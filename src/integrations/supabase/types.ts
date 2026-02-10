@@ -14,143 +14,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      documents: {
-        Row: {
-          document_type: string
-          file_name: string
-          file_path: string
-          id: string
-          profile_id: string
-          uploaded_at: string
-        }
-        Insert: {
-          document_type: string
-          file_name: string
-          file_path: string
-          id?: string
-          profile_id: string
-          uploaded_at?: string
-        }
-        Update: {
-          document_type?: string
-          file_name?: string
-          file_path?: string
-          id?: string
-          profile_id?: string
-          uploaded_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "documents_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      profiles: {
-        Row: {
-          approval_notes: string | null
-          approval_status: Database["public"]["Enums"]["approval_status"]
-          approved_at: string | null
-          available_balance: number
-          bank_account_number: string | null
-          bank_ifsc_code: string | null
-          bank_name: string | null
-          created_at: string
-          date_of_birth: string | null
-          education_background: string | null
-          education_level: string | null
-          email: string
-          emergency_contact_name: string | null
-          emergency_contact_phone: string | null
-          emergency_contact_relationship: string | null
-          full_name: string
-          gender: Database["public"]["Enums"]["gender_type"] | null
-          hold_balance: number
-          id: string
-          marital_status:
-            | Database["public"]["Enums"]["marital_status_type"]
-            | null
-          mobile_number: string | null
-          previous_job_details: string | null
-          updated_at: string
-          upi_id: string | null
-          user_code: string | null
-          user_id: string
-          user_type: Database["public"]["Enums"]["user_type"]
-          whatsapp_number: string | null
-          work_experience: string | null
-        }
-        Insert: {
-          approval_notes?: string | null
-          approval_status?: Database["public"]["Enums"]["approval_status"]
-          approved_at?: string | null
-          available_balance?: number
-          bank_account_number?: string | null
-          bank_ifsc_code?: string | null
-          bank_name?: string | null
-          created_at?: string
-          date_of_birth?: string | null
-          education_background?: string | null
-          education_level?: string | null
-          email: string
-          emergency_contact_name?: string | null
-          emergency_contact_phone?: string | null
-          emergency_contact_relationship?: string | null
-          full_name: string
-          gender?: Database["public"]["Enums"]["gender_type"] | null
-          hold_balance?: number
-          id?: string
-          marital_status?:
-            | Database["public"]["Enums"]["marital_status_type"]
-            | null
-          mobile_number?: string | null
-          previous_job_details?: string | null
-          updated_at?: string
-          upi_id?: string | null
-          user_code?: string | null
-          user_id: string
-          user_type: Database["public"]["Enums"]["user_type"]
-          whatsapp_number?: string | null
-          work_experience?: string | null
-        }
-        Update: {
-          approval_notes?: string | null
-          approval_status?: Database["public"]["Enums"]["approval_status"]
-          approved_at?: string | null
-          available_balance?: number
-          bank_account_number?: string | null
-          bank_ifsc_code?: string | null
-          bank_name?: string | null
-          created_at?: string
-          date_of_birth?: string | null
-          education_background?: string | null
-          education_level?: string | null
-          email?: string
-          emergency_contact_name?: string | null
-          emergency_contact_phone?: string | null
-          emergency_contact_relationship?: string | null
-          full_name?: string
-          gender?: Database["public"]["Enums"]["gender_type"] | null
-          hold_balance?: number
-          id?: string
-          marital_status?:
-            | Database["public"]["Enums"]["marital_status_type"]
-            | null
-          mobile_number?: string | null
-          previous_job_details?: string | null
-          updated_at?: string
-          upi_id?: string | null
-          user_code?: string | null
-          user_id?: string
-          user_type?: Database["public"]["Enums"]["user_type"]
-          whatsapp_number?: string | null
-          work_experience?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
@@ -159,10 +23,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      approval_status: "pending" | "approved" | "rejected"
-      gender_type: "male" | "female" | "other"
-      marital_status_type: "single" | "married" | "divorced" | "widowed"
-      user_type: "employee" | "client"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -289,11 +150,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      approval_status: ["pending", "approved", "rejected"],
-      gender_type: ["male", "female", "other"],
-      marital_status_type: ["single", "married", "divorced", "widowed"],
-      user_type: ["employee", "client"],
-    },
+    Enums: {},
   },
 } as const
