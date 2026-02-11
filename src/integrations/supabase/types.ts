@@ -151,6 +151,197 @@ export type Database = {
         }
         Relationships: []
       }
+      project_applications: {
+        Row: {
+          applied_at: string
+          employee_id: string
+          id: string
+          project_id: string
+          reviewed_at: string | null
+          status: Database["public"]["Enums"]["application_status"]
+        }
+        Insert: {
+          applied_at?: string
+          employee_id: string
+          id?: string
+          project_id: string
+          reviewed_at?: string | null
+          status?: Database["public"]["Enums"]["application_status"]
+        }
+        Update: {
+          applied_at?: string
+          employee_id?: string
+          id?: string
+          project_id?: string
+          reviewed_at?: string | null
+          status?: Database["public"]["Enums"]["application_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_applications_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_applications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_submissions: {
+        Row: {
+          employee_id: string
+          file_name: string | null
+          file_path: string | null
+          id: string
+          notes: string | null
+          project_id: string
+          submitted_at: string
+        }
+        Insert: {
+          employee_id: string
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          notes?: string | null
+          project_id: string
+          submitted_at?: string
+        }
+        Update: {
+          employee_id?: string
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          notes?: string | null
+          project_id?: string
+          submitted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_submissions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_submissions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          amount: number
+          assigned_employee_id: string | null
+          client_id: string
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          name: string
+          remarks: string | null
+          requirements: string
+          start_date: string | null
+          status: Database["public"]["Enums"]["project_status"]
+          updated_at: string
+          validation_fees: number
+        }
+        Insert: {
+          amount?: number
+          assigned_employee_id?: string | null
+          client_id: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          remarks?: string | null
+          requirements: string
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["project_status"]
+          updated_at?: string
+          validation_fees?: number
+        }
+        Update: {
+          amount?: number
+          assigned_employee_id?: string | null
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          remarks?: string | null
+          requirements?: string
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["project_status"]
+          updated_at?: string
+          validation_fees?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_assigned_employee_id_fkey"
+            columns: ["assigned_employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          profile_id: string
+          reference_id: string | null
+          type: Database["public"]["Enums"]["transaction_type"]
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          id?: string
+          profile_id: string
+          reference_id?: string | null
+          type: Database["public"]["Enums"]["transaction_type"]
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          profile_id?: string
+          reference_id?: string | null
+          type?: Database["public"]["Enums"]["transaction_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -169,6 +360,66 @@ export type Database = {
         }
         Relationships: []
       }
+      withdrawals: {
+        Row: {
+          amount: number
+          bank_account_number: string | null
+          bank_ifsc_code: string | null
+          employee_id: string
+          id: string
+          method: string
+          requested_at: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["withdrawal_status"]
+          upi_id: string | null
+        }
+        Insert: {
+          amount: number
+          bank_account_number?: string | null
+          bank_ifsc_code?: string | null
+          employee_id: string
+          id?: string
+          method?: string
+          requested_at?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["withdrawal_status"]
+          upi_id?: string | null
+        }
+        Update: {
+          amount?: number
+          bank_account_number?: string | null
+          bank_ifsc_code?: string | null
+          employee_id?: string
+          id?: string
+          method?: string
+          requested_at?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["withdrawal_status"]
+          upi_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawals_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "withdrawals_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -184,10 +435,19 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      application_status: "pending" | "approved" | "rejected"
       approval_status: "pending" | "approved" | "rejected"
       gender_type: "male" | "female" | "other"
       marital_status_type: "single" | "married" | "divorced" | "widowed"
+      project_status:
+        | "draft"
+        | "open"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+      transaction_type: "credit" | "debit" | "hold" | "release"
       user_type: "employee" | "client"
+      withdrawal_status: "pending" | "approved" | "rejected" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -316,10 +576,20 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      application_status: ["pending", "approved", "rejected"],
       approval_status: ["pending", "approved", "rejected"],
       gender_type: ["male", "female", "other"],
       marital_status_type: ["single", "married", "divorced", "widowed"],
+      project_status: [
+        "draft",
+        "open",
+        "in_progress",
+        "completed",
+        "cancelled",
+      ],
+      transaction_type: ["credit", "debit", "hold", "release"],
       user_type: ["employee", "client"],
+      withdrawal_status: ["pending", "approved", "rejected", "completed"],
     },
   },
 } as const
