@@ -4,11 +4,17 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import AppLayout from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import EmployeeRegister from "./pages/register/EmployeeRegister";
 import ClientRegister from "./pages/register/ClientRegister";
 import VerificationPending from "./pages/VerificationPending";
+import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
+import EmployeeProjects from "./pages/employee/EmployeeProjects";
+import EmployeeWallet from "./pages/employee/EmployeeWallet";
+import EmployeeProfile from "./pages/employee/EmployeeProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +32,22 @@ const App = () => (
             <Route path="/register/employee" element={<EmployeeRegister />} />
             <Route path="/register/client" element={<ClientRegister />} />
             <Route path="/verification-pending" element={<VerificationPending />} />
+
+            {/* Employee Routes */}
+            <Route
+              path="/employee"
+              element={
+                <ProtectedRoute>
+                  <AppLayout userType="employee" />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<EmployeeDashboard />} />
+              <Route path="projects" element={<EmployeeProjects />} />
+              <Route path="wallet" element={<EmployeeWallet />} />
+              <Route path="profile" element={<EmployeeProfile />} />
+            </Route>
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
