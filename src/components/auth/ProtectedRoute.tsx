@@ -20,11 +20,16 @@ const ProtectedRoute = ({ children, requiredApproval = true }: ProtectedRoutePro
 
   if (!user) return <Navigate to="/login" replace />;
 
-  if (requiredApproval && profile?.approval_status === "pending") {
-    return <Navigate to="/verification-pending" replace />;
+  // Wait for profile to load
+  if (!profile) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
-  if (requiredApproval && profile?.approval_status === "rejected") {
+  if (requiredApproval && profile.approval_status !== "approved") {
     return <Navigate to="/verification-pending" replace />;
   }
 
