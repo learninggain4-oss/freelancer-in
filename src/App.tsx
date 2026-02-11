@@ -15,6 +15,12 @@ import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
 import EmployeeProjects from "./pages/employee/EmployeeProjects";
 import EmployeeWallet from "./pages/employee/EmployeeWallet";
 import EmployeeProfile from "./pages/employee/EmployeeProfile";
+import ClientDashboard from "./pages/client/ClientDashboard";
+import ClientWallet from "./pages/client/ClientWallet";
+import ClientProjects from "./pages/client/ClientProjects";
+import CreateProject from "./pages/client/CreateProject";
+import ClientWithdrawals from "./pages/client/ClientWithdrawals";
+import ClientProfile from "./pages/client/ClientProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,7 +54,23 @@ const App = () => (
               <Route path="profile" element={<EmployeeProfile />} />
             </Route>
 
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            {/* Client Routes */}
+            <Route
+              path="/client"
+              element={
+                <ProtectedRoute>
+                  <AppLayout userType="client" />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<ClientDashboard />} />
+              <Route path="wallet" element={<ClientWallet />} />
+              <Route path="projects" element={<ClientProjects />} />
+              <Route path="projects/create" element={<CreateProject />} />
+              <Route path="withdrawals" element={<ClientWithdrawals />} />
+              <Route path="profile" element={<ClientProfile />} />
+            </Route>
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
