@@ -126,6 +126,11 @@ const ClientProjects = () => {
                     <span className="flex items-center gap-1"><IndianRupee className="h-3 w-3" />₹{Number(p.amount).toLocaleString("en-IN")}</span>
                     <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{p.end_date ?? "No deadline"}</span>
                   </div>
+                  {(p.status === "in_progress" || p.status === "completed") && (
+                    <Button size="sm" variant="outline" className="w-full" onClick={() => navigate(`/client/projects/chat/${p.id}`)}>
+                      <MessageSquare className="mr-1 h-3 w-3" /> Validation Chat
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ))

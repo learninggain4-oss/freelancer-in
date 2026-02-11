@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,13 +12,30 @@ import {
   IndianRupee,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const EmployeeDashboard = () => {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Realtime: refresh when transactions or profile balances change
+  useEffect(() => {
+    if (!profile?.id) return;
+    const channel = supabase
+      .channel("emp-dashboard-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "transactions", filter: `profile_id=eq.${profile.id}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["employee-transactions", profile.id] });
+        refreshProfile();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "project_applications", filter: `employee_id=eq.${profile.id}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["employee-requests"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [profile?.id, queryClient, refreshProfile]);
 
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ["employee-transactions", profile?.id],

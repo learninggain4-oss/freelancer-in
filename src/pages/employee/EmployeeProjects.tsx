@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ const EmployeeProjects = () => {
   const [search, setSearch] = useState("");
   const { profile } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Fetch open projects (inquiries)
   const { data: inquiries = [], isLoading: loadingInquiries } = useQuery({
@@ -154,7 +156,14 @@ const EmployeeProjects = () => {
                     <h3 className="font-semibold text-foreground">{r.project?.name ?? "Project"}</h3>
                     <p className="text-xs text-muted-foreground">Applied: {new Date(r.applied_at).toLocaleDateString()}</p>
                   </div>
-                  <Badge className={statusColor[r.status]}>{r.status}</Badge>
+                  <div className="flex items-center gap-2">
+                    {r.status === "approved" && (
+                      <Button size="sm" variant="outline" onClick={() => navigate(`/employee/projects/chat/${r.project_id}`)}>
+                        <MessageSquare className="mr-1 h-3 w-3" /> Chat
+                      </Button>
+                    )}
+                    <Badge className={statusColor[r.status]}>{r.status}</Badge>
+                  </div>
                 </CardContent>
               </Card>
             ))

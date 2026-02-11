@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -22,8 +23,24 @@ const statusColor: Record<string, string> = {
 };
 
 const ClientDashboard = () => {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Realtime: refresh when projects or applications change
+  useEffect(() => {
+    if (!profile?.id) return;
+    const channel = supabase
+      .channel("client-dashboard-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "projects", filter: `client_id=eq.${profile.id}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["client-active-projects", profile.id] });
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "project_applications" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["client-recent-requests", profile.id] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [profile?.id, queryClient, refreshProfile]);
 
   const { data: activeCount = 0 } = useQuery({
     queryKey: ["client-active-projects", profile?.id],
