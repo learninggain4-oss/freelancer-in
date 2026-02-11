@@ -6,6 +6,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface SideDrawerProps {
   open: boolean;
@@ -21,6 +23,15 @@ const menuItems = [
 ];
 
 const SideDrawer = ({ open, onOpenChange }: SideDrawerProps) => {
+  const { signOut, profile } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    onOpenChange(false);
+    await signOut();
+    navigate("/login");
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-72 bg-card">
@@ -28,6 +39,11 @@ const SideDrawer = ({ open, onOpenChange }: SideDrawerProps) => {
           <SheetTitle className="text-left text-lg font-bold text-foreground">
             Freelancer
           </SheetTitle>
+          {profile && (
+            <p className="text-left text-xs text-muted-foreground">
+              {profile.full_name} • {profile.user_code}
+            </p>
+          )}
         </SheetHeader>
         <Separator className="my-4" />
         <nav className="flex flex-col gap-1">
@@ -43,7 +59,10 @@ const SideDrawer = ({ open, onOpenChange }: SideDrawerProps) => {
           ))}
         </nav>
         <Separator className="my-4" />
-        <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-destructive transition-colors hover:bg-destructive/10">
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
+        >
           <LogOut className="h-4 w-4" />
           <span>Logout</span>
         </button>
