@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, Navigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Briefcase, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,12 +15,21 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signIn } = useAuth();
+  const { signIn, user, profile, loading: authLoading } = useAuth();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
   });
+
+  // Redirect if already logged in
+  if (!authLoading && user && profile) {
+    if (profile.approval_status !== "approved") {
+      return <Navigate to="/verification-pending" replace />;
+    }
+    const base = profile.user_type === "employee" ? "/employee" : "/client";
+    return <Navigate to={`${base}/dashboard`} replace />;
+  }
 
   const onSubmit = async (data: LoginFormData) => {
     setLoading(true);
@@ -28,7 +37,7 @@ const Login = () => {
       const { error } = await signIn(data.email, data.password);
       if (error) throw error;
       toast({ title: "Welcome back!" });
-      navigate("/");
+      // Navigation will happen via the redirect logic above after profile loads
     } catch (error: any) {
       toast({ title: "Login failed", description: error.message, variant: "destructive" });
     } finally {
