@@ -11,20 +11,32 @@ import {
   IndianRupee,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const EmployeeDashboard = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
 
-  const recentTransactions = [
-    { id: 1, type: "credit", description: "Project Payment - Web Design", amount: 5000, date: "2026-02-10", status: "completed" },
-    { id: 2, type: "debit", description: "Withdrawal to Bank", amount: 3000, date: "2026-02-09", status: "completed" },
-    { id: 3, type: "credit", description: "Project Payment - Logo Design", amount: 2500, date: "2026-02-08", status: "pending" },
-  ];
+  const { data: transactions = [], isLoading } = useQuery({
+    queryKey: ["employee-transactions", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("profile_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!profile?.id,
+  });
 
   return (
     <div className="space-y-6 p-4">
-      {/* Welcome Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">
           Welcome, {profile?.full_name ?? "Employee"}
@@ -34,7 +46,6 @@ const EmployeeDashboard = () => {
         </p>
       </div>
 
-      {/* Balance Cards */}
       <div className="grid grid-cols-2 gap-3">
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="p-4">
@@ -62,67 +73,40 @@ const EmployeeDashboard = () => {
         </Card>
       </div>
 
-      {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-3">
-        <Button
-          variant="outline"
-          className="h-auto flex-col gap-2 py-4"
-          onClick={() => navigate("/employee/projects")}
-        >
+        <Button variant="outline" className="h-auto flex-col gap-2 py-4" onClick={() => navigate("/employee/projects")}>
           <Briefcase className="h-5 w-5 text-primary" />
           <span className="text-xs">View Projects</span>
         </Button>
-        <Button
-          variant="outline"
-          className="h-auto flex-col gap-2 py-4"
-          onClick={() => navigate("/employee/wallet")}
-        >
+        <Button variant="outline" className="h-auto flex-col gap-2 py-4" onClick={() => navigate("/employee/wallet")}>
           <ArrowDownToLine className="h-5 w-5 text-accent" />
           <span className="text-xs">Withdraw Funds</span>
         </Button>
       </div>
 
-      {/* Recent Transactions */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <TrendingUp className="h-4 w-4" />
-            Recent Transactions
+            <TrendingUp className="h-4 w-4" /> Recent Transactions
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {recentTransactions.map((tx) => (
-            <div
-              key={tx.id}
-              className="flex items-center justify-between rounded-lg border p-3"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">
-                  {tx.description}
-                </p>
-                <p className="text-xs text-muted-foreground">{tx.date}</p>
-              </div>
-              <div className="ml-3 flex flex-col items-end gap-1">
-                <span
-                  className={`text-sm font-semibold ${
-                    tx.type === "credit" ? "text-accent" : "text-destructive"
-                  }`}
-                >
-                  {tx.type === "credit" ? "+" : "-"}₹{tx.amount.toLocaleString("en-IN")}
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)
+          ) : transactions.length > 0 ? (
+            transactions.map((tx: any) => (
+              <div key={tx.id} className="flex items-center justify-between rounded-lg border p-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">{tx.description}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</p>
+                </div>
+                <span className={`ml-3 text-sm font-semibold ${tx.type === "credit" ? "text-accent" : "text-destructive"}`}>
+                  {tx.type === "credit" ? "+" : "-"}₹{Number(tx.amount).toLocaleString("en-IN")}
                 </span>
-                <Badge
-                  variant={tx.status === "completed" ? "default" : "secondary"}
-                  className="text-[10px]"
-                >
-                  {tx.status}
-                </Badge>
               </div>
-            </div>
-          ))}
-          {recentTransactions.length === 0 && (
-            <p className="py-4 text-center text-sm text-muted-foreground">
-              No transactions yet
-            </p>
+            ))
+          ) : (
+            <p className="py-4 text-center text-sm text-muted-foreground">No transactions yet</p>
           )}
         </CardContent>
       </Card>

@@ -4,55 +4,99 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Search,
-  Plus,
-  IndianRupee,
-  Calendar,
-  Users,
-  MessageSquare,
-} from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Search, Plus, IndianRupee, Calendar, Users, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const myProjects = [
-  { id: "1", name: "E-Commerce Website", amount: 25000, applicants: 3, status: "active", deadline: "2026-03-01" },
-  { id: "2", name: "Logo Redesign", amount: 8000, applicants: 5, status: "completed", deadline: "2026-02-15" },
-];
-
-const employeeRequests = [
-  { id: "1", employeeName: "Amit Kumar", code: "EMP00001", project: "E-Commerce Website", experience: "3 years", status: "pending" },
-  { id: "2", employeeName: "Sneha Reddy", code: "EMP00002", project: "E-Commerce Website", experience: "5 years", status: "pending" },
-  { id: "3", employeeName: "Ravi Verma", code: "EMP00003", project: "Logo Redesign", experience: "2 years", status: "approved" },
-];
-
-const validations = [
-  { id: "1", projectName: "Logo Redesign", employee: "Ravi Verma", status: "awaiting_review", lastMessage: "Final deliverables attached" },
-];
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const statusColor: Record<string, string> = {
-  active: "bg-accent/10 text-accent",
+  open: "bg-accent/10 text-accent",
+  in_progress: "bg-primary/10 text-primary",
   completed: "bg-primary/10 text-primary",
+  draft: "bg-muted text-muted-foreground",
+  cancelled: "bg-destructive/10 text-destructive",
   pending: "bg-warning/10 text-warning",
   approved: "bg-accent/10 text-accent",
   rejected: "bg-destructive/10 text-destructive",
-  awaiting_review: "bg-warning/10 text-warning",
 };
 
 const ClientProjects = () => {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
+  const { profile } = useAuth();
+  const queryClient = useQueryClient();
 
-  const handleAction = (id: string, action: "approve" | "reject") => {
-    // placeholder
-  };
+  // My projects
+  const { data: myProjects = [], isLoading: loadingProjects } = useQuery({
+    queryKey: ["client-projects", profile?.id, search],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      let query = supabase
+        .from("projects")
+        .select("*")
+        .eq("client_id", profile.id)
+        .order("created_at", { ascending: false });
+      if (search) query = query.ilike("name", `%${search}%`);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!profile?.id,
+  });
+
+  // Employee requests for my projects
+  const { data: requests = [], isLoading: loadingRequests } = useQuery({
+    queryKey: ["client-applications", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data, error } = await supabase
+        .from("project_applications")
+        .select("*, employee:employee_id(full_name, user_code, work_experience), project:project_id(name, client_id)")
+        .order("applied_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).filter((r: any) => r.project?.client_id === profile.id);
+    },
+    enabled: !!profile?.id,
+  });
+
+  // Submissions for my projects
+  const { data: submissions = [], isLoading: loadingSubs } = useQuery({
+    queryKey: ["client-submissions", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data, error } = await supabase
+        .from("project_submissions")
+        .select("*, employee:employee_id(full_name), project:project_id(name, client_id)")
+        .order("submitted_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).filter((s: any) => s.project?.client_id === profile.id);
+    },
+    enabled: !!profile?.id,
+  });
+
+  const updateApplicationMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase
+        .from("project_applications")
+        .update({ status: status as any, reviewed_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Application updated");
+      queryClient.invalidateQueries({ queryKey: ["client-applications"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   return (
     <div className="space-y-4 p-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Projects</h1>
-        <Button size="sm" onClick={() => navigate("/client/projects/create")}>
-          <Plus className="mr-1 h-4 w-4" /> New
-        </Button>
+        <Button size="sm" onClick={() => navigate("/client/projects/create")}><Plus className="mr-1 h-4 w-4" /> New</Button>
       </div>
 
       <div className="relative">
@@ -64,65 +108,79 @@ const ClientProjects = () => {
         <TabsList className="w-full">
           <TabsTrigger value="projects" className="flex-1 text-xs">My Projects</TabsTrigger>
           <TabsTrigger value="requests" className="flex-1 text-xs">Requests</TabsTrigger>
-          <TabsTrigger value="validation" className="flex-1 text-xs">Validation</TabsTrigger>
+          <TabsTrigger value="submissions" className="flex-1 text-xs">Submissions</TabsTrigger>
         </TabsList>
 
         <TabsContent value="projects" className="mt-4 space-y-3">
-          {myProjects.map((p) => (
-            <Card key={p.id}>
-              <CardContent className="space-y-2 p-4">
-                <div className="flex items-start justify-between">
-                  <h3 className="font-semibold text-foreground">{p.name}</h3>
-                  <Badge className={statusColor[p.status]}>{p.status}</Badge>
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1"><IndianRupee className="h-3 w-3" />₹{p.amount.toLocaleString("en-IN")}</span>
-                  <span className="flex items-center gap-1"><Users className="h-3 w-3" />{p.applicants} applied</span>
-                  <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{p.deadline}</span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {loadingProjects ? (
+            Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
+          ) : myProjects.length > 0 ? (
+            myProjects.map((p: any) => (
+              <Card key={p.id}>
+                <CardContent className="space-y-2 p-4">
+                  <div className="flex items-start justify-between">
+                    <h3 className="font-semibold text-foreground">{p.name}</h3>
+                    <Badge className={statusColor[p.status]}>{p.status}</Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1"><IndianRupee className="h-3 w-3" />₹{Number(p.amount).toLocaleString("en-IN")}</span>
+                    <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{p.end_date ?? "No deadline"}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <p className="py-8 text-center text-sm text-muted-foreground">No projects yet. Create one!</p>
+          )}
         </TabsContent>
 
         <TabsContent value="requests" className="mt-4 space-y-3">
-          {employeeRequests.map((r) => (
-            <Card key={r.id}>
-              <CardContent className="space-y-3 p-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-foreground">{r.employeeName}</h3>
-                    <p className="text-xs text-muted-foreground">{r.code} • {r.experience}</p>
+          {loadingRequests ? (
+            Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-28 w-full" />)
+          ) : requests.length > 0 ? (
+            requests.map((r: any) => (
+              <Card key={r.id}>
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold text-foreground">{r.employee?.full_name ?? "Employee"}</h3>
+                      <p className="text-xs text-muted-foreground">{r.employee?.user_code} • {r.employee?.work_experience ?? "N/A"}</p>
+                    </div>
+                    <Badge className={statusColor[r.status]}>{r.status}</Badge>
                   </div>
-                  <Badge className={statusColor[r.status]}>{r.status}</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">Project: {r.project}</p>
-                {r.status === "pending" && (
-                  <div className="flex gap-2">
-                    <Button size="sm" className="flex-1" onClick={() => handleAction(r.id, "approve")}>Approve</Button>
-                    <Button size="sm" variant="outline" className="flex-1 text-destructive" onClick={() => handleAction(r.id, "reject")}>Reject</Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  <p className="text-xs text-muted-foreground">Project: {r.project?.name}</p>
+                  {r.status === "pending" && (
+                    <div className="flex gap-2">
+                      <Button size="sm" className="flex-1" onClick={() => updateApplicationMutation.mutate({ id: r.id, status: "approved" })}>Approve</Button>
+                      <Button size="sm" variant="outline" className="flex-1 text-destructive" onClick={() => updateApplicationMutation.mutate({ id: r.id, status: "rejected" })}>Reject</Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <p className="py-8 text-center text-sm text-muted-foreground">No employee requests</p>
+          )}
         </TabsContent>
 
-        <TabsContent value="validation" className="mt-4 space-y-3">
-          {validations.map((v) => (
-            <Card key={v.id}>
-              <CardContent className="flex items-center justify-between p-4">
-                <div>
-                  <h3 className="font-semibold text-foreground">{v.projectName}</h3>
-                  <p className="text-xs text-muted-foreground">{v.employee}</p>
-                  <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                    <MessageSquare className="h-3 w-3" /> {v.lastMessage}
-                  </p>
-                </div>
-                <Badge className={statusColor[v.status]}>Review</Badge>
-              </CardContent>
-            </Card>
-          ))}
+        <TabsContent value="submissions" className="mt-4 space-y-3">
+          {loadingSubs ? (
+            <Skeleton className="h-16 w-full" />
+          ) : submissions.length > 0 ? (
+            submissions.map((s: any) => (
+              <Card key={s.id}>
+                <CardContent className="flex items-center justify-between p-4">
+                  <div>
+                    <h3 className="font-semibold text-foreground">{s.project?.name ?? "Project"}</h3>
+                    <p className="text-xs text-muted-foreground">{s.employee?.full_name} • {new Date(s.submitted_at).toLocaleDateString()}</p>
+                  </div>
+                  <Badge className="bg-primary/10 text-primary">Submitted</Badge>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <p className="py-8 text-center text-sm text-muted-foreground">No submissions yet</p>
+          )}
         </TabsContent>
       </Tabs>
     </div>
