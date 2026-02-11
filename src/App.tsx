@@ -21,6 +21,7 @@ import ClientProjects from "./pages/client/ClientProjects";
 import CreateProject from "./pages/client/CreateProject";
 import ClientWithdrawals from "./pages/client/ClientWithdrawals";
 import ClientProfile from "./pages/client/ClientProfile";
+import ChatRoom from "./components/chat/ChatRoom";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => (
             >
               <Route path="dashboard" element={<EmployeeDashboard />} />
               <Route path="projects" element={<EmployeeProjects />} />
+              <Route path="projects/chat/:projectId" element={<ChatRoom />} />
               <Route path="wallet" element={<EmployeeWallet />} />
               <Route path="profile" element={<EmployeeProfile />} />
             </Route>
@@ -67,6 +69,7 @@ const App = () => (
               <Route path="wallet" element={<ClientWallet />} />
               <Route path="projects" element={<ClientProjects />} />
               <Route path="projects/create" element={<CreateProject />} />
+              <Route path="projects/chat/:projectId" element={<ChatRoom />} />
               <Route path="withdrawals" element={<ClientWithdrawals />} />
               <Route path="profile" element={<ClientProfile />} />
             </Route>
