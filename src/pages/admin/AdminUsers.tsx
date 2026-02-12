@@ -8,8 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { CheckCircle, XCircle, Eye, Search, X } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 import UserDetailDialog, { type FullProfile } from "@/components/admin/UserDetailDialog";
+
+const PAGE_SIZE = 15;
 
 const AdminUsers = () => {
   const [profiles, setProfiles] = useState<FullProfile[]>([]);
@@ -20,6 +22,7 @@ const AdminUsers = () => {
   const [processing, setProcessing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchProfiles = async () => {
     setLoading(true);
@@ -88,56 +91,100 @@ const AdminUsers = () => {
   const filterByStatus = (status: string | null) =>
     status ? filtered.filter((p) => p.approval_status === status) : filtered;
 
-  const UserTable = ({ users }: { users: FullProfile[] }) => (
-    <div className="overflow-x-auto rounded-lg border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Code</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {users.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No users found</TableCell>
-            </TableRow>
-          ) : (
-            users.map((u) => (
-              <TableRow key={u.id}>
-                <TableCell className="font-medium">{u.full_name?.[0] || "—"}</TableCell>
-                <TableCell className="font-mono text-xs">{u.user_code?.[0] || "—"}</TableCell>
-                <TableCell><Badge variant="secondary" className="capitalize">{u.user_type}</Badge></TableCell>
-                <TableCell className="max-w-[160px] truncate text-sm">{u.email}</TableCell>
-                <TableCell>{statusBadge(u.approval_status)}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button size="icon" variant="ghost" onClick={() => { setSelectedUser(u); setActionType("view"); }}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    {u.approval_status === "pending" && (
-                      <>
-                        <Button size="icon" variant="ghost" className="text-accent hover:text-accent" onClick={() => { setSelectedUser(u); setActionType("approve"); }}>
-                          <CheckCircle className="h-4 w-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => { setSelectedUser(u); setActionType("reject"); }}>
-                          <XCircle className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </TableCell>
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, typeFilter]);
+
+  const UserTable = ({ users }: { users: FullProfile[] }) => {
+    const totalPages = Math.max(1, Math.ceil(users.length / PAGE_SIZE));
+    const page = Math.min(currentPage, totalPages);
+    const paginated = users.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+    return (
+      <div className="space-y-3">
+        <div className="overflow-x-auto rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Code</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
-  );
+            </TableHeader>
+            <TableBody>
+              {paginated.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No users found</TableCell>
+                </TableRow>
+              ) : (
+                paginated.map((u) => (
+                  <TableRow key={u.id}>
+                    <TableCell className="font-medium">{u.full_name?.[0] || "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">{u.user_code?.[0] || "—"}</TableCell>
+                    <TableCell><Badge variant="secondary" className="capitalize">{u.user_type}</Badge></TableCell>
+                    <TableCell className="max-w-[160px] truncate text-sm">{u.email}</TableCell>
+                    <TableCell>{statusBadge(u.approval_status)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button size="icon" variant="ghost" onClick={() => { setSelectedUser(u); setActionType("view"); }}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {u.approval_status === "pending" && (
+                          <>
+                            <Button size="icon" variant="ghost" className="text-accent hover:text-accent" onClick={() => { setSelectedUser(u); setActionType("approve"); }}>
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => { setSelectedUser(u); setActionType("reject"); }}>
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Pagination */}
+        {users.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, users.length)} of {users.length}
+            </p>
+            <div className="flex items-center gap-1">
+              <Button size="icon" variant="outline" className="h-8 w-8" disabled={page <= 1} onClick={() => setCurrentPage(page - 1)}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                .reduce<(number | "ellipsis")[]>((acc, p, idx, arr) => {
+                  if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("ellipsis");
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((p, i) =>
+                  p === "ellipsis" ? (
+                    <span key={`e${i}`} className="px-1 text-sm text-muted-foreground">…</span>
+                  ) : (
+                    <Button key={p} size="icon" variant={p === page ? "default" : "outline"} className="h-8 w-8 text-xs" onClick={() => setCurrentPage(p)}>
+                      {p}
+                    </Button>
+                  )
+                )}
+              <Button size="icon" variant="outline" className="h-8 w-8" disabled={page >= totalPages} onClick={() => setCurrentPage(page + 1)}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
