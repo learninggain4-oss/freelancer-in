@@ -32,6 +32,10 @@ type Withdrawal = {
   requested_at: string;
   review_notes: string | null;
   employee_id: string;
+  upi_id: string | null;
+  bank_account_number: string | null;
+  bank_ifsc_code: string | null;
+  bank_holder_name: string | null;
   employee?: { full_name: string[]; user_code: string[]; email: string };
 };
 
@@ -47,7 +51,7 @@ const AdminWithdrawals = () => {
     setLoading(true);
     const { data: wData } = await supabase
       .from("withdrawals")
-      .select("id, amount, method, status, requested_at, review_notes, employee_id")
+      .select("id, amount, method, status, requested_at, review_notes, employee_id, upi_id, bank_account_number, bank_ifsc_code, bank_holder_name")
       .order("requested_at", { ascending: false });
 
     if (wData && wData.length > 0) {
@@ -130,6 +134,7 @@ const AdminWithdrawals = () => {
             <TableHead>Employee</TableHead>
             <TableHead>Amount</TableHead>
             <TableHead>Method</TableHead>
+            <TableHead>Bank Details</TableHead>
             <TableHead>Requested</TableHead>
             <TableHead>Countdown</TableHead>
             <TableHead>Status</TableHead>
@@ -139,7 +144,7 @@ const AdminWithdrawals = () => {
         <TableBody>
           {items.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+              <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
                 No withdrawals found
               </TableCell>
             </TableRow>
@@ -154,6 +159,15 @@ const AdminWithdrawals = () => {
                 </TableCell>
                 <TableCell className="font-semibold">₹{Number(w.amount).toLocaleString()}</TableCell>
                 <TableCell className="uppercase text-xs">{w.method}</TableCell>
+                <TableCell>
+                  <div className="text-xs space-y-0.5">
+                    {w.bank_holder_name && <p><span className="text-muted-foreground">Holder:</span> {w.bank_holder_name}</p>}
+                    {w.upi_id && <p><span className="text-muted-foreground">UPI:</span> {w.upi_id}</p>}
+                    {w.bank_account_number && <p><span className="text-muted-foreground">A/C:</span> {w.bank_account_number}</p>}
+                    {w.bank_ifsc_code && <p><span className="text-muted-foreground">IFSC:</span> {w.bank_ifsc_code}</p>}
+                    {!w.upi_id && !w.bank_account_number && <span className="text-muted-foreground">—</span>}
+                  </div>
+                </TableCell>
                 <TableCell className="text-sm">
                   {new Date(w.requested_at).toLocaleDateString()}
                 </TableCell>

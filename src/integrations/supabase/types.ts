@@ -642,6 +642,7 @@ export type Database = {
         Row: {
           amount: number
           bank_account_number: string | null
+          bank_holder_name: string | null
           bank_ifsc_code: string | null
           employee_id: string
           id: string
@@ -656,6 +657,7 @@ export type Database = {
         Insert: {
           amount: number
           bank_account_number?: string | null
+          bank_holder_name?: string | null
           bank_ifsc_code?: string | null
           employee_id: string
           id?: string
@@ -670,6 +672,7 @@ export type Database = {
         Update: {
           amount?: number
           bank_account_number?: string | null
+          bank_holder_name?: string | null
           bank_ifsc_code?: string | null
           employee_id?: string
           id?: string

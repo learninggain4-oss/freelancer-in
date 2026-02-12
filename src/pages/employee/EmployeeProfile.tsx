@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import {
   User, Mail, Phone, Calendar, GraduationCap, Briefcase,
-  AlertCircle, Edit, BadgeCheck, Save, X,
+  AlertCircle, Edit, BadgeCheck, Save, X, Landmark,
 } from "lucide-react";
 import { toast } from "sonner";
 import AadhaarVerificationCard from "@/components/verification/AadhaarVerificationCard";
@@ -77,6 +77,11 @@ const EmployeeProfile = () => {
       emergency_contact_name: profile?.emergency_contact_name ?? "",
       emergency_contact_phone: profile?.emergency_contact_phone ?? "",
       emergency_contact_relationship: profile?.emergency_contact_relationship ?? "",
+      bank_holder_name: (profile as any)?.bank_holder_name ?? "",
+      bank_name: profile?.bank_name ?? "",
+      bank_account_number: profile?.bank_account_number ?? "",
+      bank_ifsc_code: profile?.bank_ifsc_code ?? "",
+      upi_id: profile?.upi_id ?? "",
     });
     setEditing(true);
   };
@@ -181,6 +186,16 @@ const EmployeeProfile = () => {
             <EditField label="Emergency Contact Name" field="emergency_contact_name" />
             <EditField label="Emergency Contact Phone" field="emergency_contact_phone" />
             <EditField label="Emergency Contact Relationship" field="emergency_contact_relationship" />
+            <div className="pt-2 border-t">
+              <p className="text-xs font-medium text-muted-foreground mb-2">Bank Details</p>
+              <div className="space-y-3">
+                <EditField label="Account Holder Name" field="bank_holder_name" />
+                <EditField label="Bank Name" field="bank_name" />
+                <EditField label="Account Number" field="bank_account_number" />
+                <EditField label="IFSC Code" field="bank_ifsc_code" />
+                <EditField label="UPI ID" field="upi_id" />
+              </div>
+            </div>
             <div className="flex gap-2 pt-2">
               <Button className="flex-1" onClick={() => saveEditMutation.mutate()} disabled={saveEditMutation.isPending}>
                 <Save className="mr-1 h-3 w-3" /> Save
@@ -229,6 +244,20 @@ const EmployeeProfile = () => {
           <InfoRow icon={GraduationCap} label="Education Background" value={profile?.education_background} />
           <InfoRow icon={Briefcase} label="Work Experience" value={profile?.work_experience} />
           <InfoRow icon={Briefcase} label="Previous Jobs" value={profile?.previous_job_details} />
+        </CardContent>
+      </Card>
+
+      {/* Bank Details */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base"><Landmark className="h-4 w-4" /> Bank Details</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-1">
+          <InfoRow icon={User} label="Account Holder Name" value={(profile as any)?.bank_holder_name} />
+          <InfoRow icon={Landmark} label="Bank Name" value={profile?.bank_name} />
+          <InfoRow icon={Landmark} label="Account Number" value={profile?.bank_account_number} />
+          <InfoRow icon={Landmark} label="IFSC Code" value={profile?.bank_ifsc_code} />
+          <InfoRow icon={Landmark} label="UPI ID" value={profile?.upi_id} />
         </CardContent>
       </Card>
 
