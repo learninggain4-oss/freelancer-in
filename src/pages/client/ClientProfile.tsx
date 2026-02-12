@@ -14,6 +14,7 @@ import {
   Edit,
 } from "lucide-react";
 import { toast } from "sonner";
+import AadhaarVerificationCard from "@/components/verification/AadhaarVerificationCard";
 
 const ClientProfile = () => {
   const { profile } = useAuth();
@@ -84,6 +85,8 @@ const ClientProfile = () => {
           <InfoRow icon={Briefcase} label="Experience" value={profile?.work_experience} />
         </CardContent>
       </Card>
+
+      <AadhaarVerificationCard />
 
       <Card>
         <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-base"><AlertCircle className="h-4 w-4" /> Emergency Contact</CardTitle></CardHeader>

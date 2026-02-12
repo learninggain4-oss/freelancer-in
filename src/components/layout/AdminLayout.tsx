@@ -9,6 +9,7 @@ import {
   Menu,
   X,
   ShieldCheck,
+  Fingerprint,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ const navItems = [
   { label: "Overview", icon: LayoutDashboard, path: "/admin/dashboard" },
   { label: "Users", icon: Users, path: "/admin/users" },
   { label: "Withdrawals", icon: Wallet, path: "/admin/withdrawals" },
+  { label: "Verifications", icon: Fingerprint, path: "/admin/verifications" },
 ];
 
 const AdminLayout = () => {
