@@ -8,7 +8,6 @@ type Profile = Tables<"profiles">;
 interface AuthContextType {
   session: Session | null;
   user: User | null;
-  isAdmin: boolean;
   profile: Profile | null;
   loading: boolean;
   signUp: (email: string, password: string) => Promise<{ error: Error | null; data: any }>;
@@ -23,20 +22,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const [{ data: profileData }, { data: adminData }] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("id, user_id, user_type, full_name, user_code, email, gender, date_of_birth, marital_status, education_level, mobile_number, whatsapp_number, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, approval_status, approval_notes, approved_at, available_balance, hold_balance, created_at, updated_at")
-        .eq("user_id", userId)
-        .maybeSingle(),
-      supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
-    ]);
-    setProfile(profileData as unknown as Profile | null);
-    setIsAdmin(!!adminData);
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, user_id, user_type, full_name, user_code, email, gender, date_of_birth, marital_status, education_level, mobile_number, whatsapp_number, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, approval_status, approval_notes, approved_at, available_balance, hold_balance, created_at, updated_at")
+      .eq("user_id", userId)
+      .maybeSingle();
+    setProfile(data as unknown as Profile | null);
   };
 
   const refreshProfile = async () => {
@@ -89,7 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, isAdmin, loading, signUp, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, signUp, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
