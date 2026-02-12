@@ -12,6 +12,7 @@ import {
   Fingerprint,
   UserCheck,
   Building2,
+  Edit,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ const navItems = [
   { label: "Users", icon: Users, path: "/admin/users" },
   { label: "Employees", icon: UserCheck, path: "/admin/employees" },
   { label: "Clients", icon: Building2, path: "/admin/clients" },
+  { label: "Profile Edits", icon: Edit, path: "/admin/profile-edits" },
   { label: "Withdrawals", icon: Wallet, path: "/admin/withdrawals" },
   { label: "Verifications", icon: Fingerprint, path: "/admin/verifications" },
 ];

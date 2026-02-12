@@ -1,26 +1,24 @@
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import {
-  User,
-  Mail,
-  Phone,
-  Calendar,
-  GraduationCap,
-  Briefcase,
-  AlertCircle,
-  Edit,
-  BadgeCheck,
+  User, Mail, Phone, Calendar, GraduationCap, Briefcase,
+  AlertCircle, Edit, BadgeCheck, Save, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import AadhaarVerificationCard from "@/components/verification/AadhaarVerificationCard";
 
 const EmployeeProfile = () => {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<Record<string, string>>({});
 
   const { data: aadhaarStatus } = useQuery({
     queryKey: ["aadhaar-status", profile?.id],
@@ -37,27 +35,70 @@ const EmployeeProfile = () => {
 
   const isVerified = aadhaarStatus === "verified";
 
-  // Calculate profile completion
+  const editStatus = (profile as any)?.edit_request_status ?? "none";
+  const canRequestEdit = editStatus === "none" || editStatus === "rejected" || editStatus === "used";
+  const canEdit = editStatus === "approved";
+
   const fields = [
-    profile?.full_name,
-    profile?.email,
-    profile?.mobile_number,
-    profile?.whatsapp_number,
-    profile?.date_of_birth,
-    profile?.gender,
-    profile?.education_level,
-    profile?.work_experience,
-    profile?.bank_account_number,
-    profile?.upi_id,
-    profile?.emergency_contact_name,
-    profile?.emergency_contact_phone,
+    profile?.full_name, profile?.email, profile?.mobile_number,
+    profile?.whatsapp_number, profile?.date_of_birth, profile?.gender,
+    profile?.education_level, profile?.work_experience,
+    profile?.emergency_contact_name, profile?.emergency_contact_phone,
   ];
   const filled = fields.filter(Boolean).length;
   const completion = Math.round((filled / fields.length) * 100);
 
-  const handleEditRequest = () => {
-    toast.info("Edit request sent to admin. You'll be notified once approved.");
+  const requestEditMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          edit_request_status: "requested" as any,
+          edit_requested_at: new Date().toISOString(),
+        })
+        .eq("id", profile!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Edit request sent to admin. You'll be notified once approved.");
+      refreshProfile();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const startEditing = () => {
+    setForm({
+      mobile_number: profile?.mobile_number ?? "",
+      whatsapp_number: profile?.whatsapp_number ?? "",
+      education_level: profile?.education_level ?? "",
+      education_background: profile?.education_background ?? "",
+      work_experience: profile?.work_experience ?? "",
+      previous_job_details: profile?.previous_job_details ?? "",
+      emergency_contact_name: profile?.emergency_contact_name ?? "",
+      emergency_contact_phone: profile?.emergency_contact_phone ?? "",
+      emergency_contact_relationship: profile?.emergency_contact_relationship ?? "",
+    });
+    setEditing(true);
   };
+
+  const saveEditMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          ...form,
+          edit_request_status: "used" as any,
+        })
+        .eq("id", profile!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Profile updated successfully.");
+      setEditing(false);
+      refreshProfile();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value: string | null | undefined }) => (
     <div className="flex items-start gap-3 py-2">
@@ -69,6 +110,16 @@ const EmployeeProfile = () => {
     </div>
   );
 
+  const EditField = ({ label, field }: { label: string; field: string }) => (
+    <div className="space-y-1">
+      <Label className="text-xs">{label}</Label>
+      <Input
+        value={form[field] ?? ""}
+        onChange={(e) => setForm((p) => ({ ...p, [field]: e.target.value }))}
+      />
+    </div>
+  );
+
   return (
     <div className="space-y-6 p-4">
       {/* Header */}
@@ -76,9 +127,7 @@ const EmployeeProfile = () => {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
             {profile?.full_name ?? "Employee"}
-            {isVerified && (
-              <BadgeCheck className="h-5 w-5 text-accent" />
-            )}
+            {isVerified && <BadgeCheck className="h-5 w-5 text-accent" />}
           </h1>
           <p className="text-sm text-muted-foreground">
             {profile?.user_code ?? "—"} •{" "}
@@ -87,10 +136,62 @@ const EmployeeProfile = () => {
             </Badge>
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleEditRequest}>
-          <Edit className="mr-1 h-3 w-3" /> Edit
-        </Button>
+        {canEdit && !editing ? (
+          <Button variant="outline" size="sm" onClick={startEditing}>
+            <Edit className="mr-1 h-3 w-3" /> Edit Now
+          </Button>
+        ) : canRequestEdit ? (
+          <Button variant="outline" size="sm" onClick={() => requestEditMutation.mutate()} disabled={requestEditMutation.isPending}>
+            <Edit className="mr-1 h-3 w-3" /> Request Edit
+          </Button>
+        ) : editStatus === "requested" ? (
+          <Badge variant="secondary">Edit Requested</Badge>
+        ) : null}
       </div>
+
+      {/* Edit Status Banner */}
+      {editStatus === "requested" && (
+        <Card className="border-warning/30 bg-warning/5">
+          <CardContent className="p-3 text-sm text-warning-foreground">
+            Your edit request is pending admin approval. You'll be able to edit once approved.
+          </CardContent>
+        </Card>
+      )}
+      {editStatus === "approved" && !editing && (
+        <Card className="border-accent/30 bg-accent/5">
+          <CardContent className="p-3 text-sm text-accent-foreground">
+            Your edit request was approved! Click "Edit Now" to make your changes (one-time only).
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Editing Form */}
+      {editing && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Edit Your Profile</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <EditField label="Mobile Number" field="mobile_number" />
+            <EditField label="WhatsApp Number" field="whatsapp_number" />
+            <EditField label="Education Level" field="education_level" />
+            <EditField label="Education Background" field="education_background" />
+            <EditField label="Work Experience" field="work_experience" />
+            <EditField label="Previous Jobs" field="previous_job_details" />
+            <EditField label="Emergency Contact Name" field="emergency_contact_name" />
+            <EditField label="Emergency Contact Phone" field="emergency_contact_phone" />
+            <EditField label="Emergency Contact Relationship" field="emergency_contact_relationship" />
+            <div className="flex gap-2 pt-2">
+              <Button className="flex-1" onClick={() => saveEditMutation.mutate()} disabled={saveEditMutation.isPending}>
+                <Save className="mr-1 h-3 w-3" /> Save
+              </Button>
+              <Button variant="outline" onClick={() => setEditing(false)}>
+                <X className="mr-1 h-3 w-3" /> Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Profile Completion */}
       <Card>
@@ -106,9 +207,7 @@ const EmployeeProfile = () => {
       {/* Personal Information */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <User className="h-4 w-4" /> Personal Information
-          </CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base"><User className="h-4 w-4" /> Personal Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-1">
           <InfoRow icon={Mail} label="Email" value={profile?.email} />
@@ -123,9 +222,7 @@ const EmployeeProfile = () => {
       {/* Professional Information */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Briefcase className="h-4 w-4" /> Professional
-          </CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base"><Briefcase className="h-4 w-4" /> Professional</CardTitle>
         </CardHeader>
         <CardContent className="space-y-1">
           <InfoRow icon={GraduationCap} label="Education Level" value={profile?.education_level} />
@@ -135,15 +232,12 @@ const EmployeeProfile = () => {
         </CardContent>
       </Card>
 
-      {/* Aadhaar Verification */}
       <AadhaarVerificationCard />
 
       {/* Emergency Contact */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <AlertCircle className="h-4 w-4" /> Emergency Contact
-          </CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base"><AlertCircle className="h-4 w-4" /> Emergency Contact</CardTitle>
         </CardHeader>
         <CardContent className="space-y-1">
           <InfoRow icon={User} label="Name" value={profile?.emergency_contact_name} />

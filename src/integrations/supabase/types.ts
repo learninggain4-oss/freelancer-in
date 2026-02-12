@@ -292,6 +292,11 @@ export type Database = {
           created_at: string
           date_of_birth: string | null
           disabled_reason: string | null
+          edit_request_reason: string | null
+          edit_request_status: Database["public"]["Enums"]["edit_request_status"]
+          edit_requested_at: string | null
+          edit_reviewed_at: string | null
+          edit_reviewed_by: string | null
           education_background: string | null
           education_level: string | null
           email: string
@@ -333,6 +338,11 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           disabled_reason?: string | null
+          edit_request_reason?: string | null
+          edit_request_status?: Database["public"]["Enums"]["edit_request_status"]
+          edit_requested_at?: string | null
+          edit_reviewed_at?: string | null
+          edit_reviewed_by?: string | null
           education_background?: string | null
           education_level?: string | null
           email: string
@@ -374,6 +384,11 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           disabled_reason?: string | null
+          edit_request_reason?: string | null
+          edit_request_status?: Database["public"]["Enums"]["edit_request_status"]
+          edit_requested_at?: string | null
+          edit_reviewed_at?: string | null
+          edit_reviewed_by?: string | null
           education_background?: string | null
           education_level?: string | null
           email?: string
@@ -404,7 +419,15 @@ export type Database = {
           whatsapp_number?: string | null
           work_experience?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_edit_reviewed_by_fkey"
+            columns: ["edit_reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       project_applications: {
         Row: {
@@ -697,6 +720,12 @@ export type Database = {
       app_role: "admin" | "user"
       application_status: "pending" | "approved" | "rejected"
       approval_status: "pending" | "approved" | "rejected"
+      edit_request_status:
+        | "none"
+        | "requested"
+        | "approved"
+        | "rejected"
+        | "used"
       gender_type: "male" | "female" | "other"
       marital_status_type: "single" | "married" | "divorced" | "widowed"
       project_status:
@@ -845,6 +874,13 @@ export const Constants = {
       app_role: ["admin", "user"],
       application_status: ["pending", "approved", "rejected"],
       approval_status: ["pending", "approved", "rejected"],
+      edit_request_status: [
+        "none",
+        "requested",
+        "approved",
+        "rejected",
+        "used",
+      ],
       gender_type: ["male", "female", "other"],
       marital_status_type: ["single", "married", "divorced", "widowed"],
       project_status: [

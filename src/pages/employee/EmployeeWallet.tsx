@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Wallet, Clock, IndianRupee, ArrowDownToLine, Building2, CreditCard } from "lucide-react";
+import { Wallet, Clock, IndianRupee, ArrowDownToLine } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +23,10 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
 const EmployeeWallet = () => {
   const { profile, refreshProfile } = useAuth();
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [upiId, setUpiId] = useState(profile?.upi_id ?? "");
+  const [upiId, setUpiId] = useState("");
+  const [bankAccount, setBankAccount] = useState("");
+  const [bankIfsc, setBankIfsc] = useState("");
+  const [bankName, setBankName] = useState("");
   const queryClient = useQueryClient();
 
   const { data: withdrawals = [], isLoading: wLoading } = useQuery({
@@ -68,8 +71,9 @@ const EmployeeWallet = () => {
           action: "request_withdrawal",
           amount,
           upi_id: upiId || null,
-          bank_account_number: profile.bank_account_number,
-          bank_ifsc_code: profile.bank_ifsc_code,
+          bank_account_number: bankAccount || null,
+          bank_ifsc_code: bankIfsc || null,
+          bank_name: bankName || null,
         },
       });
       if (res.error) throw new Error(res.error.message);
@@ -118,9 +122,20 @@ const EmployeeWallet = () => {
             <Input placeholder="yourname@upi" value={upiId} onChange={(e) => setUpiId(e.target.value)} />
           </div>
           <Separator />
-          <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5"><Building2 className="h-3 w-3" /><span>Bank: {profile?.bank_name ?? "Not set"}</span></div>
-            <div className="flex items-center gap-1.5"><CreditCard className="h-3 w-3" /><span>A/C: {profile?.bank_account_number ? `****${profile.bank_account_number.slice(-4)}` : "Not set"}</span></div>
+          <p className="text-xs font-medium text-muted-foreground">Or provide bank details</p>
+          <div className="space-y-2">
+            <Label>Bank Name</Label>
+            <Input placeholder="e.g. State Bank of India" value={bankName} onChange={(e) => setBankName(e.target.value)} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Account Number</Label>
+              <Input placeholder="Account number" value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>IFSC Code</Label>
+              <Input placeholder="IFSC code" value={bankIfsc} onChange={(e) => setBankIfsc(e.target.value)} />
+            </div>
           </div>
           <Button className="w-full" onClick={() => withdrawMutation.mutate()} disabled={withdrawMutation.isPending}>
             {withdrawMutation.isPending ? "Submitting..." : "Submit Withdrawal"}
