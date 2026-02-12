@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,25 +7,35 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AppLayout from "@/components/layout/AppLayout";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import EmployeeRegister from "./pages/register/EmployeeRegister";
-import ClientRegister from "./pages/register/ClientRegister";
-import VerificationPending from "./pages/VerificationPending";
-import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
-import EmployeeProjects from "./pages/employee/EmployeeProjects";
-import EmployeeWallet from "./pages/employee/EmployeeWallet";
-import EmployeeProfile from "./pages/employee/EmployeeProfile";
-import ClientDashboard from "./pages/client/ClientDashboard";
-import ClientWallet from "./pages/client/ClientWallet";
-import ClientProjects from "./pages/client/ClientProjects";
-import CreateProject from "./pages/client/CreateProject";
-import ClientWithdrawals from "./pages/client/ClientWithdrawals";
-import ClientProfile from "./pages/client/ClientProfile";
-import ChatRoom from "./components/chat/ChatRoom";
-import NotFound from "./pages/NotFound";
+import { Loader2 } from "lucide-react";
+
+// Lazy loaded pages
+const Index = lazy(() => import("./pages/Index"));
+const Login = lazy(() => import("./pages/Login"));
+const EmployeeRegister = lazy(() => import("./pages/register/EmployeeRegister"));
+const ClientRegister = lazy(() => import("./pages/register/ClientRegister"));
+const VerificationPending = lazy(() => import("./pages/VerificationPending"));
+const EmployeeDashboard = lazy(() => import("./pages/employee/EmployeeDashboard"));
+const EmployeeProjects = lazy(() => import("./pages/employee/EmployeeProjects"));
+const EmployeeWallet = lazy(() => import("./pages/employee/EmployeeWallet"));
+const EmployeeProfile = lazy(() => import("./pages/employee/EmployeeProfile"));
+const ClientDashboard = lazy(() => import("./pages/client/ClientDashboard"));
+const ClientWallet = lazy(() => import("./pages/client/ClientWallet"));
+const ClientProjects = lazy(() => import("./pages/client/ClientProjects"));
+const CreateProject = lazy(() => import("./pages/client/CreateProject"));
+const ClientWithdrawals = lazy(() => import("./pages/client/ClientWithdrawals"));
+const ClientProfile = lazy(() => import("./pages/client/ClientProfile"));
+const ChatRoom = lazy(() => import("./components/chat/ChatRoom"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const InstallApp = lazy(() => import("./pages/InstallApp"));
 
 const queryClient = new QueryClient();
+
+const PageLoader = () => (
+  <div className="flex min-h-screen items-center justify-center bg-background">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -33,49 +44,52 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register/employee" element={<EmployeeRegister />} />
-            <Route path="/register/client" element={<ClientRegister />} />
-            <Route path="/verification-pending" element={<VerificationPending />} />
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register/employee" element={<EmployeeRegister />} />
+              <Route path="/register/client" element={<ClientRegister />} />
+              <Route path="/verification-pending" element={<VerificationPending />} />
+              <Route path="/install" element={<InstallApp />} />
 
-            {/* Employee Routes */}
-            <Route
-              path="/employee"
-              element={
-                <ProtectedRoute>
-                  <AppLayout userType="employee" />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="dashboard" element={<EmployeeDashboard />} />
-              <Route path="projects" element={<EmployeeProjects />} />
-              <Route path="projects/chat/:projectId" element={<ChatRoom />} />
-              <Route path="wallet" element={<EmployeeWallet />} />
-              <Route path="profile" element={<EmployeeProfile />} />
-            </Route>
+              {/* Employee Routes */}
+              <Route
+                path="/employee"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout userType="employee" />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="dashboard" element={<EmployeeDashboard />} />
+                <Route path="projects" element={<EmployeeProjects />} />
+                <Route path="projects/chat/:projectId" element={<ChatRoom />} />
+                <Route path="wallet" element={<EmployeeWallet />} />
+                <Route path="profile" element={<EmployeeProfile />} />
+              </Route>
 
-            {/* Client Routes */}
-            <Route
-              path="/client"
-              element={
-                <ProtectedRoute>
-                  <AppLayout userType="client" />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="dashboard" element={<ClientDashboard />} />
-              <Route path="wallet" element={<ClientWallet />} />
-              <Route path="projects" element={<ClientProjects />} />
-              <Route path="projects/create" element={<CreateProject />} />
-              <Route path="projects/chat/:projectId" element={<ChatRoom />} />
-              <Route path="withdrawals" element={<ClientWithdrawals />} />
-              <Route path="profile" element={<ClientProfile />} />
-            </Route>
+              {/* Client Routes */}
+              <Route
+                path="/client"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout userType="client" />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="dashboard" element={<ClientDashboard />} />
+                <Route path="wallet" element={<ClientWallet />} />
+                <Route path="projects" element={<ClientProjects />} />
+                <Route path="projects/create" element={<CreateProject />} />
+                <Route path="projects/chat/:projectId" element={<ChatRoom />} />
+                <Route path="withdrawals" element={<ClientWithdrawals />} />
+                <Route path="profile" element={<ClientProfile />} />
+              </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
