@@ -23,6 +23,7 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
 const EmployeeWallet = () => {
   const { profile, refreshProfile } = useAuth();
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [bankHolderName, setBankHolderName] = useState("");
   const [upiId, setUpiId] = useState("");
   const [bankAccount, setBankAccount] = useState("");
   const [bankIfsc, setBankIfsc] = useState("");
@@ -70,6 +71,7 @@ const EmployeeWallet = () => {
         body: {
           action: "request_withdrawal",
           amount,
+          bank_holder_name: bankHolderName || null,
           upi_id: upiId || null,
           bank_account_number: bankAccount || null,
           bank_ifsc_code: bankIfsc || null,
@@ -82,6 +84,7 @@ const EmployeeWallet = () => {
     onSuccess: () => {
       toast.success("Withdrawal request submitted");
       setWithdrawAmount("");
+      setBankHolderName("");
       refreshProfile();
       queryClient.invalidateQueries({ queryKey: ["employee-withdrawals"] });
       queryClient.invalidateQueries({ queryKey: ["employee-transactions"] });
@@ -116,6 +119,10 @@ const EmployeeWallet = () => {
           <div className="space-y-2">
             <Label>Amount (₹)</Label>
             <Input type="number" placeholder="Enter amount" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Bank Holder Name</Label>
+            <Input placeholder="Full name as per bank" value={bankHolderName} onChange={(e) => setBankHolderName(e.target.value)} />
           </div>
           <div className="space-y-2">
             <Label>UPI ID</Label>
