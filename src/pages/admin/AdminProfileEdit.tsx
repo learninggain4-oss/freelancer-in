@@ -27,6 +27,8 @@ import {
   RotateCcw,
   BadgeCheck,
   Wallet,
+  MapPin,
+  Globe,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -70,6 +72,12 @@ type ProfileData = {
   disabled_reason: string | null;
   created_at: string;
   approved_at: string | null;
+  registration_ip: string | null;
+  registration_city: string | null;
+  registration_region: string | null;
+  registration_country: string | null;
+  registration_latitude: number | null;
+  registration_longitude: number | null;
 };
 
 const AdminProfileEdit = () => {
@@ -113,7 +121,7 @@ const AdminProfileEdit = () => {
       const [{ data: p }, { data: av }] = await Promise.all([
         supabase
           .from("profiles")
-          .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, upi_id, bank_account_number, bank_ifsc_code, bank_name, available_balance, hold_balance, approval_notes, is_disabled, disabled_reason, created_at, approved_at")
+          .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, upi_id, bank_account_number, bank_ifsc_code, bank_name, available_balance, hold_balance, approval_notes, is_disabled, disabled_reason, created_at, approved_at, registration_ip, registration_city, registration_region, registration_country, registration_latitude, registration_longitude")
           .eq("id", profileId)
           .single(),
         supabase
@@ -524,10 +532,47 @@ const AdminProfileEdit = () => {
         </CardContent>
       </Card>
 
-      {/* Meta */}
+      {/* Registration Metadata */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="grid gap-4 text-sm sm:grid-cols-3">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Globe className="h-4 w-4" /> Registration Metadata
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <p className="text-xs text-muted-foreground">IP Address</p>
+              <p className="font-mono font-medium">{profile.registration_ip || "—"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Location</p>
+              <p className="font-medium">
+                {[profile.registration_city, profile.registration_region, profile.registration_country]
+                  .filter(Boolean)
+                  .join(", ") || "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Coordinates</p>
+              {profile.registration_latitude && profile.registration_longitude ? (
+                <div className="flex items-center gap-2">
+                  <p className="font-mono font-medium">
+                    {profile.registration_latitude}, {profile.registration_longitude}
+                  </p>
+                  <a
+                    href={`https://www.google.com/maps?q=${profile.registration_latitude},${profile.registration_longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    <MapPin className="h-3 w-3" /> Map
+                  </a>
+                </div>
+              ) : (
+                <p className="font-medium">—</p>
+              )}
+            </div>
             <div>
               <p className="text-xs text-muted-foreground">Registered</p>
               <p className="font-medium">{new Date(profile.created_at).toLocaleString()}</p>
