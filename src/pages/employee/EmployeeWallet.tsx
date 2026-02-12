@@ -23,12 +23,14 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
 const EmployeeWallet = () => {
   const { profile, refreshProfile } = useAuth();
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [bankHolderName, setBankHolderName] = useState("");
-  const [upiId, setUpiId] = useState("");
-  const [bankAccount, setBankAccount] = useState("");
-  const [bankIfsc, setBankIfsc] = useState("");
-  const [bankName, setBankName] = useState("");
+  const [method, setMethod] = useState<"upi" | "bank">("upi");
   const queryClient = useQueryClient();
+
+  const savedUpi = profile?.upi_id;
+  const savedBank = profile?.bank_account_number;
+  const savedIfsc = profile?.bank_ifsc_code;
+  const savedBankName = profile?.bank_name;
+  const savedHolderName = profile?.bank_holder_name;
 
   const { data: withdrawals = [], isLoading: wLoading } = useQuery({
     queryKey: ["employee-withdrawals", profile?.id],
@@ -67,15 +69,17 @@ const EmployeeWallet = () => {
       const amount = Number(withdrawAmount);
       if (!amount || amount <= 0) throw new Error("Enter a valid amount");
       if (amount > (profile?.available_balance ?? 0)) throw new Error("Insufficient balance");
+      if (method === "upi" && !savedUpi) throw new Error("No UPI ID saved in your profile");
+      if (method === "bank" && !savedBank) throw new Error("No bank account saved in your profile");
       const res = await supabase.functions.invoke("wallet-operations", {
         body: {
           action: "request_withdrawal",
           amount,
-          bank_holder_name: bankHolderName || null,
-          upi_id: upiId || null,
-          bank_account_number: bankAccount || null,
-          bank_ifsc_code: bankIfsc || null,
-          bank_name: bankName || null,
+          bank_holder_name: savedHolderName || null,
+          upi_id: method === "upi" ? savedUpi : null,
+          bank_account_number: method === "bank" ? savedBank : null,
+          bank_ifsc_code: method === "bank" ? savedIfsc : null,
+          bank_name: method === "bank" ? savedBankName : null,
         },
       });
       if (res.error) throw new Error(res.error.message);
@@ -84,7 +88,6 @@ const EmployeeWallet = () => {
     onSuccess: () => {
       toast.success("Withdrawal request submitted");
       setWithdrawAmount("");
-      setBankHolderName("");
       refreshProfile();
       queryClient.invalidateQueries({ queryKey: ["employee-withdrawals"] });
       queryClient.invalidateQueries({ queryKey: ["employee-transactions"] });
@@ -121,31 +124,34 @@ const EmployeeWallet = () => {
             <Input type="number" placeholder="Enter amount" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>Bank Holder Name</Label>
-            <Input placeholder="Full name as per bank" value={bankHolderName} onChange={(e) => setBankHolderName(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>UPI ID</Label>
-            <Input placeholder="yourname@upi" value={upiId} onChange={(e) => setUpiId(e.target.value)} />
-          </div>
-          <Separator />
-          <p className="text-xs font-medium text-muted-foreground">Or provide bank details</p>
-          <div className="space-y-2">
-            <Label>Bank Name</Label>
-            <Input placeholder="e.g. State Bank of India" value={bankName} onChange={(e) => setBankName(e.target.value)} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Account Number</Label>
-              <Input placeholder="Account number" value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>IFSC Code</Label>
-              <Input placeholder="IFSC code" value={bankIfsc} onChange={(e) => setBankIfsc(e.target.value)} />
+            <Label>Payment Method</Label>
+            <div className="flex gap-2">
+              <Button type="button" variant={method === "upi" ? "default" : "outline"} className="flex-1" onClick={() => setMethod("upi")}>UPI</Button>
+              <Button type="button" variant={method === "bank" ? "default" : "outline"} className="flex-1" onClick={() => setMethod("bank")}>Bank Transfer</Button>
             </div>
           </div>
+          {method === "upi" ? (
+            <div className="rounded-lg border p-3 space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">Saved UPI ID</p>
+              <p className="text-sm font-semibold text-foreground">{savedUpi || <span className="text-destructive">Not set — update in Profile</span>}</p>
+            </div>
+          ) : (
+            <div className="rounded-lg border p-3 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Saved Bank Details</p>
+              {savedBank ? (
+                <>
+                  <p className="text-sm text-foreground"><span className="text-muted-foreground">Holder:</span> {savedHolderName || "—"}</p>
+                  <p className="text-sm text-foreground"><span className="text-muted-foreground">Bank:</span> {savedBankName || "—"}</p>
+                  <p className="text-sm text-foreground"><span className="text-muted-foreground">A/C:</span> {savedBank}</p>
+                  <p className="text-sm text-foreground"><span className="text-muted-foreground">IFSC:</span> {savedIfsc || "—"}</p>
+                </>
+              ) : (
+                <p className="text-sm text-destructive">Not set — update in Profile</p>
+              )}
+            </div>
+          )}
           <Button className="w-full" onClick={() => withdrawMutation.mutate()} disabled={withdrawMutation.isPending}>
-            {withdrawMutation.isPending ? "Submitting..." : "Submit Withdrawal"}
+            {withdrawMutation.isPending ? "Submitting..." : "Enter Withdrawal"}
           </Button>
         </CardContent>
       </Card>
