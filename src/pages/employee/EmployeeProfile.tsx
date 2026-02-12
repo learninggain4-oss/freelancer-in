@@ -1,8 +1,9 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import {
   User,
@@ -13,12 +14,28 @@ import {
   Briefcase,
   AlertCircle,
   Edit,
+  BadgeCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import AadhaarVerificationCard from "@/components/verification/AadhaarVerificationCard";
 
 const EmployeeProfile = () => {
   const { profile } = useAuth();
+
+  const { data: aadhaarStatus } = useQuery({
+    queryKey: ["aadhaar-status", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("aadhaar_verifications")
+        .select("status")
+        .eq("profile_id", profile!.id)
+        .maybeSingle();
+      return data?.status ?? null;
+    },
+  });
+
+  const isVerified = aadhaarStatus === "verified";
 
   // Calculate profile completion
   const fields = [
@@ -57,7 +74,12 @@ const EmployeeProfile = () => {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{profile?.full_name ?? "Employee"}</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
+            {profile?.full_name ?? "Employee"}
+            {isVerified && (
+              <BadgeCheck className="h-5 w-5 text-accent" />
+            )}
+          </h1>
           <p className="text-sm text-muted-foreground">
             {profile?.user_code ?? "—"} •{" "}
             <Badge variant={profile?.approval_status === "approved" ? "default" : "secondary"} className="text-[10px]">
