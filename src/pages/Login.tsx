@@ -15,7 +15,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signIn, user, profile, loading: authLoading } = useAuth();
+  const { signIn, user, profile, isAdmin, loading: authLoading } = useAuth();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -26,6 +26,9 @@ const Login = () => {
   if (!authLoading && user && profile) {
     if (profile.approval_status !== "approved") {
       return <Navigate to="/verification-pending" replace />;
+    }
+    if (isAdmin) {
+      return <Navigate to="/admin/dashboard" replace />;
     }
     const base = profile.user_type === "employee" ? "/employee" : "/client";
     return <Navigate to={`${base}/dashboard`} replace />;
