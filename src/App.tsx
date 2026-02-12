@@ -34,8 +34,15 @@ const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
+import { useChatNotifications } from "@/hooks/use-chat-notifications";
 
 const queryClient = new QueryClient();
+
+/** Activates global chat toast notifications for logged-in users */
+const GlobalChatNotifier = () => {
+  useChatNotifications();
+  return null;
+};
 
 const PageLoader = () => (
   <div className="flex min-h-screen items-center justify-center bg-background">
@@ -50,6 +57,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <GlobalChatNotifier />
           <ErrorBoundary>
           <Suspense fallback={<PageLoader />}>
             <Routes>
