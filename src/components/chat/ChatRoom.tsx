@@ -16,6 +16,7 @@ import MessageBubble from "./MessageBubble";
 import ThreadPanel from "./ThreadPanel";
 import TypingIndicator from "./TypingIndicator";
 import ChatFileUpload from "./ChatFileUpload";
+import ProjectValidationControls from "./ProjectValidationControls";
 
 const ChatRoom = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -34,7 +35,7 @@ const ChatRoom = () => {
       if (!projectId) return null;
       const { data, error } = await supabase
         .from("chat_rooms")
-        .select("*, project:project_id(name, client_id, assigned_employee_id)")
+        .select("*, project:project_id(name, client_id, assigned_employee_id, status)")
         .eq("project_id", projectId)
         .maybeSingle();
       if (error) throw error;
@@ -139,6 +140,13 @@ const ChatRoom = () => {
             <span className="text-[10px] text-muted-foreground">Online</span>
           </div>
         </div>
+
+        {/* Validation controls for client */}
+        <ProjectValidationControls
+          projectId={projectId!}
+          projectStatus={(chatRoom as any).project?.status ?? ""}
+          isClient={profile?.user_type === "client" && (chatRoom as any).project?.client_id === profile?.id}
+        />
 
         {/* Messages */}
         <ScrollArea className="flex-1 px-4 py-2">
