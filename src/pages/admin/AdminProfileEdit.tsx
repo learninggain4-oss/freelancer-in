@@ -26,6 +26,7 @@ import {
   ShieldOff,
   RotateCcw,
   BadgeCheck,
+  Wallet,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -99,6 +100,10 @@ const AdminProfileEdit = () => {
     approval_notes: "",
     is_disabled: false,
     disabled_reason: "",
+    upi_id: "",
+    bank_name: "",
+    bank_account_number: "",
+    bank_ifsc_code: "",
   });
 
   useEffect(() => {
@@ -138,6 +143,10 @@ const AdminProfileEdit = () => {
           approval_notes: p.approval_notes || "",
           is_disabled: p.is_disabled ?? false,
           disabled_reason: p.disabled_reason || "",
+          upi_id: p.upi_id || "",
+          bank_name: p.bank_name || "",
+          bank_account_number: p.bank_account_number || "",
+          bank_ifsc_code: p.bank_ifsc_code || "",
         });
       }
       setAadhaarVerified(av?.status === "verified");
@@ -174,6 +183,10 @@ const AdminProfileEdit = () => {
         approval_notes: form.approval_notes || null,
         is_disabled: form.is_disabled,
         disabled_reason: form.disabled_reason || null,
+        upi_id: form.upi_id || null,
+        bank_name: form.bank_name || null,
+        bank_account_number: form.bank_account_number || null,
+        bank_ifsc_code: form.bank_ifsc_code || null,
         approved_at: form.approval_status === "approved" ? new Date().toISOString() : profile.approved_at,
       })
       .eq("id", profile.id);
@@ -452,6 +465,35 @@ const AdminProfileEdit = () => {
             <div className="space-y-2">
               <Label>Education Background</Label>
               <Textarea value={form.education_background} onChange={(e) => updateField("education_background", e.target.value)} rows={2} />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Financial / Payment Details */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Wallet className="h-4 w-4" /> Payment Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>UPI ID</Label>
+              <Input value={form.upi_id} onChange={(e) => updateField("upi_id", e.target.value)} placeholder="e.g. name@upi" />
+            </div>
+            <div className="space-y-2">
+              <Label>Bank Name</Label>
+              <Input value={form.bank_name} onChange={(e) => updateField("bank_name", e.target.value)} placeholder="e.g. State Bank of India" />
+            </div>
+            <div className="space-y-2">
+              <Label>Bank Account Number</Label>
+              <Input value={form.bank_account_number} onChange={(e) => updateField("bank_account_number", e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Bank IFSC Code</Label>
+              <Input value={form.bank_ifsc_code} onChange={(e) => updateField("bank_ifsc_code", e.target.value)} />
             </div>
           </div>
         </CardContent>
