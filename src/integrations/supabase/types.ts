@@ -75,35 +75,83 @@ export type Database = {
           },
         ]
       }
+      message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           chat_room_id: string
           content: string
           created_at: string
+          edited_at: string | null
           file_name: string | null
           file_path: string | null
           id: string
+          is_deleted: boolean
           is_read: boolean
+          parent_message_id: string | null
           sender_id: string
         }
         Insert: {
           chat_room_id: string
           content: string
           created_at?: string
+          edited_at?: string | null
           file_name?: string | null
           file_path?: string | null
           id?: string
+          is_deleted?: boolean
           is_read?: boolean
+          parent_message_id?: string | null
           sender_id: string
         }
         Update: {
           chat_room_id?: string
           content?: string
           created_at?: string
+          edited_at?: string | null
           file_name?: string | null
           file_path?: string | null
           id?: string
+          is_deleted?: boolean
           is_read?: boolean
+          parent_message_id?: string | null
           sender_id?: string
         }
         Relationships: [
@@ -112,6 +160,13 @@ export type Database = {
             columns: ["chat_room_id"]
             isOneToOne: false
             referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_parent_message_id_fkey"
+            columns: ["parent_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
           {
