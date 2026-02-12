@@ -264,6 +264,96 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "refund_project_payment": {
+        // Client rejects during payment_processing: refund client, release employee hold
+        if (callerProfile.user_type !== "client")
+          throw new Error("Only clients can refund payments");
+        if (!project_id) throw new Error("Missing project_id");
+
+        const { data: project, error: pErr } = await supabase
+          .from("projects")
+          .select("id, amount, client_id, assigned_employee_id, status")
+          .eq("id", project_id)
+          .single();
+        if (pErr || !project) throw new Error("Project not found");
+        if (project.client_id !== callerProfile.id)
+          throw new Error("Not your project");
+        if (project.status !== "payment_processing")
+          throw new Error("Project must be in payment_processing to refund");
+        if (!project.assigned_employee_id)
+          throw new Error("No employee assigned");
+
+        const projectAmount = Number(project.amount);
+
+        // Return amount to client available balance
+        await supabase
+          .from("profiles")
+          .update({
+            available_balance: Number(callerProfile.available_balance) + projectAmount,
+          })
+          .eq("id", callerProfile.id);
+
+        // Remove from employee hold balance
+        const { data: empProfile } = await supabase
+          .from("profiles")
+          .select("hold_balance")
+          .eq("id", project.assigned_employee_id)
+          .single();
+
+        if (empProfile) {
+          await supabase
+            .from("profiles")
+            .update({
+              hold_balance: Number(empProfile.hold_balance) - projectAmount,
+            })
+            .eq("id", project.assigned_employee_id);
+        }
+
+        // Update project status to cancelled
+        await supabase
+          .from("projects")
+          .update({ status: "cancelled" })
+          .eq("id", project_id);
+
+        // Record transactions
+        await supabase.from("transactions").insert([
+          {
+            profile_id: callerProfile.id,
+            type: "credit",
+            amount: projectAmount,
+            description: `Refund for rejected project: ${project_id}`,
+            reference_id: project_id,
+          },
+          {
+            profile_id: project.assigned_employee_id,
+            type: "release",
+            amount: projectAmount,
+            description: `Hold released (project rejected): ${project_id}`,
+            reference_id: project_id,
+          },
+        ]);
+
+        // Notify employee about refund/rejection
+        const { data: empUser3 } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("id", project.assigned_employee_id)
+          .single();
+        if (empUser3) {
+          await supabase.from("notifications").insert({
+            user_id: empUser3.user_id,
+            title: "Project Rejected — Payment Refunded",
+            message: `The client has rejected the project during payment processing. The held amount of ₹${projectAmount} has been released.`,
+            type: "financial",
+            reference_id: project_id,
+            reference_type: "project",
+          });
+        }
+
+        result.status = "cancelled";
+        break;
+      }
+
       case "process_withdrawal": {
         if (callerProfile.user_type !== "client")
           throw new Error("Only clients can process withdrawals");

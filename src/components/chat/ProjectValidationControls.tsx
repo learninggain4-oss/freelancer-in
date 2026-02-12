@@ -130,15 +130,21 @@ const ProjectValidationControls = ({
   const handleReject = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from("projects")
-        .update({
-          status: "cancelled" as any,
-          remarks: rejectReason || "Rejected by client during validation",
-        })
-        .eq("id", projectId);
-      if (error) throw error;
-      toast.success("Project has been rejected.");
+      if (projectStatus === "payment_processing") {
+        // Refund: return held amount to client, release employee hold
+        await callWalletOperation("refund_project_payment");
+        toast.success("Project rejected — payment refunded.");
+      } else {
+        const { error } = await supabase
+          .from("projects")
+          .update({
+            status: "cancelled" as any,
+            remarks: rejectReason || "Rejected by client during validation",
+          })
+          .eq("id", projectId);
+        if (error) throw error;
+        toast.success("Project has been rejected.");
+      }
       setRejectReason("");
       queryClient.invalidateQueries({ queryKey: ["chat-room", projectId] });
       queryClient.invalidateQueries({ queryKey: ["client-projects"] });
