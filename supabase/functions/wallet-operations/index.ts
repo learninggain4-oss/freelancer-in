@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action, amount, profile_id, withdrawal_id, status, review_notes } =
+    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id } =
       await req.json();
 
     // Get the caller's profile
@@ -93,6 +93,140 @@ Deno.serve(async (req) => {
         });
 
         result.new_balance = newBalance;
+        break;
+      }
+
+      case "hold_project_payment": {
+        // Client initiates payment processing: project budget → employee hold_balance
+        if (callerProfile.user_type !== "client")
+          throw new Error("Only clients can initiate payment processing");
+        if (!project_id) throw new Error("Missing project_id");
+
+        const { data: project, error: pErr } = await supabase
+          .from("projects")
+          .select("id, amount, client_id, assigned_employee_id, status")
+          .eq("id", project_id)
+          .single();
+        if (pErr || !project) throw new Error("Project not found");
+        if (project.client_id !== callerProfile.id)
+          throw new Error("Not your project");
+        if (project.status !== "in_progress")
+          throw new Error("Project must be in_progress to process payment");
+        if (!project.assigned_employee_id)
+          throw new Error("No employee assigned");
+
+        const projectAmount = Number(project.amount);
+
+        // Check client has enough balance
+        if (Number(callerProfile.available_balance) < projectAmount)
+          throw new Error("Insufficient balance to process payment");
+
+        // Deduct from client available balance
+        await supabase
+          .from("profiles")
+          .update({
+            available_balance: Number(callerProfile.available_balance) - projectAmount,
+          })
+          .eq("id", callerProfile.id);
+
+        // Add to employee hold balance
+        const { data: empProfile } = await supabase
+          .from("profiles")
+          .select("hold_balance")
+          .eq("id", project.assigned_employee_id)
+          .single();
+
+        if (empProfile) {
+          await supabase
+            .from("profiles")
+            .update({
+              hold_balance: Number(empProfile.hold_balance) + projectAmount,
+            })
+            .eq("id", project.assigned_employee_id);
+        }
+
+        // Update project status to payment_processing
+        await supabase
+          .from("projects")
+          .update({ status: "payment_processing" })
+          .eq("id", project_id);
+
+        // Record transactions
+        await supabase.from("transactions").insert([
+          {
+            profile_id: callerProfile.id,
+            type: "debit",
+            amount: projectAmount,
+            description: `Payment processing for project: ${project_id}`,
+            reference_id: project_id,
+          },
+          {
+            profile_id: project.assigned_employee_id,
+            type: "hold",
+            amount: projectAmount,
+            description: `Payment held for project: ${project_id}`,
+            reference_id: project_id,
+          },
+        ]);
+
+        result.status = "payment_processing";
+        break;
+      }
+
+      case "release_project_payment": {
+        // Client approves: move from employee hold → available
+        if (callerProfile.user_type !== "client")
+          throw new Error("Only clients can release payments");
+        if (!project_id) throw new Error("Missing project_id");
+
+        const { data: project, error: pErr } = await supabase
+          .from("projects")
+          .select("id, amount, client_id, assigned_employee_id, status")
+          .eq("id", project_id)
+          .single();
+        if (pErr || !project) throw new Error("Project not found");
+        if (project.client_id !== callerProfile.id)
+          throw new Error("Not your project");
+        if (project.status !== "payment_processing")
+          throw new Error("Project must be in payment_processing to release");
+        if (!project.assigned_employee_id)
+          throw new Error("No employee assigned");
+
+        const projectAmount = Number(project.amount);
+
+        // Move from hold to available for employee
+        const { data: empProfile } = await supabase
+          .from("profiles")
+          .select("hold_balance, available_balance")
+          .eq("id", project.assigned_employee_id)
+          .single();
+
+        if (empProfile) {
+          await supabase
+            .from("profiles")
+            .update({
+              hold_balance: Number(empProfile.hold_balance) - projectAmount,
+              available_balance: Number(empProfile.available_balance) + projectAmount,
+            })
+            .eq("id", project.assigned_employee_id);
+        }
+
+        // Update project status to completed
+        await supabase
+          .from("projects")
+          .update({ status: "completed" })
+          .eq("id", project_id);
+
+        // Record transaction
+        await supabase.from("transactions").insert({
+          profile_id: project.assigned_employee_id,
+          type: "release",
+          amount: projectAmount,
+          description: `Payment released for project: ${project_id}`,
+          reference_id: project_id,
+        });
+
+        result.status = "completed";
         break;
       }
 
