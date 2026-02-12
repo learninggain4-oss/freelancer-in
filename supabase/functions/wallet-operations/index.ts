@@ -169,6 +169,23 @@ Deno.serve(async (req) => {
           },
         ]);
 
+        // Notify employee about payment processing
+        const { data: empUser1 } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("id", project.assigned_employee_id)
+          .single();
+        if (empUser1) {
+          await supabase.from("notifications").insert({
+            user_id: empUser1.user_id,
+            title: "Payment Processing Initiated",
+            message: `The client has initiated payment processing for your project. ₹${projectAmount} is now held in your account.`,
+            type: "financial",
+            reference_id: project_id,
+            reference_type: "project",
+          });
+        }
+
         result.status = "payment_processing";
         break;
       }
@@ -225,6 +242,23 @@ Deno.serve(async (req) => {
           description: `Payment released for project: ${project_id}`,
           reference_id: project_id,
         });
+
+        // Notify employee about payment release
+        const { data: empUser2 } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("id", project.assigned_employee_id)
+          .single();
+        if (empUser2) {
+          await supabase.from("notifications").insert({
+            user_id: empUser2.user_id,
+            title: "Payment Released — Project Completed!",
+            message: `Congratulations! Your project has been marked as successful. ₹${projectAmount} has been released to your available balance.`,
+            type: "financial",
+            reference_id: project_id,
+            reference_type: "project",
+          });
+        }
 
         result.status = "completed";
         break;
