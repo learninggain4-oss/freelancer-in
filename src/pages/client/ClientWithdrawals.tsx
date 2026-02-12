@@ -2,8 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { IndianRupee, User, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,6 +21,7 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
 const ClientWithdrawals = () => {
   const { profile, refreshProfile } = useAuth();
   const queryClient = useQueryClient();
+  const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
 
   const { data: withdrawals = [], isLoading } = useQuery({
     queryKey: ["client-withdrawals", profile?.id],
@@ -35,15 +38,16 @@ const ClientWithdrawals = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status, reject_reason }: { id: string; status: string; reject_reason?: string }) => {
       const res = await supabase.functions.invoke("wallet-operations", {
-        body: { action: "process_withdrawal", withdrawal_id: id, status },
+        body: { action: "process_withdrawal", withdrawal_id: id, status, reject_reason },
       });
       if (res.error) throw new Error(res.error.message);
       if (res.data?.error) throw new Error(res.data.error);
     },
     onSuccess: (_, vars) => {
       toast.success(`Withdrawal ${vars.status}`);
+      setRejectReasons((prev) => { const next = { ...prev }; delete next[vars.id]; return next; });
       refreshProfile();
       queryClient.invalidateQueries({ queryKey: ["client-withdrawals"] });
       queryClient.invalidateQueries({ queryKey: ["client-transactions"] });
@@ -85,11 +89,17 @@ const ClientWithdrawals = () => {
                   </span>
                 </div>
                 <WithdrawalCountdown requestedAt={w.requested_at} />
+                <Textarea
+                  placeholder="Reason for rejection (optional)"
+                  value={rejectReasons[w.id] || ""}
+                  onChange={(e) => setRejectReasons((prev) => ({ ...prev, [w.id]: e.target.value }))}
+                  className="min-h-[60px] text-sm"
+                />
                 <div className="flex gap-2">
                   <Button size="sm" className="flex-1" onClick={() => updateMutation.mutate({ id: w.id, status: "approved" })} disabled={updateMutation.isPending}>
                     <Check className="mr-1 h-3 w-3" /> Approve
                   </Button>
-                  <Button size="sm" variant="outline" className="flex-1 text-destructive" onClick={() => updateMutation.mutate({ id: w.id, status: "rejected" })} disabled={updateMutation.isPending}>
+                  <Button size="sm" variant="outline" className="flex-1 text-destructive" onClick={() => updateMutation.mutate({ id: w.id, status: "rejected", reject_reason: rejectReasons[w.id] || undefined })} disabled={updateMutation.isPending}>
                     <X className="mr-1 h-3 w-3" /> Reject
                   </Button>
                 </div>
