@@ -11,6 +11,7 @@ import { Wallet, Clock, IndianRupee, ArrowDownToLine, Building2, CreditCard } fr
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { WithdrawalCountdown } from "@/components/withdrawal/WithdrawalCountdown";
 
 const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
   completed: "default",
@@ -62,21 +63,24 @@ const EmployeeWallet = () => {
       const amount = Number(withdrawAmount);
       if (!amount || amount <= 0) throw new Error("Enter a valid amount");
       if (amount > (profile?.available_balance ?? 0)) throw new Error("Insufficient balance");
-      const { error } = await supabase.from("withdrawals").insert({
-        employee_id: profile.id,
-        amount,
-        method: "UPI",
-        upi_id: upiId || null,
-        bank_account_number: profile.bank_account_number,
-        bank_ifsc_code: profile.bank_ifsc_code,
+      const res = await supabase.functions.invoke("wallet-operations", {
+        body: {
+          action: "request_withdrawal",
+          amount,
+          upi_id: upiId || null,
+          bank_account_number: profile.bank_account_number,
+          bank_ifsc_code: profile.bank_ifsc_code,
+        },
       });
-      if (error) throw error;
+      if (res.error) throw new Error(res.error.message);
+      if (res.data?.error) throw new Error(res.data.error);
     },
     onSuccess: () => {
       toast.success("Withdrawal request submitted");
       setWithdrawAmount("");
       refreshProfile();
       queryClient.invalidateQueries({ queryKey: ["employee-withdrawals"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-transactions"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -131,12 +135,20 @@ const EmployeeWallet = () => {
             Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
           ) : withdrawals.length > 0 ? (
             withdrawals.map((w: any) => (
-              <div key={w.id} className="flex items-center justify-between rounded-lg border p-3">
-                <div>
-                  <p className="text-sm font-medium text-foreground">₹{Number(w.amount).toLocaleString("en-IN")}</p>
-                  <p className="text-xs text-muted-foreground">{w.method} • {new Date(w.requested_at).toLocaleDateString()}</p>
+              <div key={w.id} className="space-y-2 rounded-lg border p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">₹{Number(w.amount).toLocaleString("en-IN")}</p>
+                    <p className="text-xs text-muted-foreground">{w.method} • {new Date(w.requested_at).toLocaleDateString()}</p>
+                  </div>
+                  <Badge variant={statusVariant[w.status] ?? "secondary"}>{w.status}</Badge>
                 </div>
-                <Badge variant={statusVariant[w.status] ?? "secondary"}>{w.status}</Badge>
+                {w.status === "pending" && (
+                  <WithdrawalCountdown requestedAt={w.requested_at} />
+                )}
+                {w.status === "rejected" && w.review_notes && (
+                  <p className="text-xs text-destructive">Reason: {w.review_notes}</p>
+                )}
               </div>
             ))
           ) : (

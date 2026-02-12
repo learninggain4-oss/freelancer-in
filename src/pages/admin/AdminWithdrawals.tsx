@@ -22,6 +22,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { CheckCircle, XCircle } from "lucide-react";
+import { WithdrawalCountdown } from "@/components/withdrawal/WithdrawalCountdown";
 
 type Withdrawal = {
   id: string;
@@ -44,7 +45,6 @@ const AdminWithdrawals = () => {
 
   const fetchWithdrawals = async () => {
     setLoading(true);
-    // Fetch withdrawals and employee info separately since banking fields are restricted
     const { data: wData } = await supabase
       .from("withdrawals")
       .select("id, amount, method, status, requested_at, review_notes, employee_id")
@@ -81,24 +81,20 @@ const AdminWithdrawals = () => {
     if (!selected || !actionType) return;
     setProcessing(true);
 
-    const { data: adminProfile } = await supabase
-      .from("profiles")
-      .select("id")
-      .single();
-
     const status = actionType === "approve" ? "approved" : "rejected";
-    const { error } = await supabase
-      .from("withdrawals")
-      .update({
-        status: status as any,
-        review_notes: notes || null,
-        reviewed_at: new Date().toISOString(),
-        reviewed_by: adminProfile?.id || null,
-      })
-      .eq("id", selected.id);
 
-    if (error) {
-      toast.error("Failed to update withdrawal");
+    const res = await supabase.functions.invoke("wallet-operations", {
+      body: {
+        action: "admin_process_withdrawal",
+        withdrawal_id: selected.id,
+        status,
+        reject_reason: actionType === "reject" ? notes : undefined,
+        review_notes: actionType === "approve" ? notes : undefined,
+      },
+    });
+
+    if (res.error || res.data?.error) {
+      toast.error(res.data?.error || "Failed to update withdrawal");
     } else {
       toast.success(`Withdrawal ${status}`);
       fetchWithdrawals();
@@ -135,6 +131,7 @@ const AdminWithdrawals = () => {
             <TableHead>Amount</TableHead>
             <TableHead>Method</TableHead>
             <TableHead>Requested</TableHead>
+            <TableHead>Countdown</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -142,7 +139,7 @@ const AdminWithdrawals = () => {
         <TableBody>
           {items.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+              <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                 No withdrawals found
               </TableCell>
             </TableRow>
@@ -159,6 +156,13 @@ const AdminWithdrawals = () => {
                 <TableCell className="uppercase text-xs">{w.method}</TableCell>
                 <TableCell className="text-sm">
                   {new Date(w.requested_at).toLocaleDateString()}
+                </TableCell>
+                <TableCell className="min-w-[140px]">
+                  {w.status === "pending" ? (
+                    <WithdrawalCountdown requestedAt={w.requested_at} />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell>{statusBadge(w.status)}</TableCell>
                 <TableCell className="text-right">
@@ -181,6 +185,11 @@ const AdminWithdrawals = () => {
                         <XCircle className="h-4 w-4" />
                       </Button>
                     </div>
+                  )}
+                  {w.status === "rejected" && w.review_notes && (
+                    <p className="text-xs text-destructive max-w-[200px] truncate" title={w.review_notes}>
+                      {w.review_notes}
+                    </p>
                   )}
                 </TableCell>
               </TableRow>
@@ -235,11 +244,13 @@ const AdminWithdrawals = () => {
             </DialogDescription>
           </DialogHeader>
           <div>
-            <p className="mb-1 text-sm text-muted-foreground">Notes (optional)</p>
+            <p className="mb-1 text-sm text-muted-foreground">
+              {actionType === "reject" ? "Rejection reason" : "Notes (optional)"}
+            </p>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add notes about this decision..."
+              placeholder={actionType === "reject" ? "Enter rejection reason..." : "Add notes about this decision..."}
             />
           </div>
           <DialogFooter>

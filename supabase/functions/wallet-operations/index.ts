@@ -57,13 +57,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id } =
+    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, reject_reason } =
       await req.json();
 
     // Get the caller's profile
     const { data: callerProfile, error: cpErr } = await supabase
       .from("profiles")
-      .select("id, user_type, available_balance, hold_balance, approval_status")
+      .select("id, user_id, user_type, available_balance, hold_balance, approval_status")
       .eq("user_id", user.id)
       .single();
     if (cpErr || !callerProfile) throw new Error("Profile not found");
@@ -96,6 +96,50 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "request_withdrawal": {
+        // Employee requests withdrawal — deduct from available_balance immediately
+        if (callerProfile.user_type !== "employee")
+          throw new Error("Only employees can request withdrawals");
+        if (!amount || amount <= 0) throw new Error("Invalid amount");
+        if (amount > Number(callerProfile.available_balance))
+          throw new Error("Insufficient balance");
+
+        // Deduct from available balance
+        await supabase
+          .from("profiles")
+          .update({
+            available_balance: Number(callerProfile.available_balance) - amount,
+          })
+          .eq("id", callerProfile.id);
+
+        // Create withdrawal record
+        const { data: newW, error: wErr } = await supabase
+          .from("withdrawals")
+          .insert({
+            employee_id: callerProfile.id,
+            amount,
+            method: "UPI",
+            upi_id: upi_id || null,
+            bank_account_number: bank_account_number || null,
+            bank_ifsc_code: bank_ifsc_code || null,
+          })
+          .select("id")
+          .single();
+        if (wErr) throw wErr;
+
+        // Record transaction
+        await supabase.from("transactions").insert({
+          profile_id: callerProfile.id,
+          type: "debit",
+          amount,
+          description: "Withdrawal requested (pending approval)",
+          reference_id: newW.id,
+        });
+
+        result.withdrawal_id = newW.id;
+        break;
+      }
+
       case "hold_project_payment": {
         // Client initiates payment processing: project budget → employee hold_balance
         if (callerProfile.user_type !== "client")
@@ -117,11 +161,9 @@ Deno.serve(async (req) => {
 
         const projectAmount = Number(project.amount);
 
-        // Check client has enough balance
         if (Number(callerProfile.available_balance) < projectAmount)
           throw new Error("Insufficient balance to process payment");
 
-        // Deduct from client available balance
         await supabase
           .from("profiles")
           .update({
@@ -129,7 +171,6 @@ Deno.serve(async (req) => {
           })
           .eq("id", callerProfile.id);
 
-        // Add to employee hold balance
         const { data: empProfile } = await supabase
           .from("profiles")
           .select("hold_balance")
@@ -145,13 +186,11 @@ Deno.serve(async (req) => {
             .eq("id", project.assigned_employee_id);
         }
 
-        // Update project status to payment_processing
         await supabase
           .from("projects")
           .update({ status: "payment_processing" })
           .eq("id", project_id);
 
-        // Record transactions
         await supabase.from("transactions").insert([
           {
             profile_id: callerProfile.id,
@@ -169,7 +208,6 @@ Deno.serve(async (req) => {
           },
         ]);
 
-        // Notify employee about payment processing
         const { data: empUser1 } = await supabase
           .from("profiles")
           .select("user_id")
@@ -191,7 +229,6 @@ Deno.serve(async (req) => {
       }
 
       case "release_project_payment": {
-        // Client approves: move from employee hold → available
         if (callerProfile.user_type !== "client")
           throw new Error("Only clients can release payments");
         if (!project_id) throw new Error("Missing project_id");
@@ -211,7 +248,6 @@ Deno.serve(async (req) => {
 
         const projectAmount = Number(project.amount);
 
-        // Move from hold to available for employee
         const { data: empProfile } = await supabase
           .from("profiles")
           .select("hold_balance, available_balance")
@@ -228,13 +264,11 @@ Deno.serve(async (req) => {
             .eq("id", project.assigned_employee_id);
         }
 
-        // Update project status to completed
         await supabase
           .from("projects")
           .update({ status: "completed" })
           .eq("id", project_id);
 
-        // Record transaction
         await supabase.from("transactions").insert({
           profile_id: project.assigned_employee_id,
           type: "release",
@@ -243,7 +277,6 @@ Deno.serve(async (req) => {
           reference_id: project_id,
         });
 
-        // Notify employee about payment release
         const { data: empUser2 } = await supabase
           .from("profiles")
           .select("user_id")
@@ -265,7 +298,6 @@ Deno.serve(async (req) => {
       }
 
       case "refund_project_payment": {
-        // Client rejects during payment_processing: refund client, release employee hold
         if (callerProfile.user_type !== "client")
           throw new Error("Only clients can refund payments");
         if (!project_id) throw new Error("Missing project_id");
@@ -285,7 +317,6 @@ Deno.serve(async (req) => {
 
         const projectAmount = Number(project.amount);
 
-        // Return amount to client available balance
         await supabase
           .from("profiles")
           .update({
@@ -293,7 +324,6 @@ Deno.serve(async (req) => {
           })
           .eq("id", callerProfile.id);
 
-        // Remove from employee hold balance
         const { data: empProfile } = await supabase
           .from("profiles")
           .select("hold_balance")
@@ -309,13 +339,11 @@ Deno.serve(async (req) => {
             .eq("id", project.assigned_employee_id);
         }
 
-        // Update project status to cancelled
         await supabase
           .from("projects")
           .update({ status: "cancelled" })
           .eq("id", project_id);
 
-        // Record transactions
         await supabase.from("transactions").insert([
           {
             profile_id: callerProfile.id,
@@ -333,7 +361,6 @@ Deno.serve(async (req) => {
           },
         ]);
 
-        // Notify employee about refund/rejection
         const { data: empUser3 } = await supabase
           .from("profiles")
           .select("user_id")
@@ -369,36 +396,10 @@ Deno.serve(async (req) => {
         if (withdrawal.status !== "pending")
           throw new Error("Withdrawal already processed");
 
+        const wAmount = Number(withdrawal.amount);
+
         if (status === "approved") {
-          const wAmount = Number(withdrawal.amount);
-
-          if (Number(callerProfile.available_balance) < wAmount)
-            throw new Error("Insufficient balance to approve withdrawal");
-
-          await supabase
-            .from("profiles")
-            .update({
-              available_balance:
-                Number(callerProfile.available_balance) - wAmount,
-            })
-            .eq("id", callerProfile.id);
-
-          const { data: empProfile } = await supabase
-            .from("profiles")
-            .select("available_balance")
-            .eq("id", withdrawal.employee_id)
-            .single();
-
-          if (empProfile) {
-            await supabase
-              .from("profiles")
-              .update({
-                available_balance:
-                  Number(empProfile.available_balance) + wAmount,
-              })
-              .eq("id", withdrawal.employee_id);
-          }
-
+          // Employee balance was already deducted on request; mark as completed
           await supabase.from("transactions").insert([
             {
               profile_id: callerProfile.id,
@@ -411,10 +412,47 @@ Deno.serve(async (req) => {
               profile_id: withdrawal.employee_id,
               type: "credit",
               amount: wAmount,
-              description: `Withdrawal received`,
+              description: `Withdrawal approved and processed`,
               reference_id: withdrawal_id,
             },
           ]);
+        } else if (status === "rejected") {
+          // Restore employee available balance
+          const { data: empProfile } = await supabase
+            .from("profiles")
+            .select("available_balance, user_id")
+            .eq("id", withdrawal.employee_id)
+            .single();
+
+          if (empProfile) {
+            await supabase
+              .from("profiles")
+              .update({
+                available_balance: Number(empProfile.available_balance) + wAmount,
+              })
+              .eq("id", withdrawal.employee_id);
+
+            // Record refund transaction
+            await supabase.from("transactions").insert({
+              profile_id: withdrawal.employee_id,
+              type: "credit",
+              amount: wAmount,
+              description: `Withdrawal rejected — amount restored`,
+              reference_id: withdrawal_id,
+            });
+
+            // Notify employee about rejection
+            await supabase.from("notifications").insert({
+              user_id: empProfile.user_id,
+              title: "Withdrawal Rejected",
+              message: reject_reason
+                ? `Your withdrawal of ₹${wAmount.toLocaleString("en-IN")} was rejected. Reason: ${reject_reason}. The amount has been restored to your balance.`
+                : `Your withdrawal of ₹${wAmount.toLocaleString("en-IN")} was rejected. The amount has been restored to your balance.`,
+              type: "financial",
+              reference_id: withdrawal_id,
+              reference_type: "withdrawal",
+            });
+          }
         }
 
         await supabase
@@ -423,7 +461,91 @@ Deno.serve(async (req) => {
             status,
             reviewed_by: callerProfile.id,
             reviewed_at: new Date().toISOString(),
-            review_notes: review_notes || null,
+            review_notes: reject_reason || review_notes || null,
+          })
+          .eq("id", withdrawal_id);
+
+        result.status = status;
+        break;
+      }
+
+      case "admin_process_withdrawal": {
+        // Admin approves/rejects withdrawal
+        // Check admin role
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+
+        if (!withdrawal_id || !status)
+          throw new Error("Missing withdrawal_id or status");
+
+        const { data: withdrawal, error: wErr } = await supabase
+          .from("withdrawals")
+          .select("*")
+          .eq("id", withdrawal_id)
+          .single();
+        if (wErr || !withdrawal) throw new Error("Withdrawal not found");
+        if (withdrawal.status !== "pending")
+          throw new Error("Withdrawal already processed");
+
+        const wAmount = Number(withdrawal.amount);
+
+        if (status === "rejected") {
+          // Restore employee balance
+          const { data: empProfile } = await supabase
+            .from("profiles")
+            .select("available_balance, user_id")
+            .eq("id", withdrawal.employee_id)
+            .single();
+
+          if (empProfile) {
+            await supabase
+              .from("profiles")
+              .update({
+                available_balance: Number(empProfile.available_balance) + wAmount,
+              })
+              .eq("id", withdrawal.employee_id);
+
+            await supabase.from("transactions").insert({
+              profile_id: withdrawal.employee_id,
+              type: "credit",
+              amount: wAmount,
+              description: `Withdrawal rejected by admin — amount restored`,
+              reference_id: withdrawal_id,
+            });
+
+            await supabase.from("notifications").insert({
+              user_id: empProfile.user_id,
+              title: "Withdrawal Rejected by Admin",
+              message: reject_reason
+                ? `Your withdrawal of ₹${wAmount.toLocaleString("en-IN")} was rejected by admin. Reason: ${reject_reason}. The amount has been restored.`
+                : `Your withdrawal of ₹${wAmount.toLocaleString("en-IN")} was rejected by admin. The amount has been restored.`,
+              type: "financial",
+              reference_id: withdrawal_id,
+              reference_type: "withdrawal",
+            });
+          }
+        } else if (status === "approved") {
+          await supabase.from("transactions").insert({
+            profile_id: withdrawal.employee_id,
+            type: "credit",
+            amount: wAmount,
+            description: `Withdrawal approved by admin`,
+            reference_id: withdrawal_id,
+          });
+        }
+
+        await supabase
+          .from("withdrawals")
+          .update({
+            status,
+            reviewed_by: callerProfile.id,
+            reviewed_at: new Date().toISOString(),
+            review_notes: reject_reason || review_notes || null,
           })
           .eq("id", withdrawal_id);
 
