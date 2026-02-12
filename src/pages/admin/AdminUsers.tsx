@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { CheckCircle, XCircle, Eye } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Search, X } from "lucide-react";
 import UserDetailDialog, { type FullProfile } from "@/components/admin/UserDetailDialog";
 
 const AdminUsers = () => {
@@ -16,6 +18,8 @@ const AdminUsers = () => {
   const [actionType, setActionType] = useState<"approve" | "reject" | "view" | null>(null);
   const [notes, setNotes] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
 
   const fetchProfiles = async () => {
     setLoading(true);
@@ -69,8 +73,20 @@ const AdminUsers = () => {
     return <Badge variant="outline" className={map[status] || ""}>{status}</Badge>;
   };
 
+  const filtered = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    return profiles.filter((p) => {
+      if (typeFilter !== "all" && p.user_type !== typeFilter) return false;
+      if (!q) return true;
+      const name = (p.full_name?.[0] || "").toLowerCase();
+      const code = (p.user_code?.[0] || "").toLowerCase();
+      const email = (p.email || "").toLowerCase();
+      return name.includes(q) || code.includes(q) || email.includes(q);
+    });
+  }, [profiles, searchQuery, typeFilter]);
+
   const filterByStatus = (status: string | null) =>
-    status ? profiles.filter((p) => p.approval_status === status) : profiles;
+    status ? filtered.filter((p) => p.approval_status === status) : filtered;
 
   const UserTable = ({ users }: { users: FullProfile[] }) => (
     <div className="overflow-x-auto rounded-lg border">
@@ -126,6 +142,40 @@ const AdminUsers = () => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-foreground">User Management</h2>
+
+      {/* Search & Filter Bar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, email, or code…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-9"
+          />
+          {searchQuery && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+              onClick={() => setSearchQuery("")}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <SelectValue placeholder="User type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="employee">Employee</SelectItem>
+            <SelectItem value="client">Client</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <Tabs defaultValue="pending">
         <TabsList>
           <TabsTrigger value="pending">Pending ({filterByStatus("pending").length})</TabsTrigger>
