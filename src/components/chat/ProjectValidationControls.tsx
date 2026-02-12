@@ -13,7 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { CheckCircle, XCircle, Loader2, ShieldCheck } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, ShieldCheck, CreditCard, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -33,13 +33,13 @@ const ProjectValidationControls = ({
   const [rejectReason, setRejectReason] = useState("");
   const queryClient = useQueryClient();
 
-  if (!isClient) return null;
+  // === Status banners visible to both client and employee ===
 
   if (projectStatus === "completed") {
     return (
       <div className="flex items-center gap-2 border-b bg-accent/10 px-4 py-2">
         <ShieldCheck className="h-4 w-4 text-accent" />
-        <span className="text-sm font-medium text-accent">Project Approved & Completed</span>
+        <span className="text-sm font-medium text-accent">Project Completed — Payment Released</span>
       </div>
     );
   }
@@ -53,17 +53,71 @@ const ProjectValidationControls = ({
     );
   }
 
-  if (projectStatus !== "in_progress") return null;
+  if (projectStatus === "payment_processing") {
+    // Employee sees status only; client gets Success/Reject buttons
+    if (!isClient) {
+      return (
+        <div className="flex items-center gap-2 border-b bg-warning/10 px-4 py-2">
+          <Clock className="h-4 w-4 text-warning" />
+          <span className="text-sm font-medium text-warning">Payment Processing — Awaiting Client Approval</span>
+        </div>
+      );
+    }
+  }
 
-  const handleApprove = async () => {
+  if (projectStatus === "in_progress" && !isClient) {
+    return (
+      <div className="flex items-center gap-2 border-b bg-muted/50 px-4 py-2">
+        <Clock className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm font-medium text-muted-foreground">Awaiting Client Validation</span>
+      </div>
+    );
+  }
+
+  // Only clients see action buttons from here
+  if (!isClient) return null;
+  if (projectStatus !== "in_progress" && projectStatus !== "payment_processing") return null;
+
+  const callWalletOperation = async (action: string) => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+    if (!token) throw new Error("Not authenticated");
+
+    const res = await fetch(
+      `https://maysttckdfnnzvfeujaj.supabase.co/functions/v1/wallet-operations`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action, project_id: projectId }),
+      }
+    );
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "Operation failed");
+    return json;
+  };
+
+  const handlePaymentProcess = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from("projects")
-        .update({ status: "completed" as any })
-        .eq("id", projectId);
-      if (error) throw error;
-      toast.success("Project approved and marked as completed!");
+      await callWalletOperation("hold_project_payment");
+      toast.success("Payment processing initiated — amount held for employee.");
+      queryClient.invalidateQueries({ queryKey: ["chat-room", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["client-projects"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSuccess = async () => {
+    setLoading(true);
+    try {
+      await callWalletOperation("release_project_payment");
+      toast.success("Project completed — payment released to employee!");
       queryClient.invalidateQueries({ queryKey: ["chat-room", projectId] });
       queryClient.invalidateQueries({ queryKey: ["client-projects"] });
     } catch (e: any) {
@@ -96,37 +150,63 @@ const ProjectValidationControls = ({
   };
 
   return (
-    <div className="flex items-center gap-3 border-b bg-muted/50 px-4 py-3">
+    <div className="flex flex-wrap items-center gap-3 border-b bg-muted/50 px-4 py-3">
       <span className="flex-1 text-sm font-medium text-foreground">
-        Validate this project:
+        {projectStatus === "in_progress" ? "Validate this project:" : "Payment held — Finalize:"}
       </span>
 
-      {/* Approve */}
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button size="sm" disabled={loading} className="gap-1">
-            {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
-            Approve
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Approve Project?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will mark the project as completed. The employee's work will be accepted. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleApprove}>Confirm Approval</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Payment Process — only in in_progress */}
+      {projectStatus === "in_progress" && (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button size="sm" variant="outline" disabled={loading} className="gap-1 border-warning/30 text-warning hover:bg-warning/10">
+              {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <CreditCard className="h-3 w-3" />}
+              Payment Process
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Initiate Payment Processing?</AlertDialogTitle>
+              <AlertDialogDescription>
+                The project budget amount will be deducted from your wallet and held for the employee. You can then approve (Success) or reject the project.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handlePaymentProcess}>Confirm Payment</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
-      {/* Reject */}
+      {/* Success — only in payment_processing */}
+      {projectStatus === "payment_processing" && (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button size="sm" disabled={loading} className="gap-1">
+              {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
+              Success
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Mark Project as Successful?</AlertDialogTitle>
+              <AlertDialogDescription>
+                The held amount will be released to the employee's available balance. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleSuccess}>Confirm Success</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {/* Reject — available in both states */}
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button size="sm" variant="outline" disabled={loading} className="gap-1 text-destructive border-destructive/30 hover:bg-destructive/10">
+          <Button size="sm" variant="outline" disabled={loading} className="gap-1 border-destructive/30 text-destructive hover:bg-destructive/10">
             {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />}
             Reject
           </Button>
