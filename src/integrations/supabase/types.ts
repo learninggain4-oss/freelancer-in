@@ -176,7 +176,7 @@ export type Database = {
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
           emergency_contact_relationship: string | null
-          full_name: string
+          full_name: string[]
           gender: Database["public"]["Enums"]["gender_type"] | null
           hold_balance: number
           id: string
@@ -187,7 +187,7 @@ export type Database = {
           previous_job_details: string | null
           updated_at: string
           upi_id: string | null
-          user_code: string | null
+          user_code: string[]
           user_id: string
           user_type: Database["public"]["Enums"]["user_type"]
           whatsapp_number: string | null
@@ -209,7 +209,7 @@ export type Database = {
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           emergency_contact_relationship?: string | null
-          full_name: string
+          full_name: string[]
           gender?: Database["public"]["Enums"]["gender_type"] | null
           hold_balance?: number
           id?: string
@@ -220,7 +220,7 @@ export type Database = {
           previous_job_details?: string | null
           updated_at?: string
           upi_id?: string | null
-          user_code?: string | null
+          user_code: string[]
           user_id: string
           user_type: Database["public"]["Enums"]["user_type"]
           whatsapp_number?: string | null
@@ -242,7 +242,7 @@ export type Database = {
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           emergency_contact_relationship?: string | null
-          full_name?: string
+          full_name?: string[]
           gender?: Database["public"]["Enums"]["gender_type"] | null
           hold_balance?: number
           id?: string
@@ -253,7 +253,7 @@ export type Database = {
           previous_job_details?: string | null
           updated_at?: string
           upi_id?: string | null
-          user_code?: string | null
+          user_code?: string[]
           user_id?: string
           user_type?: Database["public"]["Enums"]["user_type"]
           whatsapp_number?: string | null
