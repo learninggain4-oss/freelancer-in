@@ -65,6 +65,8 @@ type ProfileData = {
   available_balance: number;
   hold_balance: number;
   approval_notes: string | null;
+  is_disabled: boolean;
+  disabled_reason: string | null;
   created_at: string;
   approved_at: string | null;
 };
@@ -95,6 +97,8 @@ const AdminProfileEdit = () => {
     emergency_contact_relationship: "",
     approval_status: "",
     approval_notes: "",
+    is_disabled: false,
+    disabled_reason: "",
   });
 
   useEffect(() => {
@@ -104,7 +108,7 @@ const AdminProfileEdit = () => {
       const [{ data: p }, { data: av }] = await Promise.all([
         supabase
           .from("profiles")
-          .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, upi_id, bank_account_number, bank_ifsc_code, bank_name, available_balance, hold_balance, approval_notes, created_at, approved_at")
+          .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, upi_id, bank_account_number, bank_ifsc_code, bank_name, available_balance, hold_balance, approval_notes, is_disabled, disabled_reason, created_at, approved_at")
           .eq("id", profileId)
           .single(),
         supabase
@@ -132,6 +136,8 @@ const AdminProfileEdit = () => {
           emergency_contact_relationship: p.emergency_contact_relationship || "",
           approval_status: p.approval_status || "pending",
           approval_notes: p.approval_notes || "",
+          is_disabled: p.is_disabled ?? false,
+          disabled_reason: p.disabled_reason || "",
         });
       }
       setAadhaarVerified(av?.status === "verified");
@@ -140,7 +146,7 @@ const AdminProfileEdit = () => {
     fetchData();
   }, [profileId]);
 
-  const updateField = (key: string, value: string) => {
+  const updateField = (key: string, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -166,6 +172,8 @@ const AdminProfileEdit = () => {
         emergency_contact_relationship: form.emergency_contact_relationship || null,
         approval_status: form.approval_status as any,
         approval_notes: form.approval_notes || null,
+        is_disabled: form.is_disabled,
+        disabled_reason: form.disabled_reason || null,
         approved_at: form.approval_status === "approved" ? new Date().toISOString() : profile.approved_at,
       })
       .eq("id", profile.id);
@@ -286,6 +294,49 @@ const AdminProfileEdit = () => {
               />
             </div>
           </div>
+
+          <Separator />
+
+          {/* Disable/Enable Account */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                {form.is_disabled ? (
+                  <ShieldOff className="h-4 w-4 text-destructive" />
+                ) : (
+                  <ShieldCheck className="h-4 w-4 text-accent" />
+                )}
+                <p className="text-sm font-medium">
+                  Account {form.is_disabled ? "Disabled" : "Active"}
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {form.is_disabled
+                  ? "This user cannot log in. Toggle to re-enable access."
+                  : "This user can log in normally. Toggle to block access."}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Switch
+                checked={form.is_disabled}
+                onCheckedChange={(checked) => updateField("is_disabled", checked)}
+              />
+              <span className="text-sm text-muted-foreground">
+                {form.is_disabled ? "Disabled" : "Enabled"}
+              </span>
+            </div>
+          </div>
+
+          {form.is_disabled && (
+            <div className="space-y-2">
+              <Label>Reason for disabling</Label>
+              <Input
+                value={form.disabled_reason}
+                onChange={(e) => updateField("disabled_reason", e.target.value)}
+                placeholder="e.g. Suspicious activity, policy violation…"
+              />
+            </div>
+          )}
 
           <Separator />
 

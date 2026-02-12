@@ -291,6 +291,7 @@ export type Database = {
           bank_name: string | null
           created_at: string
           date_of_birth: string | null
+          disabled_reason: string | null
           education_background: string | null
           education_level: string | null
           email: string
@@ -301,6 +302,7 @@ export type Database = {
           gender: Database["public"]["Enums"]["gender_type"] | null
           hold_balance: number
           id: string
+          is_disabled: boolean
           marital_status:
             | Database["public"]["Enums"]["marital_status_type"]
             | null
@@ -330,6 +332,7 @@ export type Database = {
           bank_name?: string | null
           created_at?: string
           date_of_birth?: string | null
+          disabled_reason?: string | null
           education_background?: string | null
           education_level?: string | null
           email: string
@@ -340,6 +343,7 @@ export type Database = {
           gender?: Database["public"]["Enums"]["gender_type"] | null
           hold_balance?: number
           id?: string
+          is_disabled?: boolean
           marital_status?:
             | Database["public"]["Enums"]["marital_status_type"]
             | null
@@ -369,6 +373,7 @@ export type Database = {
           bank_name?: string | null
           created_at?: string
           date_of_birth?: string | null
+          disabled_reason?: string | null
           education_background?: string | null
           education_level?: string | null
           email?: string
@@ -379,6 +384,7 @@ export type Database = {
           gender?: Database["public"]["Enums"]["gender_type"] | null
           hold_balance?: number
           id?: string
+          is_disabled?: boolean
           marital_status?:
             | Database["public"]["Enums"]["marital_status_type"]
             | null

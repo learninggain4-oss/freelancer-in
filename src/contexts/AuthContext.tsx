@@ -27,9 +27,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("id, user_id, user_type, full_name, user_code, email, gender, date_of_birth, marital_status, education_level, mobile_number, whatsapp_number, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, approval_status, approval_notes, approved_at, available_balance, hold_balance, created_at, updated_at")
+      .select("id, user_id, user_type, full_name, user_code, email, gender, date_of_birth, marital_status, education_level, mobile_number, whatsapp_number, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, approval_status, approval_notes, approved_at, available_balance, hold_balance, is_disabled, disabled_reason, created_at, updated_at")
       .eq("user_id", userId)
       .maybeSingle();
+
+    // If account is disabled, sign out immediately
+    if (data && (data as any).is_disabled) {
+      await supabase.auth.signOut();
+      setProfile(null);
+      setSession(null);
+      setUser(null);
+      setLoading(false);
+      // We'll show an alert via the login page
+      throw new Error("ACCOUNT_DISABLED");
+    }
+
     setProfile(data as unknown as Profile | null);
   };
 
@@ -43,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          setTimeout(() => fetchProfile(session.user.id), 0);
+          setTimeout(() => fetchProfile(session.user.id).catch(() => {}), 0);
         } else {
           setProfile(null);
         }
@@ -55,7 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        fetchProfile(session.user.id).catch(() => {});
       }
       setLoading(false);
     });
@@ -73,8 +85,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error as Error | null };
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error as Error | null };
+
+    // Check if the account is disabled
+    if (signInData.user) {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("is_disabled, disabled_reason")
+        .eq("user_id", signInData.user.id)
+        .maybeSingle();
+
+      if (prof && (prof as any).is_disabled) {
+        await supabase.auth.signOut();
+        const reason = (prof as any).disabled_reason || "Your account has been disabled by an administrator.";
+        return { error: new Error(reason) };
+      }
+    }
+
+    return { error: null };
   };
 
   const signOut = async () => {
