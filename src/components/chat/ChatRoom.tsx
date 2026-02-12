@@ -117,7 +117,7 @@ const ChatRoom = () => {
                   >
                     {!isMine && (
                       <p className="mb-0.5 text-[10px] font-medium opacity-70">
-                        {(msg.sender as any)?.full_name}
+                        {Array.isArray((msg.sender as any)?.full_name) ? (msg.sender as any).full_name.join(' ') : (msg.sender as any)?.full_name}
                       </p>
                     )}
                     <p>{msg.content}</p>
