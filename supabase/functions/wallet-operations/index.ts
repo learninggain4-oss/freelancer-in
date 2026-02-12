@@ -6,6 +6,25 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Simple in-memory rate limiter per user (10 requests per 60 seconds)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(userId);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) {
+    return false;
+  }
+  entry.count++;
+  return true;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -30,6 +49,14 @@ Deno.serve(async (req) => {
     } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authError || !user) throw new Error("Unauthorized");
 
+    // Rate limit check
+    if (!checkRateLimit(user.id)) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { action, amount, profile_id, withdrawal_id, status, review_notes } =
       await req.json();
 
@@ -47,7 +74,6 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case "add_money": {
-        // Client adds money to their own wallet (simulated)
         if (callerProfile.user_type !== "client")
           throw new Error("Only clients can add money");
         if (!amount || amount <= 0) throw new Error("Invalid amount");
@@ -59,7 +85,6 @@ Deno.serve(async (req) => {
           .eq("id", callerProfile.id);
         if (updateErr) throw updateErr;
 
-        // Record transaction
         await supabase.from("transactions").insert({
           profile_id: callerProfile.id,
           type: "credit",
@@ -72,7 +97,6 @@ Deno.serve(async (req) => {
       }
 
       case "process_withdrawal": {
-        // Client approves/rejects an employee withdrawal
         if (callerProfile.user_type !== "client")
           throw new Error("Only clients can process withdrawals");
         if (!withdrawal_id || !status)
@@ -90,11 +114,9 @@ Deno.serve(async (req) => {
         if (status === "approved") {
           const wAmount = Number(withdrawal.amount);
 
-          // Check client has enough balance
           if (Number(callerProfile.available_balance) < wAmount)
             throw new Error("Insufficient balance to approve withdrawal");
 
-          // Deduct from client
           await supabase
             .from("profiles")
             .update({
@@ -103,7 +125,6 @@ Deno.serve(async (req) => {
             })
             .eq("id", callerProfile.id);
 
-          // Credit to employee
           const { data: empProfile } = await supabase
             .from("profiles")
             .select("available_balance")
@@ -120,7 +141,6 @@ Deno.serve(async (req) => {
               .eq("id", withdrawal.employee_id);
           }
 
-          // Record transactions
           await supabase.from("transactions").insert([
             {
               profile_id: callerProfile.id,
@@ -139,7 +159,6 @@ Deno.serve(async (req) => {
           ]);
         }
 
-        // Update withdrawal status
         await supabase
           .from("withdrawals")
           .update({
