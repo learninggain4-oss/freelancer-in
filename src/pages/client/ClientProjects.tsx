@@ -15,6 +15,7 @@ import { toast } from "sonner";
 const statusColor: Record<string, string> = {
   open: "bg-accent/10 text-accent",
   in_progress: "bg-primary/10 text-primary",
+  payment_processing: "bg-warning/10 text-warning",
   completed: "bg-primary/10 text-primary",
   draft: "bg-muted text-muted-foreground",
   cancelled: "bg-destructive/10 text-destructive",
@@ -126,7 +127,7 @@ const ClientProjects = () => {
                     <span className="flex items-center gap-1"><IndianRupee className="h-3 w-3" />₹{Number(p.amount).toLocaleString("en-IN")}</span>
                     <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{p.end_date ?? "No deadline"}</span>
                   </div>
-                  {(p.status === "in_progress" || p.status === "completed") && (
+                  {(p.status === "in_progress" || p.status === "payment_processing" || p.status === "completed" || p.status === "cancelled") && (
                     <Button size="sm" variant="outline" className="w-full" onClick={() => navigate(`/client/projects/chat/${p.id}`)}>
                       <MessageSquare className="mr-1 h-3 w-3" /> Validation Chat
                     </Button>
