@@ -60,7 +60,7 @@ const AdminVerifications = () => {
   });
 
   const actionMutation = useMutation({
-    mutationFn: async ({ id, status, reason }: { id: string; status: string; reason?: string }) => {
+    mutationFn: async ({ id, status, reason, profileId, nameOnAadhaar }: { id: string; status: string; reason?: string; profileId: string; nameOnAadhaar: string }) => {
       const update: Record<string, unknown> = {
         status,
         verified_by: profile!.id,
@@ -69,9 +69,18 @@ const AdminVerifications = () => {
       if (reason) update.rejection_reason = reason;
       const { error } = await supabase.from("aadhaar_verifications").update(update).eq("id", id);
       if (error) throw error;
+
+      // Update profile name to verified Aadhaar name on approval
+      if (status === "verified") {
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({ full_name: [nameOnAadhaar] })
+          .eq("id", profileId);
+        if (profileError) throw profileError;
+      }
     },
     onSuccess: (_, vars) => {
-      toast.success(`Verification ${vars.status}`);
+      toast.success(`Verification ${vars.status}${vars.status === "verified" ? " — profile name updated" : ""}`);
       queryClient.invalidateQueries({ queryKey: ["admin-verifications"] });
       setSelectedVerification(null);
       setRejectReason("");
@@ -238,11 +247,11 @@ const AdminVerifications = () => {
                     onChange={(e) => setRejectReason(e.target.value)} className="min-h-[60px]" />
                   <div className="flex gap-2">
                     <Button className="flex-1" disabled={actionMutation.isPending}
-                      onClick={() => actionMutation.mutate({ id: selectedVerification.id, status: "verified" })}>
+                      onClick={() => actionMutation.mutate({ id: selectedVerification.id, status: "verified", profileId: selectedVerification.profile_id, nameOnAadhaar: selectedVerification.name_on_aadhaar })}>
                       <CheckCircle2 className="mr-1 h-3 w-3" /> Verify
                     </Button>
                     <Button variant="outline" className="flex-1 text-destructive" disabled={actionMutation.isPending || !rejectReason.trim()}
-                      onClick={() => actionMutation.mutate({ id: selectedVerification.id, status: "rejected", reason: rejectReason })}>
+                      onClick={() => actionMutation.mutate({ id: selectedVerification.id, status: "rejected", reason: rejectReason, profileId: selectedVerification.profile_id, nameOnAadhaar: selectedVerification.name_on_aadhaar })}>
                       <XCircle className="mr-1 h-3 w-3" /> Reject
                     </Button>
                   </div>
