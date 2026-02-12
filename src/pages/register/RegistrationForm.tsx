@@ -71,10 +71,11 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       if (!authData.user) throw new Error("Registration failed");
 
       // 2. Create profile
-      const { error: profileError } = await supabase.from("profiles").insert({
+      const { error: profileError } = await supabase.from("profiles").insert([{
         user_id: authData.user.id,
         user_type: userType,
-        full_name: data.full_name,
+        full_name: [data.full_name],
+        user_code: [],
         email: data.email,
         gender: data.gender,
         date_of_birth: data.date_of_birth,
@@ -88,7 +89,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
         emergency_contact_name: data.emergency_contact_name,
         emergency_contact_phone: data.emergency_contact_phone,
         emergency_contact_relationship: data.emergency_contact_relationship,
-      });
+      }]);
 
       if (profileError) throw profileError;
 

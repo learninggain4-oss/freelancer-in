@@ -12,7 +12,7 @@ export interface Message {
   file_name: string | null;
   is_read: boolean;
   created_at: string;
-  sender?: { full_name: string; user_type: string } | null;
+  sender?: { full_name: string[]; user_type: string } | null;
 }
 
 export const useRealtimeMessages = (chatRoomId: string | undefined) => {
