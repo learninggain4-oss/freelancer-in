@@ -31,6 +31,8 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminEmployees = lazy(() => import("./pages/admin/AdminEmployees"));
+const AdminClients = lazy(() => import("./pages/admin/AdminClients"));
 const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
 const AdminVerifications = lazy(() => import("./pages/admin/AdminVerifications"));
 const AdminProfileEdit = lazy(() => import("./pages/admin/AdminProfileEdit"));
@@ -115,6 +117,8 @@ const App = () => (
               >
                 <Route path="dashboard" element={<AdminDashboard />} />
                 <Route path="users" element={<AdminUsers />} />
+                <Route path="employees" element={<AdminEmployees />} />
+                <Route path="clients" element={<AdminClients />} />
                 <Route path="withdrawals" element={<AdminWithdrawals />} />
                 <Route path="verifications" element={<AdminVerifications />} />
                 <Route path="users/:profileId" element={<AdminProfileEdit />} />
