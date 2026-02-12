@@ -25,7 +25,7 @@ const ClientWithdrawals = () => {
       if (!profile?.id) return [];
       const { data, error } = await supabase
         .from("withdrawals")
-        .select("*, employee:employee_id(full_name, user_code)")
+        .select("id, employee_id, amount, method, status, review_notes, reviewed_at, reviewed_by, requested_at, employee:employee_id(full_name, user_code)")
         .order("requested_at", { ascending: false });
       if (error) throw error;
       return data;
