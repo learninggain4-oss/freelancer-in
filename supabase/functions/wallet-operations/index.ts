@@ -36,10 +36,12 @@ Deno.serve(async (req) => {
     // Get the caller's profile
     const { data: callerProfile, error: cpErr } = await supabase
       .from("profiles")
-      .select("id, user_type, available_balance, hold_balance")
+      .select("id, user_type, available_balance, hold_balance, approval_status")
       .eq("user_id", user.id)
       .single();
     if (cpErr || !callerProfile) throw new Error("Profile not found");
+    if (callerProfile.approval_status !== "approved")
+      throw new Error("Account not approved");
 
     let result: any = { success: true };
 
