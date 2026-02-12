@@ -27,10 +27,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("*")
+      .select("id, user_id, user_type, full_name, user_code, email, gender, date_of_birth, marital_status, education_level, mobile_number, whatsapp_number, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, approval_status, approval_notes, approved_at, available_balance, hold_balance, created_at, updated_at")
       .eq("user_id", userId)
       .single();
-    setProfile(data);
+    setProfile(data as unknown as Profile | null);
   };
 
   const refreshProfile = async () => {
