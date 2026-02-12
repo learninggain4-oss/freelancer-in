@@ -8,12 +8,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { CheckCircle, XCircle, Eye, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Search, X, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import UserDetailDialog, { type FullProfile } from "@/components/admin/UserDetailDialog";
 
 const PAGE_SIZE = 15;
 
 const AdminUsers = () => {
+  const navigate = useNavigate();
   const [profiles, setProfiles] = useState<FullProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<FullProfile | null>(null);
@@ -128,6 +130,9 @@ const AdminUsers = () => {
                     <TableCell>{statusBadge(u.approval_status)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
+                        <Button size="icon" variant="ghost" onClick={() => navigate(`/admin/users/${u.id}`)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <Button size="icon" variant="ghost" onClick={() => { setSelectedUser(u); setActionType("view"); }}>
                           <Eye className="h-4 w-4" />
                         </Button>
