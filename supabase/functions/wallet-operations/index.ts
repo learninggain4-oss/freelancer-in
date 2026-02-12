@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, reject_reason } =
+    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason } =
       await req.json();
 
     // Get the caller's profile
@@ -118,10 +118,11 @@ Deno.serve(async (req) => {
           .insert({
             employee_id: callerProfile.id,
             amount,
-            method: "UPI",
+            method: upi_id ? "UPI" : "Bank Transfer",
             upi_id: upi_id || null,
             bank_account_number: bank_account_number || null,
             bank_ifsc_code: bank_ifsc_code || null,
+            bank_holder_name: bank_holder_name || null,
           })
           .select("id")
           .single();

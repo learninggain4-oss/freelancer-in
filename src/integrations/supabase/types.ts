@@ -287,6 +287,7 @@ export type Database = {
           approved_at: string | null
           available_balance: number
           bank_account_number: string | null
+          bank_holder_name: string | null
           bank_ifsc_code: string | null
           bank_name: string | null
           created_at: string
@@ -333,6 +334,7 @@ export type Database = {
           approved_at?: string | null
           available_balance?: number
           bank_account_number?: string | null
+          bank_holder_name?: string | null
           bank_ifsc_code?: string | null
           bank_name?: string | null
           created_at?: string
@@ -379,6 +381,7 @@ export type Database = {
           approved_at?: string | null
           available_balance?: number
           bank_account_number?: string | null
+          bank_holder_name?: string | null
           bank_ifsc_code?: string | null
           bank_name?: string | null
           created_at?: string
