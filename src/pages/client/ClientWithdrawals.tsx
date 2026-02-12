@@ -16,7 +16,7 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
 };
 
 const ClientWithdrawals = () => {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: withdrawals = [], isLoading } = useQuery({
@@ -35,22 +35,28 @@ const ClientWithdrawals = () => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      if (!profile?.id) throw new Error("Not authenticated");
-      const { error } = await supabase
-        .from("withdrawals")
-        .update({ status: status as any, reviewed_by: profile.id, reviewed_at: new Date().toISOString() })
-        .eq("id", id);
-      if (error) throw error;
+      const res = await supabase.functions.invoke("wallet-operations", {
+        body: { action: "process_withdrawal", withdrawal_id: id, status },
+      });
+      if (res.error) throw new Error(res.error.message);
+      if (res.data?.error) throw new Error(res.data.error);
     },
     onSuccess: (_, vars) => {
       toast.success(`Withdrawal ${vars.status}`);
+      refreshProfile();
       queryClient.invalidateQueries({ queryKey: ["client-withdrawals"] });
+      queryClient.invalidateQueries({ queryKey: ["client-transactions"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   const pending = withdrawals.filter((w: any) => w.status === "pending");
   const history = withdrawals.filter((w: any) => w.status !== "pending");
+
+  const getEmployeeName = (emp: any) => {
+    if (!emp) return "Employee";
+    return Array.isArray(emp.full_name) ? emp.full_name.join(" ") : emp.full_name;
+  };
 
   return (
     <div className="space-y-6 p-4">
@@ -66,14 +72,24 @@ const ClientWithdrawals = () => {
               <div key={w.id} className="space-y-3 rounded-lg border p-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="flex items-center gap-1 text-sm font-medium text-foreground"><User className="h-3 w-3" />{w.employee?.full_name ?? "Employee"}</p>
-                    <p className="text-xs text-muted-foreground">{w.employee?.user_code} • {w.method}</p>
+                    <p className="flex items-center gap-1 text-sm font-medium text-foreground">
+                      <User className="h-3 w-3" />{getEmployeeName(w.employee)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {Array.isArray(w.employee?.user_code) ? w.employee.user_code.join("") : w.employee?.user_code} • {w.method}
+                    </p>
                   </div>
-                  <span className="flex items-center text-base font-bold text-foreground"><IndianRupee className="h-4 w-4" />{Number(w.amount).toLocaleString("en-IN")}</span>
+                  <span className="flex items-center text-base font-bold text-foreground">
+                    <IndianRupee className="h-4 w-4" />{Number(w.amount).toLocaleString("en-IN")}
+                  </span>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" className="flex-1" onClick={() => updateMutation.mutate({ id: w.id, status: "approved" })}><Check className="mr-1 h-3 w-3" /> Approve</Button>
-                  <Button size="sm" variant="outline" className="flex-1 text-destructive" onClick={() => updateMutation.mutate({ id: w.id, status: "rejected" })}><X className="mr-1 h-3 w-3" /> Reject</Button>
+                  <Button size="sm" className="flex-1" onClick={() => updateMutation.mutate({ id: w.id, status: "approved" })} disabled={updateMutation.isPending}>
+                    <Check className="mr-1 h-3 w-3" /> Approve
+                  </Button>
+                  <Button size="sm" variant="outline" className="flex-1 text-destructive" onClick={() => updateMutation.mutate({ id: w.id, status: "rejected" })} disabled={updateMutation.isPending}>
+                    <X className="mr-1 h-3 w-3" /> Reject
+                  </Button>
                 </div>
               </div>
             ))
@@ -90,7 +106,7 @@ const ClientWithdrawals = () => {
             history.map((w: any) => (
               <div key={w.id} className="flex items-center justify-between rounded-lg border p-3">
                 <div>
-                  <p className="text-sm font-medium text-foreground">{w.employee?.full_name ?? "Employee"}</p>
+                  <p className="text-sm font-medium text-foreground">{getEmployeeName(w.employee)}</p>
                   <p className="text-xs text-muted-foreground">₹{Number(w.amount).toLocaleString("en-IN")} • {new Date(w.requested_at).toLocaleDateString()}</p>
                 </div>
                 <Badge variant={statusVariant[w.status] ?? "secondary"}>{w.status}</Badge>
