@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link, Navigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,9 +10,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { loginSchema, type LoginFormData } from "@/lib/validations/registration";
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, user, profile, loading: authLoading } = useAuth();
@@ -22,8 +24,16 @@ const Login = () => {
     defaultValues: { email: "", password: "" },
   });
 
+  // Check admin role when user is available
+  useEffect(() => {
+    if (!user) { setIsAdmin(null); return; }
+    supabase.rpc("has_role", { _user_id: user.id, _role: "admin" as const })
+      .then(({ data }) => setIsAdmin(!!data));
+  }, [user]);
+
   // Redirect if already logged in
-  if (!authLoading && user && profile) {
+  if (!authLoading && user && profile && isAdmin !== null) {
+    if (isAdmin) return <Navigate to="/admin/dashboard" replace />;
     if (profile.approval_status !== "approved") {
       return <Navigate to="/verification-pending" replace />;
     }
