@@ -60,6 +60,16 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const onSubmit = async (data: RegistrationFormData) => {
     setSubmitting(true);
     try {
+      // 0. Fetch IP & geolocation
+      let geoData: { ip?: string; city?: string; region?: string; country?: string; lat?: number; lon?: number } = {};
+      try {
+        const geoRes = await fetch("https://ipapi.co/json/");
+        if (geoRes.ok) {
+          const g = await geoRes.json();
+          geoData = { ip: g.ip, city: g.city, region: g.region, country: g.country_name, lat: g.latitude, lon: g.longitude };
+        }
+      } catch { /* non-critical */ }
+
       // 1. Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
@@ -89,7 +99,13 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
         emergency_contact_name: data.emergency_contact_name,
         emergency_contact_phone: data.emergency_contact_phone,
         emergency_contact_relationship: data.emergency_contact_relationship,
-      }]);
+        registration_ip: geoData.ip || null,
+        registration_city: geoData.city || null,
+        registration_region: geoData.region || null,
+        registration_country: geoData.country || null,
+        registration_latitude: geoData.lat || null,
+        registration_longitude: geoData.lon || null,
+      } as any]);
 
       if (profileError) throw profileError;
 

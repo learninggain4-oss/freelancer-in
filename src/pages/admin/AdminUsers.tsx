@@ -1,45 +1,18 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
 import { CheckCircle, XCircle, Eye } from "lucide-react";
-
-type Profile = {
-  id: string;
-  full_name: string[];
-  user_code: string[];
-  email: string;
-  user_type: string;
-  approval_status: string;
-  mobile_number: string | null;
-  whatsapp_number: string | null;
-  created_at: string;
-};
+import UserDetailDialog, { type FullProfile } from "@/components/admin/UserDetailDialog";
 
 const AdminUsers = () => {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [profiles, setProfiles] = useState<FullProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
+  const [selectedUser, setSelectedUser] = useState<FullProfile | null>(null);
   const [actionType, setActionType] = useState<"approve" | "reject" | "view" | null>(null);
   const [notes, setNotes] = useState("");
   const [processing, setProcessing] = useState(false);
@@ -48,15 +21,13 @@ const AdminUsers = () => {
     setLoading(true);
     const { data } = await supabase
       .from("profiles")
-      .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, created_at")
+      .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, registration_ip, registration_city, registration_region, registration_country, registration_latitude, registration_longitude, created_at, approval_notes, approved_at")
       .order("created_at", { ascending: false });
-    setProfiles((data as Profile[]) || []);
+    setProfiles((data as FullProfile[]) || []);
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchProfiles();
-  }, []);
+  useEffect(() => { fetchProfiles(); }, []);
 
   const handleAction = async () => {
     if (!selectedUser || !actionType || actionType === "view") return;
@@ -72,12 +43,18 @@ const AdminUsers = () => {
       .eq("id", selectedUser.id);
 
     if (error) {
+      const { toast } = await import("sonner");
       toast.error("Failed to update user status");
     } else {
+      const { toast } = await import("sonner");
       toast.success(`User ${status} successfully`);
       fetchProfiles();
     }
     setProcessing(false);
+    handleClose();
+  };
+
+  const handleClose = () => {
     setSelectedUser(null);
     setActionType(null);
     setNotes("");
@@ -89,17 +66,13 @@ const AdminUsers = () => {
       approved: "bg-accent/15 text-accent border-accent/30",
       rejected: "bg-destructive/15 text-destructive border-destructive/30",
     };
-    return (
-      <Badge variant="outline" className={map[status] || ""}>
-        {status}
-      </Badge>
-    );
+    return <Badge variant="outline" className={map[status] || ""}>{status}</Badge>;
   };
 
   const filterByStatus = (status: string | null) =>
     status ? profiles.filter((p) => p.approval_status === status) : profiles;
 
-  const UserTable = ({ users }: { users: Profile[] }) => (
+  const UserTable = ({ users }: { users: FullProfile[] }) => (
     <div className="overflow-x-auto rounded-lg border">
       <Table>
         <TableHeader>
@@ -115,47 +88,27 @@ const AdminUsers = () => {
         <TableBody>
           {users.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                No users found
-              </TableCell>
+              <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No users found</TableCell>
             </TableRow>
           ) : (
             users.map((u) => (
               <TableRow key={u.id}>
                 <TableCell className="font-medium">{u.full_name?.[0] || "—"}</TableCell>
                 <TableCell className="font-mono text-xs">{u.user_code?.[0] || "—"}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary" className="capitalize">
-                    {u.user_type}
-                  </Badge>
-                </TableCell>
+                <TableCell><Badge variant="secondary" className="capitalize">{u.user_type}</Badge></TableCell>
                 <TableCell className="max-w-[160px] truncate text-sm">{u.email}</TableCell>
                 <TableCell>{statusBadge(u.approval_status)}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => { setSelectedUser(u); setActionType("view"); }}
-                    >
+                    <Button size="icon" variant="ghost" onClick={() => { setSelectedUser(u); setActionType("view"); }}>
                       <Eye className="h-4 w-4" />
                     </Button>
                     {u.approval_status === "pending" && (
                       <>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="text-accent hover:text-accent"
-                          onClick={() => { setSelectedUser(u); setActionType("approve"); }}
-                        >
+                        <Button size="icon" variant="ghost" className="text-accent hover:text-accent" onClick={() => { setSelectedUser(u); setActionType("approve"); }}>
                           <CheckCircle className="h-4 w-4" />
                         </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => { setSelectedUser(u); setActionType("reject"); }}
-                        >
+                        <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => { setSelectedUser(u); setActionType("reject"); }}>
                           <XCircle className="h-4 w-4" />
                         </Button>
                       </>
@@ -173,121 +126,28 @@ const AdminUsers = () => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-foreground">User Management</h2>
-
       <Tabs defaultValue="pending">
         <TabsList>
-          <TabsTrigger value="pending">
-            Pending ({filterByStatus("pending").length})
-          </TabsTrigger>
+          <TabsTrigger value="pending">Pending ({filterByStatus("pending").length})</TabsTrigger>
           <TabsTrigger value="approved">Approved</TabsTrigger>
           <TabsTrigger value="rejected">Rejected</TabsTrigger>
           <TabsTrigger value="all">All</TabsTrigger>
         </TabsList>
-        <TabsContent value="pending">
-          <UserTable users={filterByStatus("pending")} />
-        </TabsContent>
-        <TabsContent value="approved">
-          <UserTable users={filterByStatus("approved")} />
-        </TabsContent>
-        <TabsContent value="rejected">
-          <UserTable users={filterByStatus("rejected")} />
-        </TabsContent>
-        <TabsContent value="all">
-          <UserTable users={filterByStatus(null)} />
-        </TabsContent>
+        <TabsContent value="pending"><UserTable users={filterByStatus("pending")} /></TabsContent>
+        <TabsContent value="approved"><UserTable users={filterByStatus("approved")} /></TabsContent>
+        <TabsContent value="rejected"><UserTable users={filterByStatus("rejected")} /></TabsContent>
+        <TabsContent value="all"><UserTable users={filterByStatus(null)} /></TabsContent>
       </Tabs>
 
-      {/* View / Approve / Reject Dialog */}
-      <Dialog
-        open={!!selectedUser && !!actionType}
-        onOpenChange={(open) => {
-          if (!open) {
-            setSelectedUser(null);
-            setActionType(null);
-            setNotes("");
-          }
-        }}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {actionType === "view"
-                ? "User Details"
-                : actionType === "approve"
-                ? "Approve User"
-                : "Reject User"}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedUser?.full_name?.[0]} • {selectedUser?.user_code?.[0]}
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedUser && (
-            <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <p className="text-muted-foreground">Email</p>
-                  <p className="font-medium">{selectedUser.email}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Type</p>
-                  <p className="font-medium capitalize">{selectedUser.user_type}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Mobile</p>
-                  <p className="font-medium">{selectedUser.mobile_number || "—"}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">WhatsApp</p>
-                  <p className="font-medium">{selectedUser.whatsapp_number || "—"}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Status</p>
-                  {statusBadge(selectedUser.approval_status)}
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Registered</p>
-                  <p className="font-medium">
-                    {new Date(selectedUser.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-
-              {actionType !== "view" && (
-                <div>
-                  <p className="mb-1 text-muted-foreground">Notes (optional)</p>
-                  <Textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Add notes about this decision..."
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          <DialogFooter>
-            {actionType === "view" ? (
-              <Button variant="outline" onClick={() => { setSelectedUser(null); setActionType(null); }}>
-                Close
-              </Button>
-            ) : (
-              <>
-                <Button variant="outline" onClick={() => { setSelectedUser(null); setActionType(null); setNotes(""); }}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleAction}
-                  disabled={processing}
-                  variant={actionType === "approve" ? "default" : "destructive"}
-                >
-                  {processing ? "Processing..." : actionType === "approve" ? "Approve" : "Reject"}
-                </Button>
-              </>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <UserDetailDialog
+        user={selectedUser}
+        actionType={actionType}
+        notes={notes}
+        onNotesChange={setNotes}
+        processing={processing}
+        onAction={handleAction}
+        onClose={handleClose}
+      />
     </div>
   );
 };

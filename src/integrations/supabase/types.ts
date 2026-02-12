@@ -240,6 +240,12 @@ export type Database = {
             | null
           mobile_number: string | null
           previous_job_details: string | null
+          registration_city: string | null
+          registration_country: string | null
+          registration_ip: string | null
+          registration_latitude: number | null
+          registration_longitude: number | null
+          registration_region: string | null
           updated_at: string
           upi_id: string | null
           user_code: string[]
@@ -273,6 +279,12 @@ export type Database = {
             | null
           mobile_number?: string | null
           previous_job_details?: string | null
+          registration_city?: string | null
+          registration_country?: string | null
+          registration_ip?: string | null
+          registration_latitude?: number | null
+          registration_longitude?: number | null
+          registration_region?: string | null
           updated_at?: string
           upi_id?: string | null
           user_code: string[]
@@ -306,6 +318,12 @@ export type Database = {
             | null
           mobile_number?: string | null
           previous_job_details?: string | null
+          registration_city?: string | null
+          registration_country?: string | null
+          registration_ip?: string | null
+          registration_latitude?: number | null
+          registration_longitude?: number | null
+          registration_region?: string | null
           updated_at?: string
           upi_id?: string | null
           user_code?: string[]
