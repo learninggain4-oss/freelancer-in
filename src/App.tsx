@@ -28,6 +28,11 @@ const ClientProfile = lazy(() => import("./pages/client/ClientProfile"));
 const ChatRoom = lazy(() => import("./components/chat/ChatRoom"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
+import AdminLayout from "@/components/layout/AdminLayout";
+import AdminRoute from "@/components/auth/AdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -85,6 +90,20 @@ const App = () => (
                 <Route path="projects/chat/:projectId" element={<ChatRoom />} />
                 <Route path="withdrawals" element={<ClientWithdrawals />} />
                 <Route path="profile" element={<ClientProfile />} />
+              </Route>
+
+              {/* Admin Routes */}
+              <Route
+                path="/admin"
+                element={
+                  <AdminRoute>
+                    <AdminLayout />
+                  </AdminRoute>
+                }
+              >
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="withdrawals" element={<AdminWithdrawals />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
