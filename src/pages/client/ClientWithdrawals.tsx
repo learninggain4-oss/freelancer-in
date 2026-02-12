@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { WithdrawalCountdown } from "@/components/withdrawal/WithdrawalCountdown";
 
 const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
   completed: "default",
@@ -83,6 +84,7 @@ const ClientWithdrawals = () => {
                     <IndianRupee className="h-4 w-4" />{Number(w.amount).toLocaleString("en-IN")}
                   </span>
                 </div>
+                <WithdrawalCountdown requestedAt={w.requested_at} />
                 <div className="flex gap-2">
                   <Button size="sm" className="flex-1" onClick={() => updateMutation.mutate({ id: w.id, status: "approved" })} disabled={updateMutation.isPending}>
                     <Check className="mr-1 h-3 w-3" /> Approve
