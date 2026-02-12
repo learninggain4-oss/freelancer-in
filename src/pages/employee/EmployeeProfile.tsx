@@ -15,6 +15,7 @@ import {
   Edit,
 } from "lucide-react";
 import { toast } from "sonner";
+import AadhaarVerificationCard from "@/components/verification/AadhaarVerificationCard";
 
 const EmployeeProfile = () => {
   const { profile } = useAuth();
@@ -111,6 +112,9 @@ const EmployeeProfile = () => {
           <InfoRow icon={Briefcase} label="Previous Jobs" value={profile?.previous_job_details} />
         </CardContent>
       </Card>
+
+      {/* Aadhaar Verification */}
+      <AadhaarVerificationCard />
 
       {/* Emergency Contact */}
       <Card>

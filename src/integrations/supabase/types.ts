@@ -14,6 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      aadhaar_verifications: {
+        Row: {
+          aadhaar_number: string
+          address_on_aadhaar: string
+          back_image_path: string
+          created_at: string
+          dob_on_aadhaar: string
+          front_image_path: string
+          id: string
+          name_on_aadhaar: string
+          profile_id: string
+          rejection_reason: string | null
+          status: Database["public"]["Enums"]["aadhaar_verification_status"]
+          updated_at: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          aadhaar_number: string
+          address_on_aadhaar: string
+          back_image_path: string
+          created_at?: string
+          dob_on_aadhaar: string
+          front_image_path: string
+          id?: string
+          name_on_aadhaar: string
+          profile_id: string
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["aadhaar_verification_status"]
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          aadhaar_number?: string
+          address_on_aadhaar?: string
+          back_image_path?: string
+          created_at?: string
+          dob_on_aadhaar?: string
+          front_image_path?: string
+          id?: string
+          name_on_aadhaar?: string
+          profile_id?: string
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["aadhaar_verification_status"]
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aadhaar_verifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aadhaar_verifications_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_rooms: {
         Row: {
           created_at: string
@@ -617,6 +683,11 @@ export type Database = {
       }
     }
     Enums: {
+      aadhaar_verification_status:
+        | "not_submitted"
+        | "pending"
+        | "verified"
+        | "rejected"
       app_role: "admin" | "user"
       application_status: "pending" | "approved" | "rejected"
       approval_status: "pending" | "approved" | "rejected"
@@ -759,6 +830,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      aadhaar_verification_status: [
+        "not_submitted",
+        "pending",
+        "verified",
+        "rejected",
+      ],
       app_role: ["admin", "user"],
       application_status: ["pending", "approved", "rejected"],
       approval_status: ["pending", "approved", "rejected"],

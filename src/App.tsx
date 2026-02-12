@@ -32,6 +32,7 @@ const InstallApp = lazy(() => import("./pages/InstallApp"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
+const AdminVerifications = lazy(() => import("./pages/admin/AdminVerifications"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
@@ -114,6 +115,7 @@ const App = () => (
                 <Route path="dashboard" element={<AdminDashboard />} />
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="withdrawals" element={<AdminWithdrawals />} />
+                <Route path="verifications" element={<AdminVerifications />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
