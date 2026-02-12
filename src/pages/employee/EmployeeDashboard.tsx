@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,17 +13,32 @@ import {
   ChevronRight,
   FileText,
   MessageSquare,
+  Loader2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from "recharts";
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 
 const EmployeeDashboard = () => {
   const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      refreshProfile(),
+      queryClient.invalidateQueries({ queryKey: ["employee-transactions", profile?.id] }),
+      queryClient.invalidateQueries({ queryKey: ["employee-earnings-chart", profile?.id] }),
+      queryClient.invalidateQueries({ queryKey: ["employee-active-projects", profile?.id] }),
+    ]);
+  }, [profile?.id, queryClient, refreshProfile]);
+
+  const { containerRef, pullDistance, refreshing } = usePullToRefresh({
+    onRefresh: handleRefresh,
+  });
 
   // Realtime: refresh when transactions or profile balances change
   useEffect(() => {
@@ -116,7 +131,21 @@ const EmployeeDashboard = () => {
   ];
 
   return (
-    <div className="space-y-5 p-4 pb-8">
+    <div ref={containerRef} className="relative h-full overflow-y-auto">
+      {/* Pull-to-refresh indicator */}
+      <div
+        className="flex items-center justify-center overflow-hidden transition-all duration-200 ease-out"
+        style={{ height: pullDistance > 0 ? `${pullDistance}px` : 0 }}
+      >
+        <div className={`flex items-center gap-2 text-sm text-muted-foreground ${refreshing ? "animate-pulse" : ""}`}>
+          <Loader2 className={`h-5 w-5 text-primary ${refreshing ? "animate-spin" : ""}`} style={{
+            transform: refreshing ? undefined : `rotate(${pullDistance * 3}deg)`,
+          }} />
+          <span>{refreshing ? "Refreshing…" : pullDistance >= 80 ? "Release to refresh" : "Pull to refresh"}</span>
+        </div>
+      </div>
+
+      <div className="space-y-5 p-4 pb-8">
       {/* Hero greeting */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary/70 p-5 text-primary-foreground">
         <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-primary-foreground/10" />
@@ -299,6 +328,7 @@ const EmployeeDashboard = () => {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };
