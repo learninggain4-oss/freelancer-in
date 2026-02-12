@@ -1,0 +1,1 @@
+ALTER TABLE public.withdrawals ADD COLUMN bank_holder_name text;
