@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +13,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { MapPin, Globe, Wifi } from "lucide-react";
+import { MapPin, Globe, Wifi, FileText, Image as ImageIcon, Download, ExternalLink } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+type Document = {
+  id: string;
+  file_name: string;
+  file_path: string;
+  document_type: string;
+  uploaded_at: string;
+};
 
 export type FullProfile = {
   id: string;
@@ -73,7 +84,44 @@ const Field = ({ label, value }: { label: string; value: string | null | undefin
   </div>
 );
 
+const isImageFile = (name: string) => /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(name);
+
+const DocumentImagePreview = ({ filePath, getSignedUrl }: { filePath: string; getSignedUrl: (p: string) => Promise<string | null> }) => {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => { getSignedUrl(filePath).then(setUrl); }, [filePath]);
+  if (!url) return <Skeleton className="h-32 w-full rounded" />;
+  return <img src={url} alt="Document" className="max-h-48 w-full rounded object-contain border bg-muted/30" />;
+};
+
 const UserDetailDialog = ({ user, actionType, notes, onNotesChange, processing, onAction, onClose }: Props) => {
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [docsLoading, setDocsLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) { setDocuments([]); return; }
+    setDocsLoading(true);
+    supabase
+      .from("documents")
+      .select("id, file_name, file_path, document_type, uploaded_at")
+      .eq("profile_id", user.id)
+      .order("uploaded_at", { ascending: false })
+      .then(({ data }) => {
+        setDocuments((data as Document[]) || []);
+        setDocsLoading(false);
+      });
+  }, [user?.id]);
+
+  const getPublicUrl = (path: string) => {
+    const { data } = supabase.storage.from("documents").getPublicUrl(path);
+    return data.publicUrl;
+  };
+
+  const getSignedUrl = async (path: string) => {
+    const { data } = await supabase.storage.from("documents").createSignedUrl(path, 3600);
+    return data?.signedUrl || null;
+  };
+
   if (!user || !actionType) return null;
 
   const locationStr = [user.registration_city, user.registration_region, user.registration_country]
@@ -175,6 +223,81 @@ const UserDetailDialog = ({ user, actionType, notes, onNotesChange, processing, 
                 )}
               </div>
             </div>
+
+            <Separator />
+
+            {/* Uploaded Documents */}
+            <div>
+              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Verification Documents</h4>
+              {docsLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </div>
+              ) : documents.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No documents uploaded</p>
+              ) : (
+                <div className="space-y-3">
+                  {documents.map((doc) => (
+                    <div key={doc.id} className="rounded-lg border p-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {isImageFile(doc.file_name) ? (
+                            <ImageIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          ) : (
+                            <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{doc.file_name}</p>
+                            <p className="text-xs text-muted-foreground capitalize">{doc.document_type.replace(/_/g, " ")}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          {isImageFile(doc.file_name) && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={async () => {
+                                const url = await getSignedUrl(doc.file_path);
+                                if (url) setPreviewUrl(url);
+                              }}
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            onClick={async () => {
+                              const url = await getSignedUrl(doc.file_path);
+                              if (url) window.open(url, "_blank");
+                            }}
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                      {/* Inline image preview for image files */}
+                      {isImageFile(doc.file_name) && (
+                        <DocumentImagePreview filePath={doc.file_path} getSignedUrl={getSignedUrl} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Image preview overlay */}
+            {previewUrl && (
+              <div
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 cursor-pointer"
+                onClick={() => setPreviewUrl(null)}
+              >
+                <img src={previewUrl} alt="Preview" className="max-h-[85vh] max-w-[90vw] rounded-lg object-contain" />
+              </div>
+            )}
 
             <Separator />
 
