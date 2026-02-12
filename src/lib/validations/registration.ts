@@ -14,7 +14,7 @@ export const contactInfoSchema = z.object({
   mobile_number: z.string().regex(phoneRegex, "Enter a valid 10-digit Indian mobile number"),
   whatsapp_number: z.string().regex(phoneRegex, "Enter a valid 10-digit WhatsApp number"),
   email: z.string().trim().email("Enter a valid email").max(255),
-  password: z.string().min(6, "Password must be at least 6 characters").max(72),
+  password: z.string().min(8, "Password must be at least 8 characters").max(72),
 });
 
 export const professionalInfoSchema = z.object({
