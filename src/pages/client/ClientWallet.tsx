@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Wallet,
   Clock,
@@ -13,26 +14,59 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-const transactions = [
-  { id: 1, type: "credit", description: "Added to Wallet", amount: 10000, date: "2026-02-10", status: "completed" },
-  { id: 2, type: "debit", description: "Project Funding - E-Commerce", amount: 25000, date: "2026-02-08", status: "completed" },
-  { id: 3, type: "debit", description: "Employee Withdrawal Approved", amount: 5000, date: "2026-02-06", status: "completed" },
-];
+const txBadgeVariant: Record<string, "default" | "secondary" | "destructive"> = {
+  credit: "default",
+  debit: "destructive",
+  hold: "secondary",
+  release: "default",
+};
 
 const ClientWallet = () => {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const [addAmount, setAddAmount] = useState("");
+  const queryClient = useQueryClient();
 
-  const handleAddMoney = () => {
-    const amount = Number(addAmount);
-    if (!amount || amount <= 0) {
-      toast.error("Enter a valid amount");
-      return;
-    }
-    toast.success(`₹${amount.toLocaleString("en-IN")} added to wallet (simulated)`);
-    setAddAmount("");
-  };
+  const { data: transactions = [], isLoading } = useQuery({
+    queryKey: ["client-transactions", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("profile_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!profile?.id,
+  });
+
+  const addMoneyMutation = useMutation({
+    mutationFn: async () => {
+      const amount = Number(addAmount);
+      if (!amount || amount <= 0) throw new Error("Enter a valid amount");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const res = await supabase.functions.invoke("wallet-operations", {
+        body: { action: "add_money", amount },
+      });
+      if (res.error) throw new Error(res.error.message);
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(`₹${Number(addAmount).toLocaleString("en-IN")} added to wallet`);
+      setAddAmount("");
+      refreshProfile();
+      queryClient.invalidateQueries({ queryKey: ["client-transactions"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   return (
     <div className="space-y-6 p-4">
@@ -75,8 +109,8 @@ const ClientWallet = () => {
             <Label>Amount (₹)</Label>
             <Input type="number" placeholder="Enter amount" value={addAmount} onChange={(e) => setAddAmount(e.target.value)} />
           </div>
-          <Button className="w-full" onClick={handleAddMoney}>
-            <ArrowUpRight className="mr-2 h-4 w-4" /> Add to Wallet
+          <Button className="w-full" onClick={() => addMoneyMutation.mutate()} disabled={addMoneyMutation.isPending}>
+            <ArrowUpRight className="mr-2 h-4 w-4" /> {addMoneyMutation.isPending ? "Processing..." : "Add to Wallet"}
           </Button>
         </CardContent>
       </Card>
@@ -87,17 +121,23 @@ const ClientWallet = () => {
           <CardTitle className="text-base">Transaction History</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {transactions.map((tx) => (
-            <div key={tx.id} className="flex items-center justify-between rounded-lg border p-3">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">{tx.description}</p>
-                <p className="text-xs text-muted-foreground">{tx.date}</p>
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
+          ) : transactions.length > 0 ? (
+            transactions.map((tx: any) => (
+              <div key={tx.id} className="flex items-center justify-between rounded-lg border p-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">{tx.description}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</p>
+                </div>
+                <span className={`ml-3 text-sm font-semibold ${tx.type === "credit" ? "text-accent" : "text-destructive"}`}>
+                  {tx.type === "credit" ? "+" : "-"}₹{Number(tx.amount).toLocaleString("en-IN")}
+                </span>
               </div>
-              <span className={`ml-3 text-sm font-semibold ${tx.type === "credit" ? "text-accent" : "text-destructive"}`}>
-                {tx.type === "credit" ? "+" : "-"}₹{tx.amount.toLocaleString("en-IN")}
-              </span>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="py-4 text-center text-sm text-muted-foreground">No transactions yet</p>
+          )}
         </CardContent>
       </Card>
     </div>
