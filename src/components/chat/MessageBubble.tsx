@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Message } from "@/hooks/use-realtime-messages";
@@ -36,7 +36,18 @@ const MessageBubble = ({
 }: MessageBubbleProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
   const isMine = message.sender_id === currentUserId;
+
+  useEffect(() => {
+    if (!message.file_path) return;
+    supabase.storage
+      .from("chat-attachments")
+      .createSignedUrl(message.file_path, 3600)
+      .then(({ data }) => {
+        if (data?.signedUrl) setFileUrl(data.signedUrl);
+      });
+  }, [message.file_path]);
 
   const handleSaveEdit = async () => {
     if (editContent.trim() && editContent !== message.content) {
@@ -78,10 +89,6 @@ const MessageBubble = ({
       </div>
     );
   }
-
-  const fileUrl = message.file_path
-    ? supabase.storage.from("chat-attachments").getPublicUrl(message.file_path).data.publicUrl
-    : null;
 
   const isImage = message.file_name?.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
 
