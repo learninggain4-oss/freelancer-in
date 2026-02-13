@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Briefcase, Shield, MessageCircle, CreditCard, Users, ArrowRight } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,8 +13,15 @@ const features = [
 ];
 
 const Index = () => {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, refreshProfile } = useAuth();
 
+  // Auto-refresh every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshProfile();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [refreshProfile]);
   // Redirect logged-in approved users to their dashboard
   if (!loading && user && profile) {
     if (profile.approval_status === "approved") {
