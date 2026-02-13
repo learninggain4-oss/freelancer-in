@@ -131,9 +131,16 @@ const EmployeeWallet = () => {
             </div>
           </div>
           {method === "upi" ? (
-            <div className="rounded-lg border p-3 space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">Saved UPI ID</p>
-              <p className="text-sm font-semibold text-foreground">{savedUpi || <span className="text-destructive">Not set — update in Profile</span>}</p>
+            <div className="rounded-lg border p-3 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Saved UPI Details</p>
+              {savedUpi ? (
+                <>
+                  <p className="text-sm text-foreground"><span className="text-muted-foreground">Holder:</span> {savedHolderName || "—"}</p>
+                  <p className="text-sm text-foreground"><span className="text-muted-foreground">UPI ID:</span> {savedUpi}</p>
+                </>
+              ) : (
+                <p className="text-sm text-destructive">Not set — update in Profile</p>
+              )}
             </div>
           ) : (
             <div className="rounded-lg border p-3 space-y-2">
