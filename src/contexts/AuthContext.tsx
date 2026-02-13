@@ -75,6 +75,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Auto-refresh profile every 1 second across all pages
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      fetchProfile(user.id).catch(() => {});
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   const signUp = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
