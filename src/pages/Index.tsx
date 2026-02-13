@@ -19,7 +19,7 @@ const Index = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       refreshProfile();
-    }, 10000);
+    }, 1000);
     return () => clearInterval(interval);
   }, [refreshProfile]);
   // Redirect logged-in approved users to their dashboard
