@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle, BadgeCheck } from "lucide-react";
 import { WithdrawalCountdown } from "@/components/withdrawal/WithdrawalCountdown";
 
 type Withdrawal = {
@@ -37,6 +37,7 @@ type Withdrawal = {
   bank_ifsc_code: string | null;
   bank_holder_name: string | null;
   employee?: { full_name: string[]; user_code: string[]; email: string };
+  bankVerified?: boolean;
 };
 
 const AdminWithdrawals = () => {
@@ -61,14 +62,23 @@ const AdminWithdrawals = () => {
         .select("id, full_name, user_code, email")
         .in("id", employeeIds);
 
+      const { data: bankVerifs } = await supabase
+        .from("bank_verifications")
+        .select("profile_id, status")
+        .in("profile_id", employeeIds);
+
       const profileMap = new Map(
         (profiles || []).map((p) => [p.id, p])
+      );
+      const bankVerifMap = new Map(
+        (bankVerifs || []).map((b) => [b.profile_id, b.status === "verified"])
       );
 
       setWithdrawals(
         wData.map((w) => ({
           ...w,
           employee: profileMap.get(w.employee_id) as any,
+          bankVerified: bankVerifMap.get(w.employee_id) ?? false,
         }))
       );
     } else {
@@ -152,9 +162,16 @@ const AdminWithdrawals = () => {
             items.map((w) => (
               <TableRow key={w.id}>
                 <TableCell>
-                  <div>
-                    <p className="font-medium">{w.employee?.full_name?.[0] || "—"}</p>
-                    <p className="text-xs text-muted-foreground">{w.employee?.user_code?.[0]}</p>
+                  <div className="flex items-center gap-1.5">
+                    <div>
+                      <p className="font-medium">{w.employee?.full_name?.[0] || "—"}</p>
+                      <p className="text-xs text-muted-foreground">{w.employee?.user_code?.[0]}</p>
+                    </div>
+                    {w.bankVerified ? (
+                      <BadgeCheck className="h-4 w-4 shrink-0 text-accent" />
+                    ) : (
+                      <span className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning" title="Bank Not Verified">Unverified</span>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell className="font-semibold">₹{Number(w.amount).toLocaleString()}</TableCell>
