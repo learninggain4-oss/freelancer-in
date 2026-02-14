@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface SideDrawerProps {
   open: boolean;
@@ -18,8 +18,8 @@ const menuItems = [
   { label: "Account Settings", icon: Settings, path: "/settings" },
   { label: "Help & Support", icon: HelpCircle, path: "/help" },
   { label: "Notification Settings", icon: Bell, path: "/notifications" },
-  { label: "Terms & Conditions", icon: FileText, path: "/terms" },
-  { label: "Privacy Policy", icon: Shield, path: "/privacy" },
+  { label: "Terms of Service", icon: FileText, path: "/legal/terms-of-service" },
+  { label: "Privacy Policy", icon: Shield, path: "/legal/privacy-policy" },
 ];
 
 const SideDrawer = ({ open, onOpenChange }: SideDrawerProps) => {
@@ -51,7 +51,10 @@ const SideDrawer = ({ open, onOpenChange }: SideDrawerProps) => {
             <button
               key={item.label}
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-muted"
-              onClick={() => onOpenChange(false)}
+              onClick={() => {
+                onOpenChange(false);
+                if (item.path) navigate(item.path);
+              }}
             >
               <item.icon className="h-4 w-4 text-muted-foreground" />
               <span>{item.label}</span>

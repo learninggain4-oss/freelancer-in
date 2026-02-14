@@ -37,6 +37,8 @@ const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
 const AdminVerifications = lazy(() => import("./pages/admin/AdminVerifications"));
 const AdminProfileEdit = lazy(() => import("./pages/admin/AdminProfileEdit"));
 const AdminProfileEdits = lazy(() => import("./pages/admin/AdminProfileEdits"));
+const AdminLegalDocuments = lazy(() => import("./pages/admin/AdminLegalDocuments"));
+const LegalDocument = lazy(() => import("./pages/LegalDocument"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
@@ -72,6 +74,7 @@ const App = () => (
               <Route path="/register/client" element={<ClientRegister />} />
               <Route path="/verification-pending" element={<VerificationPending />} />
               <Route path="/install" element={<InstallApp />} />
+              <Route path="/legal/:slug" element={<LegalDocument />} />
 
               {/* Employee Routes */}
               <Route
@@ -124,6 +127,7 @@ const App = () => (
                 <Route path="verifications" element={<AdminVerifications />} />
                 <Route path="profile-edits" element={<AdminProfileEdits />} />
                 <Route path="users/:profileId" element={<AdminProfileEdit />} />
+                <Route path="legal-documents" element={<AdminLegalDocuments />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
