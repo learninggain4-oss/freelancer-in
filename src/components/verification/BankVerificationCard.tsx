@@ -5,7 +5,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Landmark, BadgeCheck, Clock, AlertCircle, Loader2, Upload, FileText } from "lucide-react";
+import { Landmark, BadgeCheck, Clock, AlertCircle, Loader2, Upload, FileText, Pencil, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
 const statusConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string; icon: any }> = {
@@ -21,6 +32,7 @@ const BankVerificationCard = () => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [editing, setEditing] = useState(false);
 
   const { data: verification, isLoading } = useQuery({
     queryKey: ["bank-verification", profile?.id],
@@ -116,6 +128,62 @@ const BankVerificationCard = () => {
     onSettled: () => setUploading(false),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!profile?.id) throw new Error("Not authenticated");
+      // Delete the stored document first
+      if (verification?.document_path) {
+        await supabase.storage.from("bank-documents").remove([verification.document_path]);
+      }
+      const { error } = await supabase
+        .from("bank_verifications")
+        .delete()
+        .eq("profile_id", profile.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Bank verification deleted");
+      queryClient.invalidateQueries({ queryKey: ["bank-verification"] });
+      setSelectedFile(null);
+      setEditing(false);
+      if (fileRef.current) fileRef.current.value = "";
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const updateDocMutation = useMutation({
+    mutationFn: async () => {
+      if (!profile?.id || !user?.id) throw new Error("Not authenticated");
+      if (!selectedFile) throw new Error("Please select a new file");
+
+      setUploading(true);
+      const ext = selectedFile.name.split(".").pop();
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("bank-documents")
+        .upload(path, selectedFile);
+      if (uploadError) throw uploadError;
+
+      const { error } = await supabase
+        .from("bank_verifications")
+        .update({
+          document_path: path,
+          document_name: selectedFile.name,
+        })
+        .eq("profile_id", profile.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Document updated");
+      queryClient.invalidateQueries({ queryKey: ["bank-verification"] });
+      setSelectedFile(null);
+      setEditing(false);
+      if (fileRef.current) fileRef.current.value = "";
+    },
+    onError: (e: any) => toast.error(e.message),
+    onSettled: () => setUploading(false),
+  });
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -129,6 +197,7 @@ const BankVerificationCard = () => {
   const hasBankDetails = profile?.bank_account_number || profile?.upi_id;
   const cfg = verification ? statusConfig[verification.status] ?? statusConfig.pending : null;
   const canSubmit = hasBankDetails && (selectedFile || verification?.document_path);
+  const isPending = verification?.status === "pending";
 
   return (
     <Card>
@@ -145,15 +214,66 @@ const BankVerificationCard = () => {
           <p className="text-sm text-muted-foreground">Loading...</p>
         ) : verification ? (
           <>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Status:</span>
-              <Badge variant={cfg!.variant}>{cfg!.label}</Badge>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Status:</span>
+                <Badge variant={cfg!.variant}>{cfg!.label}</Badge>
+              </div>
+              {isPending && (
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditing(true); setSelectedFile(null); }}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Bank Verification?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will remove your verification request and uploaded document. You can submit again later.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending}>
+                          {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
             </div>
 
-            {verification.document_name && (
+            {verification.document_name && !editing && (
               <div className="flex items-center gap-2 rounded-md bg-muted/50 p-2 text-sm">
                 <FileText className="h-4 w-4 text-muted-foreground" />
                 <span className="truncate text-muted-foreground">{verification.document_name}</span>
+              </div>
+            )}
+
+            {isPending && editing && (
+              <div className="space-y-2 rounded-md border p-3">
+                <p className="text-xs text-muted-foreground">Upload a new document to replace the current one.</p>
+                <input ref={fileRef} type="file" className="hidden" onChange={handleFileChange}
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => fileRef.current?.click()}>
+                    <Upload className="h-3.5 w-3.5" />
+                    {selectedFile ? selectedFile.name : "Choose File"}
+                  </Button>
+                  <Button size="sm" onClick={() => updateDocMutation.mutate()}
+                    disabled={updateDocMutation.isPending || !selectedFile}>
+                    {updateDocMutation.isPending ? "Updating..." : "Update Document"}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => { setEditing(false); setSelectedFile(null); }}>
+                    Cancel
+                  </Button>
+                </div>
               </div>
             )}
 
