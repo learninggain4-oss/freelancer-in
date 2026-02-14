@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { fullRegistrationSchema, type RegistrationFormData } from "@/lib/validations/registration";
 
-const RECAPTCHA_SITE_KEY = "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"; // Google test key — replace with your own
+const RECAPTCHA_SITE_KEY = "6Lev72osAAAAAAlPrwq6vGMs4pt3wBDjOqWT9gB5";
 
 interface RegistrationFormProps {
   userType: "employee" | "client";

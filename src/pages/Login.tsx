@@ -13,7 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { loginSchema, type LoginFormData } from "@/lib/validations/registration";
 import { supabase } from "@/integrations/supabase/client";
 
-const RECAPTCHA_SITE_KEY = "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"; // Google test key — replace with your own
+const RECAPTCHA_SITE_KEY = "6Lev72osAAAAAAlPrwq6vGMs4pt3wBDjOqWT9gB5";
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
