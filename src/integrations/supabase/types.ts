@@ -1061,6 +1061,7 @@ export type Database = {
       aadhaar_verification_status:
         | "not_submitted"
         | "pending"
+        | "under_process"
         | "verified"
         | "rejected"
       app_role: "admin" | "user"
@@ -1219,6 +1220,7 @@ export const Constants = {
       aadhaar_verification_status: [
         "not_submitted",
         "pending",
+        "under_process",
         "verified",
         "rejected",
       ],
