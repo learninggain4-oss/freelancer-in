@@ -36,6 +36,8 @@ const Index = () => {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSTip, setShowIOSTip] = useState(false);
+  const [showBanner, setShowBanner] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   useEffect(() => {
     setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
@@ -50,6 +52,13 @@ const Index = () => {
     window.addEventListener("appinstalled", () => setIsInstalled(true));
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
+
+  // Show bottom banner after 5 seconds on mobile
+  useEffect(() => {
+    if (isInstalled || bannerDismissed) return;
+    const timer = setTimeout(() => setShowBanner(true), 5000);
+    return () => clearTimeout(timer);
+  }, [isInstalled, bannerDismissed, deferredPrompt, isIOS]);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
@@ -252,6 +261,57 @@ const Index = () => {
           </div>
         </div>
       </footer>
+      {/* Install Banner */}
+      {showBanner && !isInstalled && !bannerDismissed && (
+        <div className="fixed inset-x-0 bottom-0 z-50 animate-slide-in-bottom p-4 pb-safe sm:hidden">
+          <div className="rounded-2xl border bg-card/95 p-4 shadow-2xl backdrop-blur-lg">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <Download className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground">Install Freelancer</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {isIOS
+                    ? "Add to your home screen for the best experience"
+                    : "Install for quick access & offline support"}
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <Button
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs"
+                    onClick={() => {
+                      if (deferredPrompt) {
+                        handleInstall();
+                      } else if (isIOS) {
+                        setShowIOSTip(true);
+                        setShowBanner(false);
+                      }
+                    }}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    {isIOS ? "How to Install" : "Install Now"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 text-xs text-muted-foreground"
+                    onClick={() => { setShowBanner(false); setBannerDismissed(true); }}
+                  >
+                    Not now
+                  </Button>
+                </div>
+              </div>
+              <button
+                onClick={() => { setShowBanner(false); setBannerDismissed(true); }}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
