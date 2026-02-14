@@ -113,8 +113,9 @@ const AdminVerifications = () => {
   });
 
   const statusBadge = (status: string) => {
-    const map: Record<string, { variant: "default" | "secondary" | "destructive"; label: string }> = {
+    const map: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
       pending: { variant: "secondary", label: "Pending" },
+      under_process: { variant: "outline", label: "Under Process" },
       verified: { variant: "default", label: "Verified" },
       rejected: { variant: "destructive", label: "Rejected" },
     };
@@ -241,11 +242,17 @@ const AdminVerifications = () => {
                 {statusBadge(selectedVerification.status)}
               </div>
 
-              {selectedVerification.status === "pending" && (
+              {(selectedVerification.status === "pending" || selectedVerification.status === "under_process") && (
                 <div className="space-y-3 rounded-lg border p-3">
                   <Textarea placeholder="Rejection reason (required only for rejection)" value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)} className="min-h-[60px]" />
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    {selectedVerification.status === "pending" && (
+                      <Button variant="secondary" className="flex-1" disabled={actionMutation.isPending}
+                        onClick={() => actionMutation.mutate({ id: selectedVerification.id, status: "under_process", profileId: selectedVerification.profile_id, nameOnAadhaar: selectedVerification.name_on_aadhaar })}>
+                        <Clock className="mr-1 h-3 w-3" /> Under Process
+                      </Button>
+                    )}
                     <Button className="flex-1" disabled={actionMutation.isPending}
                       onClick={() => actionMutation.mutate({ id: selectedVerification.id, status: "verified", profileId: selectedVerification.profile_id, nameOnAadhaar: selectedVerification.name_on_aadhaar })}>
                       <CheckCircle2 className="mr-1 h-3 w-3" /> Verify
