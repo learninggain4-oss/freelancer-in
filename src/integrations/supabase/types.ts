@@ -1097,6 +1097,17 @@ export type Database = {
         }
         Returns: Json
       }
+      get_referral_history: {
+        Args: never
+        Returns: {
+          created_at: string
+          job_bonus_paid: boolean
+          referral_id: string
+          referred_name: string
+          referred_user_type: string
+          signup_bonus_paid: boolean
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
