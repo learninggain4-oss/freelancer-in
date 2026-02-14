@@ -4,13 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Clock, Landmark } from "lucide-react";
+import { Loader2, Save, Clock, Landmark, Gift } from "lucide-react";
 
 const AdminSettings = () => {
   const { toast } = useToast();
   const [countdownHours, setCountdownHours] = useState("");
   const [maxBankAttempts, setMaxBankAttempts] = useState("");
+  const [signupBonus, setSignupBonus] = useState("");
+  const [jobBonus, setJobBonus] = useState("");
+  const [referralTerms, setReferralTerms] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
 
@@ -19,11 +23,20 @@ const AdminSettings = () => {
       const { data } = await supabase
         .from("app_settings")
         .select("key, value")
-        .in("key", ["approval_countdown_hours", "max_bank_verification_attempts"]);
+        .in("key", [
+          "approval_countdown_hours",
+          "max_bank_verification_attempts",
+          "referral_signup_bonus",
+          "referral_job_bonus",
+          "referral_terms_conditions",
+        ]);
       if (data) {
         for (const row of data) {
           if (row.key === "approval_countdown_hours") setCountdownHours(row.value);
           if (row.key === "max_bank_verification_attempts") setMaxBankAttempts(row.value);
+          if (row.key === "referral_signup_bonus") setSignupBonus(row.value);
+          if (row.key === "referral_job_bonus") setJobBonus(row.value);
+          if (row.key === "referral_terms_conditions") setReferralTerms(row.value.replace(/\\n/g, "\n"));
         }
       }
       setLoading(false);
@@ -51,6 +64,25 @@ const AdminSettings = () => {
     }
   };
 
+  const handleSaveText = async (key: string, value: string, label: string) => {
+    if (!value.trim()) {
+      toast({ title: "Invalid value", description: "Content cannot be empty", variant: "destructive" });
+      return;
+    }
+    setSaving(key);
+    try {
+      const { error } = await supabase
+        .from("app_settings")
+        .upsert({ key, value: value.replace(/\n/g, "\\n") }, { onConflict: "key" });
+      if (error) throw error;
+      toast({ title: "Settings saved", description: `${label} updated` });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setSaving(null);
+    }
+  };
+
   if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
   return (
@@ -67,7 +99,6 @@ const AdminSettings = () => {
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
             Set the countdown time (in hours) shown on the verification pending page.
-            Users will see this countdown after registration while waiting for admin approval.
           </p>
           <div className="flex items-end gap-3">
             <div className="flex-1">
@@ -103,6 +134,66 @@ const AdminSettings = () => {
               Save
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Referral Bonus Settings */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Gift className="h-4 w-4 text-primary" />
+            Referral Bonus Settings
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Configure the bonus amounts awarded when a referred user signs up or completes a job.
+          </p>
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label>Signup Bonus (₹)</Label>
+              <Input type="number" min="0" max="99999" value={signupBonus} onChange={(e) => setSignupBonus(e.target.value)} />
+            </div>
+            <Button onClick={() => handleSaveSetting("referral_signup_bonus", signupBonus, "Signup bonus", 0, 99999)} disabled={saving === "referral_signup_bonus"} className="gap-1">
+              {saving === "referral_signup_bonus" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          </div>
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label>Job Completion Bonus (₹)</Label>
+              <Input type="number" min="0" max="99999" value={jobBonus} onChange={(e) => setJobBonus(e.target.value)} />
+            </div>
+            <Button onClick={() => handleSaveSetting("referral_job_bonus", jobBonus, "Job bonus", 0, 99999)} disabled={saving === "referral_job_bonus"} className="gap-1">
+              {saving === "referral_job_bonus" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Referral Terms & Conditions */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Gift className="h-4 w-4 text-primary" />
+            Referral Terms & Conditions
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Edit the referral program terms shown to users on their account settings page.
+          </p>
+          <Textarea
+            rows={8}
+            value={referralTerms}
+            onChange={(e) => setReferralTerms(e.target.value)}
+            placeholder="Enter referral terms and conditions..."
+          />
+          <Button onClick={() => handleSaveText("referral_terms_conditions", referralTerms, "Referral T&C")} disabled={saving === "referral_terms_conditions"} className="gap-1">
+            {saving === "referral_terms_conditions" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            Save Terms
+          </Button>
         </CardContent>
       </Card>
     </div>

@@ -44,6 +44,7 @@ const AdminLegalDocuments = lazy(() => import("./pages/admin/AdminLegalDocuments
 const AdminServiceManagement = lazy(() => import("./pages/admin/AdminServiceManagement"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const LegalDocument = lazy(() => import("./pages/LegalDocument"));
+const AccountSettings = lazy(() => import("./pages/AccountSettings"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
@@ -97,6 +98,7 @@ const App = () => (
                 <Route path="projects/chat/:projectId" element={<ChatRoom />} />
                 <Route path="wallet" element={<EmployeeWallet />} />
                 <Route path="profile" element={<EmployeeProfile />} />
+                <Route path="settings" element={<AccountSettings />} />
               </Route>
 
               {/* Client Routes */}
@@ -115,6 +117,7 @@ const App = () => (
                 <Route path="projects/chat/:projectId" element={<ChatRoom />} />
                 <Route path="withdrawals" element={<ClientWithdrawals />} />
                 <Route path="profile" element={<ClientProfile />} />
+                <Route path="settings" element={<AccountSettings />} />
               </Route>
 
               {/* Admin Routes */}
