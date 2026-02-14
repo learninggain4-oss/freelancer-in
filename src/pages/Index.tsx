@@ -1,4 +1,5 @@
-import { Briefcase, Shield, MessageCircle, CreditCard, Users, ArrowRight, Star, CheckCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Briefcase, Shield, MessageCircle, CreditCard, Users, ArrowRight, Star, CheckCircle, Download, Smartphone, Share } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,8 +25,39 @@ const steps = [
   { step: "04", title: "Get Paid", description: "Receive secure payments directly to your UPI or bank account." },
 ];
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
 const Index = () => {
   const { user, profile, loading } = useAuth();
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [showIOSTip, setShowIOSTip] = useState(false);
+
+  useEffect(() => {
+    setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setIsInstalled(true);
+    }
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", () => setIsInstalled(true));
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+    await deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === "accepted") setIsInstalled(true);
+    setDeferredPrompt(null);
+  };
 
   if (!loading && user && profile) {
     if (profile.approval_status === "approved") {
@@ -49,6 +81,19 @@ const Index = () => {
             <span className="text-lg font-bold text-foreground">Freelancer</span>
           </div>
           <div className="flex items-center gap-2">
+            {!isInstalled && (deferredPrompt || isIOS) && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => {
+                  if (deferredPrompt) handleInstall();
+                  else if (isIOS) setShowIOSTip((v) => !v);
+                }}
+              >
+                <Download className="h-3.5 w-3.5" /> Install App
+              </Button>
+            )}
             <Link to="/register/employee">
               <Button variant="ghost" size="sm" className="hidden sm:inline-flex">Register</Button>
             </Link>
@@ -58,6 +103,21 @@ const Index = () => {
           </div>
         </div>
       </header>
+
+      {/* iOS Install Tip */}
+      {showIOSTip && isIOS && (
+        <div className="border-b bg-muted/50 px-4 py-3">
+          <div className="mx-auto flex max-w-6xl items-start gap-3 text-sm">
+            <Smartphone className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">Install on iOS</p>
+              <p className="flex items-center gap-1.5 text-muted-foreground"><Share className="h-3.5 w-3.5 text-primary" /> Tap the Share button in Safari</p>
+              <p className="flex items-center gap-1.5 text-muted-foreground"><Download className="h-3.5 w-3.5 text-primary" /> Tap "Add to Home Screen"</p>
+            </div>
+            <button onClick={() => setShowIOSTip(false)} className="ml-auto text-xs text-muted-foreground hover:text-foreground">✕</button>
+          </div>
+        </div>
+      )}
 
       {/* Hero */}
       <section className="relative overflow-hidden px-4 pb-12 pt-16 sm:px-6 md:pb-20 md:pt-24">
