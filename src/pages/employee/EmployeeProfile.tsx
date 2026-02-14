@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import AadhaarVerificationCard from "@/components/verification/AadhaarVerificationCard";
+import ProfileRegistrationData from "@/components/profile/ProfileRegistrationData";
 
 const EmployeeProfile = () => {
   const { profile, refreshProfile } = useAuth();
@@ -261,19 +262,9 @@ const EmployeeProfile = () => {
         </CardContent>
       </Card>
 
-      <AadhaarVerificationCard />
+      {profile?.id && <ProfileRegistrationData profileId={profile.id} />}
 
-      {/* Emergency Contact */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base"><AlertCircle className="h-4 w-4" /> Emergency Contact</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-1">
-          <InfoRow icon={User} label="Name" value={profile?.emergency_contact_name} />
-          <InfoRow icon={Phone} label="Phone" value={profile?.emergency_contact_phone} />
-          <InfoRow icon={User} label="Relationship" value={profile?.emergency_contact_relationship} />
-        </CardContent>
-      </Card>
+      <AadhaarVerificationCard />
     </div>
   );
 };
