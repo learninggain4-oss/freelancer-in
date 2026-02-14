@@ -124,7 +124,7 @@ const EmployeeDashboard = () => {
   const totalBalance = (profile?.available_balance ?? 0) + (profile?.hold_balance ?? 0);
 
   const quickActions = [
-    { icon: Briefcase, label: "Projects", to: "/employee/projects", color: "text-primary" },
+    { icon: Briefcase, label: "Jobs", to: "/employee/projects", color: "text-primary" },
     { icon: ArrowDownToLine, label: "Withdraw", to: "/employee/wallet", color: "text-accent" },
     { icon: FileText, label: "Submissions", to: "/employee/projects", color: "text-warning" },
     { icon: MessageSquare, label: "Messages", to: "/employee/projects", color: "text-secondary" },
