@@ -76,6 +76,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContactEntry[]>([emptyContact()]);
   const [services, setServices] = useState<ServiceEntry[]>([emptyService()]);
   const [arrayErrors, setArrayErrors] = useState<string[]>([]);
+  const [referralCode, setReferralCode] = useState("");
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationProfileSchema),
@@ -245,6 +246,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
         registration_country: geoData.country || null,
         registration_latitude: geoData.lat || null,
         registration_longitude: geoData.lon || null,
+        referred_by: referralCode.trim() || null,
       } as any]);
       if (profileError) throw profileError;
 
@@ -482,6 +484,16 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                         <FormMessage />
                       </FormItem>
                     )} />
+                    <div className="space-y-2">
+                      <Label>Referral Code (optional)</Label>
+                      <Input
+                        placeholder="Enter referral code if you have one"
+                        value={referralCode}
+                        onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                        className="uppercase"
+                      />
+                      <p className="text-xs text-muted-foreground">Got a referral code from a friend? Enter it here.</p>
+                    </div>
                   </>
                 )}
 

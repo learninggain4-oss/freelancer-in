@@ -7,24 +7,26 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 interface SideDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const menuItems = [
-  { label: "Account Settings", icon: Settings, path: "/settings" },
-  { label: "Help & Support", icon: HelpCircle, path: "/help" },
-  { label: "Notification Settings", icon: Bell, path: "/notifications" },
-  { label: "Terms of Service", icon: FileText, path: "/legal/terms-of-service" },
-  { label: "Privacy Policy", icon: Shield, path: "/legal/privacy-policy" },
-];
-
 const SideDrawer = ({ open, onOpenChange }: SideDrawerProps) => {
   const { signOut, profile } = useAuth();
   const navigate = useNavigate();
+
+  const basePath = profile?.user_type === "client" ? "/client" : "/employee";
+
+  const menuItems = [
+    { label: "Account Settings", icon: Settings, path: `${basePath}/settings` },
+    { label: "Help & Support", icon: HelpCircle, path: "/help" },
+    { label: "Notification Settings", icon: Bell, path: "/notifications" },
+    { label: "Terms of Service", icon: FileText, path: "/legal/terms-of-service" },
+    { label: "Privacy Policy", icon: Shield, path: "/legal/privacy-policy" },
+  ];
 
   const handleLogout = async () => {
     onOpenChange(false);

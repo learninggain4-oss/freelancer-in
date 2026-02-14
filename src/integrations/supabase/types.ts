@@ -548,6 +548,8 @@ export type Database = {
             | null
           mobile_number: string | null
           previous_job_details: string | null
+          referral_code: string
+          referred_by: string | null
           registration_city: string | null
           registration_country: string | null
           registration_ip: string | null
@@ -595,6 +597,8 @@ export type Database = {
             | null
           mobile_number?: string | null
           previous_job_details?: string | null
+          referral_code: string
+          referred_by?: string | null
           registration_city?: string | null
           registration_country?: string | null
           registration_ip?: string | null
@@ -642,6 +646,8 @@ export type Database = {
             | null
           mobile_number?: string | null
           previous_job_details?: string | null
+          referral_code?: string
+          referred_by?: string | null
           registration_city?: string | null
           registration_country?: string | null
           registration_ip?: string | null
@@ -813,6 +819,48 @@ export type Database = {
           {
             foreignKeyName: "projects_client_id_fkey"
             columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          job_bonus_paid: boolean
+          referred_id: string
+          referrer_id: string
+          signup_bonus_paid: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_bonus_paid?: boolean
+          referred_id: string
+          referrer_id: string
+          signup_bonus_paid?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_bonus_paid?: boolean
+          referred_id?: string
+          referrer_id?: string
+          signup_bonus_paid?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referred_id_fkey"
+            columns: ["referred_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
