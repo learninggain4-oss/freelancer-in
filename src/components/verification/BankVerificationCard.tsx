@@ -79,17 +79,32 @@ const BankVerificationCard = () => {
 
       const newAttemptCount = verification ? attemptCount + 1 : 1;
 
-      const { error } = await supabase
-        .from("bank_verifications")
-        .upsert({
-          profile_id: profile.id,
-          status: "pending" as any,
-          document_path: documentPath,
-          document_name: documentName,
-          attempt_count: newAttemptCount,
-          rejection_reason: null,
-        }, { onConflict: "profile_id" });
-      if (error) throw error;
+      if (verification) {
+        // Update existing record (RLS allows when status is 'rejected')
+        const { error } = await supabase
+          .from("bank_verifications")
+          .update({
+            status: "pending" as any,
+            document_path: documentPath,
+            document_name: documentName,
+            attempt_count: newAttemptCount,
+            rejection_reason: null,
+          })
+          .eq("profile_id", profile.id);
+        if (error) throw error;
+      } else {
+        // Insert new record
+        const { error } = await supabase
+          .from("bank_verifications")
+          .insert({
+            profile_id: profile.id,
+            status: "pending" as any,
+            document_path: documentPath,
+            document_name: documentName,
+            attempt_count: 1,
+          });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       toast.success("Bank verification request submitted");
