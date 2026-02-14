@@ -983,6 +983,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_registration_duplicates: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_mobile: string
+          p_whatsapp: string
+        }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
