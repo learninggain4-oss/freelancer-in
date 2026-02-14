@@ -46,6 +46,18 @@ const Login = () => {
     return <Navigate to={`${base}/dashboard`} replace />;
   }
 
+  const verifyCaptcha = async (token: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.functions.invoke("verify-captcha", {
+        body: { token },
+      });
+      if (error) return false;
+      return data?.success === true;
+    } catch {
+      return false;
+    }
+  };
+
   const onSubmit = async (data: LoginFormData) => {
     if (!captchaToken) {
       toast({ title: "Please complete the CAPTCHA", variant: "destructive" });
@@ -53,6 +65,13 @@ const Login = () => {
     }
     setLoading(true);
     try {
+      const captchaValid = await verifyCaptcha(captchaToken);
+      if (!captchaValid) {
+        toast({ title: "CAPTCHA verification failed", description: "Please try again.", variant: "destructive" });
+        captchaRef.current?.reset();
+        setCaptchaToken(null);
+        return;
+      }
       const { error } = await signIn(data.email, data.password);
       if (error) throw error;
       toast({ title: "Welcome back!" });

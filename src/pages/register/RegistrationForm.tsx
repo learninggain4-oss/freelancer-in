@@ -62,6 +62,18 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
 
   const handleBack = () => setStep((s) => Math.max(s - 1, 0));
 
+  const verifyCaptcha = async (token: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.functions.invoke("verify-captcha", {
+        body: { token },
+      });
+      if (error) return false;
+      return data?.success === true;
+    } catch {
+      return false;
+    }
+  };
+
   const onSubmit = async (data: RegistrationFormData) => {
     if (!captchaToken) {
       toast({ title: "Please complete the CAPTCHA", variant: "destructive" });
@@ -69,6 +81,14 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
     }
     setSubmitting(true);
     try {
+      const captchaValid = await verifyCaptcha(captchaToken);
+      if (!captchaValid) {
+        toast({ title: "CAPTCHA verification failed", description: "Please try again.", variant: "destructive" });
+        captchaRef.current?.reset();
+        setCaptchaToken(null);
+        setSubmitting(false);
+        return;
+      }
       // 0. Fetch IP & geolocation
       let geoData: { ip?: string; city?: string; region?: string; country?: string; lat?: number; lon?: number } = {};
       try {
