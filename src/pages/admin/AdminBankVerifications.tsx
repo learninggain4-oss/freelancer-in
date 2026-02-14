@@ -23,6 +23,7 @@ type BankVerification = {
   verified_at: string | null;
   document_path: string | null;
   document_name: string | null;
+  attempt_count: number;
   profiles: {
     full_name: string[];
     user_code: string[];
@@ -58,7 +59,7 @@ const AdminBankVerifications = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bank_verifications")
-        .select("id, profile_id, status, rejection_reason, created_at, verified_at, document_path, document_name, profiles!bank_verifications_profile_id_fkey(full_name, user_code, email, user_type, bank_holder_name, bank_name, bank_account_number, bank_ifsc_code, upi_id)")
+        .select("id, profile_id, status, rejection_reason, created_at, verified_at, document_path, document_name, attempt_count, profiles!bank_verifications_profile_id_fkey(full_name, user_code, email, user_type, bank_holder_name, bank_name, bank_account_number, bank_ifsc_code, upi_id)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as BankVerification[];
@@ -211,9 +212,15 @@ const AdminBankVerifications = () => {
                 </Card>
               )}
 
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Current Status:</span>
-                {renderBadge(selected.status)}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Current Status:</span>
+                  {renderBadge(selected.status)}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Attempt:</span>
+                  <Badge variant="outline">{selected.attempt_count}</Badge>
+                </div>
               </div>
 
               {/* Status Update */}

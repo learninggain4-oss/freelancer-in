@@ -36,6 +36,22 @@ const BankVerificationCard = () => {
     },
   });
 
+  const { data: maxAttempts = 9 } = useQuery({
+    queryKey: ["max-bank-verification-attempts"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "max_bank_verification_attempts")
+        .maybeSingle();
+      return data ? Number(data.value) : 9;
+    },
+  });
+
+  const attemptCount = (verification as any)?.attempt_count ?? 1;
+  const attemptsRemaining = Math.max(0, maxAttempts - attemptCount);
+  const canRetry = verification?.status === "rejected" && attemptsRemaining > 0;
+
   const submitMutation = useMutation({
     mutationFn: async () => {
       if (!profile?.id || !user?.id) throw new Error("Not authenticated");
@@ -61,6 +77,8 @@ const BankVerificationCard = () => {
         documentName = selectedFile.name;
       }
 
+      const newAttemptCount = verification ? attemptCount + 1 : 1;
+
       const { error } = await supabase
         .from("bank_verifications")
         .upsert({
@@ -68,6 +86,8 @@ const BankVerificationCard = () => {
           status: "pending" as any,
           document_path: documentPath,
           document_name: documentName,
+          attempt_count: newAttemptCount,
+          rejection_reason: null,
         }, { onConflict: "profile_id" });
       if (error) throw error;
     },
@@ -130,19 +150,31 @@ const BankVerificationCard = () => {
             )}
 
             {verification.status === "rejected" && (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">Upload a new bank statement or signed proof from your bank:</p>
-                <input ref={fileRef} type="file" className="hidden" onChange={handleFileChange}
-                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
-                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => fileRef.current?.click()}>
-                  <Upload className="h-3.5 w-3.5" />
-                  {selectedFile ? selectedFile.name : "Choose File"}
-                </Button>
-                <Button size="sm" className="ml-2" onClick={() => submitMutation.mutate()}
-                  disabled={submitMutation.isPending || !hasBankDetails || (!selectedFile && !verification.document_path)}>
-                  {submitMutation.isPending ? "Submitting..." : "Resubmit for Verification"}
-                </Button>
-              </div>
+              <>
+                {canRetry ? (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Upload a new bank statement or signed proof from your bank.
+                      <span className="ml-1 font-medium">Attempts remaining: {attemptsRemaining} of {maxAttempts}</span>
+                    </p>
+                    <input ref={fileRef} type="file" className="hidden" onChange={handleFileChange}
+                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => fileRef.current?.click()}>
+                      <Upload className="h-3.5 w-3.5" />
+                      {selectedFile ? selectedFile.name : "Choose File"}
+                    </Button>
+                    <Button size="sm" className="ml-2" onClick={() => submitMutation.mutate()}
+                      disabled={submitMutation.isPending || !hasBankDetails || (!selectedFile && !verification.document_path)}>
+                      {submitMutation.isPending ? "Submitting..." : "Resubmit for Verification"}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                    <p className="font-medium">Maximum attempts reached</p>
+                    <p className="text-xs">You have used all {maxAttempts} verification attempts. Please contact support for assistance.</p>
+                  </div>
+                )}
+              </>
             )}
           </>
         ) : (
