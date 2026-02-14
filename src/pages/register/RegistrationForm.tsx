@@ -68,9 +68,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const stepLabels = isEmployee
-    ? ["Personal Info", "Contact Details", "Work Experience", "Emergency Contact", "Services"]
-    : ["Personal Info", "Contact Details", "Emergency Contact"];
+  const stepLabels = ["Personal Info", "Contact Details", "Work Experience", "Emergency Contact", "Services"];
 
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -89,14 +87,13 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
     mode: "onTouched",
   });
 
-  // Fetch service categories and skills for employee step 5
+  // Fetch service categories and skills
   const { data: categories = [] } = useQuery({
     queryKey: ["service-categories"],
     queryFn: async () => {
       const { data } = await supabase.from("service_categories").select("*").order("name");
       return data || [];
     },
-    enabled: isEmployee,
   });
 
   const { data: allSkills = [] } = useQuery({
@@ -105,19 +102,15 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       const { data } = await supabase.from("service_skills").select("*").order("name");
       return data || [];
     },
-    enabled: isEmployee,
   });
 
   // Map step index to content type
   const getStepType = (s: number) => {
     if (s === 0) return "personal";
     if (s === 1) return "contact";
-    if (isEmployee) {
-      if (s === 2) return "work";
-      if (s === 3) return "emergency";
-      if (s === 4) return "services";
-    }
-    if (!isEmployee && s === 2) return "emergency";
+    if (s === 2) return "work";
+    if (s === 3) return "emergency";
+    if (s === 4) return "services";
     return "personal";
   };
 
@@ -296,8 +289,8 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
         });
       }
 
-      // Insert services (employee only)
-      if (isEmployee) {
+      // Insert services
+      {
         for (const s of services) {
           if (!s.category_id || !s.service_title) continue;
           const { data: svcData } = await supabase.from("employee_services").insert({
