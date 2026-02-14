@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,17 @@ import {
   Plus,
   Users,
   IndianRupee,
-  ArrowRight,
+  ChevronRight,
+  Clock,
+  TrendingUp,
+  ArrowDownToLine,
+  Loader2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 
 const statusColor: Record<string, string> = {
   pending: "bg-warning/10 text-warning",
@@ -27,7 +32,19 @@ const ClientDashboard = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // Realtime: refresh when projects or applications change
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      refreshProfile(),
+      queryClient.invalidateQueries({ queryKey: ["client-active-projects", profile?.id] }),
+      queryClient.invalidateQueries({ queryKey: ["client-recent-requests", profile?.id] }),
+    ]);
+  }, [profile?.id, queryClient, refreshProfile]);
+
+  const { containerRef, pullDistance, refreshing } = usePullToRefresh({
+    onRefresh: handleRefresh,
+  });
+
+  // Realtime
   useEffect(() => {
     if (!profile?.id) return;
     const channel = supabase
@@ -67,68 +84,168 @@ const ClientDashboard = () => {
         .order("applied_at", { ascending: false })
         .limit(5);
       if (error) throw error;
-      // Filter to only this client's projects
       return (data ?? []).filter((r: any) => r.project?.client_id === profile.id);
     },
     enabled: !!profile?.id,
   });
 
+  const totalBalance = (profile?.available_balance ?? 0) + (profile?.hold_balance ?? 0);
+
+  const quickActions = [
+    { icon: Plus, label: "New Job", to: "/client/projects/create", color: "text-primary" },
+    { icon: Wallet, label: "Add Money", to: "/client/wallet", color: "text-accent" },
+    { icon: ArrowDownToLine, label: "Withdrawals", to: "/client/withdrawals", color: "text-warning" },
+    { icon: Users, label: "Projects", to: "/client/projects", color: "text-secondary" },
+  ];
+
   return (
-    <div className="space-y-6 p-4">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Welcome, {profile?.full_name ?? "Client"}</h1>
-        <p className="text-sm text-muted-foreground">Code: <span className="font-mono font-medium text-foreground">{profile?.user_code ?? "—"}</span></p>
+    <div ref={containerRef} className="relative h-full overflow-y-auto">
+      {/* Pull-to-refresh indicator */}
+      <div
+        className="flex items-center justify-center overflow-hidden transition-all duration-200 ease-out"
+        style={{ height: pullDistance > 0 ? `${pullDistance}px` : 0 }}
+      >
+        <div className={`flex items-center gap-2 text-sm text-muted-foreground ${refreshing ? "animate-pulse" : ""}`}>
+          <Loader2 className={`h-5 w-5 text-primary ${refreshing ? "animate-spin" : ""}`} style={{
+            transform: refreshing ? undefined : `rotate(${pullDistance * 3}deg)`,
+          }} />
+          <span>{refreshing ? "Refreshing…" : pullDistance >= 80 ? "Release to refresh" : "Pull to refresh"}</span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground"><Wallet className="h-4 w-4" /><span className="text-xs">Balance</span></div>
-            <p className="mt-1 text-xl font-bold text-foreground"><IndianRupee className="inline h-4 w-4" />{(profile?.available_balance ?? 0).toLocaleString("en-IN")}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-accent/20 bg-accent/5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground"><Briefcase className="h-4 w-4" /><span className="text-xs">Active Jobs</span></div>
-            <p className="mt-1 text-xl font-bold text-foreground">{activeCount}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Button variant="outline" className="h-auto flex-col gap-2 py-4" onClick={() => navigate("/client/projects/create")}>
-          <Plus className="h-5 w-5 text-primary" /><span className="text-xs">New Job</span>
-        </Button>
-        <Button variant="outline" className="h-auto flex-col gap-2 py-4" onClick={() => navigate("/client/wallet")}>
-          <Wallet className="h-5 w-5 text-accent" /><span className="text-xs">Add Money</span>
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-base"><Users className="h-4 w-4" /> Employee Requests</CardTitle>
-            <Button variant="ghost" size="sm" className="text-xs" onClick={() => navigate("/client/projects")}>View All <ArrowRight className="ml-1 h-3 w-3" /></Button>
+      <div className="space-y-5 p-4 pb-8">
+        {/* Hero greeting */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary/70 p-5 text-primary-foreground">
+          <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-primary-foreground/10" />
+          <div className="absolute -bottom-4 -right-2 h-16 w-16 rounded-full bg-primary-foreground/5" />
+          <p className="text-sm font-medium text-primary-foreground/80">Welcome back,</p>
+          <h1 className="mt-0.5 text-xl font-bold">
+            {Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Client"}
+          </h1>
+          <div className="mt-3 flex items-baseline gap-1">
+            <span className="text-3xl font-extrabold">₹{totalBalance.toLocaleString("en-IN")}</span>
+            <span className="text-sm text-primary-foreground/70">total balance</span>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {isLoading ? (
-            Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
-          ) : recentRequests.length > 0 ? (
-            recentRequests.map((r: any) => (
-              <div key={r.id} className="flex items-center justify-between rounded-lg border p-3">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{r.employee?.full_name ?? "Employee"}</p>
-                  <p className="text-xs text-muted-foreground">{r.project?.name ?? "Job"}</p>
+          <Badge variant="secondary" className="mt-2 bg-primary-foreground/15 text-primary-foreground border-0 text-xs">
+            {Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—"}
+          </Badge>
+        </div>
+
+        {/* Balance split cards */}
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="border-0 shadow-sm bg-accent/5">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-accent">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+                  <Wallet className="h-4 w-4" />
                 </div>
-                <Badge className={statusColor[r.status]}>{r.status}</Badge>
+                <span className="text-xs font-medium text-muted-foreground">Available</span>
               </div>
-            ))
-          ) : (
-            <p className="py-4 text-center text-sm text-muted-foreground">No requests yet</p>
-          )}
-        </CardContent>
-      </Card>
+              <p className="mt-2 text-lg font-bold text-foreground">
+                ₹{(profile?.available_balance ?? 0).toLocaleString("en-IN")}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-sm bg-warning/5">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-warning">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/10">
+                  <Clock className="h-4 w-4" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground">On Hold</span>
+              </div>
+              <p className="mt-2 text-lg font-bold text-foreground">
+                ₹{(profile?.hold_balance ?? 0).toLocaleString("en-IN")}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick actions */}
+        <div className="grid grid-cols-4 gap-2">
+          {quickActions.map((action) => (
+            <button
+              key={action.label}
+              onClick={() => navigate(action.to)}
+              className="flex flex-col items-center gap-1.5 rounded-xl bg-muted/50 p-3 transition-colors hover:bg-muted active:scale-95"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-card shadow-sm">
+                <action.icon className={`h-5 w-5 ${action.color}`} />
+              </div>
+              <span className="text-[11px] font-medium text-muted-foreground">{action.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Stats row */}
+        <div className="flex gap-3">
+          <Card className="flex-1 border-0 shadow-sm">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <Briefcase className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{activeCount}</p>
+                <p className="text-xs text-muted-foreground">Active Jobs</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="flex-1 border-0 shadow-sm">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10">
+                <TrendingUp className="h-5 w-5 text-accent" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{recentRequests.length}</p>
+                <p className="text-xs text-muted-foreground">Requests</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent requests */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="flex-row items-center justify-between pb-3">
+            <CardTitle className="text-sm font-semibold text-foreground">Employee Requests</CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-auto p-0 text-xs text-primary hover:text-primary/80"
+              onClick={() => navigate("/client/projects")}
+            >
+              View All <ChevronRight className="ml-0.5 h-3 w-3" />
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-1 pb-3">
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)
+            ) : recentRequests.length > 0 ? (
+              recentRequests.map((r: any) => (
+                <div
+                  key={r.id}
+                  className="flex items-center justify-between rounded-lg px-2 py-2.5 transition-colors hover:bg-muted/50"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {Array.isArray(r.employee?.full_name) ? r.employee.full_name.join(" ") : r.employee?.full_name ?? "Employee"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">{r.project?.name ?? "Job"}</p>
+                  </div>
+                  <Badge className={statusColor[r.status]}>{r.status}</Badge>
+                </div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center py-8 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                  <Users className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <p className="mt-3 text-sm font-medium text-muted-foreground">No requests yet</p>
+                <p className="text-xs text-muted-foreground/70">Employee applications will appear here</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
