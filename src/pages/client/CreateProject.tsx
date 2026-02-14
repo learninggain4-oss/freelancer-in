@@ -37,7 +37,7 @@ const CreateProject = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Project created successfully!");
+      toast.success("Job created successfully!");
       navigate("/client/projects");
     },
     onError: (e: any) => toast.error(e.message)
@@ -54,7 +54,7 @@ const CreateProject = () => {
         <CardHeader className="pb-3"><CardTitle className="text-base">Job Details</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Project Name *</Label>
+            <Label>Job Name *</Label>
             <Input placeholder="e.g. E-Commerce Website" value={form.name} onChange={(e) => update("name", e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -69,7 +69,7 @@ const CreateProject = () => {
           </div>
           <div className="space-y-2">
             <Label>Requirements *</Label>
-            <Textarea placeholder="Describe your project requirements..." value={form.requirements} onChange={(e) => update("requirements", e.target.value)} rows={4} />
+            <Textarea placeholder="Describe your job requirements..." value={form.requirements} onChange={(e) => update("requirements", e.target.value)} rows={4} />
           </div>
           <div className="space-y-2">
             <Label>Remarks</Label>
@@ -86,7 +86,7 @@ const CreateProject = () => {
             </div>
           </div>
           <Button className="w-full" onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
-            <Send className="mr-2 h-4 w-4" /> Publish Project
+            <Send className="mr-2 h-4 w-4" /> Publish Job
           </Button>
         </CardContent>
       </Card>

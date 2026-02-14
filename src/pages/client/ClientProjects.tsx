@@ -96,18 +96,18 @@ const ClientProjects = () => {
   return (
     <div className="space-y-4 p-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Projects</h1>
+        <h1 className="text-2xl font-bold text-foreground">Jobs</h1>
         <Button size="sm" onClick={() => navigate("/client/projects/create")}><Plus className="mr-1 h-4 w-4" /> New</Button>
       </div>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search projects..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        <Input placeholder="Search jobs..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
       <Tabs defaultValue="projects" className="w-full">
         <TabsList className="w-full">
-          <TabsTrigger value="projects" className="flex-1 text-xs">My Projects</TabsTrigger>
+          <TabsTrigger value="projects" className="flex-1 text-xs">My Jobs</TabsTrigger>
           <TabsTrigger value="requests" className="flex-1 text-xs">Requests</TabsTrigger>
           <TabsTrigger value="submissions" className="flex-1 text-xs">Submissions</TabsTrigger>
         </TabsList>
@@ -136,7 +136,7 @@ const ClientProjects = () => {
               </Card>
             ))
           ) : (
-            <p className="py-8 text-center text-sm text-muted-foreground">No projects yet. Create one!</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">No jobs yet. Create one!</p>
           )}
         </TabsContent>
 
@@ -154,7 +154,7 @@ const ClientProjects = () => {
                     </div>
                     <Badge className={statusColor[r.status]}>{r.status}</Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground">Project: {r.project?.name}</p>
+                  <p className="text-xs text-muted-foreground">Job: {r.project?.name}</p>
                   {r.status === "pending" && (
                     <div className="flex gap-2">
                       <Button size="sm" className="flex-1" onClick={() => updateApplicationMutation.mutate({ id: r.id, status: "approved" })}>Approve</Button>
@@ -177,7 +177,7 @@ const ClientProjects = () => {
               <Card key={s.id}>
                 <CardContent className="flex items-center justify-between p-4">
                   <div>
-                    <h3 className="font-semibold text-foreground">{s.project?.name ?? "Project"}</h3>
+                    <h3 className="font-semibold text-foreground">{s.project?.name ?? "Job"}</h3>
                     <p className="text-xs text-muted-foreground">{s.employee?.full_name} • {new Date(s.submitted_at).toLocaleDateString()}</p>
                   </div>
                   <Badge className="bg-primary/10 text-primary">Submitted</Badge>
