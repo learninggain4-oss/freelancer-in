@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Upload, AlertTriangle, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { ShieldCheck, Upload, AlertTriangle, CheckCircle2, Clock, XCircle, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const AadhaarVerificationCard = () => {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
   const frontRef = useRef<HTMLInputElement>(null);
   const backRef = useRef<HTMLInputElement>(null);
 
@@ -32,7 +34,7 @@ const AadhaarVerificationCard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("aadhaar_verifications")
-        .select("id, aadhaar_number, name_on_aadhaar, dob_on_aadhaar, address_on_aadhaar, status, rejection_reason, created_at, verified_at")
+        .select("id, aadhaar_number, name_on_aadhaar, dob_on_aadhaar, address_on_aadhaar, front_image_path, back_image_path, status, rejection_reason, created_at, verified_at")
         .eq("profile_id", profile!.id)
         .maybeSingle();
       if (error) throw error;
@@ -43,18 +45,26 @@ const AadhaarVerificationCard = () => {
   const submitMutation = useMutation({
     mutationFn: async () => {
       if (!user || !profile) throw new Error("Not authenticated");
-      if (!frontFile || !backFile) throw new Error("Upload both sides of Aadhaar card");
+      const isEditMode = !!verification && verification.status === "pending";
+      if (!isEditMode && (!frontFile || !backFile)) throw new Error("Upload both sides of Aadhaar card");
       if (form.aadhaar_number.replace(/\s/g, "").length !== 12) throw new Error("Aadhaar number must be 12 digits");
 
-      // Upload front image
-      const frontPath = `${user.id}/aadhaar-front-${Date.now()}`;
-      const { error: fe } = await supabase.storage.from("aadhaar-documents").upload(frontPath, frontFile);
-      if (fe) throw fe;
+      let frontPath = verification?.front_image_path ?? "";
+      let backPath = verification?.back_image_path ?? "";
 
-      // Upload back image
-      const backPath = `${user.id}/aadhaar-back-${Date.now()}`;
-      const { error: be } = await supabase.storage.from("aadhaar-documents").upload(backPath, backFile);
-      if (be) throw be;
+      if (frontFile) {
+        const fp = `${user.id}/aadhaar-front-${Date.now()}`;
+        const { error: fe } = await supabase.storage.from("aadhaar-documents").upload(fp, frontFile);
+        if (fe) throw fe;
+        frontPath = fp;
+      }
+
+      if (backFile) {
+        const bp = `${user.id}/aadhaar-back-${Date.now()}`;
+        const { error: be } = await supabase.storage.from("aadhaar-documents").upload(bp, backFile);
+        if (be) throw be;
+        backPath = bp;
+      }
 
       const payload = {
         profile_id: profile.id,
@@ -85,6 +95,22 @@ const AadhaarVerificationCard = () => {
       queryClient.invalidateQueries({ queryKey: ["aadhaar-verification"] });
       setFrontFile(null);
       setBackFile(null);
+      setEditing(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!verification) throw new Error("No verification to delete");
+      // Delete uploaded images from storage
+      await supabase.storage.from("aadhaar-documents").remove([verification.front_image_path, verification.back_image_path].filter(Boolean) as string[]);
+      const { error } = await supabase.from("aadhaar_verifications").delete().eq("id", verification.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Aadhaar verification deleted");
+      queryClient.invalidateQueries({ queryKey: ["aadhaar-verification"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -93,25 +119,69 @@ const AadhaarVerificationCard = () => {
 
   const statusConfig = {
     pending: { icon: Clock, color: "text-warning", badge: "secondary" as const, label: "Pending Review" },
+    under_process: { icon: Clock, color: "text-primary", badge: "secondary" as const, label: "Under Process" },
     verified: { icon: CheckCircle2, color: "text-accent", badge: "default" as const, label: "Verified" },
     rejected: { icon: XCircle, color: "text-destructive", badge: "destructive" as const, label: "Rejected" },
   };
 
-  // Show status if already submitted
-  if (verification && verification.status !== "rejected") {
+  const isPending = verification?.status === "pending";
+
+  // If editing a pending verification, show the form
+  if (editing && verification && isPending) {
+    // Fall through to the form below by treating as resubmit
+  }
+  // Show status if already submitted and not editing
+  else if (verification && verification.status !== "rejected") {
     const cfg = statusConfig[verification.status as keyof typeof statusConfig];
-    const Icon = cfg.icon;
+    const Icon = cfg?.icon ?? Clock;
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ShieldCheck className="h-4 w-4" /> Aadhaar Verification
+          <CardTitle className="flex items-center justify-between text-base">
+            <span className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4" /> Aadhaar Verification
+            </span>
+            {isPending && (
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                  setForm({
+                    aadhaar_number: verification.aadhaar_number,
+                    name_on_aadhaar: verification.name_on_aadhaar,
+                    dob_on_aadhaar: verification.dob_on_aadhaar,
+                    address_on_aadhaar: verification.address_on_aadhaar,
+                  });
+                  setEditing(true);
+                }}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Aadhaar Verification?</AlertDialogTitle>
+                      <AlertDialogDescription>This will permanently delete your submitted Aadhaar verification. You can submit a new one later.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending}>
+                        {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center gap-2">
-            <Icon className={`h-5 w-5 ${cfg.color}`} />
-            <Badge variant={cfg.badge}>{cfg.label}</Badge>
+            <Icon className={`h-5 w-5 ${cfg?.color}`} />
+            <Badge variant={cfg?.badge}>{cfg?.label}</Badge>
           </div>
           <div className="space-y-1 text-sm">
             <p><span className="text-muted-foreground">Name:</span> {verification.name_on_aadhaar}</p>
@@ -126,8 +196,9 @@ const AadhaarVerificationCard = () => {
     );
   }
 
-  // Show form for new submission or resubmission after rejection
+  // Show form for new submission, resubmission after rejection, or editing pending
   const isResubmit = verification?.status === "rejected";
+  const isEdit = editing && isPending;
 
   return (
     <Card>
@@ -192,9 +263,12 @@ const AadhaarVerificationCard = () => {
           </div>
         </div>
 
-        <Button className="w-full" disabled={submitMutation.isPending || !form.aadhaar_number || !form.name_on_aadhaar || !form.dob_on_aadhaar || !form.address_on_aadhaar || !frontFile || !backFile}
+        {isEdit && (
+          <Button variant="outline" className="w-full" onClick={() => setEditing(false)}>Cancel</Button>
+        )}
+        <Button className="w-full" disabled={submitMutation.isPending || !form.aadhaar_number || !form.name_on_aadhaar || !form.dob_on_aadhaar || !form.address_on_aadhaar || (!isEdit && (!frontFile || !backFile))}
           onClick={() => submitMutation.mutate()}>
-          {submitMutation.isPending ? "Submitting..." : isResubmit ? "Resubmit for Verification" : "Submit for Verification"}
+          {submitMutation.isPending ? "Submitting..." : isEdit ? "Update Verification" : isResubmit ? "Resubmit for Verification" : "Submit for Verification"}
         </Button>
       </CardContent>
     </Card>
