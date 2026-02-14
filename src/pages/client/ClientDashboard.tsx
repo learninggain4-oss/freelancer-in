@@ -89,7 +89,7 @@ const ClientDashboard = () => {
         </Card>
         <Card className="border-accent/20 bg-accent/5">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground"><Briefcase className="h-4 w-4" /><span className="text-xs">Active Projects</span></div>
+            <div className="flex items-center gap-2 text-muted-foreground"><Briefcase className="h-4 w-4" /><span className="text-xs">Active Jobs</span></div>
             <p className="mt-1 text-xl font-bold text-foreground">{activeCount}</p>
           </CardContent>
         </Card>
@@ -97,7 +97,7 @@ const ClientDashboard = () => {
 
       <div className="grid grid-cols-2 gap-3">
         <Button variant="outline" className="h-auto flex-col gap-2 py-4" onClick={() => navigate("/client/projects/create")}>
-          <Plus className="h-5 w-5 text-primary" /><span className="text-xs">New Project</span>
+          <Plus className="h-5 w-5 text-primary" /><span className="text-xs">New Job</span>
         </Button>
         <Button variant="outline" className="h-auto flex-col gap-2 py-4" onClick={() => navigate("/client/wallet")}>
           <Wallet className="h-5 w-5 text-accent" /><span className="text-xs">Add Money</span>
@@ -119,7 +119,7 @@ const ClientDashboard = () => {
               <div key={r.id} className="flex items-center justify-between rounded-lg border p-3">
                 <div>
                   <p className="text-sm font-medium text-foreground">{r.employee?.full_name ?? "Employee"}</p>
-                  <p className="text-xs text-muted-foreground">{r.project?.name ?? "Project"}</p>
+                  <p className="text-xs text-muted-foreground">{r.project?.name ?? "Job"}</p>
                 </div>
                 <Badge className={statusColor[r.status]}>{r.status}</Badge>
               </div>
