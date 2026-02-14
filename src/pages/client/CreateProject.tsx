@@ -15,7 +15,7 @@ const CreateProject = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const [form, setForm] = useState({
-    name: "", amount: "", validationFees: "", requirements: "", remarks: "", startDate: "", endDate: "",
+    name: "", amount: "", validationFees: "", requirements: "", remarks: "", startDate: "", endDate: ""
   });
 
   const update = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
@@ -32,7 +32,7 @@ const CreateProject = () => {
         requirements: form.requirements,
         remarks: form.remarks || null,
         start_date: form.startDate || null,
-        end_date: form.endDate || null,
+        end_date: form.endDate || null
       });
       if (error) throw error;
     },
@@ -40,14 +40,14 @@ const CreateProject = () => {
       toast.success("Project created successfully!");
       navigate("/client/projects");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message)
   });
 
   return (
     <div className="space-y-6 p-4">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><ArrowLeft className="h-5 w-5" /></Button>
-        <h1 className="text-2xl font-bold text-foreground">Create Project</h1>
+        <h1 className="text-2xl font-bold text-foreground">Create Jobs</h1>
       </div>
 
       <Card>
@@ -90,8 +90,8 @@ const CreateProject = () => {
           </Button>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>);
+
 };
 
 export default CreateProject;
