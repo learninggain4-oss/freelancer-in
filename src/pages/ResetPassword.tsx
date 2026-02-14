@@ -1,12 +1,27 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Briefcase, Loader2, CheckCircle } from "lucide-react";
+import { Briefcase, Loader2, CheckCircle, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+
+const getPasswordStrength = (pw: string) => {
+  const checks = [
+    { label: "At least 8 characters", met: pw.length >= 8 },
+    { label: "Uppercase letter", met: /[A-Z]/.test(pw) },
+    { label: "Lowercase letter", met: /[a-z]/.test(pw) },
+    { label: "Number", met: /[0-9]/.test(pw) },
+    { label: "Special character", met: /[^A-Za-z0-9]/.test(pw) },
+  ];
+  const score = checks.filter((c) => c.met).length;
+  const level = score <= 1 ? "Weak" : score <= 3 ? "Fair" : score === 4 ? "Good" : "Strong";
+  const color = score <= 1 ? "bg-destructive" : score <= 3 ? "bg-warning" : score === 4 ? "bg-primary" : "bg-accent";
+  return { checks, score, level, color, percent: (score / checks.length) * 100 };
+};
 
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
@@ -19,10 +34,12 @@ const ResetPassword = () => {
   // Supabase will automatically pick up the token from the URL hash
   // when the user clicks the reset link in their email
 
+  const strength = useMemo(() => getPasswordStrength(password), [password]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) {
-      toast({ title: "Password must be at least 6 characters", variant: "destructive" });
+    if (password.length < 8) {
+      toast({ title: "Password must be at least 8 characters", variant: "destructive" });
       return;
     }
     if (password !== confirmPassword) {
@@ -70,13 +87,34 @@ const ResetPassword = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label>New Password</Label>
-                  <Input
-                    type="password"
-                    placeholder="At least 6 characters"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
+                    <Input
+                      type="password"
+                      placeholder="At least 8 characters"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
+                  {password && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Strength</span>
+                        <span className={`font-medium ${strength.score <= 1 ? "text-destructive" : strength.score <= 3 ? "text-warning" : "text-accent"}`}>
+                          {strength.level}
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                        <div className={`h-full rounded-full transition-all duration-300 ${strength.color}`} style={{ width: `${strength.percent}%` }} />
+                      </div>
+                      <ul className="space-y-1">
+                        {strength.checks.map((c) => (
+                          <li key={c.label} className="flex items-center gap-1.5 text-xs">
+                            {c.met ? <Check className="h-3 w-3 text-accent" /> : <X className="h-3 w-3 text-muted-foreground" />}
+                            <span className={c.met ? "text-foreground" : "text-muted-foreground"}>{c.label}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 <div className="space-y-2">
                   <Label>Confirm Password</Label>
                   <Input
