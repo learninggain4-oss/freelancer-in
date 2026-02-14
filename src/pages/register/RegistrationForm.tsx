@@ -1,149 +1,60 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Briefcase, ArrowLeft, ArrowRight, Loader2, Plus, Trash2, Upload } from "lucide-react";
+import { Briefcase, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
-import {
-  employeeRegistrationSchema,
-  clientRegistrationSchema,
-  type RegistrationFormData,
-} from "@/lib/validations/registration";
+import { fullRegistrationSchema, type RegistrationFormData } from "@/lib/validations/registration";
+
+
 
 interface RegistrationFormProps {
   userType: "employee" | "client";
 }
 
-const EMPLOYEE_STEPS = [
-  { title: "Personal Info", key: "personal" },
-  { title: "Contact Details", key: "contact" },
-  { title: "Professional", key: "professional" },
-  { title: "Emergency Contact", key: "emergency" },
-  { title: "Services", key: "services" },
-];
-
-const CLIENT_STEPS = [
-  { title: "Personal Info", key: "personal" },
-  { title: "Contact Details", key: "contact" },
-  { title: "Emergency Contact", key: "emergency" },
+const steps = [
+  { title: "Personal Info", fields: ["full_name", "gender", "date_of_birth", "marital_status", "education_level"] },
+  { title: "Contact Details", fields: ["mobile_number", "whatsapp_number", "email", "password"] },
+  { title: "Professional", fields: ["previous_job_details", "work_experience", "education_background"] },
+  { title: "Emergency Contact", fields: ["emergency_contact_name", "emergency_contact_phone", "emergency_contact_relationship"] },
 ];
 
 const RegistrationForm = ({ userType }: RegistrationFormProps) => {
-  const isEmployee = userType === "employee";
-  const steps = isEmployee ? EMPLOYEE_STEPS : CLIENT_STEPS;
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-  const [certificateFiles, setCertificateFiles] = useState<Record<number, File>>({});
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Fetch service categories & skills for employee registration
-  const { data: categories } = useQuery({
-    queryKey: ["service-categories"],
-    queryFn: async () => {
-      const { data } = await supabase.from("service_categories").select("*").order("name");
-      return data ?? [];
-    },
-    enabled: isEmployee,
-  });
-
-  const { data: allSkills } = useQuery({
-    queryKey: ["service-skills"],
-    queryFn: async () => {
-      const { data } = await supabase.from("service_skills").select("*").order("name");
-      return data ?? [];
-    },
-    enabled: isEmployee,
-  });
-
-  const defaultValues: any = {
-    full_name: "", gender: undefined, date_of_birth: "", marital_status: undefined,
-    education_level: "", mobile_number: "", whatsapp_number: "", email: "", password: "",
-    education_background: "",
-    work_experiences: [],
-    emergency_contacts: [{ contact_name: "", contact_phone: "", relationship: "" }],
-    services: isEmployee ? [{ service_title: "", category_id: "", skill_ids: [], hourly_rate: 0, minimum_budget: 0 }] : [],
-  };
-
   const form = useForm<RegistrationFormData>({
-    resolver: zodResolver(isEmployee ? employeeRegistrationSchema : clientRegistrationSchema),
-    defaultValues,
+    resolver: zodResolver(fullRegistrationSchema),
+    defaultValues: {
+      full_name: "", gender: undefined, date_of_birth: "", marital_status: undefined,
+      education_level: "", mobile_number: "", whatsapp_number: "", email: "", password: "",
+      previous_job_details: "", work_experience: "", education_background: "",
+      emergency_contact_name: "", emergency_contact_phone: "", emergency_contact_relationship: "",
+    },
     mode: "onTouched",
   });
 
-  const workExpArray = useFieldArray({ control: form.control, name: "work_experiences" });
-  const emergencyArray = useFieldArray({ control: form.control, name: "emergency_contacts" });
-  const servicesArray = useFieldArray({ control: form.control, name: "services" });
-
-  // Auto-capitalize full name
-  const watchName = form.watch("full_name");
-  useEffect(() => {
-    if (watchName && watchName !== watchName.toUpperCase()) {
-      form.setValue("full_name", watchName.toUpperCase(), { shouldValidate: false });
-    }
-  }, [watchName]);
+  const currentFields = steps[step].fields;
 
   const validateCurrentStep = async () => {
-    const currentKey = steps[step].key;
-    let fieldsToValidate: string[] = [];
-    if (currentKey === "personal") fieldsToValidate = ["full_name", "gender", "date_of_birth", "marital_status", "education_level"];
-    else if (currentKey === "contact") fieldsToValidate = ["mobile_number", "whatsapp_number", "email", "password"];
-    else if (currentKey === "professional") fieldsToValidate = ["education_background"];
-    else if (currentKey === "emergency") fieldsToValidate = ["emergency_contacts"];
-    else if (currentKey === "services") fieldsToValidate = ["services"];
-    return form.trigger(fieldsToValidate as any);
+    const result = await form.trigger(currentFields as any);
+    return result;
   };
-
-  const checkDuplicates = async (): Promise<boolean> => {
-    const { full_name, mobile_number, email, whatsapp_number } = form.getValues();
-    const { data, error } = await supabase.rpc("check_registration_duplicates", {
-      p_email: email,
-      p_mobile: mobile_number,
-      p_whatsapp: whatsapp_number,
-      p_full_name: full_name,
-    });
-    if (error) {
-      toast({ title: "Error checking duplicates", description: error.message, variant: "destructive" });
-      return false;
-    }
-    const dupes = data as Record<string, string> | null;
-    if (dupes && Object.keys(dupes).length > 0) {
-      Object.entries(dupes).forEach(([field, message]) => {
-        form.setError(field as any, { type: "manual", message });
-      });
-      // Show which step has the error
-      if (dupes.full_name) setStep(0);
-      else if (dupes.mobile_number || dupes.whatsapp_number || dupes.email) setStep(steps.findIndex(s => s.key === "contact"));
-      toast({ title: "Duplicate account found", description: "Some of your details are already registered.", variant: "destructive" });
-      return false;
-    }
-    return true;
-  };
-
-  const [checkingDuplicates, setCheckingDuplicates] = useState(false);
 
   const handleNext = async () => {
     const valid = await validateCurrentStep();
-    if (valid) {
-      // On contact step, check for duplicates before proceeding
-      if (steps[step].key === "contact") {
-        setCheckingDuplicates(true);
-        const noDupes = await checkDuplicates();
-        setCheckingDuplicates(false);
-        if (!noDupes) return;
-      }
-      setStep((s) => Math.min(s + 1, steps.length - 1));
-    }
+    if (valid) setStep((s) => Math.min(s + 1, steps.length - 1));
   };
 
   const handleBack = () => setStep((s) => Math.max(s - 1, 0));
@@ -168,16 +79,11 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
         options: { emailRedirectTo: window.location.origin },
       });
 
-      if (authError) {
-        if (authError.message?.includes("already registered")) {
-          throw new Error("This email is already registered. Please login instead.");
-        }
-        throw authError;
-      }
+      if (authError) throw authError;
       if (!authData.user) throw new Error("Registration failed");
 
       // 2. Create profile
-      const { data: profileData, error: profileError } = await supabase.from("profiles").insert([{
+      const { error: profileError } = await supabase.from("profiles").insert([{
         user_id: authData.user.id,
         user_type: userType,
         full_name: [data.full_name],
@@ -189,86 +95,21 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
         education_level: data.education_level,
         mobile_number: data.mobile_number,
         whatsapp_number: data.whatsapp_number,
+        previous_job_details: data.previous_job_details || null,
+        work_experience: data.work_experience || null,
         education_background: data.education_background || null,
-        emergency_contact_name: data.emergency_contacts[0]?.contact_name || null,
-        emergency_contact_phone: data.emergency_contacts[0]?.contact_phone || null,
-        emergency_contact_relationship: data.emergency_contacts[0]?.relationship || null,
+        emergency_contact_name: data.emergency_contact_name,
+        emergency_contact_phone: data.emergency_contact_phone,
+        emergency_contact_relationship: data.emergency_contact_relationship,
         registration_ip: geoData.ip || null,
         registration_city: geoData.city || null,
         registration_region: geoData.region || null,
         registration_country: geoData.country || null,
         registration_latitude: geoData.lat || null,
         registration_longitude: geoData.lon || null,
-      } as any]).select("id").single();
+      } as any]);
 
       if (profileError) throw profileError;
-      const profileId = profileData.id;
-
-      // 3. Insert emergency contacts
-      if (data.emergency_contacts.length > 0) {
-        const contacts = data.emergency_contacts.map((c) => ({
-          profile_id: profileId,
-          contact_name: c.contact_name,
-          contact_phone: c.contact_phone,
-          relationship: c.relationship,
-        }));
-        await supabase.from("employee_emergency_contacts").insert(contacts as any);
-      }
-
-      // 4. Insert work experiences (employee only)
-      if (isEmployee && data.work_experiences && data.work_experiences.length > 0) {
-        for (let i = 0; i < data.work_experiences.length; i++) {
-          const we = data.work_experiences[i];
-          let certPath: string | null = null;
-          let certName: string | null = null;
-
-          // Upload certificate if exists
-          const certFile = certificateFiles[i];
-          if (certFile) {
-            const filePath = `${authData.user.id}/${Date.now()}_${certFile.name}`;
-            const { error: uploadErr } = await supabase.storage
-              .from("work-certificates")
-              .upload(filePath, certFile);
-            if (!uploadErr) {
-              certPath = filePath;
-              certName = certFile.name;
-            }
-          }
-
-          await supabase.from("work_experiences").insert({
-            profile_id: profileId,
-            company_name: we.company_name,
-            company_type: we.company_type,
-            work_description: we.work_description || null,
-            start_year: we.start_year,
-            end_year: we.is_current ? null : (we.end_year || null),
-            is_current: we.is_current,
-            certificate_path: certPath,
-            certificate_name: certName,
-          } as any);
-        }
-      }
-
-      // 5. Insert services (employee only)
-      if (isEmployee && data.services && data.services.length > 0) {
-        for (const svc of data.services) {
-          const { data: svcData } = await supabase.from("employee_services").insert({
-            profile_id: profileId,
-            service_title: svc.service_title,
-            category_id: svc.category_id,
-            hourly_rate: svc.hourly_rate,
-            minimum_budget: svc.minimum_budget,
-          } as any).select("id").single();
-
-          if (svcData && svc.skill_ids && svc.skill_ids.length > 0) {
-            const skillInserts = svc.skill_ids.map((skillId: string) => ({
-              employee_service_id: svcData.id,
-              skill_id: skillId,
-            }));
-            await supabase.from("employee_skill_selections").insert(skillInserts as any);
-          }
-        }
-      }
 
       toast({ title: "Registration successful!", description: "Your account is pending admin approval." });
       navigate("/verification-pending");
@@ -279,7 +120,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
     }
   };
 
-  const currentKey = steps[step].key;
+  const isEmployee = userType === "employee";
 
   return (
     <div className="flex min-h-screen flex-col bg-background px-4 py-6">
@@ -311,7 +152,9 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
           {steps.map((_, i) => (
             <div
               key={i}
-              className={`h-1.5 flex-1 rounded-full transition-colors ${i <= step ? "bg-primary" : "bg-muted"}`}
+              className={`h-1.5 flex-1 rounded-full transition-colors ${
+                i <= step ? "bg-primary" : "bg-muted"
+              }`}
             />
           ))}
         </div>
@@ -323,14 +166,13 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                 <CardTitle className="text-base">{steps[step].title}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-
-                {/* Step: Personal Info */}
-                {currentKey === "personal" && (
+                {/* Step 1: Personal Info */}
+                {step === 0 && (
                   <>
                     <FormField control={form.control} name="full_name" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Full Name *</FormLabel>
-                        <FormControl><Input placeholder="ENTER YOUR FULL NAME" {...field} className="uppercase" /></FormControl>
+                        <FormControl><Input placeholder="Enter your full name" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
@@ -338,7 +180,9 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                       <FormItem>
                         <FormLabel>Gender *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl>
+                          <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                          </FormControl>
                           <SelectContent>
                             <SelectItem value="male">Male</SelectItem>
                             <SelectItem value="female">Female</SelectItem>
@@ -359,7 +203,9 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                       <FormItem>
                         <FormLabel>Marital Status *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger></FormControl>
+                          <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                          </FormControl>
                           <SelectContent>
                             <SelectItem value="single">Single</SelectItem>
                             <SelectItem value="married">Married</SelectItem>
@@ -374,7 +220,9 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                       <FormItem>
                         <FormLabel>Education Level *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Select education" /></SelectTrigger></FormControl>
+                          <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select education" /></SelectTrigger>
+                          </FormControl>
                           <SelectContent>
                             <SelectItem value="high_school">High School</SelectItem>
                             <SelectItem value="diploma">Diploma</SelectItem>
@@ -390,8 +238,8 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                   </>
                 )}
 
-                {/* Step: Contact Details */}
-                {currentKey === "contact" && (
+                {/* Step 2: Contact Details */}
+                {step === 1 && (
                   <>
                     <FormField control={form.control} name="mobile_number" render={({ field }) => (
                       <FormItem>
@@ -417,16 +265,30 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                     <FormField control={form.control} name="password" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Password *</FormLabel>
-                        <FormControl><Input type="password" placeholder="Min 8 characters" {...field} /></FormControl>
+                        <FormControl><Input type="password" placeholder="Min 6 characters" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
                   </>
                 )}
 
-                {/* Step: Professional (employee only) */}
-                {currentKey === "professional" && (
+                {/* Step 3: Professional Background */}
+                {step === 2 && (
                   <>
+                    <FormField control={form.control} name="previous_job_details" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Previous Job Details</FormLabel>
+                        <FormControl><Textarea placeholder="Describe your previous roles..." rows={3} {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="work_experience" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Work Experience</FormLabel>
+                        <FormControl><Textarea placeholder="Years and areas of experience..." rows={3} {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
                     <FormField control={form.control} name="education_background" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Education Background</FormLabel>
@@ -434,306 +296,46 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                         <FormMessage />
                       </FormItem>
                     )} />
-
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-foreground">Work Experience (Optional)</p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => workExpArray.append({
-                            company_name: "", company_type: "private", work_description: "",
-                            start_year: new Date().getFullYear(), end_year: undefined, is_current: false,
-                          })}
-                          className="gap-1"
-                        >
-                          <Plus className="h-3 w-3" /> Add
-                        </Button>
-                      </div>
-
-                      {workExpArray.fields.map((field, idx) => (
-                        <Card key={field.id} className="border-dashed">
-                          <CardContent className="space-y-3 p-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-medium text-muted-foreground">Experience #{idx + 1}</span>
-                              <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                                workExpArray.remove(idx);
-                                const newFiles = { ...certificateFiles };
-                                delete newFiles[idx];
-                                setCertificateFiles(newFiles);
-                              }}>
-                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                              </Button>
-                            </div>
-
-                            <FormField control={form.control} name={`work_experiences.${idx}.company_name`} render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Company Name *</FormLabel>
-                                <FormControl><Input placeholder="e.g. Tata Consultancy Services" {...field} /></FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )} />
-
-                            <FormField control={form.control} name={`work_experiences.${idx}.company_type`} render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Company Type *</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                  <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="private">Private</SelectItem>
-                                    <SelectItem value="public">Public</SelectItem>
-                                    <SelectItem value="government">Government</SelectItem>
-                                    <SelectItem value="ngo">NGO</SelectItem>
-                                    <SelectItem value="freelance">Freelance</SelectItem>
-                                    <SelectItem value="other">Other</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )} />
-
-                            <FormField control={form.control} name={`work_experiences.${idx}.work_description`} render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Work Description</FormLabel>
-                                <FormControl><Textarea placeholder="Role, responsibilities..." rows={2} {...field} /></FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )} />
-
-                            <div className="grid grid-cols-2 gap-3">
-                              <FormField control={form.control} name={`work_experiences.${idx}.start_year`} render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Start Year *</FormLabel>
-                                  <FormControl><Input type="number" min={1970} max={new Date().getFullYear()} {...field} onChange={(e) => field.onChange(parseInt(e.target.value) || 0)} /></FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )} />
-
-                              {!form.watch(`work_experiences.${idx}.is_current`) && (
-                                <FormField control={form.control} name={`work_experiences.${idx}.end_year`} render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>End Year</FormLabel>
-                                    <FormControl><Input type="number" min={1970} max={new Date().getFullYear()} {...field} onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)} value={field.value ?? ""} /></FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )} />
-                              )}
-                            </div>
-
-                            <FormField control={form.control} name={`work_experiences.${idx}.is_current`} render={({ field }) => (
-                              <FormItem className="flex items-center gap-2 space-y-0">
-                                <FormControl>
-                                  <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                                </FormControl>
-                                <FormLabel className="font-normal">Currently working here</FormLabel>
-                              </FormItem>
-                            )} />
-
-                            <div>
-                              <p className="mb-1 text-sm font-medium">Certificate Upload</p>
-                              <label className="flex cursor-pointer items-center gap-2 rounded-md border border-dashed p-2 text-xs text-muted-foreground hover:border-primary">
-                                <Upload className="h-3.5 w-3.5" />
-                                {certificateFiles[idx] ? certificateFiles[idx].name : "Upload certificate (PDF/Image)"}
-                                <input
-                                  type="file"
-                                  accept=".pdf,.jpg,.jpeg,.png,.webp"
-                                  className="hidden"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) setCertificateFiles({ ...certificateFiles, [idx]: file });
-                                  }}
-                                />
-                              </label>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
                   </>
                 )}
 
-                {/* Step: Emergency Contacts */}
-                {currentKey === "emergency" && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-foreground">Emergency Contacts *</p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => emergencyArray.append({ contact_name: "", contact_phone: "", relationship: "" })}
-                        className="gap-1"
-                      >
-                        <Plus className="h-3 w-3" /> Add
-                      </Button>
-                    </div>
-
-                    {emergencyArray.fields.map((field, idx) => (
-                      <Card key={field.id} className="border-dashed">
-                        <CardContent className="space-y-3 p-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-muted-foreground">Contact #{idx + 1}</span>
-                            {idx > 0 && (
-                              <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => emergencyArray.remove(idx)}>
-                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                              </Button>
-                            )}
-                          </div>
-
-                          <FormField control={form.control} name={`emergency_contacts.${idx}.contact_name`} render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Contact Name *</FormLabel>
-                              <FormControl><Input placeholder="Emergency contact name" {...field} /></FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                          <FormField control={form.control} name={`emergency_contacts.${idx}.contact_phone`} render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Contact Phone *</FormLabel>
-                              <FormControl><Input placeholder="10-digit phone number" maxLength={10} {...field} /></FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                          <FormField control={form.control} name={`emergency_contacts.${idx}.relationship`} render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Relationship *</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select relationship" /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                  <SelectItem value="parent">Parent</SelectItem>
-                                  <SelectItem value="spouse">Spouse</SelectItem>
-                                  <SelectItem value="sibling">Sibling</SelectItem>
-                                  <SelectItem value="friend">Friend</SelectItem>
-                                  <SelectItem value="other">Other</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                {/* Step 4: Emergency Contact */}
+                {step === 3 && (
+                  <>
+                    <FormField control={form.control} name="emergency_contact_name" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contact Name *</FormLabel>
+                        <FormControl><Input placeholder="Emergency contact name" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="emergency_contact_phone" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contact Phone *</FormLabel>
+                        <FormControl><Input placeholder="10-digit phone number" maxLength={10} {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="emergency_contact_relationship" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Relationship *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select relationship" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="parent">Parent</SelectItem>
+                            <SelectItem value="spouse">Spouse</SelectItem>
+                            <SelectItem value="sibling">Sibling</SelectItem>
+                            <SelectItem value="friend">Friend</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </>
                 )}
-
-                {/* Step: Services (employee only) */}
-                {currentKey === "services" && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-foreground">Your Services *</p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => servicesArray.append({ service_title: "", category_id: "", skill_ids: [], hourly_rate: 0, minimum_budget: 0 })}
-                        className="gap-1"
-                      >
-                        <Plus className="h-3 w-3" /> Add
-                      </Button>
-                    </div>
-
-                    {servicesArray.fields.map((field, idx) => {
-                      const selectedCatId = form.watch(`services.${idx}.category_id`);
-                      const catSkills = allSkills?.filter((s: any) => s.category_id === selectedCatId) ?? [];
-
-                      return (
-                        <Card key={field.id} className="border-dashed">
-                          <CardContent className="space-y-3 p-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-medium text-muted-foreground">Service #{idx + 1}</span>
-                              {idx > 0 && (
-                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => servicesArray.remove(idx)}>
-                                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                                </Button>
-                              )}
-                            </div>
-
-                            <FormField control={form.control} name={`services.${idx}.service_title`} render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Service Title *</FormLabel>
-                                <FormControl><Input placeholder="e.g. Web Development, Graphic Design" {...field} /></FormControl>
-                                <FormDescription className="text-xs">Example: "Full Stack Web Development", "Logo & Brand Design"</FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )} />
-
-                            <FormField control={form.control} name={`services.${idx}.category_id`} render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Service Category *</FormLabel>
-                                <Select onValueChange={(val) => {
-                                  field.onChange(val);
-                                  form.setValue(`services.${idx}.skill_ids`, []);
-                                }} value={field.value}>
-                                  <FormControl><SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger></FormControl>
-                                  <SelectContent>
-                                    {categories?.map((cat: any) => (
-                                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                {(!categories || categories.length === 0) && (
-                                  <p className="text-xs text-warning">No categories available yet. Admin needs to create them first.</p>
-                                )}
-                                <FormMessage />
-                              </FormItem>
-                            )} />
-
-                            {catSkills.length > 0 && (
-                              <FormField control={form.control} name={`services.${idx}.skill_ids`} render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Skills</FormLabel>
-                                  <div className="flex flex-wrap gap-2">
-                                    {catSkills.map((skill: any) => {
-                                      const isSelected = (field.value || []).includes(skill.id);
-                                      return (
-                                        <button
-                                          key={skill.id}
-                                          type="button"
-                                          onClick={() => {
-                                            const current = field.value || [];
-                                            field.onChange(
-                                              isSelected ? current.filter((id: string) => id !== skill.id) : [...current, skill.id]
-                                            );
-                                          }}
-                                          className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                                            isSelected ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/50"
-                                          }`}
-                                        >
-                                          {skill.name}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                  <FormMessage />
-                                </FormItem>
-                              )} />
-                            )}
-
-                            <div className="grid grid-cols-2 gap-3">
-                              <FormField control={form.control} name={`services.${idx}.hourly_rate`} render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Hourly Rate (₹) *</FormLabel>
-                                  <FormControl><Input type="number" min={0} placeholder="500" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )} />
-
-                              <FormField control={form.control} name={`services.${idx}.minimum_budget`} render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Min Budget (₹) *</FormLabel>
-                                  <FormControl><Input type="number" min={0} placeholder="5000" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )} />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                )}
-
               </CardContent>
             </Card>
 
@@ -744,10 +346,9 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                   <ArrowLeft className="h-4 w-4" /> Back
                 </Button>
               )}
-{step < steps.length - 1 ? (
-                <Button type="button" onClick={handleNext} disabled={checkingDuplicates} className="flex-1 gap-1">
-                  {checkingDuplicates ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  {checkingDuplicates ? "Checking..." : "Next"} {!checkingDuplicates && <ArrowRight className="h-4 w-4" />}
+              {step < steps.length - 1 ? (
+                <Button type="button" onClick={handleNext} className="flex-1 gap-1">
+                  Next <ArrowRight className="h-4 w-4" />
                 </Button>
               ) : (
                 <Button type="submit" disabled={submitting} className="flex-1 gap-1">
