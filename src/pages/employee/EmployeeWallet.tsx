@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Wallet, Clock, IndianRupee, ArrowDownToLine } from "lucide-react";
+import { Wallet, Clock, IndianRupee, ArrowDownToLine, BadgeCheck, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +31,21 @@ const EmployeeWallet = () => {
   const savedIfsc = profile?.bank_ifsc_code;
   const savedBankName = profile?.bank_name;
   const savedHolderName = profile?.bank_holder_name;
+
+  const { data: bankVerification } = useQuery({
+    queryKey: ["bank-verification-status", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("bank_verifications")
+        .select("status")
+        .eq("profile_id", profile!.id)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const isBankVerified = bankVerification?.status === "verified";
 
   const { data: withdrawals = [], isLoading: wLoading } = useQuery({
     queryKey: ["employee-withdrawals", profile?.id],
@@ -116,7 +131,10 @@ const EmployeeWallet = () => {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base"><ArrowDownToLine className="h-4 w-4" /> Request Withdrawal</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ArrowDownToLine className="h-4 w-4" /> Request Withdrawal
+            {isBankVerified && <BadgeCheck className="h-4 w-4 text-accent" />}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -157,8 +175,14 @@ const EmployeeWallet = () => {
               )}
             </div>
           )}
-          <Button className="w-full" onClick={() => withdrawMutation.mutate()} disabled={withdrawMutation.isPending}>
-            {withdrawMutation.isPending ? "Submitting..." : "Enter Withdrawal"}
+          {!isBankVerified && (
+            <div className="flex items-start gap-2 rounded-md bg-warning/10 p-3 text-sm text-warning">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>Your bank details must be verified before you can withdraw. Go to your Profile to submit for verification.</span>
+            </div>
+          )}
+          <Button className="w-full" onClick={() => withdrawMutation.mutate()} disabled={withdrawMutation.isPending || !isBankVerified}>
+            {withdrawMutation.isPending ? "Submitting..." : !isBankVerified ? "Bank Verification Required" : "Enter Withdrawal"}
           </Button>
         </CardContent>
       </Card>

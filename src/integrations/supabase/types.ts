@@ -109,6 +109,54 @@ export type Database = {
           },
         ]
       }
+      bank_verifications: {
+        Row: {
+          created_at: string
+          id: string
+          profile_id: string
+          rejection_reason: string | null
+          status: Database["public"]["Enums"]["bank_verification_status"]
+          updated_at: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          profile_id: string
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["bank_verification_status"]
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          profile_id?: string
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["bank_verification_status"]
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_verifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_verifications_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_rooms: {
         Row: {
           created_at: string
@@ -1009,6 +1057,11 @@ export type Database = {
       app_role: "admin" | "user"
       application_status: "pending" | "approved" | "rejected"
       approval_status: "pending" | "approved" | "rejected"
+      bank_verification_status:
+        | "pending"
+        | "under_process"
+        | "verified"
+        | "rejected"
       edit_request_status:
         | "none"
         | "requested"
@@ -1163,6 +1216,12 @@ export const Constants = {
       app_role: ["admin", "user"],
       application_status: ["pending", "approved", "rejected"],
       approval_status: ["pending", "approved", "rejected"],
+      bank_verification_status: [
+        "pending",
+        "under_process",
+        "verified",
+        "rejected",
+      ],
       edit_request_status: [
         "none",
         "requested",

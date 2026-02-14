@@ -16,6 +16,7 @@ import {
   FileText,
   Layers,
   Settings,
+  Landmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,8 @@ const navItems = [
   { label: "Clients", icon: Building2, path: "/admin/clients" },
   { label: "Profile Edits", icon: Edit, path: "/admin/profile-edits" },
   { label: "Withdrawals", icon: Wallet, path: "/admin/withdrawals" },
-  { label: "Verifications", icon: Fingerprint, path: "/admin/verifications" },
+  { label: "Aadhaar Verify", icon: Fingerprint, path: "/admin/verifications" },
+  { label: "Bank Verify", icon: Landmark, path: "/admin/bank-verifications" },
   { label: "Services", icon: Layers, path: "/admin/services" },
   { label: "Legal Docs", icon: FileText, path: "/admin/legal-documents" },
   { label: "Settings", icon: Settings, path: "/admin/settings" },

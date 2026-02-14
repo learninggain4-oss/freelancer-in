@@ -104,6 +104,15 @@ Deno.serve(async (req) => {
         if (amount > Number(callerProfile.available_balance))
           throw new Error("Insufficient balance");
 
+        // Check bank verification status
+        const { data: bankVerif } = await supabase
+          .from("bank_verifications")
+          .select("status")
+          .eq("profile_id", callerProfile.id)
+          .single();
+        if (!bankVerif || bankVerif.status !== "verified")
+          throw new Error("Bank details must be verified before requesting withdrawals. Please submit your bank details for verification in your profile.");
+
         // Deduct from available balance
         await supabase
           .from("profiles")

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import AadhaarVerificationCard from "@/components/verification/AadhaarVerificationCard";
+import BankVerificationCard from "@/components/verification/BankVerificationCard";
 import ProfileRegistrationData from "@/components/profile/ProfileRegistrationData";
 
 const ClientProfile = () => {
@@ -246,6 +247,7 @@ const ClientProfile = () => {
       {profile?.id && <ProfileRegistrationData profileId={profile.id} />}
 
       <AadhaarVerificationCard />
+      <BankVerificationCard />
     </div>
   );
 };
