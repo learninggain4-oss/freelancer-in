@@ -21,6 +21,8 @@ type BankVerification = {
   rejection_reason: string | null;
   created_at: string;
   verified_at: string | null;
+  document_path: string | null;
+  document_name: string | null;
   profiles: {
     full_name: string[];
     user_code: string[];
@@ -56,7 +58,7 @@ const AdminBankVerifications = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bank_verifications")
-        .select("id, profile_id, status, rejection_reason, created_at, verified_at, profiles!bank_verifications_profile_id_fkey(full_name, user_code, email, user_type, bank_holder_name, bank_name, bank_account_number, bank_ifsc_code, upi_id)")
+        .select("id, profile_id, status, rejection_reason, created_at, verified_at, document_path, document_name, profiles!bank_verifications_profile_id_fkey(full_name, user_code, email, user_type, bank_holder_name, bank_name, bank_account_number, bank_ifsc_code, upi_id)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as BankVerification[];
@@ -191,6 +193,23 @@ const AdminBankVerifications = () => {
                   <p><span className="text-muted-foreground">UPI ID:</span> {selected.profiles?.upi_id || "—"}</p>
                 </CardContent>
               </Card>
+
+              {selected.document_name && (
+                <Card>
+                  <CardHeader className="pb-2"><CardTitle className="text-sm">Uploaded Proof Document</CardTitle></CardHeader>
+                  <CardContent className="space-y-2">
+                    <p className="text-sm text-muted-foreground">{selected.document_name}</p>
+                    <Button variant="outline" size="sm" onClick={async () => {
+                      if (!selected.document_path) return;
+                      const { data } = await supabase.storage.from("bank-documents").createSignedUrl(selected.document_path, 300);
+                      if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+                      else toast.error("Could not generate download link");
+                    }}>
+                      <Eye className="mr-1.5 h-3.5 w-3.5" /> View Document
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
 
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Current Status:</span>
