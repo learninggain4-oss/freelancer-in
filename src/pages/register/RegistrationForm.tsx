@@ -1,9 +1,8 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Briefcase, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
-import ReCAPTCHA from "react-google-recaptcha";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { fullRegistrationSchema, type RegistrationFormData } from "@/lib/validations/registration";
 
-const RECAPTCHA_SITE_KEY = "6Lev72osAAAAAAlPrwq6vGMs4pt3wBDjOqWT9gB5";
+
 
 interface RegistrationFormProps {
   userType: "employee" | "client";
@@ -32,8 +31,6 @@ const steps = [
 const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const captchaRef = useRef<ReCAPTCHA>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -62,33 +59,9 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
 
   const handleBack = () => setStep((s) => Math.max(s - 1, 0));
 
-  const verifyCaptcha = async (token: string): Promise<boolean> => {
-    try {
-      const { data, error } = await supabase.functions.invoke("verify-captcha", {
-        body: { token },
-      });
-      if (error) return false;
-      return data?.success === true;
-    } catch {
-      return false;
-    }
-  };
-
   const onSubmit = async (data: RegistrationFormData) => {
-    if (!captchaToken) {
-      toast({ title: "Please complete the CAPTCHA", variant: "destructive" });
-      return;
-    }
     setSubmitting(true);
     try {
-      const captchaValid = await verifyCaptcha(captchaToken);
-      if (!captchaValid) {
-        toast({ title: "CAPTCHA verification failed", description: "Please try again.", variant: "destructive" });
-        captchaRef.current?.reset();
-        setCaptchaToken(null);
-        setSubmitting(false);
-        return;
-      }
       // 0. Fetch IP & geolocation
       let geoData: { ip?: string; city?: string; region?: string; country?: string; lat?: number; lon?: number } = {};
       try {
@@ -142,8 +115,6 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       navigate("/verification-pending");
     } catch (error: any) {
       toast({ title: "Registration failed", description: error.message, variant: "destructive" });
-      captchaRef.current?.reset();
-      setCaptchaToken(null);
     } finally {
       setSubmitting(false);
     }
@@ -368,18 +339,6 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
               </CardContent>
             </Card>
 
-            {/* CAPTCHA on last step */}
-            {step === steps.length - 1 && (
-              <div className="mt-4 flex justify-center">
-                <ReCAPTCHA
-                  ref={captchaRef}
-                  sitekey={RECAPTCHA_SITE_KEY}
-                  onChange={(token) => setCaptchaToken(token)}
-                  onExpired={() => setCaptchaToken(null)}
-                />
-              </div>
-            )}
-
             {/* Navigation Buttons */}
             <div className="mt-4 flex gap-3">
               {step > 0 && (
@@ -392,7 +351,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                   Next <ArrowRight className="h-4 w-4" />
                 </Button>
               ) : (
-                <Button type="submit" disabled={submitting || !captchaToken} className="flex-1 gap-1">
+                <Button type="submit" disabled={submitting} className="flex-1 gap-1">
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                   Submit Registration
                 </Button>
