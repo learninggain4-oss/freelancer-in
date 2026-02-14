@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -49,6 +50,9 @@ const AdminVerifications = () => {
   const [backUrl, setBackUrl] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name_on_aadhaar: "", aadhaar_number: "", dob_on_aadhaar: "", address_on_aadhaar: "" });
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkRejectReason, setBulkRejectReason] = useState("");
+  const [showBulkRejectDialog, setShowBulkRejectDialog] = useState(false);
 
   const { data: verifications = [], isLoading } = useQuery({
     queryKey: ["admin-verifications"],
@@ -74,7 +78,6 @@ const AdminVerifications = () => {
       const { error } = await supabase.from("aadhaar_verifications").update(update).eq("id", id);
       if (error) throw error;
 
-      // Update profile name to verified Aadhaar name on approval
       if (status === "verified") {
         const { error: profileError } = await supabase
           .from("profiles")
@@ -88,6 +91,36 @@ const AdminVerifications = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-verifications"] });
       setSelectedVerification(null);
       setRejectReason("");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const bulkActionMutation = useMutation({
+    mutationFn: async ({ ids, status, reason }: { ids: string[]; status: string; reason?: string }) => {
+      const now = new Date().toISOString();
+      for (const id of ids) {
+        const v = verifications.find(v => v.id === id);
+        if (!v) continue;
+        const update: Record<string, unknown> = {
+          status,
+          verified_by: profile!.id,
+          verified_at: now,
+        };
+        if (reason) update.rejection_reason = reason;
+        const { error } = await supabase.from("aadhaar_verifications").update(update).eq("id", id);
+        if (error) throw error;
+
+        if (status === "verified") {
+          await supabase.from("profiles").update({ full_name: [v.name_on_aadhaar] }).eq("id", v.profile_id);
+        }
+      }
+    },
+    onSuccess: (_, vars) => {
+      toast.success(`${vars.ids.length} verification(s) updated to ${vars.status}`);
+      queryClient.invalidateQueries({ queryKey: ["admin-verifications"] });
+      setSelectedIds(new Set());
+      setBulkRejectReason("");
+      setShowBulkRejectDialog(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -108,7 +141,6 @@ const AdminVerifications = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (v: Verification) => {
-      // Delete stored images
       await supabase.storage.from("aadhaar-documents").remove([v.front_image_path, v.back_image_path]);
       const { error } = await supabase.from("aadhaar_verifications").delete().eq("id", v.id);
       if (error) throw error;
@@ -146,6 +178,26 @@ const AdminVerifications = () => {
     );
   });
 
+  const actionableFiltered = filtered.filter(v => v.status === "pending" || v.status === "under_process");
+  const allActionableSelected = actionableFiltered.length > 0 && actionableFiltered.every(v => selectedIds.has(v.id));
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (allActionableSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(actionableFiltered.map(v => v.id)));
+    }
+  };
+
   const statusBadge = (status: string) => {
     const map: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
       pending: { variant: "secondary", label: "Pending" },
@@ -170,7 +222,7 @@ const AdminVerifications = () => {
           value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
 
-      <Tabs value={tab} onValueChange={setTab}>
+      <Tabs value={tab} onValueChange={(v) => { setTab(v); setSelectedIds(new Set()); }}>
         <TabsList className="w-full grid grid-cols-5">
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="under_process">Processing</TabsTrigger>
@@ -180,38 +232,101 @@ const AdminVerifications = () => {
         </TabsList>
 
         <TabsContent value={tab} className="mt-4 space-y-3">
+          {/* Bulk action bar */}
+          {actionableFiltered.length > 0 && (
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 p-3">
+              <div className="flex items-center gap-2">
+                <Checkbox checked={allActionableSelected} onCheckedChange={toggleSelectAll} />
+                <span className="text-sm text-muted-foreground">
+                  {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
+                </span>
+              </div>
+              {selectedIds.size > 0 && (
+                <div className="flex flex-wrap items-center gap-2 ml-auto">
+                  <Button size="sm" disabled={bulkActionMutation.isPending}
+                    onClick={() => bulkActionMutation.mutate({ ids: Array.from(selectedIds), status: "verified" })}>
+                    <CheckCircle2 className="mr-1 h-3 w-3" /> Verify ({selectedIds.size})
+                  </Button>
+                  <Button size="sm" variant="secondary" disabled={bulkActionMutation.isPending}
+                    onClick={() => bulkActionMutation.mutate({ ids: Array.from(selectedIds), status: "under_process" })}>
+                    <Clock className="mr-1 h-3 w-3" /> Under Process ({selectedIds.size})
+                  </Button>
+                  <Button size="sm" variant="outline" className="text-destructive" disabled={bulkActionMutation.isPending}
+                    onClick={() => setShowBulkRejectDialog(true)}>
+                    <XCircle className="mr-1 h-3 w-3" /> Reject ({selectedIds.size})
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
           {isLoading ? (
             Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-lg" />)
           ) : filtered.length === 0 ? (
             <Card><CardContent className="p-6 text-center text-muted-foreground">No verifications found</CardContent></Card>
           ) : (
-            filtered.map((v) => (
-              <Card key={v.id} className="cursor-pointer transition-colors hover:bg-muted/30" onClick={() => openDetail(v)}>
-                <CardContent className="flex items-center justify-between p-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium text-foreground">{v.profiles?.full_name?.[0] ?? "—"}</span>
-                      <Badge variant="outline" className="text-[10px]">{v.profiles?.user_type}</Badge>
+            filtered.map((v) => {
+              const isActionable = v.status === "pending" || v.status === "under_process";
+              return (
+                <Card key={v.id} className="transition-colors hover:bg-muted/30">
+                  <CardContent className="flex items-center gap-3 p-4">
+                    {isActionable && (
+                      <Checkbox
+                        checked={selectedIds.has(v.id)}
+                        onCheckedChange={() => toggleSelect(v.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    )}
+                    <div className="flex-1 cursor-pointer" onClick={() => openDetail(v)}>
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium text-foreground">{v.profiles?.full_name?.[0] ?? "—"}</span>
+                            <Badge variant="outline" className="text-[10px]">{v.profiles?.user_type}</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {v.profiles?.user_code?.[0]} • Aadhaar name: {v.name_on_aadhaar}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Submitted {new Date(v.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {statusBadge(v.status)}
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {v.profiles?.user_code?.[0]} • Aadhaar name: {v.name_on_aadhaar}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Submitted {new Date(v.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {statusBadge(v.status)}
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </TabsContent>
       </Tabs>
 
+      {/* Bulk Reject Dialog */}
+      <AlertDialog open={showBulkRejectDialog} onOpenChange={setShowBulkRejectDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject {selectedIds.size} Verification(s)</AlertDialogTitle>
+            <AlertDialogDescription>Provide a reason for rejecting these verifications.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <Textarea placeholder="Rejection reason (required)" value={bulkRejectReason}
+            onChange={(e) => setBulkRejectReason(e.target.value)} className="min-h-[80px]" />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={!bulkRejectReason.trim() || bulkActionMutation.isPending}
+              onClick={() => bulkActionMutation.mutate({ ids: Array.from(selectedIds), status: "rejected", reason: bulkRejectReason })}>
+              {bulkActionMutation.isPending ? "Rejecting..." : "Reject All"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Detail Dialog */}
       <Dialog open={!!selectedVerification} onOpenChange={(open) => { if (!open) { setSelectedVerification(null); setFrontUrl(null); setBackUrl(null); setIsEditing(false); } }}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
