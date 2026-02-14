@@ -80,6 +80,35 @@ export type Database = {
           },
         ]
       }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_rooms: {
         Row: {
           created_at: string
@@ -137,6 +166,119 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_emergency_contacts: {
+        Row: {
+          contact_name: string
+          contact_phone: string
+          created_at: string
+          id: string
+          profile_id: string
+          relationship: string
+        }
+        Insert: {
+          contact_name: string
+          contact_phone: string
+          created_at?: string
+          id?: string
+          profile_id: string
+          relationship: string
+        }
+        Update: {
+          contact_name?: string
+          contact_phone?: string
+          created_at?: string
+          id?: string
+          profile_id?: string
+          relationship?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_emergency_contacts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_services: {
+        Row: {
+          category_id: string
+          created_at: string
+          hourly_rate: number
+          id: string
+          minimum_budget: number
+          profile_id: string
+          service_title: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          hourly_rate?: number
+          id?: string
+          minimum_budget?: number
+          profile_id: string
+          service_title: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          hourly_rate?: number
+          id?: string
+          minimum_budget?: number
+          profile_id?: string
+          service_title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_services_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_services_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_skill_selections: {
+        Row: {
+          employee_service_id: string
+          id: string
+          skill_id: string
+        }
+        Insert: {
+          employee_service_id: string
+          id?: string
+          skill_id: string
+        }
+        Update: {
+          employee_service_id?: string
+          id?: string
+          skill_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_skill_selections_employee_service_id_fkey"
+            columns: ["employee_service_id"]
+            isOneToOne: false
+            referencedRelation: "employee_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_skill_selections_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "service_skills"
             referencedColumns: ["id"]
           },
         ]
@@ -620,6 +762,53 @@ export type Database = {
           },
         ]
       }
+      service_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      service_skills: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_skills_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
@@ -733,6 +922,56 @@ export type Database = {
           {
             foreignKeyName: "withdrawals_reviewed_by_fkey"
             columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_experiences: {
+        Row: {
+          certificate_name: string | null
+          certificate_path: string | null
+          company_name: string
+          company_type: string
+          created_at: string
+          end_year: number | null
+          id: string
+          is_current: boolean
+          profile_id: string
+          start_year: number
+          work_description: string | null
+        }
+        Insert: {
+          certificate_name?: string | null
+          certificate_path?: string | null
+          company_name: string
+          company_type?: string
+          created_at?: string
+          end_year?: number | null
+          id?: string
+          is_current?: boolean
+          profile_id: string
+          start_year: number
+          work_description?: string | null
+        }
+        Update: {
+          certificate_name?: string | null
+          certificate_path?: string | null
+          company_name?: string
+          company_type?: string
+          created_at?: string
+          end_year?: number | null
+          id?: string
+          is_current?: boolean
+          profile_id?: string
+          start_year?: number
+          work_description?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_experiences_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
