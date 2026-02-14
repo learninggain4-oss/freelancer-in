@@ -111,6 +111,7 @@ export type Database = {
       }
       bank_verifications: {
         Row: {
+          attempt_count: number
           created_at: string
           document_name: string | null
           document_path: string | null
@@ -123,6 +124,7 @@ export type Database = {
           verified_by: string | null
         }
         Insert: {
+          attempt_count?: number
           created_at?: string
           document_name?: string | null
           document_path?: string | null
@@ -135,6 +137,7 @@ export type Database = {
           verified_by?: string | null
         }
         Update: {
+          attempt_count?: number
           created_at?: string
           document_name?: string | null
           document_path?: string | null
