@@ -13,8 +13,8 @@ import {
   User,
   FileText,
   MessageSquare,
-  Send,
-} from "lucide-react";
+  Send } from
+"lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,7 +26,7 @@ const statusColor: Record<string, string> = {
   approved: "bg-accent/10 text-accent",
   rejected: "bg-destructive/10 text-destructive",
   in_progress: "bg-primary/10 text-primary",
-  completed: "bg-primary/10 text-primary",
+  completed: "bg-primary/10 text-primary"
 };
 
 const EmployeeProjects = () => {
@@ -39,16 +39,16 @@ const EmployeeProjects = () => {
   const { data: inquiries = [], isLoading: loadingInquiries } = useQuery({
     queryKey: ["employee-inquiries", search],
     queryFn: async () => {
-      let query = supabase
-        .from("projects")
-        .select("*, client:client_id(full_name)")
-        .eq("status", "open")
-        .order("created_at", { ascending: false });
+      let query = supabase.
+      from("projects").
+      select("*, client:client_id(full_name)").
+      eq("status", "open").
+      order("created_at", { ascending: false });
       if (search) query = query.ilike("name", `%${search}%`);
       const { data, error } = await query;
       if (error) throw error;
       return data;
-    },
+    }
   });
 
   // Fetch my applications (requests)
@@ -56,15 +56,15 @@ const EmployeeProjects = () => {
     queryKey: ["employee-requests", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
-      const { data, error } = await supabase
-        .from("project_applications")
-        .select("*, project:project_id(name)")
-        .eq("employee_id", profile.id)
-        .order("applied_at", { ascending: false });
+      const { data, error } = await supabase.
+      from("project_applications").
+      select("*, project:project_id(name)").
+      eq("employee_id", profile.id).
+      order("applied_at", { ascending: false });
       if (error) throw error;
       return data;
     },
-    enabled: !!profile?.id,
+    enabled: !!profile?.id
   });
 
   // Fetch my submissions
@@ -72,15 +72,15 @@ const EmployeeProjects = () => {
     queryKey: ["employee-submissions", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
-      const { data, error } = await supabase
-        .from("project_submissions")
-        .select("*, project:project_id(name, end_date)")
-        .eq("employee_id", profile.id)
-        .order("submitted_at", { ascending: false });
+      const { data, error } = await supabase.
+      from("project_submissions").
+      select("*, project:project_id(name, end_date)").
+      eq("employee_id", profile.id).
+      order("submitted_at", { ascending: false });
       if (error) throw error;
       return data;
     },
-    enabled: !!profile?.id,
+    enabled: !!profile?.id
   });
 
   // Apply to project
@@ -89,7 +89,7 @@ const EmployeeProjects = () => {
       if (!profile?.id) throw new Error("Not authenticated");
       const { error } = await supabase.from("project_applications").insert({
         project_id: projectId,
-        employee_id: profile.id,
+        employee_id: profile.id
       });
       if (error) throw error;
     },
@@ -97,12 +97,12 @@ const EmployeeProjects = () => {
       toast.success("Application submitted!");
       queryClient.invalidateQueries({ queryKey: ["employee-requests"] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message)
   });
 
   return (
     <div className="space-y-4 p-4">
-      <h1 className="text-2xl font-bold text-foreground">Projects</h1>
+      <h1 className="text-2xl font-bold text-foreground">Jobs</h1>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -117,11 +117,11 @@ const EmployeeProjects = () => {
         </TabsList>
 
         <TabsContent value="inquiries" className="mt-4 space-y-3">
-          {loadingInquiries ? (
-            Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-40 w-full" />)
-          ) : inquiries.length > 0 ? (
-            inquiries.map((p: any) => (
-              <Card key={p.id}>
+          {loadingInquiries ?
+          Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-40 w-full" />) :
+          inquiries.length > 0 ?
+          inquiries.map((p: any) =>
+          <Card key={p.id}>
                 <CardContent className="space-y-3 p-4">
                   <div className="flex items-start justify-between">
                     <h3 className="font-semibold text-foreground">{p.name}</h3>
@@ -139,45 +139,45 @@ const EmployeeProjects = () => {
                   </Button>
                 </CardContent>
               </Card>
-            ))
-          ) : (
-            <p className="py-8 text-center text-sm text-muted-foreground">No open projects available</p>
-          )}
+          ) :
+
+          <p className="py-8 text-center text-sm text-muted-foreground">No open projects available</p>
+          }
         </TabsContent>
 
         <TabsContent value="requests" className="mt-4 space-y-3">
-          {loadingRequests ? (
-            Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)
-          ) : requests.length > 0 ? (
-            requests.map((r: any) => (
-              <Card key={r.id}>
+          {loadingRequests ?
+          Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />) :
+          requests.length > 0 ?
+          requests.map((r: any) =>
+          <Card key={r.id}>
                 <CardContent className="flex items-center justify-between p-4">
                   <div>
                     <h3 className="font-semibold text-foreground">{r.project?.name ?? "Project"}</h3>
                     <p className="text-xs text-muted-foreground">Applied: {new Date(r.applied_at).toLocaleDateString()}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {r.status === "approved" && (
-                      <Button size="sm" variant="outline" onClick={() => navigate(`/employee/projects/chat/${r.project_id}`)}>
+                    {r.status === "approved" &&
+                <Button size="sm" variant="outline" onClick={() => navigate(`/employee/projects/chat/${r.project_id}`)}>
                         <MessageSquare className="mr-1 h-3 w-3" /> Chat
                       </Button>
-                    )}
+                }
                     <Badge className={statusColor[r.status]}>{r.status}</Badge>
                   </div>
                 </CardContent>
               </Card>
-            ))
-          ) : (
-            <p className="py-8 text-center text-sm text-muted-foreground">No applications yet</p>
-          )}
+          ) :
+
+          <p className="py-8 text-center text-sm text-muted-foreground">No applications yet</p>
+          }
         </TabsContent>
 
         <TabsContent value="submissions" className="mt-4 space-y-3">
-          {loadingSubmissions ? (
-            <Skeleton className="h-16 w-full" />
-          ) : submissions.length > 0 ? (
-            submissions.map((s: any) => (
-              <Card key={s.id}>
+          {loadingSubmissions ?
+          <Skeleton className="h-16 w-full" /> :
+          submissions.length > 0 ?
+          submissions.map((s: any) =>
+          <Card key={s.id}>
                 <CardContent className="flex items-center justify-between p-4">
                   <div>
                     <h3 className="font-semibold text-foreground">{s.project?.name ?? "Project"}</h3>
@@ -186,14 +186,14 @@ const EmployeeProjects = () => {
                   <Badge className="bg-primary/10 text-primary">Submitted</Badge>
                 </CardContent>
               </Card>
-            ))
-          ) : (
-            <p className="py-8 text-center text-sm text-muted-foreground">No submissions yet</p>
-          )}
+          ) :
+
+          <p className="py-8 text-center text-sm text-muted-foreground">No submissions yet</p>
+          }
         </TabsContent>
       </Tabs>
-    </div>
-  );
+    </div>);
+
 };
 
 export default EmployeeProjects;
