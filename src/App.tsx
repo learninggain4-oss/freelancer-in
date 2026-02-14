@@ -38,6 +38,8 @@ const AdminVerifications = lazy(() => import("./pages/admin/AdminVerifications")
 const AdminProfileEdit = lazy(() => import("./pages/admin/AdminProfileEdit"));
 const AdminProfileEdits = lazy(() => import("./pages/admin/AdminProfileEdits"));
 const AdminLegalDocuments = lazy(() => import("./pages/admin/AdminLegalDocuments"));
+const AdminServiceManagement = lazy(() => import("./pages/admin/AdminServiceManagement"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const LegalDocument = lazy(() => import("./pages/LegalDocument"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
@@ -128,6 +130,8 @@ const App = () => (
                 <Route path="profile-edits" element={<AdminProfileEdits />} />
                 <Route path="users/:profileId" element={<AdminProfileEdit />} />
                 <Route path="legal-documents" element={<AdminLegalDocuments />} />
+                <Route path="services" element={<AdminServiceManagement />} />
+                <Route path="settings" element={<AdminSettings />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

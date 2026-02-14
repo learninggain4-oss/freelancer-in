@@ -14,6 +14,8 @@ import {
   Building2,
   Edit,
   FileText,
+  Layers,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -26,7 +28,9 @@ const navItems = [
   { label: "Profile Edits", icon: Edit, path: "/admin/profile-edits" },
   { label: "Withdrawals", icon: Wallet, path: "/admin/withdrawals" },
   { label: "Verifications", icon: Fingerprint, path: "/admin/verifications" },
+  { label: "Services", icon: Layers, path: "/admin/services" },
   { label: "Legal Docs", icon: FileText, path: "/admin/legal-documents" },
+  { label: "Settings", icon: Settings, path: "/admin/settings" },
 ];
 
 const AdminLayout = () => {
