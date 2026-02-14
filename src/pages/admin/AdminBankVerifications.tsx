@@ -7,11 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Landmark, CheckCircle2, XCircle, Clock, Search, Eye, User, Loader2 } from "lucide-react";
+import { Landmark, CheckCircle2, XCircle, Clock, Search, Eye, User, Loader2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 type BankVerification = {
@@ -52,6 +54,8 @@ const AdminBankVerifications = () => {
   const [selected, setSelected] = useState<BankVerification | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [newStatus, setNewStatus] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ bank_holder_name: "", bank_name: "", bank_account_number: "", bank_ifsc_code: "", upi_id: "" });
 
   const { data: verifications = [], isLoading } = useQuery({
     queryKey: ["admin-bank-verifications"],
@@ -85,6 +89,42 @@ const AdminBankVerifications = () => {
       setSelected(null);
       setRejectReason("");
       setNewStatus("");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async ({ profileId, data }: { profileId: string; data: typeof editForm }) => {
+      const { error } = await supabase.from("profiles").update({
+        bank_holder_name: data.bank_holder_name || null,
+        bank_name: data.bank_name || null,
+        bank_account_number: data.bank_account_number || null,
+        bank_ifsc_code: data.bank_ifsc_code || null,
+        upi_id: data.upi_id || null,
+      }).eq("id", profileId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Bank details updated");
+      queryClient.invalidateQueries({ queryKey: ["admin-bank-verifications"] });
+      setSelected(null);
+      setIsEditing(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (v: BankVerification) => {
+      if (v.document_path) {
+        await supabase.storage.from("bank-documents").remove([v.document_path]);
+      }
+      const { error } = await supabase.from("bank_verifications").delete().eq("id", v.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Bank verification record deleted");
+      queryClient.invalidateQueries({ queryKey: ["admin-bank-verifications"] });
+      setSelected(null);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -137,7 +177,7 @@ const AdminBankVerifications = () => {
             <Card><CardContent className="p-6 text-center text-muted-foreground">No verifications found</CardContent></Card>
           ) : (
             filtered.map((v) => (
-              <Card key={v.id} className="cursor-pointer transition-colors hover:bg-muted/30" onClick={() => { setSelected(v); setNewStatus(v.status); setRejectReason(v.rejection_reason || ""); }}>
+              <Card key={v.id} className="cursor-pointer transition-colors hover:bg-muted/30" onClick={() => { setSelected(v); setNewStatus(v.status); setRejectReason(v.rejection_reason || ""); setIsEditing(false); setEditForm({ bank_holder_name: v.profiles?.bank_holder_name || "", bank_name: v.profiles?.bank_name || "", bank_account_number: v.profiles?.bank_account_number || "", bank_ifsc_code: v.profiles?.bank_ifsc_code || "", upi_id: v.profiles?.upi_id || "" }); }}>
                 <CardContent className="flex items-center justify-between p-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -164,7 +204,7 @@ const AdminBankVerifications = () => {
       </Tabs>
 
       {/* Detail Dialog */}
-      <Dialog open={!!selected} onOpenChange={(open) => { if (!open) setSelected(null); }}>
+      <Dialog open={!!selected} onOpenChange={(open) => { if (!open) { setSelected(null); setIsEditing(false); } }}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -174,6 +214,32 @@ const AdminBankVerifications = () => {
 
           {selected && (
             <div className="space-y-4">
+              {/* Admin action buttons */}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setIsEditing(!isEditing); if (!isEditing) setEditForm({ bank_holder_name: selected.profiles?.bank_holder_name || "", bank_name: selected.profiles?.bank_name || "", bank_account_number: selected.profiles?.bank_account_number || "", bank_ifsc_code: selected.profiles?.bank_ifsc_code || "", upi_id: selected.profiles?.upi_id || "" }); }}>
+                  <Pencil className="mr-1 h-3 w-3" /> {isEditing ? "Cancel Edit" : "Edit"}
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="text-destructive">
+                      <Trash2 className="mr-1 h-3 w-3" /> Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Bank Verification</AlertDialogTitle>
+                      <AlertDialogDescription>This will permanently delete this bank verification record and any uploaded proof document. This action cannot be undone.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(selected)}>
+                        {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm">Profile Information</CardTitle></CardHeader>
                 <CardContent className="space-y-1 text-sm">
@@ -186,12 +252,42 @@ const AdminBankVerifications = () => {
 
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm">Bank Details</CardTitle></CardHeader>
-                <CardContent className="space-y-1 text-sm">
-                  <p><span className="text-muted-foreground">Holder Name:</span> {selected.profiles?.bank_holder_name || "—"}</p>
-                  <p><span className="text-muted-foreground">Bank Name:</span> {selected.profiles?.bank_name || "—"}</p>
-                  <p><span className="text-muted-foreground">Account Number:</span> {selected.profiles?.bank_account_number || "—"}</p>
-                  <p><span className="text-muted-foreground">IFSC Code:</span> {selected.profiles?.bank_ifsc_code || "—"}</p>
-                  <p><span className="text-muted-foreground">UPI ID:</span> {selected.profiles?.upi_id || "—"}</p>
+                <CardContent className="space-y-2 text-sm">
+                  {isEditing ? (
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Holder Name</Label>
+                        <Input value={editForm.bank_holder_name} onChange={(e) => setEditForm(f => ({ ...f, bank_holder_name: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Bank Name</Label>
+                        <Input value={editForm.bank_name} onChange={(e) => setEditForm(f => ({ ...f, bank_name: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Account Number</Label>
+                        <Input value={editForm.bank_account_number} onChange={(e) => setEditForm(f => ({ ...f, bank_account_number: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">IFSC Code</Label>
+                        <Input value={editForm.bank_ifsc_code} onChange={(e) => setEditForm(f => ({ ...f, bank_ifsc_code: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">UPI ID</Label>
+                        <Input value={editForm.upi_id} onChange={(e) => setEditForm(f => ({ ...f, upi_id: e.target.value }))} />
+                      </div>
+                      <Button className="w-full" disabled={editMutation.isPending} onClick={() => editMutation.mutate({ profileId: selected.profile_id, data: editForm })}>
+                        {editMutation.isPending ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <p><span className="text-muted-foreground">Holder Name:</span> {selected.profiles?.bank_holder_name || "—"}</p>
+                      <p><span className="text-muted-foreground">Bank Name:</span> {selected.profiles?.bank_name || "—"}</p>
+                      <p><span className="text-muted-foreground">Account Number:</span> {selected.profiles?.bank_account_number || "—"}</p>
+                      <p><span className="text-muted-foreground">IFSC Code:</span> {selected.profiles?.bank_ifsc_code || "—"}</p>
+                      <p><span className="text-muted-foreground">UPI ID:</span> {selected.profiles?.upi_id || "—"}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
