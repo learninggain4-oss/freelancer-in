@@ -7,10 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShieldCheck, CheckCircle2, XCircle, Clock, Search, Eye, User } from "lucide-react";
+import { ShieldCheck, CheckCircle2, XCircle, Clock, Search, Eye, User, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Verification = {
@@ -45,6 +47,8 @@ const AdminVerifications = () => {
   const [rejectReason, setRejectReason] = useState("");
   const [frontUrl, setFrontUrl] = useState<string | null>(null);
   const [backUrl, setBackUrl] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ name_on_aadhaar: "", aadhaar_number: "", dob_on_aadhaar: "", address_on_aadhaar: "" });
 
   const { data: verifications = [], isLoading } = useQuery({
     queryKey: ["admin-verifications"],
@@ -88,10 +92,40 @@ const AdminVerifications = () => {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const editMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: typeof editForm }) => {
+      const { error } = await supabase.from("aadhaar_verifications").update(data).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Verification details updated");
+      queryClient.invalidateQueries({ queryKey: ["admin-verifications"] });
+      setSelectedVerification(null);
+      setIsEditing(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (v: Verification) => {
+      // Delete stored images
+      await supabase.storage.from("aadhaar-documents").remove([v.front_image_path, v.back_image_path]);
+      const { error } = await supabase.from("aadhaar_verifications").delete().eq("id", v.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Verification record deleted");
+      queryClient.invalidateQueries({ queryKey: ["admin-verifications"] });
+      setSelectedVerification(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const openDetail = async (v: Verification) => {
     setSelectedVerification(v);
     setRejectReason("");
-    // Get signed URLs for images
+    setIsEditing(false);
+    setEditForm({ name_on_aadhaar: v.name_on_aadhaar, aadhaar_number: v.aadhaar_number, dob_on_aadhaar: v.dob_on_aadhaar, address_on_aadhaar: v.address_on_aadhaar });
     const { data: fData } = await supabase.storage.from("aadhaar-documents").createSignedUrl(v.front_image_path, 300);
     const { data: bData } = await supabase.storage.from("aadhaar-documents").createSignedUrl(v.back_image_path, 300);
     setFrontUrl(fData?.signedUrl ?? null);
@@ -178,8 +212,7 @@ const AdminVerifications = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Detail Dialog */}
-      <Dialog open={!!selectedVerification} onOpenChange={(open) => { if (!open) { setSelectedVerification(null); setFrontUrl(null); setBackUrl(null); } }}>
+      <Dialog open={!!selectedVerification} onOpenChange={(open) => { if (!open) { setSelectedVerification(null); setFrontUrl(null); setBackUrl(null); setIsEditing(false); } }}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -189,6 +222,32 @@ const AdminVerifications = () => {
 
           {selectedVerification && (
             <div className="space-y-4">
+              {/* Admin action buttons */}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setIsEditing(!isEditing); if (!isEditing) setEditForm({ name_on_aadhaar: selectedVerification.name_on_aadhaar, aadhaar_number: selectedVerification.aadhaar_number, dob_on_aadhaar: selectedVerification.dob_on_aadhaar, address_on_aadhaar: selectedVerification.address_on_aadhaar }); }}>
+                  <Pencil className="mr-1 h-3 w-3" /> {isEditing ? "Cancel Edit" : "Edit"}
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="text-destructive">
+                      <Trash2 className="mr-1 h-3 w-3" /> Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Verification</AlertDialogTitle>
+                      <AlertDialogDescription>This will permanently delete this Aadhaar verification record and its uploaded images. This action cannot be undone.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(selectedVerification)}>
+                        {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+
               {/* Profile info */}
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm">Profile Information</CardTitle></CardHeader>
@@ -202,22 +261,47 @@ const AdminVerifications = () => {
                 </CardContent>
               </Card>
 
-              {/* Aadhaar info */}
+              {/* Aadhaar info - View or Edit mode */}
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm">Aadhaar Details</CardTitle></CardHeader>
-                <CardContent className="space-y-1 text-sm">
-                  <p><span className="text-muted-foreground">Aadhaar Number:</span> {selectedVerification.aadhaar_number}</p>
-                  <p><span className="text-muted-foreground">Name on Aadhaar:</span> {selectedVerification.name_on_aadhaar}</p>
-                  <p><span className="text-muted-foreground">DOB on Aadhaar:</span> {selectedVerification.dob_on_aadhaar}</p>
-                  <p><span className="text-muted-foreground">Address:</span> {selectedVerification.address_on_aadhaar}</p>
-                  {/* Name match indicator */}
-                  {selectedVerification.profiles?.full_name?.[0] && (
-                    <div className="mt-2 flex items-center gap-2">
-                      {selectedVerification.name_on_aadhaar.toLowerCase().trim() === selectedVerification.profiles.full_name[0].toLowerCase().trim()
-                        ? <><CheckCircle2 className="h-4 w-4 text-accent" /><span className="text-accent text-xs font-medium">Name matches profile</span></>
-                        : <><XCircle className="h-4 w-4 text-warning" /><span className="text-warning text-xs font-medium">Name does not match profile ({selectedVerification.profiles.full_name[0]})</span></>
-                      }
+                <CardContent className="space-y-2 text-sm">
+                  {isEditing ? (
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Name on Aadhaar</Label>
+                        <Input value={editForm.name_on_aadhaar} onChange={(e) => setEditForm(f => ({ ...f, name_on_aadhaar: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Aadhaar Number</Label>
+                        <Input value={editForm.aadhaar_number} onChange={(e) => setEditForm(f => ({ ...f, aadhaar_number: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">DOB on Aadhaar</Label>
+                        <Input type="date" value={editForm.dob_on_aadhaar} onChange={(e) => setEditForm(f => ({ ...f, dob_on_aadhaar: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Address</Label>
+                        <Textarea value={editForm.address_on_aadhaar} onChange={(e) => setEditForm(f => ({ ...f, address_on_aadhaar: e.target.value }))} className="min-h-[60px]" />
+                      </div>
+                      <Button className="w-full" disabled={editMutation.isPending} onClick={() => editMutation.mutate({ id: selectedVerification.id, data: editForm })}>
+                        {editMutation.isPending ? "Saving..." : "Save Changes"}
+                      </Button>
                     </div>
+                  ) : (
+                    <>
+                      <p><span className="text-muted-foreground">Aadhaar Number:</span> {selectedVerification.aadhaar_number}</p>
+                      <p><span className="text-muted-foreground">Name on Aadhaar:</span> {selectedVerification.name_on_aadhaar}</p>
+                      <p><span className="text-muted-foreground">DOB on Aadhaar:</span> {selectedVerification.dob_on_aadhaar}</p>
+                      <p><span className="text-muted-foreground">Address:</span> {selectedVerification.address_on_aadhaar}</p>
+                      {selectedVerification.profiles?.full_name?.[0] && (
+                        <div className="mt-2 flex items-center gap-2">
+                          {selectedVerification.name_on_aadhaar.toLowerCase().trim() === selectedVerification.profiles.full_name[0].toLowerCase().trim()
+                            ? <><CheckCircle2 className="h-4 w-4 text-accent" /><span className="text-accent text-xs font-medium">Name matches profile</span></>
+                            : <><XCircle className="h-4 w-4 text-warning" /><span className="text-warning text-xs font-medium">Name does not match profile ({selectedVerification.profiles.full_name[0]})</span></>
+                          }
+                        </div>
+                      )}
+                    </>
                   )}
                 </CardContent>
               </Card>
