@@ -104,22 +104,43 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
     return form.trigger(fieldsToValidate as any);
   };
 
-  const checkDuplicates = async () => {
+  const checkDuplicates = async (): Promise<boolean> => {
     const { full_name, mobile_number, email, whatsapp_number } = form.getValues();
-    // Check via edge function or direct query - using RPC not available, check auth email
-    const { data: existingAuth } = await supabase.auth.signInWithPassword({ email, password: "___check___" });
-    // If sign-in doesn't fail with "Invalid login credentials", the email exists
-    // Actually, let's just try signUp and handle the error. We'll check profiles for mobile/whatsapp/name.
-    // Since profiles RLS blocks reading other profiles, we'll check during signup and handle errors.
-    return true; // Duplicate check will be handled server-side via unique constraints and signup error
+    const { data, error } = await supabase.rpc("check_registration_duplicates", {
+      p_email: email,
+      p_mobile: mobile_number,
+      p_whatsapp: whatsapp_number,
+      p_full_name: full_name,
+    });
+    if (error) {
+      toast({ title: "Error checking duplicates", description: error.message, variant: "destructive" });
+      return false;
+    }
+    const dupes = data as Record<string, string> | null;
+    if (dupes && Object.keys(dupes).length > 0) {
+      Object.entries(dupes).forEach(([field, message]) => {
+        form.setError(field as any, { type: "manual", message });
+      });
+      // Show which step has the error
+      if (dupes.full_name) setStep(0);
+      else if (dupes.mobile_number || dupes.whatsapp_number || dupes.email) setStep(steps.findIndex(s => s.key === "contact"));
+      toast({ title: "Duplicate account found", description: "Some of your details are already registered.", variant: "destructive" });
+      return false;
+    }
+    return true;
   };
+
+  const [checkingDuplicates, setCheckingDuplicates] = useState(false);
 
   const handleNext = async () => {
     const valid = await validateCurrentStep();
     if (valid) {
-      // On contact step, check for duplicate email
+      // On contact step, check for duplicates before proceeding
       if (steps[step].key === "contact") {
-        // We'll let Supabase auth handle email uniqueness
+        setCheckingDuplicates(true);
+        const noDupes = await checkDuplicates();
+        setCheckingDuplicates(false);
+        if (!noDupes) return;
       }
       setStep((s) => Math.min(s + 1, steps.length - 1));
     }
@@ -723,9 +744,10 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                   <ArrowLeft className="h-4 w-4" /> Back
                 </Button>
               )}
-              {step < steps.length - 1 ? (
-                <Button type="button" onClick={handleNext} className="flex-1 gap-1">
-                  Next <ArrowRight className="h-4 w-4" />
+{step < steps.length - 1 ? (
+                <Button type="button" onClick={handleNext} disabled={checkingDuplicates} className="flex-1 gap-1">
+                  {checkingDuplicates ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  {checkingDuplicates ? "Checking..." : "Next"} {!checkingDuplicates && <ArrowRight className="h-4 w-4" />}
                 </Button>
               ) : (
                 <Button type="submit" disabled={submitting} className="flex-1 gap-1">
