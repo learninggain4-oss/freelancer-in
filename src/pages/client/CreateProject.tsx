@@ -51,7 +51,7 @@ const CreateProject = () => {
       </div>
 
       <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-base">Project Details</CardTitle></CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-base">Job Details</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Project Name *</Label>
