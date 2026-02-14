@@ -13,6 +13,8 @@ import { Loader2 } from "lucide-react";
 // Lazy loaded pages
 const Index = lazy(() => import("./pages/Index"));
 const Login = lazy(() => import("./pages/Login"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const EmployeeRegister = lazy(() => import("./pages/register/EmployeeRegister"));
 const ClientRegister = lazy(() => import("./pages/register/ClientRegister"));
 const VerificationPending = lazy(() => import("./pages/VerificationPending"));
@@ -72,6 +74,8 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/register/employee" element={<EmployeeRegister />} />
               <Route path="/register/client" element={<ClientRegister />} />
               <Route path="/verification-pending" element={<VerificationPending />} />
