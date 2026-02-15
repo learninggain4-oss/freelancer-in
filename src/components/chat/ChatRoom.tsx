@@ -35,7 +35,7 @@ const ChatRoom = () => {
       if (!projectId) return null;
       const { data, error } = await supabase
         .from("chat_rooms")
-        .select("*, project:project_id(name, client_id, assigned_employee_id, status)")
+        .select("*, project:project_id(name, client_id, assigned_employee_id, status, amount, validation_fees)")
         .eq("project_id", projectId)
         .maybeSingle();
       if (error) throw error;
@@ -146,6 +146,8 @@ const ChatRoom = () => {
           projectId={projectId!}
           projectStatus={(chatRoom as any).project?.status ?? ""}
           isClient={profile?.user_type === "client" && (chatRoom as any).project?.client_id === profile?.id}
+          amount={Number((chatRoom as any).project?.amount ?? 0)}
+          validationFees={Number((chatRoom as any).project?.validation_fees ?? 0)}
         />
 
         {/* Messages */}
