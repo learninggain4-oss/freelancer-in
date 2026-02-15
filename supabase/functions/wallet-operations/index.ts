@@ -812,13 +812,15 @@ Deno.serve(async (req) => {
         if (!roleCheck) throw new Error("Admin access required");
         if (!target_profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
 
-        const { data: tp, error: tpErr } = await supabase.from("profiles").select("id, available_balance, user_id").eq("id", target_profile_id).single();
+        const { data: tp, error: tpErr } = await supabase.from("profiles").select("id, available_balance, user_id, full_name").eq("id", target_profile_id).single();
         if (tpErr || !tp) throw new Error("Target profile not found");
 
-        await supabase.from("profiles").update({ available_balance: Number(tp.available_balance) + amount }).eq("id", tp.id);
+        const newBal = Number(tp.available_balance) + amount;
+        await supabase.from("profiles").update({ available_balance: newBal }).eq("id", tp.id);
         await supabase.from("transactions").insert({ profile_id: tp.id, type: "credit", amount, description: description || "Admin: added to wallet" });
         await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Wallet Credited", message: `₹${amount.toLocaleString("en-IN")} has been added to your wallet by admin.`, type: "financial" });
-        result.new_balance = Number(tp.available_balance) + amount;
+        await supabase.from("admin_audit_logs").insert({ admin_id: callerProfile.id, action: "wallet_add", target_profile_id: tp.id, target_profile_name: (tp.full_name as any)?.[0] || null, details: { amount, description: description || "Admin: added to wallet", balance_before: Number(tp.available_balance), balance_after: newBal } });
+        result.new_balance = newBal;
         break;
       }
 
@@ -827,14 +829,15 @@ Deno.serve(async (req) => {
         if (!roleCheck) throw new Error("Admin access required");
         if (!target_profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
 
-        const { data: tp } = await supabase.from("profiles").select("id, available_balance, user_id").eq("id", target_profile_id).single();
+        const { data: tp } = await supabase.from("profiles").select("id, available_balance, user_id, full_name").eq("id", target_profile_id).single();
         if (!tp) throw new Error("Target profile not found");
 
-        // Allow negative balance
-        await supabase.from("profiles").update({ available_balance: Number(tp.available_balance) - amount }).eq("id", tp.id);
+        const newBal = Number(tp.available_balance) - amount;
+        await supabase.from("profiles").update({ available_balance: newBal }).eq("id", tp.id);
         await supabase.from("transactions").insert({ profile_id: tp.id, type: "debit", amount, description: description || "Admin: deducted from wallet" });
         await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Wallet Deducted", message: `₹${amount.toLocaleString("en-IN")} has been deducted from your wallet by admin.`, type: "financial" });
-        result.new_balance = Number(tp.available_balance) - amount;
+        await supabase.from("admin_audit_logs").insert({ admin_id: callerProfile.id, action: "wallet_deduct", target_profile_id: tp.id, target_profile_name: (tp.full_name as any)?.[0] || null, details: { amount, description: description || "Admin: deducted from wallet", balance_before: Number(tp.available_balance), balance_after: newBal } });
+        result.new_balance = newBal;
         break;
       }
 
@@ -843,7 +846,7 @@ Deno.serve(async (req) => {
         if (!roleCheck) throw new Error("Admin access required");
         if (!target_profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
 
-        const { data: tp } = await supabase.from("profiles").select("id, available_balance, hold_balance, user_id").eq("id", target_profile_id).single();
+        const { data: tp } = await supabase.from("profiles").select("id, available_balance, hold_balance, user_id, full_name").eq("id", target_profile_id).single();
         if (!tp) throw new Error("Target profile not found");
 
         const holdAmt = Math.min(amount, Number(tp.available_balance));
@@ -852,6 +855,7 @@ Deno.serve(async (req) => {
         await supabase.from("profiles").update({ available_balance: Number(tp.available_balance) - holdAmt, hold_balance: Number(tp.hold_balance) + holdAmt }).eq("id", tp.id);
         await supabase.from("transactions").insert({ profile_id: tp.id, type: "hold", amount: holdAmt, description: description || "Admin: amount held" });
         await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Balance Held", message: `₹${holdAmt.toLocaleString("en-IN")} has been placed on hold by admin.`, type: "financial" });
+        await supabase.from("admin_audit_logs").insert({ admin_id: callerProfile.id, action: "wallet_hold", target_profile_id: tp.id, target_profile_name: (tp.full_name as any)?.[0] || null, details: { amount: holdAmt, description: description || "Admin: amount held" } });
         break;
       }
 
@@ -874,6 +878,7 @@ Deno.serve(async (req) => {
           { user_id: from.user_id, title: "Funds Transferred", message: `₹${amount.toLocaleString("en-IN")} transferred to ${(to.full_name as any)?.[0]} by admin.`, type: "financial" },
           { user_id: to.user_id, title: "Funds Received", message: `₹${amount.toLocaleString("en-IN")} received from ${(from.full_name as any)?.[0]} by admin.`, type: "financial" },
         ]);
+        await supabase.from("admin_audit_logs").insert({ admin_id: callerProfile.id, action: "wallet_transfer", target_profile_id: from.id, target_profile_name: (from.full_name as any)?.[0] || null, details: { amount, from_id: from.id, to_id: to.id, to_name: (to.full_name as any)?.[0] || null, description: description || "Admin transfer" } });
         break;
       }
 
@@ -885,7 +890,6 @@ Deno.serve(async (req) => {
         const { data: oldTx } = await supabase.from("transactions").select("*").eq("id", transaction_id).single();
         if (!oldTx) throw new Error("Transaction not found");
 
-        // If adjusting balance, reverse old effect then apply new
         if (adjust_balance) {
           const { data: tp } = await supabase.from("profiles").select("id, available_balance, hold_balance").eq("id", target_profile_id).single();
           if (!tp) throw new Error("Profile not found");
@@ -897,13 +901,11 @@ Deno.serve(async (req) => {
           const oldType = oldTx.type;
           const newType = type ?? oldTx.type;
 
-          // Reverse old
           if (oldType === "credit") avail -= oldAmt;
           else if (oldType === "debit") avail += oldAmt;
           else if (oldType === "hold") { avail += oldAmt; hold -= oldAmt; }
           else if (oldType === "release") { avail -= oldAmt; hold += oldAmt; }
 
-          // Apply new
           if (newType === "credit") avail += newAmt;
           else if (newType === "debit") avail -= newAmt;
           else if (newType === "hold") { avail -= newAmt; hold += newAmt; }
@@ -917,6 +919,9 @@ Deno.serve(async (req) => {
           description: description ?? oldTx.description,
           type: type ?? oldTx.type,
         }).eq("id", transaction_id);
+
+        const { data: tpName } = await supabase.from("profiles").select("full_name").eq("id", target_profile_id).single();
+        await supabase.from("admin_audit_logs").insert({ admin_id: callerProfile.id, action: "edit_transaction", target_profile_id, target_profile_name: (tpName?.full_name as any)?.[0] || null, details: { transaction_id, old: { amount: oldTx.amount, type: oldTx.type, description: oldTx.description }, new: { amount: amount ?? oldTx.amount, type: type ?? oldTx.type, description: description ?? oldTx.description }, adjust_balance } });
         break;
       }
 
@@ -945,6 +950,9 @@ Deno.serve(async (req) => {
         }
 
         await supabase.from("transactions").delete().eq("id", transaction_id);
+
+        const { data: tpName } = await supabase.from("profiles").select("full_name").eq("id", target_profile_id).single();
+        await supabase.from("admin_audit_logs").insert({ admin_id: callerProfile.id, action: "delete_transaction", target_profile_id, target_profile_name: (tpName?.full_name as any)?.[0] || null, details: { transaction_id, deleted: { amount: oldTx.amount, type: oldTx.type, description: oldTx.description }, adjust_balance } });
         break;
       }
 
@@ -960,7 +968,6 @@ Deno.serve(async (req) => {
           const diff = Number(amount) - Number(oldW.amount);
           const { data: tp } = await supabase.from("profiles").select("id, available_balance").eq("id", target_profile_id).single();
           if (tp) {
-            // If withdrawal amount increased, deduct more; if decreased, refund
             await supabase.from("profiles").update({ available_balance: Number(tp.available_balance) - diff }).eq("id", target_profile_id);
           }
         }
@@ -971,6 +978,9 @@ Deno.serve(async (req) => {
         if (review_notes !== undefined) updates.review_notes = review_notes;
 
         await supabase.from("withdrawals").update(updates).eq("id", withdrawal_id);
+
+        const { data: tpName } = await supabase.from("profiles").select("full_name").eq("id", target_profile_id).single();
+        await supabase.from("admin_audit_logs").insert({ admin_id: callerProfile.id, action: "edit_withdrawal", target_profile_id, target_profile_name: (tpName?.full_name as any)?.[0] || null, details: { withdrawal_id, old: { amount: oldW.amount, status: oldW.status }, new: { amount: amount ?? oldW.amount, status: status ?? oldW.status, review_notes: review_notes ?? oldW.review_notes }, adjust_balance } });
         break;
       }
 
@@ -983,7 +993,6 @@ Deno.serve(async (req) => {
         if (!oldW) throw new Error("Withdrawal not found");
 
         if (adjust_balance && (oldW.status === "pending" || oldW.status === "approved")) {
-          // Restore the deducted amount
           const { data: tp } = await supabase.from("profiles").select("id, available_balance").eq("id", target_profile_id).single();
           if (tp) {
             await supabase.from("profiles").update({ available_balance: Number(tp.available_balance) + Number(oldW.amount) }).eq("id", target_profile_id);
@@ -991,6 +1000,9 @@ Deno.serve(async (req) => {
         }
 
         await supabase.from("withdrawals").delete().eq("id", withdrawal_id);
+
+        const { data: tpName } = await supabase.from("profiles").select("full_name").eq("id", target_profile_id).single();
+        await supabase.from("admin_audit_logs").insert({ admin_id: callerProfile.id, action: "delete_withdrawal", target_profile_id, target_profile_name: (tpName?.full_name as any)?.[0] || null, details: { withdrawal_id, deleted: { amount: oldW.amount, status: oldW.status }, adjust_balance } });
         break;
       }
 
