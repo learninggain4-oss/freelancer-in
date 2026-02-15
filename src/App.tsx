@@ -52,6 +52,8 @@ const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications")
 const LegalDocument = lazy(() => import("./pages/LegalDocument"));
 const AccountSettings = lazy(() => import("./pages/AccountSettings"));
 const EmployeeSupportChat = lazy(() => import("./pages/employee/EmployeeSupportChat"));
+const HelpSupport = lazy(() => import("./pages/HelpSupport"));
+const AdminHelpSupport = lazy(() => import("./pages/admin/AdminHelpSupport"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
@@ -109,6 +111,7 @@ const App = () => (
                 <Route path="wallet" element={<EmployeeWallet />} />
                 <Route path="profile" element={<EmployeeProfile />} />
                 <Route path="settings" element={<AccountSettings />} />
+                <Route path="help-support" element={<HelpSupport />} />
               </Route>
 
               {/* Client Routes */}
@@ -128,6 +131,7 @@ const App = () => (
                 <Route path="withdrawals" element={<ClientWithdrawals />} />
                 <Route path="profile" element={<ClientProfile />} />
                 <Route path="settings" element={<AccountSettings />} />
+                <Route path="help-support" element={<HelpSupport />} />
               </Route>
 
               {/* Admin Routes */}
@@ -157,6 +161,7 @@ const App = () => (
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="announcements" element={<AdminAnnouncements />} />
                 <Route path="notifications" element={<AdminNotifications />} />
+                <Route path="help-support" element={<AdminHelpSupport />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
