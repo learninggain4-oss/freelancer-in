@@ -23,6 +23,7 @@ import {
   Megaphone,
   Briefcase,
   LifeBuoy,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ const navItems = [
   { label: "Recovery", icon: LifeBuoy, path: "/admin/recovery-requests" },
   { label: "Services", icon: Layers, path: "/admin/services" },
   { label: "Legal Docs", icon: FileText, path: "/admin/legal-documents" },
+  { label: "Notifications", icon: Bell, path: "/admin/notifications" },
   { label: "Announcements", icon: Megaphone, path: "/admin/announcements" },
   { label: "Settings", icon: Settings, path: "/admin/settings" },
 ];

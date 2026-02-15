@@ -48,6 +48,7 @@ const AdminJobs = lazy(() => import("./pages/admin/AdminJobs"));
 const AdminRecoveryRequests = lazy(() => import("./pages/admin/AdminRecoveryRequests"));
 const AdminRecoveryChat = lazy(() => import("./pages/admin/AdminRecoveryChat"));
 const AdminWalletManagement = lazy(() => import("./pages/admin/AdminWalletManagement"));
+const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 const LegalDocument = lazy(() => import("./pages/LegalDocument"));
 const AccountSettings = lazy(() => import("./pages/AccountSettings"));
 const EmployeeSupportChat = lazy(() => import("./pages/employee/EmployeeSupportChat"));
@@ -155,6 +156,7 @@ const App = () => (
                 <Route path="wallet-management" element={<AdminWalletManagement />} />
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="announcements" element={<AdminAnnouncements />} />
+                <Route path="notifications" element={<AdminNotifications />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

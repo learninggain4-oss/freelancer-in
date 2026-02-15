@@ -21,8 +21,11 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Search, Wallet, IndianRupee, Clock, PlusCircle, MinusCircle,
-  Lock, ArrowRightLeft, Pencil, Trash2, User, ChevronLeft, ChevronRight, ScrollText,
+  Lock, ArrowRightLeft, Pencil, Trash2, User, ChevronLeft, ChevronRight, ScrollText, EyeOff,
 } from "lucide-react";
 
 type Profile = {
@@ -42,6 +45,7 @@ type Transaction = {
   description: string;
   created_at: string;
   reference_id: string | null;
+  is_cleared: boolean;
 };
 
 type Withdrawal = {
@@ -55,6 +59,7 @@ type Withdrawal = {
   bank_account_number: string | null;
   bank_ifsc_code: string | null;
   bank_holder_name: string | null;
+  is_cleared: boolean;
 };
 
 type AuditLog = {
@@ -108,6 +113,8 @@ const AdminWalletManagement = () => {
   const [txPage, setTxPage] = useState(1);
   const [wPage, setWPage] = useState(1);
   const [alPage, setAlPage] = useState(1);
+  const [showClearedTx, setShowClearedTx] = useState(false);
+  const [showClearedW, setShowClearedW] = useState(false);
 
   // User search
   const { data: searchResults = [], isLoading: searching } = useQuery({
@@ -145,15 +152,17 @@ const AdminWalletManagement = () => {
 
   // Transactions
   const { data: transactions = [], isLoading: loadingTx } = useQuery({
-    queryKey: ["admin-wallet-transactions", selectedUser?.id],
+    queryKey: ["admin-wallet-transactions", selectedUser?.id, showClearedTx],
     queryFn: async () => {
       if (!selectedUser?.id) return [];
-      const { data } = await supabase
+      let q = supabase
         .from("transactions")
         .select("*")
         .eq("profile_id", selectedUser.id)
         .order("created_at", { ascending: false })
         .limit(50);
+      if (!showClearedTx) q = q.eq("is_cleared", false);
+      const { data } = await q;
       return (data || []) as Transaction[];
     },
     enabled: !!selectedUser?.id,
@@ -161,15 +170,17 @@ const AdminWalletManagement = () => {
 
   // Withdrawals
   const { data: withdrawals = [], isLoading: loadingW } = useQuery({
-    queryKey: ["admin-wallet-withdrawals", selectedUser?.id],
+    queryKey: ["admin-wallet-withdrawals", selectedUser?.id, showClearedW],
     queryFn: async () => {
       if (!selectedUser?.id) return [];
-      const { data } = await supabase
+      let q = supabase
         .from("withdrawals")
         .select("*")
         .eq("employee_id", selectedUser.id)
         .order("requested_at", { ascending: false })
         .limit(50);
+      if (!showClearedW) q = q.eq("is_cleared", false);
+      const { data } = await q;
       return (data || []) as Withdrawal[];
     },
     enabled: !!selectedUser?.id,
@@ -263,6 +274,24 @@ const AdminWalletManagement = () => {
       setEditW(null);
       setDeleteW(null);
     },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const clearTxMutation = useMutation({
+    mutationFn: async ({ id, clear }: { id: string; clear: boolean }) => {
+      const { error } = await supabase.from("transactions").update({ is_cleared: clear }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => { toast.success(vars.clear ? "Transaction cleared" : "Transaction restored"); invalidateAll(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const clearWMutation = useMutation({
+    mutationFn: async ({ id, clear }: { id: string; clear: boolean }) => {
+      const { error } = await supabase.from("withdrawals").update({ is_cleared: clear }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => { toast.success(vars.clear ? "Withdrawal cleared" : "Withdrawal restored"); invalidateAll(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -445,6 +474,10 @@ const AdminWalletManagement = () => {
             </TabsList>
 
             <TabsContent value="transactions">
+              <div className="mb-3 flex items-center gap-2">
+                <Switch checked={showClearedTx} onCheckedChange={setShowClearedTx} id="show-cleared-tx" />
+                <Label htmlFor="show-cleared-tx" className="text-xs text-muted-foreground">Show cleared</Label>
+              </div>
               {(() => {
                 const totalTxPages = Math.max(1, Math.ceil(transactions.length / TX_PAGE_SIZE));
                 const safeTxPage = Math.min(txPage, totalTxPages);
@@ -468,9 +501,10 @@ const AdminWalletManagement = () => {
                           ) : paginatedTx.length === 0 ? (
                             <TableRow><TableCell colSpan={5} className="py-6 text-center text-muted-foreground">No transactions</TableCell></TableRow>
                           ) : paginatedTx.map((tx) => (
-                            <TableRow key={tx.id}>
+                            <TableRow key={tx.id} className={tx.is_cleared ? "opacity-50" : ""}>
                               <TableCell>
                                 <Badge variant="outline" className={txTypeBadge[tx.type] || ""}>{tx.type}</Badge>
+                                {tx.is_cleared && <Badge variant="outline" className="ml-1 text-[10px] border-destructive/30 text-destructive">Cleared</Badge>}
                               </TableCell>
                               <TableCell className="font-semibold">₹{Number(tx.amount).toLocaleString("en-IN")}</TableCell>
                               <TableCell className="max-w-[200px] truncate text-sm">{tx.description}</TableCell>
@@ -486,6 +520,15 @@ const AdminWalletManagement = () => {
                                   }}>
                                     <Pencil className="h-3.5 w-3.5" />
                                   </Button>
+                                  {tx.is_cleared ? (
+                                    <Button size="icon" variant="ghost" onClick={() => clearTxMutation.mutate({ id: tx.id, clear: false })}>
+                                      <EyeOff className="h-3.5 w-3.5" />
+                                    </Button>
+                                  ) : (
+                                    <Button size="icon" variant="ghost" className="text-warning" onClick={() => clearTxMutation.mutate({ id: tx.id, clear: true })} title="Clear">
+                                      <EyeOff className="h-3.5 w-3.5" />
+                                    </Button>
+                                  )}
                                   <Button size="icon" variant="ghost" className="text-destructive" onClick={() => {
                                     setDeleteTx(tx);
                                     setDeleteTxAdjustBalance(true);
@@ -536,6 +579,10 @@ const AdminWalletManagement = () => {
             </TabsContent>
 
             <TabsContent value="withdrawals">
+              <div className="mb-3 flex items-center gap-2">
+                <Switch checked={showClearedW} onCheckedChange={setShowClearedW} id="show-cleared-w" />
+                <Label htmlFor="show-cleared-w" className="text-xs text-muted-foreground">Show cleared</Label>
+              </div>
               {(() => {
                 const totalWPages = Math.max(1, Math.ceil(withdrawals.length / W_PAGE_SIZE));
                 const safeWPage = Math.min(wPage, totalWPages);
@@ -560,11 +607,12 @@ const AdminWalletManagement = () => {
                           ) : paginatedW.length === 0 ? (
                             <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">No withdrawals</TableCell></TableRow>
                           ) : paginatedW.map((w) => (
-                            <TableRow key={w.id}>
+                            <TableRow key={w.id} className={w.is_cleared ? "opacity-50" : ""}>
                               <TableCell className="font-semibold">₹{Number(w.amount).toLocaleString("en-IN")}</TableCell>
                               <TableCell className="text-xs uppercase">{w.method}</TableCell>
                               <TableCell>
                                 <Badge variant="outline" className={wStatusBadge[w.status] || ""}>{w.status}</Badge>
+                                {w.is_cleared && <Badge variant="outline" className="ml-1 text-[10px] border-destructive/30 text-destructive">Cleared</Badge>}
                               </TableCell>
                               <TableCell className="text-sm">{new Date(w.requested_at).toLocaleDateString()}</TableCell>
                               <TableCell className="max-w-[150px] truncate text-xs">{w.review_notes || "—"}</TableCell>
@@ -579,6 +627,15 @@ const AdminWalletManagement = () => {
                                   }}>
                                     <Pencil className="h-3.5 w-3.5" />
                                   </Button>
+                                  {w.is_cleared ? (
+                                    <Button size="icon" variant="ghost" onClick={() => clearWMutation.mutate({ id: w.id, clear: false })}>
+                                      <EyeOff className="h-3.5 w-3.5" />
+                                    </Button>
+                                  ) : (
+                                    <Button size="icon" variant="ghost" className="text-warning" onClick={() => clearWMutation.mutate({ id: w.id, clear: true })} title="Clear">
+                                      <EyeOff className="h-3.5 w-3.5" />
+                                    </Button>
+                                  )}
                                   <Button size="icon" variant="ghost" className="text-destructive" onClick={() => {
                                     setDeleteW(w);
                                     setDeleteWAdjustBalance(true);
