@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users, Clock, CheckCircle, Wallet, Fingerprint, Landmark,
   LifeBuoy, Briefcase, Edit, UserCheck, Building2,
+  IndianRupee, UserPlus, MessageSquare,
 } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -19,20 +20,42 @@ const AdminDashboard = () => {
     pendingProfileEdits: 0,
     totalEmployees: 0,
     totalClients: 0,
+    employeeEarnings: 0,
+    clientEarnings: 0,
+    employeesInvited: 0,
+    clientsInvited: 0,
+    unreadSupportChats: 0,
   });
 
   useEffect(() => {
-    const fetch = async () => {
-      const [profiles, withdrawals, aadhaar, bank, recovery, jobs] = await Promise.all([
+    const fetchStats = async () => {
+      const [profiles, withdrawals, aadhaar, bank, recovery, jobs, transactions, referredProfiles, supportMessages] = await Promise.all([
         supabase.from("profiles").select("id, approval_status, user_type, edit_request_status"),
         supabase.from("withdrawals").select("id").eq("status", "pending"),
         supabase.from("aadhaar_verifications").select("id").eq("status", "pending"),
         supabase.from("bank_verifications").select("id").eq("status", "pending"),
         supabase.from("recovery_requests").select("id").eq("status", "pending"),
         supabase.from("projects").select("id", { count: "exact" }),
+        supabase.from("transactions").select("profile_id, amount, type"),
+        supabase.from("profiles").select("id, user_type, referred_by").not("referred_by", "is", null),
+        supabase.from("messages").select("id, is_read, chat_room_id, chat_rooms!inner(type)").eq("is_read", false).eq("chat_rooms.type", "support"),
       ]);
 
       const allProfiles = profiles.data || [];
+      const allTransactions = transactions.data || [];
+      const referredUsers = referredProfiles.data || [];
+
+      const employeeIds = new Set(allProfiles.filter(p => p.user_type === "employee").map(p => p.id));
+      const clientIds = new Set(allProfiles.filter(p => p.user_type === "client").map(p => p.id));
+
+      const employeeEarnings = allTransactions
+        .filter(t => t.type === "credit" && employeeIds.has(t.profile_id))
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+
+      const clientEarnings = allTransactions
+        .filter(t => t.type === "credit" && clientIds.has(t.profile_id))
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+
       setStats({
         totalUsers: allProfiles.length,
         pendingApprovals: allProfiles.filter((p) => p.approval_status === "pending").length,
@@ -45,10 +68,17 @@ const AdminDashboard = () => {
         pendingProfileEdits: allProfiles.filter((p) => p.edit_request_status === "requested").length,
         totalEmployees: allProfiles.filter((p) => p.user_type === "employee").length,
         totalClients: allProfiles.filter((p) => p.user_type === "client").length,
+        employeeEarnings,
+        clientEarnings,
+        employeesInvited: referredUsers.filter(p => p.user_type === "employee").length,
+        clientsInvited: referredUsers.filter(p => p.user_type === "client").length,
+        unreadSupportChats: supportMessages.data?.length || 0,
       });
     };
-    fetch();
+    fetchStats();
   }, []);
+
+  const formatCurrency = (val: number) => `₹${val.toLocaleString("en-IN")}`;
 
   const cards = [
     { label: "Total Users", value: stats.totalUsers, icon: Users, color: "text-primary" },
@@ -56,6 +86,11 @@ const AdminDashboard = () => {
     { label: "Approved Users", value: stats.approvedUsers, icon: CheckCircle, color: "text-accent" },
     { label: "Employees", value: stats.totalEmployees, icon: UserCheck, color: "text-primary" },
     { label: "Clients", value: stats.totalClients, icon: Building2, color: "text-primary" },
+    { label: "Employee Earnings", value: formatCurrency(stats.employeeEarnings), icon: IndianRupee, color: "text-accent", isCurrency: true },
+    { label: "Client Earnings", value: formatCurrency(stats.clientEarnings), icon: IndianRupee, color: "text-accent", isCurrency: true },
+    { label: "Employees Invited", value: stats.employeesInvited, icon: UserPlus, color: "text-primary" },
+    { label: "Clients Invited", value: stats.clientsInvited, icon: UserPlus, color: "text-primary" },
+    { label: "Support Chat Unread", value: stats.unreadSupportChats, icon: MessageSquare, color: "text-destructive" },
     { label: "Pending Withdrawals", value: stats.pendingWithdrawals, icon: Wallet, color: "text-destructive" },
     { label: "Pending Aadhaar", value: stats.pendingAadhaar, icon: Fingerprint, color: "text-warning" },
     { label: "Pending Bank", value: stats.pendingBank, icon: Landmark, color: "text-warning" },
@@ -75,7 +110,7 @@ const AdminDashboard = () => {
               <c.icon className={`h-5 w-5 ${c.color}`} />
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-foreground">{c.value}</p>
+              <p className={`font-bold text-foreground ${(c as any).isCurrency ? "text-2xl" : "text-3xl"}`}>{c.value}</p>
             </CardContent>
           </Card>
         ))}
