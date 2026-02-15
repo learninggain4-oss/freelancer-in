@@ -943,6 +943,50 @@ export type Database = {
           },
         ]
       }
+      registration_metadata: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          latitude: number | null
+          longitude: number | null
+          profile_id: string
+          region: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          profile_id: string
+          region?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          profile_id?: string
+          region?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_metadata_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_categories: {
         Row: {
           created_at: string

@@ -72,12 +72,15 @@ type ProfileData = {
   disabled_reason: string | null;
   created_at: string;
   approved_at: string | null;
-  registration_ip: string | null;
-  registration_city: string | null;
-  registration_region: string | null;
-  registration_country: string | null;
-  registration_latitude: number | null;
-  registration_longitude: number | null;
+};
+
+type RegistrationMeta = {
+  ip_address: string | null;
+  city: string | null;
+  region: string | null;
+  country: string | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 const AdminProfileEdit = () => {
@@ -87,6 +90,7 @@ const AdminProfileEdit = () => {
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [aadhaarVerified, setAadhaarVerified] = useState(false);
+  const [regMeta, setRegMeta] = useState<RegistrationMeta | null>(null);
 
   // Form state
   const [form, setForm] = useState({
@@ -119,15 +123,20 @@ const AdminProfileEdit = () => {
     if (!profileId) return;
     const fetchData = async () => {
       setLoading(true);
-      const [{ data: p }, { data: av }] = await Promise.all([
+      const [{ data: p }, { data: av }, { data: meta }] = await Promise.all([
         supabase
           .from("profiles")
-          .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, upi_id, bank_account_number, bank_ifsc_code, bank_name, available_balance, hold_balance, approval_notes, is_disabled, disabled_reason, created_at, approved_at, registration_ip, registration_city, registration_region, registration_country, registration_latitude, registration_longitude")
+          .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, upi_id, bank_account_number, bank_ifsc_code, bank_name, available_balance, hold_balance, approval_notes, is_disabled, disabled_reason, created_at, approved_at")
           .eq("id", profileId)
           .single(),
         supabase
           .from("aadhaar_verifications")
           .select("status")
+          .eq("profile_id", profileId)
+          .maybeSingle(),
+        supabase
+          .from("registration_metadata" as any)
+          .select("ip_address, city, region, country, latitude, longitude")
           .eq("profile_id", profileId)
           .maybeSingle(),
       ]);
@@ -160,6 +169,7 @@ const AdminProfileEdit = () => {
         });
       }
       setAadhaarVerified(av?.status === "verified");
+      setRegMeta((meta as unknown as RegistrationMeta) || null);
       setLoading(false);
     };
     fetchData();
@@ -550,25 +560,25 @@ const AdminProfileEdit = () => {
           <div className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <p className="text-xs text-muted-foreground">IP Address</p>
-              <p className="font-mono font-medium">{profile.registration_ip || "—"}</p>
+              <p className="font-mono font-medium">{regMeta?.ip_address || "—"}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Location</p>
               <p className="font-medium">
-                {[profile.registration_city, profile.registration_region, profile.registration_country]
+                {[regMeta?.city, regMeta?.region, regMeta?.country]
                   .filter(Boolean)
                   .join(", ") || "—"}
               </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Coordinates</p>
-              {profile.registration_latitude && profile.registration_longitude ? (
+              {regMeta?.latitude && regMeta?.longitude ? (
                 <div className="flex items-center gap-2">
                   <p className="font-mono font-medium">
-                    {profile.registration_latitude}, {profile.registration_longitude}
+                    {regMeta.latitude}, {regMeta.longitude}
                   </p>
                   <a
-                    href={`https://www.google.com/maps?q=${profile.registration_latitude},${profile.registration_longitude}`}
+                    href={`https://www.google.com/maps?q=${regMeta.latitude},${regMeta.longitude}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
