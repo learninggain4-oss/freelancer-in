@@ -60,6 +60,7 @@ const AdminBankVerifications = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkRejectReason, setBulkRejectReason] = useState("");
   const [showBulkRejectDialog, setShowBulkRejectDialog] = useState(false);
+  const [showCleared, setShowCleared] = useState(false);
 
   const { data: verifications = [], isLoading } = useQuery({
     queryKey: ["admin-bank-verifications"],
@@ -200,9 +201,15 @@ const AdminBankVerifications = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Bank Verifications</h1>
-        <p className="text-sm text-muted-foreground">Review and manage bank detail verifications</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Bank Verifications</h1>
+          <p className="text-sm text-muted-foreground">Review and manage bank detail verifications</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Switch checked={showCleared} onCheckedChange={setShowCleared} id="show-cleared-bank" />
+          <Label htmlFor="show-cleared-bank" className="text-xs text-muted-foreground">Show cleared</Label>
+        </div>
       </div>
 
       <div className="relative">

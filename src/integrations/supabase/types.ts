@@ -23,6 +23,7 @@ export type Database = {
           dob_on_aadhaar: string
           front_image_path: string
           id: string
+          is_cleared: boolean
           name_on_aadhaar: string
           profile_id: string
           rejection_reason: string | null
@@ -39,6 +40,7 @@ export type Database = {
           dob_on_aadhaar: string
           front_image_path: string
           id?: string
+          is_cleared?: boolean
           name_on_aadhaar: string
           profile_id: string
           rejection_reason?: string | null
@@ -55,6 +57,7 @@ export type Database = {
           dob_on_aadhaar?: string
           front_image_path?: string
           id?: string
+          is_cleared?: boolean
           name_on_aadhaar?: string
           profile_id?: string
           rejection_reason?: string | null
@@ -237,6 +240,7 @@ export type Database = {
           document_name: string | null
           document_path: string | null
           id: string
+          is_cleared: boolean
           profile_id: string
           rejection_reason: string | null
           status: Database["public"]["Enums"]["bank_verification_status"]
@@ -250,6 +254,7 @@ export type Database = {
           document_name?: string | null
           document_path?: string | null
           id?: string
+          is_cleared?: boolean
           profile_id: string
           rejection_reason?: string | null
           status?: Database["public"]["Enums"]["bank_verification_status"]
@@ -263,6 +268,7 @@ export type Database = {
           document_name?: string | null
           document_path?: string | null
           id?: string
+          is_cleared?: boolean
           profile_id?: string
           rejection_reason?: string | null
           status?: Database["public"]["Enums"]["bank_verification_status"]
@@ -616,6 +622,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_cleared: boolean
           is_read: boolean
           message: string
           reference_id: string | null
@@ -627,6 +634,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_cleared?: boolean
           is_read?: boolean
           message: string
           reference_id?: string | null
@@ -638,6 +646,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_cleared?: boolean
           is_read?: boolean
           message?: string
           reference_id?: string | null
@@ -949,6 +958,7 @@ export type Database = {
           description: string | null
           end_date: string | null
           id: string
+          is_cleared: boolean
           name: string
           order_id: string | null
           order_number: number
@@ -972,6 +982,7 @@ export type Database = {
           description?: string | null
           end_date?: string | null
           id?: string
+          is_cleared?: boolean
           name: string
           order_id?: string | null
           order_number?: number
@@ -995,6 +1006,7 @@ export type Database = {
           description?: string | null
           end_date?: string | null
           id?: string
+          is_cleared?: boolean
           name?: string
           order_id?: string | null
           order_number?: number
@@ -1039,6 +1051,7 @@ export type Database = {
           employee_id: string
           held_amount: number
           id: string
+          is_cleared: boolean
           project_id: string
           resolved_at: string | null
           resolved_by: string | null
@@ -1050,6 +1063,7 @@ export type Database = {
           employee_id: string
           held_amount?: number
           id?: string
+          is_cleared?: boolean
           project_id: string
           resolved_at?: string | null
           resolved_by?: string | null
@@ -1061,6 +1075,7 @@ export type Database = {
           employee_id?: string
           held_amount?: number
           id?: string
+          is_cleared?: boolean
           project_id?: string
           resolved_at?: string | null
           resolved_by?: string | null
@@ -1229,6 +1244,7 @@ export type Database = {
           created_at: string
           description: string
           id: string
+          is_cleared: boolean
           profile_id: string
           reference_id: string | null
           type: Database["public"]["Enums"]["transaction_type"]
@@ -1238,6 +1254,7 @@ export type Database = {
           created_at?: string
           description: string
           id?: string
+          is_cleared?: boolean
           profile_id: string
           reference_id?: string | null
           type: Database["public"]["Enums"]["transaction_type"]
@@ -1247,6 +1264,7 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          is_cleared?: boolean
           profile_id?: string
           reference_id?: string | null
           type?: Database["public"]["Enums"]["transaction_type"]
@@ -1287,6 +1305,7 @@ export type Database = {
           bank_ifsc_code: string | null
           employee_id: string
           id: string
+          is_cleared: boolean
           method: string
           requested_at: string
           review_notes: string | null
@@ -1302,6 +1321,7 @@ export type Database = {
           bank_ifsc_code?: string | null
           employee_id: string
           id?: string
+          is_cleared?: boolean
           method?: string
           requested_at?: string
           review_notes?: string | null
@@ -1317,6 +1337,7 @@ export type Database = {
           bank_ifsc_code?: string | null
           employee_id?: string
           id?: string
+          is_cleared?: boolean
           method?: string
           requested_at?: string
           review_notes?: string | null
