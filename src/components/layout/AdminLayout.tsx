@@ -26,6 +26,7 @@ import {
   LifeBuoy,
   Bell,
   HelpCircle,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ const navItems = [
   { label: "Jobs", icon: Briefcase, path: "/admin/jobs" },
   { label: "Recovery", icon: LifeBuoy, path: "/admin/recovery-requests" },
   { label: "Help & Support", icon: HelpCircle, path: "/admin/help-support" },
+  { label: "Support Reports", icon: BarChart3, path: "/admin/support-reporting" },
   { label: "Services", icon: Layers, path: "/admin/services" },
   { label: "Legal Docs", icon: FileText, path: "/admin/legal-documents" },
   { label: "Notifications", icon: Bell, path: "/admin/notifications" },

@@ -54,6 +54,7 @@ const AccountSettings = lazy(() => import("./pages/AccountSettings"));
 const EmployeeSupportChat = lazy(() => import("./pages/employee/EmployeeSupportChat"));
 const HelpSupport = lazy(() => import("./pages/HelpSupport"));
 const AdminHelpSupport = lazy(() => import("./pages/admin/AdminHelpSupport"));
+const AdminSupportReporting = lazy(() => import("./pages/admin/AdminSupportReporting"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
@@ -162,6 +163,7 @@ const App = () => (
                 <Route path="announcements" element={<AdminAnnouncements />} />
                 <Route path="notifications" element={<AdminNotifications />} />
                 <Route path="help-support" element={<AdminHelpSupport />} />
+                <Route path="support-reporting" element={<AdminSupportReporting />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
