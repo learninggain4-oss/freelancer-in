@@ -78,6 +78,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const [services, setServices] = useState<ServiceEntry[]>([emptyService()]);
   const [arrayErrors, setArrayErrors] = useState<string[]>([]);
   const [referralCode, setReferralCode] = useState(() => searchParams.get("ref")?.toUpperCase() || "");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationProfileSchema),
@@ -682,10 +683,25 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                   Next <ArrowRight className="h-4 w-4" />
                 </Button>
               ) : (
-                <Button type="submit" disabled={submitting} className="flex-1 gap-1">
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  Submit Registration
-                </Button>
+                <>
+                  <div className="mt-2 flex items-start space-x-2 col-span-full w-full">
+                    <Checkbox
+                      id="reg-terms"
+                      checked={agreedToTerms}
+                      onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                    />
+                    <label htmlFor="reg-terms" className="text-xs leading-tight text-muted-foreground">
+                      I agree to the{" "}
+                      <Link to="/legal/terms-of-service" className="text-primary hover:underline" target="_blank">Terms of Service</Link>
+                      {" "}and{" "}
+                      <Link to="/legal/privacy-policy" className="text-primary hover:underline" target="_blank">Privacy Policy</Link>
+                    </label>
+                  </div>
+                  <Button type="submit" disabled={submitting || !agreedToTerms} className="flex-1 gap-1">
+                    {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    Submit Registration
+                  </Button>
+                </>
               )}
             </div>
 
