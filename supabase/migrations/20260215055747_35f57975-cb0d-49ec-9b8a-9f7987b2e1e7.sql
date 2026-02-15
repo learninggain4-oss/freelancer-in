@@ -1,0 +1,4 @@
+
+ALTER TABLE public.announcements
+  ADD COLUMN scheduled_at TIMESTAMPTZ DEFAULT NULL,
+  ADD COLUMN expires_at TIMESTAMPTZ DEFAULT NULL;
