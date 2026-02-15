@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -92,13 +93,24 @@ const InquiryCard = ({ project: p, onApply, isPending }: { project: any; onApply
 
 const EmployeeProjects = () => {
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const { profile } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  // Fetch categories for filter
+  const { data: categories = [] } = useQuery({
+    queryKey: ["service-categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("service_categories").select("*").order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Fetch open projects (inquiries)
   const { data: inquiries = [], isLoading: loadingInquiries } = useQuery({
-    queryKey: ["employee-inquiries", search],
+    queryKey: ["employee-inquiries", search, categoryFilter],
     queryFn: async () => {
       let query = supabase.
       from("projects").
@@ -106,6 +118,7 @@ const EmployeeProjects = () => {
       eq("status", "open").
       order("created_at", { ascending: false });
       if (search) query = query.ilike("name", `%${search}%`);
+      if (categoryFilter !== "all") query = query.eq("category_id", categoryFilter);
       const { data, error } = await query;
       if (error) throw error;
       return data;
@@ -165,9 +178,20 @@ const EmployeeProjects = () => {
     <div className="space-y-4 p-4">
       <h1 className="text-2xl font-bold text-foreground">Jobs</h1>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search jobs..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search jobs..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        </div>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-[130px]"><SelectValue placeholder="Category" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {categories.map((c: any) => (
+              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <Tabs defaultValue="inquiries" className="w-full">
