@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { CheckCircle, XCircle, Loader2, ShieldCheck, CreditCard, Clock, ClipboardCheck, BadgeCheck } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, ShieldCheck, CreditCard, Clock, ClipboardCheck, BadgeCheck, IndianRupee } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,6 +21,8 @@ interface ProjectValidationControlsProps {
   projectId: string;
   projectStatus: string;
   isClient: boolean;
+  amount: number;
+  validationFees: number;
 }
 
 const STEP_LABELS: Record<string, { step: number; label: string }> = {
@@ -34,6 +36,8 @@ const ProjectValidationControls = ({
   projectId,
   projectStatus,
   isClient,
+  amount,
+  validationFees,
 }: ProjectValidationControlsProps) => {
   const [loading, setLoading] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
@@ -184,6 +188,25 @@ const ProjectValidationControls = ({
 
   return (
     <div className="flex flex-col gap-2 border-b bg-muted/50 px-4 py-3">
+      {/* Fee Summary */}
+      <div className="flex flex-wrap gap-3 rounded-md bg-background/80 px-3 py-2 text-xs">
+        <div className="flex items-center gap-1">
+          <IndianRupee className="h-3 w-3 text-muted-foreground" />
+          <span className="text-muted-foreground">Validation Fees:</span>
+          <span className="font-semibold text-foreground">₹{validationFees.toLocaleString("en-IN")}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <IndianRupee className="h-3 w-3 text-muted-foreground" />
+          <span className="text-muted-foreground">Budget:</span>
+          <span className="font-semibold text-foreground">₹{amount.toLocaleString("en-IN")}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-muted-foreground">Total:</span>
+          <span className="font-semibold text-primary">₹{(amount + validationFees).toLocaleString("en-IN")}</span>
+        </div>
+      </div>
+
+      {/* Step indicators */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         {[1, 2, 3, 4].map((s) => (
           <span
