@@ -41,6 +41,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import UserEntityManager from "@/components/admin/UserEntityManager";
 
 type ProfileData = {
   id: string;
@@ -548,6 +549,10 @@ const AdminProfileEdit = () => {
           </div>
         </CardContent>
       </Card>
+      {/* Registration Metadata */}
+
+      {/* Entity Management */}
+      <UserEntityManager profileId={profileId!} />
 
       {/* Registration Metadata */}
       <Card>
