@@ -123,6 +123,15 @@ const AdminWalletManagement = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-wallet-users"] });
       queryClient.invalidateQueries({ queryKey: ["admin-wallet-tx"] });
       queryClient.invalidateQueries({ queryKey: ["admin-wallet-withdrawals"] });
+      // Refresh selected user's balance
+      if (selectedUser) {
+        supabase
+          .from("profiles")
+          .select("id, full_name, user_code, email, user_type, available_balance, hold_balance")
+          .eq("id", selectedUser.id)
+          .single()
+          .then(({ data }) => { if (data) setSelectedUser(data as Profile); });
+      }
     },
     onError: (e: any) => toast.error(e.message),
   });
