@@ -14,6 +14,10 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -53,6 +57,9 @@ const AdminWalletManagement = () => {
   const [editWAmount, setEditWAmount] = useState("");
   const [editWStatus, setEditWStatus] = useState("");
   const [editWNotes, setEditWNotes] = useState("");
+
+  // Confirmation dialogs
+  const [confirmAction, setConfirmAction] = useState<{ type: string; id?: string; label: string } | null>(null);
 
   const { data: users = [], isLoading: usersLoading } = useQuery({
     queryKey: ["admin-wallet-users", searchTerm],
@@ -289,7 +296,7 @@ const AdminWalletManagement = () => {
 
             <TabsContent value="transactions" className="space-y-3">
               <div className="flex justify-end">
-                <Button size="sm" variant="destructive" onClick={handleClearTransactions} disabled={transactions.length === 0}>
+                <Button size="sm" variant="destructive" onClick={() => setConfirmAction({ type: "clear_all", label: `Clear all ${transactions.length} transactions for ${selectedUser?.full_name?.[0]}?` })} disabled={transactions.length === 0}>
                   <XCircle className="mr-1 h-3.5 w-3.5" /> Clear All
                 </Button>
               </div>
@@ -326,7 +333,7 @@ const AdminWalletManagement = () => {
                             }}>
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
-                            <Button size="icon" variant="ghost" className="text-destructive" onClick={() => handleDeleteTransaction(tx.id)}>
+                            <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setConfirmAction({ type: "delete_tx", id: tx.id, label: `Delete transaction "₹${Number(tx.amount).toLocaleString("en-IN")} — ${tx.description}"?` })}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
@@ -379,7 +386,7 @@ const AdminWalletManagement = () => {
                             }}>
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
-                            <Button size="icon" variant="ghost" className="text-destructive" onClick={() => handleDeleteWithdrawal(w.id)}>
+                            <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setConfirmAction({ type: "delete_w", id: w.id, label: `Delete withdrawal of ₹${Number(w.amount).toLocaleString("en-IN")}?` })}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
@@ -493,6 +500,33 @@ const AdminWalletManagement = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog for destructive actions */}
+      <AlertDialog open={!!confirmAction} onOpenChange={(o) => { if (!o) setConfirmAction(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction?.label} This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (!confirmAction) return;
+                if (confirmAction.type === "clear_all") handleClearTransactions();
+                else if (confirmAction.type === "delete_tx" && confirmAction.id) handleDeleteTransaction(confirmAction.id);
+                else if (confirmAction.type === "delete_w" && confirmAction.id) handleDeleteWithdrawal(confirmAction.id);
+                setConfirmAction(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
