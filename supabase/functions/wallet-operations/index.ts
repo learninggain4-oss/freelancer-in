@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes } =
+    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type } =
       await req.json();
 
     // Get the caller's profile
@@ -802,6 +802,195 @@ Deno.serve(async (req) => {
 
         result.status = "held";
         result.held_amount = holdAmount;
+        break;
+      }
+
+      // ─── Admin Wallet Management Actions ───
+
+      case "admin_wallet_add": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!target_profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
+
+        const { data: tp, error: tpErr } = await supabase.from("profiles").select("id, available_balance, user_id").eq("id", target_profile_id).single();
+        if (tpErr || !tp) throw new Error("Target profile not found");
+
+        await supabase.from("profiles").update({ available_balance: Number(tp.available_balance) + amount }).eq("id", tp.id);
+        await supabase.from("transactions").insert({ profile_id: tp.id, type: "credit", amount, description: description || "Admin: added to wallet" });
+        await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Wallet Credited", message: `₹${amount.toLocaleString("en-IN")} has been added to your wallet by admin.`, type: "financial" });
+        result.new_balance = Number(tp.available_balance) + amount;
+        break;
+      }
+
+      case "admin_wallet_deduct": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!target_profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
+
+        const { data: tp } = await supabase.from("profiles").select("id, available_balance, user_id").eq("id", target_profile_id).single();
+        if (!tp) throw new Error("Target profile not found");
+
+        // Allow negative balance
+        await supabase.from("profiles").update({ available_balance: Number(tp.available_balance) - amount }).eq("id", tp.id);
+        await supabase.from("transactions").insert({ profile_id: tp.id, type: "debit", amount, description: description || "Admin: deducted from wallet" });
+        await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Wallet Deducted", message: `₹${amount.toLocaleString("en-IN")} has been deducted from your wallet by admin.`, type: "financial" });
+        result.new_balance = Number(tp.available_balance) - amount;
+        break;
+      }
+
+      case "admin_wallet_hold": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!target_profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
+
+        const { data: tp } = await supabase.from("profiles").select("id, available_balance, hold_balance, user_id").eq("id", target_profile_id).single();
+        if (!tp) throw new Error("Target profile not found");
+
+        const holdAmt = Math.min(amount, Number(tp.available_balance));
+        if (holdAmt <= 0) throw new Error("Insufficient available balance to hold");
+
+        await supabase.from("profiles").update({ available_balance: Number(tp.available_balance) - holdAmt, hold_balance: Number(tp.hold_balance) + holdAmt }).eq("id", tp.id);
+        await supabase.from("transactions").insert({ profile_id: tp.id, type: "hold", amount: holdAmt, description: description || "Admin: amount held" });
+        await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Balance Held", message: `₹${holdAmt.toLocaleString("en-IN")} has been placed on hold by admin.`, type: "financial" });
+        break;
+      }
+
+      case "admin_wallet_transfer": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!target_profile_id || !transfer_to_profile_id || !amount || amount <= 0) throw new Error("Missing parameters");
+
+        const { data: from } = await supabase.from("profiles").select("id, available_balance, user_id, full_name").eq("id", target_profile_id).single();
+        const { data: to } = await supabase.from("profiles").select("id, available_balance, user_id, full_name").eq("id", transfer_to_profile_id).single();
+        if (!from || !to) throw new Error("Profile not found");
+
+        await supabase.from("profiles").update({ available_balance: Number(from.available_balance) - amount }).eq("id", from.id);
+        await supabase.from("profiles").update({ available_balance: Number(to.available_balance) + amount }).eq("id", to.id);
+        await supabase.from("transactions").insert([
+          { profile_id: from.id, type: "debit" as const, amount, description: description || `Admin transfer to ${(to.full_name as any)?.[0] || to.id}` },
+          { profile_id: to.id, type: "credit" as const, amount, description: description || `Admin transfer from ${(from.full_name as any)?.[0] || from.id}` },
+        ]);
+        await supabase.from("notifications").insert([
+          { user_id: from.user_id, title: "Funds Transferred", message: `₹${amount.toLocaleString("en-IN")} transferred to ${(to.full_name as any)?.[0]} by admin.`, type: "financial" },
+          { user_id: to.user_id, title: "Funds Received", message: `₹${amount.toLocaleString("en-IN")} received from ${(from.full_name as any)?.[0]} by admin.`, type: "financial" },
+        ]);
+        break;
+      }
+
+      case "admin_edit_transaction": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!transaction_id || !target_profile_id) throw new Error("Missing parameters");
+
+        const { data: oldTx } = await supabase.from("transactions").select("*").eq("id", transaction_id).single();
+        if (!oldTx) throw new Error("Transaction not found");
+
+        // If adjusting balance, reverse old effect then apply new
+        if (adjust_balance) {
+          const { data: tp } = await supabase.from("profiles").select("id, available_balance, hold_balance").eq("id", target_profile_id).single();
+          if (!tp) throw new Error("Profile not found");
+
+          let avail = Number(tp.available_balance);
+          let hold = Number(tp.hold_balance);
+          const oldAmt = Number(oldTx.amount);
+          const newAmt = Number(amount ?? oldTx.amount);
+          const oldType = oldTx.type;
+          const newType = type ?? oldTx.type;
+
+          // Reverse old
+          if (oldType === "credit") avail -= oldAmt;
+          else if (oldType === "debit") avail += oldAmt;
+          else if (oldType === "hold") { avail += oldAmt; hold -= oldAmt; }
+          else if (oldType === "release") { avail -= oldAmt; hold += oldAmt; }
+
+          // Apply new
+          if (newType === "credit") avail += newAmt;
+          else if (newType === "debit") avail -= newAmt;
+          else if (newType === "hold") { avail -= newAmt; hold += newAmt; }
+          else if (newType === "release") { avail += newAmt; hold -= newAmt; }
+
+          await supabase.from("profiles").update({ available_balance: avail, hold_balance: hold }).eq("id", target_profile_id);
+        }
+
+        await supabase.from("transactions").update({
+          amount: Number(amount ?? oldTx.amount),
+          description: description ?? oldTx.description,
+          type: type ?? oldTx.type,
+        }).eq("id", transaction_id);
+        break;
+      }
+
+      case "admin_delete_transaction": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!transaction_id || !target_profile_id) throw new Error("Missing parameters");
+
+        const { data: oldTx } = await supabase.from("transactions").select("*").eq("id", transaction_id).single();
+        if (!oldTx) throw new Error("Transaction not found");
+
+        if (adjust_balance) {
+          const { data: tp } = await supabase.from("profiles").select("id, available_balance, hold_balance").eq("id", target_profile_id).single();
+          if (!tp) throw new Error("Profile not found");
+
+          let avail = Number(tp.available_balance);
+          let hold = Number(tp.hold_balance);
+          const amt = Number(oldTx.amount);
+
+          if (oldTx.type === "credit") avail -= amt;
+          else if (oldTx.type === "debit") avail += amt;
+          else if (oldTx.type === "hold") { avail += amt; hold -= amt; }
+          else if (oldTx.type === "release") { avail -= amt; hold += amt; }
+
+          await supabase.from("profiles").update({ available_balance: avail, hold_balance: hold }).eq("id", target_profile_id);
+        }
+
+        await supabase.from("transactions").delete().eq("id", transaction_id);
+        break;
+      }
+
+      case "admin_edit_withdrawal": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!withdrawal_id || !target_profile_id) throw new Error("Missing parameters");
+
+        const { data: oldW } = await supabase.from("withdrawals").select("*").eq("id", withdrawal_id).single();
+        if (!oldW) throw new Error("Withdrawal not found");
+
+        if (adjust_balance && amount !== undefined && Number(amount) !== Number(oldW.amount)) {
+          const diff = Number(amount) - Number(oldW.amount);
+          const { data: tp } = await supabase.from("profiles").select("id, available_balance").eq("id", target_profile_id).single();
+          if (tp) {
+            // If withdrawal amount increased, deduct more; if decreased, refund
+            await supabase.from("profiles").update({ available_balance: Number(tp.available_balance) - diff }).eq("id", target_profile_id);
+          }
+        }
+
+        const updates: any = {};
+        if (amount !== undefined) updates.amount = Number(amount);
+        if (status) updates.status = status;
+        if (review_notes !== undefined) updates.review_notes = review_notes;
+
+        await supabase.from("withdrawals").update(updates).eq("id", withdrawal_id);
+        break;
+      }
+
+      case "admin_delete_withdrawal": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!withdrawal_id || !target_profile_id) throw new Error("Missing parameters");
+
+        const { data: oldW } = await supabase.from("withdrawals").select("*").eq("id", withdrawal_id).single();
+        if (!oldW) throw new Error("Withdrawal not found");
+
+        if (adjust_balance && (oldW.status === "pending" || oldW.status === "approved")) {
+          // Restore the deducted amount
+          const { data: tp } = await supabase.from("profiles").select("id, available_balance").eq("id", target_profile_id).single();
+          if (tp) {
+            await supabase.from("profiles").update({ available_balance: Number(tp.available_balance) + Number(oldW.amount) }).eq("id", target_profile_id);
+          }
+        }
+
+        await supabase.from("withdrawals").delete().eq("id", withdrawal_id);
         break;
       }
 
