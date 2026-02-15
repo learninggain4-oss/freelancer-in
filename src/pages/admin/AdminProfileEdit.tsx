@@ -91,6 +91,7 @@ const AdminProfileEdit = () => {
   // Form state
   const [form, setForm] = useState({
     full_name: "",
+    user_code: "",
     email: "",
     mobile_number: "",
     whatsapp_number: "",
@@ -134,6 +135,7 @@ const AdminProfileEdit = () => {
         setProfile(p as ProfileData);
         setForm({
           full_name: p.full_name?.[0] || "",
+          user_code: p.user_code?.[0] || "",
           email: p.email || "",
           mobile_number: p.mobile_number || "",
           whatsapp_number: p.whatsapp_number || "",
@@ -174,6 +176,7 @@ const AdminProfileEdit = () => {
       .from("profiles")
       .update({
         full_name: [form.full_name],
+        user_code: [form.user_code],
         email: form.email,
         mobile_number: form.mobile_number || null,
         whatsapp_number: form.whatsapp_number || null,
@@ -405,6 +408,10 @@ const AdminProfileEdit = () => {
             <div className="space-y-2">
               <Label>Full Name</Label>
               <Input value={form.full_name} onChange={(e) => updateField("full_name", e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>User Code</Label>
+              <Input value={form.user_code} onChange={(e) => updateField("user_code", e.target.value)} placeholder="e.g. EMP00001" />
             </div>
             <div className="space-y-2">
               <Label>Email</Label>
