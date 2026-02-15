@@ -173,14 +173,25 @@ const AdminAnnouncements = () => {
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start text-left font-normal">
                       <CalendarClock className="mr-2 h-4 w-4" />
-                      {scheduledAt ? format(scheduledAt, "PPP") : "Immediately"}
+                      {scheduledAt ? format(scheduledAt, "PPP p") : "Immediately"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={scheduledAt} onSelect={setScheduledAt} disabled={(date) => date < new Date()} />
+                    <Calendar mode="single" selected={scheduledAt} onSelect={(day) => {
+                      if (!day) { setScheduledAt(undefined); return; }
+                      const prev = scheduledAt;
+                      if (prev) { day.setHours(prev.getHours(), prev.getMinutes()); }
+                      setScheduledAt(day);
+                    }} disabled={(date) => date < new Date(new Date().toDateString())} className="p-3 pointer-events-auto" />
                     {scheduledAt && (
-                      <div className="px-3 pb-3">
-                        <Button variant="ghost" size="sm" className="w-full" onClick={() => setScheduledAt(undefined)}>Clear</Button>
+                      <div className="flex items-center gap-2 px-3 pb-3">
+                        <Input type="time" className="flex-1" value={format(scheduledAt, "HH:mm")} onChange={(e) => {
+                          const [h, m] = e.target.value.split(":").map(Number);
+                          const d = new Date(scheduledAt);
+                          d.setHours(h, m);
+                          setScheduledAt(d);
+                        }} />
+                        <Button variant="ghost" size="sm" onClick={() => setScheduledAt(undefined)}>Clear</Button>
                       </div>
                     )}
                   </PopoverContent>
@@ -192,14 +203,26 @@ const AdminAnnouncements = () => {
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start text-left font-normal">
                       <Clock className="mr-2 h-4 w-4" />
-                      {expiresAt ? format(expiresAt, "PPP") : "Never"}
+                      {expiresAt ? format(expiresAt, "PPP p") : "Never"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={expiresAt} onSelect={setExpiresAt} disabled={(date) => date < new Date()} />
+                    <Calendar mode="single" selected={expiresAt} onSelect={(day) => {
+                      if (!day) { setExpiresAt(undefined); return; }
+                      const prev = expiresAt;
+                      if (prev) { day.setHours(prev.getHours(), prev.getMinutes()); }
+                      else { day.setHours(23, 59); }
+                      setExpiresAt(day);
+                    }} disabled={(date) => date < new Date(new Date().toDateString())} className="p-3 pointer-events-auto" />
                     {expiresAt && (
-                      <div className="px-3 pb-3">
-                        <Button variant="ghost" size="sm" className="w-full" onClick={() => setExpiresAt(undefined)}>Clear</Button>
+                      <div className="flex items-center gap-2 px-3 pb-3">
+                        <Input type="time" className="flex-1" value={format(expiresAt, "HH:mm")} onChange={(e) => {
+                          const [h, m] = e.target.value.split(":").map(Number);
+                          const d = new Date(expiresAt);
+                          d.setHours(h, m);
+                          setExpiresAt(d);
+                        }} />
+                        <Button variant="ghost" size="sm" onClick={() => setExpiresAt(undefined)}>Clear</Button>
                       </div>
                     )}
                   </PopoverContent>
