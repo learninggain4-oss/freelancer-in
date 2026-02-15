@@ -76,7 +76,8 @@ const AccountSettings = () => {
 
   const handleShare = async (type: "employee" | "client") => {
     const label = type === "employee" ? "Freelancer" : "Client";
-    const text = `Join Freelancer as a ${label} using my referral code: ${referralCode}\nSign up at ${window.location.origin}/register/${type}`;
+    const link = `${window.location.origin}/register/${type}?ref=${referralCode}`;
+    const text = `Join Freelancer as a ${label} using my referral code: ${referralCode}\nSign up at ${link}`;
     if (navigator.share) {
       try {
         await navigator.share({ title: `Join Freelancer as ${label}`, text });

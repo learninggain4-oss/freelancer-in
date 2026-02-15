@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
@@ -66,6 +66,7 @@ const emptyService = (): ServiceEntry => ({
 const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const isEmployee = userType === "employee";
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
   const stepLabels = ["Personal Info", "Contact Details", "Work Experience", "Emergency Contact", "Services"];
@@ -76,7 +77,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContactEntry[]>([emptyContact()]);
   const [services, setServices] = useState<ServiceEntry[]>([emptyService()]);
   const [arrayErrors, setArrayErrors] = useState<string[]>([]);
-  const [referralCode, setReferralCode] = useState("");
+  const [referralCode, setReferralCode] = useState(() => searchParams.get("ref")?.toUpperCase() || "");
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationProfileSchema),
