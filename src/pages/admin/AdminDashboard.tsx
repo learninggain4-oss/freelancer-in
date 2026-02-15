@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -8,6 +9,7 @@ import {
 } from "lucide-react";
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalUsers: 0,
     pendingApprovals: 0,
@@ -81,22 +83,22 @@ const AdminDashboard = () => {
   const formatCurrency = (val: number) => `₹${val.toLocaleString("en-IN")}`;
 
   const cards = [
-    { label: "Total Users", value: stats.totalUsers, icon: Users, color: "text-primary" },
-    { label: "Pending Approvals", value: stats.pendingApprovals, icon: Clock, color: "text-warning" },
-    { label: "Approved Users", value: stats.approvedUsers, icon: CheckCircle, color: "text-accent" },
-    { label: "Employees", value: stats.totalEmployees, icon: UserCheck, color: "text-primary" },
-    { label: "Clients", value: stats.totalClients, icon: Building2, color: "text-primary" },
-    { label: "Employee Earnings", value: formatCurrency(stats.employeeEarnings), icon: IndianRupee, color: "text-accent", isCurrency: true },
-    { label: "Client Earnings", value: formatCurrency(stats.clientEarnings), icon: IndianRupee, color: "text-accent", isCurrency: true },
-    { label: "Employees Invited", value: stats.employeesInvited, icon: UserPlus, color: "text-primary" },
-    { label: "Clients Invited", value: stats.clientsInvited, icon: UserPlus, color: "text-primary" },
-    { label: "Support Chat Unread", value: stats.unreadSupportChats, icon: MessageSquare, color: "text-destructive" },
-    { label: "Pending Withdrawals", value: stats.pendingWithdrawals, icon: Wallet, color: "text-destructive" },
-    { label: "Pending Aadhaar", value: stats.pendingAadhaar, icon: Fingerprint, color: "text-warning" },
-    { label: "Pending Bank", value: stats.pendingBank, icon: Landmark, color: "text-warning" },
-    { label: "Pending Recovery", value: stats.pendingRecovery, icon: LifeBuoy, color: "text-destructive" },
-    { label: "Total Jobs", value: stats.totalJobs, icon: Briefcase, color: "text-accent" },
-    { label: "Profile Edits", value: stats.pendingProfileEdits, icon: Edit, color: "text-warning" },
+    { label: "Total Users", value: stats.totalUsers, icon: Users, color: "text-primary", path: "/admin/users" },
+    { label: "Pending Approvals", value: stats.pendingApprovals, icon: Clock, color: "text-warning", path: "/admin/users" },
+    { label: "Approved Users", value: stats.approvedUsers, icon: CheckCircle, color: "text-accent", path: "/admin/users" },
+    { label: "Employees", value: stats.totalEmployees, icon: UserCheck, color: "text-primary", path: "/admin/employees" },
+    { label: "Clients", value: stats.totalClients, icon: Building2, color: "text-primary", path: "/admin/clients" },
+    { label: "Employee Earnings", value: formatCurrency(stats.employeeEarnings), icon: IndianRupee, color: "text-accent", isCurrency: true, path: "/admin/wallet-management" },
+    { label: "Client Earnings", value: formatCurrency(stats.clientEarnings), icon: IndianRupee, color: "text-accent", isCurrency: true, path: "/admin/wallet-management" },
+    { label: "Employees Invited", value: stats.employeesInvited, icon: UserPlus, color: "text-primary", path: "/admin/employees" },
+    { label: "Clients Invited", value: stats.clientsInvited, icon: UserPlus, color: "text-primary", path: "/admin/clients" },
+    { label: "Support Chat Unread", value: stats.unreadSupportChats, icon: MessageSquare, color: "text-destructive", path: "/admin/recovery-requests" },
+    { label: "Pending Withdrawals", value: stats.pendingWithdrawals, icon: Wallet, color: "text-destructive", path: "/admin/withdrawals" },
+    { label: "Pending Aadhaar", value: stats.pendingAadhaar, icon: Fingerprint, color: "text-warning", path: "/admin/verifications" },
+    { label: "Pending Bank", value: stats.pendingBank, icon: Landmark, color: "text-warning", path: "/admin/bank-verifications" },
+    { label: "Pending Recovery", value: stats.pendingRecovery, icon: LifeBuoy, color: "text-destructive", path: "/admin/recovery-requests" },
+    { label: "Total Jobs", value: stats.totalJobs, icon: Briefcase, color: "text-accent", path: "/admin/jobs" },
+    { label: "Profile Edits", value: stats.pendingProfileEdits, icon: Edit, color: "text-warning", path: "/admin/profile-edits" },
   ];
 
   return (
@@ -104,7 +106,11 @@ const AdminDashboard = () => {
       <h2 className="text-2xl font-bold text-foreground">Dashboard Overview</h2>
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
         {cards.map((c) => (
-          <Card key={c.label}>
+          <Card
+            key={c.label}
+            className="cursor-pointer transition-shadow hover:shadow-md hover:border-primary/30"
+            onClick={() => navigate(c.path)}
+          >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">{c.label}</CardTitle>
               <c.icon className={`h-5 w-5 ${c.color}`} />
