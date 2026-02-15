@@ -18,6 +18,7 @@ import {
   Settings,
   Landmark,
   Megaphone,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ const navItems = [
   { label: "Withdrawals", icon: Wallet, path: "/admin/withdrawals" },
   { label: "Aadhaar Verify", icon: Fingerprint, path: "/admin/verifications" },
   { label: "Bank Verify", icon: Landmark, path: "/admin/bank-verifications" },
+  { label: "Jobs", icon: Briefcase, path: "/admin/jobs" },
   { label: "Services", icon: Layers, path: "/admin/services" },
   { label: "Legal Docs", icon: FileText, path: "/admin/legal-documents" },
   { label: "Announcements", icon: Megaphone, path: "/admin/announcements" },

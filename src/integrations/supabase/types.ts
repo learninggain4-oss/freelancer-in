@@ -790,6 +790,51 @@ export type Database = {
           },
         ]
       }
+      project_documents: {
+        Row: {
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          project_id: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          project_id: string
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          project_id?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_documents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_submissions: {
         Row: {
           employee_id: string
@@ -837,50 +882,71 @@ export type Database = {
       }
       projects: {
         Row: {
+          admin_approved: boolean
           amount: number
           assigned_employee_id: string | null
+          category_id: string | null
           client_id: string
           created_at: string
           description: string | null
           end_date: string | null
           id: string
           name: string
+          order_id: string | null
+          order_number: number
           remarks: string | null
           requirements: string
+          responsibility: string | null
+          scheduled_publish_at: string | null
           start_date: string | null
           status: Database["public"]["Enums"]["project_status"]
+          summary: string | null
           updated_at: string
           validation_fees: number
         }
         Insert: {
+          admin_approved?: boolean
           amount?: number
           assigned_employee_id?: string | null
+          category_id?: string | null
           client_id: string
           created_at?: string
           description?: string | null
           end_date?: string | null
           id?: string
           name: string
+          order_id?: string | null
+          order_number?: number
           remarks?: string | null
           requirements: string
+          responsibility?: string | null
+          scheduled_publish_at?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"]
+          summary?: string | null
           updated_at?: string
           validation_fees?: number
         }
         Update: {
+          admin_approved?: boolean
           amount?: number
           assigned_employee_id?: string | null
+          category_id?: string | null
           client_id?: string
           created_at?: string
           description?: string | null
           end_date?: string | null
           id?: string
           name?: string
+          order_id?: string | null
+          order_number?: number
           remarks?: string | null
           requirements?: string
+          responsibility?: string | null
+          scheduled_publish_at?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"]
+          summary?: string | null
           updated_at?: string
           validation_fees?: number
         }
@@ -890,6 +956,13 @@ export type Database = {
             columns: ["assigned_employee_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
             referencedColumns: ["id"]
           },
           {
