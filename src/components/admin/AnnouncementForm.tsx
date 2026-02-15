@@ -9,12 +9,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Megaphone, Loader2, Clock, CalendarClock, Users } from "lucide-react";
+import { Megaphone, Loader2, Clock, CalendarClock, Users, Eye } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface AnnouncementFormProps {
   editingAnnouncement?: any;
@@ -33,6 +41,7 @@ const AnnouncementForm = ({ editingAnnouncement, onClose }: AnnouncementFormProp
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(true);
   const [userSearch, setUserSearch] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
 
   const isEditing = !!editingAnnouncement;
 
@@ -296,7 +305,7 @@ const AnnouncementForm = ({ editingAnnouncement, onClose }: AnnouncementFormProp
             </Popover>
           </div>
         </div>
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-2 pt-2 flex-wrap">
           <Button
             onClick={() => saveMutation.mutate()}
             disabled={!title.trim() || !message.trim() || saveMutation.isPending || (!selectAll && selectedUserIds.length === 0 && userType !== null)}
@@ -310,8 +319,39 @@ const AnnouncementForm = ({ editingAnnouncement, onClose }: AnnouncementFormProp
                 ? "Schedule Announcement"
                 : "Publish Announcement"}
           </Button>
+          <Button
+            variant="secondary"
+            onClick={() => setShowPreview(true)}
+            disabled={!title.trim() || !message.trim()}
+            className="gap-2"
+          >
+            <Eye className="h-4 w-4" />
+            Preview
+          </Button>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
         </div>
+
+        {/* Preview Dialog — matches the exact popup users see */}
+        <Dialog open={showPreview} onOpenChange={setShowPreview}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                  <Megaphone className="h-5 w-5 text-primary" />
+                </div>
+                <DialogTitle>{title.trim() || "Untitled"}</DialogTitle>
+              </div>
+              <DialogDescription className="whitespace-pre-wrap pt-2 text-foreground/80">
+                {message.trim() || "No message content."}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={() => setShowPreview(false)} className="w-full sm:w-auto">
+                Got it
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
