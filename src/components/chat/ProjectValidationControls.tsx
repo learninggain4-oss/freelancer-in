@@ -166,17 +166,17 @@ const ProjectValidationControls = ({
     job_confirmed: {
       icon: <CreditCard className="h-3 w-3" />,
       text: "Payment Process",
-      description: "The project budget will be deducted from your wallet and held for the employee.",
+      description: "The validation fees will be deducted from your wallet and held for the employee.",
     },
     payment_processing: {
       icon: <BadgeCheck className="h-3 w-3" />,
       text: "Validation Confirm",
-      description: "Confirm validation of the work and proceed to final confirmation.",
+      description: "The budget amount will be deducted from your wallet and held for the employee.",
     },
     validation: {
       icon: <CheckCircle className="h-3 w-3" />,
       text: "Final Confirm",
-      description: "The held amount will be released to the employee. This cannot be undone.",
+      description: "The total held amount (validation fees + budget) will be released to the employee's available balance. This cannot be undone.",
     },
   };
 
@@ -235,9 +235,7 @@ const ProjectValidationControls = ({
             <AlertDialogHeader>
               <AlertDialogTitle>Reject Project?</AlertDialogTitle>
               <AlertDialogDescription>
-                {projectStatus === "payment_processing" || projectStatus === "validation"
-                  ? "This will cancel the project and refund the held payment."
-                  : "This will cancel the project."}
+                This will cancel the project. The held balance will remain on hold.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <Textarea
