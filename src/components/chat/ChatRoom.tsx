@@ -194,20 +194,26 @@ const ChatRoom = () => {
           </div>
         )}
 
-        {/* Input */}
-        <div className="flex items-center gap-2 border-t px-4 py-3">
-          <ChatFileUpload onFileUploaded={handleFileUploaded} />
-          <Input
-            placeholder="Type a message... (use @name to mention)"
-            value={newMessage}
-            onChange={handleInputChange}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            className="flex-1"
-          />
-          <Button size="icon" onClick={handleSend} disabled={!newMessage.trim() && !pendingFile}>
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
+        {/* Input — disabled when project is cancelled or completed */}
+        {((chatRoom as any).project?.status === "cancelled" || (chatRoom as any).project?.status === "completed") ? (
+          <div className="flex items-center justify-center border-t px-4 py-3 text-sm text-muted-foreground">
+            This chat is closed.
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 border-t px-4 py-3">
+            <ChatFileUpload onFileUploaded={handleFileUploaded} />
+            <Input
+              placeholder="Type a message... (use @name to mention)"
+              value={newMessage}
+              onChange={handleInputChange}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              className="flex-1"
+            />
+            <Button size="icon" onClick={handleSend} disabled={!newMessage.trim() && !pendingFile}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Thread panel */}
