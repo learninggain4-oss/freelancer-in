@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ import {
   LogOut,
   Menu,
   X,
+  ChevronLeft,
   ShieldCheck,
   Fingerprint,
   UserCheck,
@@ -51,6 +52,10 @@ const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const currentNav = navItems.find((item) => location.pathname === item.path);
+  const isSubPage = location.pathname !== "/admin/dashboard";
 
   const { data: pendingRecoveryCount = 0 } = useQuery({
     queryKey: ["admin-recovery-pending-count"],
@@ -145,6 +150,23 @@ const AdminLayout = () => {
             <Menu className="h-5 w-5 text-muted-foreground" />
           </button>
           <h1 className="text-lg font-bold text-primary lg:hidden">Admin</h1>
+          {isSubPage && (
+            <div className="ml-auto flex items-center gap-1.5 text-sm lg:ml-0">
+              <button
+                onClick={() => navigate("/admin/dashboard")}
+                className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Dashboard</span>
+              </button>
+              {currentNav && (
+                <>
+                  <span className="text-muted-foreground">/</span>
+                  <span className="font-medium text-foreground">{currentNav.label}</span>
+                </>
+              )}
+            </div>
+          )}
         </header>
         <main className="flex-1 p-4 lg:p-6">
           <Outlet />
