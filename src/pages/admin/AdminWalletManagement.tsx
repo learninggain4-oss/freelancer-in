@@ -22,7 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   Search, Wallet, IndianRupee, Clock, PlusCircle, MinusCircle,
-  Lock, ArrowRightLeft, Pencil, Trash2, User,
+  Lock, ArrowRightLeft, Pencil, Trash2, User, ChevronLeft, ChevronRight,
 } from "lucide-react";
 
 type Profile = {
@@ -89,6 +89,12 @@ const AdminWalletManagement = () => {
   const [editWAdjustBalance, setEditWAdjustBalance] = useState(true);
   const [deleteW, setDeleteW] = useState<Withdrawal | null>(null);
   const [deleteWAdjustBalance, setDeleteWAdjustBalance] = useState(true);
+
+  // Pagination
+  const TX_PAGE_SIZE = 15;
+  const W_PAGE_SIZE = 15;
+  const [txPage, setTxPage] = useState(1);
+  const [wPage, setWPage] = useState(1);
 
   // User search
   const { data: searchResults = [], isLoading: searching } = useQuery({
@@ -316,7 +322,7 @@ const AdminWalletManagement = () => {
               <button
                 key={u.id}
                 className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted"
-                onClick={() => { setSelectedUser(u); setSearch(""); }}
+                onClick={() => { setSelectedUser(u); setSearch(""); setTxPage(1); setWPage(1); }}
               >
                 <div>
                   <p className="font-medium text-foreground">{u.full_name?.[0]}</p>
@@ -406,107 +412,187 @@ const AdminWalletManagement = () => {
             </TabsList>
 
             <TabsContent value="transactions">
-              <div className="overflow-x-auto rounded-lg border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loadingTx ? (
-                      <TableRow><TableCell colSpan={5}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
-                    ) : transactions.length === 0 ? (
-                      <TableRow><TableCell colSpan={5} className="py-6 text-center text-muted-foreground">No transactions</TableCell></TableRow>
-                    ) : transactions.map((tx) => (
-                      <TableRow key={tx.id}>
-                        <TableCell>
-                          <Badge variant="outline" className={txTypeBadge[tx.type] || ""}>{tx.type}</Badge>
-                        </TableCell>
-                        <TableCell className="font-semibold">₹{Number(tx.amount).toLocaleString("en-IN")}</TableCell>
-                        <TableCell className="max-w-[200px] truncate text-sm">{tx.description}</TableCell>
-                        <TableCell className="text-sm">{new Date(tx.created_at).toLocaleDateString()}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button size="icon" variant="ghost" onClick={() => {
-                              setEditTx(tx);
-                              setEditTxAmount(String(tx.amount));
-                              setEditTxDesc(tx.description);
-                              setEditTxType(tx.type);
-                              setEditTxAdjustBalance(true);
-                            }}>
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button size="icon" variant="ghost" className="text-destructive" onClick={() => {
-                              setDeleteTx(tx);
-                              setDeleteTxAdjustBalance(true);
-                            }}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              {(() => {
+                const totalTxPages = Math.max(1, Math.ceil(transactions.length / TX_PAGE_SIZE));
+                const safeTxPage = Math.min(txPage, totalTxPages);
+                const paginatedTx = transactions.slice((safeTxPage - 1) * TX_PAGE_SIZE, safeTxPage * TX_PAGE_SIZE);
+                return (
+                  <div className="space-y-3">
+                    <div className="overflow-x-auto rounded-lg border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {loadingTx ? (
+                            <TableRow><TableCell colSpan={5}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
+                          ) : paginatedTx.length === 0 ? (
+                            <TableRow><TableCell colSpan={5} className="py-6 text-center text-muted-foreground">No transactions</TableCell></TableRow>
+                          ) : paginatedTx.map((tx) => (
+                            <TableRow key={tx.id}>
+                              <TableCell>
+                                <Badge variant="outline" className={txTypeBadge[tx.type] || ""}>{tx.type}</Badge>
+                              </TableCell>
+                              <TableCell className="font-semibold">₹{Number(tx.amount).toLocaleString("en-IN")}</TableCell>
+                              <TableCell className="max-w-[200px] truncate text-sm">{tx.description}</TableCell>
+                              <TableCell className="text-sm">{new Date(tx.created_at).toLocaleDateString()}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1">
+                                  <Button size="icon" variant="ghost" onClick={() => {
+                                    setEditTx(tx);
+                                    setEditTxAmount(String(tx.amount));
+                                    setEditTxDesc(tx.description);
+                                    setEditTxType(tx.type);
+                                    setEditTxAdjustBalance(true);
+                                  }}>
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="text-destructive" onClick={() => {
+                                    setDeleteTx(tx);
+                                    setDeleteTxAdjustBalance(true);
+                                  }}>
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    {transactions.length > TX_PAGE_SIZE && (
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                          Showing {(safeTxPage - 1) * TX_PAGE_SIZE + 1}–{Math.min(safeTxPage * TX_PAGE_SIZE, transactions.length)} of {transactions.length}
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <Button size="icon" variant="outline" className="h-8 w-8" disabled={safeTxPage <= 1} onClick={() => setTxPage(safeTxPage - 1)}>
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          {Array.from({ length: totalTxPages }, (_, i) => i + 1)
+                            .filter((p) => p === 1 || p === totalTxPages || Math.abs(p - safeTxPage) <= 1)
+                            .reduce<(number | "ellipsis")[]>((acc, p, idx, arr) => {
+                              if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("ellipsis");
+                              acc.push(p);
+                              return acc;
+                            }, [])
+                            .map((p, i) =>
+                              p === "ellipsis" ? (
+                                <span key={`e${i}`} className="px-1 text-sm text-muted-foreground">…</span>
+                              ) : (
+                                <Button key={p} size="icon" variant={p === safeTxPage ? "default" : "outline"} className="h-8 w-8 text-xs" onClick={() => setTxPage(p)}>
+                                  {p}
+                                </Button>
+                              )
+                            )}
+                          <Button size="icon" variant="outline" className="h-8 w-8" disabled={safeTxPage >= totalTxPages} onClick={() => setTxPage(safeTxPage + 1)}>
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </TabsContent>
 
             <TabsContent value="withdrawals">
-              <div className="overflow-x-auto rounded-lg border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Notes</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loadingW ? (
-                      <TableRow><TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
-                    ) : withdrawals.length === 0 ? (
-                      <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">No withdrawals</TableCell></TableRow>
-                    ) : withdrawals.map((w) => (
-                      <TableRow key={w.id}>
-                        <TableCell className="font-semibold">₹{Number(w.amount).toLocaleString("en-IN")}</TableCell>
-                        <TableCell className="text-xs uppercase">{w.method}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={wStatusBadge[w.status] || ""}>{w.status}</Badge>
-                        </TableCell>
-                        <TableCell className="text-sm">{new Date(w.requested_at).toLocaleDateString()}</TableCell>
-                        <TableCell className="max-w-[150px] truncate text-xs">{w.review_notes || "—"}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button size="icon" variant="ghost" onClick={() => {
-                              setEditW(w);
-                              setEditWAmount(String(w.amount));
-                              setEditWStatus(w.status);
-                              setEditWNotes(w.review_notes || "");
-                              setEditWAdjustBalance(true);
-                            }}>
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button size="icon" variant="ghost" className="text-destructive" onClick={() => {
-                              setDeleteW(w);
-                              setDeleteWAdjustBalance(true);
-                            }}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              {(() => {
+                const totalWPages = Math.max(1, Math.ceil(withdrawals.length / W_PAGE_SIZE));
+                const safeWPage = Math.min(wPage, totalWPages);
+                const paginatedW = withdrawals.slice((safeWPage - 1) * W_PAGE_SIZE, safeWPage * W_PAGE_SIZE);
+                return (
+                  <div className="space-y-3">
+                    <div className="overflow-x-auto rounded-lg border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Method</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Notes</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {loadingW ? (
+                            <TableRow><TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
+                          ) : paginatedW.length === 0 ? (
+                            <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">No withdrawals</TableCell></TableRow>
+                          ) : paginatedW.map((w) => (
+                            <TableRow key={w.id}>
+                              <TableCell className="font-semibold">₹{Number(w.amount).toLocaleString("en-IN")}</TableCell>
+                              <TableCell className="text-xs uppercase">{w.method}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={wStatusBadge[w.status] || ""}>{w.status}</Badge>
+                              </TableCell>
+                              <TableCell className="text-sm">{new Date(w.requested_at).toLocaleDateString()}</TableCell>
+                              <TableCell className="max-w-[150px] truncate text-xs">{w.review_notes || "—"}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1">
+                                  <Button size="icon" variant="ghost" onClick={() => {
+                                    setEditW(w);
+                                    setEditWAmount(String(w.amount));
+                                    setEditWStatus(w.status);
+                                    setEditWNotes(w.review_notes || "");
+                                    setEditWAdjustBalance(true);
+                                  }}>
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="text-destructive" onClick={() => {
+                                    setDeleteW(w);
+                                    setDeleteWAdjustBalance(true);
+                                  }}>
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    {withdrawals.length > W_PAGE_SIZE && (
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                          Showing {(safeWPage - 1) * W_PAGE_SIZE + 1}–{Math.min(safeWPage * W_PAGE_SIZE, withdrawals.length)} of {withdrawals.length}
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <Button size="icon" variant="outline" className="h-8 w-8" disabled={safeWPage <= 1} onClick={() => setWPage(safeWPage - 1)}>
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          {Array.from({ length: totalWPages }, (_, i) => i + 1)
+                            .filter((p) => p === 1 || p === totalWPages || Math.abs(p - safeWPage) <= 1)
+                            .reduce<(number | "ellipsis")[]>((acc, p, idx, arr) => {
+                              if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("ellipsis");
+                              acc.push(p);
+                              return acc;
+                            }, [])
+                            .map((p, i) =>
+                              p === "ellipsis" ? (
+                                <span key={`e${i}`} className="px-1 text-sm text-muted-foreground">…</span>
+                              ) : (
+                                <Button key={p} size="icon" variant={p === safeWPage ? "default" : "outline"} className="h-8 w-8 text-xs" onClick={() => setWPage(p)}>
+                                  {p}
+                                </Button>
+                              )
+                            )}
+                          <Button size="icon" variant="outline" className="h-8 w-8" disabled={safeWPage >= totalWPages} onClick={() => setWPage(safeWPage + 1)}>
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </TabsContent>
           </Tabs>
         </>
