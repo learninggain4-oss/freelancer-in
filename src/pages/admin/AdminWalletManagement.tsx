@@ -116,20 +116,32 @@ const AdminWalletManagement = () => {
   const [showClearedTx, setShowClearedTx] = useState(false);
   const [showClearedW, setShowClearedW] = useState(false);
 
-  // User search
-  const { data: searchResults = [], isLoading: searching } = useQuery({
-    queryKey: ["admin-wallet-search", search],
+  const [userTab, setUserTab] = useState<"employee" | "client">("employee");
+
+  // Fetch all users
+  const { data: allUsers = [], isLoading: loadingUsers } = useQuery({
+    queryKey: ["admin-wallet-all-users"],
     queryFn: async () => {
-      if (search.length < 2) return [];
       const { data, error } = await supabase
         .from("profiles")
         .select("id, full_name, user_code, email, user_type, available_balance, hold_balance")
-        .or(`email.ilike.%${search}%,full_name.cs.{${search}}`)
-        .limit(10);
+        .in("user_type", ["employee", "client"])
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data as Profile[];
     },
-    enabled: search.length >= 2 && !selectedUser,
+    enabled: !selectedUser,
+  });
+
+  const filteredUsers = allUsers.filter((u) => {
+    if (u.user_type !== userTab) return false;
+    if (search.length < 2) return true;
+    const q = search.toLowerCase();
+    return (
+      (u.full_name?.[0] || "").toLowerCase().includes(q) ||
+      (u.user_code?.[0] || "").toLowerCase().includes(q) ||
+      (u.email || "").toLowerCase().includes(q)
+    );
   });
 
   // Fresh user data
@@ -367,35 +379,43 @@ const AdminWalletManagement = () => {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Search className="h-4 w-4" /> Search User
+              <Search className="h-4 w-4" /> Select User
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
+            <Tabs value={userTab} onValueChange={(v) => setUserTab(v as "employee" | "client")}>
+              <TabsList className="w-full">
+                <TabsTrigger value="employee" className="flex-1">Employees</TabsTrigger>
+                <TabsTrigger value="client" className="flex-1">Clients</TabsTrigger>
+              </TabsList>
+            </Tabs>
             <Input
-              placeholder="Search by name, email, or code..."
+              placeholder="Filter by name, email, or code..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            {searching && <Skeleton className="h-10 w-full" />}
-            {searchResults.map((u) => (
-              <button
-                key={u.id}
-                className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted"
-                onClick={() => { setSelectedUser(u); setSearch(""); setTxPage(1); setWPage(1); }}
-              >
-                <div>
-                  <p className="font-medium text-foreground">{u.full_name?.[0]}</p>
-                  <p className="text-xs text-muted-foreground">{u.user_code?.[0]} · {u.email} · {u.user_type}</p>
-                </div>
-                <div className="text-right text-sm">
-                  <p className="font-semibold text-foreground">₹{Number(u.available_balance).toLocaleString("en-IN")}</p>
-                  <p className="text-xs text-muted-foreground">Hold: ₹{Number(u.hold_balance).toLocaleString("en-IN")}</p>
-                </div>
-              </button>
-            ))}
-            {search.length >= 2 && !searching && searchResults.length === 0 && (
-              <p className="py-2 text-center text-sm text-muted-foreground">No users found</p>
-            )}
+            {loadingUsers && <Skeleton className="h-10 w-full" />}
+            <div className="max-h-[400px] space-y-2 overflow-y-auto">
+              {filteredUsers.map((u) => (
+                <button
+                  key={u.id}
+                  className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted"
+                  onClick={() => { setSelectedUser(u); setSearch(""); setTxPage(1); setWPage(1); }}
+                >
+                  <div>
+                    <p className="font-medium text-foreground">{u.full_name?.[0]}</p>
+                    <p className="text-xs text-muted-foreground">{u.user_code?.[0]} · {u.email}</p>
+                  </div>
+                  <div className="text-right text-sm">
+                    <p className="font-semibold text-foreground">₹{Number(u.available_balance).toLocaleString("en-IN")}</p>
+                    <p className="text-xs text-muted-foreground">Hold: ₹{Number(u.hold_balance).toLocaleString("en-IN")}</p>
+                  </div>
+                </button>
+              ))}
+              {!loadingUsers && filteredUsers.length === 0 && (
+                <p className="py-4 text-center text-sm text-muted-foreground">No {userTab}s found</p>
+              )}
+            </div>
           </CardContent>
         </Card>
       ) : (
