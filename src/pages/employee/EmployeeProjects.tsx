@@ -17,6 +17,7 @@ import {
   Send,
   Tag,
   Paperclip,
+  Sparkles,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -94,6 +95,7 @@ const InquiryCard = ({ project: p, onApply, isPending }: { project: any; onApply
 const EmployeeProjects = () => {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [mySkillsActive, setMySkillsActive] = useState(false);
   const { profile } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -108,9 +110,29 @@ const EmployeeProjects = () => {
     },
   });
 
+  // Fetch employee's registered service category IDs
+  const { data: mySkillCategoryIds = [] } = useQuery({
+    queryKey: ["my-skill-categories", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data, error } = await supabase
+        .from("employee_services")
+        .select("category_id")
+        .eq("profile_id", profile.id);
+      if (error) throw error;
+      return [...new Set(data.map((s: any) => s.category_id))];
+    },
+    enabled: !!profile?.id,
+  });
+
+  const toggleMySkills = () => {
+    setMySkillsActive((prev) => !prev);
+    setCategoryFilter("all");
+  };
+
   // Fetch open projects (inquiries)
   const { data: inquiries = [], isLoading: loadingInquiries } = useQuery({
-    queryKey: ["employee-inquiries", search, categoryFilter],
+    queryKey: ["employee-inquiries", search, categoryFilter, mySkillsActive, mySkillCategoryIds],
     queryFn: async () => {
       let query = supabase.
       from("projects").
@@ -118,7 +140,11 @@ const EmployeeProjects = () => {
       eq("status", "open").
       order("created_at", { ascending: false });
       if (search) query = query.ilike("name", `%${search}%`);
-      if (categoryFilter !== "all") query = query.eq("category_id", categoryFilter);
+      if (mySkillsActive && mySkillCategoryIds.length > 0) {
+        query = query.in("category_id", mySkillCategoryIds);
+      } else if (categoryFilter !== "all") {
+        query = query.eq("category_id", categoryFilter);
+      }
       const { data, error } = await query;
       if (error) throw error;
       return data;
@@ -183,7 +209,7 @@ const EmployeeProjects = () => {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Search jobs..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+        <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setMySkillsActive(false); }} disabled={mySkillsActive}>
           <SelectTrigger className="w-[130px]"><SelectValue placeholder="Category" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
@@ -193,6 +219,17 @@ const EmployeeProjects = () => {
           </SelectContent>
         </Select>
       </div>
+      {mySkillCategoryIds.length > 0 && (
+        <Button
+          variant={mySkillsActive ? "default" : "outline"}
+          size="sm"
+          onClick={toggleMySkills}
+          className="gap-1.5"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          My Skills
+        </Button>
+      )}
 
       <Tabs defaultValue="inquiries" className="w-full">
         <TabsList className="w-full">
