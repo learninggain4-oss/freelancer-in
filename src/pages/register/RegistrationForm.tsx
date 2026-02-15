@@ -242,18 +242,23 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
         mobile_number: data.mobile_number,
         whatsapp_number: data.whatsapp_number,
         education_background: data.education_background || null,
-        registration_ip: geoData.ip || null,
-        registration_city: geoData.city || null,
-        registration_region: geoData.region || null,
-        registration_country: geoData.country || null,
-        registration_latitude: geoData.lat || null,
-        registration_longitude: geoData.lon || null,
         referred_by: referralCode.trim() || null,
       } as any]);
       if (profileError) throw profileError;
 
       // The profile id = userId (default is auth.uid())
       const profileId = userId;
+
+      // Store registration metadata in separate admin-only table
+      await supabase.from("registration_metadata" as any).insert([{
+        profile_id: profileId,
+        ip_address: geoData.ip || null,
+        city: geoData.city || null,
+        region: geoData.region || null,
+        country: geoData.country || null,
+        latitude: geoData.lat || null,
+        longitude: geoData.lon || null,
+      }] as any);
 
       // Insert work experiences
       for (const w of workExperiences) {

@@ -24,6 +24,15 @@ type Document = {
   uploaded_at: string;
 };
 
+type RegistrationMeta = {
+  ip_address: string | null;
+  city: string | null;
+  region: string | null;
+  country: string | null;
+  latitude: number | null;
+  longitude: number | null;
+};
+
 export type FullProfile = {
   id: string;
   full_name: string[];
@@ -43,12 +52,6 @@ export type FullProfile = {
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
   emergency_contact_relationship: string | null;
-  registration_ip: string | null;
-  registration_city: string | null;
-  registration_region: string | null;
-  registration_country: string | null;
-  registration_latitude: number | null;
-  registration_longitude: number | null;
   created_at: string;
   approval_notes: string | null;
   approved_at: string | null;
@@ -97,19 +100,29 @@ const UserDetailDialog = ({ user, actionType, notes, onNotesChange, processing, 
   const [documents, setDocuments] = useState<Document[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [regMeta, setRegMeta] = useState<RegistrationMeta | null>(null);
 
   useEffect(() => {
-    if (!user?.id) { setDocuments([]); return; }
+    if (!user?.id) { setDocuments([]); setRegMeta(null); return; }
     setDocsLoading(true);
-    supabase
-      .from("documents")
-      .select("id, file_name, file_path, document_type, uploaded_at")
-      .eq("profile_id", user.id)
-      .order("uploaded_at", { ascending: false })
-      .then(({ data }) => {
-        setDocuments((data as Document[]) || []);
-        setDocsLoading(false);
-      });
+
+    // Fetch documents and registration metadata in parallel
+    Promise.all([
+      supabase
+        .from("documents")
+        .select("id, file_name, file_path, document_type, uploaded_at")
+        .eq("profile_id", user.id)
+        .order("uploaded_at", { ascending: false }),
+      supabase
+        .from("registration_metadata" as any)
+        .select("ip_address, city, region, country, latitude, longitude")
+        .eq("profile_id", user.id)
+        .maybeSingle(),
+    ]).then(([docsRes, metaRes]) => {
+      setDocuments((docsRes.data as Document[]) || []);
+      setRegMeta((metaRes.data as unknown as RegistrationMeta) || null);
+      setDocsLoading(false);
+    });
   }, [user?.id]);
 
   const getPublicUrl = (path: string) => {
@@ -124,7 +137,7 @@ const UserDetailDialog = ({ user, actionType, notes, onNotesChange, processing, 
 
   if (!user || !actionType) return null;
 
-  const locationStr = [user.registration_city, user.registration_region, user.registration_country]
+  const locationStr = [regMeta?.city, regMeta?.region, regMeta?.country]
     .filter(Boolean)
     .join(", ");
 
@@ -202,22 +215,22 @@ const UserDetailDialog = ({ user, actionType, notes, onNotesChange, processing, 
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Wifi className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-mono text-xs">{user.registration_ip || "Not captured"}</span>
+                  <span className="font-mono text-xs">{regMeta?.ip_address || "Not captured"}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">{locationStr || "Not captured"}</span>
                 </div>
-                {user.registration_latitude && user.registration_longitude && (
+                {regMeta?.latitude && regMeta?.longitude && (
                   <div className="flex items-center gap-2">
                     <Globe className="h-4 w-4 text-muted-foreground" />
                     <a
-                      href={`https://www.google.com/maps?q=${user.registration_latitude},${user.registration_longitude}`}
+                      href={`https://www.google.com/maps?q=${regMeta.latitude},${regMeta.longitude}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-primary underline"
                     >
-                      View on Google Maps ({user.registration_latitude}, {user.registration_longitude})
+                      View on Google Maps ({regMeta.latitude}, {regMeta.longitude})
                     </a>
                   </div>
                 )}
