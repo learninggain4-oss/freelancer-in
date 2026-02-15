@@ -43,11 +43,13 @@ const AdminProfileEdits = lazy(() => import("./pages/admin/AdminProfileEdits"));
 const AdminLegalDocuments = lazy(() => import("./pages/admin/AdminLegalDocuments"));
 const AdminServiceManagement = lazy(() => import("./pages/admin/AdminServiceManagement"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminAnnouncements = lazy(() => import("./pages/admin/AdminAnnouncements"));
 const LegalDocument = lazy(() => import("./pages/LegalDocument"));
 const AccountSettings = lazy(() => import("./pages/AccountSettings"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
+import AnnouncementPopup from "@/components/announcements/AnnouncementPopup";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +73,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <GlobalChatNotifier />
+          <AnnouncementPopup />
           <ErrorBoundary>
           <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -141,6 +144,7 @@ const App = () => (
                 <Route path="legal-documents" element={<AdminLegalDocuments />} />
                 <Route path="services" element={<AdminServiceManagement />} />
                 <Route path="settings" element={<AdminSettings />} />
+                <Route path="announcements" element={<AdminAnnouncements />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
