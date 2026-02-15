@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard,
   Users,
@@ -45,6 +47,19 @@ const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { signOut } = useAuth();
   const navigate = useNavigate();
+
+  const { data: pendingRecoveryCount = 0 } = useQuery({
+    queryKey: ["admin-recovery-pending-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("recovery_requests")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending");
+      if (error) throw error;
+      return count || 0;
+    },
+    refetchInterval: 30000,
+  });
 
   const handleLogout = async () => {
     await signOut();
@@ -96,6 +111,11 @@ const AdminLayout = () => {
             >
               <item.icon className="h-4 w-4" />
               {item.label}
+              {item.path === "/admin/recovery-requests" && pendingRecoveryCount > 0 && (
+                <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
+                  {pendingRecoveryCount}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
