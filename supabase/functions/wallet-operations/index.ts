@@ -57,8 +57,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes } =
-      await req.json();
+    const body = await req.json();
+    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, from_profile_id, to_profile_id, transaction_id, description, new_amount, new_status } = body;
 
     // Get the caller's profile
     const { data: callerProfile, error: cpErr } = await supabase
@@ -802,6 +802,277 @@ Deno.serve(async (req) => {
 
         result.status = "held";
         result.held_amount = holdAmount;
+        break;
+      }
+
+      case "admin_add_money": {
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
+
+        const { data: target, error: tErr } = await supabase
+          .from("profiles")
+          .select("id, available_balance, user_id")
+          .eq("id", profile_id)
+          .single();
+        if (tErr || !target) throw new Error("User not found");
+
+        await supabase.from("profiles").update({
+          available_balance: Number(target.available_balance) + amount,
+        }).eq("id", profile_id);
+
+        await supabase.from("transactions").insert({
+          profile_id,
+          type: "credit",
+          amount,
+          description: review_notes || "Admin: added to wallet",
+        });
+
+        await supabase.from("notifications").insert({
+          user_id: target.user_id,
+          title: "Wallet Credited",
+          message: `₹${amount.toLocaleString("en-IN")} has been added to your wallet by admin.`,
+          type: "financial",
+        });
+
+        result.new_balance = Number(target.available_balance) + amount;
+        break;
+      }
+
+      case "admin_debit_money": {
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
+
+        const { data: target, error: tErr } = await supabase
+          .from("profiles")
+          .select("id, available_balance, user_id")
+          .eq("id", profile_id)
+          .single();
+        if (tErr || !target) throw new Error("User not found");
+        if (Number(target.available_balance) < amount) throw new Error("Insufficient balance");
+
+        await supabase.from("profiles").update({
+          available_balance: Number(target.available_balance) - amount,
+        }).eq("id", profile_id);
+
+        await supabase.from("transactions").insert({
+          profile_id,
+          type: "debit",
+          amount,
+          description: review_notes || "Admin: debited from wallet",
+        });
+
+        result.new_balance = Number(target.available_balance) - amount;
+        break;
+      }
+
+      case "admin_hold_user_balance": {
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
+
+        const { data: target, error: tErr } = await supabase
+          .from("profiles")
+          .select("id, available_balance, hold_balance, user_id")
+          .eq("id", profile_id)
+          .single();
+        if (tErr || !target) throw new Error("User not found");
+        if (Number(target.available_balance) < amount) throw new Error("Insufficient available balance");
+
+        await supabase.from("profiles").update({
+          available_balance: Number(target.available_balance) - amount,
+          hold_balance: Number(target.hold_balance) + amount,
+        }).eq("id", profile_id);
+
+        await supabase.from("transactions").insert({
+          profile_id,
+          type: "hold",
+          amount,
+          description: review_notes || "Admin: moved to hold",
+        });
+
+        result.new_available = Number(target.available_balance) - amount;
+        result.new_hold = Number(target.hold_balance) + amount;
+        break;
+      }
+
+      case "admin_release_user_balance": {
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
+
+        const { data: target, error: tErr } = await supabase
+          .from("profiles")
+          .select("id, available_balance, hold_balance, user_id")
+          .eq("id", profile_id)
+          .single();
+        if (tErr || !target) throw new Error("User not found");
+        if (Number(target.hold_balance) < amount) throw new Error("Insufficient hold balance");
+
+        await supabase.from("profiles").update({
+          available_balance: Number(target.available_balance) + amount,
+          hold_balance: Number(target.hold_balance) - amount,
+        }).eq("id", profile_id);
+
+        await supabase.from("transactions").insert({
+          profile_id,
+          type: "release",
+          amount,
+          description: review_notes || "Admin: released from hold",
+        });
+
+        result.new_available = Number(target.available_balance) + amount;
+        result.new_hold = Number(target.hold_balance) - amount;
+        break;
+      }
+
+      case "admin_transfer_balance": {
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+
+        const fromId = from_profile_id || profile_id;
+        if (!fromId || !to_profile_id || !amount || amount <= 0) throw new Error("Missing from_profile_id, to_profile_id or invalid amount");
+
+        const { data: fromP } = await supabase.from("profiles").select("id, available_balance").eq("id", fromId).single();
+        const { data: toP } = await supabase.from("profiles").select("id, available_balance").eq("id", to_profile_id).single();
+        if (!fromP || !toP) throw new Error("One or both profiles not found");
+        if (Number(fromP.available_balance) < amount) throw new Error("Sender has insufficient balance");
+
+        await supabase.from("profiles").update({ available_balance: Number(fromP.available_balance) - amount }).eq("id", fromId);
+        await supabase.from("profiles").update({ available_balance: Number(toP.available_balance) + amount }).eq("id", to_profile_id);
+
+        await supabase.from("transactions").insert([
+          { profile_id: fromId, type: "debit" as const, amount, description: review_notes || "Admin: transferred out" },
+          { profile_id: to_profile_id, type: "credit" as const, amount, description: review_notes || "Admin: transferred in" },
+        ]);
+
+        result.status = "transferred";
+        break;
+      }
+
+      case "admin_edit_transaction": {
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+
+        if (!transaction_id) throw new Error("Missing transaction_id");
+
+        const updates: any = {};
+        if (description !== undefined) updates.description = description;
+        if (amount !== undefined && amount > 0) updates.amount = amount;
+
+        if (Object.keys(updates).length === 0) throw new Error("Nothing to update");
+
+        const { error: txErr } = await supabase.from("transactions").update(updates).eq("id", transaction_id);
+        if (txErr) throw txErr;
+
+        result.status = "updated";
+        break;
+      }
+
+      case "admin_delete_transaction": {
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+
+        if (!transaction_id) throw new Error("Missing transaction_id");
+
+        const { error: txErr } = await supabase.from("transactions").delete().eq("id", transaction_id);
+        if (txErr) throw txErr;
+
+        result.status = "deleted";
+        break;
+      }
+
+      case "admin_clear_transactions": {
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!profile_id) throw new Error("Missing profile_id");
+
+        const { error: txErr } = await supabase.from("transactions").delete().eq("profile_id", profile_id);
+        if (txErr) throw txErr;
+
+        result.status = "cleared";
+        break;
+      }
+
+      case "admin_edit_withdrawal": {
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+
+        if (!withdrawal_id) throw new Error("Missing withdrawal_id");
+        const updates: any = {};
+        if (new_amount !== undefined && new_amount > 0) updates.amount = new_amount;
+        if (new_status) updates.status = new_status;
+        if (review_notes !== undefined) updates.review_notes = review_notes;
+
+        if (Object.keys(updates).length === 0) throw new Error("Nothing to update");
+
+        const { error: wErr } = await supabase.from("withdrawals").update(updates).eq("id", withdrawal_id);
+        if (wErr) throw wErr;
+
+        result.status = "updated";
+        break;
+      }
+
+      case "admin_delete_withdrawal": {
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+
+        if (!withdrawal_id) throw new Error("Missing withdrawal_id");
+        const { error: wErr } = await supabase.from("withdrawals").delete().eq("id", withdrawal_id);
+        if (wErr) throw wErr;
+
+        result.status = "deleted";
         break;
       }
 
