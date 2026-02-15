@@ -1,1 +1,4 @@
 project_id = "maysttckdfnnzvfeujaj"
+
+[functions.auto-publish-jobs]
+verify_jwt = false
