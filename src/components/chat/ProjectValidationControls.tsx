@@ -124,7 +124,7 @@ const CancelledEmployeeView = ({ projectId }: { projectId: string }) => {
           className="gap-1 w-fit"
         >
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LifeBuoy className="h-3.5 w-3.5" />}
-          Help - Recovery Money
+          Help - Amount Recovery
         </Button>
       )}
     </div>
