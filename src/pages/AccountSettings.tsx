@@ -74,11 +74,12 @@ const AccountSettings = () => {
     }
   };
 
-  const handleShare = async () => {
-    const text = `Join Freelancer using my referral code: ${referralCode}\nSign up at ${window.location.origin}/register/employee`;
+  const handleShare = async (type: "employee" | "client") => {
+    const label = type === "employee" ? "Freelancer" : "Client";
+    const text = `Join Freelancer as a ${label} using my referral code: ${referralCode}\nSign up at ${window.location.origin}/register/${type}`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Join Freelancer", text });
+        await navigator.share({ title: `Join Freelancer as ${label}`, text });
       } catch { /* cancelled */ }
     } else {
       handleCopy();
@@ -126,8 +127,13 @@ const AccountSettings = () => {
                 <Button variant="outline" size="icon" onClick={handleCopy} className="shrink-0">
                   {copied ? <Check className="h-4 w-4 text-accent" /> : <Copy className="h-4 w-4" />}
                 </Button>
-                <Button variant="outline" size="icon" onClick={handleShare} className="shrink-0">
-                  <Share2 className="h-4 w-4" />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1 text-xs gap-1.5" onClick={() => handleShare("employee")}>
+                  <Share2 className="h-3.5 w-3.5" /> Invite as Employee
+                </Button>
+                <Button variant="outline" className="flex-1 text-xs gap-1.5" onClick={() => handleShare("client")}>
+                  <Share2 className="h-3.5 w-3.5" /> Invite as Client
                 </Button>
               </div>
               <div className="grid grid-cols-3 gap-3">
