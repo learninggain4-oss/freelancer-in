@@ -44,6 +44,7 @@ const AdminLegalDocuments = lazy(() => import("./pages/admin/AdminLegalDocuments
 const AdminServiceManagement = lazy(() => import("./pages/admin/AdminServiceManagement"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const AdminAnnouncements = lazy(() => import("./pages/admin/AdminAnnouncements"));
+const AdminJobs = lazy(() => import("./pages/admin/AdminJobs"));
 const LegalDocument = lazy(() => import("./pages/LegalDocument"));
 const AccountSettings = lazy(() => import("./pages/AccountSettings"));
 import AdminLayout from "@/components/layout/AdminLayout";
@@ -142,6 +143,7 @@ const App = () => (
                 <Route path="profile-edits" element={<AdminProfileEdits />} />
                 <Route path="users/:profileId" element={<AdminProfileEdit />} />
                 <Route path="legal-documents" element={<AdminLegalDocuments />} />
+                <Route path="jobs" element={<AdminJobs />} />
                 <Route path="services" element={<AdminServiceManagement />} />
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="announcements" element={<AdminAnnouncements />} />

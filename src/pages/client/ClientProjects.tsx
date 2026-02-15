@@ -5,12 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Plus, IndianRupee, Calendar, Users, MessageSquare } from "lucide-react";
+import { Search, Plus, IndianRupee, Calendar, MessageSquare, Pencil, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const statusColor: Record<string, string> = {
   open: "bg-accent/10 text-accent",
@@ -30,14 +31,13 @@ const ClientProjects = () => {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
 
-  // My projects
   const { data: myProjects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ["client-projects", profile?.id, search],
     queryFn: async () => {
       if (!profile?.id) return [];
       let query = supabase
         .from("projects")
-        .select("*")
+        .select("*, category:category_id(name)")
         .eq("client_id", profile.id)
         .order("created_at", { ascending: false });
       if (search) query = query.ilike("name", `%${search}%`);
@@ -48,7 +48,6 @@ const ClientProjects = () => {
     enabled: !!profile?.id,
   });
 
-  // Employee requests for my projects
   const { data: requests = [], isLoading: loadingRequests } = useQuery({
     queryKey: ["client-applications", profile?.id],
     queryFn: async () => {
@@ -63,7 +62,6 @@ const ClientProjects = () => {
     enabled: !!profile?.id,
   });
 
-  // Submissions for my projects
   const { data: submissions = [], isLoading: loadingSubs } = useQuery({
     queryKey: ["client-submissions", profile?.id],
     queryFn: async () => {
@@ -89,6 +87,18 @@ const ClientProjects = () => {
     onSuccess: () => {
       toast.success("Application updated");
       queryClient.invalidateQueries({ queryKey: ["client-applications"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("projects").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Job deleted");
+      queryClient.invalidateQueries({ queryKey: ["client-projects"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -120,18 +130,50 @@ const ClientProjects = () => {
               <Card key={p.id}>
                 <CardContent className="space-y-2 p-4">
                   <div className="flex items-start justify-between">
-                    <h3 className="font-semibold text-foreground">{p.name}</h3>
+                    <div>
+                      <h3 className="font-semibold text-foreground">{p.name}</h3>
+                      <p className="text-xs text-muted-foreground">{p.order_id}{p.category?.name ? ` • ${p.category.name}` : ""}</p>
+                    </div>
                     <Badge className={statusColor[p.status]}>{p.status}</Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><IndianRupee className="h-3 w-3" />₹{Number(p.amount).toLocaleString("en-IN")}</span>
                     <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{p.end_date ?? "No deadline"}</span>
                   </div>
-                  {(p.status === "in_progress" || p.status === "payment_processing" || p.status === "completed" || p.status === "cancelled") && (
-                    <Button size="sm" variant="outline" className="w-full" onClick={() => navigate(`/client/projects/chat/${p.id}`)}>
-                      <MessageSquare className="mr-1 h-3 w-3" /> Validation Chat
-                    </Button>
+                  {!p.admin_approved && p.status !== "draft" && (
+                    <Badge variant="outline" className="text-xs text-warning border-warning">Pending Admin Approval</Badge>
                   )}
+                  <div className="flex gap-2">
+                    {(p.status === "draft" || p.status === "open") && (
+                      <>
+                        <Button size="sm" variant="outline" className="flex-1" onClick={() => navigate(`/client/projects/create?edit=${p.id}`)}>
+                          <Pencil className="mr-1 h-3 w-3" /> Edit
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="outline" className="text-destructive">
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Job?</AlertDialogTitle>
+                              <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(p.id)}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </>
+                    )}
+                    {(p.status === "in_progress" || p.status === "payment_processing" || p.status === "completed" || p.status === "cancelled") && (
+                      <Button size="sm" variant="outline" className="w-full" onClick={() => navigate(`/client/projects/chat/${p.id}`)}>
+                        <MessageSquare className="mr-1 h-3 w-3" /> Validation Chat
+                      </Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))
