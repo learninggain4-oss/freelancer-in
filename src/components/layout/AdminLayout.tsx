@@ -40,7 +40,6 @@ const navItems = [
   { label: "Services", icon: Layers, path: "/admin/services" },
   { label: "Legal Docs", icon: FileText, path: "/admin/legal-documents" },
   { label: "Announcements", icon: Megaphone, path: "/admin/announcements" },
-  { label: "Wallet Mgmt", icon: Wallet, path: "/admin/wallet-management" },
   { label: "Settings", icon: Settings, path: "/admin/settings" },
 ];
 
