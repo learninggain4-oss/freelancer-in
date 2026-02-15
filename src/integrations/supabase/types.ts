@@ -119,6 +119,7 @@ export type Database = {
           message: string
           scheduled_at: string | null
           target_audience: string
+          target_user_ids: string[] | null
           title: string
         }
         Insert: {
@@ -130,6 +131,7 @@ export type Database = {
           message: string
           scheduled_at?: string | null
           target_audience: string
+          target_user_ids?: string[] | null
           title: string
         }
         Update: {
@@ -141,6 +143,7 @@ export type Database = {
           message?: string
           scheduled_at?: string | null
           target_audience?: string
+          target_user_ids?: string[] | null
           title?: string
         }
         Relationships: [

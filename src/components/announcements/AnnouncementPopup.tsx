@@ -45,15 +45,21 @@ const AnnouncementPopup = () => {
 
       const { data: announcements } = await supabase
         .from("announcements")
-        .select("id, title, message, target_audience")
+        .select("id, title, message, target_audience, target_user_ids")
         .eq("is_active", true)
         .in("target_audience", audiences)
         .or(`scheduled_at.is.null,scheduled_at.lte.${now}`)
         .or(`expires_at.is.null,expires_at.gte.${now}`)
         .order("created_at", { ascending: false });
 
+      // Filter by target_user_ids: show if null (all users) or if current user is in the list
+      const applicable = (announcements ?? []).filter((a: any) => {
+        if (!a.target_user_ids || a.target_user_ids.length === 0) return true;
+        return a.target_user_ids.includes(user.id);
+      });
+
       // Find the first undismissed one
-      const undismissed = (announcements ?? []).find(
+      const undismissed = applicable.find(
         (a: any) => !dismissedIds.includes(a.id)
       );
 
