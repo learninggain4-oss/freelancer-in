@@ -247,16 +247,22 @@ export type Database = {
           created_at: string
           id: string
           project_id: string
+          recovery_request_id: string | null
+          type: string
         }
         Insert: {
           created_at?: string
           id?: string
           project_id: string
+          recovery_request_id?: string | null
+          type?: string
         }
         Update: {
           created_at?: string
           id?: string
           project_id?: string
+          recovery_request_id?: string | null
+          type?: string
         }
         Relationships: [
           {
@@ -264,6 +270,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_rooms_recovery_request_id_fkey"
+            columns: ["recovery_request_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_requests"
             referencedColumns: ["id"]
           },
         ]
@@ -968,6 +981,64 @@ export type Database = {
           {
             foreignKeyName: "projects_client_id_fkey"
             columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recovery_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          employee_id: string
+          held_amount: number
+          id: string
+          project_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          employee_id: string
+          held_amount?: number
+          id?: string
+          project_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          employee_id?: string
+          held_amount?: number
+          id?: string
+          project_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recovery_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_requests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_requests_resolved_by_fkey"
+            columns: ["resolved_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

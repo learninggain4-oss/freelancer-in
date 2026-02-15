@@ -12,10 +12,124 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { CheckCircle, XCircle, Loader2, ShieldCheck, CreditCard, Clock, ClipboardCheck, BadgeCheck, IndianRupee } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, ShieldCheck, CreditCard, Clock, ClipboardCheck, BadgeCheck, IndianRupee, LifeBuoy, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+
+/** Employee view for cancelled projects - shows Help - Recovery Money button */
+const CancelledEmployeeView = ({ projectId }: { projectId: string }) => {
+  const { profile } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
+  const { data: existingRequest } = useQuery({
+    queryKey: ["recovery-request", projectId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("recovery_requests")
+        .select("id, status")
+        .eq("project_id", projectId)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const handleRecovery = async () => {
+    if (!profile) return;
+    setLoading(true);
+    try {
+      // Get project details for held amount
+      const { data: project } = await supabase
+        .from("projects")
+        .select("amount, validation_fees, assigned_employee_id")
+        .eq("id", projectId)
+        .single();
+      if (!project) throw new Error("Project not found");
+
+      const heldAmount = Number(project.amount || 0) + Number(project.validation_fees || 0);
+
+      // Create recovery request
+      const { data: req, error: reqErr } = await supabase
+        .from("recovery_requests")
+        .insert({
+          project_id: projectId,
+          employee_id: profile.id,
+          held_amount: heldAmount,
+        })
+        .select("id")
+        .single();
+      if (reqErr) throw reqErr;
+
+      // Create support chat room
+      const { data: room, error: roomErr } = await supabase
+        .from("chat_rooms")
+        .insert({
+          project_id: projectId,
+          type: "support",
+          recovery_request_id: req.id,
+        })
+        .select("id")
+        .single();
+      if (roomErr) throw roomErr;
+
+      toast.success("Recovery request submitted. Customer Service will assist you.");
+      navigate(`/employee/projects/support-chat/${projectId}?room=${room.id}`);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openExistingChat = async () => {
+    if (!existingRequest) return;
+    const { data: room } = await supabase
+      .from("chat_rooms")
+      .select("id")
+      .eq("recovery_request_id", existingRequest.id)
+      .eq("type", "support")
+      .maybeSingle();
+    if (room) {
+      navigate(`/employee/projects/support-chat/${projectId}?room=${room.id}`);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-2 border-b bg-destructive/10 px-4 py-3">
+      <div className="flex items-center gap-2">
+        <XCircle className="h-4 w-4 text-destructive" />
+        <span className="text-sm font-medium text-destructive">Project Rejected — Balance on Hold</span>
+      </div>
+      {existingRequest ? (
+        <div className="flex items-center gap-2">
+          {existingRequest.status === "pending" ? (
+            <Button size="sm" variant="outline" onClick={openExistingChat} className="gap-1">
+              <MessageSquare className="h-3.5 w-3.5" />
+              Open Customer Service Chat
+            </Button>
+          ) : existingRequest.status === "resolved" ? (
+            <span className="text-xs text-accent font-medium">✓ Recovery completed — balance released</span>
+          ) : (
+            <span className="text-xs text-destructive font-medium">Recovery request was rejected</span>
+          )}
+        </div>
+      ) : (
+        <Button
+          size="sm"
+          onClick={handleRecovery}
+          disabled={loading}
+          className="gap-1 w-fit"
+        >
+          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LifeBuoy className="h-3.5 w-3.5" />}
+          Help - Recovery Money
+        </Button>
+      )}
+    </div>
+  );
+};
 
 interface ProjectValidationControlsProps {
   projectId: string;
@@ -59,6 +173,9 @@ const ProjectValidationControls = ({
   }
 
   if (projectStatus === "cancelled") {
+    if (!isClient) {
+      return <CancelledEmployeeView projectId={projectId} />;
+    }
     return (
       <div className="flex items-center gap-2 border-b bg-destructive/10 px-4 py-2">
         <XCircle className="h-4 w-4 text-destructive" />

@@ -17,13 +17,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 const REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🎉", "🔥", "👏"];
 
-interface MessageBubbleProps {
+export interface MessageBubbleProps {
   message: Message;
   onEdit: (id: string, content: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onReaction: (messageId: string, emoji: string) => Promise<void>;
   onReply: (message: Message) => void;
   currentUserId: string;
+  senderDisplayName?: string;
 }
 
 const MessageBubble = ({
@@ -33,6 +34,7 @@ const MessageBubble = ({
   onReaction,
   onReply,
   currentUserId,
+  senderDisplayName,
 }: MessageBubbleProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
@@ -56,9 +58,11 @@ const MessageBubble = ({
     setIsEditing(false);
   };
 
-  const senderName = Array.isArray((message.sender as any)?.full_name)
-    ? (message.sender as any).full_name.join(" ")
-    : (message.sender as any)?.full_name || "Unknown";
+  const senderName = senderDisplayName
+    ? senderDisplayName
+    : Array.isArray((message.sender as any)?.full_name)
+      ? (message.sender as any).full_name.join(" ")
+      : (message.sender as any)?.full_name || "Unknown";
 
   // Parse @mentions
   const renderContent = (text: string) => {
