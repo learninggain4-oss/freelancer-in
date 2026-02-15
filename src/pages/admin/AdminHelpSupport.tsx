@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, HelpCircle, ArrowLeft, MessageCircle, Search, X, Zap } from "lucide-react";
+import { Send, HelpCircle, ArrowLeft, MessageCircle, Search, X, Zap, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,13 +12,68 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import SupportMessageBubble from "@/components/chat/SupportMessageBubble";
 
-const QUICK_REPLIES = [
-  "Hi! How can I help you today?",
-  "Thank you for reaching out. Let me look into this for you.",
-  "Could you please provide more details about your issue?",
-  "Your issue has been resolved. Is there anything else I can help with?",
-  "We're working on this and will update you shortly.",
-  "Please check your email for further instructions.",
+const QUICK_REPLY_CATEGORIES = [
+  {
+    label: "👋 Greetings",
+    templates: [
+      "Hi! How can I help you today?",
+      "Hello! Thank you for reaching out to support.",
+      "Welcome! I'm here to assist you.",
+    ],
+  },
+  {
+    label: "🔍 Gathering Info",
+    templates: [
+      "Could you please provide more details about your issue?",
+      "Can you share a screenshot so I can better understand the problem?",
+      "What is your registered email or user code?",
+      "When did you first notice this issue?",
+    ],
+  },
+  {
+    label: "⏳ In Progress",
+    templates: [
+      "Thank you for your patience. We're looking into this now.",
+      "We're working on this and will update you shortly.",
+      "I've escalated this to the team. You'll hear back soon.",
+      "This may take a little time. I'll keep you posted.",
+    ],
+  },
+  {
+    label: "💰 Payments & Wallet",
+    templates: [
+      "Your wallet balance has been updated. Please check now.",
+      "The withdrawal is being processed and should reflect within 24 hours.",
+      "Could you confirm your UPI ID or bank details for the transfer?",
+      "The payment has been credited to your account successfully.",
+    ],
+  },
+  {
+    label: "📋 Projects & Jobs",
+    templates: [
+      "Your project application has been received. The client will review it shortly.",
+      "Please upload your submission files through the Projects tab.",
+      "The project status has been updated. Please check your dashboard.",
+    ],
+  },
+  {
+    label: "✅ Resolution",
+    templates: [
+      "Your issue has been resolved. Is there anything else I can help with?",
+      "This has been fixed. Please try again and let me know if it works.",
+      "I'm glad I could help! Feel free to reach out anytime.",
+      "Closing this ticket. Don't hesitate to contact us again if needed.",
+    ],
+  },
+  {
+    label: "📧 Follow-up",
+    templates: [
+      "Please check your email for further instructions.",
+      "I've sent you a notification with the details.",
+      "You can track the status from your dashboard.",
+      "Is there anything else you need help with?",
+    ],
+  },
 ];
 
 const AdminHelpSupport = () => {
@@ -31,6 +86,8 @@ const AdminHelpSupport = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [convSearch, setConvSearch] = useState("");
   const [quickRepliesOpen, setQuickRepliesOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<number | null>(null);
+  const [templateSearch, setTemplateSearch] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const selectedConv = conversations.find((c: any) => c.id === selectedConvId);
@@ -166,23 +223,70 @@ const AdminHelpSupport = () => {
           )}
         </ScrollArea>
 
-        {/* Quick replies */}
+        {/* Quick replies template library */}
         {quickRepliesOpen && (
-          <div className="border-t px-3 py-2 bg-muted/30">
-            <p className="text-[10px] font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
-              <Zap className="h-3 w-3" /> Quick Replies
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {QUICK_REPLIES.map((reply, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleSend(reply)}
-                  className="rounded-full border bg-background px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-primary/10 hover:border-primary/30"
-                >
-                  {reply.length > 45 ? reply.slice(0, 45) + "…" : reply}
-                </button>
-              ))}
+          <div className="border-t bg-muted/30 max-h-56 overflow-hidden flex flex-col">
+            <div className="flex items-center gap-2 px-3 pt-2 pb-1">
+              <Zap className="h-3 w-3 text-muted-foreground" />
+              <span className="text-[10px] font-medium text-muted-foreground">Quick Replies</span>
+              <Input
+                placeholder="Search templates..."
+                value={templateSearch}
+                onChange={(e) => { setTemplateSearch(e.target.value); setActiveCategory(null); }}
+                className="ml-auto h-6 w-40 text-[11px] px-2"
+              />
             </div>
+            <ScrollArea className="flex-1 px-3 pb-2">
+              {templateSearch ? (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {QUICK_REPLY_CATEGORIES.flatMap((cat) =>
+                    cat.templates.filter((t) =>
+                      t.toLowerCase().includes(templateSearch.toLowerCase())
+                    )
+                  ).map((reply, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSend(reply)}
+                      className="rounded-full border bg-background px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-primary/10 hover:border-primary/30"
+                    >
+                      {reply.length > 55 ? reply.slice(0, 55) + "…" : reply}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-1.5 pt-1">
+                  {QUICK_REPLY_CATEGORIES.map((cat, ci) => (
+                    <div key={ci}>
+                      <button
+                        onClick={() => setActiveCategory(activeCategory === ci ? null : ci)}
+                        className={cn(
+                          "flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors",
+                          activeCategory === ci
+                            ? "bg-primary/10 text-primary"
+                            : "text-foreground hover:bg-muted"
+                        )}
+                      >
+                        <span>{cat.label}</span>
+                        <ChevronRight className={cn("ml-auto h-3 w-3 transition-transform", activeCategory === ci && "rotate-90")} />
+                      </button>
+                      {activeCategory === ci && (
+                        <div className="flex flex-wrap gap-1.5 pl-2 pt-1 pb-1">
+                          {cat.templates.map((reply, ri) => (
+                            <button
+                              key={ri}
+                              onClick={() => handleSend(reply)}
+                              className="rounded-full border bg-background px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-primary/10 hover:border-primary/30"
+                            >
+                              {reply}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
           </div>
         )}
 
