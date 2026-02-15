@@ -86,11 +86,6 @@ const VerificationPending = () => {
                   </p>
                 )}
 
-                {profile?.user_code && profile.user_code.length > 0 && profile.user_code[0] && (
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Your code: <span className="font-mono font-bold text-primary">{profile.user_code[0]}</span>
-                  </p>
-                )}
               </>
             )}
 

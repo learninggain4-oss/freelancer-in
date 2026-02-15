@@ -15,6 +15,10 @@ const AdminSettings = () => {
   const [signupBonus, setSignupBonus] = useState("");
   const [jobBonus, setJobBonus] = useState("");
   const [referralTerms, setReferralTerms] = useState("");
+  const [empPrefix, setEmpPrefix] = useState("");
+  const [cltPrefix, setCltPrefix] = useState("");
+  const [empDigits, setEmpDigits] = useState("");
+  const [cltDigits, setCltDigits] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
 
@@ -29,6 +33,10 @@ const AdminSettings = () => {
           "referral_signup_bonus",
           "referral_job_bonus",
           "referral_terms_conditions",
+          "employee_code_prefix",
+          "client_code_prefix",
+          "employee_code_digits",
+          "client_code_digits",
         ]);
       if (data) {
         for (const row of data) {
@@ -37,6 +45,10 @@ const AdminSettings = () => {
           if (row.key === "referral_signup_bonus") setSignupBonus(row.value);
           if (row.key === "referral_job_bonus") setJobBonus(row.value);
           if (row.key === "referral_terms_conditions") setReferralTerms(row.value.replace(/\\n/g, "\n"));
+          if (row.key === "employee_code_prefix") setEmpPrefix(row.value);
+          if (row.key === "client_code_prefix") setCltPrefix(row.value);
+          if (row.key === "employee_code_digits") setEmpDigits(row.value);
+          if (row.key === "client_code_digits") setCltDigits(row.value);
         }
       }
       setLoading(false);
@@ -194,6 +206,94 @@ const AdminSettings = () => {
             {saving === "referral_terms_conditions" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Save Terms
           </Button>
+        </CardContent>
+      </Card>
+      {/* User Code Configuration */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Clock className="h-4 w-4 text-primary" />
+            User Code Configuration
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Configure the prefix and number of digits for auto-generated user codes. Changes apply to new registrations only.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold">Employee Code</h4>
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <Label>Prefix</Label>
+                  <Input value={empPrefix} onChange={(e) => setEmpPrefix(e.target.value.toUpperCase())} placeholder="EMP" maxLength={10} />
+                </div>
+                <div className="w-24">
+                  <Label>Digits</Label>
+                  <Input type="number" min="3" max="10" value={empDigits} onChange={(e) => setEmpDigits(e.target.value)} />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Preview: <span className="font-mono font-bold">{empPrefix || "EMP"}{("0".repeat(Number(empDigits) || 5)).slice(0, -1)}1</span>
+              </p>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  if (!empPrefix.trim()) { toast({ title: "Invalid", description: "Prefix cannot be empty", variant: "destructive" }); return; }
+                  const d = Number(empDigits);
+                  if (isNaN(d) || d < 3 || d > 10) { toast({ title: "Invalid", description: "Digits must be 3-10", variant: "destructive" }); return; }
+                  setSaving("emp_code");
+                  try {
+                    await supabase.from("app_settings").upsert({ key: "employee_code_prefix", value: empPrefix.trim() }, { onConflict: "key" });
+                    await supabase.from("app_settings").upsert({ key: "employee_code_digits", value: String(d) }, { onConflict: "key" });
+                    toast({ title: "Saved", description: "Employee code settings updated" });
+                  } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
+                  finally { setSaving(null); }
+                }}
+                disabled={saving === "emp_code"}
+                className="gap-1"
+              >
+                {saving === "emp_code" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save Employee Code
+              </Button>
+            </div>
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold">Client Code</h4>
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <Label>Prefix</Label>
+                  <Input value={cltPrefix} onChange={(e) => setCltPrefix(e.target.value.toUpperCase())} placeholder="CLT" maxLength={10} />
+                </div>
+                <div className="w-24">
+                  <Label>Digits</Label>
+                  <Input type="number" min="3" max="10" value={cltDigits} onChange={(e) => setCltDigits(e.target.value)} />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Preview: <span className="font-mono font-bold">{cltPrefix || "CLT"}{("0".repeat(Number(cltDigits) || 5)).slice(0, -1)}1</span>
+              </p>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  if (!cltPrefix.trim()) { toast({ title: "Invalid", description: "Prefix cannot be empty", variant: "destructive" }); return; }
+                  const d = Number(cltDigits);
+                  if (isNaN(d) || d < 3 || d > 10) { toast({ title: "Invalid", description: "Digits must be 3-10", variant: "destructive" }); return; }
+                  setSaving("clt_code");
+                  try {
+                    await supabase.from("app_settings").upsert({ key: "client_code_prefix", value: cltPrefix.trim() }, { onConflict: "key" });
+                    await supabase.from("app_settings").upsert({ key: "client_code_digits", value: String(d) }, { onConflict: "key" });
+                    toast({ title: "Saved", description: "Client code settings updated" });
+                  } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
+                  finally { setSaving(null); }
+                }}
+                disabled={saving === "clt_code"}
+                className="gap-1"
+              >
+                {saving === "clt_code" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save Client Code
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
