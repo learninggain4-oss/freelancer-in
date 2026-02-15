@@ -717,15 +717,12 @@ Deno.serve(async (req) => {
           reference_id: project_id,
         });
 
-        // Update recovery request if provided
+        // Update recovery request admin notes (keep status pending so chat stays open)
         if (recovery_request_id) {
           await supabase
             .from("recovery_requests")
             .update({
-              status: "resolved",
               admin_notes: admin_notes || "Balance released by admin",
-              resolved_at: new Date().toISOString(),
-              resolved_by: callerProfile.id,
             })
             .eq("id", recovery_request_id);
         }
@@ -742,6 +739,69 @@ Deno.serve(async (req) => {
 
         result.status = "released";
         result.released_amount = releaseAmount;
+        break;
+      }
+
+      case "admin_hold_balance": {
+        // Admin moves funds from employee's available balance back to hold balance
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+
+        if (!recovery_request_id) throw new Error("Missing recovery_request_id");
+        if (!amount || amount <= 0) throw new Error("Invalid amount");
+
+        const { data: recReq, error: rrErr } = await supabase
+          .from("recovery_requests")
+          .select("*, employee:profiles!recovery_requests_employee_id_fkey(id, available_balance, hold_balance, user_id)")
+          .eq("id", recovery_request_id)
+          .single();
+        if (rrErr || !recReq) throw new Error("Recovery request not found");
+
+        const emp = recReq.employee as any;
+        if (!emp) throw new Error("Employee not found");
+
+        const holdAmount = Math.min(amount, Number(emp.available_balance));
+        if (holdAmount <= 0) throw new Error("Employee has no available balance to hold");
+
+        await supabase
+          .from("profiles")
+          .update({
+            available_balance: Number(emp.available_balance) - holdAmount,
+            hold_balance: Number(emp.hold_balance) + holdAmount,
+          })
+          .eq("id", emp.id);
+
+        await supabase.from("transactions").insert({
+          profile_id: emp.id,
+          type: "hold",
+          amount: holdAmount,
+          description: `Recovery: balance held by admin for recovery request: ${recovery_request_id}`,
+          reference_id: recReq.project_id,
+        });
+
+        if (admin_notes) {
+          await supabase
+            .from("recovery_requests")
+            .update({ admin_notes })
+            .eq("id", recovery_request_id);
+        }
+
+        await supabase.from("notifications").insert({
+          user_id: emp.user_id,
+          title: "Balance Held",
+          message: `₹${holdAmount.toLocaleString("en-IN")} has been moved from your available balance to hold by Customer Service.`,
+          type: "financial",
+          reference_id: recReq.project_id,
+          reference_type: "project",
+        });
+
+        result.status = "held";
+        result.held_amount = holdAmount;
         break;
       }
 

@@ -213,7 +213,7 @@ const AdminRecoveryRequests = () => {
                   Requested: {new Date(req.created_at).toLocaleString("en-IN")}
                 </div>
 
-                {req.status === "pending" && (
+                {req.status !== "rejected" && (
                   <>
                     <Textarea
                       placeholder="Admin notes (optional)"
@@ -254,7 +254,7 @@ const AdminRecoveryRequests = () => {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Release Held Balance?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will transfer ₹{Number(req.held_amount).toLocaleString("en-IN")} from the employee's hold balance to their available balance. This action cannot be undone.
+                              This will transfer ₹{Number(req.held_amount).toLocaleString("en-IN")} from the employee's hold balance to their available balance.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -277,14 +277,14 @@ const AdminRecoveryRequests = () => {
                             className="gap-1 border-destructive/30 text-destructive hover:bg-destructive/10"
                           >
                             <XCircle className="h-3.5 w-3.5" />
-                            Reject
+                            Close Request
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Reject Recovery Request?</AlertDialogTitle>
+                            <AlertDialogTitle>Close Recovery Request?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              The held balance will remain on hold.
+                              This will close the request. Current balances will remain unchanged.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -293,7 +293,7 @@ const AdminRecoveryRequests = () => {
                               onClick={() => handleReject(req.id)}
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
-                              Confirm Rejection
+                              Confirm Close
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
