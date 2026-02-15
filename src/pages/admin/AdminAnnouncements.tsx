@@ -172,6 +172,22 @@ const AdminAnnouncements = () => {
     },
   });
 
+  const clearAllMutation = useMutation({
+    mutationFn: async () => {
+      const ids = announcements.map((a: any) => a.id);
+      if (ids.length === 0) return;
+      const { error } = await supabase
+        .from("announcements")
+        .delete()
+        .in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "All announcements deleted" });
+      queryClient.invalidateQueries({ queryKey: ["admin-announcements"] });
+    },
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -179,10 +195,32 @@ const AdminAnnouncements = () => {
           <h1 className="text-2xl font-bold text-foreground">Announcements</h1>
           <p className="text-sm text-muted-foreground">Send popup messages to employees, clients, or everyone</p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          New Announcement
-        </Button>
+        <div className="flex gap-2">
+          {announcements.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="gap-2 text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                  Clear All
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete all announcements?</AlertDialogTitle>
+                  <AlertDialogDescription>This will permanently remove all {announcements.length} announcement(s). This action cannot be undone.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => clearAllMutation.mutate()}>Delete All</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+          <Button onClick={() => setShowForm(!showForm)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            New Announcement
+          </Button>
+        </div>
       </div>
 
       {showForm && (
