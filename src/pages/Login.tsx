@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { loginSchema, type LoginFormData } from "@/lib/validations/registration";
@@ -16,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -88,7 +90,20 @@ const Login = () => {
                 <div className="text-right">
                   <Link to="/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="terms"
+                    checked={agreedToTerms}
+                    onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                  />
+                  <label htmlFor="terms" className="text-xs leading-tight text-muted-foreground">
+                    I agree to the{" "}
+                    <Link to="/legal/terms-of-service" className="text-primary hover:underline" target="_blank">Terms of Service</Link>
+                    {" "}and{" "}
+                    <Link to="/legal/privacy-policy" className="text-primary hover:underline" target="_blank">Privacy Policy</Link>
+                  </label>
+                </div>
+                <Button type="submit" className="w-full" disabled={loading || !agreedToTerms}>
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Sign In
                 </Button>
