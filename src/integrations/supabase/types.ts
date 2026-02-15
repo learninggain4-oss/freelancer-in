@@ -1336,7 +1336,9 @@ export type Database = {
         | "draft"
         | "open"
         | "in_progress"
+        | "job_confirmed"
         | "payment_processing"
+        | "validation"
         | "completed"
         | "cancelled"
       transaction_type: "credit" | "debit" | "hold" | "release"
@@ -1498,7 +1500,9 @@ export const Constants = {
         "draft",
         "open",
         "in_progress",
+        "job_confirmed",
         "payment_processing",
+        "validation",
         "completed",
         "cancelled",
       ],
