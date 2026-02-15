@@ -9,8 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Megaphone, Plus, Trash2, Loader2 } from "lucide-react";
+import { Megaphone, Plus, Trash2, Loader2, Clock, CalendarClock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +45,8 @@ const AdminAnnouncements = () => {
   const [message, setMessage] = useState("");
   const [target, setTarget] = useState("everyone");
   const [showForm, setShowForm] = useState(false);
+  const [scheduledAt, setScheduledAt] = useState<Date | undefined>(undefined);
+  const [expiresAt, setExpiresAt] = useState<Date | undefined>(undefined);
 
   const { data: announcements = [], isLoading } = useQuery({
     queryKey: ["admin-announcements"],
@@ -62,6 +67,8 @@ const AdminAnnouncements = () => {
         message: message.trim(),
         target_audience: target,
         created_by: profile?.id,
+        scheduled_at: scheduledAt ? scheduledAt.toISOString() : null,
+        expires_at: expiresAt ? expiresAt.toISOString() : null,
       });
       if (error) throw error;
     },
@@ -70,6 +77,8 @@ const AdminAnnouncements = () => {
       setTitle("");
       setMessage("");
       setTarget("everyone");
+      setScheduledAt(undefined);
+      setExpiresAt(undefined);
       setShowForm(false);
       queryClient.invalidateQueries({ queryKey: ["admin-announcements"] });
     },
@@ -157,6 +166,46 @@ const AdminAnnouncements = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Schedule For (optional)</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <CalendarClock className="mr-2 h-4 w-4" />
+                      {scheduledAt ? format(scheduledAt, "PPP") : "Immediately"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={scheduledAt} onSelect={setScheduledAt} disabled={(date) => date < new Date()} />
+                    {scheduledAt && (
+                      <div className="px-3 pb-3">
+                        <Button variant="ghost" size="sm" className="w-full" onClick={() => setScheduledAt(undefined)}>Clear</Button>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label>Expires On (optional)</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <Clock className="mr-2 h-4 w-4" />
+                      {expiresAt ? format(expiresAt, "PPP") : "Never"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={expiresAt} onSelect={setExpiresAt} disabled={(date) => date < new Date()} />
+                    {expiresAt && (
+                      <div className="px-3 pb-3">
+                        <Button variant="ghost" size="sm" className="w-full" onClick={() => setExpiresAt(undefined)}>Clear</Button>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
             <div className="flex gap-2 pt-2">
               <Button
                 onClick={() => createMutation.mutate()}
@@ -165,7 +214,7 @@ const AdminAnnouncements = () => {
               >
                 {createMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                 <Megaphone className="h-4 w-4" />
-                Publish Announcement
+                {scheduledAt ? "Schedule Announcement" : "Publish Announcement"}
               </Button>
               <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
             </div>
@@ -205,15 +254,23 @@ const AdminAnnouncements = () => {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">{a.message}</p>
-                    <p className="text-xs text-muted-foreground/70">
-                      {new Date(a.created_at).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground/70">
+                      <span>
+                        Created: {new Date(a.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                      {a.scheduled_at && (
+                        <span className="flex items-center gap-1">
+                          <CalendarClock className="h-3 w-3" />
+                          Scheduled: {new Date(a.scheduled_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        </span>
+                      )}
+                      {a.expires_at && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          Expires: {new Date(a.expires_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex shrink-0 gap-1">
                     {a.is_active && (

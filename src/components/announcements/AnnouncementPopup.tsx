@@ -41,11 +41,15 @@ const AnnouncementPopup = () => {
 
       const dismissedIds = (dismissed ?? []).map((d: any) => d.announcement_id);
 
+      const now = new Date().toISOString();
+
       const { data: announcements } = await supabase
         .from("announcements")
         .select("id, title, message, target_audience")
         .eq("is_active", true)
         .in("target_audience", audiences)
+        .or(`scheduled_at.is.null,scheduled_at.lte.${now}`)
+        .or(`expires_at.is.null,expires_at.gte.${now}`)
         .order("created_at", { ascending: false });
 
       // Find the first undismissed one
