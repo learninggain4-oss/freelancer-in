@@ -30,7 +30,11 @@ const statusColor: Record<string, string> = {
   approved: "bg-accent/10 text-accent",
   rejected: "bg-destructive/10 text-destructive",
   in_progress: "bg-primary/10 text-primary",
-  completed: "bg-primary/10 text-primary"
+  job_confirmed: "bg-primary/10 text-primary",
+  payment_processing: "bg-warning/10 text-warning",
+  validation: "bg-warning/10 text-warning",
+  completed: "bg-primary/10 text-primary",
+  cancelled: "bg-destructive/10 text-destructive",
 };
 
 /** Inquiry card with Order ID, category, documents */

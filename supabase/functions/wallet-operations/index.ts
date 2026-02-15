@@ -150,8 +150,52 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "confirm_job": {
+        // Step 1: Client confirms the job (in_progress → job_confirmed)
+        if (callerProfile.user_type !== "client")
+          throw new Error("Only clients can confirm jobs");
+        if (!project_id) throw new Error("Missing project_id");
+
+        const { data: proj1, error: p1Err } = await supabase
+          .from("projects")
+          .select("id, client_id, assigned_employee_id, status")
+          .eq("id", project_id)
+          .single();
+        if (p1Err || !proj1) throw new Error("Project not found");
+        if (proj1.client_id !== callerProfile.id)
+          throw new Error("Not your project");
+        if (proj1.status !== "in_progress")
+          throw new Error("Project must be in_progress to confirm job");
+
+        await supabase
+          .from("projects")
+          .update({ status: "job_confirmed" })
+          .eq("id", project_id);
+
+        if (proj1.assigned_employee_id) {
+          const { data: empU } = await supabase
+            .from("profiles")
+            .select("user_id")
+            .eq("id", proj1.assigned_employee_id)
+            .single();
+          if (empU) {
+            await supabase.from("notifications").insert({
+              user_id: empU.user_id,
+              title: "Job Confirmed",
+              message: `The client has confirmed your job. Payment processing will follow.`,
+              type: "info",
+              reference_id: project_id,
+              reference_type: "project",
+            });
+          }
+        }
+
+        result.status = "job_confirmed";
+        break;
+      }
+
       case "hold_project_payment": {
-        // Client initiates payment processing: project budget → employee hold_balance
+        // Step 2: Client initiates payment processing: project budget → employee hold_balance
         if (callerProfile.user_type !== "client")
           throw new Error("Only clients can initiate payment processing");
         if (!project_id) throw new Error("Missing project_id");
@@ -164,8 +208,8 @@ Deno.serve(async (req) => {
         if (pErr || !project) throw new Error("Project not found");
         if (project.client_id !== callerProfile.id)
           throw new Error("Not your project");
-        if (project.status !== "in_progress")
-          throw new Error("Project must be in_progress to process payment");
+        if (project.status !== "job_confirmed")
+          throw new Error("Job must be confirmed before processing payment");
         if (!project.assigned_employee_id)
           throw new Error("No employee assigned");
 
@@ -238,7 +282,52 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "confirm_validation": {
+        // Step 3: Client confirms validation (payment_processing → validation)
+        if (callerProfile.user_type !== "client")
+          throw new Error("Only clients can confirm validation");
+        if (!project_id) throw new Error("Missing project_id");
+
+        const { data: projV, error: pvErr } = await supabase
+          .from("projects")
+          .select("id, client_id, assigned_employee_id, status")
+          .eq("id", project_id)
+          .single();
+        if (pvErr || !projV) throw new Error("Project not found");
+        if (projV.client_id !== callerProfile.id)
+          throw new Error("Not your project");
+        if (projV.status !== "payment_processing")
+          throw new Error("Project must be in payment_processing to validate");
+
+        await supabase
+          .from("projects")
+          .update({ status: "validation" })
+          .eq("id", project_id);
+
+        if (projV.assigned_employee_id) {
+          const { data: empUV } = await supabase
+            .from("profiles")
+            .select("user_id")
+            .eq("id", projV.assigned_employee_id)
+            .single();
+          if (empUV) {
+            await supabase.from("notifications").insert({
+              user_id: empUV.user_id,
+              title: "Validation Confirmed",
+              message: `The client has confirmed validation. Final confirmation is pending.`,
+              type: "info",
+              reference_id: project_id,
+              reference_type: "project",
+            });
+          }
+        }
+
+        result.status = "validation";
+        break;
+      }
+
       case "release_project_payment": {
+        // Step 4: Final confirmation — release payment (validation → completed)
         if (callerProfile.user_type !== "client")
           throw new Error("Only clients can release payments");
         if (!project_id) throw new Error("Missing project_id");
@@ -251,8 +340,8 @@ Deno.serve(async (req) => {
         if (pErr || !project) throw new Error("Project not found");
         if (project.client_id !== callerProfile.id)
           throw new Error("Not your project");
-        if (project.status !== "payment_processing")
-          throw new Error("Project must be in payment_processing to release");
+        if (project.status !== "validation")
+          throw new Error("Project must be in validation to release payment");
         if (!project.assigned_employee_id)
           throw new Error("No employee assigned");
 
@@ -320,8 +409,8 @@ Deno.serve(async (req) => {
         if (pErr || !project) throw new Error("Project not found");
         if (project.client_id !== callerProfile.id)
           throw new Error("Not your project");
-        if (project.status !== "payment_processing")
-          throw new Error("Project must be in payment_processing to refund");
+        if (project.status !== "payment_processing" && project.status !== "validation")
+          throw new Error("Project must be in payment_processing or validation to refund");
         if (!project.assigned_employee_id)
           throw new Error("No employee assigned");
 
