@@ -37,6 +37,7 @@ const ChatRoom = () => {
         .from("chat_rooms")
         .select("*, project:project_id(name, client_id, assigned_employee_id, status, amount, validation_fees)")
         .eq("project_id", projectId)
+        .eq("type", "project")
         .maybeSingle();
       if (error) throw error;
       return data;
