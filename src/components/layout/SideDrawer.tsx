@@ -22,7 +22,7 @@ const SideDrawer = ({ open, onOpenChange }: SideDrawerProps) => {
 
   const menuItems = [
     { label: "Account Settings", icon: Settings, path: `${basePath}/settings` },
-    { label: "Help & Support", icon: HelpCircle, path: "/help" },
+    { label: "Help & Support", icon: HelpCircle, path: `${basePath}/help-support` },
     { label: "Notification Settings", icon: Bell, path: "/notifications" },
     { label: "Terms of Service", icon: FileText, path: "/legal/terms-of-service" },
     { label: "Privacy Policy", icon: Shield, path: "/legal/privacy-policy" },
