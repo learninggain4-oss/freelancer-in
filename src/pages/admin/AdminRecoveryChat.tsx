@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Send, CheckCircle, XCircle, Loader2, IndianRupee, Pencil } from "lucide-react";
+import { ArrowLeft, Send, CheckCircle, XCircle, Loader2, IndianRupee, Pencil, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -151,7 +151,49 @@ const AdminRecoveryChat = () => {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Operation failed");
 
-      toast.success("Held balance released to employee's available balance.");
+      toast.success(`₹${json.released_amount?.toLocaleString("en-IN") || ""} released to employee's available balance.`);
+      queryClient.invalidateQueries({ queryKey: ["recovery-request-detail"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-recovery-requests"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleHold = async () => {
+    if (!recoveryRequest) return;
+    const holdAmt = parseFloat(editAmount || String(heldAmount));
+    if (isNaN(holdAmt) || holdAmt <= 0) {
+      toast.error("Please enter a valid amount to hold");
+      return;
+    }
+    setActionLoading(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) throw new Error("Not authenticated");
+
+      const res = await fetch(
+        `https://maysttckdfnnzvfeujaj.supabase.co/functions/v1/wallet-operations`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            action: "admin_hold_balance",
+            amount: holdAmt,
+            admin_notes: adminNotes || "",
+            recovery_request_id: recoveryRequest.id,
+          }),
+        }
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Operation failed");
+
+      toast.success(`₹${json.held_amount?.toLocaleString("en-IN") || ""} moved to employee's hold balance.`);
       queryClient.invalidateQueries({ queryKey: ["recovery-request-detail"] });
       queryClient.invalidateQueries({ queryKey: ["admin-recovery-requests"] });
     } catch (e: any) {
@@ -260,16 +302,14 @@ const AdminRecoveryChat = () => {
               ) : (
                 <div className="flex items-center gap-1">
                   <span className="font-semibold text-destructive">₹{heldAmount.toLocaleString("en-IN")}</span>
-                  {requestStatus === "pending" && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-6 p-0"
-                      onClick={() => { setEditAmount(String(heldAmount)); setEditingAmount(true); }}
-                    >
-                      <Pencil className="h-3 w-3 text-muted-foreground" />
-                    </Button>
-                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
+                    onClick={() => { setEditAmount(String(heldAmount)); setEditingAmount(true); }}
+                  >
+                    <Pencil className="h-3 w-3 text-muted-foreground" />
+                  </Button>
                 </div>
               )}
             </div>
@@ -279,68 +319,87 @@ const AdminRecoveryChat = () => {
             Project: {recoveryRequest.project?.name || "Unknown"} • Employee Hold Balance: ₹{Number(recoveryRequest.employee?.hold_balance || 0).toLocaleString("en-IN")}
           </div>
 
-          {/* Admin actions */}
-          {requestStatus === "pending" && (
-            <div className="space-y-2">
-              <Textarea
-                placeholder="Admin notes (optional)"
-                value={adminNotes}
-                onChange={(e) => setAdminNotes(e.target.value)}
-                className="text-sm"
-                rows={2}
-              />
-              <div className="flex gap-2">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button size="sm" disabled={actionLoading} className="gap-1">
-                      {actionLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle className="h-3.5 w-3.5" />}
-                      Release Balance
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Release ₹{heldAmount.toLocaleString("en-IN")} to {employeeName}?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will transfer the held amount to the employee's available balance. This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleRelease}>Confirm Release</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+          {/* Admin actions — always available */}
+          <div className="space-y-2">
+            <Textarea
+              placeholder="Admin notes (optional)"
+              value={adminNotes}
+              onChange={(e) => setAdminNotes(e.target.value)}
+              className="text-sm"
+              rows={2}
+            />
+            <div className="flex flex-wrap gap-2">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" disabled={actionLoading} className="gap-1">
+                    {actionLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle className="h-3.5 w-3.5" />}
+                    Release Balance
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Release ₹{heldAmount.toLocaleString("en-IN")} to {employeeName}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will transfer the held amount to the employee's available balance.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleRelease}>Confirm Release</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
 
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button size="sm" variant="outline" disabled={actionLoading} className="gap-1 border-destructive/30 text-destructive hover:bg-destructive/10">
-                      <XCircle className="h-3.5 w-3.5" />
-                      Reject
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Reject Recovery Request?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        The held balance will remain on hold for {employeeName}.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleReject}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        Confirm Rejection
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="outline" disabled={actionLoading} className="gap-1 border-warning/30 text-warning hover:bg-warning/10">
+                    <Lock className="h-3.5 w-3.5" />
+                    Hold Balance
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Hold balance for {employeeName}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will move ₹{heldAmount.toLocaleString("en-IN")} from the employee's available balance back to hold.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleHold}>Confirm Hold</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="outline" disabled={actionLoading} className="gap-1 border-destructive/30 text-destructive hover:bg-destructive/10">
+                    <XCircle className="h-3.5 w-3.5" />
+                    Close Request
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Close Recovery Request?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will close the request and the chat. The current balances will remain unchanged.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleReject}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Confirm Close
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
-          )}
+          </div>
 
-          {requestStatus !== "pending" && recoveryRequest.admin_notes && (
+          {recoveryRequest.admin_notes && (
             <div className="rounded-md bg-muted/30 p-2 text-xs text-muted-foreground">
               <span className="font-medium">Admin Notes:</span> {recoveryRequest.admin_notes}
             </div>
