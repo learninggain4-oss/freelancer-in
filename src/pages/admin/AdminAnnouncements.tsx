@@ -9,11 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Megaphone, Plus, Trash2, Loader2, Clock, CalendarClock } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Megaphone, Plus, Trash2, Loader2, Clock, CalendarClock, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,6 +49,57 @@ const AdminAnnouncements = () => {
   const [showForm, setShowForm] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<Date | undefined>(undefined);
   const [expiresAt, setExpiresAt] = useState<Date | undefined>(undefined);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(true);
+  const [userSearch, setUserSearch] = useState("");
+
+  // Fetch users based on target audience
+  const userType = target === "employees" ? "employee" : target === "clients" ? "client" : null;
+
+  const { data: users = [] } = useQuery({
+    queryKey: ["announcement-users", userType],
+    queryFn: async () => {
+      if (!userType) return [];
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, user_code, user_id")
+        .eq("user_type", userType)
+        .eq("approval_status", "approved")
+        .order("full_name", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!userType,
+  });
+
+  const filteredUsers = users.filter((u: any) => {
+    if (!userSearch) return true;
+    const search = userSearch.toLowerCase();
+    const name = (u.full_name as string[])?.join(" ")?.toLowerCase() ?? "";
+    const code = (u.user_code as string[])?.join("")?.toLowerCase() ?? "";
+    return name.includes(search) || code.includes(search);
+  });
+
+  const handleTargetChange = (val: string) => {
+    setTarget(val);
+    setSelectedUserIds([]);
+    setSelectAll(true);
+    setUserSearch("");
+  };
+
+  const toggleUser = (userId: string) => {
+    setSelectAll(false);
+    setSelectedUserIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    setSelectAll(checked);
+    if (checked) {
+      setSelectedUserIds([]);
+    }
+  };
 
   const { data: announcements = [], isLoading } = useQuery({
     queryKey: ["admin-announcements"],
@@ -62,6 +115,7 @@ const AdminAnnouncements = () => {
 
   const createMutation = useMutation({
     mutationFn: async () => {
+      const targetIds = !selectAll && selectedUserIds.length > 0 ? selectedUserIds : null;
       const { error } = await supabase.from("announcements").insert({
         title: title.trim(),
         message: message.trim(),
@@ -69,7 +123,8 @@ const AdminAnnouncements = () => {
         created_by: profile?.id,
         scheduled_at: scheduledAt ? scheduledAt.toISOString() : null,
         expires_at: expiresAt ? expiresAt.toISOString() : null,
-      });
+        target_user_ids: targetIds,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -79,6 +134,8 @@ const AdminAnnouncements = () => {
       setTarget("everyone");
       setScheduledAt(undefined);
       setExpiresAt(undefined);
+      setSelectedUserIds([]);
+      setSelectAll(true);
       setShowForm(false);
       queryClient.invalidateQueries({ queryKey: ["admin-announcements"] });
     },
@@ -155,7 +212,7 @@ const AdminAnnouncements = () => {
             </div>
             <div className="space-y-2">
               <Label>Target Audience</Label>
-              <Select value={target} onValueChange={setTarget}>
+              <Select value={target} onValueChange={handleTargetChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -166,6 +223,61 @@ const AdminAnnouncements = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* User selection for employees/clients */}
+            {userType && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Select {target === "employees" ? "Employees" : "Clients"}
+                </Label>
+                <div className="flex items-center gap-2 pb-1">
+                  <Checkbox
+                    id="select-all-users"
+                    checked={selectAll}
+                    onCheckedChange={(checked) => handleSelectAll(checked === true)}
+                  />
+                  <label htmlFor="select-all-users" className="text-sm font-medium cursor-pointer">
+                    All {target === "employees" ? "Employees" : "Clients"}
+                  </label>
+                </div>
+                {!selectAll && (
+                  <>
+                    <Input
+                      placeholder={`Search ${target === "employees" ? "employees" : "clients"}...`}
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      className="mb-2"
+                    />
+                    <ScrollArea className="h-48 rounded-md border p-2">
+                      {filteredUsers.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-4">No users found</p>
+                      ) : (
+                        <div className="space-y-1">
+                          {filteredUsers.map((u: any) => (
+                            <div key={u.id} className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
+                              <Checkbox
+                                id={`user-${u.id}`}
+                                checked={selectedUserIds.includes(u.user_id)}
+                                onCheckedChange={() => toggleUser(u.user_id)}
+                              />
+                              <label htmlFor={`user-${u.id}`} className="flex-1 text-sm cursor-pointer">
+                                <span className="font-medium">{(u.full_name as string[])?.join(" ")}</span>
+                                <span className="ml-2 text-muted-foreground">{(u.user_code as string[])?.[0]}</span>
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </ScrollArea>
+                    {selectedUserIds.length > 0 && (
+                      <p className="text-xs text-muted-foreground">{selectedUserIds.length} user(s) selected</p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Schedule For (optional)</Label>
@@ -232,7 +344,7 @@ const AdminAnnouncements = () => {
             <div className="flex gap-2 pt-2">
               <Button
                 onClick={() => createMutation.mutate()}
-                disabled={!title.trim() || !message.trim() || createMutation.isPending}
+                disabled={!title.trim() || !message.trim() || createMutation.isPending || (!selectAll && selectedUserIds.length === 0 && userType !== null)}
                 className="gap-2"
               >
                 {createMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -272,6 +384,11 @@ const AdminAnnouncements = () => {
                       <Badge className={audienceColor[a.target_audience] ?? ""}>
                         {audienceLabel[a.target_audience] ?? a.target_audience}
                       </Badge>
+                      {a.target_user_ids && a.target_user_ids.length > 0 && (
+                        <Badge variant="outline" className="text-muted-foreground">
+                          {a.target_user_ids.length} user(s)
+                        </Badge>
+                      )}
                       {!a.is_active && (
                         <Badge variant="outline" className="text-muted-foreground">Inactive</Badge>
                       )}
