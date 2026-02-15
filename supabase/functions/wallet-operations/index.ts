@@ -195,14 +195,14 @@ Deno.serve(async (req) => {
       }
 
       case "hold_project_payment": {
-        // Step 2: Client initiates payment processing: project budget → employee hold_balance
+        // Step 2: Client initiates payment processing: validation_fees → employee hold_balance
         if (callerProfile.user_type !== "client")
           throw new Error("Only clients can initiate payment processing");
         if (!project_id) throw new Error("Missing project_id");
 
         const { data: project, error: pErr } = await supabase
           .from("projects")
-          .select("id, amount, client_id, assigned_employee_id, status")
+          .select("id, amount, validation_fees, client_id, assigned_employee_id, status")
           .eq("id", project_id)
           .single();
         if (pErr || !project) throw new Error("Project not found");
@@ -213,15 +213,15 @@ Deno.serve(async (req) => {
         if (!project.assigned_employee_id)
           throw new Error("No employee assigned");
 
-        const projectAmount = Number(project.amount);
+        const validationFees = Number(project.validation_fees);
 
-        if (Number(callerProfile.available_balance) < projectAmount)
-          throw new Error("Insufficient balance to process payment");
+        if (Number(callerProfile.available_balance) < validationFees)
+          throw new Error("Insufficient balance to process validation fees");
 
         await supabase
           .from("profiles")
           .update({
-            available_balance: Number(callerProfile.available_balance) - projectAmount,
+            available_balance: Number(callerProfile.available_balance) - validationFees,
           })
           .eq("id", callerProfile.id);
 
@@ -235,7 +235,7 @@ Deno.serve(async (req) => {
           await supabase
             .from("profiles")
             .update({
-              hold_balance: Number(empProfile.hold_balance) + projectAmount,
+              hold_balance: Number(empProfile.hold_balance) + validationFees,
             })
             .eq("id", project.assigned_employee_id);
         }
@@ -249,15 +249,15 @@ Deno.serve(async (req) => {
           {
             profile_id: callerProfile.id,
             type: "debit",
-            amount: projectAmount,
-            description: `Payment processing for project: ${project_id}`,
+            amount: validationFees,
+            description: `Validation fees for project: ${project_id}`,
             reference_id: project_id,
           },
           {
             profile_id: project.assigned_employee_id,
             type: "hold",
-            amount: projectAmount,
-            description: `Payment held for project: ${project_id}`,
+            amount: validationFees,
+            description: `Validation fees held for project: ${project_id}`,
             reference_id: project_id,
           },
         ]);
@@ -270,8 +270,8 @@ Deno.serve(async (req) => {
         if (empUser1) {
           await supabase.from("notifications").insert({
             user_id: empUser1.user_id,
-            title: "Payment Processing Initiated",
-            message: `The client has initiated payment processing for your project. ₹${projectAmount} is now held in your account.`,
+            title: "Payment Processing — Validation Fees Held",
+            message: `The client has initiated payment processing. ₹${validationFees} (validation fees) is now held in your account.`,
             type: "financial",
             reference_id: project_id,
             reference_type: "project",
@@ -283,14 +283,14 @@ Deno.serve(async (req) => {
       }
 
       case "confirm_validation": {
-        // Step 3: Client confirms validation (payment_processing → validation)
+        // Step 3: Client confirms validation (payment_processing → validation) — budget amount → employee hold
         if (callerProfile.user_type !== "client")
           throw new Error("Only clients can confirm validation");
         if (!project_id) throw new Error("Missing project_id");
 
         const { data: projV, error: pvErr } = await supabase
           .from("projects")
-          .select("id, client_id, assigned_employee_id, status")
+          .select("id, amount, client_id, assigned_employee_id, status")
           .eq("id", project_id)
           .single();
         if (pvErr || !projV) throw new Error("Project not found");
@@ -299,10 +299,60 @@ Deno.serve(async (req) => {
         if (projV.status !== "payment_processing")
           throw new Error("Project must be in payment_processing to validate");
 
+        const budgetAmount = Number(projV.amount);
+
+        // Re-fetch caller balance (may have changed)
+        const { data: freshCaller } = await supabase
+          .from("profiles")
+          .select("available_balance")
+          .eq("id", callerProfile.id)
+          .single();
+        const callerBal = Number(freshCaller?.available_balance ?? callerProfile.available_balance);
+
+        if (callerBal < budgetAmount)
+          throw new Error("Insufficient balance to hold budget amount");
+
+        // Deduct budget from client
+        await supabase
+          .from("profiles")
+          .update({ available_balance: callerBal - budgetAmount })
+          .eq("id", callerProfile.id);
+
+        // Add budget to employee hold
+        const { data: empProfV } = await supabase
+          .from("profiles")
+          .select("hold_balance")
+          .eq("id", projV.assigned_employee_id!)
+          .single();
+
+        if (empProfV) {
+          await supabase
+            .from("profiles")
+            .update({ hold_balance: Number(empProfV.hold_balance) + budgetAmount })
+            .eq("id", projV.assigned_employee_id!);
+        }
+
         await supabase
           .from("projects")
           .update({ status: "validation" })
           .eq("id", project_id);
+
+        await supabase.from("transactions").insert([
+          {
+            profile_id: callerProfile.id,
+            type: "debit",
+            amount: budgetAmount,
+            description: `Budget amount held for project: ${project_id}`,
+            reference_id: project_id,
+          },
+          {
+            profile_id: projV.assigned_employee_id!,
+            type: "hold",
+            amount: budgetAmount,
+            description: `Budget amount held for project: ${project_id}`,
+            reference_id: project_id,
+          },
+        ]);
 
         if (projV.assigned_employee_id) {
           const { data: empUV } = await supabase
@@ -313,9 +363,9 @@ Deno.serve(async (req) => {
           if (empUV) {
             await supabase.from("notifications").insert({
               user_id: empUV.user_id,
-              title: "Validation Confirmed",
-              message: `The client has confirmed validation. Final confirmation is pending.`,
-              type: "info",
+              title: "Validation Confirmed — Budget Held",
+              message: `The client has confirmed validation. ₹${budgetAmount} (budget) is now held in your account. Final confirmation pending.`,
+              type: "financial",
               reference_id: project_id,
               reference_type: "project",
             });
@@ -327,14 +377,14 @@ Deno.serve(async (req) => {
       }
 
       case "release_project_payment": {
-        // Step 4: Final confirmation — release payment (validation → completed)
+        // Step 4: Final confirmation — move all hold to available (validation → completed)
         if (callerProfile.user_type !== "client")
           throw new Error("Only clients can release payments");
         if (!project_id) throw new Error("Missing project_id");
 
         const { data: project, error: pErr } = await supabase
           .from("projects")
-          .select("id, amount, client_id, assigned_employee_id, status")
+          .select("id, amount, validation_fees, client_id, assigned_employee_id, status")
           .eq("id", project_id)
           .single();
         if (pErr || !project) throw new Error("Project not found");
@@ -345,7 +395,7 @@ Deno.serve(async (req) => {
         if (!project.assigned_employee_id)
           throw new Error("No employee assigned");
 
-        const projectAmount = Number(project.amount);
+        const totalAmount = Number(project.amount) + Number(project.validation_fees);
 
         const { data: empProfile } = await supabase
           .from("profiles")
@@ -357,8 +407,8 @@ Deno.serve(async (req) => {
           await supabase
             .from("profiles")
             .update({
-              hold_balance: Number(empProfile.hold_balance) - projectAmount,
-              available_balance: Number(empProfile.available_balance) + projectAmount,
+              hold_balance: Number(empProfile.hold_balance) - totalAmount,
+              available_balance: Number(empProfile.available_balance) + totalAmount,
             })
             .eq("id", project.assigned_employee_id);
         }
@@ -371,7 +421,7 @@ Deno.serve(async (req) => {
         await supabase.from("transactions").insert({
           profile_id: project.assigned_employee_id,
           type: "release",
-          amount: projectAmount,
+          amount: totalAmount,
           description: `Payment released for project: ${project_id}`,
           reference_id: project_id,
         });
@@ -385,7 +435,7 @@ Deno.serve(async (req) => {
           await supabase.from("notifications").insert({
             user_id: empUser2.user_id,
             title: "Payment Released — Project Completed!",
-            message: `Congratulations! Your project has been marked as successful. ₹${projectAmount} has been released to your available balance.`,
+            message: `Congratulations! ₹${totalAmount} (budget + validation fees) has been released to your available balance.`,
             type: "financial",
             reference_id: project_id,
             reference_type: "project",
@@ -397,83 +447,43 @@ Deno.serve(async (req) => {
       }
 
       case "refund_project_payment": {
+        // Reject: cancel project, held balance stays on hold (no refund)
         if (callerProfile.user_type !== "client")
-          throw new Error("Only clients can refund payments");
+          throw new Error("Only clients can reject projects");
         if (!project_id) throw new Error("Missing project_id");
 
         const { data: project, error: pErr } = await supabase
           .from("projects")
-          .select("id, amount, client_id, assigned_employee_id, status")
+          .select("id, amount, validation_fees, client_id, assigned_employee_id, status, remarks")
           .eq("id", project_id)
           .single();
         if (pErr || !project) throw new Error("Project not found");
         if (project.client_id !== callerProfile.id)
           throw new Error("Not your project");
         if (project.status !== "payment_processing" && project.status !== "validation")
-          throw new Error("Project must be in payment_processing or validation to refund");
-        if (!project.assigned_employee_id)
-          throw new Error("No employee assigned");
-
-        const projectAmount = Number(project.amount);
-
-        await supabase
-          .from("profiles")
-          .update({
-            available_balance: Number(callerProfile.available_balance) + projectAmount,
-          })
-          .eq("id", callerProfile.id);
-
-        const { data: empProfile } = await supabase
-          .from("profiles")
-          .select("hold_balance")
-          .eq("id", project.assigned_employee_id)
-          .single();
-
-        if (empProfile) {
-          await supabase
-            .from("profiles")
-            .update({
-              hold_balance: Number(empProfile.hold_balance) - projectAmount,
-            })
-            .eq("id", project.assigned_employee_id);
-        }
+          throw new Error("Project must be in payment_processing or validation to reject");
 
         await supabase
           .from("projects")
-          .update({ status: "cancelled" })
+          .update({ status: "cancelled", remarks: reject_reason || project.remarks || "Rejected by client" })
           .eq("id", project_id);
 
-        await supabase.from("transactions").insert([
-          {
-            profile_id: callerProfile.id,
-            type: "credit",
-            amount: projectAmount,
-            description: `Refund for rejected project: ${project_id}`,
-            reference_id: project_id,
-          },
-          {
-            profile_id: project.assigned_employee_id,
-            type: "release",
-            amount: projectAmount,
-            description: `Hold released (project rejected): ${project_id}`,
-            reference_id: project_id,
-          },
-        ]);
-
-        const { data: empUser3 } = await supabase
-          .from("profiles")
-          .select("user_id")
-          .eq("id", project.assigned_employee_id)
-          .single();
-        if (empUser3) {
-          await supabase.from("notifications").insert({
-            user_id: empUser3.user_id,
-            title: "Project Rejected — Payment Refunded",
-            message: `The client has rejected the project during payment processing. The held amount of ₹${projectAmount} has been released.`,
-            type: "financial",
-            reference_id: project_id,
-            reference_type: "project",
-          });
+        if (project.assigned_employee_id) {
+          const { data: empUser3 } = await supabase
+            .from("profiles")
+            .select("user_id")
+            .eq("id", project.assigned_employee_id)
+            .single();
+          if (empUser3) {
+            await supabase.from("notifications").insert({
+              user_id: empUser3.user_id,
+              title: "Project Rejected",
+              message: `The client has rejected the project. The held balance remains on hold.`,
+              type: "financial",
+              reference_id: project_id,
+              reference_type: "project",
+            });
+          }
         }
 
         result.status = "cancelled";
