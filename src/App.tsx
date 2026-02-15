@@ -45,8 +45,11 @@ const AdminServiceManagement = lazy(() => import("./pages/admin/AdminServiceMana
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const AdminAnnouncements = lazy(() => import("./pages/admin/AdminAnnouncements"));
 const AdminJobs = lazy(() => import("./pages/admin/AdminJobs"));
+const AdminRecoveryRequests = lazy(() => import("./pages/admin/AdminRecoveryRequests"));
+const AdminRecoveryChat = lazy(() => import("./pages/admin/AdminRecoveryChat"));
 const LegalDocument = lazy(() => import("./pages/LegalDocument"));
 const AccountSettings = lazy(() => import("./pages/AccountSettings"));
+const EmployeeSupportChat = lazy(() => import("./pages/employee/EmployeeSupportChat"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
@@ -100,6 +103,7 @@ const App = () => (
                 <Route path="dashboard" element={<EmployeeDashboard />} />
                 <Route path="projects" element={<EmployeeProjects />} />
                 <Route path="projects/chat/:projectId" element={<ChatRoom />} />
+                <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
                 <Route path="wallet" element={<EmployeeWallet />} />
                 <Route path="profile" element={<EmployeeProfile />} />
                 <Route path="settings" element={<AccountSettings />} />
@@ -144,6 +148,8 @@ const App = () => (
                 <Route path="users/:profileId" element={<AdminProfileEdit />} />
                 <Route path="legal-documents" element={<AdminLegalDocuments />} />
                 <Route path="jobs" element={<AdminJobs />} />
+                <Route path="recovery-requests" element={<AdminRecoveryRequests />} />
+                <Route path="recovery-chat/:projectId" element={<AdminRecoveryChat />} />
                 <Route path="services" element={<AdminServiceManagement />} />
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="announcements" element={<AdminAnnouncements />} />

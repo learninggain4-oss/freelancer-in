@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason } =
+    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes } =
       await req.json();
 
     // Get the caller's profile
@@ -659,6 +659,89 @@ Deno.serve(async (req) => {
           .eq("id", withdrawal_id);
 
         result.status = status;
+        break;
+      }
+
+      case "admin_release_held_balance": {
+        // Admin releases held balance from cancelled project to employee's available balance
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+
+        if (!project_id) throw new Error("Missing project_id");
+
+        const { data: project, error: pErr } = await supabase
+          .from("projects")
+          .select("id, amount, validation_fees, assigned_employee_id, status")
+          .eq("id", project_id)
+          .single();
+        if (pErr || !project) throw new Error("Project not found");
+        if (project.status !== "cancelled")
+          throw new Error("Project must be cancelled to release held balance");
+        if (!project.assigned_employee_id)
+          throw new Error("No employee assigned");
+
+        // Calculate held amount based on what was held
+        const heldAmount = Number(project.amount) + Number(project.validation_fees);
+
+        const { data: empProfile } = await supabase
+          .from("profiles")
+          .select("hold_balance, available_balance, user_id")
+          .eq("id", project.assigned_employee_id)
+          .single();
+        if (!empProfile) throw new Error("Employee profile not found");
+
+        const currentHold = Number(empProfile.hold_balance);
+        const releaseAmount = Math.min(heldAmount, currentHold);
+        if (releaseAmount <= 0) throw new Error("No held balance to release");
+
+        // Transfer from hold to available
+        await supabase
+          .from("profiles")
+          .update({
+            hold_balance: currentHold - releaseAmount,
+            available_balance: Number(empProfile.available_balance) + releaseAmount,
+          })
+          .eq("id", project.assigned_employee_id);
+
+        // Record transaction
+        await supabase.from("transactions").insert({
+          profile_id: project.assigned_employee_id,
+          type: "release",
+          amount: releaseAmount,
+          description: `Recovery: held balance released by admin for project: ${project_id}`,
+          reference_id: project_id,
+        });
+
+        // Update recovery request if provided
+        if (recovery_request_id) {
+          await supabase
+            .from("recovery_requests")
+            .update({
+              status: "resolved",
+              admin_notes: admin_notes || "Balance released by admin",
+              resolved_at: new Date().toISOString(),
+              resolved_by: callerProfile.id,
+            })
+            .eq("id", recovery_request_id);
+        }
+
+        // Notify employee
+        await supabase.from("notifications").insert({
+          user_id: empProfile.user_id,
+          title: "Balance Recovered! 🎉",
+          message: `₹${releaseAmount.toLocaleString("en-IN")} has been released from hold to your available balance by Customer Service.`,
+          type: "financial",
+          reference_id: project_id,
+          reference_type: "project",
+        });
+
+        result.status = "released";
+        result.released_amount = releaseAmount;
         break;
       }
 
