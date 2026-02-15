@@ -244,7 +244,7 @@ const AccountSettings = () => {
               <Separator />
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">User Code</span>
-                <Badge variant="secondary" className={profile?.user_type === "employee" ? "bg-primary/15 text-primary border-primary/30" : "bg-accent/15 text-accent border-accent/30"}>{profile?.user_code?.[0]}</Badge>
+                <Badge variant="secondary">{profile?.user_code?.[0]}</Badge>
               </div>
               <Separator />
               <div className="flex items-center justify-between">
