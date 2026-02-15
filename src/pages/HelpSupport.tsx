@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, HelpCircle } from "lucide-react";
+import { Send, HelpCircle, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -7,18 +7,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSupportChat, useMyConversation } from "@/hooks/use-support-chat";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import SupportMessageBubble from "@/components/chat/SupportMessageBubble";
 
 const HelpSupport = () => {
   const { profile } = useAuth();
   const { data: conversation, isLoading: loadingConv } = useMyConversation();
-  const { messages, isLoading: loadingMessages, sendMessage } = useSupportChat(conversation?.id);
+  const { messages, isLoading: loadingMessages, sendMessage, toggleReaction } = useSupportChat(conversation?.id);
   const [newMessage, setNewMessage] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (!searchOpen) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, searchOpen]);
 
   const handleSend = async () => {
     const content = newMessage.trim();
@@ -30,6 +32,10 @@ const HelpSupport = () => {
       toast.error(e.message);
     }
   };
+
+  const filteredMessages = searchQuery
+    ? messages.filter((m) => m.content.toLowerCase().includes(searchQuery.toLowerCase()))
+    : messages;
 
   if (loadingConv) {
     return (
@@ -49,11 +55,33 @@ const HelpSupport = () => {
           <h2 className="text-sm font-semibold text-foreground">Help & Support</h2>
           <p className="text-xs text-muted-foreground">Chat with our support team</p>
         </div>
-        <div className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-accent" />
-          <span className="text-[10px] text-muted-foreground">Online</span>
-        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => { setSearchOpen(!searchOpen); setSearchQuery(""); }}
+        >
+          {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+        </Button>
       </div>
+
+      {/* Search bar */}
+      {searchOpen && (
+        <div className="border-b px-4 py-2">
+          <Input
+            placeholder="Search messages..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-8 text-sm"
+            autoFocus
+          />
+          {searchQuery && (
+            <p className="text-[10px] text-muted-foreground mt-1">
+              {filteredMessages.length} result{filteredMessages.length !== 1 ? "s" : ""} found
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Messages */}
       <ScrollArea className="flex-1 px-4 py-2">
@@ -63,42 +91,27 @@ const HelpSupport = () => {
               <Skeleton key={i} className="h-12 w-3/4" />
             ))}
           </div>
-        ) : messages.length === 0 ? (
+        ) : filteredMessages.length === 0 ? (
           <div className="py-8 text-center">
             <HelpCircle className="mx-auto mb-2 h-10 w-10 text-muted-foreground/40" />
             <p className="text-sm text-muted-foreground">
-              Welcome to Help & Support! Send a message and our team will get back to you.
+              {searchQuery
+                ? "No messages match your search."
+                : "Welcome to Help & Support! Send a message and our team will get back to you."}
             </p>
           </div>
         ) : (
           <div className="space-y-2">
-            {messages.map((msg) => {
-              const isMe = msg.sender_id === profile?.id;
-              const senderName = isMe
-                ? "You"
-                : "Support Team";
-              return (
-                <div
-                  key={msg.id}
-                  className={cn("flex", isMe ? "justify-end" : "justify-start")}
-                >
-                  <div
-                    className={cn(
-                      "max-w-[75%] rounded-lg px-3 py-2",
-                      isMe
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground"
-                    )}
-                  >
-                    <p className="text-[10px] font-medium opacity-70 mb-0.5">{senderName}</p>
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                    <p className="text-[10px] opacity-50 mt-0.5">
-                      {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+            {filteredMessages.map((msg) => (
+              <SupportMessageBubble
+                key={msg.id}
+                message={msg}
+                isMe={msg.sender_id === profile?.id}
+                senderLabel={msg.sender_id === profile?.id ? "You" : "Support Team"}
+                currentUserId={profile?.id || ""}
+                onReaction={toggleReaction}
+              />
+            ))}
             <div ref={bottomRef} />
           </div>
         )}
