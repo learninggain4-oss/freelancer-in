@@ -275,6 +275,12 @@ const AdminAnnouncements = () => {
                       {!a.is_active && (
                         <Badge variant="outline" className="text-muted-foreground">Inactive</Badge>
                       )}
+                      {a.is_active && a.scheduled_at && new Date(a.scheduled_at) > new Date() && (
+                        <Badge className="bg-blue-500/10 text-blue-600 border-blue-200">Scheduled</Badge>
+                      )}
+                      {a.is_active && a.expires_at && new Date(a.expires_at) < new Date() && (
+                        <Badge className="bg-destructive/10 text-destructive border-destructive/20">Expired</Badge>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">{a.message}</p>
                     <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground/70">
