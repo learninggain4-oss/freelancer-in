@@ -182,8 +182,9 @@ const AdminAnnouncements = () => {
         .in("id", ids);
       if (error) throw error;
     },
-    onSuccess: () => {
-      toast({ title: "All announcements deleted" });
+    onSuccess: (_data, _vars, _ctx) => {
+      const count = announcements.length;
+      toast({ title: "All announcements deleted", description: `${count} announcement(s) were permanently removed.` });
       queryClient.invalidateQueries({ queryKey: ["admin-announcements"] });
     },
   });
