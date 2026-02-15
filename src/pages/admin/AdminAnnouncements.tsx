@@ -1,21 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Megaphone, Plus, Trash2, Loader2, Clock, CalendarClock, Users } from "lucide-react";
+import { Megaphone, Plus, Trash2, Loader2, Clock, CalendarClock, Pencil } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import AnnouncementForm from "@/components/admin/AnnouncementForm";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,65 +32,9 @@ const audienceColor: Record<string, string> = {
 };
 
 const AdminAnnouncements = () => {
-  const { profile } = useAuth();
   const queryClient = useQueryClient();
-  const [title, setTitle] = useState("");
-  const [message, setMessage] = useState("");
-  const [target, setTarget] = useState("everyone");
   const [showForm, setShowForm] = useState(false);
-  const [scheduledAt, setScheduledAt] = useState<Date | undefined>(undefined);
-  const [expiresAt, setExpiresAt] = useState<Date | undefined>(undefined);
-  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
-  const [selectAll, setSelectAll] = useState(true);
-  const [userSearch, setUserSearch] = useState("");
-
-  // Fetch users based on target audience
-  const userType = target === "employees" ? "employee" : target === "clients" ? "client" : null;
-
-  const { data: users = [] } = useQuery({
-    queryKey: ["announcement-users", userType],
-    queryFn: async () => {
-      if (!userType) return [];
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, user_code, user_id")
-        .eq("user_type", userType)
-        .eq("approval_status", "approved")
-        .order("full_name", { ascending: true });
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: !!userType,
-  });
-
-  const filteredUsers = users.filter((u: any) => {
-    if (!userSearch) return true;
-    const search = userSearch.toLowerCase();
-    const name = (u.full_name as string[])?.join(" ")?.toLowerCase() ?? "";
-    const code = (u.user_code as string[])?.join("")?.toLowerCase() ?? "";
-    return name.includes(search) || code.includes(search);
-  });
-
-  const handleTargetChange = (val: string) => {
-    setTarget(val);
-    setSelectedUserIds([]);
-    setSelectAll(true);
-    setUserSearch("");
-  };
-
-  const toggleUser = (userId: string) => {
-    setSelectAll(false);
-    setSelectedUserIds((prev) =>
-      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
-    );
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    setSelectAll(checked);
-    if (checked) {
-      setSelectedUserIds([]);
-    }
-  };
+  const [editingAnnouncement, setEditingAnnouncement] = useState<any>(null);
 
   const { data: announcements = [], isLoading } = useQuery({
     queryKey: ["admin-announcements"],
@@ -110,37 +45,6 @@ const AdminAnnouncements = () => {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
-    },
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      const targetIds = !selectAll && selectedUserIds.length > 0 ? selectedUserIds : null;
-      const { error } = await supabase.from("announcements").insert({
-        title: title.trim(),
-        message: message.trim(),
-        target_audience: target,
-        created_by: profile?.id,
-        scheduled_at: scheduledAt ? scheduledAt.toISOString() : null,
-        expires_at: expiresAt ? expiresAt.toISOString() : null,
-        target_user_ids: targetIds,
-      } as any);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({ title: "Announcement created", description: "Users will see this popup on their next visit." });
-      setTitle("");
-      setMessage("");
-      setTarget("everyone");
-      setScheduledAt(undefined);
-      setExpiresAt(undefined);
-      setSelectedUserIds([]);
-      setSelectAll(true);
-      setShowForm(false);
-      queryClient.invalidateQueries({ queryKey: ["admin-announcements"] });
-    },
-    onError: (e: any) => {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
     },
   });
 
@@ -182,12 +86,27 @@ const AdminAnnouncements = () => {
         .in("id", ids);
       if (error) throw error;
     },
-    onSuccess: (_data, _vars, _ctx) => {
+    onSuccess: () => {
       const count = announcements.length;
       toast({ title: "All announcements deleted", description: `${count} announcement(s) were permanently removed.` });
       queryClient.invalidateQueries({ queryKey: ["admin-announcements"] });
     },
   });
+
+  const handleEdit = (announcement: any) => {
+    setEditingAnnouncement(announcement);
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingAnnouncement(null);
+  };
+
+  const handleNewAnnouncement = () => {
+    setEditingAnnouncement(null);
+    setShowForm(!showForm);
+  };
 
   return (
     <div className="space-y-6">
@@ -217,7 +136,7 @@ const AdminAnnouncements = () => {
               </AlertDialogContent>
             </AlertDialog>
           )}
-          <Button onClick={() => setShowForm(!showForm)} className="gap-2">
+          <Button onClick={handleNewAnnouncement} className="gap-2">
             <Plus className="h-4 w-4" />
             New Announcement
           </Button>
@@ -225,175 +144,10 @@ const AdminAnnouncements = () => {
       </div>
 
       {showForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Create Announcement</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Title</Label>
-              <Input
-                placeholder="Announcement title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                maxLength={100}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Message</Label>
-              <Textarea
-                placeholder="Write your message here..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                maxLength={1000}
-                rows={4}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Target Audience</Label>
-              <Select value={target} onValueChange={handleTargetChange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="everyone">Everyone</SelectItem>
-                  <SelectItem value="employees">Employees Only</SelectItem>
-                  <SelectItem value="clients">Clients Only</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* User selection for employees/clients */}
-            {userType && (
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Select {target === "employees" ? "Employees" : "Clients"}
-                </Label>
-                <div className="flex items-center gap-2 pb-1">
-                  <Checkbox
-                    id="select-all-users"
-                    checked={selectAll}
-                    onCheckedChange={(checked) => handleSelectAll(checked === true)}
-                  />
-                  <label htmlFor="select-all-users" className="text-sm font-medium cursor-pointer">
-                    All {target === "employees" ? "Employees" : "Clients"}
-                  </label>
-                </div>
-                {!selectAll && (
-                  <>
-                    <Input
-                      placeholder={`Search ${target === "employees" ? "employees" : "clients"}...`}
-                      value={userSearch}
-                      onChange={(e) => setUserSearch(e.target.value)}
-                      className="mb-2"
-                    />
-                    <ScrollArea className="h-48 rounded-md border p-2">
-                      {filteredUsers.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-4">No users found</p>
-                      ) : (
-                        <div className="space-y-1">
-                          {filteredUsers.map((u: any) => (
-                            <div key={u.id} className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
-                              <Checkbox
-                                id={`user-${u.id}`}
-                                checked={selectedUserIds.includes(u.user_id)}
-                                onCheckedChange={() => toggleUser(u.user_id)}
-                              />
-                              <label htmlFor={`user-${u.id}`} className="flex-1 text-sm cursor-pointer">
-                                <span className="font-medium">{(u.full_name as string[])?.join(" ")}</span>
-                                <span className="ml-2 text-muted-foreground">{(u.user_code as string[])?.[0]}</span>
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </ScrollArea>
-                    {selectedUserIds.length > 0 && (
-                      <p className="text-xs text-muted-foreground">{selectedUserIds.length} user(s) selected</p>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Schedule For (optional)</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal">
-                      <CalendarClock className="mr-2 h-4 w-4" />
-                      {scheduledAt ? format(scheduledAt, "PPP p") : "Immediately"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={scheduledAt} onSelect={(day) => {
-                      if (!day) { setScheduledAt(undefined); return; }
-                      const prev = scheduledAt;
-                      if (prev) { day.setHours(prev.getHours(), prev.getMinutes()); }
-                      setScheduledAt(day);
-                    }} disabled={(date) => date < new Date(new Date().toDateString())} className="p-3 pointer-events-auto" />
-                    {scheduledAt && (
-                      <div className="flex items-center gap-2 px-3 pb-3">
-                        <Input type="time" className="flex-1" value={format(scheduledAt, "HH:mm")} onChange={(e) => {
-                          const [h, m] = e.target.value.split(":").map(Number);
-                          const d = new Date(scheduledAt);
-                          d.setHours(h, m);
-                          setScheduledAt(d);
-                        }} />
-                        <Button variant="ghost" size="sm" onClick={() => setScheduledAt(undefined)}>Clear</Button>
-                      </div>
-                    )}
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="space-y-2">
-                <Label>Expires On (optional)</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal">
-                      <Clock className="mr-2 h-4 w-4" />
-                      {expiresAt ? format(expiresAt, "PPP p") : "Never"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={expiresAt} onSelect={(day) => {
-                      if (!day) { setExpiresAt(undefined); return; }
-                      const prev = expiresAt;
-                      if (prev) { day.setHours(prev.getHours(), prev.getMinutes()); }
-                      else { day.setHours(23, 59); }
-                      setExpiresAt(day);
-                    }} disabled={(date) => date < new Date(new Date().toDateString())} className="p-3 pointer-events-auto" />
-                    {expiresAt && (
-                      <div className="flex items-center gap-2 px-3 pb-3">
-                        <Input type="time" className="flex-1" value={format(expiresAt, "HH:mm")} onChange={(e) => {
-                          const [h, m] = e.target.value.split(":").map(Number);
-                          const d = new Date(expiresAt);
-                          d.setHours(h, m);
-                          setExpiresAt(d);
-                        }} />
-                        <Button variant="ghost" size="sm" onClick={() => setExpiresAt(undefined)}>Clear</Button>
-                      </div>
-                    )}
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <Button
-                onClick={() => createMutation.mutate()}
-                disabled={!title.trim() || !message.trim() || createMutation.isPending || (!selectAll && selectedUserIds.length === 0 && userType !== null)}
-                className="gap-2"
-              >
-                {createMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                <Megaphone className="h-4 w-4" />
-                {scheduledAt ? "Schedule Announcement" : "Publish Announcement"}
-              </Button>
-              <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
-            </div>
-          </CardContent>
-        </Card>
+        <AnnouncementForm
+          editingAnnouncement={editingAnnouncement}
+          onClose={handleCloseForm}
+        />
       )}
 
       <Card>
@@ -458,6 +212,14 @@ const AdminAnnouncements = () => {
                     </div>
                   </div>
                   <div className="flex shrink-0 gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(a)}
+                      title="Edit announcement"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                     {a.is_active && (
                       <Button
                         variant="outline"
