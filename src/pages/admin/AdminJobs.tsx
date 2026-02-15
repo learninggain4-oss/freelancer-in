@@ -4,7 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, IndianRupee, Calendar, CheckCircle, XCircle, Pencil, Trash2, Eye } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Search, IndianRupee, Calendar, CheckCircle, XCircle, Pencil, Eye, EyeOff, ChevronDown, ChevronUp, Save } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -12,7 +14,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 
 const statusColor: Record<string, string> = {
   open: "bg-accent/10 text-accent",
@@ -27,11 +28,13 @@ const AdminJobs = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [viewProject, setViewProject] = useState<any>(null);
-  const [editProject, setEditProject] = useState<any>(null);
+  const [expandedEdit, setExpandedEdit] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<any>({});
+  const [showCleared, setShowCleared] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: projects = [], isLoading } = useQuery({
-    queryKey: ["admin-jobs", search, statusFilter],
+    queryKey: ["admin-jobs", search, statusFilter, showCleared],
     queryFn: async () => {
       let query = supabase
         .from("projects")
@@ -39,6 +42,7 @@ const AdminJobs = () => {
         .order("created_at", { ascending: false });
       if (search) query = query.ilike("name", `%${search}%`);
       if (statusFilter !== "all") query = query.eq("status", statusFilter as any);
+      if (!showCleared) query = query.eq("is_cleared", false);
       const { data, error } = await query;
       if (error) throw error;
       return data;
@@ -57,13 +61,25 @@ const AdminJobs = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const deleteMutation = useMutation({
+  const clearMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("projects").delete().eq("id", id);
+      const { error } = await supabase.from("projects").update({ is_cleared: true }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Job deleted");
+      toast.success("Job cleared (soft deleted)");
+      queryClient.invalidateQueries({ queryKey: ["admin-jobs"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("projects").update({ is_cleared: false }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Job restored");
       queryClient.invalidateQueries({ queryKey: ["admin-jobs"] });
     },
     onError: (e: any) => toast.error(e.message),
@@ -85,18 +101,27 @@ const AdminJobs = () => {
     },
     onSuccess: () => {
       toast.success("Job updated");
-      setEditProject(null);
+      setExpandedEdit(null);
       queryClient.invalidateQueries({ queryKey: ["admin-jobs"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
 
+  const startEdit = (p: any) => {
+    if (expandedEdit === p.id) {
+      setExpandedEdit(null);
+      return;
+    }
+    setEditForm({ ...p });
+    setExpandedEdit(p.id);
+  };
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-foreground">Job Management</h1>
 
-      <div className="flex gap-2">
-        <div className="relative flex-1">
+      <div className="flex flex-wrap gap-2">
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Search jobs..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
@@ -111,6 +136,10 @@ const AdminJobs = () => {
             <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-2">
+          <Switch checked={showCleared} onCheckedChange={setShowCleared} id="show-cleared-jobs" />
+          <Label htmlFor="show-cleared-jobs" className="text-xs text-muted-foreground">Show cleared</Label>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -118,7 +147,7 @@ const AdminJobs = () => {
           Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 w-full" />)
         ) : projects.length > 0 ? (
           projects.map((p: any) => (
-            <Card key={p.id}>
+            <Card key={p.id} className={p.is_cleared ? "opacity-60 border-dashed" : ""}>
               <CardContent className="space-y-2 p-4">
                 <div className="flex items-start justify-between">
                   <div>
@@ -129,6 +158,7 @@ const AdminJobs = () => {
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
+                    {p.is_cleared && <Badge variant="outline" className="text-xs border-destructive/30 text-destructive">Cleared</Badge>}
                     <Badge className={statusColor[p.status]}>{p.status}</Badge>
                     {p.admin_approved && <Badge variant="outline" className="text-xs border-accent text-accent">✓</Badge>}
                   </div>
@@ -144,8 +174,9 @@ const AdminJobs = () => {
                   <Button size="sm" variant="outline" onClick={() => setViewProject(p)}>
                     <Eye className="mr-1 h-3 w-3" /> View
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setEditProject({ ...p })}>
-                    <Pencil className="mr-1 h-3 w-3" /> Edit
+                  <Button size="sm" variant="outline" onClick={() => startEdit(p)}>
+                    {expandedEdit === p.id ? <ChevronUp className="mr-1 h-3 w-3" /> : <Pencil className="mr-1 h-3 w-3" />}
+                    {expandedEdit === p.id ? "Close" : "Edit"}
                   </Button>
                   {!p.admin_approved ? (
                     <Button size="sm" variant="default" onClick={() => approveMutation.mutate({ id: p.id, approved: true })}>
@@ -156,24 +187,70 @@ const AdminJobs = () => {
                       <XCircle className="mr-1 h-3 w-3" /> Revoke
                     </Button>
                   )}
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="outline" className="text-destructive">
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete this job?</AlertDialogTitle>
-                        <AlertDialogDescription>This will permanently remove "{p.name}" and all associated data.</AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => deleteMutation.mutate(p.id)}>Delete</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  {p.is_cleared ? (
+                    <Button size="sm" variant="outline" onClick={() => restoreMutation.mutate(p.id)}>
+                      Restore
+                    </Button>
+                  ) : (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="outline" className="text-destructive">
+                          <EyeOff className="mr-1 h-3 w-3" /> Clear
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Clear this job?</AlertDialogTitle>
+                          <AlertDialogDescription>This will soft-delete "{p.name}". It can be restored later.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => clearMutation.mutate(p.id)}>Clear</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
+
+                {/* Expandable Edit Row */}
+                {expandedEdit === p.id && (
+                  <div className="mt-3 space-y-3 rounded-lg border bg-muted/30 p-4">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Name</Label>
+                        <Input value={editForm.name} onChange={(e) => setEditForm((f: any) => ({ ...f, name: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Budget (₹)</Label>
+                        <Input type="number" value={editForm.amount} onChange={(e) => setEditForm((f: any) => ({ ...f, amount: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Status</Label>
+                        <Select value={editForm.status} onValueChange={(v) => setEditForm((f: any) => ({ ...f, status: v }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="draft">Draft</SelectItem>
+                            <SelectItem value="open">Open</SelectItem>
+                            <SelectItem value="in_progress">In Progress</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Requirements</Label>
+                      <Textarea value={editForm.requirements} onChange={(e) => setEditForm((f: any) => ({ ...f, requirements: e.target.value }))} rows={2} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Remarks</Label>
+                      <Textarea value={editForm.remarks || ""} onChange={(e) => setEditForm((f: any) => ({ ...f, remarks: e.target.value }))} rows={2} />
+                    </div>
+                    <Button className="w-full" onClick={() => updateMutation.mutate(editForm)} disabled={updateMutation.isPending}>
+                      <Save className="mr-1 h-3 w-3" /> {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))
@@ -204,49 +281,6 @@ const AdminJobs = () => {
                 <div><span className="text-muted-foreground">Start:</span> {viewProject.start_date || "N/A"}</div>
                 <div><span className="text-muted-foreground">End:</span> {viewProject.end_date || "N/A"}</div>
               </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={!!editProject} onOpenChange={() => setEditProject(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Edit Job</DialogTitle></DialogHeader>
-          {editProject && (
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label>Name</Label>
-                <Input value={editProject.name} onChange={(e) => setEditProject((p: any) => ({ ...p, name: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Budget (₹)</Label>
-                <Input type="number" value={editProject.amount} onChange={(e) => setEditProject((p: any) => ({ ...p, amount: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={editProject.status} onValueChange={(v) => setEditProject((p: any) => ({ ...p, status: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Requirements</Label>
-                <Textarea value={editProject.requirements} onChange={(e) => setEditProject((p: any) => ({ ...p, requirements: e.target.value }))} rows={3} />
-              </div>
-              <div className="space-y-2">
-                <Label>Remarks</Label>
-                <Textarea value={editProject.remarks || ""} onChange={(e) => setEditProject((p: any) => ({ ...p, remarks: e.target.value }))} rows={2} />
-              </div>
-              <Button className="w-full" onClick={() => updateMutation.mutate(editProject)} disabled={updateMutation.isPending}>
-                Save Changes
-              </Button>
             </div>
           )}
         </DialogContent>

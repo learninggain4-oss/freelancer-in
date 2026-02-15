@@ -53,6 +53,7 @@ const AdminVerifications = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkRejectReason, setBulkRejectReason] = useState("");
   const [showBulkRejectDialog, setShowBulkRejectDialog] = useState(false);
+  const [showCleared, setShowCleared] = useState(false);
 
   const { data: verifications = [], isLoading } = useQuery({
     queryKey: ["admin-verifications"],
@@ -211,9 +212,15 @@ const AdminVerifications = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Aadhaar Verifications</h1>
-        <p className="text-sm text-muted-foreground">Review and manage identity verification submissions</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Aadhaar Verifications</h1>
+          <p className="text-sm text-muted-foreground">Review and manage identity verification submissions</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Switch checked={showCleared} onCheckedChange={setShowCleared} id="show-cleared-aadhaar" />
+          <Label htmlFor="show-cleared-aadhaar" className="text-xs text-muted-foreground">Show cleared</Label>
+        </div>
       </div>
 
       <div className="relative">
