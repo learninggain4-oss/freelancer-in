@@ -90,7 +90,7 @@ const EmployeeSupportChat = () => {
         </Button>
         <div className="flex-1">
           <h2 className="text-sm font-semibold text-foreground">Customer Service</h2>
-          <p className="text-xs text-muted-foreground">Help - Recovery Money</p>
+          <p className="text-xs text-muted-foreground">Help - Amount Recovery</p>
         </div>
         <div className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-accent" />
