@@ -1044,6 +1044,41 @@ export type Database = {
           },
         ]
       }
+      quick_reply_analytics: {
+        Row: {
+          category: string
+          conversation_id: string | null
+          created_at: string
+          id: string
+          template_text: string
+          used_by: string
+        }
+        Insert: {
+          category: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          template_text: string
+          used_by: string
+        }
+        Update: {
+          category?: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          template_text?: string
+          used_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quick_reply_analytics_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "support_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recovery_requests: {
         Row: {
           admin_notes: string | null

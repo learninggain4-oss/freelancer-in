@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { Send, HelpCircle, ArrowLeft, MessageCircle, Search, X, Zap, ChevronRight } from "lucide-react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { Send, HelpCircle, ArrowLeft, MessageCircle, Search, X, Zap, ChevronRight, Eye, BarChart3, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -7,6 +7,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSupportChat, useAllConversations } from "@/hooks/use-support-chat";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -15,6 +17,7 @@ import SupportMessageBubble from "@/components/chat/SupportMessageBubble";
 const QUICK_REPLY_CATEGORIES = [
   {
     label: "👋 Greetings",
+    shortcut: "/greet",
     templates: [
       "Hi! How can I help you today?",
       "Hello! Thank you for reaching out to support.",
@@ -23,6 +26,7 @@ const QUICK_REPLY_CATEGORIES = [
   },
   {
     label: "🔍 Gathering Info",
+    shortcut: "/info",
     templates: [
       "Could you please provide more details about your issue?",
       "Can you share a screenshot so I can better understand the problem?",
@@ -32,6 +36,7 @@ const QUICK_REPLY_CATEGORIES = [
   },
   {
     label: "⏳ In Progress",
+    shortcut: "/status",
     templates: [
       "Thank you for your patience. We're looking into this now.",
       "We're working on this and will update you shortly.",
@@ -41,6 +46,7 @@ const QUICK_REPLY_CATEGORIES = [
   },
   {
     label: "💰 Payments & Wallet",
+    shortcut: "/pay",
     templates: [
       "Your wallet balance has been updated. Please check now.",
       "The withdrawal is being processed and should reflect within 24 hours.",
@@ -50,6 +56,7 @@ const QUICK_REPLY_CATEGORIES = [
   },
   {
     label: "📋 Projects & Jobs",
+    shortcut: "/project",
     templates: [
       "Your project application has been received. The client will review it shortly.",
       "Please upload your submission files through the Projects tab.",
@@ -58,6 +65,7 @@ const QUICK_REPLY_CATEGORIES = [
   },
   {
     label: "✅ Resolution",
+    shortcut: "/resolve",
     templates: [
       "Your issue has been resolved. Is there anything else I can help with?",
       "This has been fixed. Please try again and let me know if it works.",
@@ -67,6 +75,7 @@ const QUICK_REPLY_CATEGORIES = [
   },
   {
     label: "📧 Follow-up",
+    shortcut: "/follow",
     templates: [
       "Please check your email for further instructions.",
       "I've sent you a notification with the details.",
@@ -75,6 +84,43 @@ const QUICK_REPLY_CATEGORIES = [
     ],
   },
 ];
+
+// Hook for template analytics
+const useTemplateAnalytics = () => {
+  const queryClient = useQueryClient();
+
+  const { data: analytics = [] } = useQuery({
+    queryKey: ["quick-reply-analytics"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("quick_reply_analytics")
+        .select("template_text, category")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const usageCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    analytics.forEach((a: any) => {
+      counts[a.template_text] = (counts[a.template_text] || 0) + 1;
+    });
+    return counts;
+  }, [analytics]);
+
+  const trackUsage = async (templateText: string, category: string, userId: string, conversationId?: string) => {
+    await supabase.from("quick_reply_analytics").insert({
+      template_text: templateText,
+      category,
+      used_by: userId,
+      conversation_id: conversationId || null,
+    });
+    queryClient.invalidateQueries({ queryKey: ["quick-reply-analytics"] });
+  };
+
+  return { usageCounts, trackUsage };
+};
 
 const AdminHelpSupport = () => {
   const { profile } = useAuth();
@@ -88,7 +134,13 @@ const AdminHelpSupport = () => {
   const [quickRepliesOpen, setQuickRepliesOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [templateSearch, setTemplateSearch] = useState("");
+  const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [shortcutMatches, setShortcutMatches] = useState<{ category: typeof QUICK_REPLY_CATEGORIES[0]; index: number } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const { usageCounts, trackUsage } = useTemplateAnalytics();
 
   const selectedConv = conversations.find((c: any) => c.id === selectedConvId);
 
@@ -96,16 +148,61 @@ const AdminHelpSupport = () => {
     if (!searchOpen) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, searchOpen]);
 
+  // Keyboard shortcut detection
+  useEffect(() => {
+    if (!newMessage.startsWith("/")) {
+      setShortcutMatches(null);
+      return;
+    }
+    const cmd = newMessage.toLowerCase().trim();
+    const match = QUICK_REPLY_CATEGORIES.findIndex((cat) => cat.shortcut === cmd);
+    if (match !== -1) {
+      setShortcutMatches({ category: QUICK_REPLY_CATEGORIES[match], index: match });
+      setQuickRepliesOpen(true);
+      setActiveCategory(match);
+    } else {
+      // Partial match
+      const partial = QUICK_REPLY_CATEGORIES.findIndex((cat) => cat.shortcut.startsWith(cmd) && cmd.length > 1);
+      if (partial !== -1) {
+        setShortcutMatches({ category: QUICK_REPLY_CATEGORIES[partial], index: partial });
+      } else {
+        setShortcutMatches(null);
+      }
+    }
+  }, [newMessage]);
+
+  const findCategory = (templateText: string): string => {
+    for (const cat of QUICK_REPLY_CATEGORIES) {
+      if (cat.templates.includes(templateText)) return cat.label;
+    }
+    return "Unknown";
+  };
+
   const handleSend = async (text?: string) => {
     const content = (text || newMessage).trim();
     if (!content) return;
     try {
+      // Track if it's a template
+      const isTemplate = QUICK_REPLY_CATEGORIES.some((cat) => cat.templates.includes(content));
+      if (isTemplate && profile?.id) {
+        await trackUsage(content, findCategory(content), profile.id, selectedConvId || undefined);
+      }
       await sendMessage(content);
       setNewMessage("");
       setQuickRepliesOpen(false);
+      setPreviewTemplate(null);
+      setShortcutMatches(null);
     } catch (e: any) {
       toast.error(e.message);
     }
+  };
+
+  const handleTemplateSelect = (template: string) => {
+    setPreviewTemplate(template);
+  };
+
+  const handleConfirmPreview = () => {
+    if (previewTemplate) handleSend(previewTemplate);
   };
 
   const getUserDisplayName = (conv: any) => {
@@ -134,6 +231,30 @@ const AdminHelpSupport = () => {
       })
     : conversations;
 
+  // Top templates for analytics view
+  const topTemplates = useMemo(() => {
+    return Object.entries(usageCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10);
+  }, [usageCounts]);
+
+  const handleInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      if (previewTemplate) {
+        e.preventDefault();
+        handleConfirmPreview();
+      } else if (shortcutMatches && newMessage.startsWith("/")) {
+        // Don't send the slash command as text
+        e.preventDefault();
+      } else {
+        handleSend();
+      }
+    }
+    if (e.key === "Escape" && previewTemplate) {
+      setPreviewTemplate(null);
+    }
+  };
+
   if (loadingConvs) {
     return (
       <div className="space-y-3">
@@ -154,7 +275,7 @@ const AdminHelpSupport = () => {
       <div className="flex h-[calc(100vh-10rem)] flex-col">
         {/* Header */}
         <div className="flex items-center gap-3 border-b pb-3 mb-2">
-          <Button variant="ghost" size="icon" onClick={() => setSelectedConvId(null)}>
+          <Button variant="ghost" size="icon" onClick={() => { setSelectedConvId(null); setPreviewTemplate(null); }}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
@@ -223,12 +344,40 @@ const AdminHelpSupport = () => {
           )}
         </ScrollArea>
 
+        {/* Template preview banner */}
+        {previewTemplate && (
+          <div className="border-t bg-accent/10 px-3 py-2 flex items-start gap-2">
+            <Eye className="h-4 w-4 text-accent-foreground mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-medium text-muted-foreground mb-0.5">Preview — press Enter to send</p>
+              <p className="text-xs text-foreground">{previewTemplate}</p>
+            </div>
+            <div className="flex gap-1 shrink-0">
+              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setPreviewTemplate(null)}>
+                Cancel
+              </Button>
+              <Button size="sm" className="h-7 text-xs" onClick={handleConfirmPreview}>
+                <Send className="h-3 w-3 mr-1" /> Send
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Quick replies template library */}
         {quickRepliesOpen && (
-          <div className="border-t bg-muted/30 max-h-56 overflow-hidden flex flex-col">
+          <div className="border-t bg-muted/30 max-h-64 overflow-hidden flex flex-col">
             <div className="flex items-center gap-2 px-3 pt-2 pb-1">
               <Zap className="h-3 w-3 text-muted-foreground" />
               <span className="text-[10px] font-medium text-muted-foreground">Quick Replies</span>
+              <Button
+                variant={showAnalytics ? "secondary" : "ghost"}
+                size="sm"
+                className="h-5 px-1.5 text-[10px] ml-1"
+                onClick={() => setShowAnalytics(!showAnalytics)}
+                title="Template analytics"
+              >
+                <BarChart3 className="h-3 w-3" />
+              </Button>
               <Input
                 placeholder="Search templates..."
                 value={templateSearch}
@@ -236,24 +385,60 @@ const AdminHelpSupport = () => {
                 className="ml-auto h-6 w-40 text-[11px] px-2"
               />
             </div>
-            <ScrollArea className="flex-1 px-3 pb-2">
-              {templateSearch ? (
+
+            {/* Shortcut hints */}
+            <div className="px-3 pb-1">
+              <p className="text-[9px] text-muted-foreground">
+                Shortcuts: {QUICK_REPLY_CATEGORIES.map((c) => c.shortcut).join(" • ")}
+              </p>
+            </div>
+
+            {/* Analytics view */}
+            {showAnalytics ? (
+              <ScrollArea className="flex-1 px-3 pb-2">
+                <p className="text-[10px] font-medium text-muted-foreground mb-1.5">Most Used Templates</p>
+                {topTemplates.length === 0 ? (
+                  <p className="text-[10px] text-muted-foreground py-2">No template usage data yet.</p>
+                ) : (
+                  <div className="space-y-1">
+                    {topTemplates.map(([text, count], i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleTemplateSelect(text)}
+                        className="flex w-full items-center gap-2 rounded-md border bg-background px-2 py-1.5 text-left transition-colors hover:bg-primary/5"
+                      >
+                        <span className="text-xs text-foreground flex-1 truncate">{text}</span>
+                        <Badge variant="secondary" className="text-[9px] shrink-0">
+                          <Hash className="h-2.5 w-2.5 mr-0.5" />{count}
+                        </Badge>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            ) : templateSearch ? (
+              <ScrollArea className="flex-1 px-3 pb-2">
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {QUICK_REPLY_CATEGORIES.flatMap((cat) =>
-                    cat.templates.filter((t) =>
-                      t.toLowerCase().includes(templateSearch.toLowerCase())
-                    )
-                  ).map((reply, i) => (
+                    cat.templates
+                      .filter((t) => t.toLowerCase().includes(templateSearch.toLowerCase()))
+                      .map((t) => ({ text: t, label: cat.label }))
+                  ).map((item, i) => (
                     <button
                       key={i}
-                      onClick={() => handleSend(reply)}
-                      className="rounded-full border bg-background px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-primary/10 hover:border-primary/30"
+                      onClick={() => handleTemplateSelect(item.text)}
+                      className="rounded-full border bg-background px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-primary/10 hover:border-primary/30 flex items-center gap-1.5"
                     >
-                      {reply.length > 55 ? reply.slice(0, 55) + "…" : reply}
+                      <span>{item.text.length > 55 ? item.text.slice(0, 55) + "…" : item.text}</span>
+                      {usageCounts[item.text] > 0 && (
+                        <Badge variant="outline" className="text-[8px] h-4 px-1">{usageCounts[item.text]}</Badge>
+                      )}
                     </button>
                   ))}
                 </div>
-              ) : (
+              </ScrollArea>
+            ) : (
+              <ScrollArea className="flex-1 px-3 pb-2">
                 <div className="space-y-1.5 pt-1">
                   {QUICK_REPLY_CATEGORIES.map((cat, ci) => (
                     <div key={ci}>
@@ -267,6 +452,7 @@ const AdminHelpSupport = () => {
                         )}
                       >
                         <span>{cat.label}</span>
+                        <code className="ml-1 text-[9px] text-muted-foreground font-mono">{cat.shortcut}</code>
                         <ChevronRight className={cn("ml-auto h-3 w-3 transition-transform", activeCategory === ci && "rotate-90")} />
                       </button>
                       {activeCategory === ci && (
@@ -274,10 +460,13 @@ const AdminHelpSupport = () => {
                           {cat.templates.map((reply, ri) => (
                             <button
                               key={ri}
-                              onClick={() => handleSend(reply)}
-                              className="rounded-full border bg-background px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-primary/10 hover:border-primary/30"
+                              onClick={() => handleTemplateSelect(reply)}
+                              className="rounded-full border bg-background px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-primary/10 hover:border-primary/30 flex items-center gap-1.5"
                             >
-                              {reply}
+                              <span>{reply}</span>
+                              {usageCounts[reply] > 0 && (
+                                <Badge variant="outline" className="text-[8px] h-4 px-1">{usageCounts[reply]}</Badge>
+                              )}
                             </button>
                           ))}
                         </div>
@@ -285,8 +474,8 @@ const AdminHelpSupport = () => {
                     </div>
                   ))}
                 </div>
-              )}
-            </ScrollArea>
+              </ScrollArea>
+            )}
           </div>
         )}
 
@@ -296,19 +485,20 @@ const AdminHelpSupport = () => {
             variant={quickRepliesOpen ? "secondary" : "ghost"}
             size="icon"
             className="h-9 w-9 shrink-0"
-            onClick={() => setQuickRepliesOpen(!quickRepliesOpen)}
+            onClick={() => { setQuickRepliesOpen(!quickRepliesOpen); setShowAnalytics(false); }}
             title="Quick replies"
           >
             <Zap className="h-4 w-4" />
           </Button>
           <Input
-            placeholder="Type a message..."
+            ref={inputRef}
+            placeholder="Type a message or /shortcut..."
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            onKeyDown={handleInputKeyDown}
             className="flex-1"
           />
-          <Button size="icon" onClick={() => handleSend()} disabled={!newMessage.trim()}>
+          <Button size="icon" onClick={() => previewTemplate ? handleConfirmPreview() : handleSend()} disabled={!newMessage.trim() && !previewTemplate}>
             <Send className="h-4 w-4" />
           </Button>
         </div>
