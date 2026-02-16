@@ -332,6 +332,39 @@ export type Database = {
           },
         ]
       }
+      custom_quick_replies: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          shortcut: string | null
+          template_text: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          shortcut?: string | null
+          template_text: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          shortcut?: string | null
+          template_text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           document_type: string
