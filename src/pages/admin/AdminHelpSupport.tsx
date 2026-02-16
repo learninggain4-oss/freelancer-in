@@ -1,12 +1,15 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Send, HelpCircle, ArrowLeft, MessageCircle, Search, X, Zap, ChevronRight, Eye, BarChart3, Hash } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { Send, HelpCircle, ArrowLeft, MessageCircle, Search, X, Zap, ChevronRight, Eye, BarChart3, Hash, Plus, Trash2, Edit2, Check, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSupportChat, useAllConversations } from "@/hooks/use-support-chat";
+import { useCustomQuickReplies } from "@/hooks/use-custom-quick-replies";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -14,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import SupportMessageBubble from "@/components/chat/SupportMessageBubble";
 
-const QUICK_REPLY_CATEGORIES = [
+const BUILT_IN_CATEGORIES = [
   {
     label: "👋 Greetings",
     shortcut: "/greet",
@@ -122,25 +125,222 @@ const useTemplateAnalytics = () => {
   return { usageCounts, trackUsage };
 };
 
+// ---- Custom Template Form ----
+const CustomTemplateForm = ({ onClose, profileId }: { onClose: () => void; profileId: string }) => {
+  const { addReply, customCategories } = useCustomQuickReplies();
+  const [category, setCategory] = useState("");
+  const [newCategory, setNewCategory] = useState("");
+  const [templateText, setTemplateText] = useState("");
+  const [shortcut, setShortcut] = useState("");
+
+  const existingCategories = [
+    ...BUILT_IN_CATEGORIES.map((c) => c.label),
+    ...Object.keys(customCategories),
+  ];
+  const uniqueCategories = [...new Set(existingCategories)];
+
+  const handleSubmit = () => {
+    const cat = newCategory.trim() || category;
+    if (!cat || !templateText.trim()) {
+      toast.error("Category and template text are required");
+      return;
+    }
+    addReply.mutate({
+      category: cat,
+      template_text: templateText.trim(),
+      shortcut: shortcut.trim() || undefined,
+      created_by: profileId,
+    }, { onSuccess: onClose });
+  };
+
+  return (
+    <div className="space-y-3 p-3 border rounded-lg bg-background">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-foreground">Add Custom Template</h3>
+        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
+          <X className="h-3 w-3" />
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        <div>
+          <label className="text-[11px] text-muted-foreground font-medium">Category</label>
+          <Select value={category} onValueChange={(v) => { setCategory(v); setNewCategory(""); }}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Select a category" />
+            </SelectTrigger>
+            <SelectContent>
+              {uniqueCategories.map((c) => (
+                <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>
+              ))}
+              <SelectItem value="__new__" className="text-xs text-primary">+ New Category</SelectItem>
+            </SelectContent>
+          </Select>
+          {category === "__new__" && (
+            <Input
+              placeholder="New category name (e.g. 🔧 Technical)"
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              className="h-8 text-xs mt-1"
+              autoFocus
+            />
+          )}
+        </div>
+
+        <div>
+          <label className="text-[11px] text-muted-foreground font-medium">Template Text</label>
+          <Textarea
+            placeholder="Type the response template..."
+            value={templateText}
+            onChange={(e) => setTemplateText(e.target.value)}
+            className="text-xs min-h-[60px]"
+          />
+        </div>
+
+        <div>
+          <label className="text-[11px] text-muted-foreground font-medium">Shortcut (optional)</label>
+          <Input
+            placeholder="e.g. /tech"
+            value={shortcut}
+            onChange={(e) => setShortcut(e.target.value)}
+            className="h-8 text-xs"
+          />
+        </div>
+
+        <Button size="sm" className="w-full h-8 text-xs" onClick={handleSubmit} disabled={addReply.isPending}>
+          {addReply.isPending ? "Adding..." : "Add Template"}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+// ---- Custom Templates Manager ----
+const CustomTemplatesManager = ({ profileId }: { profileId: string }) => {
+  const { customReplies, customCategories, deleteReply, updateReply } = useCustomQuickReplies();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+
+  if (customReplies.length === 0) {
+    return <p className="text-[10px] text-muted-foreground py-2">No custom templates yet.</p>;
+  }
+
+  return (
+    <div className="space-y-2">
+      {Object.entries(customCategories).map(([cat, replies]) => (
+        <div key={cat}>
+          <p className="text-[10px] font-medium text-muted-foreground mb-1">{cat}</p>
+          <div className="space-y-1">
+            {replies.map((r) => (
+              <div key={r.id} className="flex items-center gap-1.5 rounded-md border bg-background px-2 py-1.5 text-xs">
+                {editingId === r.id ? (
+                  <>
+                    <Input
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      className="h-6 text-[11px] flex-1"
+                      autoFocus
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 shrink-0"
+                      onClick={() => {
+                        if (editText.trim()) {
+                          updateReply.mutate({ id: r.id, template_text: editText.trim() });
+                        }
+                        setEditingId(null);
+                      }}
+                    >
+                      <Check className="h-3 w-3 text-primary" />
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <span className="flex-1 text-foreground truncate">{r.template_text}</span>
+                    {r.shortcut && (
+                      <code className="text-[9px] text-muted-foreground font-mono">{r.shortcut}</code>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 shrink-0"
+                      onClick={() => { setEditingId(r.id); setEditText(r.template_text); }}
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 shrink-0 text-destructive"
+                      onClick={() => deleteReply.mutate(r.id)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const AdminHelpSupport = () => {
   const { profile } = useAuth();
   const { data: conversations = [], isLoading: loadingConvs } = useAllConversations();
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
   const { messages, isLoading: loadingMessages, sendMessage, toggleReaction } = useSupportChat(selectedConvId ?? undefined);
+  const { customReplies, customCategories } = useCustomQuickReplies();
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [convSearch, setConvSearch] = useState("");
   const [quickRepliesOpen, setQuickRepliesOpen] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<number | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [templateSearch, setTemplateSearch] = useState("");
   const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
-  const [shortcutMatches, setShortcutMatches] = useState<{ category: typeof QUICK_REPLY_CATEGORIES[0]; index: number } | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [showManage, setShowManage] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { usageCounts, trackUsage } = useTemplateAnalytics();
+
+  // Merge built-in + custom categories
+  const allCategories = useMemo(() => {
+    const cats = BUILT_IN_CATEGORIES.map((c) => ({
+      label: c.label,
+      shortcut: c.shortcut,
+      templates: c.templates,
+      isCustom: false,
+    }));
+
+    Object.entries(customCategories).forEach(([catName, replies]) => {
+      const existingIdx = cats.findIndex((c) => c.label === catName);
+      if (existingIdx !== -1) {
+        // Merge into existing
+        cats[existingIdx].templates = [
+          ...cats[existingIdx].templates,
+          ...replies.map((r) => r.template_text),
+        ];
+      } else {
+        // New custom category
+        const firstShortcut = replies.find((r) => r.shortcut)?.shortcut || undefined;
+        cats.push({
+          label: catName,
+          shortcut: firstShortcut || "",
+          templates: replies.map((r) => r.template_text),
+          isCustom: true,
+        });
+      }
+    });
+
+    return cats;
+  }, [customCategories]);
 
   const selectedConv = conversations.find((c: any) => c.id === selectedConvId);
 
@@ -150,40 +350,27 @@ const AdminHelpSupport = () => {
 
   // Keyboard shortcut detection
   useEffect(() => {
-    if (!newMessage.startsWith("/")) {
-      setShortcutMatches(null);
-      return;
-    }
+    if (!newMessage.startsWith("/")) return;
     const cmd = newMessage.toLowerCase().trim();
-    const match = QUICK_REPLY_CATEGORIES.findIndex((cat) => cat.shortcut === cmd);
+    const match = allCategories.findIndex((cat) => cat.shortcut === cmd);
     if (match !== -1) {
-      setShortcutMatches({ category: QUICK_REPLY_CATEGORIES[match], index: match });
       setQuickRepliesOpen(true);
-      setActiveCategory(match);
-    } else {
-      // Partial match
-      const partial = QUICK_REPLY_CATEGORIES.findIndex((cat) => cat.shortcut.startsWith(cmd) && cmd.length > 1);
-      if (partial !== -1) {
-        setShortcutMatches({ category: QUICK_REPLY_CATEGORIES[partial], index: partial });
-      } else {
-        setShortcutMatches(null);
-      }
+      setActiveCategory(allCategories[match].label);
     }
-  }, [newMessage]);
+  }, [newMessage, allCategories]);
 
   const findCategory = (templateText: string): string => {
-    for (const cat of QUICK_REPLY_CATEGORIES) {
+    for (const cat of allCategories) {
       if (cat.templates.includes(templateText)) return cat.label;
     }
-    return "Unknown";
+    return "Custom";
   };
 
   const handleSend = async (text?: string) => {
     const content = (text || newMessage).trim();
     if (!content) return;
     try {
-      // Track if it's a template
-      const isTemplate = QUICK_REPLY_CATEGORIES.some((cat) => cat.templates.includes(content));
+      const isTemplate = allCategories.some((cat) => cat.templates.includes(content));
       if (isTemplate && profile?.id) {
         await trackUsage(content, findCategory(content), profile.id, selectedConvId || undefined);
       }
@@ -191,7 +378,6 @@ const AdminHelpSupport = () => {
       setNewMessage("");
       setQuickRepliesOpen(false);
       setPreviewTemplate(null);
-      setShortcutMatches(null);
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -231,7 +417,6 @@ const AdminHelpSupport = () => {
       })
     : conversations;
 
-  // Top templates for analytics view
   const topTemplates = useMemo(() => {
     return Object.entries(usageCounts)
       .sort(([, a], [, b]) => b - a)
@@ -243,8 +428,7 @@ const AdminHelpSupport = () => {
       if (previewTemplate) {
         e.preventDefault();
         handleConfirmPreview();
-      } else if (shortcutMatches && newMessage.startsWith("/")) {
-        // Don't send the slash command as text
+      } else if (newMessage.startsWith("/")) {
         e.preventDefault();
       } else {
         handleSend();
@@ -365,36 +549,63 @@ const AdminHelpSupport = () => {
 
         {/* Quick replies template library */}
         {quickRepliesOpen && (
-          <div className="border-t bg-muted/30 max-h-64 overflow-hidden flex flex-col">
-            <div className="flex items-center gap-2 px-3 pt-2 pb-1">
+          <div className="border-t bg-muted/30 max-h-72 overflow-hidden flex flex-col">
+            <div className="flex items-center gap-1.5 px-3 pt-2 pb-1">
               <Zap className="h-3 w-3 text-muted-foreground" />
               <span className="text-[10px] font-medium text-muted-foreground">Quick Replies</span>
               <Button
                 variant={showAnalytics ? "secondary" : "ghost"}
                 size="sm"
-                className="h-5 px-1.5 text-[10px] ml-1"
-                onClick={() => setShowAnalytics(!showAnalytics)}
-                title="Template analytics"
+                className="h-5 px-1.5 text-[10px]"
+                onClick={() => { setShowAnalytics(!showAnalytics); setShowAddForm(false); setShowManage(false); }}
+                title="Analytics"
               >
                 <BarChart3 className="h-3 w-3" />
+              </Button>
+              <Button
+                variant={showAddForm ? "secondary" : "ghost"}
+                size="sm"
+                className="h-5 px-1.5 text-[10px]"
+                onClick={() => { setShowAddForm(!showAddForm); setShowAnalytics(false); setShowManage(false); }}
+                title="Add custom template"
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+              <Button
+                variant={showManage ? "secondary" : "ghost"}
+                size="sm"
+                className="h-5 px-1.5 text-[10px]"
+                onClick={() => { setShowManage(!showManage); setShowAnalytics(false); setShowAddForm(false); }}
+                title="Manage custom templates"
+              >
+                <Settings2 className="h-3 w-3" />
               </Button>
               <Input
                 placeholder="Search templates..."
                 value={templateSearch}
                 onChange={(e) => { setTemplateSearch(e.target.value); setActiveCategory(null); }}
-                className="ml-auto h-6 w-40 text-[11px] px-2"
+                className="ml-auto h-6 w-36 text-[11px] px-2"
               />
             </div>
 
             {/* Shortcut hints */}
             <div className="px-3 pb-1">
-              <p className="text-[9px] text-muted-foreground">
-                Shortcuts: {QUICK_REPLY_CATEGORIES.map((c) => c.shortcut).join(" • ")}
+              <p className="text-[9px] text-muted-foreground truncate">
+                Shortcuts: {allCategories.filter((c) => c.shortcut).map((c) => c.shortcut).join(" • ")}
               </p>
             </div>
 
-            {/* Analytics view */}
-            {showAnalytics ? (
+            {/* Add custom template form */}
+            {showAddForm && profile?.id ? (
+              <ScrollArea className="flex-1 px-3 pb-2">
+                <CustomTemplateForm onClose={() => setShowAddForm(false)} profileId={profile.id} />
+              </ScrollArea>
+            ) : showManage && profile?.id ? (
+              <ScrollArea className="flex-1 px-3 pb-2">
+                <p className="text-[10px] font-medium text-muted-foreground mb-1.5">Manage Custom Templates</p>
+                <CustomTemplatesManager profileId={profile.id} />
+              </ScrollArea>
+            ) : showAnalytics ? (
               <ScrollArea className="flex-1 px-3 pb-2">
                 <p className="text-[10px] font-medium text-muted-foreground mb-1.5">Most Used Templates</p>
                 {topTemplates.length === 0 ? (
@@ -419,7 +630,7 @@ const AdminHelpSupport = () => {
             ) : templateSearch ? (
               <ScrollArea className="flex-1 px-3 pb-2">
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {QUICK_REPLY_CATEGORIES.flatMap((cat) =>
+                  {allCategories.flatMap((cat) =>
                     cat.templates
                       .filter((t) => t.toLowerCase().includes(templateSearch.toLowerCase()))
                       .map((t) => ({ text: t, label: cat.label }))
@@ -440,22 +651,27 @@ const AdminHelpSupport = () => {
             ) : (
               <ScrollArea className="flex-1 px-3 pb-2">
                 <div className="space-y-1.5 pt-1">
-                  {QUICK_REPLY_CATEGORIES.map((cat, ci) => (
-                    <div key={ci}>
+                  {allCategories.map((cat) => (
+                    <div key={cat.label}>
                       <button
-                        onClick={() => setActiveCategory(activeCategory === ci ? null : ci)}
+                        onClick={() => setActiveCategory(activeCategory === cat.label ? null : cat.label)}
                         className={cn(
                           "flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors",
-                          activeCategory === ci
+                          activeCategory === cat.label
                             ? "bg-primary/10 text-primary"
                             : "text-foreground hover:bg-muted"
                         )}
                       >
                         <span>{cat.label}</span>
-                        <code className="ml-1 text-[9px] text-muted-foreground font-mono">{cat.shortcut}</code>
-                        <ChevronRight className={cn("ml-auto h-3 w-3 transition-transform", activeCategory === ci && "rotate-90")} />
+                        {cat.isCustom && (
+                          <Badge variant="outline" className="text-[8px] h-3.5 px-1">Custom</Badge>
+                        )}
+                        {cat.shortcut && (
+                          <code className="ml-1 text-[9px] text-muted-foreground font-mono">{cat.shortcut}</code>
+                        )}
+                        <ChevronRight className={cn("ml-auto h-3 w-3 transition-transform", activeCategory === cat.label && "rotate-90")} />
                       </button>
-                      {activeCategory === ci && (
+                      {activeCategory === cat.label && (
                         <div className="flex flex-wrap gap-1.5 pl-2 pt-1 pb-1">
                           {cat.templates.map((reply, ri) => (
                             <button
@@ -485,7 +701,7 @@ const AdminHelpSupport = () => {
             variant={quickRepliesOpen ? "secondary" : "ghost"}
             size="icon"
             className="h-9 w-9 shrink-0"
-            onClick={() => { setQuickRepliesOpen(!quickRepliesOpen); setShowAnalytics(false); }}
+            onClick={() => { setQuickRepliesOpen(!quickRepliesOpen); setShowAnalytics(false); setShowAddForm(false); setShowManage(false); }}
             title="Quick replies"
           >
             <Zap className="h-4 w-4" />
@@ -514,7 +730,6 @@ const AdminHelpSupport = () => {
         <h1 className="text-xl font-bold text-foreground">Help & Support</h1>
       </div>
 
-      {/* Search conversations */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
