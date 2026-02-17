@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Clock, Landmark, Gift } from "lucide-react";
+import { Loader2, Save, Clock, Landmark, Gift, CreditCard } from "lucide-react";
 
 const AdminSettings = () => {
   const { toast } = useToast();
@@ -19,6 +19,7 @@ const AdminSettings = () => {
   const [cltPrefix, setCltPrefix] = useState("");
   const [empDigits, setEmpDigits] = useState("");
   const [cltDigits, setCltDigits] = useState("");
+  const [otpCountdown, setOtpCountdown] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
 
@@ -37,6 +38,7 @@ const AdminSettings = () => {
           "client_code_prefix",
           "employee_code_digits",
           "client_code_digits",
+          "payment_otp_countdown_seconds",
         ]);
       if (data) {
         for (const row of data) {
@@ -49,6 +51,7 @@ const AdminSettings = () => {
           if (row.key === "client_code_prefix") setCltPrefix(row.value);
           if (row.key === "employee_code_digits") setEmpDigits(row.value);
           if (row.key === "client_code_digits") setCltDigits(row.value);
+          if (row.key === "payment_otp_countdown_seconds") setOtpCountdown(row.value);
         }
       }
       setLoading(false);
@@ -119,6 +122,30 @@ const AdminSettings = () => {
             </div>
             <Button onClick={() => handleSaveSetting("approval_countdown_hours", countdownHours, "Countdown", 1, 72)} disabled={saving === "approval_countdown_hours"} className="gap-1">
               {saving === "approval_countdown_hours" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CreditCard className="h-4 w-4 text-primary" />
+            Payment OTP Countdown
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Set the countdown time (in seconds) for the payment OTP confirmation window in validation chat.
+          </p>
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label>Countdown Seconds</Label>
+              <Input type="number" min="10" max="600" value={otpCountdown} onChange={(e) => setOtpCountdown(e.target.value)} />
+            </div>
+            <Button onClick={() => handleSaveSetting("payment_otp_countdown_seconds", otpCountdown, "OTP Countdown", 10, 600)} disabled={saving === "payment_otp_countdown_seconds"} className="gap-1">
+              {saving === "payment_otp_countdown_seconds" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Save
             </Button>
           </div>
