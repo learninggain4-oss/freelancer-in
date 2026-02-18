@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Clock, Landmark, Gift, CreditCard } from "lucide-react";
+import { Loader2, Save, Clock, Landmark, Gift, CreditCard, RefreshCw } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 const AdminSettings = () => {
   const { toast } = useToast();
@@ -20,6 +21,8 @@ const AdminSettings = () => {
   const [empDigits, setEmpDigits] = useState("");
   const [cltDigits, setCltDigits] = useState("");
   const [otpCountdown, setOtpCountdown] = useState("");
+  const [maxPaymentRetries, setMaxPaymentRetries] = useState("");
+  const [reinitiationEnabled, setReinitiationEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
 
@@ -39,6 +42,8 @@ const AdminSettings = () => {
           "employee_code_digits",
           "client_code_digits",
           "payment_otp_countdown_seconds",
+          "payment_max_retries",
+          "payment_reinitiation_enabled",
         ]);
       if (data) {
         for (const row of data) {
@@ -52,6 +57,8 @@ const AdminSettings = () => {
           if (row.key === "employee_code_digits") setEmpDigits(row.value);
           if (row.key === "client_code_digits") setCltDigits(row.value);
           if (row.key === "payment_otp_countdown_seconds") setOtpCountdown(row.value);
+          if (row.key === "payment_max_retries") setMaxPaymentRetries(row.value);
+          if (row.key === "payment_reinitiation_enabled") setReinitiationEnabled(row.value === "true");
         }
       }
       setLoading(false);
@@ -146,6 +153,55 @@ const AdminSettings = () => {
             </div>
             <Button onClick={() => handleSaveSetting("payment_otp_countdown_seconds", otpCountdown, "OTP Countdown", 10, 600)} disabled={saving === "payment_otp_countdown_seconds"} className="gap-1">
               {saving === "payment_otp_countdown_seconds" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <RefreshCw className="h-4 w-4 text-primary" />
+            Payment Re-initiation Settings
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Control whether clients can re-initiate payment confirmations after a failure, and the maximum number of retries allowed.
+          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Allow Re-initiation</Label>
+              <p className="text-xs text-muted-foreground">Enable clients to retry failed payments</p>
+            </div>
+            <Switch
+              checked={reinitiationEnabled}
+              onCheckedChange={async (checked) => {
+                setReinitiationEnabled(checked);
+                setSaving("payment_reinitiation_enabled");
+                try {
+                  const { error } = await supabase
+                    .from("app_settings")
+                    .upsert({ key: "payment_reinitiation_enabled", value: String(checked) }, { onConflict: "key" });
+                  if (error) throw error;
+                  toast({ title: "Settings saved", description: `Re-initiation ${checked ? "enabled" : "disabled"}` });
+                } catch (e: any) {
+                  toast({ title: "Error", description: e.message, variant: "destructive" });
+                  setReinitiationEnabled(!checked);
+                } finally {
+                  setSaving(null);
+                }
+              }}
+            />
+          </div>
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label>Max Retries</Label>
+              <Input type="number" min="1" max="20" value={maxPaymentRetries} onChange={(e) => setMaxPaymentRetries(e.target.value)} />
+            </div>
+            <Button onClick={() => handleSaveSetting("payment_max_retries", maxPaymentRetries, "Max retries", 1, 20)} disabled={saving === "payment_max_retries"} className="gap-1">
+              {saving === "payment_max_retries" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Save
             </Button>
           </div>

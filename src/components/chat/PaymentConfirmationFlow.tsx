@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,18 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   CreditCard,
-  Phone,
   Send,
   Loader2,
   CheckCircle,
   XCircle,
   Clock,
   Eye,
-  EyeOff,
   Smartphone,
+  RefreshCw,
+  IndianRupee,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -40,6 +39,7 @@ interface PaymentConfirmation {
   otp: string | null;
   otp_submitted_at: string | null;
   status: string;
+  amount: number;
   created_at: string;
   updated_at: string;
 }
@@ -57,22 +57,25 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
   const [paymentMethod, setPaymentMethod] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otpValue, setOtpValue] = useState("");
+  const [amount, setAmount] = useState("");
+  const [selectedMethod, setSelectedMethod] = useState("");
 
-  // Fetch active payment confirmation for this project
-  const { data: confirmation, isLoading } = useQuery({
-    queryKey: ["payment-confirmation", projectId],
+  // Fetch all payment confirmations for this project
+  const { data: confirmations = [], isLoading } = useQuery({
+    queryKey: ["payment-confirmations", projectId],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("payment_confirmations")
         .select("*")
         .eq("project_id", projectId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as PaymentConfirmation | null;
+      return (data || []) as PaymentConfirmation[];
     },
   });
+
+  const confirmation = confirmations.length > 0 ? confirmations[0] : null;
+  const failedCount = confirmations.filter((c) => c.status === "failure").length;
 
   // Fetch countdown setting
   const { data: countdownSeconds = 60 } = useQuery({
@@ -88,6 +91,29 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
     staleTime: 60000,
   });
 
+  // Fetch admin settings for re-initiation
+  const { data: adminPaymentSettings } = useQuery({
+    queryKey: ["payment-admin-settings"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("key, value")
+        .in("key", ["payment_max_retries", "payment_reinitiation_enabled"]);
+      const settings = { maxRetries: 3, enabled: true };
+      if (data) {
+        for (const row of data) {
+          if (row.key === "payment_max_retries") settings.maxRetries = Number(row.value) || 3;
+          if (row.key === "payment_reinitiation_enabled") settings.enabled = row.value === "true";
+        }
+      }
+      return settings;
+    },
+    staleTime: 60000,
+  });
+
+  const maxRetries = adminPaymentSettings?.maxRetries ?? 3;
+  const reinitiationEnabled = adminPaymentSettings?.enabled ?? true;
+
   // Real-time subscription
   useEffect(() => {
     const channel = supabase
@@ -98,7 +124,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
         table: "payment_confirmations",
         filter: `project_id=eq.${projectId}`,
       }, () => {
-        queryClient.invalidateQueries({ queryKey: ["payment-confirmation", projectId] });
+        queryClient.invalidateQueries({ queryKey: ["payment-confirmations", projectId] });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -107,17 +133,29 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
   // --- Client: Initiate Payment Confirmation ---
   const handleInitiate = async () => {
     if (!assignedEmployeeId) return;
+    const amt = Number(amount);
+    if (isNaN(amt) || amt <= 0) {
+      toast.error("Enter a valid amount");
+      return;
+    }
     setLoading(true);
     try {
+      const insertData: any = {
+        project_id: projectId,
+        employee_id: assignedEmployeeId,
+        status: "initiated",
+        amount: amt,
+      };
+      if (selectedMethod) {
+        insertData.payment_method = selectedMethod;
+      }
       const { error } = await (supabase as any)
         .from("payment_confirmations")
-        .insert({
-          project_id: projectId,
-          employee_id: assignedEmployeeId,
-          status: "initiated",
-        });
+        .insert(insertData);
       if (error) throw error;
       toast.success("Payment Confirmation shared with employee.");
+      setAmount("");
+      setSelectedMethod("");
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -194,22 +232,89 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
 
   if (isLoading) return null;
 
-  // No active confirmation — show initiate button for client only
-  if (!confirmation) {
-    if (!isClient) return null;
+  const canReinitiate = isClient && reinitiationEnabled && failedCount < maxRetries;
+
+  // No active confirmation — show initiate form for client only
+  if (!confirmation || (confirmation.status === "failure" && canReinitiate)) {
+    if (!isClient) {
+      if (confirmation?.status === "failure") {
+        return (
+          <PaymentCard>
+            <div className="flex items-center gap-2 text-destructive">
+              <XCircle className="h-5 w-5" />
+              <span className="font-semibold text-sm">Payment Failed</span>
+            </div>
+            {confirmation.payment_method && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Via {confirmation.payment_method} • ₹{confirmation.amount}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">Waiting for client to re-initiate...</p>
+          </PaymentCard>
+        );
+      }
+      return null;
+    }
     return (
-      <div className="px-4 py-2">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleInitiate}
-          disabled={loading}
-          className="gap-1.5"
-        >
-          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />}
-          Share Payment Confirmation
-        </Button>
-      </div>
+      <PaymentCard>
+        {confirmation?.status === "failure" && (
+          <div className="flex items-center gap-2 text-destructive mb-3">
+            <XCircle className="h-4 w-4" />
+            <span className="text-sm font-medium">Previous payment failed</span>
+            <span className="text-xs text-muted-foreground ml-auto">
+              {failedCount}/{maxRetries} attempts used
+            </span>
+          </div>
+        )}
+        <div className="flex items-center gap-2 mb-3">
+          {confirmation?.status === "failure" ? (
+            <RefreshCw className="h-4 w-4 text-primary" />
+          ) : (
+            <CreditCard className="h-4 w-4 text-primary" />
+          )}
+          <span className="font-semibold text-sm">
+            {confirmation?.status === "failure" ? "Re-initiate Payment" : "Share Payment Confirmation"}
+          </span>
+        </div>
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs">Amount (₹)</Label>
+            <div className="relative">
+              <IndianRupee className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="number"
+                placeholder="Enter amount"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="h-9 text-sm pl-8"
+                min="1"
+              />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Payment Method (optional)</Label>
+            <Select value={selectedMethod} onValueChange={setSelectedMethod}>
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue placeholder="Choose payment app..." />
+              </SelectTrigger>
+              <SelectContent>
+                {PAYMENT_METHODS.map((m) => (
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleInitiate}
+            disabled={loading || !amount || Number(amount) <= 0}
+            className="gap-1.5 w-full"
+          >
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />}
+            {confirmation?.status === "failure" ? "Re-initiate Payment" : "Share Payment Confirmation"}
+          </Button>
+        </div>
+      </PaymentCard>
     );
   }
 
@@ -221,25 +326,29 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
           <CheckCircle className="h-5 w-5" />
           <span className="font-semibold text-sm">Payment Successful</span>
         </div>
-        {confirmation.payment_method && (
-          <p className="text-xs text-muted-foreground mt-1">
-            Via {confirmation.payment_method} • {confirmation.phone_number}
-          </p>
-        )}
+        <p className="text-xs text-muted-foreground mt-1">
+          ₹{confirmation.amount}
+          {confirmation.payment_method && ` • Via ${confirmation.payment_method}`}
+          {confirmation.phone_number && ` • ${confirmation.phone_number}`}
+        </p>
       </PaymentCard>
     );
   }
 
-  if (confirmation.status === "failure") {
+  if (confirmation.status === "failure" && !canReinitiate) {
     return (
       <PaymentCard>
         <div className="flex items-center gap-2 text-destructive">
           <XCircle className="h-5 w-5" />
           <span className="font-semibold text-sm">Payment Failed</span>
         </div>
-        {confirmation.payment_method && (
-          <p className="text-xs text-muted-foreground mt-1">
-            Via {confirmation.payment_method} • {confirmation.phone_number}
+        <p className="text-xs text-muted-foreground mt-1">
+          ₹{confirmation.amount}
+          {confirmation.payment_method && ` • Via ${confirmation.payment_method}`}
+        </p>
+        {isClient && (
+          <p className="text-xs text-destructive/80 mt-1">
+            Maximum retry attempts ({maxRetries}) reached. Contact admin for assistance.
           </p>
         )}
       </PaymentCard>
@@ -249,13 +358,18 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
   // === INITIATED: Employee needs to fill payment details ===
   if (confirmation.status === "initiated") {
     if (!isClient) {
-      // Employee view — fill in payment method + phone
       return (
         <PaymentCard>
           <div className="flex items-center gap-2 mb-3">
             <CreditCard className="h-4 w-4 text-primary" />
             <span className="font-semibold text-sm">Payment Confirmation Request</span>
           </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Amount: <strong className="text-foreground">₹{confirmation.amount}</strong>
+            {confirmation.payment_method && (
+              <> • Preferred: <strong className="text-foreground">{confirmation.payment_method}</strong></>
+            )}
+          </p>
           <div className="space-y-3">
             <div>
               <Label className="text-xs">Select Payment App</Label>
@@ -303,6 +417,10 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
             Waiting for employee to select payment method...
           </span>
         </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          Amount: <strong className="text-foreground">₹{confirmation.amount}</strong>
+          {confirmation.payment_method && ` • ${confirmation.payment_method}`}
+        </p>
       </PaymentCard>
     );
   }
@@ -310,7 +428,6 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
   // === PENDING_OTP: Employee needs to enter OTP ===
   if (confirmation.status === "pending_otp") {
     if (!isClient) {
-      // Employee view — enter OTP
       return (
         <PaymentCard>
           <div className="flex items-center gap-2 mb-2">
@@ -319,6 +436,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
           </div>
           <p className="text-xs text-muted-foreground mb-3">
             Enter the OTP received from <strong>{confirmation.payment_method}</strong> on your phone.
+            <br />Amount: <strong>₹{confirmation.amount}</strong>
           </p>
           <div className="flex gap-2">
             <Input
@@ -342,7 +460,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
         </PaymentCard>
       );
     }
-    // Client view — sees payment details, waiting for OTP
+    // Client view
     return (
       <PaymentCard>
         <div className="flex items-center gap-2 mb-2">
@@ -350,6 +468,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
           <span className="font-semibold text-sm">Payment Details Received</span>
         </div>
         <div className="text-xs space-y-1 text-muted-foreground">
+          <p>Amount: <strong className="text-foreground">₹{confirmation.amount}</strong></p>
           <p>Payment App: <strong className="text-foreground">{confirmation.payment_method}</strong></p>
           <p>Phone: <strong className="text-foreground">{confirmation.phone_number}</strong></p>
         </div>
@@ -364,7 +483,6 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
   // === OTP_SUBMITTED: Countdown + Client sees OTP + Success/Failure buttons ===
   if (confirmation.status === "otp_submitted") {
     if (!isClient) {
-      // Employee view — cannot see OTP, just sees waiting state
       return (
         <PaymentCard>
           <div className="flex items-center gap-2 mb-2">
@@ -372,7 +490,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
             <span className="font-semibold text-sm">OTP Submitted</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            Your OTP has been submitted. Waiting for client to confirm payment...
+            Your OTP has been submitted for ₹{confirmation.amount}. Waiting for client to confirm payment...
           </p>
           <OtpCountdown
             submittedAt={confirmation.otp_submitted_at!}
@@ -381,7 +499,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
         </PaymentCard>
       );
     }
-    // Client view — sees OTP + countdown + success/failure buttons
+    // Client view
     return (
       <PaymentCard>
         <div className="flex items-center gap-2 mb-2">
@@ -389,6 +507,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
           <span className="font-semibold text-sm">Payment Confirmation</span>
         </div>
         <div className="text-xs space-y-1 text-muted-foreground mb-2">
+          <p>Amount: <strong className="text-foreground">₹{confirmation.amount}</strong></p>
           <p>Payment App: <strong className="text-foreground">{confirmation.payment_method}</strong></p>
           <p>Phone: <strong className="text-foreground">{confirmation.phone_number}</strong></p>
         </div>

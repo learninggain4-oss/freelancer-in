@@ -692,6 +692,7 @@ export type Database = {
       }
       payment_confirmations: {
         Row: {
+          amount: number
           created_at: string
           employee_id: string
           id: string
@@ -704,6 +705,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          amount?: number
           created_at?: string
           employee_id: string
           id?: string
@@ -716,6 +718,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          amount?: number
           created_at?: string
           employee_id?: string
           id?: string
