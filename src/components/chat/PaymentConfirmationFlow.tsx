@@ -21,14 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-const PAYMENT_METHODS = [
-  "GPay",
-  "PhonePe",
-  "Paytm",
-  "Amazon Pay",
-  "BHIM UPI",
-  "Other",
-];
+// Payment methods are now fetched from DB
 
 interface PaymentConfirmation {
   id: string;
@@ -59,6 +52,35 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
   const [otpValue, setOtpValue] = useState("");
   const [amount, setAmount] = useState("");
   const [selectedMethod, setSelectedMethod] = useState("");
+
+  // Fetch payment methods from DB
+  const { data: paymentMethods = [] } = useQuery({
+    queryKey: ["payment-methods"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("payment_methods")
+        .select("id, name, is_active, display_order")
+        .eq("is_active", true)
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return (data || []) as { id: string; name: string; is_active: boolean; display_order: number }[];
+    },
+    staleTime: 60000,
+  });
+
+  // Fetch OTP entry countdown setting
+  const { data: otpEntryCountdown = 120 } = useQuery({
+    queryKey: ["payment-otp-entry-countdown"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "payment_otp_entry_countdown_seconds")
+        .maybeSingle();
+      return data ? Number(data.value) : 120;
+    },
+    staleTime: 60000,
+  });
 
   // Fetch all payment confirmations for this project
   const { data: confirmations = [], isLoading } = useQuery({
@@ -299,8 +321,8 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
                 <SelectValue placeholder="Choose payment app..." />
               </SelectTrigger>
               <SelectContent>
-                {PAYMENT_METHODS.map((m) => (
-                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                {paymentMethods.map((m) => (
+                  <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -379,8 +401,8 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
                   <SelectValue placeholder="Choose payment app..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {PAYMENT_METHODS.map((m) => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  {paymentMethods.map((m) => (
+                    <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -435,7 +457,12 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
             <Smartphone className="h-4 w-4 text-primary" />
             <span className="font-semibold text-sm">Enter OTP</span>
           </div>
-          <p className="text-xs text-muted-foreground mb-3">
+          <OtpCountdown
+            submittedAt={confirmation.updated_at}
+            totalSeconds={otpEntryCountdown}
+            label="Time to enter OTP"
+          />
+          <p className="text-xs text-muted-foreground mb-3 mt-2">
             Enter the OTP received from <strong>{confirmation.payment_method}</strong> on your phone.
             <br />Amount: <strong>₹{confirmation.amount}</strong>
           </p>
@@ -558,7 +585,7 @@ const PaymentCard = ({ children }: { children: React.ReactNode }) => (
 );
 
 // --- OTP Countdown Timer ---
-const OtpCountdown = ({ submittedAt, totalSeconds }: { submittedAt: string; totalSeconds: number }) => {
+const OtpCountdown = ({ submittedAt, totalSeconds, label }: { submittedAt: string; totalSeconds: number; label?: string }) => {
   const totalMs = totalSeconds * 1000;
   const [remaining, setRemaining] = useState(() => {
     const deadline = new Date(submittedAt).getTime() + totalMs;
@@ -592,7 +619,7 @@ const OtpCountdown = ({ submittedAt, totalSeconds }: { submittedAt: string; tota
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
         <span className="flex items-center gap-1 text-muted-foreground">
-          <Clock className="h-3 w-3" /> Time remaining
+          <Clock className="h-3 w-3" /> {label || "Time remaining"}
         </span>
         <span className={`font-mono font-medium ${remaining < 15000 ? "text-destructive" : "text-warning"}`}>
           {String(mins).padStart(2, "0")}:{String(s).padStart(2, "0")}

@@ -1,16 +1,19 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Clock, Landmark, Gift, CreditCard, RefreshCw } from "lucide-react";
+import { Loader2, Save, Clock, Landmark, Gift, CreditCard, RefreshCw, Plus, Pencil, Trash2, GripVertical, Smartphone } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 
 const AdminSettings = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [countdownHours, setCountdownHours] = useState("");
   const [maxBankAttempts, setMaxBankAttempts] = useState("");
   const [signupBonus, setSignupBonus] = useState("");
@@ -21,10 +24,15 @@ const AdminSettings = () => {
   const [empDigits, setEmpDigits] = useState("");
   const [cltDigits, setCltDigits] = useState("");
   const [otpCountdown, setOtpCountdown] = useState("");
+  const [otpEntryCountdown, setOtpEntryCountdown] = useState("");
   const [maxPaymentRetries, setMaxPaymentRetries] = useState("");
   const [reinitiationEnabled, setReinitiationEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+
+  // Payment methods state
+  const [newMethodName, setNewMethodName] = useState("");
+  const [editingMethod, setEditingMethod] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     const fetch = async () => {
@@ -42,6 +50,7 @@ const AdminSettings = () => {
           "employee_code_digits",
           "client_code_digits",
           "payment_otp_countdown_seconds",
+          "payment_otp_entry_countdown_seconds",
           "payment_max_retries",
           "payment_reinitiation_enabled",
         ]);
@@ -57,6 +66,7 @@ const AdminSettings = () => {
           if (row.key === "employee_code_digits") setEmpDigits(row.value);
           if (row.key === "client_code_digits") setCltDigits(row.value);
           if (row.key === "payment_otp_countdown_seconds") setOtpCountdown(row.value);
+          if (row.key === "payment_otp_entry_countdown_seconds") setOtpEntryCountdown(row.value);
           if (row.key === "payment_max_retries") setMaxPaymentRetries(row.value);
           if (row.key === "payment_reinitiation_enabled") setReinitiationEnabled(row.value === "true");
         }
@@ -207,6 +217,32 @@ const AdminSettings = () => {
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Clock className="h-4 w-4 text-primary" />
+            OTP Entry Countdown
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Set the countdown time (in seconds) for employees to enter OTP after selecting payment method.
+          </p>
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label>Countdown Seconds</Label>
+              <Input type="number" min="30" max="600" value={otpEntryCountdown} onChange={(e) => setOtpEntryCountdown(e.target.value)} />
+            </div>
+            <Button onClick={() => handleSaveSetting("payment_otp_entry_countdown_seconds", otpEntryCountdown, "OTP Entry Countdown", 30, 600)} disabled={saving === "payment_otp_entry_countdown_seconds"} className="gap-1">
+              {saving === "payment_otp_entry_countdown_seconds" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <PaymentMethodsManager toast={toast} />
 
       <Card>
         <CardHeader className="pb-3">
@@ -380,6 +416,178 @@ const AdminSettings = () => {
         </CardContent>
       </Card>
     </div>
+  );
+};
+
+// --- Payment Methods Manager ---
+interface PaymentMethod {
+  id: string;
+  name: string;
+  is_active: boolean;
+  display_order: number;
+}
+
+const PaymentMethodsManager = ({ toast }: { toast: any }) => {
+  const queryClient = useQueryClient();
+  const [newName, setNewName] = useState("");
+  const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const { data: methods = [], isLoading } = useQuery({
+    queryKey: ["admin-payment-methods"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("payment_methods")
+        .select("*")
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return (data || []) as PaymentMethod[];
+    },
+  });
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["admin-payment-methods"] });
+
+  const handleAdd = async () => {
+    if (!newName.trim()) return;
+    setSaving(true);
+    try {
+      const maxOrder = methods.length > 0 ? Math.max(...methods.map((m) => m.display_order)) : 0;
+      const { error } = await (supabase as any)
+        .from("payment_methods")
+        .insert({ name: newName.trim(), display_order: maxOrder + 1 });
+      if (error) throw error;
+      toast({ title: "Added", description: `Payment method "${newName.trim()}" added` });
+      setNewName("");
+      refresh();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggle = async (method: PaymentMethod) => {
+    try {
+      const { error } = await (supabase as any)
+        .from("payment_methods")
+        .update({ is_active: !method.is_active })
+        .eq("id", method.id);
+      if (error) throw error;
+      toast({ title: "Updated", description: `${method.name} ${method.is_active ? "disabled" : "enabled"}` });
+      refresh();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editing || !editing.name.trim()) return;
+    setSaving(true);
+    try {
+      const { error } = await (supabase as any)
+        .from("payment_methods")
+        .update({ name: editing.name.trim() })
+        .eq("id", editing.id);
+      if (error) throw error;
+      toast({ title: "Updated", description: "Payment method renamed" });
+      setEditing(null);
+      refresh();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (method: PaymentMethod) => {
+    try {
+      const { error } = await (supabase as any)
+        .from("payment_methods")
+        .delete()
+        .eq("id", method.id);
+      if (error) throw error;
+      toast({ title: "Deleted", description: `${method.name} removed` });
+      refresh();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Smartphone className="h-4 w-4 text-primary" />
+          Payment Methods
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Manage payment methods available to employees and clients during payment confirmation.
+        </p>
+
+        {/* Add new method */}
+        <div className="flex gap-2">
+          <Input
+            placeholder="New payment method name..."
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            className="flex-1"
+            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+          />
+          <Button onClick={handleAdd} disabled={saving || !newName.trim()} size="sm" className="gap-1">
+            <Plus className="h-4 w-4" /> Add
+          </Button>
+        </div>
+
+        {/* Methods list */}
+        {isLoading ? (
+          <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
+        ) : (
+          <div className="space-y-2">
+            {methods.map((method) => (
+              <div key={method.id} className="flex items-center gap-3 rounded-lg border p-3">
+                <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+                {editing?.id === method.id ? (
+                  <div className="flex flex-1 gap-2">
+                    <Input
+                      value={editing.name}
+                      onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                      className="h-8 text-sm flex-1"
+                      autoFocus
+                      onKeyDown={(e) => e.key === "Enter" && handleSaveEdit()}
+                    />
+                    <Button size="sm" variant="ghost" onClick={handleSaveEdit} disabled={saving}>
+                      <Save className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>✕</Button>
+                  </div>
+                ) : (
+                  <>
+                    <span className={`flex-1 text-sm font-medium ${!method.is_active ? "text-muted-foreground line-through" : ""}`}>
+                      {method.name}
+                    </span>
+                    <Badge variant={method.is_active ? "default" : "secondary"} className="text-[10px]">
+                      {method.is_active ? "Active" : "Disabled"}
+                    </Badge>
+                    <Switch checked={method.is_active} onCheckedChange={() => handleToggle(method)} />
+                    <Button size="sm" variant="ghost" onClick={() => setEditing({ id: method.id, name: method.name })}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDelete(method)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            ))}
+            {methods.length === 0 && (
+              <p className="text-center text-sm text-muted-foreground py-4">No payment methods configured.</p>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
