@@ -72,6 +72,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
       if (error) throw error;
       return (data || []) as PaymentConfirmation[];
     },
+    refetchInterval: 10000,
   });
 
   const confirmation = confirmations.length > 0 ? confirmations[0] : null;

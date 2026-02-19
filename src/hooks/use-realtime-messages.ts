@@ -73,6 +73,7 @@ export const useRealtimeMessages = (chatRoomId: string | undefined) => {
       })) as Message[];
     },
     enabled: !!chatRoomId,
+    refetchInterval: 15000,
   });
 
   // Subscribe to real-time changes (INSERT, UPDATE, DELETE)
