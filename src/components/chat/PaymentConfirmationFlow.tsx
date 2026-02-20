@@ -413,8 +413,11 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
                   <SelectValue placeholder="Choose payment app..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {paymentMethods.map((m) => (
-                    <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
+                  {(confirmation.payment_method
+                    ? confirmation.payment_method.split(",").map((n: string) => n.trim()).filter(Boolean)
+                    : paymentMethods.map((m) => m.name)
+                  ).map((name: string) => (
+                    <SelectItem key={name} value={name}>{name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
