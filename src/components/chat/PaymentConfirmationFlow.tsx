@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   CreditCard,
   Send,
@@ -51,7 +52,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otpValue, setOtpValue] = useState("");
   const [amount, setAmount] = useState("");
-  const [selectedMethod, setSelectedMethod] = useState("");
+  const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
 
   // Fetch payment methods from DB
   const { data: paymentMethods = [] } = useQuery({
@@ -169,8 +170,8 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
         status: "initiated",
         amount: amt,
       };
-      if (selectedMethod) {
-        insertData.payment_method = selectedMethod;
+      if (selectedMethods.length > 0) {
+        insertData.payment_method = selectedMethods.join(", ");
       }
       const { error } = await (supabase as any)
         .from("payment_confirmations")
@@ -178,7 +179,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
       if (error) throw error;
       toast.success("Payment Confirmation shared with employee.");
       setAmount("");
-      setSelectedMethod("");
+      setSelectedMethods([]);
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -315,17 +316,28 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
             </div>
           </div>
           <div>
-            <Label className="text-xs">Payment Method (optional)</Label>
-            <Select value={selectedMethod} onValueChange={setSelectedMethod}>
-              <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder="Choose payment app..." />
-              </SelectTrigger>
-              <SelectContent>
-                {paymentMethods.map((m) => (
-                  <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label className="text-xs">Payment Methods</Label>
+            <div className="mt-1.5 space-y-2 rounded-md border p-2.5">
+              {paymentMethods.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No payment methods available. Admin must activate them.</p>
+              ) : (
+                paymentMethods.map((m) => (
+                  <label key={m.id} className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox
+                      checked={selectedMethods.includes(m.name)}
+                      onCheckedChange={(checked) => {
+                        setSelectedMethods((prev) =>
+                          checked
+                            ? [...prev, m.name]
+                            : prev.filter((n) => n !== m.name)
+                        );
+                      }}
+                    />
+                    <span className="text-sm">{m.name}</span>
+                  </label>
+                ))
+              )}
+            </div>
           </div>
           <Button
             size="sm"
