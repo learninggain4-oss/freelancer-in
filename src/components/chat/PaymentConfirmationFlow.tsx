@@ -96,6 +96,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
       return (data || []) as PaymentConfirmation[];
     },
     refetchInterval: 10000,
+    placeholderData: (prev: any) => prev,
   });
 
   const confirmation = confirmations.length > 0 ? confirmations[0] : null;
