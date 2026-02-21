@@ -693,42 +693,66 @@ export type Database = {
       payment_confirmations: {
         Row: {
           amount: number
+          client_payment_info: string | null
           created_at: string
+          details_shared_at: string | null
           employee_id: string
           id: string
+          method_selected_at: string | null
           otp: string | null
           otp_submitted_at: string | null
           payment_method: string | null
           phone_number: string | null
           project_id: string
+          qr_code_name: string | null
+          qr_code_path: string | null
+          receipt_name: string | null
+          receipt_path: string | null
           status: string
           updated_at: string
+          utr_number: string | null
         }
         Insert: {
           amount?: number
+          client_payment_info?: string | null
           created_at?: string
+          details_shared_at?: string | null
           employee_id: string
           id?: string
+          method_selected_at?: string | null
           otp?: string | null
           otp_submitted_at?: string | null
           payment_method?: string | null
           phone_number?: string | null
           project_id: string
+          qr_code_name?: string | null
+          qr_code_path?: string | null
+          receipt_name?: string | null
+          receipt_path?: string | null
           status?: string
           updated_at?: string
+          utr_number?: string | null
         }
         Update: {
           amount?: number
+          client_payment_info?: string | null
           created_at?: string
+          details_shared_at?: string | null
           employee_id?: string
           id?: string
+          method_selected_at?: string | null
           otp?: string | null
           otp_submitted_at?: string | null
           payment_method?: string | null
           phone_number?: string | null
           project_id?: string
+          qr_code_name?: string | null
+          qr_code_path?: string | null
+          receipt_name?: string | null
+          receipt_path?: string | null
           status?: string
           updated_at?: string
+          utr_number?: string | null
         }
         Relationships: [
           {

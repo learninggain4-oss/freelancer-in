@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import {
   CreditCard,
   Send,
@@ -19,10 +20,13 @@ import {
   Smartphone,
   RefreshCw,
   IndianRupee,
+  Upload,
+  FileText,
+  QrCode,
+  Landmark,
+  Hash,
 } from "lucide-react";
 import { toast } from "sonner";
-
-// Payment methods are now fetched from DB
 
 interface PaymentConfirmation {
   id: string;
@@ -36,6 +40,14 @@ interface PaymentConfirmation {
   amount: number;
   created_at: string;
   updated_at: string;
+  utr_number: string | null;
+  receipt_path: string | null;
+  receipt_name: string | null;
+  qr_code_path: string | null;
+  qr_code_name: string | null;
+  client_payment_info: string | null;
+  method_selected_at: string | null;
+  details_shared_at: string | null;
 }
 
 interface Props {
@@ -48,11 +60,16 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
   const { profile } = useAuth();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [otpValue, setOtpValue] = useState("");
   const [amount, setAmount] = useState("");
   const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
+  const [employeeSelectedMethod, setEmployeeSelectedMethod] = useState("");
+  const [utrNumber, setUtrNumber] = useState("");
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [qrCodeFile, setQrCodeFile] = useState<File | null>(null);
+  const [upiId, setUpiId] = useState("");
+  const [bankDetails, setBankDetails] = useState("");
+  const receiptInputRef = useRef<HTMLInputElement>(null);
+  const qrInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch payment methods from DB
   const { data: paymentMethods = [] } = useQuery({
@@ -69,21 +86,34 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
     staleTime: 60000,
   });
 
-  // Fetch OTP entry countdown setting
-  const { data: otpEntryCountdown = 120 } = useQuery({
-    queryKey: ["payment-otp-entry-countdown"],
+  // Fetch countdown settings
+  const { data: methodCountdown = 600 } = useQuery({
+    queryKey: ["payment-method-countdown"],
     queryFn: async () => {
       const { data } = await supabase
         .from("app_settings")
         .select("value")
-        .eq("key", "payment_otp_entry_countdown_seconds")
+        .eq("key", "payment_method_countdown_seconds")
         .maybeSingle();
-      return data ? Number(data.value) : 120;
+      return data ? Number(data.value) : 600;
     },
     staleTime: 60000,
   });
 
-  // Fetch all payment confirmations for this project
+  const { data: detailsCountdown = 420 } = useQuery({
+    queryKey: ["payment-details-countdown"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "payment_details_countdown_seconds")
+        .maybeSingle();
+      return data ? Number(data.value) : 420;
+    },
+    staleTime: 60000,
+  });
+
+  // Fetch all payment confirmations
   const { data: confirmations = [], isLoading } = useQuery({
     queryKey: ["payment-confirmations", projectId],
     queryFn: async () => {
@@ -102,21 +132,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
   const confirmation = confirmations.length > 0 ? confirmations[0] : null;
   const failedCount = confirmations.filter((c) => c.status === "failure").length;
 
-  // Fetch countdown setting
-  const { data: countdownSeconds = 60 } = useQuery({
-    queryKey: ["payment-otp-countdown"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("app_settings")
-        .select("value")
-        .eq("key", "payment_otp_countdown_seconds")
-        .maybeSingle();
-      return data ? Number(data.value) : 60;
-    },
-    staleTime: 60000,
-  });
-
-  // Fetch admin settings for re-initiation
+  // Fetch admin re-initiation settings
   const { data: adminPaymentSettings } = useQuery({
     queryKey: ["payment-admin-settings"],
     queryFn: async () => {
@@ -155,7 +171,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
     return () => { supabase.removeChannel(channel); };
   }, [projectId, queryClient]);
 
-  // --- Client: Initiate Payment Confirmation ---
+  // --- Client: Initiate Payment Request ---
   const handleInitiate = async () => {
     if (!assignedEmployeeId) return;
     const amt = Number(amount);
@@ -178,7 +194,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
         .from("payment_confirmations")
         .insert(insertData);
       if (error) throw error;
-      toast.success("Payment Confirmation shared with employee.");
+      toast.success("Payment Request sent to employee.");
       setAmount("");
       setSelectedMethods([]);
     } catch (e: any) {
@@ -188,25 +204,22 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
     }
   };
 
-  // --- Employee: Submit Payment Details (Send OTP) ---
-  const handleSendOtp = async () => {
-    if (!confirmation || !paymentMethod || !phoneNumber.trim()) return;
-    if (phoneNumber.trim().length < 10) {
-      toast.error("Enter a valid phone number");
-      return;
-    }
+  // --- Employee: Select Payment Method ---
+  const handleSelectMethod = async () => {
+    if (!confirmation || !employeeSelectedMethod) return;
     setLoading(true);
     try {
       const { error } = await (supabase as any)
         .from("payment_confirmations")
         .update({
-          payment_method: paymentMethod,
-          phone_number: phoneNumber.trim(),
-          status: "pending_otp",
+          payment_method: employeeSelectedMethod,
+          status: "method_selected",
+          method_selected_at: new Date().toISOString(),
         })
         .eq("id", confirmation.id);
       if (error) throw error;
-      toast.success("Payment details sent! Now enter the OTP from your payment app.");
+      toast.success("Payment method selected. Waiting for client to share payment details.");
+      setEmployeeSelectedMethod("");
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -214,22 +227,91 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
     }
   };
 
-  // --- Employee: Submit OTP ---
-  const handleSubmitOtp = async () => {
-    if (!confirmation || !otpValue.trim()) return;
+  // --- Client: Share Payment Details (QR, UPI, Bank) ---
+  const handleShareDetails = async () => {
+    if (!confirmation) return;
+    if (!upiId.trim() && !bankDetails.trim() && !qrCodeFile) {
+      toast.error("Please provide at least one payment detail (QR Code, UPI ID, or Bank details).");
+      return;
+    }
     setLoading(true);
     try {
+      let qrPath: string | null = null;
+      let qrName: string | null = null;
+
+      if (qrCodeFile) {
+        const ext = qrCodeFile.name.split(".").pop();
+        const filePath = `${projectId}/${confirmation.id}/qr-${Date.now()}.${ext}`;
+        const { error: uploadErr } = await supabase.storage
+          .from("payment-attachments")
+          .upload(filePath, qrCodeFile);
+        if (uploadErr) throw uploadErr;
+        qrPath = filePath;
+        qrName = qrCodeFile.name;
+      }
+
+      const paymentInfo: any = {};
+      if (upiId.trim()) paymentInfo.upi_id = upiId.trim();
+      if (bankDetails.trim()) paymentInfo.bank_details = bankDetails.trim();
+
       const { error } = await (supabase as any)
         .from("payment_confirmations")
         .update({
-          otp: otpValue.trim(),
-          otp_submitted_at: new Date().toISOString(),
-          status: "otp_submitted",
+          status: "details_shared",
+          details_shared_at: new Date().toISOString(),
+          qr_code_path: qrPath,
+          qr_code_name: qrName,
+          client_payment_info: Object.keys(paymentInfo).length > 0 ? JSON.stringify(paymentInfo) : null,
         })
         .eq("id", confirmation.id);
       if (error) throw error;
-      setOtpValue("");
-      toast.success("OTP submitted successfully.");
+      toast.success("Payment details shared with employee.");
+      setUpiId("");
+      setBankDetails("");
+      setQrCodeFile(null);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Employee: Mark as Paid with UTR + Receipt ---
+  const handleMarkPaid = async () => {
+    if (!confirmation || !utrNumber.trim()) {
+      toast.error("Please enter the UTR number.");
+      return;
+    }
+    setLoading(true);
+    try {
+      let rPath: string | null = null;
+      let rName: string | null = null;
+
+      if (receiptFile) {
+        const ext = receiptFile.name.split(".").pop();
+        const filePath = `${projectId}/${confirmation.id}/receipt-${Date.now()}.${ext}`;
+        const { error: uploadErr } = await supabase.storage
+          .from("payment-attachments")
+          .upload(filePath, receiptFile);
+        if (uploadErr) throw uploadErr;
+        rPath = filePath;
+        rName = receiptFile.name;
+      }
+
+      const { error } = await (supabase as any)
+        .from("payment_confirmations")
+        .update({
+          status: "paid",
+          utr_number: utrNumber.trim(),
+          receipt_path: rPath,
+          receipt_name: rName,
+          otp_submitted_at: new Date().toISOString(), // reuse for paid timestamp
+        })
+        .eq("id", confirmation.id);
+      if (error) throw error;
+      toast.success("Payment submitted! Waiting for client confirmation.");
+      setUtrNumber("");
+      setReceiptFile(null);
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -259,7 +341,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
 
   const canReinitiate = isClient && reinitiationEnabled && failedCount < maxRetries;
 
-  // No active confirmation — show initiate form for client only
+  // ===== No active confirmation — show initiate form for client =====
   if (!confirmation || (confirmation.status === "failure" && canReinitiate)) {
     if (!isClient) {
       if (confirmation?.status === "failure") {
@@ -298,7 +380,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
             <CreditCard className="h-4 w-4 text-primary" />
           )}
           <span className="font-semibold text-sm">
-            {confirmation?.status === "failure" ? "Re-initiate Payment" : "Share Payment Confirmation"}
+            {confirmation?.status === "failure" ? "Re-initiate Payment" : "Payment Request"}
           </span>
         </div>
         <div className="space-y-3">
@@ -317,7 +399,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
             </div>
           </div>
           <div>
-            <Label className="text-xs">Payment Methods</Label>
+            <Label className="text-xs">Payment Methods (for employee to choose from)</Label>
             <div className="mt-1.5 space-y-2 rounded-md border p-2.5">
               {paymentMethods.length === 0 ? (
                 <p className="text-xs text-muted-foreground">No payment methods available. Admin must activate them.</p>
@@ -328,9 +410,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
                       checked={selectedMethods.includes(m.name)}
                       onCheckedChange={(checked) => {
                         setSelectedMethods((prev) =>
-                          checked
-                            ? [...prev, m.name]
-                            : prev.filter((n) => n !== m.name)
+                          checked ? [...prev, m.name] : prev.filter((n) => n !== m.name)
                         );
                       }}
                     />
@@ -347,14 +427,14 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
             className="gap-1.5 w-full"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CreditCard className="h-3.5 w-3.5" />}
-            {confirmation?.status === "failure" ? "Re-initiate Payment" : "Share Payment Confirmation"}
+            {confirmation?.status === "failure" ? "Re-initiate Payment" : "Send Payment Request"}
           </Button>
         </div>
       </PaymentCard>
     );
   }
 
-  // Completed states
+  // ===== Completed states =====
   if (confirmation.status === "success") {
     return (
       <PaymentCard>
@@ -362,11 +442,11 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
           <CheckCircle className="h-5 w-5" />
           <span className="font-semibold text-sm">Payment Successful</span>
         </div>
-        <p className="text-xs text-muted-foreground mt-1">
-          ₹{confirmation.amount}
-          {confirmation.payment_method && ` • Via ${confirmation.payment_method}`}
-          {confirmation.phone_number && ` • ${confirmation.phone_number}`}
-        </p>
+        <div className="text-xs text-muted-foreground mt-1 space-y-1">
+          <p>₹{confirmation.amount}{confirmation.payment_method && ` • Via ${confirmation.payment_method}`}</p>
+          {confirmation.utr_number && <p>UTR: <strong className="text-foreground font-mono">{confirmation.utr_number}</strong></p>}
+        </div>
+        {confirmation.receipt_path && <ReceiptLink path={confirmation.receipt_path} name={confirmation.receipt_name} />}
       </PaymentCard>
     );
   }
@@ -379,8 +459,7 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
           <span className="font-semibold text-sm">Payment Failed</span>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
-          ₹{confirmation.amount}
-          {confirmation.payment_method && ` • Via ${confirmation.payment_method}`}
+          ₹{confirmation.amount}{confirmation.payment_method && ` • Via ${confirmation.payment_method}`}
         </p>
         {isClient && (
           <p className="text-xs text-destructive/80 mt-1">
@@ -391,27 +470,24 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
     );
   }
 
-  // === INITIATED: Employee needs to fill payment details ===
+  // ===== STEP 1: INITIATED — Employee selects payment method =====
   if (confirmation.status === "initiated") {
     if (!isClient) {
       return (
         <PaymentCard>
           <div className="flex items-center gap-2 mb-3">
             <CreditCard className="h-4 w-4 text-primary" />
-            <span className="font-semibold text-sm">Payment Confirmation Request</span>
+            <span className="font-semibold text-sm">Payment Request</span>
           </div>
           <p className="text-xs text-muted-foreground mb-3">
             Amount: <strong className="text-foreground">₹{confirmation.amount}</strong>
-            {confirmation.payment_method && (
-              <> • Preferred: <strong className="text-foreground">{confirmation.payment_method}</strong></>
-            )}
           </p>
           <div className="space-y-3">
             <div>
-              <Label className="text-xs">Select Payment App</Label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+              <Label className="text-xs">Select Payment Method</Label>
+              <Select value={employeeSelectedMethod} onValueChange={setEmployeeSelectedMethod}>
                 <SelectTrigger className="h-9 text-sm">
-                  <SelectValue placeholder="Choose payment app..." />
+                  <SelectValue placeholder="Choose payment method..." />
                 </SelectTrigger>
                 <SelectContent>
                   {(confirmation.payment_method
@@ -423,31 +499,19 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label className="text-xs">Phone Number</Label>
-              <Input
-                type="tel"
-                placeholder="Enter phone number"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                className="h-9 text-sm"
-                maxLength={10}
-              />
-            </div>
             <Button
               size="sm"
-              onClick={handleSendOtp}
-              disabled={loading || !paymentMethod || phoneNumber.length < 10}
+              onClick={handleSelectMethod}
+              disabled={loading || !employeeSelectedMethod}
               className="gap-1.5 w-full"
             >
               {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-              Send OTP
+              Confirm Payment Method
             </Button>
           </div>
         </PaymentCard>
       );
     }
-    // Client view — waiting
     return (
       <PaymentCard>
         <div className="flex items-center gap-2">
@@ -458,134 +522,262 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Pr
         </div>
         <p className="text-xs text-muted-foreground mt-1">
           Amount: <strong className="text-foreground">₹{confirmation.amount}</strong>
-          {confirmation.payment_method && ` • ${confirmation.payment_method}`}
+          {confirmation.payment_method && ` • Methods: ${confirmation.payment_method}`}
         </p>
       </PaymentCard>
     );
   }
 
-  // === PENDING_OTP: Employee needs to enter OTP ===
-  if (confirmation.status === "pending_otp") {
-    if (!isClient) {
+  // ===== STEP 2: METHOD_SELECTED — Client shares QR/UPI/Bank details =====
+  if (confirmation.status === "method_selected") {
+    if (isClient) {
       return (
         <PaymentCard>
           <div className="flex items-center gap-2 mb-2">
             <Smartphone className="h-4 w-4 text-primary" />
-            <span className="font-semibold text-sm">Enter OTP</span>
+            <span className="font-semibold text-sm">Share Payment Details</span>
           </div>
-          <OtpCountdown
-            submittedAt={confirmation.updated_at}
-            totalSeconds={otpEntryCountdown}
-            label="Time to enter OTP"
+          <CountdownTimer
+            startedAt={confirmation.method_selected_at!}
+            totalSeconds={methodCountdown}
+            label="Time to share details"
           />
-          <p className="text-xs text-muted-foreground mb-3 mt-2">
-            Enter the OTP received from <strong>{confirmation.payment_method}</strong> on your phone.
-            <br />Amount: <strong>₹{confirmation.amount}</strong>
+          <p className="text-xs text-muted-foreground my-2">
+            Employee selected: <strong className="text-foreground">{confirmation.payment_method}</strong>
+            <br />Amount: <strong className="text-foreground">₹{confirmation.amount}</strong>
           </p>
-          <div className="flex gap-2">
-            <Input
-              type="text"
-              placeholder="Enter OTP"
-              value={otpValue}
-              onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, "").slice(0, 8))}
-              className="h-9 text-sm flex-1 font-mono tracking-widest"
-              maxLength={8}
-            />
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs flex items-center gap-1"><QrCode className="h-3 w-3" /> Upload QR Code</Label>
+              <input
+                ref={qrInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => setQrCodeFile(e.target.files?.[0] || null)}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => qrInputRef.current?.click()}
+                className="gap-1.5 w-full mt-1"
+              >
+                <Upload className="h-3.5 w-3.5" />
+                {qrCodeFile ? qrCodeFile.name : "Choose QR Code Image"}
+              </Button>
+            </div>
+            <div>
+              <Label className="text-xs flex items-center gap-1"><Hash className="h-3 w-3" /> UPI ID</Label>
+              <Input
+                placeholder="e.g. name@upi"
+                value={upiId}
+                onChange={(e) => setUpiId(e.target.value)}
+                className="h-9 text-sm"
+              />
+            </div>
+            <div>
+              <Label className="text-xs flex items-center gap-1"><Landmark className="h-3 w-3" /> Bank Details</Label>
+              <Textarea
+                placeholder="Account number, IFSC code, bank name..."
+                value={bankDetails}
+                onChange={(e) => setBankDetails(e.target.value)}
+                className="text-sm"
+                rows={3}
+              />
+            </div>
             <Button
               size="sm"
-              onClick={handleSubmitOtp}
-              disabled={loading || !otpValue.trim()}
-              className="gap-1"
+              onClick={handleShareDetails}
+              disabled={loading || (!upiId.trim() && !bankDetails.trim() && !qrCodeFile)}
+              className="gap-1.5 w-full"
             >
               {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-              Submit
+              Share Payment Details
             </Button>
           </div>
         </PaymentCard>
       );
     }
-    // Client view
+    // Employee view — waiting
     return (
       <PaymentCard>
-        <div className="flex items-center gap-2 mb-2">
-          <Smartphone className="h-4 w-4 text-primary" />
-          <span className="font-semibold text-sm">Payment Details Received</span>
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-muted-foreground animate-pulse" />
+          <span className="text-sm font-medium text-muted-foreground">
+            Waiting for client to share payment details...
+          </span>
         </div>
-        <div className="text-xs space-y-1 text-muted-foreground">
-          <p>Amount: <strong className="text-foreground">₹{confirmation.amount}</strong></p>
-          <p>Payment App: <strong className="text-foreground">{confirmation.payment_method}</strong></p>
-          <p>Phone: <strong className="text-foreground">{confirmation.phone_number}</strong></p>
-        </div>
-        <div className="flex items-center gap-2 mt-2">
-          <Clock className="h-3.5 w-3.5 text-muted-foreground animate-pulse" />
-          <span className="text-xs text-muted-foreground">Waiting for employee to submit OTP...</span>
-        </div>
+        <CountdownTimer
+          startedAt={confirmation.method_selected_at!}
+          totalSeconds={methodCountdown}
+          label="Client time remaining"
+        />
+        <p className="text-xs text-muted-foreground mt-1">
+          Method: <strong className="text-foreground">{confirmation.payment_method}</strong> • Amount: <strong className="text-foreground">₹{confirmation.amount}</strong>
+        </p>
       </PaymentCard>
     );
   }
 
-  // === OTP_SUBMITTED: Countdown + Client sees OTP + Success/Failure buttons ===
-  if (confirmation.status === "otp_submitted") {
+  // ===== STEP 3: DETAILS_SHARED — Employee sees details + marks Paid =====
+  if (confirmation.status === "details_shared") {
+    const paymentInfo = confirmation.client_payment_info ? JSON.parse(confirmation.client_payment_info) : {};
+
     if (!isClient) {
       return (
         <PaymentCard>
           <div className="flex items-center gap-2 mb-2">
-            <CheckCircle className="h-4 w-4 text-accent" />
-            <span className="font-semibold text-sm">OTP Submitted</span>
+            <CreditCard className="h-4 w-4 text-primary" />
+            <span className="font-semibold text-sm">Payment Details from Client</span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Your OTP has been submitted for ₹{confirmation.amount}. Waiting for client to confirm payment...
-          </p>
-          <OtpCountdown
-            submittedAt={confirmation.otp_submitted_at!}
-            totalSeconds={countdownSeconds}
+          <CountdownTimer
+            startedAt={confirmation.details_shared_at!}
+            totalSeconds={detailsCountdown}
+            label="Time to complete payment"
           />
+          <div className="text-xs space-y-1 text-muted-foreground my-2">
+            <p>Amount: <strong className="text-foreground">₹{confirmation.amount}</strong></p>
+            <p>Method: <strong className="text-foreground">{confirmation.payment_method}</strong></p>
+            {paymentInfo.upi_id && <p>UPI ID: <strong className="text-foreground font-mono">{paymentInfo.upi_id}</strong></p>}
+            {paymentInfo.bank_details && (
+              <div>
+                <p className="font-medium text-foreground">Bank Details:</p>
+                <p className="whitespace-pre-wrap text-foreground">{paymentInfo.bank_details}</p>
+              </div>
+            )}
+          </div>
+          {confirmation.qr_code_path && <QrCodeImage path={confirmation.qr_code_path} name={confirmation.qr_code_name} />}
+
+          <div className="space-y-3 mt-3 border-t pt-3">
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle className="h-4 w-4 text-accent" />
+              <span className="font-semibold text-sm">Mark as Paid</span>
+            </div>
+            <div>
+              <Label className="text-xs">UTR Number *</Label>
+              <Input
+                placeholder="Enter UTR / Transaction ID"
+                value={utrNumber}
+                onChange={(e) => setUtrNumber(e.target.value)}
+                className="h-9 text-sm font-mono"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Upload Payment Receipt (optional)</Label>
+              <input
+                ref={receiptInputRef}
+                type="file"
+                accept="image/*,.pdf"
+                className="hidden"
+                onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => receiptInputRef.current?.click()}
+                className="gap-1.5 w-full mt-1"
+              >
+                <Upload className="h-3.5 w-3.5" />
+                {receiptFile ? receiptFile.name : "Choose Receipt File"}
+              </Button>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleMarkPaid}
+              disabled={loading || !utrNumber.trim()}
+              className="gap-1.5 w-full"
+            >
+              {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle className="h-3.5 w-3.5" />}
+              Paid — Submit
+            </Button>
+          </div>
         </PaymentCard>
       );
     }
-    // Client view
+    // Client view — waiting for employee to pay
     return (
       <PaymentCard>
         <div className="flex items-center gap-2 mb-2">
-          <CreditCard className="h-4 w-4 text-primary" />
-          <span className="font-semibold text-sm">Payment Confirmation</span>
-        </div>
-        <div className="text-xs space-y-1 text-muted-foreground mb-2">
-          <p>Amount: <strong className="text-foreground">₹{confirmation.amount}</strong></p>
-          <p>Payment App: <strong className="text-foreground">{confirmation.payment_method}</strong></p>
-          <p>Phone: <strong className="text-foreground">{confirmation.phone_number}</strong></p>
-        </div>
-        <div className="flex items-center gap-2 rounded-md bg-primary/10 px-3 py-2 mb-3">
-          <Eye className="h-4 w-4 text-primary" />
-          <span className="text-sm font-mono font-bold tracking-[0.3em] text-primary">
-            {confirmation.otp}
+          <Clock className="h-4 w-4 text-muted-foreground animate-pulse" />
+          <span className="text-sm font-medium text-muted-foreground">
+            Waiting for employee to complete payment...
           </span>
         </div>
-        <OtpCountdown
-          submittedAt={confirmation.otp_submitted_at!}
-          totalSeconds={countdownSeconds}
+        <CountdownTimer
+          startedAt={confirmation.details_shared_at!}
+          totalSeconds={detailsCountdown}
+          label="Employee time remaining"
         />
-        <div className="flex gap-2 mt-3">
-          <Button
-            size="sm"
-            onClick={() => handleResult("success")}
-            disabled={loading}
-            className="gap-1 flex-1"
-          >
-            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle className="h-3.5 w-3.5" />}
-            Payment Success
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleResult("failure")}
-            disabled={loading}
-            className="gap-1 flex-1 border-destructive/30 text-destructive hover:bg-destructive/10"
-          >
-            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />}
-            Payment Failure
-          </Button>
+        <p className="text-xs text-muted-foreground mt-1">
+          Method: <strong className="text-foreground">{confirmation.payment_method}</strong> • ₹{confirmation.amount}
+        </p>
+      </PaymentCard>
+    );
+  }
+
+  // ===== STEP 4: PAID — Client sees UTR + Receipt, can confirm/reject =====
+  if (confirmation.status === "paid") {
+    if (isClient) {
+      return (
+        <PaymentCard>
+          <div className="flex items-center gap-2 mb-2">
+            <CreditCard className="h-4 w-4 text-primary" />
+            <span className="font-semibold text-sm">Employee Payment Submitted</span>
+          </div>
+          <div className="text-xs space-y-1 text-muted-foreground mb-3">
+            <p>Amount: <strong className="text-foreground">₹{confirmation.amount}</strong></p>
+            <p>Method: <strong className="text-foreground">{confirmation.payment_method}</strong></p>
+            <p>UTR Number: <strong className="text-foreground font-mono">{confirmation.utr_number}</strong></p>
+          </div>
+          {confirmation.receipt_path && <ReceiptLink path={confirmation.receipt_path} name={confirmation.receipt_name} />}
+          <div className="flex gap-2 mt-3">
+            <Button
+              size="sm"
+              onClick={() => handleResult("success")}
+              disabled={loading}
+              className="gap-1 flex-1"
+            >
+              {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle className="h-3.5 w-3.5" />}
+              Payment Success
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleResult("failure")}
+              disabled={loading}
+              className="gap-1 flex-1 border-destructive/30 text-destructive hover:bg-destructive/10"
+            >
+              {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />}
+              Payment Failure
+            </Button>
+          </div>
+        </PaymentCard>
+      );
+    }
+    // Employee view — waiting for client confirmation
+    return (
+      <PaymentCard>
+        <div className="flex items-center gap-2 mb-2">
+          <CheckCircle className="h-4 w-4 text-accent" />
+          <span className="font-semibold text-sm">Payment Submitted</span>
         </div>
+        <p className="text-xs text-muted-foreground">
+          UTR: <strong className="text-foreground font-mono">{confirmation.utr_number}</strong> • ₹{confirmation.amount}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">Waiting for client to confirm payment...</p>
+      </PaymentCard>
+    );
+  }
+
+  // Legacy statuses (pending_otp, otp_submitted) — show generic waiting
+  if (confirmation.status === "pending_otp" || confirmation.status === "otp_submitted") {
+    return (
+      <PaymentCard>
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-muted-foreground animate-pulse" />
+          <span className="text-sm font-medium text-muted-foreground">Payment in progress...</span>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">₹{confirmation.amount}</p>
       </PaymentCard>
     );
   }
@@ -600,23 +792,23 @@ const PaymentCard = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-// --- OTP Countdown Timer ---
-const OtpCountdown = ({ submittedAt, totalSeconds, label }: { submittedAt: string; totalSeconds: number; label?: string }) => {
+// --- Countdown Timer ---
+const CountdownTimer = ({ startedAt, totalSeconds, label }: { startedAt: string; totalSeconds: number; label?: string }) => {
   const totalMs = totalSeconds * 1000;
   const [remaining, setRemaining] = useState(() => {
-    const deadline = new Date(submittedAt).getTime() + totalMs;
+    const deadline = new Date(startedAt).getTime() + totalMs;
     return Math.max(0, deadline - Date.now());
   });
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const deadline = new Date(submittedAt).getTime() + totalMs;
+      const deadline = new Date(startedAt).getTime() + totalMs;
       const left = Math.max(0, deadline - Date.now());
       setRemaining(left);
       if (left <= 0) clearInterval(interval);
     }, 1000);
     return () => clearInterval(interval);
-  }, [submittedAt, totalMs]);
+  }, [startedAt, totalMs]);
 
   const secs = Math.floor(remaining / 1000);
   const mins = Math.floor(secs / 60);
@@ -637,12 +829,65 @@ const OtpCountdown = ({ submittedAt, totalSeconds, label }: { submittedAt: strin
         <span className="flex items-center gap-1 text-muted-foreground">
           <Clock className="h-3 w-3" /> {label || "Time remaining"}
         </span>
-        <span className={`font-mono font-medium ${remaining < 15000 ? "text-destructive" : "text-warning"}`}>
+        <span className={`font-mono font-medium ${remaining < 30000 ? "text-destructive" : "text-warning"}`}>
           {String(mins).padStart(2, "0")}:{String(s).padStart(2, "0")}
         </span>
       </div>
       <Progress value={progress} className="h-1.5" />
     </div>
+  );
+};
+
+// --- QR Code Image Preview ---
+const QrCodeImage = ({ path, name }: { path: string; name: string | null }) => {
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUrl = async () => {
+      const { data } = await supabase.storage
+        .from("payment-attachments")
+        .createSignedUrl(path, 3600);
+      if (data?.signedUrl) setUrl(data.signedUrl);
+    };
+    getUrl();
+  }, [path]);
+
+  if (!url) return null;
+  return (
+    <div className="mt-2">
+      <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+        <QrCode className="h-3 w-3" /> QR Code
+      </p>
+      <img src={url} alt={name || "QR Code"} className="max-w-[200px] rounded-md border" />
+    </div>
+  );
+};
+
+// --- Receipt Link ---
+const ReceiptLink = ({ path, name }: { path: string; name: string | null }) => {
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUrl = async () => {
+      const { data } = await supabase.storage
+        .from("payment-attachments")
+        .createSignedUrl(path, 3600);
+      if (data?.signedUrl) setUrl(data.signedUrl);
+    };
+    getUrl();
+  }, [path]);
+
+  if (!url) return null;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-2 flex items-center gap-1 text-xs text-primary hover:underline"
+    >
+      <FileText className="h-3 w-3" />
+      {name || "View Receipt"}
+    </a>
   );
 };
 
