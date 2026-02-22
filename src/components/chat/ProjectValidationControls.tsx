@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { CheckCircle, XCircle, Loader2, ShieldCheck, CreditCard, Clock, ClipboardCheck, BadgeCheck, IndianRupee, LifeBuoy, MessageSquare, BadgeCheck as PaymentConfirmIcon } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, ShieldCheck, CreditCard, Clock, ClipboardCheck, BadgeCheck, IndianRupee, LifeBuoy, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -157,49 +157,12 @@ const ProjectValidationControls = ({
   const [rejectReason, setRejectReason] = useState("");
   const queryClient = useQueryClient();
 
-  // Fetch active payment confirmation for "Payment Confirm" button
-  const { data: activePaymentConfirmation } = useQuery({
-    queryKey: ["payment-confirm-status", projectId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("payment_confirmations")
-        .select("id, status, amount, payment_method, utr_number, receipt_path, receipt_name")
-        .eq("project_id", projectId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (error) throw error;
-      return data as { id: string; status: string; amount: number; payment_method: string | null; utr_number: string | null; receipt_path: string | null; receipt_name: string | null } | null;
-    },
-    refetchInterval: 10000,
-    enabled: isClient,
-  });
-
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["chat-room", projectId] });
     queryClient.invalidateQueries({ queryKey: ["client-projects"] });
   };
 
-  // Handle Payment Confirm (success/failure) from controls
-  const handlePaymentConfirmResult = async (result: "success" | "failure") => {
-    if (!activePaymentConfirmation) return;
-    setLoading(true);
-    try {
-      const { error } = await (supabase as any)
-        .from("payment_confirmations")
-        .update({ status: result })
-        .eq("id", activePaymentConfirmation.id);
-      if (error) throw error;
-      toast.success(result === "success" ? "Payment confirmed successfully!" : "Payment marked as failed.");
-      queryClient.invalidateQueries({ queryKey: ["payment-confirm-status", projectId] });
-      queryClient.invalidateQueries({ queryKey: ["payment-confirmations", projectId] });
-    } catch (e: any) {
-      toast.error(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // === Terminal statuses — both roles see banners ===
   if (projectStatus === "completed") {
     return (
       <div className="flex items-center gap-2 border-b bg-accent/10 px-4 py-2">
@@ -400,44 +363,6 @@ const ProjectValidationControls = ({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-
-        {/* Payment Confirm — visible when employee has submitted payment */}
-        {activePaymentConfirmation?.status === "paid" && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button size="sm" variant="outline" disabled={loading} className="gap-1 border-accent/30 text-accent hover:bg-accent/10">
-                {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <BadgeCheck className="h-3 w-3" />}
-                Payment Confirm
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Confirm Payment?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Employee has submitted payment of <strong>₹{activePaymentConfirmation.amount}</strong>
-                  {activePaymentConfirmation.payment_method && ` via ${activePaymentConfirmation.payment_method}`}.
-                  {activePaymentConfirmation.utr_number && (
-                    <> UTR: <strong className="font-mono">{activePaymentConfirmation.utr_number}</strong></>
-                  )}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => handlePaymentConfirmResult("failure")}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  Payment Failure
-                </AlertDialogAction>
-                <AlertDialogAction
-                  onClick={() => handlePaymentConfirmResult("success")}
-                >
-                  Payment Success
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
 
         <AlertDialog>
           <AlertDialogTrigger asChild>
