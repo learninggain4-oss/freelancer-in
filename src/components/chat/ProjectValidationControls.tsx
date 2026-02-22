@@ -223,33 +223,6 @@ const ProjectValidationControls = ({
     return json;
   };
 
-  const handlePaymentRequest = async () => {
-    setLoading(true);
-    try {
-      const { data: project } = await supabase
-        .from("projects")
-        .select("assigned_employee_id")
-        .eq("id", projectId)
-        .single();
-      if (!project?.assigned_employee_id) throw new Error("No assigned employee found");
-
-      const { error } = await supabase.from("payment_confirmations").insert({
-        project_id: projectId,
-        employee_id: project.assigned_employee_id,
-        amount: amount + validationFees,
-        status: "initiated",
-      });
-      if (error) throw error;
-      toast.success("Payment request sent to employee.");
-      invalidate();
-      queryClient.invalidateQueries({ queryKey: ["payment-confirmation", projectId] });
-    } catch (e: any) {
-      toast.error(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleConfirm = async () => {
     setLoading(true);
     try {
@@ -321,134 +294,14 @@ const ProjectValidationControls = ({
       text: "Validation Confirm",
       description: "The budget amount will be deducted from your wallet and held for the employee.",
     },
+    validation: {
+      icon: <CheckCircle className="h-3 w-3" />,
+      text: "Final Confirm",
+      description: "The total held amount (validation fees + budget) will be released to the employee's available balance. This cannot be undone.",
+    },
   };
 
   const current = confirmLabel[projectStatus];
-
-  // === Validation status: show two options ===
-  if (projectStatus === "validation") {
-    return (
-      <div className="flex flex-col gap-2 border-b bg-muted/50 px-4 py-3">
-        {/* Fee Summary */}
-        <div className="flex flex-wrap gap-3 rounded-md bg-background/80 px-3 py-2 text-xs">
-          <div className="flex items-center gap-1">
-            <IndianRupee className="h-3 w-3 text-muted-foreground" />
-            <span className="text-muted-foreground">Validation Fees:</span>
-            <span className="font-semibold text-foreground">₹{validationFees.toLocaleString("en-IN")}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <IndianRupee className="h-3 w-3 text-muted-foreground" />
-            <span className="text-muted-foreground">Budget:</span>
-            <span className="font-semibold text-foreground">₹{amount.toLocaleString("en-IN")}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-muted-foreground">Total:</span>
-            <span className="font-semibold text-primary">₹{(amount + validationFees).toLocaleString("en-IN")}</span>
-          </div>
-        </div>
-
-        {/* Step indicators */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {[1, 2, 3, 4].map((s) => (
-            <span
-              key={s}
-              className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
-                s === 4
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-accent/20 text-accent"
-              }`}
-            >
-              {s}
-            </span>
-          ))}
-          <span className="ml-1 font-medium text-foreground">
-            Step 4: Final Validation
-          </span>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Validation Request — triggers payment request */}
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button size="sm" variant="outline" disabled={loading} className="gap-1">
-                {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <CreditCard className="h-3 w-3" />}
-                Payment Request
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Send Payment Request?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will initiate a payment request to the employee. The employee will choose a payment method and the payment countdown will begin.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handlePaymentRequest}>Confirm</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          {/* Validation Confirm — releases payment */}
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button size="sm" disabled={loading} className="gap-1">
-                {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
-                Validation Confirm
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Confirm Validation & Release Payment?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  The total held amount (validation fees ₹{validationFees.toLocaleString("en-IN")} + budget ₹{amount.toLocaleString("en-IN")}) will be released to the employee's available balance. This cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirm}>Confirm</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          {/* Reject */}
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button size="sm" variant="outline" disabled={loading} className="gap-1 border-destructive/30 text-destructive hover:bg-destructive/10">
-                {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />}
-                Reject
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Reject Project?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will cancel the project. The held balance will remain on hold.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <Textarea
-                placeholder="Reason for rejection (optional)"
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                className="mt-2"
-              />
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setRejectReason("")}>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleReject}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  Confirm Rejection
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </div>
-    );
-  }
-
-  if (!current) return null;
 
   return (
     <div className="flex flex-col gap-2 border-b bg-muted/50 px-4 py-3">
