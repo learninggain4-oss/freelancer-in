@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 const navItems = [
   { label: "Overview", icon: LayoutDashboard, path: "/admin/dashboard" },
@@ -154,8 +155,11 @@ const AdminLayout = () => {
             <Menu className="h-5 w-5 text-muted-foreground" />
           </button>
           <h1 className="text-lg font-bold text-primary lg:hidden">Admin</h1>
+          <div className="ml-auto flex items-center gap-2">
+            <NotificationBell />
+          </div>
           {isSubPage && (
-            <div className="ml-auto flex items-center gap-1.5 text-sm lg:ml-0">
+            <div className="flex items-center gap-1.5 text-sm">
               <button
                 onClick={() => navigate("/admin/dashboard")}
                 className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
