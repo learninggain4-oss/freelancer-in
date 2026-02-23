@@ -15,6 +15,25 @@ export interface Notification {
   created_at: string;
 }
 
+export interface NotificationPreferences {
+  soundEnabled: boolean;
+  browserNotificationsEnabled: boolean;
+}
+
+const PREFS_KEY = "notification_preferences";
+
+export const getNotificationPreferences = (): NotificationPreferences => {
+  try {
+    const stored = localStorage.getItem(PREFS_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch {}
+  return { soundEnabled: true, browserNotificationsEnabled: true };
+};
+
+export const setNotificationPreferences = (prefs: NotificationPreferences) => {
+  localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+};
+
 const playNotificationSound = () => {
   try {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -75,8 +94,9 @@ export const useNotifications = () => {
     queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
     if (!isFirstLoad.current) {
       const record = payload.new as any;
-      playNotificationSound();
-      showBrowserNotification(record?.title || "New Notification", record?.message || "");
+      const prefs = getNotificationPreferences();
+      if (prefs.soundEnabled) playNotificationSound();
+      if (prefs.browserNotificationsEnabled) showBrowserNotification(record?.title || "New Notification", record?.message || "");
     }
   }, [user?.id, queryClient]);
 
