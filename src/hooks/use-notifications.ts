@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,9 +15,42 @@ export interface Notification {
   created_at: string;
 }
 
+const playNotificationSound = () => {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1046, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.3);
+  } catch {
+    // Audio not available
+  }
+};
+
+const showBrowserNotification = (title: string, body: string) => {
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "granted") {
+    new window.Notification(title, { body, icon: "/pwa-icon-512.png", tag: "freelancer-notif" });
+  } else if (Notification.permission !== "denied") {
+    Notification.requestPermission().then((perm) => {
+      if (perm === "granted") {
+        new window.Notification(title, { body, icon: "/pwa-icon-512.png", tag: "freelancer-notif" });
+      }
+    });
+  }
+};
+
 export const useNotifications = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const isFirstLoad = useRef(true);
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ["notifications", user?.id],
@@ -30,6 +63,7 @@ export const useNotifications = () => {
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
+      isFirstLoad.current = false;
       return data as Notification[];
     },
     enabled: !!user?.id,
@@ -37,8 +71,22 @@ export const useNotifications = () => {
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
+  const handleNewNotification = useCallback(async (payload: any) => {
+    queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+    if (!isFirstLoad.current) {
+      const record = payload.new as any;
+      playNotificationSound();
+      showBrowserNotification(record?.title || "New Notification", record?.message || "");
+    }
+  }, [user?.id, queryClient]);
+
   useEffect(() => {
     if (!user?.id) return;
+
+    // Request notification permission early
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
 
     const channel = supabase
       .channel(`notifications:${user.id}`)
@@ -50,16 +98,14 @@ export const useNotifications = () => {
           table: "notifications",
           filter: `user_id=eq.${user.id}`,
         },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
-        }
+        handleNewNotification
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, queryClient]);
+  }, [user?.id, handleNewNotification]);
 
   const markAsRead = useMutation({
     mutationFn: async (notificationId: string) => {
