@@ -6,13 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Gift, Users, Check, Loader2, Share2, UserCheck, Briefcase, Clock, Bell, Volume2 } from "lucide-react";
+import { Copy, Gift, Users, Check, Loader2, Share2, UserCheck, Briefcase, Clock } from "lucide-react";
 import { format } from "date-fns";
-import { getNotificationPreferences, setNotificationPreferences } from "@/hooks/use-notifications";
 
 interface ReferralEntry {
   referral_id: string;
@@ -235,8 +232,6 @@ const AccountSettings = () => {
 
         {/* Tab: Account */}
         <TabsContent value="account" className="space-y-4 mt-4">
-          <NotificationPreferencesCard />
-
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Account Information</CardTitle>
@@ -266,50 +261,6 @@ const AccountSettings = () => {
         </TabsContent>
       </Tabs>
     </div>
-  );
-};
-
-const NotificationPreferencesCard = () => {
-  const [prefs, setPrefs] = useState(getNotificationPreferences);
-
-  const toggle = (key: "soundEnabled" | "browserNotificationsEnabled") => {
-    const updated = { ...prefs, [key]: !prefs[key] };
-    setPrefs(updated);
-    setNotificationPreferences(updated);
-  };
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Bell className="h-5 w-5 text-primary" />
-          Notification Preferences
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Volume2 className="h-4 w-4 text-muted-foreground" />
-            <div>
-              <Label className="text-sm">Notification Sound</Label>
-              <p className="text-xs text-muted-foreground">Play a sound when new notifications arrive</p>
-            </div>
-          </div>
-          <Switch checked={prefs.soundEnabled} onCheckedChange={() => toggle("soundEnabled")} />
-        </div>
-        <Separator />
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Bell className="h-4 w-4 text-muted-foreground" />
-            <div>
-              <Label className="text-sm">Browser Notifications</Label>
-              <p className="text-xs text-muted-foreground">Show desktop notifications for new alerts</p>
-            </div>
-          </div>
-          <Switch checked={prefs.browserNotificationsEnabled} onCheckedChange={() => toggle("browserNotificationsEnabled")} />
-        </div>
-      </CardContent>
-    </Card>
   );
 };
 
