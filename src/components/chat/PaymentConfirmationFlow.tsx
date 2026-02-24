@@ -54,19 +54,9 @@ interface Props {
   projectId: string;
   isClient: boolean;
   assignedEmployeeId: string | null;
-  chatRoomId?: string;
 }
 
-const sendSystemMessage = async (chatRoomId: string | undefined, senderId: string | undefined, content: string) => {
-  if (!chatRoomId || !senderId) return;
-  await supabase.from("messages").insert({
-    chat_room_id: chatRoomId,
-    sender_id: senderId,
-    content,
-  });
-};
-
-const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId, chatRoomId }: Props) => {
+const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId }: Props) => {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
@@ -204,8 +194,6 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId, chat
         .from("payment_confirmations")
         .insert(insertData);
       if (error) throw error;
-      const methodsText = selectedMethods.length > 0 ? ` (Methods: ${selectedMethods.join(", ")})` : "";
-      await sendSystemMessage(chatRoomId, profile?.id, `💳 Payment Request — ₹${amt}${methodsText}`);
       toast.success("Payment Request sent to employee.");
       setAmount("");
       setSelectedMethods([]);
@@ -230,7 +218,6 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId, chat
         })
         .eq("id", confirmation.id);
       if (error) throw error;
-      await sendSystemMessage(chatRoomId, profile?.id, `💳 Payment method selected: ${employeeSelectedMethod}`);
       toast.success("Payment method selected. Waiting for client to share payment details.");
       setEmployeeSelectedMethod("");
     } catch (e: any) {
@@ -278,7 +265,6 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId, chat
         })
         .eq("id", confirmation.id);
       if (error) throw error;
-      await sendSystemMessage(chatRoomId, profile?.id, `💳 Payment details shared with employee`);
       toast.success("Payment details shared with employee.");
       setUpiId("");
       setBankDetails("");
@@ -323,7 +309,6 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId, chat
         })
         .eq("id", confirmation.id);
       if (error) throw error;
-      await sendSystemMessage(chatRoomId, profile?.id, `💳 Payment submitted — UTR: ${utrNumber.trim()}`);
       toast.success("Payment submitted! Waiting for client confirmation.");
       setUtrNumber("");
       setReceiptFile(null);
@@ -344,8 +329,6 @@ const PaymentConfirmationFlow = ({ projectId, isClient, assignedEmployeeId, chat
         .update({ status: result })
         .eq("id", confirmation.id);
       if (error) throw error;
-      const emoji = result === "success" ? "✅" : "❌";
-      await sendSystemMessage(chatRoomId, profile?.id, `${emoji} Payment ${result === "success" ? "confirmed successful" : "marked as failed"} — ₹${confirmation.amount}`);
       toast.success(result === "success" ? "Payment marked as successful!" : "Payment marked as failed.");
     } catch (e: any) {
       toast.error(e.message);
