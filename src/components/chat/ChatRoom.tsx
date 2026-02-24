@@ -157,6 +157,7 @@ const ChatRoom = () => {
           projectId={projectId!}
           isClient={profile?.user_type === "client" && (chatRoom as any).project?.client_id === profile?.id}
           assignedEmployeeId={(chatRoom as any).project?.assigned_employee_id}
+          chatRoomId={chatRoom?.id}
         />
 
         {/* Messages */}
