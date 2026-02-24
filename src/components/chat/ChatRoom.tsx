@@ -17,7 +17,6 @@ import ThreadPanel from "./ThreadPanel";
 import TypingIndicator from "./TypingIndicator";
 import ChatFileUpload from "./ChatFileUpload";
 import ProjectValidationControls from "./ProjectValidationControls";
-import PaymentConfirmationFlow from "./PaymentConfirmationFlow";
 
 const ChatRoom = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -150,13 +149,6 @@ const ChatRoom = () => {
           isClient={profile?.user_type === "client" && (chatRoom as any).project?.client_id === profile?.id}
           amount={Number((chatRoom as any).project?.amount ?? 0)}
           validationFees={Number((chatRoom as any).project?.validation_fees ?? 0)}
-        />
-
-        {/* Payment Confirmation Flow */}
-        <PaymentConfirmationFlow
-          projectId={projectId!}
-          isClient={profile?.user_type === "client" && (chatRoom as any).project?.client_id === profile?.id}
-          assignedEmployeeId={(chatRoom as any).project?.assigned_employee_id}
         />
 
         {/* Messages */}

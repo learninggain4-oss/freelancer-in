@@ -71,7 +71,6 @@ const EmployeeDashboard = () => {
       return data;
     },
     enabled: !!profile?.id,
-    refetchInterval: 30000,
   });
 
   // Earnings chart data (last 7 days of credits)
@@ -104,7 +103,6 @@ const EmployeeDashboard = () => {
       return Object.entries(dayMap).map(([day, amount]) => ({ day, amount }));
     },
     enabled: !!profile?.id,
-    refetchInterval: 30000,
   });
 
   // Active projects count
@@ -121,7 +119,6 @@ const EmployeeDashboard = () => {
       return count ?? 0;
     },
     enabled: !!profile?.id,
-    refetchInterval: 30000,
   });
 
   const totalBalance = (profile?.available_balance ?? 0) + (profile?.hold_balance ?? 0);

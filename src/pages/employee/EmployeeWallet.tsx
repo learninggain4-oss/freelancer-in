@@ -60,7 +60,6 @@ const EmployeeWallet = () => {
       return data;
     },
     enabled: !!profile?.id,
-    refetchInterval: 30000,
   });
 
   const { data: transactions = [], isLoading: tLoading } = useQuery({
@@ -77,7 +76,6 @@ const EmployeeWallet = () => {
       return data;
     },
     enabled: !!profile?.id,
-    refetchInterval: 30000,
   });
 
   const withdrawMutation = useMutation({

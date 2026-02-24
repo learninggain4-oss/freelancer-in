@@ -43,7 +43,6 @@ const ClientWallet = () => {
       return data;
     },
     enabled: !!profile?.id,
-    refetchInterval: 30000,
   });
 
   const addMoneyMutation = useMutation({

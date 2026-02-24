@@ -72,7 +72,6 @@ const ClientDashboard = () => {
       return count ?? 0;
     },
     enabled: !!profile?.id,
-    refetchInterval: 30000,
   });
 
   const { data: recentRequests = [], isLoading } = useQuery({
@@ -88,7 +87,6 @@ const ClientDashboard = () => {
       return (data ?? []).filter((r: any) => r.project?.client_id === profile.id);
     },
     enabled: !!profile?.id,
-    refetchInterval: 30000,
   });
 
   const totalBalance = (profile?.available_balance ?? 0) + (profile?.hold_balance ?? 0);
