@@ -332,6 +332,39 @@ export type Database = {
           },
         ]
       }
+      countdowns: {
+        Row: {
+          created_at: string
+          display_order: number
+          duration_minutes: number
+          id: string
+          is_active: boolean
+          is_cleared: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          duration_minutes?: number
+          id?: string
+          is_active?: boolean
+          is_cleared?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          duration_minutes?: number
+          id?: string
+          is_active?: boolean
+          is_cleared?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       custom_quick_replies: {
         Row: {
           category: string

@@ -27,6 +27,9 @@ import {
   Bell,
   HelpCircle,
   BarChart3,
+  CreditCard,
+  Clock,
+  BadgeCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -45,6 +48,9 @@ const navItems = [
   { label: "Recovery", icon: LifeBuoy, path: "/admin/recovery-requests" },
   { label: "Help & Support", icon: HelpCircle, path: "/admin/help-support" },
   { label: "Support Reports", icon: BarChart3, path: "/admin/support-reporting" },
+  { label: "Validation", icon: BadgeCheck, path: "/admin/validation" },
+  { label: "Payment Methods", icon: CreditCard, path: "/admin/payment-methods" },
+  { label: "Countdowns", icon: Clock, path: "/admin/countdowns" },
   { label: "Services", icon: Layers, path: "/admin/services" },
   { label: "Legal Docs", icon: FileText, path: "/admin/legal-documents" },
   { label: "Notifications", icon: Bell, path: "/admin/notifications" },

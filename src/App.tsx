@@ -55,6 +55,9 @@ const EmployeeSupportChat = lazy(() => import("./pages/employee/EmployeeSupportC
 const HelpSupport = lazy(() => import("./pages/HelpSupport"));
 const AdminHelpSupport = lazy(() => import("./pages/admin/AdminHelpSupport"));
 const AdminSupportReporting = lazy(() => import("./pages/admin/AdminSupportReporting"));
+const AdminPaymentMethods = lazy(() => import("./pages/admin/AdminPaymentMethods"));
+const AdminCountdowns = lazy(() => import("./pages/admin/AdminCountdowns"));
+const AdminValidation = lazy(() => import("./pages/admin/AdminValidation"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
@@ -164,6 +167,9 @@ const App = () => (
                 <Route path="notifications" element={<AdminNotifications />} />
                 <Route path="help-support" element={<AdminHelpSupport />} />
                 <Route path="support-reporting" element={<AdminSupportReporting />} />
+                <Route path="payment-methods" element={<AdminPaymentMethods />} />
+                <Route path="countdowns" element={<AdminCountdowns />} />
+                <Route path="validation" element={<AdminValidation />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
