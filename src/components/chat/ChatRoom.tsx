@@ -17,6 +17,7 @@ import ThreadPanel from "./ThreadPanel";
 import TypingIndicator from "./TypingIndicator";
 import ChatFileUpload from "./ChatFileUpload";
 import ProjectValidationControls from "./ProjectValidationControls";
+import PaymentExchangePanel from "./PaymentExchangePanel";
 
 const ChatRoom = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -149,6 +150,14 @@ const ChatRoom = () => {
           isClient={profile?.user_type === "client" && (chatRoom as any).project?.client_id === profile?.id}
           amount={Number((chatRoom as any).project?.amount ?? 0)}
           validationFees={Number((chatRoom as any).project?.validation_fees ?? 0)}
+        />
+
+        {/* Payment Exchange (PR / PC) */}
+        <PaymentExchangePanel
+          projectId={projectId!}
+          projectStatus={(chatRoom as any).project?.status ?? ""}
+          isClient={profile?.user_type === "client" && (chatRoom as any).project?.client_id === profile?.id}
+          employeeId={(chatRoom as any).project?.assigned_employee_id ?? null}
         />
 
         {/* Messages */}
