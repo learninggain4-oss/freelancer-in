@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,13 +32,22 @@ import {
   Smartphone,
   Eye,
   RefreshCw,
+  Copy,
+  Download,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  Countdown display                                                  */
+/*  Countdown display with label                                       */
 /* ------------------------------------------------------------------ */
-const CountdownDisplay = ({ deadline }: { deadline: Date }) => {
+const CountdownDisplay = ({
+  deadline,
+  label,
+}: {
+  deadline: Date;
+  label?: string;
+}) => {
   const [remaining, setRemaining] = useState(() =>
     Math.max(0, deadline.getTime() - Date.now())
   );
@@ -53,8 +62,9 @@ const CountdownDisplay = ({ deadline }: { deadline: Date }) => {
 
   if (remaining <= 0)
     return (
-      <Badge variant="destructive" className="text-[10px]">
-        Time Expired
+      <Badge variant="destructive" className="text-[10px] gap-1">
+        <Clock className="h-3 w-3" />
+        {label ? `${label} — ` : ""}Time Expired
       </Badge>
     );
 
@@ -64,10 +74,28 @@ const CountdownDisplay = ({ deadline }: { deadline: Date }) => {
   return (
     <Badge variant="outline" className="text-[10px] gap-1">
       <Clock className="h-3 w-3" />
+      {label ? `${label}: ` : ""}
       {m}:{s.toString().padStart(2, "0")}
     </Badge>
   );
 };
+
+/* ------------------------------------------------------------------ */
+/*  Copy helper                                                        */
+/* ------------------------------------------------------------------ */
+const CopyButton = ({ text, label }: { text: string; label?: string }) => (
+  <button
+    onClick={() => {
+      navigator.clipboard.writeText(text);
+      toast.success(`${label || "Text"} copied!`);
+    }}
+    className="inline-flex items-center gap-0.5 text-primary hover:underline text-[10px]"
+    title="Copy"
+  >
+    <Copy className="h-3 w-3" />
+    Copy
+  </button>
+);
 
 /* ------------------------------------------------------------------ */
 /*  Types / helpers                                                    */
@@ -89,12 +117,31 @@ const ACTIVE_STATUSES = [
 ];
 
 const STATUS_LABELS: Record<string, { cls: string; text: string }> = {
-  initiated: { cls: "bg-warning/20 text-warning", text: "Awaiting Method Selection" },
-  method_selected: { cls: "bg-primary/20 text-primary", text: "Awaiting Payment Details" },
-  details_shared: { cls: "bg-primary/20 text-primary", text: "Awaiting Payment Proof" },
-  utr_submitted: { cls: "bg-warning/20 text-warning", text: "Awaiting Verification" },
+  initiated: {
+    cls: "bg-warning/20 text-warning",
+    text: "Awaiting Method Selection",
+  },
+  method_selected: {
+    cls: "bg-primary/20 text-primary",
+    text: "Awaiting Payment Details",
+  },
+  details_shared: {
+    cls: "bg-primary/20 text-primary",
+    text: "Awaiting Payment Proof",
+  },
+  proof_submitted: {
+    cls: "bg-warning/20 text-warning",
+    text: "Awaiting OTP Verification",
+  },
+  otp_submitted: {
+    cls: "bg-warning/20 text-warning",
+    text: "Auto Checking…",
+  },
   success: { cls: "bg-accent/20 text-accent", text: "Payment Successful" },
-  failed: { cls: "bg-destructive/20 text-destructive", text: "Payment Failed" },
+  failed: {
+    cls: "bg-destructive/20 text-destructive",
+    text: "Payment Failed",
+  },
 };
 
 const parseClientInfo = (raw: string | null) => {
@@ -123,22 +170,27 @@ const PaymentExchangePanel = ({
   /* --- Form states --- */
   const [prAmount, setPrAmount] = useState("");
   const [prMethods, setPrMethods] = useState<string[]>([]);
-  const [prMessage, setPrMessage] = useState("");
+  const [prWarning, setPrWarning] = useState("");
+  const [showPrWarning, setShowPrWarning] = useState(false);
 
   const [selectedMethod, setSelectedMethod] = useState("");
+  const [empPhone, setEmpPhone] = useState("");
 
-  const [shareType, setShareType] = useState<ShareType>("upi");
+  const [shareTypes, setShareTypes] = useState<ShareType[]>([]);
   const [upiId, setUpiId] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
   const [bankHolder, setBankHolder] = useState("");
   const [bankName, setBankName] = useState("");
   const [bankAccount, setBankAccount] = useState("");
   const [bankIfsc, setBankIfsc] = useState("");
   const [qrFile, setQrFile] = useState<File | null>(null);
+  const [shareWarning, setShareWarning] = useState("");
+  const [showShareWarning, setShowShareWarning] = useState(false);
 
   const [utrNumber, setUtrNumber] = useState("");
-  const [otp, setOtp] = useState("");
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+
+  const [otpPhone, setOtpPhone] = useState("");
+  const [otp, setOtp] = useState("");
 
   const [clientReceiptFile, setClientReceiptFile] = useState<File | null>(null);
 
@@ -225,6 +277,19 @@ const PaymentExchangePanel = ({
     (!confirmation || status === "failed" || status === "success") &&
     isActive;
 
+  /* --- Countdown lookup by name --- */
+  const findCountdown = (name: string) =>
+    countdowns.find(
+      (c: any) => c.name.toLowerCase() === name.toLowerCase()
+    );
+
+  const getDeadlineByName = (ts: string | null, countdownName: string) => {
+    if (!ts) return null;
+    const cd = findCountdown(countdownName);
+    if (!cd) return null;
+    return new Date(new Date(ts).getTime() + cd.duration_minutes * 60000);
+  };
+
   /* --- Helpers --- */
   const uploadFile = async (file: File, prefix: string) => {
     const ext = file.name.split(".").pop();
@@ -236,10 +301,22 @@ const PaymentExchangePanel = ({
     return { path, name: file.name };
   };
 
-  const getDeadline = (ts: string | null, idx: number) => {
-    if (!ts || !countdowns[idx]) return null;
-    return new Date(
-      new Date(ts).getTime() + countdowns[idx].duration_minutes * 60000
+  const allMethodNames = paymentMethods.map((m: any) => m.name);
+  const allSelected =
+    allMethodNames.length > 0 &&
+    allMethodNames.every((n: string) => prMethods.includes(n));
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setPrMethods([]);
+    } else {
+      setPrMethods([...allMethodNames]);
+    }
+  };
+
+  const toggleShareType = (t: ShareType) => {
+    setShareTypes((prev) =>
+      prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]
     );
   };
 
@@ -253,7 +330,7 @@ const PaymentExchangePanel = ({
     try {
       const info = JSON.stringify({
         methods: prMethods,
-        message: prMessage || undefined,
+        warning: showPrWarning && prWarning ? prWarning : undefined,
       });
       const { error } = await supabase.from("payment_confirmations").insert({
         project_id: projectId,
@@ -266,7 +343,8 @@ const PaymentExchangePanel = ({
       toast.success("Payment Request sent!");
       setPrAmount("");
       setPrMethods([]);
-      setPrMessage("");
+      setPrWarning("");
+      setShowPrWarning(false);
       setShowInitForm(false);
       invalidate();
     } catch (e: any) {
@@ -277,13 +355,14 @@ const PaymentExchangePanel = ({
   };
 
   const handleSelectMethod = async () => {
-    if (!selectedMethod || !confirmation) return;
+    if (!selectedMethod || !confirmation || !empPhone.trim()) return;
     setLoading(true);
     try {
       const { error } = await supabase
         .from("payment_confirmations")
         .update({
           payment_method: selectedMethod,
+          phone_number: empPhone.trim(),
           method_selected_at: new Date().toISOString(),
           status: "method_selected",
         })
@@ -299,28 +378,32 @@ const PaymentExchangePanel = ({
   };
 
   const handleShareDetails = async () => {
-    if (!confirmation) return;
+    if (!confirmation || shareTypes.length === 0) return;
     setLoading(true);
     try {
       const info = clientInfo || {};
-      if (shareType === "upi") {
+      info.shared_types = shareTypes;
+
+      if (shareTypes.includes("upi")) {
         info.upi_id = upiId;
-        info.phone_number = phoneNumber;
-      } else if (shareType === "bank") {
+      }
+      if (shareTypes.includes("bank")) {
         info.bank_holder = bankHolder;
         info.bank_name = bankName;
         info.bank_account = bankAccount;
         info.bank_ifsc = bankIfsc;
+      }
+      if (showShareWarning && shareWarning) {
+        info.share_warning = shareWarning;
       }
 
       const updates: Record<string, any> = {
         details_shared_at: new Date().toISOString(),
         status: "details_shared",
         client_payment_info: JSON.stringify(info),
-        phone_number: phoneNumber || confirmation.phone_number,
       };
 
-      if (qrFile) {
+      if (shareTypes.includes("qr") && qrFile) {
         const { path, name } = await uploadFile(qrFile, "qr");
         updates.qr_code_path = path;
         updates.qr_code_name = name;
@@ -341,28 +424,44 @@ const PaymentExchangePanel = ({
   };
 
   const handleSubmitProof = async () => {
-    if (!confirmation || !utrNumber) return;
+    if (!confirmation || utrNumber.length !== 12 || !receiptFile) return;
     setLoading(true);
     try {
-      const updates: Record<string, any> = {
-        utr_number: utrNumber,
-        otp: otp || null,
-        otp_submitted_at: new Date().toISOString(),
-        status: "utr_submitted",
-      };
-
-      if (receiptFile) {
-        const { path, name } = await uploadFile(receiptFile, "receipt");
-        updates.receipt_path = path;
-        updates.receipt_name = name;
-      }
-
+      const { path, name } = await uploadFile(receiptFile, "receipt");
       const { error } = await supabase
         .from("payment_confirmations")
-        .update(updates)
+        .update({
+          utr_number: utrNumber,
+          receipt_path: path,
+          receipt_name: name,
+          status: "proof_submitted",
+        })
         .eq("id", confirmation.id);
       if (error) throw error;
       toast.success("Payment proof submitted!");
+      invalidate();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendOtp = async () => {
+    if (!confirmation || !otpPhone.trim() || !otp.trim()) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("payment_confirmations")
+        .update({
+          phone_number: otpPhone.trim(),
+          otp: otp.trim(),
+          otp_submitted_at: new Date().toISOString(),
+          status: "otp_submitted",
+        })
+        .eq("id", confirmation.id);
+      if (error) throw error;
+      toast.success("OTP sent for verification!");
       invalidate();
     } catch (e: any) {
       toast.error(e.message);
@@ -375,10 +474,12 @@ const PaymentExchangePanel = ({
     if (!confirmation) return;
     setLoading(true);
     try {
-      // Optionally upload client receipt
       const info = clientInfo || {};
       if (clientReceiptFile) {
-        const { path, name } = await uploadFile(clientReceiptFile, "client-receipt");
+        const { path, name } = await uploadFile(
+          clientReceiptFile,
+          "client-receipt"
+        );
         info.client_receipt_path = path;
         info.client_receipt_name = name;
       }
@@ -453,7 +554,7 @@ const PaymentExchangePanel = ({
             </div>
           )}
 
-          {/* =================== NO CONFIRMATION / INITIATE =================== */}
+          {/* =================== INITIATE (Client) =================== */}
           {canInitiate && !showInitForm && (
             <Button
               size="sm"
@@ -483,35 +584,53 @@ const PaymentExchangePanel = ({
               </div>
               <div>
                 <Label className="text-xs">Payment Methods</Label>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {paymentMethods.map((m: any) => (
-                    <label
-                      key={m.id}
-                      className="flex items-center gap-1.5 text-xs cursor-pointer"
-                    >
-                      <Checkbox
-                        checked={prMethods.includes(m.name)}
-                        onCheckedChange={(c) =>
-                          setPrMethods((prev) =>
-                            c
-                              ? [...prev, m.name]
-                              : prev.filter((n) => n !== m.name)
-                          )
-                        }
-                      />
-                      {m.name}
-                    </label>
-                  ))}
+                <div className="mt-1 space-y-1">
+                  <label className="flex items-center gap-1.5 text-xs cursor-pointer font-medium text-primary">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                    Select All
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {paymentMethods.map((m: any) => (
+                      <label
+                        key={m.id}
+                        className="flex items-center gap-1.5 text-xs cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={prMethods.includes(m.name)}
+                          onCheckedChange={(c) =>
+                            setPrMethods((prev) =>
+                              c
+                                ? [...prev, m.name]
+                                : prev.filter((n) => n !== m.name)
+                            )
+                          }
+                        />
+                        {m.name}
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div>
-                <Label className="text-xs">Message (optional)</Label>
-                <Textarea
-                  value={prMessage}
-                  onChange={(e) => setPrMessage(e.target.value)}
-                  placeholder="Instructions for the employee..."
-                  className="text-sm min-h-[50px]"
-                />
+                <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                  <Checkbox
+                    checked={showPrWarning}
+                    onCheckedChange={(c) => setShowPrWarning(!!c)}
+                  />
+                  <AlertTriangle className="h-3 w-3 text-warning" />
+                  Send Warning Message
+                </label>
+                {showPrWarning && (
+                  <Textarea
+                    value={prWarning}
+                    onChange={(e) => setPrWarning(e.target.value)}
+                    placeholder="Enter warning message for the employee..."
+                    className="text-sm min-h-[50px] mt-1"
+                  />
+                )}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -543,17 +662,20 @@ const PaymentExchangePanel = ({
             </p>
           )}
 
-          {/* =================== INITIATED: Employee selects method =================== */}
+          {/* =================== INITIATED: Employee selects method + phone =================== */}
           {status === "initiated" && (
             <>
-              {clientInfo?.message && (
-                <p className="text-xs bg-muted/50 rounded p-2 italic">
-                  "{clientInfo.message}"
-                </p>
+              {clientInfo?.warning && (
+                <div className="flex items-start gap-1.5 text-xs bg-warning/10 border border-warning/30 rounded p-2">
+                  <AlertTriangle className="h-3.5 w-3.5 text-warning shrink-0 mt-0.5" />
+                  <span className="text-warning font-medium">
+                    {clientInfo.warning}
+                  </span>
+                </div>
               )}
               {!isClient ? (
-                <div className="space-y-2">
-                  <Label className="text-xs">Select Payment Method</Label>
+                <div className="space-y-2 rounded-md border p-3">
+                  <p className="text-xs font-medium">Select Payment Method</p>
                   <Select
                     value={selectedMethod}
                     onValueChange={setSelectedMethod}
@@ -569,10 +691,24 @@ const PaymentExchangePanel = ({
                       ))}
                     </SelectContent>
                   </Select>
+                  <div>
+                    <Label className="text-xs">
+                      Payment App Phone Number
+                    </Label>
+                    <Input
+                      value={empPhone}
+                      onChange={(e) => setEmpPhone(e.target.value)}
+                      placeholder="+91XXXXXXXXXX"
+                      className="h-8 text-sm"
+                      maxLength={13}
+                    />
+                  </div>
                   <Button
                     size="sm"
                     onClick={handleSelectMethod}
-                    disabled={loading || !selectedMethod}
+                    disabled={
+                      loading || !selectedMethod || !empPhone.trim()
+                    }
                   >
                     {loading && (
                       <Loader2 className="h-3 w-3 animate-spin mr-1" />
@@ -588,43 +724,80 @@ const PaymentExchangePanel = ({
             </>
           )}
 
-          {/* =================== METHOD_SELECTED: Client shares details =================== */}
+          {/* =================== METHOD_SELECTED: Client sees phone + shares details =================== */}
           {status === "method_selected" && (
             <>
+              {/* Auto Matching Countdown */}
               <div className="flex items-center gap-2">
                 {(() => {
-                  const dl = getDeadline(
+                  const dl = getDeadlineByName(
                     confirmation?.method_selected_at ?? null,
-                    0
+                    "Auto Matching"
                   );
-                  return dl ? <CountdownDisplay deadline={dl} /> : null;
+                  return dl ? (
+                    <CountdownDisplay
+                      deadline={dl}
+                      label="Auto Matching"
+                    />
+                  ) : null;
                 })()}
               </div>
+
+              {/* Employee phone visible to client */}
+              {confirmation?.phone_number && (
+                <div className="text-xs bg-muted/50 rounded p-2 space-y-1">
+                  <p className="font-medium text-foreground">
+                    Employee Payment App Phone:
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-semibold">
+                      {confirmation.phone_number}
+                    </span>
+                    <CopyButton
+                      text={confirmation.phone_number}
+                      label="Phone number"
+                    />
+                  </div>
+                </div>
+              )}
+
               {isClient ? (
                 <div className="space-y-2 rounded-md border p-3">
-                  <p className="text-xs font-medium">Share Payment Details</p>
-                  <div className="flex gap-1.5">
+                  <p className="text-xs font-medium">
+                    Share Payment Details
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Select one or more options to share
+                  </p>
+                  <div className="flex gap-1.5 flex-wrap">
                     {(["qr", "upi", "bank"] as ShareType[]).map((t) => (
-                      <Button
+                      <label
                         key={t}
-                        size="sm"
-                        variant={shareType === t ? "default" : "outline"}
-                        onClick={() => setShareType(t)}
-                        className="text-xs h-7 gap-1"
+                        className="flex items-center gap-1 text-xs cursor-pointer"
                       >
-                        {t === "qr" && <QrCode className="h-3 w-3" />}
-                        {t === "upi" && <Smartphone className="h-3 w-3" />}
-                        {t === "bank" && <Building2 className="h-3 w-3" />}
+                        <Checkbox
+                          checked={shareTypes.includes(t)}
+                          onCheckedChange={() => toggleShareType(t)}
+                        />
+                        {t === "qr" && (
+                          <QrCode className="h-3 w-3" />
+                        )}
+                        {t === "upi" && (
+                          <Smartphone className="h-3 w-3" />
+                        )}
+                        {t === "bank" && (
+                          <Building2 className="h-3 w-3" />
+                        )}
                         {t === "qr"
                           ? "QR Code"
                           : t === "upi"
-                          ? "UPI"
-                          : "Bank"}
-                      </Button>
+                          ? "UPI ID"
+                          : "Bank Details"}
+                      </label>
                     ))}
                   </div>
 
-                  {shareType === "qr" && (
+                  {shareTypes.includes("qr") && (
                     <div>
                       <Label className="text-xs">Upload QR Code</Label>
                       <Input
@@ -638,30 +811,19 @@ const PaymentExchangePanel = ({
                     </div>
                   )}
 
-                  {shareType === "upi" && (
-                    <div className="grid gap-2">
-                      <div>
-                        <Label className="text-xs">UPI ID</Label>
-                        <Input
-                          value={upiId}
-                          onChange={(e) => setUpiId(e.target.value)}
-                          placeholder="example@upi"
-                          className="h-8 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Phone Number</Label>
-                        <Input
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
-                          placeholder="+91..."
-                          className="h-8 text-sm"
-                        />
-                      </div>
+                  {shareTypes.includes("upi") && (
+                    <div>
+                      <Label className="text-xs">UPI ID</Label>
+                      <Input
+                        value={upiId}
+                        onChange={(e) => setUpiId(e.target.value)}
+                        placeholder="example@upi"
+                        className="h-8 text-sm"
+                      />
                     </div>
                   )}
 
-                  {shareType === "bank" && (
+                  {shareTypes.includes("bank") && (
                     <div className="grid gap-2">
                       <Input
                         value={bankHolder}
@@ -690,10 +852,28 @@ const PaymentExchangePanel = ({
                     </div>
                   )}
 
+                  {/* Warning message option */}
+                  <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                    <Checkbox
+                      checked={showShareWarning}
+                      onCheckedChange={(c) => setShowShareWarning(!!c)}
+                    />
+                    <AlertTriangle className="h-3 w-3 text-warning" />
+                    Send Warning Message
+                  </label>
+                  {showShareWarning && (
+                    <Textarea
+                      value={shareWarning}
+                      onChange={(e) => setShareWarning(e.target.value)}
+                      placeholder="Enter warning message..."
+                      className="text-sm min-h-[50px]"
+                    />
+                  )}
+
                   <Button
                     size="sm"
                     onClick={handleShareDetails}
-                    disabled={loading}
+                    disabled={loading || shareTypes.length === 0}
                   >
                     {loading ? (
                       <Loader2 className="h-3 w-3 animate-spin mr-1" />
@@ -714,69 +894,124 @@ const PaymentExchangePanel = ({
           {/* =================== DETAILS_SHARED: Employee submits proof =================== */}
           {status === "details_shared" && (
             <>
+              {/* Auto Payment Remaining Countdown */}
               <div className="flex items-center gap-2">
                 {(() => {
-                  const dl = getDeadline(
+                  const dl = getDeadlineByName(
                     confirmation?.details_shared_at ?? null,
-                    1
+                    "Auto Payment Remaining"
                   );
-                  return dl ? <CountdownDisplay deadline={dl} /> : null;
+                  return dl ? (
+                    <CountdownDisplay
+                      deadline={dl}
+                      label="Auto Payment Remaining"
+                    />
+                  ) : null;
                 })()}
               </div>
 
-              {/* Show shared details to both */}
+              {/* Warning message from client */}
+              {clientInfo?.share_warning && (
+                <div className="flex items-start gap-1.5 text-xs bg-warning/10 border border-warning/30 rounded p-2">
+                  <AlertTriangle className="h-3.5 w-3.5 text-warning shrink-0 mt-0.5" />
+                  <span className="text-warning font-medium">
+                    {clientInfo.share_warning}
+                  </span>
+                </div>
+              )}
+
+              {/* Shared details visible to both */}
               <div className="text-xs bg-muted/50 rounded p-2 space-y-1">
-                <p className="font-medium text-foreground">Payment Details:</p>
-                {clientInfo?.upi_id && <p>UPI: {clientInfo.upi_id}</p>}
-                {clientInfo?.phone_number && (
-                  <p>Phone: {clientInfo.phone_number}</p>
+                <p className="font-medium text-foreground">
+                  Payment Details:
+                </p>
+                {clientInfo?.upi_id && (
+                  <div className="flex items-center gap-2">
+                    <span>UPI: {clientInfo.upi_id}</span>
+                    {!isClient && (
+                      <CopyButton
+                        text={clientInfo.upi_id}
+                        label="UPI ID"
+                      />
+                    )}
+                  </div>
                 )}
                 {clientInfo?.bank_holder && (
-                  <p>
-                    Bank: {clientInfo.bank_holder} – {clientInfo.bank_name}
-                  </p>
-                )}
-                {clientInfo?.bank_account && (
-                  <p>
-                    A/C: {clientInfo.bank_account} | IFSC:{" "}
-                    {clientInfo.bank_ifsc}
-                  </p>
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span>
+                        Bank: {clientInfo.bank_holder} –{" "}
+                        {clientInfo.bank_name}
+                      </span>
+                      {!isClient && (
+                        <CopyButton
+                          text={`${clientInfo.bank_holder}, ${clientInfo.bank_name}, A/C: ${clientInfo.bank_account}, IFSC: ${clientInfo.bank_ifsc}`}
+                          label="Bank details"
+                        />
+                      )}
+                    </div>
+                    <p>
+                      A/C: {clientInfo.bank_account} | IFSC:{" "}
+                      {clientInfo.bank_ifsc}
+                    </p>
+                  </div>
                 )}
                 {qrUrl && (
-                  <a
-                    href={qrUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-primary underline"
-                  >
-                    <Eye className="h-3 w-3" /> View QR Code
-                  </a>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={qrUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-primary underline"
+                    >
+                      <Eye className="h-3 w-3" /> View QR Code
+                    </a>
+                    {!isClient && (
+                      <a
+                        href={qrUrl}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-0.5 text-primary hover:underline text-[10px]"
+                      >
+                        <Download className="h-3 w-3" /> Download
+                      </a>
+                    )}
+                  </div>
                 )}
               </div>
 
               {!isClient ? (
                 <div className="space-y-2 rounded-md border p-3">
-                  <p className="text-xs font-medium">Submit Payment Proof</p>
+                  <p className="text-xs font-medium">
+                    Submit Payment Proof
+                  </p>
                   <div>
-                    <Label className="text-xs">UTR / Reference Number</Label>
+                    <Label className="text-xs">
+                      UTR / Reference Number (12 digits)
+                    </Label>
                     <Input
                       value={utrNumber}
-                      onChange={(e) => setUtrNumber(e.target.value)}
-                      placeholder="Enter UTR number"
-                      className="h-8 text-sm"
+                      onChange={(e) => {
+                        const val = e.target.value
+                          .replace(/[^0-9]/g, "")
+                          .slice(0, 12);
+                        setUtrNumber(val);
+                      }}
+                      placeholder="Enter 12-digit UTR number"
+                      className="h-8 text-sm font-mono"
+                      maxLength={12}
                     />
+                    {utrNumber && utrNumber.length !== 12 && (
+                      <p className="text-[10px] text-destructive mt-0.5">
+                        UTR must be exactly 12 digits
+                      </p>
+                    )}
                   </div>
                   <div>
-                    <Label className="text-xs">OTP (from payment app)</Label>
-                    <Input
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      placeholder="Enter OTP if applicable"
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Upload Receipt</Label>
+                    <Label className="text-xs">
+                      Upload Payment Receipt *
+                    </Label>
                     <Input
                       type="file"
                       accept="image/*,.pdf"
@@ -789,7 +1024,11 @@ const PaymentExchangePanel = ({
                   <Button
                     size="sm"
                     onClick={handleSubmitProof}
-                    disabled={loading || !utrNumber}
+                    disabled={
+                      loading ||
+                      utrNumber.length !== 12 ||
+                      !receiptFile
+                    }
                   >
                     {loading ? (
                       <Loader2 className="h-3 w-3 animate-spin mr-1" />
@@ -807,35 +1046,195 @@ const PaymentExchangePanel = ({
             </>
           )}
 
-          {/* =================== UTR_SUBMITTED: Client verifies =================== */}
-          {status === "utr_submitted" && (
+          {/* =================== PROOF_SUBMITTED: Employee enters OTP =================== */}
+          {status === "proof_submitted" && (
             <>
+              {/* Show proof to both */}
               <div className="text-xs bg-muted/50 rounded p-2 space-y-1">
-                <p className="font-medium text-foreground">Payment Proof:</p>
-                <p>
-                  UTR:{" "}
-                  <span className="font-mono font-semibold">
-                    {confirmation?.utr_number}
-                  </span>
+                <p className="font-medium text-foreground">
+                  Payment Proof:
                 </p>
-                {confirmation?.otp && (
-                  <p>
+                <div className="flex items-center gap-2">
+                  <span>
+                    UTR:{" "}
+                    <span className="font-mono font-semibold">
+                      {confirmation?.utr_number}
+                    </span>
+                  </span>
+                  {isClient && confirmation?.utr_number && (
+                    <CopyButton
+                      text={confirmation.utr_number}
+                      label="UTR number"
+                    />
+                  )}
+                </div>
+                {receiptUrl && (
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={receiptUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-primary underline"
+                    >
+                      <Eye className="h-3 w-3" /> View Receipt
+                    </a>
+                    {isClient && (
+                      <a
+                        href={receiptUrl}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-0.5 text-primary hover:underline text-[10px]"
+                      >
+                        <Download className="h-3 w-3" /> Download
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {!isClient ? (
+                <div className="space-y-2 rounded-md border p-3">
+                  <p className="text-xs font-medium">Send OTP</p>
+                  <div>
+                    <Label className="text-xs">
+                      Payment App Phone Number
+                    </Label>
+                    <Input
+                      value={otpPhone}
+                      onChange={(e) => setOtpPhone(e.target.value)}
+                      placeholder="+91XXXXXXXXXX"
+                      className="h-8 text-sm"
+                      maxLength={13}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Enter OTP</Label>
+                    <Input
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      placeholder="Enter OTP from payment app"
+                      className="h-8 text-sm font-mono"
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleSendOtp}
+                    disabled={
+                      loading || !otpPhone.trim() || !otp.trim()
+                    }
+                  >
+                    {loading ? (
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                    ) : (
+                      <Send className="h-3 w-3 mr-1" />
+                    )}
+                    Send OTP
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Waiting for employee to send OTP…
+                </p>
+              )}
+            </>
+          )}
+
+          {/* =================== OTP_SUBMITTED: Client verifies =================== */}
+          {status === "otp_submitted" && (
+            <>
+              {/* Send OTP Countdown + Auto Checking Countdown */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {(() => {
+                  const dl = getDeadlineByName(
+                    confirmation?.otp_submitted_at ?? null,
+                    "Send Otp"
+                  );
+                  return dl ? (
+                    <CountdownDisplay
+                      deadline={dl}
+                      label="Send OTP"
+                    />
+                  ) : null;
+                })()}
+                {(() => {
+                  const dl = getDeadlineByName(
+                    confirmation?.otp_submitted_at ?? null,
+                    "Auto Checking"
+                  );
+                  return dl ? (
+                    <CountdownDisplay
+                      deadline={dl}
+                      label="Auto Checking"
+                    />
+                  ) : null;
+                })()}
+              </div>
+
+              {/* Proof + OTP details */}
+              <div className="text-xs bg-muted/50 rounded p-2 space-y-1">
+                <p className="font-medium text-foreground">
+                  Payment Proof & OTP:
+                </p>
+                <div className="flex items-center gap-2">
+                  <span>
+                    UTR:{" "}
+                    <span className="font-mono font-semibold">
+                      {confirmation?.utr_number}
+                    </span>
+                  </span>
+                  {isClient && confirmation?.utr_number && (
+                    <CopyButton
+                      text={confirmation.utr_number}
+                      label="UTR number"
+                    />
+                  )}
+                </div>
+                {receiptUrl && (
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={receiptUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-primary underline"
+                    >
+                      <Eye className="h-3 w-3" /> View Receipt
+                    </a>
+                    {isClient && (
+                      <a
+                        href={receiptUrl}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-0.5 text-primary hover:underline text-[10px]"
+                      >
+                        <Download className="h-3 w-3" /> Download
+                      </a>
+                    )}
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <span>
+                    Phone:{" "}
+                    <span className="font-mono font-semibold">
+                      {confirmation?.phone_number}
+                    </span>
+                  </span>
+                  {isClient && confirmation?.phone_number && (
+                    <CopyButton
+                      text={confirmation.phone_number}
+                      label="Phone number"
+                    />
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span>
                     OTP:{" "}
                     <span className="font-mono font-semibold">
-                      {confirmation.otp}
+                      {confirmation?.otp}
                     </span>
-                  </p>
-                )}
-                {receiptUrl && (
-                  <a
-                    href={receiptUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-primary underline"
-                  >
-                    <Eye className="h-3 w-3" /> View Receipt
-                  </a>
-                )}
+                  </span>
+                </div>
               </div>
 
               {isClient ? (
@@ -848,7 +1247,9 @@ const PaymentExchangePanel = ({
                       type="file"
                       accept="image/*,.pdf"
                       onChange={(e) =>
-                        setClientReceiptFile(e.target.files?.[0] || null)
+                        setClientReceiptFile(
+                          e.target.files?.[0] || null
+                        )
                       }
                       className="h-8 text-xs"
                     />
