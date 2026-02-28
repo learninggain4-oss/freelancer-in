@@ -49,6 +49,7 @@ const STATUS_COLORS: Record<string, string> = {
   initiated: "bg-muted text-muted-foreground",
   method_selected: "bg-blue-500/10 text-blue-600",
   details_shared: "bg-amber-500/10 text-amber-600",
+  proof_submitted: "bg-orange-500/10 text-orange-600",
   otp_submitted: "bg-purple-500/10 text-purple-600",
   success: "bg-accent/10 text-accent",
   failed: "bg-destructive/10 text-destructive",
@@ -130,7 +131,7 @@ const AdminValidation = () => {
     }
   };
 
-  const statuses = ["all", "initiated", "method_selected", "details_shared", "otp_submitted", "success", "failed"];
+  const statuses = ["all", "initiated", "method_selected", "details_shared", "proof_submitted", "otp_submitted", "success", "failed"];
 
   if (isLoading) {
     return (
@@ -177,7 +178,7 @@ const AdminValidation = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
         {statuses.filter((s) => s !== "all").map((s) => {
           const count = confirmations.filter((c) => c.status === s).length;
           return (
