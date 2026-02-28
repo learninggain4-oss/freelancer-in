@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
@@ -364,51 +365,71 @@ const AdminValidation = () => {
 
               {/* Admin Actions */}
               <Separator />
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="default"
-                  className="gap-1"
-                  disabled={selected.status === "success"}
-                  onClick={() => updateStatusMutation.mutate({ id: selected.id, status: "success" })}
-                >
-                  <CheckCircle className="h-3.5 w-3.5" />
-                  Mark Success
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1 border-destructive/30 text-destructive hover:bg-destructive/10"
-                  disabled={selected.status === "failed"}
-                  onClick={() => updateStatusMutation.mutate({ id: selected.id, status: "failed" })}
-                >
-                  <XCircle className="h-3.5 w-3.5" />
-                  Mark Failed
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button size="sm" variant="destructive" className="gap-1 ml-auto">
-                      Delete Record
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete this payment confirmation?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will permanently remove this record. This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => deleteMutation.mutate(selected.id)}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">Force Status:</span>
+                  <Select
+                    value={selected.status}
+                    onValueChange={(val) => updateStatusMutation.mutate({ id: selected.id, status: val })}
+                  >
+                    <SelectTrigger className="h-9 flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["initiated", "method_selected", "details_shared", "proof_submitted", "otp_submitted", "success", "failed"].map((s) => (
+                        <SelectItem key={s} value={s} className="capitalize">
+                          {s.replace(/_/g, " ")}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="gap-1"
+                    disabled={selected.status === "success"}
+                    onClick={() => updateStatusMutation.mutate({ id: selected.id, status: "success" })}
+                  >
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    Mark Success
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1 border-destructive/30 text-destructive hover:bg-destructive/10"
+                    disabled={selected.status === "failed"}
+                    onClick={() => updateStatusMutation.mutate({ id: selected.id, status: "failed" })}
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                    Mark Failed
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="destructive" className="gap-1 ml-auto">
+                        Delete Record
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this payment confirmation?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently remove this record. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deleteMutation.mutate(selected.id)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             </div>
           </DialogContent>
