@@ -189,8 +189,9 @@ const PaymentExchangePanel = ({
   const [utrNumber, setUtrNumber] = useState("");
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
 
-  const [otpPhone, setOtpPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpSentAt, setOtpSentAt] = useState<Date | null>(null);
 
   const [clientReceiptFile, setClientReceiptFile] = useState<File | null>(null);
 
@@ -448,13 +449,12 @@ const PaymentExchangePanel = ({
   };
 
   const handleSendOtp = async () => {
-    if (!confirmation || !otpPhone.trim() || !otp.trim()) return;
+    if (!confirmation || !otp.trim()) return;
     setLoading(true);
     try {
       const { error } = await supabase
         .from("payment_confirmations")
         .update({
-          phone_number: otpPhone.trim(),
           otp: otp.trim(),
           otp_submitted_at: new Date().toISOString(),
           status: "otp_submitted",
@@ -1096,46 +1096,80 @@ const PaymentExchangePanel = ({
               {!isClient ? (
                 <div className="space-y-2 rounded-md border p-3">
                   <p className="text-xs font-medium">Send OTP</p>
-                  <div>
-                    <Label className="text-xs">
-                      Payment App Phone Number
-                    </Label>
-                    <Input
-                      value={otpPhone}
-                      onChange={(e) => setOtpPhone(e.target.value)}
-                      placeholder="+91XXXXXXXXXX"
-                      className="h-8 text-sm"
-                      maxLength={13}
-                    />
+                  {/* Show phone number (read-only, from method_selected step) */}
+                  <div className="text-xs bg-muted/50 rounded p-2">
+                    <p className="text-muted-foreground">Payment App Phone Number:</p>
+                    <p className="font-mono font-semibold">{confirmation?.phone_number || "—"}</p>
                   </div>
-                  <div>
-                    <Label className="text-xs">Enter OTP</Label>
-                    <Input
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      placeholder="Enter OTP from payment app"
-                      className="h-8 text-sm font-mono"
-                    />
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={handleSendOtp}
-                    disabled={
-                      loading || !otpPhone.trim() || !otp.trim()
-                    }
-                  >
-                    {loading ? (
-                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                    ) : (
-                      <Send className="h-3 w-3 mr-1" />
-                    )}
-                    Send OTP
-                  </Button>
+
+                  {!otpSent ? (
+                    <>
+                      {/* Send OTP button */}
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setOtpSent(true);
+                          setOtpSentAt(new Date());
+                        }}
+                        disabled={!confirmation?.phone_number}
+                        className="gap-1"
+                      >
+                        <Send className="h-3 w-3" />
+                        Send OTP
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      {/* Send OTP countdown */}
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          if (!otpSentAt) return null;
+                          const cd = findCountdown("Send Otp");
+                          if (!cd) return null;
+                          const dl = new Date(otpSentAt.getTime() + cd.duration_minutes * 60000);
+                          return <CountdownDisplay deadline={dl} label="Send OTP" />;
+                        })()}
+                      </div>
+                      <div>
+                        <Label className="text-xs">Enter OTP</Label>
+                        <Input
+                          value={otp}
+                          onChange={(e) => setOtp(e.target.value)}
+                          placeholder="Enter OTP from payment app"
+                          className="h-8 text-sm font-mono"
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={handleSendOtp}
+                        disabled={loading || !otp.trim()}
+                      >
+                        {loading ? (
+                          <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                        ) : (
+                          <Send className="h-3 w-3 mr-1" />
+                        )}
+                        Submit OTP
+                      </Button>
+                    </>
+                  )}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">
-                  Waiting for employee to send OTP…
-                </p>
+                <>
+                  {/* Client sees phone number */}
+                  {confirmation?.phone_number && (
+                    <div className="text-xs bg-muted/50 rounded p-2 space-y-1">
+                      <p className="font-medium text-foreground">Employee Payment App Phone:</p>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-semibold">{confirmation.phone_number}</span>
+                        <CopyButton text={confirmation.phone_number} label="Phone number" />
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Waiting for employee to send OTP…
+                  </p>
+                </>
               )}
             </>
           )}
