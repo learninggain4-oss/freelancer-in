@@ -237,6 +237,18 @@ const PaymentExchangePanel = ({
     },
   });
 
+  const { data: clientSharingEnabled = true } = useQuery({
+    queryKey: ["client-payment-sharing-setting"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "client_payment_sharing_enabled")
+        .maybeSingle();
+      return data?.value !== "false";
+    },
+  });
+
   // Signed URLs for attachments
   const { data: qrUrl } = useQuery({
     queryKey: ["signed-url", confirmation?.qr_code_path],
@@ -761,7 +773,7 @@ const PaymentExchangePanel = ({
                 </div>
               )}
 
-              {isClient ? (
+              {isClient && clientSharingEnabled ? (
                 <div className="space-y-2 rounded-md border p-3">
                   <p className="text-xs font-medium">
                     Share Payment Details
@@ -883,9 +895,13 @@ const PaymentExchangePanel = ({
                     Share Details
                   </Button>
                 </div>
+              ) : isClient && !clientSharingEnabled ? (
+                <p className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
+                  Payment details sharing is managed by admin. Please wait for the admin to share payment details.
+                </p>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  Waiting for client to share payment details…
+                  Waiting for payment details to be shared…
                 </p>
               )}
             </>
