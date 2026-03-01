@@ -4,14 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
   Loader2, Search, ShieldCheck, Eye, Download, CheckCircle, XCircle,
-  Clock, CreditCard, FileText, Image, RefreshCw,
+  Clock, CreditCard, FileText, Image, RefreshCw, Send, QrCode, Smartphone, Building2,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -61,6 +63,15 @@ const AdminValidation = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showShareForm, setShowShareForm] = useState(false);
+  const [adminShareTypes, setAdminShareTypes] = useState<("qr" | "upi" | "bank")[]>([]);
+  const [adminUpiId, setAdminUpiId] = useState("");
+  const [adminBankHolder, setAdminBankHolder] = useState("");
+  const [adminBankName, setAdminBankName] = useState("");
+  const [adminBankAccount, setAdminBankAccount] = useState("");
+  const [adminBankIfsc, setAdminBankIfsc] = useState("");
+  const [adminQrFile, setAdminQrFile] = useState<File | null>(null);
+  const [adminSharing, setAdminSharing] = useState(false);
 
   const { data: confirmations = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-payment-confirmations"],
@@ -102,6 +113,58 @@ const AdminValidation = () => {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const toggleAdminShareType = (t: "qr" | "upi" | "bank") => {
+    setAdminShareTypes((prev) => prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]);
+  };
+
+  const handleAdminShareDetails = async (confirmationId: string, existingInfo: string | null) => {
+    if (adminShareTypes.length === 0) return;
+    setAdminSharing(true);
+    try {
+      const info = existingInfo ? JSON.parse(existingInfo) : {};
+      info.shared_types = adminShareTypes;
+      if (adminShareTypes.includes("upi")) info.upi_id = adminUpiId;
+      if (adminShareTypes.includes("bank")) {
+        info.bank_holder = adminBankHolder;
+        info.bank_name = adminBankName;
+        info.bank_account = adminBankAccount;
+        info.bank_ifsc = adminBankIfsc;
+      }
+
+      const updates: Record<string, any> = {
+        details_shared_at: new Date().toISOString(),
+        status: "details_shared",
+        client_payment_info: JSON.stringify(info),
+      };
+
+      if (adminShareTypes.includes("qr") && adminQrFile) {
+        const ext = adminQrFile.name.split(".").pop();
+        const path = `${confirmationId}/admin-qr-${Date.now()}.${ext}`;
+        const { error: uploadErr } = await supabase.storage.from("payment-attachments").upload(path, adminQrFile);
+        if (uploadErr) throw uploadErr;
+        updates.qr_code_path = path;
+        updates.qr_code_name = adminQrFile.name;
+      }
+
+      const { error } = await supabase.from("payment_confirmations").update(updates).eq("id", confirmationId);
+      if (error) throw error;
+      toast.success("Payment details shared by admin!");
+      setShowShareForm(false);
+      setAdminShareTypes([]);
+      setAdminUpiId("");
+      setAdminBankHolder("");
+      setAdminBankName("");
+      setAdminBankAccount("");
+      setAdminBankIfsc("");
+      setAdminQrFile(null);
+      qc.invalidateQueries({ queryKey: ["admin-payment-confirmations"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setAdminSharing(false);
+    }
+  };
 
   const filtered = confirmations.filter((c) => {
     if (statusFilter !== "all" && c.status !== statusFilter) return false;
@@ -360,6 +423,62 @@ const AdminValidation = () => {
                       </Button>
                     )}
                   </div>
+                </>
+              )}
+
+              {/* Admin Share Payment Details */}
+              {(selected.status === "method_selected" || selected.status === "initiated") && (
+                <>
+                  <Separator />
+                  {!showShareForm ? (
+                    <Button size="sm" variant="outline" onClick={() => setShowShareForm(true)} className="gap-1 w-full">
+                      <Send className="h-3.5 w-3.5" />
+                      Share Payment Details (Admin)
+                    </Button>
+                  ) : (
+                    <div className="space-y-2 rounded-md border p-3">
+                      <p className="text-xs font-medium">Admin: Share Payment Details</p>
+                      <p className="text-[10px] text-muted-foreground">Select one or more options to share on behalf of the client</p>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {(["qr", "upi", "bank"] as const).map((t) => (
+                          <label key={t} className="flex items-center gap-1 text-xs cursor-pointer">
+                            <Checkbox checked={adminShareTypes.includes(t)} onCheckedChange={() => toggleAdminShareType(t)} />
+                            {t === "qr" && <QrCode className="h-3 w-3" />}
+                            {t === "upi" && <Smartphone className="h-3 w-3" />}
+                            {t === "bank" && <Building2 className="h-3 w-3" />}
+                            {t === "qr" ? "QR Code" : t === "upi" ? "UPI ID" : "Bank Details"}
+                          </label>
+                        ))}
+                      </div>
+                      {adminShareTypes.includes("qr") && (
+                        <div>
+                          <Label className="text-xs">Upload QR Code</Label>
+                          <Input type="file" accept="image/*" onChange={(e) => setAdminQrFile(e.target.files?.[0] || null)} className="h-8 text-xs" />
+                        </div>
+                      )}
+                      {adminShareTypes.includes("upi") && (
+                        <div>
+                          <Label className="text-xs">UPI ID</Label>
+                          <Input value={adminUpiId} onChange={(e) => setAdminUpiId(e.target.value)} placeholder="example@upi" className="h-8 text-sm" />
+                        </div>
+                      )}
+                      {adminShareTypes.includes("bank") && (
+                        <div className="grid gap-2">
+                          <Input value={adminBankHolder} onChange={(e) => setAdminBankHolder(e.target.value)} placeholder="Account Holder Name" className="h-8 text-sm" />
+                          <Input value={adminBankName} onChange={(e) => setAdminBankName(e.target.value)} placeholder="Bank Name" className="h-8 text-sm" />
+                          <Input value={adminBankAccount} onChange={(e) => setAdminBankAccount(e.target.value)} placeholder="Account Number" className="h-8 text-sm" />
+                          <Input value={adminBankIfsc} onChange={(e) => setAdminBankIfsc(e.target.value)} placeholder="IFSC Code" className="h-8 text-sm" />
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => handleAdminShareDetails(selected.id, selected.client_payment_info)} disabled={adminSharing || adminShareTypes.length === 0}>
+                          {adminSharing ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Send className="h-3 w-3 mr-1" />}
+                          Share Details
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setShowShareForm(false)}>Cancel</Button>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
 

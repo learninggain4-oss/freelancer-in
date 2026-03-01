@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Clock, Landmark, Gift } from "lucide-react";
+import { Loader2, Save, Clock, Landmark, Gift, CreditCard } from "lucide-react";
 
 const AdminSettings = () => {
   const { toast } = useToast();
@@ -19,6 +20,7 @@ const AdminSettings = () => {
   const [cltPrefix, setCltPrefix] = useState("");
   const [empDigits, setEmpDigits] = useState("");
   const [cltDigits, setCltDigits] = useState("");
+  const [clientPaymentSharing, setClientPaymentSharing] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
 
@@ -37,6 +39,7 @@ const AdminSettings = () => {
           "client_code_prefix",
           "employee_code_digits",
           "client_code_digits",
+          "client_payment_sharing_enabled",
         ]);
       if (data) {
         for (const row of data) {
@@ -49,6 +52,7 @@ const AdminSettings = () => {
           if (row.key === "client_code_prefix") setCltPrefix(row.value);
           if (row.key === "employee_code_digits") setEmpDigits(row.value);
           if (row.key === "client_code_digits") setCltDigits(row.value);
+          if (row.key === "client_payment_sharing_enabled") setClientPaymentSharing(row.value !== "false");
         }
       }
       setLoading(false);
@@ -208,6 +212,47 @@ const AdminSettings = () => {
           </Button>
         </CardContent>
       </Card>
+      {/* Client Payment Sharing Toggle */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CreditCard className="h-4 w-4 text-primary" />
+            Client Payment Details Sharing
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            When disabled, only admins can share payment details (QR/UPI/Bank) in the validation chat. Clients will see a message that this feature is managed by admin.
+          </p>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="client-sharing-toggle" className="text-sm font-medium">
+              Allow clients to share payment details
+            </Label>
+            <Switch
+              id="client-sharing-toggle"
+              checked={clientPaymentSharing}
+              disabled={saving === "client_payment_sharing"}
+              onCheckedChange={async (checked) => {
+                setClientPaymentSharing(checked);
+                setSaving("client_payment_sharing");
+                try {
+                  const { error } = await supabase
+                    .from("app_settings")
+                    .upsert({ key: "client_payment_sharing_enabled", value: String(checked) }, { onConflict: "key" });
+                  if (error) throw error;
+                  toast({ title: "Settings saved", description: `Client payment sharing ${checked ? "enabled" : "disabled"}` });
+                } catch (e: any) {
+                  setClientPaymentSharing(!checked);
+                  toast({ title: "Error", description: e.message, variant: "destructive" });
+                } finally {
+                  setSaving(null);
+                }
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* User Code Configuration */}
       <Card>
         <CardHeader className="pb-3">
