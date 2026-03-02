@@ -865,6 +865,7 @@ export type Database = {
             | null
           mobile_number: string | null
           previous_job_details: string | null
+          profile_photo_path: string | null
           referral_code: string
           referred_by: string | null
           registration_city: string | null
@@ -878,6 +879,7 @@ export type Database = {
           user_code: string[]
           user_id: string
           user_type: Database["public"]["Enums"]["user_type"]
+          wallet_number: string | null
           whatsapp_number: string | null
           work_experience: string | null
         }
@@ -914,6 +916,7 @@ export type Database = {
             | null
           mobile_number?: string | null
           previous_job_details?: string | null
+          profile_photo_path?: string | null
           referral_code: string
           referred_by?: string | null
           registration_city?: string | null
@@ -927,6 +930,7 @@ export type Database = {
           user_code: string[]
           user_id: string
           user_type: Database["public"]["Enums"]["user_type"]
+          wallet_number?: string | null
           whatsapp_number?: string | null
           work_experience?: string | null
         }
@@ -963,6 +967,7 @@ export type Database = {
             | null
           mobile_number?: string | null
           previous_job_details?: string | null
+          profile_photo_path?: string | null
           referral_code?: string
           referred_by?: string | null
           registration_city?: string | null
@@ -976,6 +981,7 @@ export type Database = {
           user_code?: string[]
           user_id?: string
           user_type?: Database["public"]["Enums"]["user_type"]
+          wallet_number?: string | null
           whatsapp_number?: string | null
           work_experience?: string | null
         }
