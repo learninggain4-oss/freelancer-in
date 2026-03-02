@@ -51,6 +51,36 @@ const Login = () => {
       const { error } = await signIn(data.email, data.password);
       if (error) throw error;
       toast({ title: "Welcome back!" });
+      // Actively navigate after sign-in instead of relying on reactive state
+      const waitForProfile = async () => {
+        for (let i = 0; i < 20; i++) {
+          await new Promise((r) => setTimeout(r, 500));
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session?.user) break;
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("user_type, approval_status")
+            .eq("user_id", session.user.id)
+            .maybeSingle();
+          if (!prof) continue;
+          if (prof.approval_status !== "approved") {
+            navigate("/verification-pending", { replace: true });
+            return;
+          }
+          const { data: adminCheck } = await supabase.rpc("has_role", {
+            _user_id: session.user.id,
+            _role: "admin" as const,
+          });
+          if (adminCheck) {
+            navigate("/admin/dashboard", { replace: true });
+          } else {
+            const base = prof.user_type === "employee" ? "/employee" : "/client";
+            navigate(`${base}/dashboard`, { replace: true });
+          }
+          return;
+        }
+      };
+      waitForProfile();
     } catch (error: any) {
       toast({ title: "Login failed", description: error.message, variant: "destructive" });
     } finally {
