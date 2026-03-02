@@ -10,12 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import {
   User, Mail, Phone, Calendar, GraduationCap, Briefcase,
-  AlertCircle, Edit, BadgeCheck, Save, X, Landmark,
+  BadgeCheck, Save, X, Landmark, Edit, Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import AadhaarVerificationCard from "@/components/verification/AadhaarVerificationCard";
 import BankVerificationCard from "@/components/verification/BankVerificationCard";
 import ProfileRegistrationData from "@/components/profile/ProfileRegistrationData";
+import ProfilePhotoUpload from "@/components/profile/ProfilePhotoUpload";
 
 const ClientProfile = () => {
   const { profile, refreshProfile } = useAuth();
@@ -36,9 +37,6 @@ const ClientProfile = () => {
   });
 
   const isVerified = aadhaarStatus === "verified";
-  const editStatus = (profile as any)?.edit_request_status ?? "none";
-  const canRequestEdit = editStatus === "none" || editStatus === "rejected" || editStatus === "used";
-  const canEdit = editStatus === "approved";
 
   const fields = [
     profile?.full_name, profile?.email, profile?.mobile_number,
@@ -48,24 +46,6 @@ const ClientProfile = () => {
   ];
   const filled = fields.filter(Boolean).length;
   const completion = Math.round((filled / fields.length) * 100);
-
-  const requestEditMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          edit_request_status: "requested" as any,
-          edit_requested_at: new Date().toISOString(),
-        })
-        .eq("id", profile!.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Edit request sent to admin. You'll be notified once approved.");
-      refreshProfile();
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
 
   const startEditing = () => {
     setForm({
@@ -89,10 +69,7 @@ const ClientProfile = () => {
     mutationFn: async () => {
       const { error } = await supabase
         .from("profiles")
-        .update({
-          ...form,
-          edit_request_status: "used" as any,
-        })
+        .update(form as any)
         .eq("id", profile!.id);
       if (error) throw error;
     },
@@ -126,8 +103,10 @@ const ClientProfile = () => {
 
   return (
     <div className="space-y-6 p-4">
-      <div className="flex items-start justify-between">
-        <div>
+      {/* Header with Photo */}
+      <div className="flex items-start gap-4">
+        <ProfilePhotoUpload />
+        <div className="flex-1 min-w-0">
           <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
             {profile?.full_name ?? "Client"}
             {isVerified && <BadgeCheck className="h-5 w-5 text-accent" />}
@@ -139,34 +118,27 @@ const ClientProfile = () => {
             </Badge>
           </p>
         </div>
-        {canEdit && !editing ? (
+        {!editing && (
           <Button variant="outline" size="sm" onClick={startEditing}>
-            <Edit className="mr-1 h-3 w-3" /> Edit Now
+            <Edit className="mr-1 h-3 w-3" /> Edit
           </Button>
-        ) : canRequestEdit ? (
-          <Button variant="outline" size="sm" onClick={() => requestEditMutation.mutate()} disabled={requestEditMutation.isPending}>
-            <Edit className="mr-1 h-3 w-3" /> Request Edit
-          </Button>
-        ) : editStatus === "requested" ? (
-          <Badge variant="secondary">Edit Requested</Badge>
-        ) : null}
+        )}
       </div>
 
-      {editStatus === "requested" && (
-        <Card className="border-warning/30 bg-warning/5">
-          <CardContent className="p-3 text-sm text-warning-foreground">
-            Your edit request is pending admin approval.
-          </CardContent>
-        </Card>
-      )}
-      {editStatus === "approved" && !editing && (
-        <Card className="border-accent/30 bg-accent/5">
-          <CardContent className="p-3 text-sm text-accent-foreground">
-            Your edit request was approved! Click "Edit Now" to make your changes (one-time only).
-          </CardContent>
-        </Card>
-      )}
+      {/* Wallet Number */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="p-4 flex items-center gap-3">
+          <Wallet className="h-5 w-5 text-primary" />
+          <div>
+            <p className="text-xs text-muted-foreground">Wallet Number</p>
+            <p className="text-base font-mono font-semibold text-foreground tracking-wider">
+              {(profile as any)?.wallet_number ?? "—"}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
+      {/* Editing Form */}
       {editing && (
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-base">Edit Your Profile</CardTitle></CardHeader>
@@ -230,7 +202,6 @@ const ClientProfile = () => {
         </CardContent>
       </Card>
 
-      {/* Bank Details */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base"><Landmark className="h-4 w-4" /> Bank Details</CardTitle>
