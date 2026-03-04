@@ -177,7 +177,7 @@ const EmployeeDashboard = () => {
               onClick={copyWalletNumber}
             >
               <Wallet className="mr-1 h-3 w-3" /> {profile.wallet_number}
-              {walletCopied ? <Check className="ml-1 h-3 w-3" /> : <Copy className="ml-1 h-3 w-3 opacity-60" />}
+              <Copy className="ml-1 h-3 w-3 opacity-60" />
             </Badge>
           )}
         </div>
