@@ -1,4 +1,5 @@
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback } from "react";
+import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,6 @@ import {
   MessageSquare,
   Loader2,
   Copy,
-  Check,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -28,13 +28,10 @@ const EmployeeDashboard = () => {
   const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [walletCopied, setWalletCopied] = useState(false);
-
   const copyWalletNumber = useCallback(() => {
     if (!profile?.wallet_number) return;
     navigator.clipboard.writeText(profile.wallet_number);
-    setWalletCopied(true);
-    setTimeout(() => setWalletCopied(false), 2000);
+    toast({ title: "Copied!", description: `Wallet number ${profile.wallet_number} copied to clipboard.` });
   }, [profile?.wallet_number]);
 
   const handleRefresh = useCallback(async () => {
@@ -179,7 +176,7 @@ const EmployeeDashboard = () => {
               onClick={copyWalletNumber}
             >
               <Wallet className="mr-1 h-3 w-3" /> {profile.wallet_number}
-              {walletCopied ? <Check className="ml-1 h-3 w-3" /> : <Copy className="ml-1 h-3 w-3 opacity-60" />}
+              <Copy className="ml-1 h-3 w-3 opacity-60" />
             </Badge>
           )}
         </div>
