@@ -1749,6 +1749,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      algorithm_sign: {
+        Args: { algorithm: string; secret: string; signables: string }
+        Returns: string
+      }
       check_registration_duplicates: {
         Args: {
           p_email: string
@@ -1775,6 +1779,21 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      sign: {
+        Args: { algorithm?: string; payload: Json; secret: string }
+        Returns: string
+      }
+      try_cast_double: { Args: { inp: string }; Returns: number }
+      url_decode: { Args: { data: string }; Returns: string }
+      url_encode: { Args: { data: string }; Returns: string }
+      verify: {
+        Args: { algorithm?: string; secret: string; token: string }
+        Returns: {
+          header: Json
+          payload: Json
+          valid: boolean
+        }[]
       }
     }
     Enums: {

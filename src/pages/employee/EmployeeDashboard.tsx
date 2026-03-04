@@ -158,9 +158,16 @@ const EmployeeDashboard = () => {
           <span className="text-3xl font-extrabold">₹{totalBalance.toLocaleString("en-IN")}</span>
           <span className="text-sm text-primary-foreground/70">total balance</span>
         </div>
-        <Badge variant="secondary" className="mt-2 bg-primary-foreground/15 text-primary-foreground border-0 text-xs">
-          {Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—"}
-        </Badge>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Badge variant="secondary" className="bg-primary-foreground/15 text-primary-foreground border-0 text-xs">
+            {Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—"}
+          </Badge>
+          {profile?.wallet_number && (
+            <Badge variant="secondary" className="bg-primary-foreground/15 text-primary-foreground border-0 text-xs">
+              <Wallet className="mr-1 h-3 w-3" /> {profile.wallet_number}
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* Balance split cards */}
