@@ -173,8 +173,13 @@ const EmployeeDashboard = () => {
             {Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—"}
           </Badge>
           {profile?.wallet_number && (
-            <Badge variant="secondary" className="bg-primary-foreground/15 text-primary-foreground border-0 text-xs">
+            <Badge
+              variant="secondary"
+              className="bg-primary-foreground/15 text-primary-foreground border-0 text-xs cursor-pointer active:scale-95 transition-transform"
+              onClick={copyWalletNumber}
+            >
               <Wallet className="mr-1 h-3 w-3" /> {profile.wallet_number}
+              {walletCopied ? <Check className="ml-1 h-3 w-3" /> : <Copy className="ml-1 h-3 w-3 opacity-60" />}
             </Badge>
           )}
         </div>
