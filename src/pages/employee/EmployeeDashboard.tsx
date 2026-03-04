@@ -29,13 +29,10 @@ const EmployeeDashboard = () => {
   const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [walletCopied, setWalletCopied] = useState(false);
-
   const copyWalletNumber = useCallback(() => {
     if (!profile?.wallet_number) return;
     navigator.clipboard.writeText(profile.wallet_number);
-    setWalletCopied(true);
-    setTimeout(() => setWalletCopied(false), 2000);
+    toast({ title: "Copied!", description: `Wallet number ${profile.wallet_number} copied to clipboard.` });
   }, [profile?.wallet_number]);
 
   const handleRefresh = useCallback(async () => {
