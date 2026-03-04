@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import {
   FileText,
   MessageSquare,
   Loader2,
+  Copy,
+  Check,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,6 +28,14 @@ const EmployeeDashboard = () => {
   const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [walletCopied, setWalletCopied] = useState(false);
+
+  const copyWalletNumber = useCallback(() => {
+    if (!profile?.wallet_number) return;
+    navigator.clipboard.writeText(profile.wallet_number);
+    setWalletCopied(true);
+    setTimeout(() => setWalletCopied(false), 2000);
+  }, [profile?.wallet_number]);
 
   const handleRefresh = useCallback(async () => {
     await Promise.all([
@@ -163,8 +173,13 @@ const EmployeeDashboard = () => {
             {Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—"}
           </Badge>
           {profile?.wallet_number && (
-            <Badge variant="secondary" className="bg-primary-foreground/15 text-primary-foreground border-0 text-xs">
+            <Badge
+              variant="secondary"
+              className="bg-primary-foreground/15 text-primary-foreground border-0 text-xs cursor-pointer active:scale-95 transition-transform"
+              onClick={copyWalletNumber}
+            >
               <Wallet className="mr-1 h-3 w-3" /> {profile.wallet_number}
+              {walletCopied ? <Check className="ml-1 h-3 w-3" /> : <Copy className="ml-1 h-3 w-3 opacity-60" />}
             </Badge>
           )}
         </div>
