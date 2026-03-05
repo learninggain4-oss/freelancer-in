@@ -32,11 +32,12 @@ const AdminUsers = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock" | "delete"; user: FullProfile } | null>(null);
   const [actionProcessing, setActionProcessing] = useState(false);
+
   const fetchProfiles = async () => {
     setLoading(true);
     const { data } = await supabase
       .from("profiles")
-      .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at")
+      .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled")
       .order("created_at", { ascending: false });
     setProfiles((data as FullProfile[]) || []);
     setLoading(false);
