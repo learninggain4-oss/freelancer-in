@@ -171,6 +171,7 @@ const App = () => (
                 <Route path="payment-methods" element={<AdminPaymentMethods />} />
                 <Route path="countdowns" element={<AdminCountdowns />} />
                 <Route path="validation" element={<AdminValidation />} />
+                <Route path="sessions" element={<AdminSessions />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
