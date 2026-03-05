@@ -205,11 +205,31 @@ const AdminEmployees = () => {
                   <TableCell className="text-right font-mono text-sm">₹{Number(e.available_balance).toLocaleString("en-IN")}</TableCell>
                   <TableCell className="text-center">{projectCounts[e.id] || 0}</TableCell>
                   <TableCell>{statusBadge(e)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button size="icon" variant="ghost" onClick={() => navigate(`/admin/users/${e.id}`)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button size="icon" variant="ghost" onClick={() => navigate(`/admin/users/${e.id}`)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title={e.is_disabled ? "Unblock" : "Block"}
+                          className={e.is_disabled ? "text-accent hover:text-accent" : "text-warning hover:text-warning"}
+                          onClick={() => setConfirmAction({ type: e.is_disabled ? "unblock" : "block", employee: e })}
+                        >
+                          {e.is_disabled ? <ShieldCheck className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title="Delete Permanently"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setConfirmAction({ type: "delete", employee: e })}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                 </TableRow>
               ))
             )}
