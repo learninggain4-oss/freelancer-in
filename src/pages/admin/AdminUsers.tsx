@@ -8,8 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { CheckCircle, XCircle, Eye, Search, X, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { CheckCircle, XCircle, Eye, Search, X, ChevronLeft, ChevronRight, Pencil, ShieldOff, ShieldCheck, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import UserDetailDialog, { type FullProfile } from "@/components/admin/UserDetailDialog";
 
 const PAGE_SIZE = 15;
@@ -25,12 +30,14 @@ const AdminUsers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock" | "delete"; user: FullProfile } | null>(null);
+  const [actionProcessing, setActionProcessing] = useState(false);
 
   const fetchProfiles = async () => {
     setLoading(true);
     const { data } = await supabase
       .from("profiles")
-      .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at")
+      .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled")
       .order("created_at", { ascending: false });
     setProfiles((data as FullProfile[]) || []);
     setLoading(false);
@@ -67,6 +74,38 @@ const AdminUsers = () => {
     setSelectedUser(null);
     setActionType(null);
     setNotes("");
+  };
+
+  const handleToggleBlock = async (user: FullProfile) => {
+    setActionProcessing(true);
+    const newDisabled = !(user as any).is_disabled;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_disabled: newDisabled, disabled_reason: newDisabled ? "Blocked by admin" : null })
+      .eq("id", user.id);
+    setActionProcessing(false);
+    setConfirmAction(null);
+    if (error) {
+      toast.error("Failed to update status");
+    } else {
+      toast.success(newDisabled ? "User blocked" : "User unblocked");
+      fetchProfiles();
+    }
+  };
+
+  const handlePermanentDelete = async (user: FullProfile) => {
+    setActionProcessing(true);
+    const { data, error } = await supabase.functions.invoke("admin-user-management", {
+      body: { action: "permanent_delete", profile_id: user.id },
+    });
+    setActionProcessing(false);
+    setConfirmAction(null);
+    if (error || data?.error) {
+      toast.error(data?.error || error?.message || "Delete failed");
+    } else {
+      toast.success("User permanently deleted");
+      fetchProfiles();
+    }
   };
 
   const statusBadge = (status: string) => {
@@ -146,6 +185,24 @@ const AdminUsers = () => {
                             </Button>
                           </>
                         )}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title={(u as any).is_disabled ? "Unblock" : "Block"}
+                          className={(u as any).is_disabled ? "text-accent hover:text-accent" : "text-warning hover:text-warning"}
+                          onClick={() => setConfirmAction({ type: (u as any).is_disabled ? "unblock" : "block", user: u })}
+                        >
+                          {(u as any).is_disabled ? <ShieldCheck className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title="Delete Permanently"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setConfirmAction({ type: "delete", user: u })}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -250,6 +307,42 @@ const AdminUsers = () => {
         onAction={handleAction}
         onClose={handleClose}
       />
+
+      {/* Block/Delete Confirm Dialog */}
+      <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction?.type === "delete"
+                ? "Permanently Delete User?"
+                : confirmAction?.type === "block"
+                ? "Block User?"
+                : "Unblock User?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction?.type === "delete"
+                ? `This will permanently delete "${confirmAction.user.full_name?.[0]}" and all their data. This CANNOT be undone.`
+                : confirmAction?.type === "block"
+                ? `This will block "${confirmAction?.user.full_name?.[0]}" from logging in. You can unblock them later.`
+                : `This will re-enable login access for "${confirmAction?.user.full_name?.[0]}".`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionProcessing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={actionProcessing}
+              className={confirmAction?.type === "delete" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+              onClick={() => {
+                if (!confirmAction) return;
+                if (confirmAction.type === "delete") handlePermanentDelete(confirmAction.user);
+                else handleToggleBlock(confirmAction.user);
+              }}
+            >
+              {actionProcessing ? "Processing…" : confirmAction?.type === "delete" ? "Delete" : confirmAction?.type === "block" ? "Block" : "Unblock"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

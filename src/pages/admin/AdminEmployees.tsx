@@ -7,8 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Search, X, ChevronLeft, ChevronRight, Pencil, Eye, Users, Wallet, Briefcase } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Search, X, ChevronLeft, ChevronRight, Pencil, Eye, Users, Wallet, Briefcase, ShieldOff, ShieldCheck, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const PAGE_SIZE = 15;
 
@@ -33,40 +38,73 @@ const AdminEmployees = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [projectCounts, setProjectCounts] = useState<Record<string, number>>({});
   const [withdrawalCounts, setWithdrawalCounts] = useState<Record<string, number>>({});
+  const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock" | "delete"; employee: EmployeeRow } | null>(null);
+  const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    const fetch = async () => {
-      setLoading(true);
-      const [{ data: emps }, { data: apps }, { data: wds }] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("id, full_name, user_code, email, approval_status, available_balance, hold_balance, is_disabled, created_at, mobile_number")
-          .eq("user_type", "employee")
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("project_applications")
-          .select("employee_id, status")
-          .eq("status", "approved"),
-        supabase
-          .from("withdrawals")
-          .select("employee_id, status")
-          .eq("status", "pending"),
-      ]);
+  const fetchData = async () => {
+    setLoading(true);
+    const [{ data: emps }, { data: apps }, { data: wds }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, full_name, user_code, email, approval_status, available_balance, hold_balance, is_disabled, created_at, mobile_number")
+        .eq("user_type", "employee")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("project_applications")
+        .select("employee_id, status")
+        .eq("status", "approved"),
+      supabase
+        .from("withdrawals")
+        .select("employee_id, status")
+        .eq("status", "pending"),
+    ]);
 
-      setEmployees((emps as EmployeeRow[]) || []);
+    setEmployees((emps as EmployeeRow[]) || []);
 
-      const pc: Record<string, number> = {};
-      (apps || []).forEach((a: any) => { pc[a.employee_id] = (pc[a.employee_id] || 0) + 1; });
-      setProjectCounts(pc);
+    const pc: Record<string, number> = {};
+    (apps || []).forEach((a: any) => { pc[a.employee_id] = (pc[a.employee_id] || 0) + 1; });
+    setProjectCounts(pc);
 
-      const wc: Record<string, number> = {};
-      (wds || []).forEach((w: any) => { wc[w.employee_id] = (wc[w.employee_id] || 0) + 1; });
-      setWithdrawalCounts(wc);
+    const wc: Record<string, number> = {};
+    (wds || []).forEach((w: any) => { wc[w.employee_id] = (wc[w.employee_id] || 0) + 1; });
+    setWithdrawalCounts(wc);
 
-      setLoading(false);
-    };
-    fetch();
-  }, []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  const handleToggleBlock = async (employee: EmployeeRow) => {
+    setProcessing(true);
+    const newDisabled = !employee.is_disabled;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_disabled: newDisabled, disabled_reason: newDisabled ? "Blocked by admin" : null })
+      .eq("id", employee.id);
+    setProcessing(false);
+    setConfirmAction(null);
+    if (error) {
+      toast.error("Failed to update status");
+    } else {
+      toast.success(newDisabled ? "User blocked" : "User unblocked");
+      fetchData();
+    }
+  };
+
+  const handlePermanentDelete = async (employee: EmployeeRow) => {
+    setProcessing(true);
+    const { data, error } = await supabase.functions.invoke("admin-user-management", {
+      body: { action: "permanent_delete", profile_id: employee.id },
+    });
+    setProcessing(false);
+    setConfirmAction(null);
+    if (error || data?.error) {
+      toast.error(data?.error || error?.message || "Delete failed");
+    } else {
+      toast.success("Employee permanently deleted");
+      fetchData();
+    }
+  };
 
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
@@ -167,11 +205,31 @@ const AdminEmployees = () => {
                   <TableCell className="text-right font-mono text-sm">₹{Number(e.available_balance).toLocaleString("en-IN")}</TableCell>
                   <TableCell className="text-center">{projectCounts[e.id] || 0}</TableCell>
                   <TableCell>{statusBadge(e)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button size="icon" variant="ghost" onClick={() => navigate(`/admin/users/${e.id}`)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button size="icon" variant="ghost" onClick={() => navigate(`/admin/users/${e.id}`)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title={e.is_disabled ? "Unblock" : "Block"}
+                          className={e.is_disabled ? "text-accent hover:text-accent" : "text-warning hover:text-warning"}
+                          onClick={() => setConfirmAction({ type: e.is_disabled ? "unblock" : "block", employee: e })}
+                        >
+                          {e.is_disabled ? <ShieldCheck className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title="Delete Permanently"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setConfirmAction({ type: "delete", employee: e })}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                 </TableRow>
               ))
             )}
@@ -189,6 +247,42 @@ const AdminEmployees = () => {
           </div>
         </div>
       )}
+
+      {/* Confirm Dialog */}
+      <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction?.type === "delete"
+                ? "Permanently Delete Employee?"
+                : confirmAction?.type === "block"
+                ? "Block Employee?"
+                : "Unblock Employee?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction?.type === "delete"
+                ? `This will permanently delete "${confirmAction.employee.full_name?.[0]}" and all their data. This CANNOT be undone.`
+                : confirmAction?.type === "block"
+                ? `This will block "${confirmAction?.employee.full_name?.[0]}" from logging in. You can unblock them later.`
+                : `This will re-enable login access for "${confirmAction?.employee.full_name?.[0]}".`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={processing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={processing}
+              className={confirmAction?.type === "delete" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+              onClick={() => {
+                if (!confirmAction) return;
+                if (confirmAction.type === "delete") handlePermanentDelete(confirmAction.employee);
+                else handleToggleBlock(confirmAction.employee);
+              }}
+            >
+              {processing ? "Processing…" : confirmAction?.type === "delete" ? "Delete" : confirmAction?.type === "block" ? "Block" : "Unblock"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
