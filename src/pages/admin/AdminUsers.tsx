@@ -76,6 +76,38 @@ const AdminUsers = () => {
     setNotes("");
   };
 
+  const handleToggleBlock = async (user: FullProfile) => {
+    setActionProcessing(true);
+    const newDisabled = !(user as any).is_disabled;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_disabled: newDisabled, disabled_reason: newDisabled ? "Blocked by admin" : null })
+      .eq("id", user.id);
+    setActionProcessing(false);
+    setConfirmAction(null);
+    if (error) {
+      toast.error("Failed to update status");
+    } else {
+      toast.success(newDisabled ? "User blocked" : "User unblocked");
+      fetchProfiles();
+    }
+  };
+
+  const handlePermanentDelete = async (user: FullProfile) => {
+    setActionProcessing(true);
+    const { data, error } = await supabase.functions.invoke("admin-user-management", {
+      body: { action: "permanent_delete", profile_id: user.id },
+    });
+    setActionProcessing(false);
+    setConfirmAction(null);
+    if (error || data?.error) {
+      toast.error(data?.error || error?.message || "Delete failed");
+    } else {
+      toast.success("User permanently deleted");
+      fetchProfiles();
+    }
+  };
+
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
       pending: "bg-warning/15 text-warning border-warning/30",
