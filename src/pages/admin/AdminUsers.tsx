@@ -30,7 +30,8 @@ const AdminUsers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
-
+  const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock" | "delete"; user: FullProfile } | null>(null);
+  const [actionProcessing, setActionProcessing] = useState(false);
   const fetchProfiles = async () => {
     setLoading(true);
     const { data } = await supabase
