@@ -41,39 +41,70 @@ const AdminEmployees = () => {
   const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock" | "delete"; employee: EmployeeRow } | null>(null);
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    const fetch = async () => {
-      setLoading(true);
-      const [{ data: emps }, { data: apps }, { data: wds }] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("id, full_name, user_code, email, approval_status, available_balance, hold_balance, is_disabled, created_at, mobile_number")
-          .eq("user_type", "employee")
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("project_applications")
-          .select("employee_id, status")
-          .eq("status", "approved"),
-        supabase
-          .from("withdrawals")
-          .select("employee_id, status")
-          .eq("status", "pending"),
-      ]);
+  const fetchData = async () => {
+    setLoading(true);
+    const [{ data: emps }, { data: apps }, { data: wds }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, full_name, user_code, email, approval_status, available_balance, hold_balance, is_disabled, created_at, mobile_number")
+        .eq("user_type", "employee")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("project_applications")
+        .select("employee_id, status")
+        .eq("status", "approved"),
+      supabase
+        .from("withdrawals")
+        .select("employee_id, status")
+        .eq("status", "pending"),
+    ]);
 
-      setEmployees((emps as EmployeeRow[]) || []);
+    setEmployees((emps as EmployeeRow[]) || []);
 
-      const pc: Record<string, number> = {};
-      (apps || []).forEach((a: any) => { pc[a.employee_id] = (pc[a.employee_id] || 0) + 1; });
-      setProjectCounts(pc);
+    const pc: Record<string, number> = {};
+    (apps || []).forEach((a: any) => { pc[a.employee_id] = (pc[a.employee_id] || 0) + 1; });
+    setProjectCounts(pc);
 
-      const wc: Record<string, number> = {};
-      (wds || []).forEach((w: any) => { wc[w.employee_id] = (wc[w.employee_id] || 0) + 1; });
-      setWithdrawalCounts(wc);
+    const wc: Record<string, number> = {};
+    (wds || []).forEach((w: any) => { wc[w.employee_id] = (wc[w.employee_id] || 0) + 1; });
+    setWithdrawalCounts(wc);
 
-      setLoading(false);
-    };
-    fetch();
-  }, []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  const handleToggleBlock = async (employee: EmployeeRow) => {
+    setProcessing(true);
+    const newDisabled = !employee.is_disabled;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_disabled: newDisabled, disabled_reason: newDisabled ? "Blocked by admin" : null })
+      .eq("id", employee.id);
+    setProcessing(false);
+    setConfirmAction(null);
+    if (error) {
+      toast.error("Failed to update status");
+    } else {
+      toast.success(newDisabled ? "User blocked" : "User unblocked");
+      fetchData();
+    }
+  };
+
+  const handlePermanentDelete = async (employee: EmployeeRow) => {
+    setProcessing(true);
+    const { data, error } = await supabase.functions.invoke("admin-user-management", {
+      body: { action: "permanent_delete", profile_id: employee.id },
+    });
+    setProcessing(false);
+    setConfirmAction(null);
+    if (error || data?.error) {
+      toast.error(data?.error || error?.message || "Delete failed");
+    } else {
+      toast.success("Employee permanently deleted");
+      fetchData();
+    }
+  };
 
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
