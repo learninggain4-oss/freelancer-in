@@ -185,6 +185,24 @@ const AdminUsers = () => {
                             </Button>
                           </>
                         )}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title={(u as any).is_disabled ? "Unblock" : "Block"}
+                          className={(u as any).is_disabled ? "text-accent hover:text-accent" : "text-warning hover:text-warning"}
+                          onClick={() => setConfirmAction({ type: (u as any).is_disabled ? "unblock" : "block", user: u })}
+                        >
+                          {(u as any).is_disabled ? <ShieldCheck className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title="Delete Permanently"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setConfirmAction({ type: "delete", user: u })}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
