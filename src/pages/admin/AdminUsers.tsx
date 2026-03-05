@@ -307,6 +307,42 @@ const AdminUsers = () => {
         onAction={handleAction}
         onClose={handleClose}
       />
+
+      {/* Block/Delete Confirm Dialog */}
+      <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction?.type === "delete"
+                ? "Permanently Delete User?"
+                : confirmAction?.type === "block"
+                ? "Block User?"
+                : "Unblock User?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction?.type === "delete"
+                ? `This will permanently delete "${confirmAction.user.full_name?.[0]}" and all their data. This CANNOT be undone.`
+                : confirmAction?.type === "block"
+                ? `This will block "${confirmAction?.user.full_name?.[0]}" from logging in. You can unblock them later.`
+                : `This will re-enable login access for "${confirmAction?.user.full_name?.[0]}".`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionProcessing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={actionProcessing}
+              className={confirmAction?.type === "delete" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+              onClick={() => {
+                if (!confirmAction) return;
+                if (confirmAction.type === "delete") handlePermanentDelete(confirmAction.user);
+                else handleToggleBlock(confirmAction.user);
+              }}
+            >
+              {actionProcessing ? "Processing…" : confirmAction?.type === "delete" ? "Delete" : confirmAction?.type === "block" ? "Block" : "Unblock"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
