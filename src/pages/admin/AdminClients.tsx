@@ -7,8 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Search, X, ChevronLeft, ChevronRight, Pencil, Users, Wallet, FolderOpen } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Search, X, ChevronLeft, ChevronRight, Pencil, Users, Wallet, FolderOpen, ShieldOff, ShieldCheck, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const PAGE_SIZE = 15;
 
@@ -32,31 +37,64 @@ const AdminClients = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [projectCounts, setProjectCounts] = useState<Record<string, number>>({});
+  const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock" | "delete"; client: ClientRow } | null>(null);
+  const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    const fetch = async () => {
-      setLoading(true);
-      const [{ data: cls }, { data: projs }] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("id, full_name, user_code, email, approval_status, available_balance, hold_balance, is_disabled, created_at, mobile_number")
-          .eq("user_type", "client")
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("projects")
-          .select("client_id"),
-      ]);
+  const fetchData = async () => {
+    setLoading(true);
+    const [{ data: cls }, { data: projs }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, full_name, user_code, email, approval_status, available_balance, hold_balance, is_disabled, created_at, mobile_number")
+        .eq("user_type", "client")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("projects")
+        .select("client_id"),
+    ]);
 
-      setClients((cls as ClientRow[]) || []);
+    setClients((cls as ClientRow[]) || []);
 
-      const pc: Record<string, number> = {};
-      (projs || []).forEach((p: any) => { pc[p.client_id] = (pc[p.client_id] || 0) + 1; });
-      setProjectCounts(pc);
+    const pc: Record<string, number> = {};
+    (projs || []).forEach((p: any) => { pc[p.client_id] = (pc[p.client_id] || 0) + 1; });
+    setProjectCounts(pc);
 
-      setLoading(false);
-    };
-    fetch();
-  }, []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  const handleToggleBlock = async (client: ClientRow) => {
+    setProcessing(true);
+    const newDisabled = !client.is_disabled;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_disabled: newDisabled, disabled_reason: newDisabled ? "Blocked by admin" : null })
+      .eq("id", client.id);
+    setProcessing(false);
+    setConfirmAction(null);
+    if (error) {
+      toast.error("Failed to update status");
+    } else {
+      toast.success(newDisabled ? "Client blocked" : "Client unblocked");
+      fetchData();
+    }
+  };
+
+  const handlePermanentDelete = async (client: ClientRow) => {
+    setProcessing(true);
+    const { data, error } = await supabase.functions.invoke("admin-user-management", {
+      body: { action: "permanent_delete", profile_id: client.id },
+    });
+    setProcessing(false);
+    setConfirmAction(null);
+    if (error || data?.error) {
+      toast.error(data?.error || error?.message || "Delete failed");
+    } else {
+      toast.success("Client permanently deleted");
+      fetchData();
+    }
+  };
 
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
@@ -158,9 +196,29 @@ const AdminClients = () => {
                   <TableCell className="text-center">{projectCounts[c.id] || 0}</TableCell>
                   <TableCell>{statusBadge(c)}</TableCell>
                   <TableCell className="text-right">
-                    <Button size="icon" variant="ghost" onClick={() => navigate(`/admin/users/${c.id}`)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <Button size="icon" variant="ghost" onClick={() => navigate(`/admin/users/${c.id}`)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        title={c.is_disabled ? "Unblock" : "Block"}
+                        className={c.is_disabled ? "text-accent hover:text-accent" : "text-warning hover:text-warning"}
+                        onClick={() => setConfirmAction({ type: c.is_disabled ? "unblock" : "block", client: c })}
+                      >
+                        {c.is_disabled ? <ShieldCheck className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        title="Delete Permanently"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setConfirmAction({ type: "delete", client: c })}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -179,6 +237,42 @@ const AdminClients = () => {
           </div>
         </div>
       )}
+
+      {/* Confirm Dialog */}
+      <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction?.type === "delete"
+                ? "Permanently Delete Client?"
+                : confirmAction?.type === "block"
+                ? "Block Client?"
+                : "Unblock Client?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction?.type === "delete"
+                ? `This will permanently delete "${confirmAction.client.full_name?.[0]}" and all their data. This CANNOT be undone.`
+                : confirmAction?.type === "block"
+                ? `This will block "${confirmAction?.client.full_name?.[0]}" from logging in. You can unblock them later.`
+                : `This will re-enable login access for "${confirmAction?.client.full_name?.[0]}".`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={processing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={processing}
+              className={confirmAction?.type === "delete" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+              onClick={() => {
+                if (!confirmAction) return;
+                if (confirmAction.type === "delete") handlePermanentDelete(confirmAction.client);
+                else handleToggleBlock(confirmAction.client);
+              }}
+            >
+              {processing ? "Processing…" : confirmAction?.type === "delete" ? "Delete" : confirmAction?.type === "block" ? "Block" : "Unblock"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

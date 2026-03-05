@@ -247,6 +247,42 @@ const AdminEmployees = () => {
           </div>
         </div>
       )}
+
+      {/* Confirm Dialog */}
+      <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction?.type === "delete"
+                ? "Permanently Delete Employee?"
+                : confirmAction?.type === "block"
+                ? "Block Employee?"
+                : "Unblock Employee?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction?.type === "delete"
+                ? `This will permanently delete "${confirmAction.employee.full_name?.[0]}" and all their data. This CANNOT be undone.`
+                : confirmAction?.type === "block"
+                ? `This will block "${confirmAction?.employee.full_name?.[0]}" from logging in. You can unblock them later.`
+                : `This will re-enable login access for "${confirmAction?.employee.full_name?.[0]}".`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={processing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={processing}
+              className={confirmAction?.type === "delete" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+              onClick={() => {
+                if (!confirmAction) return;
+                if (confirmAction.type === "delete") handlePermanentDelete(confirmAction.employee);
+                else handleToggleBlock(confirmAction.employee);
+              }}
+            >
+              {processing ? "Processing…" : confirmAction?.type === "delete" ? "Delete" : confirmAction?.type === "block" ? "Block" : "Unblock"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
