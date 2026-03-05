@@ -38,6 +38,8 @@ const AdminEmployees = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [projectCounts, setProjectCounts] = useState<Record<string, number>>({});
   const [withdrawalCounts, setWithdrawalCounts] = useState<Record<string, number>>({});
+  const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock" | "delete"; employee: EmployeeRow } | null>(null);
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
