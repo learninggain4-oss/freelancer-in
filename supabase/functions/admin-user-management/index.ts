@@ -13,35 +13,43 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Validate caller is admin
+    // Validate caller via getClaims
     const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const callerClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    const token = authHeader.replace("Bearer ", "");
+    const callerClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { authorization: authHeader } },
     });
 
-    const { data: { user: caller } } = await callerClient.auth.getUser();
-    if (!caller) {
+    const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
+      console.error("Claims error:", claimsError);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Check admin role
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    const callerUserId = claimsData.claims.sub;
+
+    // Check admin role using service role client
+    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
     const { data: roleData } = await adminClient
       .from("user_roles")
       .select("role")
-      .eq("user_id", caller.id)
+      .eq("user_id", callerUserId)
       .eq("role", "admin")
       .maybeSingle();
 
@@ -63,7 +71,6 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Get the auth user_id from profile
         const { data: profile } = await adminClient
           .from("profiles")
           .select("user_id, full_name")
@@ -77,16 +84,14 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Log the action before deleting
         await adminClient.from("admin_audit_logs").insert({
-          admin_id: caller.id,
+          admin_id: callerUserId,
           action: "permanent_delete_user",
           target_profile_id: profile_id,
           target_profile_name: profile.full_name?.[0] || "Unknown",
           details: { reason: "Permanent deletion by admin" },
         });
 
-        // Delete auth user (cascades to profile via FK)
         const { error: deleteError } = await adminClient.auth.admin.deleteUser(profile.user_id);
         if (deleteError) {
           return new Response(JSON.stringify({ error: deleteError.message }), {
@@ -116,7 +121,6 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Log the action
         const { data: targetProfile } = await adminClient
           .from("profiles")
           .select("id, full_name")
@@ -124,7 +128,7 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         await adminClient.from("admin_audit_logs").insert({
-          admin_id: caller.id,
+          admin_id: callerUserId,
           action: "force_logout",
           target_profile_id: targetProfile?.id || null,
           target_profile_name: targetProfile?.full_name?.[0] || "Unknown",
@@ -137,12 +141,9 @@ Deno.serve(async (req) => {
       }
 
       case "list_users_sessions": {
-        // List all auth users with session info
-        const page = 1;
-        const perPage = 1000;
         const { data: { users }, error: listError } = await adminClient.auth.admin.listUsers({
-          page,
-          perPage,
+          page: 1,
+          perPage: 1000,
         });
 
         if (listError) {
@@ -152,7 +153,6 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Get profiles for mapping
         const { data: profiles } = await adminClient
           .from("profiles")
           .select("id, user_id, full_name, user_code, user_type, is_disabled, approval_status");
@@ -188,6 +188,7 @@ Deno.serve(async (req) => {
         });
     }
   } catch (err) {
+    console.error("Edge function error:", err);
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
