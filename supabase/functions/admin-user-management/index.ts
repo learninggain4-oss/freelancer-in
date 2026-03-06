@@ -86,17 +86,68 @@ Deno.serve(async (req) => {
           });
         }
 
+        // Delete all related records before deleting the auth user
+        const userId = profile.user_id;
+        const pid = profile_id;
+
+        // Delete records referencing profile_id
+        await Promise.all([
+          adminClient.from("aadhaar_verifications").delete().eq("profile_id", pid),
+          adminClient.from("bank_verifications").delete().eq("profile_id", pid),
+          adminClient.from("documents").delete().eq("profile_id", pid),
+          adminClient.from("employee_emergency_contacts").delete().eq("profile_id", pid),
+          adminClient.from("employee_services").delete().eq("profile_id", pid),
+          adminClient.from("notifications").delete().eq("user_id", pid),
+          adminClient.from("registration_metadata").delete().eq("profile_id", pid),
+          adminClient.from("transactions").delete().eq("profile_id", pid),
+          adminClient.from("work_experiences").delete().eq("profile_id", pid),
+          adminClient.from("referrals").delete().eq("referrer_id", pid),
+          adminClient.from("referrals").delete().eq("referred_id", pid),
+          adminClient.from("withdrawals").delete().eq("employee_id", pid),
+          adminClient.from("recovery_requests").delete().eq("employee_id", pid),
+          adminClient.from("project_applications").delete().eq("employee_id", pid),
+          adminClient.from("project_submissions").delete().eq("employee_id", pid),
+          adminClient.from("project_documents").delete().eq("uploaded_by", pid),
+          adminClient.from("payment_confirmations").delete().eq("employee_id", pid),
+          adminClient.from("message_reactions").delete().eq("user_id", pid),
+          adminClient.from("support_message_reactions").delete().eq("user_id", pid),
+          adminClient.from("announcement_dismissals").delete().eq("user_id", pid),
+        ]);
+
+        // Delete support messages & conversations
+        const { data: supportConvo } = await adminClient
+          .from("support_conversations")
+          .select("id")
+          .eq("user_id", pid)
+          .maybeSingle();
+        if (supportConvo) {
+          await adminClient.from("support_messages").delete().eq("conversation_id", supportConvo.id);
+          await adminClient.from("support_conversations").delete().eq("id", supportConvo.id);
+        }
+
+        // Delete messages sent by user
+        await adminClient.from("messages").delete().eq("sender_id", pid);
+
+        // Nullify admin audit log references (keep logs)
+        await adminClient.from("admin_audit_logs").update({ target_profile_id: null }).eq("target_profile_id", pid);
+
+        // Insert audit log before deleting profile
         await adminClient.from("admin_audit_logs").insert({
           admin_id: callerUserId,
           action: "permanent_delete_user",
-          target_profile_id: profile_id,
+          target_profile_id: null,
           target_profile_name: profile.full_name?.[0] || "Unknown",
-          details: { reason: "Permanent deletion by admin" },
+          details: { reason: "Permanent deletion by admin", deleted_profile_id: pid },
         });
 
-        const { error: deleteError } = await adminClient.auth.admin.deleteUser(profile.user_id);
+        // Delete the profile itself
+        await adminClient.from("profiles").delete().eq("id", pid);
+
+        // Finally delete the auth user
+        const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
         if (deleteError) {
-          return new Response(JSON.stringify({ error: deleteError.message }), {
+          console.error("Auth delete error:", deleteError);
+          return new Response(JSON.stringify({ error: "Database error deleting user" }), {
             status: 500,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
