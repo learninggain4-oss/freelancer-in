@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { action, user_id, profile_id } = await req.json();
+    const { action, user_id, profile_id, email, user_type } = await req.json();
 
     switch (action) {
       case "permanent_delete": {
