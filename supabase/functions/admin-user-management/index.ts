@@ -236,12 +236,41 @@ Deno.serve(async (req) => {
           });
         }
 
-        const { error: logoutError } = await adminClient.auth.admin.signOut(user_id, "global");
-        if (logoutError) {
-          return new Response(JSON.stringify({ error: logoutError.message }), {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+        // Use the Admin API REST endpoint directly to sign out a user by ID
+        const logoutRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${user_id}/factors`, {
+          method: "GET",
+          headers: { "Authorization": `Bearer ${serviceRoleKey}`, "apikey": serviceRoleKey },
+        });
+        await logoutRes.text(); // consume
+
+        // Use admin API to sign out user globally via REST
+        const signOutRes = await fetch(`${supabaseUrl}/auth/v1/logout`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${serviceRoleKey}`,
+            "apikey": serviceRoleKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ user_id, scope: "global" }),
+        });
+        
+        if (!signOutRes.ok) {
+          const errText = await signOutRes.text();
+          console.error("Logout REST error:", signOutRes.status, errText);
+          // Fallback: invalidate refresh tokens by updating user
+          const { error: updateErr } = await adminClient.auth.admin.updateUser(user_id, {
+            ban_duration: "1s", // Temporarily ban to invalidate sessions
           });
+          if (updateErr) {
+            return new Response(JSON.stringify({ error: updateErr.message }), {
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          // Immediately unban
+          await adminClient.auth.admin.updateUser(user_id, { ban_duration: "none" });
+        } else {
+          await signOutRes.text();
         }
 
         const { data: targetProfile } = await adminClient
