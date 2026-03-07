@@ -236,42 +236,37 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Use the Admin API REST endpoint directly to sign out a user by ID
-        const logoutRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${user_id}/factors`, {
-          method: "GET",
-          headers: { "Authorization": `Bearer ${serviceRoleKey}`, "apikey": serviceRoleKey },
-        });
-        await logoutRes.text(); // consume
-
-        // Use admin API to sign out user globally via REST
-        const signOutRes = await fetch(`${supabaseUrl}/auth/v1/logout`, {
-          method: "POST",
+        // Use Admin REST API to ban user briefly, which invalidates all sessions
+        const banRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${user_id}`, {
+          method: "PUT",
           headers: {
             "Authorization": `Bearer ${serviceRoleKey}`,
             "apikey": serviceRoleKey,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ user_id, scope: "global" }),
+          body: JSON.stringify({ ban_duration: "1s" }),
         });
-        
-        if (!signOutRes.ok) {
-          const errText = await signOutRes.text();
-          console.error("Logout REST error:", signOutRes.status, errText);
-          // Fallback: invalidate refresh tokens by updating user
-          const { error: updateErr } = await adminClient.auth.admin.updateUser(user_id, {
-            ban_duration: "1s", // Temporarily ban to invalidate sessions
+        const banBody = await banRes.text();
+
+        if (!banRes.ok) {
+          console.error("Ban error:", banRes.status, banBody);
+          return new Response(JSON.stringify({ error: "Failed to force logout user" }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
-          if (updateErr) {
-            return new Response(JSON.stringify({ error: updateErr.message }), {
-              status: 500,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-          }
-          // Immediately unban
-          await adminClient.auth.admin.updateUser(user_id, { ban_duration: "none" });
-        } else {
-          await signOutRes.text();
         }
+
+        // Immediately unban
+        const unbanRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${user_id}`, {
+          method: "PUT",
+          headers: {
+            "Authorization": `Bearer ${serviceRoleKey}`,
+            "apikey": serviceRoleKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ ban_duration: "none" }),
+        });
+        await unbanRes.text();
 
         const { data: targetProfile } = await adminClient
           .from("profiles")
