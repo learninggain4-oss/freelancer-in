@@ -43,7 +43,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check admin role using service role client
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
@@ -86,11 +85,59 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Delete all related records before deleting the auth user
         const userId = profile.user_id;
         const pid = profile_id;
 
-        // Delete records referencing profile_id
+        // 1. Delete employee_skill_selections (child of employee_services)
+        const { data: empServices } = await adminClient
+          .from("employee_services")
+          .select("id")
+          .eq("profile_id", pid);
+        if (empServices && empServices.length > 0) {
+          const serviceIds = empServices.map((s: any) => s.id);
+          await adminClient.from("employee_skill_selections").delete().in("employee_service_id", serviceIds);
+        }
+
+        // 2. Handle projects where user is client — delete entire project tree
+        const { data: clientProjects } = await adminClient
+          .from("projects")
+          .select("id")
+          .eq("client_id", pid);
+        if (clientProjects && clientProjects.length > 0) {
+          const projectIds = clientProjects.map((p: any) => p.id);
+          // Get chat rooms for these projects
+          const { data: chatRooms } = await adminClient
+            .from("chat_rooms")
+            .select("id")
+            .in("project_id", projectIds);
+          if (chatRooms && chatRooms.length > 0) {
+            const roomIds = chatRooms.map((r: any) => r.id);
+            // Get message ids for reactions cleanup
+            const { data: roomMessages } = await adminClient
+              .from("messages")
+              .select("id")
+              .in("chat_room_id", roomIds);
+            if (roomMessages && roomMessages.length > 0) {
+              await adminClient.from("message_reactions").delete().in("message_id", roomMessages.map((m: any) => m.id));
+            }
+            await adminClient.from("messages").delete().in("chat_room_id", roomIds);
+            await adminClient.from("chat_rooms").delete().in("id", roomIds);
+          }
+          // Delete project child records
+          await Promise.all([
+            adminClient.from("project_applications").delete().in("project_id", projectIds),
+            adminClient.from("project_submissions").delete().in("project_id", projectIds),
+            adminClient.from("project_documents").delete().in("project_id", projectIds),
+            adminClient.from("payment_confirmations").delete().in("project_id", projectIds),
+            adminClient.from("recovery_requests").delete().in("project_id", projectIds),
+          ]);
+          await adminClient.from("projects").delete().in("id", projectIds);
+        }
+
+        // 3. Nullify assigned_employee_id on remaining projects
+        await adminClient.from("projects").update({ assigned_employee_id: null }).eq("assigned_employee_id", pid);
+
+        // 4. Delete records referencing profile_id
         await Promise.all([
           adminClient.from("aadhaar_verifications").delete().eq("profile_id", pid),
           adminClient.from("bank_verifications").delete().eq("profile_id", pid),
@@ -112,9 +159,10 @@ Deno.serve(async (req) => {
           adminClient.from("message_reactions").delete().eq("user_id", pid),
           adminClient.from("support_message_reactions").delete().eq("user_id", pid),
           adminClient.from("announcement_dismissals").delete().eq("user_id", pid),
+          adminClient.from("messages").delete().eq("sender_id", pid),
         ]);
 
-        // Delete support messages & conversations
+        // 5. Delete support conversations
         const { data: supportConvo } = await adminClient
           .from("support_conversations")
           .select("id")
@@ -125,13 +173,9 @@ Deno.serve(async (req) => {
           await adminClient.from("support_conversations").delete().eq("id", supportConvo.id);
         }
 
-        // Delete messages sent by user
-        await adminClient.from("messages").delete().eq("sender_id", pid);
-
-        // Nullify admin audit log references (keep logs)
+        // 6. Nullify audit log references & insert deletion log
         await adminClient.from("admin_audit_logs").update({ target_profile_id: null }).eq("target_profile_id", pid);
 
-        // Insert audit log before deleting profile
         await adminClient.from("admin_audit_logs").insert({
           admin_id: callerUserId,
           action: "permanent_delete_user",
@@ -140,10 +184,13 @@ Deno.serve(async (req) => {
           details: { reason: "Permanent deletion by admin", deleted_profile_id: pid },
         });
 
-        // Delete the profile itself
+        // 7. Delete the profile
         await adminClient.from("profiles").delete().eq("id", pid);
 
-        // Finally delete the auth user
+        // 8. Delete user_roles (FK to auth.users) — THIS was the missing piece
+        await adminClient.from("user_roles").delete().eq("user_id", userId);
+
+        // 9. Finally delete the auth user
         const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
         if (deleteError) {
           console.error("Auth delete error:", deleteError);
