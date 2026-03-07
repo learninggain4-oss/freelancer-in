@@ -116,6 +116,24 @@ const AdminUsers = () => {
     }
   };
 
+  const handleInviteUser = async () => {
+    if (!inviteEmail.trim()) { toast.error("Email is required"); return; }
+    setInviteProcessing(true);
+    const { data, error } = await supabase.functions.invoke("admin-user-management", {
+      body: { action: "invite_user", email: inviteEmail.trim().toLowerCase(), user_type: inviteType },
+    });
+    setInviteProcessing(false);
+    if (error || data?.error) {
+      toast.error(data?.error || error?.message || "Failed to send invite");
+    } else {
+      toast.success(data?.message || "Invite sent successfully");
+      setInviteOpen(false);
+      setInviteEmail("");
+      setInviteType("employee");
+      fetchProfiles();
+    }
+  };
+
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
       pending: "bg-warning/15 text-warning border-warning/30",
