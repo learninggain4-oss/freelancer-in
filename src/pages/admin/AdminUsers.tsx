@@ -36,6 +36,10 @@ const AdminUsers = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock" | "delete"; user: FullProfile } | null>(null);
   const [actionProcessing, setActionProcessing] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteType, setInviteType] = useState<string>("employee");
+  const [inviteProcessing, setInviteProcessing] = useState(false);
 
   const fetchProfiles = async () => {
     setLoading(true);
