@@ -57,9 +57,7 @@ Deno.serve(async (req) => {
       var callerUserId = callerUser.id;
     }
 
-    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+
 
     const { data: roleData } = await adminClient
       .from("user_roles")
