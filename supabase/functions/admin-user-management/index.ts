@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { action, user_id, profile_id } = await req.json();
+    const { action, user_id, profile_id, email, user_type } = await req.json();
 
     switch (action) {
       case "permanent_delete": {
@@ -324,6 +324,91 @@ Deno.serve(async (req) => {
         });
 
         return new Response(JSON.stringify({ users: sessionData }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      case "invite_user": {
+        if (!email || !user_type) {
+          return new Response(JSON.stringify({ error: "email and user_type required" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        if (!["employee", "client"].includes(user_type)) {
+          return new Response(JSON.stringify({ error: "user_type must be 'employee' or 'client'" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Check if email already exists
+        const { data: existingProfile } = await adminClient
+          .from("profiles")
+          .select("id")
+          .eq("email", email)
+          .maybeSingle();
+
+        if (existingProfile) {
+          return new Response(JSON.stringify({ error: "A user with this email already exists" }), {
+            status: 409,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Invite user via Supabase Auth Admin API
+        const inviteRes = await fetch(`${supabaseUrl}/auth/v1/invite`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${serviceRoleKey}`,
+            "apikey": serviceRoleKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        });
+
+        const inviteBody = await inviteRes.json();
+
+        if (!inviteRes.ok) {
+          console.error("Invite error:", inviteRes.status, inviteBody);
+          return new Response(JSON.stringify({ error: inviteBody.msg || inviteBody.error || "Failed to send invite" }), {
+            status: inviteRes.status,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const invitedUserId = inviteBody.id;
+
+        // Create a minimal profile for the invited user
+        if (invitedUserId) {
+          const { error: profileError } = await adminClient.from("profiles").insert({
+            user_id: invitedUserId,
+            email,
+            full_name: [email.split("@")[0].toUpperCase()],
+            user_code: ["PENDING"],
+            user_type,
+            approval_status: "approved",
+            approved_at: new Date().toISOString(),
+            referral_code: invitedUserId.substring(0, 8).toUpperCase(),
+          });
+
+          if (profileError) {
+            console.error("Profile creation error:", profileError);
+            // Don't fail the invite — user can complete profile later
+          }
+        }
+
+        // Audit log
+        await adminClient.from("admin_audit_logs").insert({
+          admin_id: callerUserId,
+          action: "invite_user",
+          target_profile_id: null,
+          target_profile_name: email,
+          details: { email, user_type, invited_user_id: invitedUserId },
+        });
+
+        return new Response(JSON.stringify({ success: true, message: `Invite sent to ${email}` }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
