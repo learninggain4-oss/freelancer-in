@@ -176,8 +176,9 @@ Deno.serve(async (req) => {
           await adminClient.from("support_conversations").delete().eq("id", supportConvo.id);
         }
 
-        // 6. Nullify audit log references & insert deletion log
+        // 6. Clean up audit log references & delete logs where this user was the admin
         await adminClient.from("admin_audit_logs").update({ target_profile_id: null }).eq("target_profile_id", pid);
+        await adminClient.from("admin_audit_logs").delete().eq("admin_id", pid);
 
         await adminClient.from("admin_audit_logs").insert({
           admin_id: callerUserId,
@@ -187,8 +188,15 @@ Deno.serve(async (req) => {
           details: { reason: "Permanent deletion by admin", deleted_profile_id: pid },
         });
 
-        // 7. Delete the profile
-        await adminClient.from("profiles").delete().eq("id", pid);
+        // 7. Delete the profile (check for errors)
+        const { error: profileDeleteError } = await adminClient.from("profiles").delete().eq("id", pid);
+        if (profileDeleteError) {
+          console.error("Profile delete error:", profileDeleteError);
+          return new Response(JSON.stringify({ error: "Failed to delete profile: " + profileDeleteError.message }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
 
         // 8. Delete user_roles (FK to auth.users) — THIS was the missing piece
         await adminClient.from("user_roles").delete().eq("user_id", userId);
