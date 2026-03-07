@@ -35,12 +35,26 @@ Deno.serve(async (req) => {
       });
     }
 
-    const callerUserId = getUserIdFromJwt(authHeader);
-    if (!callerUserId) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    // Use getUser for reliable token validation instead of manual JWT decoding
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user: callerUser }, error: userError } = await adminClient.auth.getUser(token);
+    if (userError || !callerUser) {
+      console.error("Token validation failed:", userError);
+      // Fallback to manual JWT decoding
+      const fallbackId = getUserIdFromJwt(authHeader);
+      if (!fallbackId) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      var callerUserId = fallbackId;
+    } else {
+      var callerUserId = callerUser.id;
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
