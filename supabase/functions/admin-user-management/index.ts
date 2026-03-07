@@ -160,6 +160,9 @@ Deno.serve(async (req) => {
           adminClient.from("support_message_reactions").delete().eq("user_id", pid),
           adminClient.from("announcement_dismissals").delete().eq("user_id", pid),
           adminClient.from("messages").delete().eq("sender_id", pid),
+          // Tables referencing profile via non-standard columns
+          adminClient.from("custom_quick_replies").delete().eq("created_by", pid),
+          adminClient.from("quick_reply_analytics").delete().eq("used_by", pid),
         ]);
 
         // 5. Delete support conversations
