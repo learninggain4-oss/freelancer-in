@@ -153,6 +153,7 @@ const AppContent = () => {
               <Route path="profile/aadhaar-verification" element={<ProfileAadhaarVerification />} />
               <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
               <Route path="settings" element={<AccountSettings />} />
+              <Route path="get-free" element={<GetFree />} />
               <Route path="help-support" element={<HelpSupport />} />
             </Route>
 
