@@ -636,7 +636,7 @@ const AdminSettings = () => {
               <p className="text-xs text-muted-foreground">
                 Preview: <span className="font-mono font-bold">{(() => {
                   const p = cltPrefix || "CLT";
-                  const s = cltSeparator;
+                  const s = cltSeparator === "none" ? "" : cltSeparator;
                   const d = Number(cltDigits) || 5;
                   const num = "0".repeat(d - 1) + "1";
                   const year = new Date().getFullYear().toString();
