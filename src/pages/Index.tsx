@@ -342,7 +342,7 @@ const Index = () => {
 
       {/* CTA */}
       <section className="border-t bg-muted/30 px-4 py-12 sm:px-6 md:py-20">
-        <div className="mx-auto max-w-6xl">
+        <ScrollFadeIn className="mx-auto max-w-6xl">
           <Card className="overflow-hidden border-0 bg-gradient-to-br from-primary to-primary/80 shadow-xl">
             <CardContent className="flex flex-col items-center gap-6 p-8 text-center sm:p-12 md:flex-row md:text-left">
               <div className="flex-1">
@@ -365,12 +365,12 @@ const Index = () => {
               </Link>
             </CardContent>
           </Card>
-        </div>
+        </ScrollFadeIn>
       </section>
 
       {/* Footer */}
       <footer className="mt-auto border-t bg-card px-4 py-8 sm:px-6">
-        <div className="mx-auto max-w-6xl">
+        <ScrollFadeIn className="mx-auto max-w-6xl">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
             <div className="flex items-center gap-2">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
@@ -384,7 +384,7 @@ const Index = () => {
             </div>
             <p className="text-xs text-muted-foreground">© 2026 Freelancer. All rights reserved.</p>
           </div>
-        </div>
+        </ScrollFadeIn>
       </footer>
       {/* Install Banner */}
       {showBanner && !isInstalled && !bannerDismissed && (
