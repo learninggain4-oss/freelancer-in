@@ -42,6 +42,10 @@ const UpdatePrompt = () => {
       updateServiceWorker(true).then(() => {
         clearInterval(intervalRef.current);
         setProgress(100);
+        setTimeout(() => {
+          setUpdating(false);
+          toast({ title: "Update complete", description: "App has been updated to the latest version." });
+        }, 500);
       });
     }
 
