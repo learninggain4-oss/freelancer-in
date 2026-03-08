@@ -24,6 +24,33 @@ const AdminSettings = () => {
   const [clientPaymentSharing, setClientPaymentSharing] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+
+  const {
+    needRefresh: [needRefresh],
+    updateServiceWorker,
+  } = useRegisterSW();
+
+  const handleCheckUpdate = useCallback(async () => {
+    setChecking(true);
+    try {
+      const registrations = await navigator.serviceWorker?.getRegistrations();
+      if (registrations?.length) {
+        await Promise.all(registrations.map((r) => r.update()));
+      }
+      if (!needRefresh) {
+        toast({ title: "You're up to date!", description: "No new updates available." });
+      }
+    } catch {
+      toast({ title: "Could not check for updates", variant: "destructive" });
+    } finally {
+      setChecking(false);
+    }
+  }, [needRefresh, toast]);
+
+  const handleUpdate = useCallback(() => {
+    updateServiceWorker(true);
+  }, [updateServiceWorker]);
 
   useEffect(() => {
     const fetch = async () => {
