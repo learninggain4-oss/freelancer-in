@@ -88,7 +88,17 @@ const Login = () => {
             navigate("/admin/dashboard", { replace: true });
           } else {
             const base = prof.user_type === "employee" ? "/employee" : "/client";
-            navigate(`${base}/dashboard`, { replace: true });
+            const dest = `${base}/dashboard`;
+            // Check if user has TOTP enabled
+            const userTotpRes = await supabase.functions.invoke("user-totp", {
+              body: { action: "check_status_by_id", user_id: session.user.id },
+            });
+            if (userTotpRes.data?.is_enabled) {
+              setPendingUserNav(dest);
+              setShowTotpDialog(true);
+              return;
+            }
+            navigate(dest, { replace: true });
           }
           return;
         }
