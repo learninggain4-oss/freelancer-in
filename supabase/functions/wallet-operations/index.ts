@@ -949,8 +949,6 @@ Deno.serve(async (req) => {
 
         await supabase.from("transactions").delete().eq("id", transaction_id);
 
-        const { data: tpName } = await supabase.from("profiles").select("full_name").eq("id", target_profile_id).single();
-        await supabase.from("admin_audit_logs").insert({ admin_id: callerProfile.id, action: "delete_transaction", target_profile_id, target_profile_name: (tpName?.full_name as any)?.[0] || null, details: { transaction_id, deleted: { amount: oldTx.amount, type: oldTx.type, description: oldTx.description }, adjust_balance } });
         break;
       }
 
