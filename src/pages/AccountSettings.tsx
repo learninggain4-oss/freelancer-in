@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Copy, Gift, Users, Check, Loader2, Share2, UserCheck, Briefcase, Clock, RefreshCw, Download } from "lucide-react";
 import UserTotpSetupCard from "@/components/auth/UserTotpSetupCard";
+import WithdrawalPasswordCard from "@/components/settings/WithdrawalPasswordCard";
 import { format } from "date-fns";
 
 interface ReferralEntry {
