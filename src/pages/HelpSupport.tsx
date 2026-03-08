@@ -179,69 +179,6 @@ const HelpSupport = () => {
               </CardContent>
             </Card>
 
-            {/* Recent Messages Preview */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-foreground">Recent Messages</h3>
-                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setActiveTab("messages")}>
-                    View All <ChevronRight className="ml-1 h-3 w-3" />
-                  </Button>
-                </div>
-                {loadingMessages ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                ) : messages.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">No messages yet. Start a conversation with our support team.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {messages.slice(-3).map((msg) => (
-                      <div
-                        key={msg.id}
-                        className="flex items-start gap-2 rounded-lg border p-2"
-                      >
-                        <div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${msg.sender_id === profile?.id ? 'bg-primary' : 'bg-accent'}`} />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[10px] font-medium text-muted-foreground">
-                            {msg.sender_id === profile?.id ? "You" : "Support Team"}
-                          </p>
-                          <p className="truncate text-xs text-foreground">{msg.content}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Top FAQs Preview */}
-            {faqs.length > 0 && (
-              <Card>
-                <CardContent className="p-4">
-                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-foreground">Popular Questions</h3>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setActiveTab("faqs")}>
-                      View All <ChevronRight className="ml-1 h-3 w-3" />
-                    </Button>
-                  </div>
-                  <div className="space-y-2">
-                    {faqs.slice(0, 3).map((faq) => (
-                      <button
-                        key={faq.id}
-                        onClick={() => { setActiveTab("faqs"); setExpandedFaq(faq.id); }}
-                        className="flex w-full items-center gap-2 rounded-lg border p-2.5 text-left transition-colors hover:bg-muted"
-                      >
-                        <HelpCircle className="h-4 w-4 shrink-0 text-primary" />
-                        <span className="flex-1 text-xs text-foreground">{faq.question}</span>
-                        <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                      </button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
         </TabsContent>
 
