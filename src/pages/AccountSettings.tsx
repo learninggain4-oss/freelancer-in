@@ -31,6 +31,8 @@ const AccountSettings = () => {
   const [terms, setTerms] = useState("");
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [updateProgress, setUpdateProgress] = useState(0);
 
   const {
     needRefresh: [needRefresh],
@@ -44,6 +46,7 @@ const AccountSettings = () => {
       if (registrations?.length) {
         await Promise.all(registrations.map((r) => r.update()));
       }
+      await new Promise((r) => setTimeout(r, 1500));
       if (!needRefresh) {
         toast({ title: "You're up to date!", description: "No new updates available." });
       }
@@ -55,7 +58,22 @@ const AccountSettings = () => {
   }, [needRefresh, toast]);
 
   const handleUpdate = useCallback(() => {
-    updateServiceWorker(true);
+    setUpdating(true);
+    setUpdateProgress(0);
+    const interval = setInterval(() => {
+      setUpdateProgress((prev) => {
+        if (prev >= 90) {
+          clearInterval(interval);
+          return 95;
+        }
+        return prev + Math.random() * 15 + 5;
+      });
+    }, 200);
+    updateServiceWorker(true).finally(() => {
+      clearInterval(interval);
+      setUpdateProgress(100);
+      setTimeout(() => window.location.reload(), 300);
+    });
   }, [updateServiceWorker]);
 
   useEffect(() => {
@@ -265,7 +283,17 @@ const AccountSettings = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {needRefresh ? (
+              {updating ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">Updating... {Math.min(Math.round(updateProgress), 100)}%</p>
+                  <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-200"
+                      style={{ width: `${Math.min(updateProgress, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ) : needRefresh ? (
                 <>
                   <p className="text-sm text-muted-foreground">A new version is available. Update now to get the latest features and fixes.</p>
                   <Button onClick={handleUpdate} className="w-full gap-2">
