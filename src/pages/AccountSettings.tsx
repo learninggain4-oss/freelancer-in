@@ -31,6 +31,8 @@ const AccountSettings = () => {
   const [terms, setTerms] = useState("");
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [updateProgress, setUpdateProgress] = useState(0);
 
   const {
     needRefresh: [needRefresh],
