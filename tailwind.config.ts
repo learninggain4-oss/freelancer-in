@@ -47,6 +47,11 @@ export default {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
         },
+        wallet: {
+          from: "hsl(var(--wallet-from))",
+          via: "hsl(var(--wallet-via))",
+          to: "hsl(var(--wallet-to))",
+        },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
