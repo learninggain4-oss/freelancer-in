@@ -234,7 +234,7 @@ const AdminWallet = () => {
             {selectedRecipient && (
               <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-sm">
                 <span className="font-medium">{selectedRecipient.full_name?.[0]}</span>
-                <Badge variant="secondary" className="text-xs">{selectedRecipient.user_code?.[0]}</Badge>
+                <Badge variant="secondary" className="text-xs">{(selectedRecipient as any).wallet_number}</Badge>
                 <button
                   className="ml-auto text-xs text-destructive hover:underline"
                   onClick={() => { setSelectedRecipient(null); setTransferSearch(""); }}
