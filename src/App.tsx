@@ -80,6 +80,7 @@ const queryClient = new QueryClient();
 const GlobalChatNotifier = () => {
   useChatNotifications();
   usePresenceHeartbeat();
+  useVisitorTracking();
   return null;
 };
 
