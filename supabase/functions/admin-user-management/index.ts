@@ -188,17 +188,6 @@ Deno.serve(async (req) => {
           await adminClient.from("support_conversations").delete().eq("id", supportConvo.id);
         }
 
-        // 6. Clean up audit log references & delete logs where this user was the admin
-        await adminClient.from("admin_audit_logs").update({ target_profile_id: null }).eq("target_profile_id", pid);
-        await adminClient.from("admin_audit_logs").delete().eq("admin_id", pid);
-
-        await adminClient.from("admin_audit_logs").insert({
-          admin_id: callerUserId,
-          action: "permanent_delete_user",
-          target_profile_id: null,
-          target_profile_name: profile.full_name?.[0] || "Unknown",
-          details: { reason: "Permanent deletion by admin", deleted_profile_id: pid },
-        });
 
         // 7. Delete the profile (check for errors)
         const { error: profileDeleteError } = await adminClient.from("profiles").delete().eq("id", pid);
