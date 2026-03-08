@@ -75,6 +75,15 @@ const Login = () => {
             _role: "admin" as const,
           });
           if (adminCheck) {
+            // Check if admin has TOTP enabled
+            const totpRes = await supabase.functions.invoke("admin-totp", {
+              body: { action: "check_status" },
+            });
+            if (totpRes.data?.is_enabled) {
+              setPendingAdminNav(true);
+              setShowTotpDialog(true);
+              return;
+            }
             navigate("/admin/dashboard", { replace: true });
           } else {
             const base = prof.user_type === "employee" ? "/employee" : "/client";
