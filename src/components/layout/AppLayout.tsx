@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import BottomTabBar from "./BottomTabBar";
 import SideDrawer from "./SideDrawer";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import ChatBotPopup from "@/components/chatbot/ChatBotPopup";
 
 interface AppLayoutProps {
   userType: "employee" | "client";
@@ -29,6 +30,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
       </main>
       <BottomTabBar userType={userType} onMenuClick={() => setDrawerOpen(true)} />
       <SideDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
+      <ChatBotPopup />
     </div>
   );
 };
