@@ -174,16 +174,36 @@ const ScrollFadeIn = ({ children, className = "", delay = 0 }: { children: React
 const HeroSlideshow = () => {
   const [current, setCurrent] = useState(0);
 
+  const { data: dbSlides = [] } = useQuery({
+    queryKey: ["hero-slides"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("hero_slides")
+        .select("*")
+        .eq("is_active", true)
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const slides = dbSlides.length > 0
+    ? dbSlides.map((s) => ({ image_path: s.image_path, title: s.title, subtitle: s.subtitle }))
+    : fallbackSlides;
+
   useEffect(() => {
+    if (slides.length === 0) return;
     const timer = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % heroSlides.length);
+      setCurrent((prev) => (prev + 1) % slides.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [slides.length]);
+
+  if (slides.length === 0) return null;
 
   return (
     <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl" style={{ aspectRatio: "16/7" }}>
-      {heroSlides.map((slide, i) => (
+      {slides.map((slide, i) => (
         <div
           key={i}
           className="absolute inset-0 transition-all duration-700 ease-in-out"
@@ -193,7 +213,7 @@ const HeroSlideshow = () => {
           }}
         >
           <img
-            src={slide.image}
+            src={slide.image_path || ""}
             alt={slide.title}
             className="h-full w-full object-cover"
             loading={i === 0 ? "eager" : "lazy"}
@@ -222,7 +242,7 @@ const HeroSlideshow = () => {
         </div>
       ))}
       <div className="absolute bottom-3 right-4 flex gap-1.5 sm:bottom-5 sm:right-6">
-        {heroSlides.map((_, i) => (
+        {slides.map((_, i) => (
           <button
             key={i}
             onClick={() => setCurrent(i)}
