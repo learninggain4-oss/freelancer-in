@@ -198,6 +198,7 @@ const AppContent = () => {
               <Route path="hero-slides" element={<AdminHeroSlides />} />
               <Route path="visitors" element={<AdminVisitors />} />
               <Route path="wallet" element={<AdminWallet />} />
+              <Route path="wallet/transactions" element={<AdminWalletTransactions />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
