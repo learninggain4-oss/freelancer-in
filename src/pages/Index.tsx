@@ -358,6 +358,14 @@ const Index = () => {
     setDeferredPrompt(null);
   };
 
+  // Parallax scroll offset for hero background
+  const [scrollY, setScrollY] = useState(0);
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   if (!loading && user && profile) {
     if (profile.approval_status === "approved") {
       const base = profile.user_type === "employee" ? "/employee" : "/client";
@@ -367,14 +375,6 @@ const Index = () => {
       return <Navigate to="/verification-pending" replace />;
     }
   }
-
-  // Parallax scroll offset for hero background
-  const [scrollY, setScrollY] = useState(0);
-  useEffect(() => {
-    const onScroll = () => setScrollY(window.scrollY);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
