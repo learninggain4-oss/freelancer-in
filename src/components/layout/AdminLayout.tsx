@@ -34,6 +34,7 @@ import {
   Monitor,
   MessageSquareQuote,
   Wifi,
+  SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ const navItems = [
   { label: "Referrals", icon: UserPlus, path: "/admin/referrals" },
   { label: "Sessions", icon: Monitor, path: "/admin/sessions" },
   { label: "Online Status", icon: Wifi, path: "/admin/online-status" },
+  { label: "Hero Slideshow", icon: SlidersHorizontal, path: "/admin/hero-slides" },
   { label: "Testimonials", icon: MessageSquareQuote, path: "/admin/testimonials" },
 ];
 

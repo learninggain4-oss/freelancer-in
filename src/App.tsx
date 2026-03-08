@@ -63,6 +63,7 @@ const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"));
 const AdminTestimonials = lazy(() => import("./pages/admin/AdminTestimonials"));
 const AdminReferrals = lazy(() => import("./pages/admin/AdminReferrals"));
 const AdminOnlineStatus = lazy(() => import("./pages/admin/AdminOnlineStatus"));
+const AdminHeroSlides = lazy(() => import("./pages/admin/AdminHeroSlides"));
 const Categories = lazy(() => import("./pages/Categories"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
@@ -186,6 +187,7 @@ const App = () => (
                 <Route path="testimonials" element={<AdminTestimonials />} />
                 <Route path="referrals" element={<AdminReferrals />} />
                 <Route path="online-status" element={<AdminOnlineStatus />} />
+                <Route path="hero-slides" element={<AdminHeroSlides />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
