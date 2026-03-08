@@ -1,10 +1,38 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Coins, Star, CheckCircle, Trophy } from "lucide-react";
+import { Coins, Star, CheckCircle, Trophy, IndianRupee } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const GetCoins = () => {
+  const [coinRate, setCoinRate] = useState<number>(100);
+
+  useEffect(() => {
+    const fetchRate = async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "coin_conversion_rate")
+        .maybeSingle();
+      if (data?.value) setCoinRate(Number(data.value) || 100);
+    };
+    fetchRate();
+  }, []);
+
   return (
     <div className="space-y-6 px-4 py-6">
       <h2 className="text-2xl font-bold text-foreground">Get Coins</h2>
+
+      {/* Conversion Rate Card */}
+      <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-amber-600/5">
+        <CardContent className="flex items-center justify-center gap-3 py-5">
+          <Coins className="h-6 w-6 text-amber-500" />
+          <span className="text-lg font-bold text-foreground">{coinRate} Coins</span>
+          <span className="text-muted-foreground">=</span>
+          <span className="flex items-center text-lg font-bold text-accent">
+            <IndianRupee className="h-4 w-4" />1
+          </span>
+        </CardContent>
+      </Card>
 
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
         <CardHeader className="pb-3">
@@ -23,6 +51,7 @@ const GetCoins = () => {
               <Coins className="mx-auto mb-1 h-5 w-5 text-amber-500" />
               <p className="text-xl font-bold text-foreground">0</p>
               <p className="text-xs text-muted-foreground">Total Coins</p>
+              <p className="text-[10px] text-muted-foreground">≈ ₹{(0 / coinRate).toFixed(2)}</p>
             </div>
             <div className="rounded-lg bg-background p-3 text-center">
               <Trophy className="mx-auto mb-1 h-5 w-5 text-amber-500" />
