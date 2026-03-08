@@ -1,4 +1,4 @@
-import { Home, Briefcase, Wallet, HelpCircle, Menu, ClipboardCheck, FileText } from "lucide-react";
+import { Home, Briefcase, Wallet, HelpCircle, Menu, ClipboardCheck, FileText, MessageSquare } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
