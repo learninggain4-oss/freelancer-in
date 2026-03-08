@@ -327,7 +327,7 @@ const AdminTestimonials = () => {
                   <div className="min-w-0">
                     <p className="font-semibold text-foreground truncate">{t.name}</p>
                     <p className="text-xs text-muted-foreground truncate">{t.role}</p>
-                    <RatingDisplay value={t.rating} />
+                    <InlineRatingPicker id={t.id} value={t.rating} />
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground line-clamp-3">"{t.quote}"</p>
