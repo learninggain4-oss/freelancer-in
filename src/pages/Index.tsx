@@ -472,8 +472,52 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* FAQ */}
       <section className="border-t px-4 py-12 sm:px-6 md:py-20">
+        <div className="mx-auto max-w-3xl">
+          <ScrollFadeIn className="mb-10 text-center">
+            <h2 className="text-2xl font-bold text-foreground sm:text-3xl">Frequently Asked Questions</h2>
+            <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+              Got questions? We've got answers.
+            </p>
+          </ScrollFadeIn>
+          <div className="space-y-3">
+            {[
+              {
+                q: "Is it free to sign up?",
+                a: "Yes! Signing up, posting jobs, and searching for freelancers is completely free. We only charge a 2.9% handling fee on invoice payments.",
+              },
+              {
+                q: "How does the verification process work?",
+                a: "After registration, your profile is reviewed and approved by our admin team within 6 hours. We verify your identity through WhatsApp and document verification to ensure authentic interactions.",
+              },
+              {
+                q: "What payment methods are supported?",
+                a: "We support UPI transfers and bank transfers (NEFT/RTGS). All payments are processed securely through our platform with full transaction tracking.",
+              },
+              {
+                q: "How do I get paid as a freelancer?",
+                a: "Once your project is validated and completed, your earnings are credited to your wallet. You can withdraw anytime via UPI or bank transfer.",
+              },
+              {
+                q: "Can I hire multiple freelancers for a project?",
+                a: "Currently, each project is assigned to one freelancer. However, you can create multiple projects and assign different freelancers to each.",
+              },
+              {
+                q: "What happens if there's a dispute?",
+                a: "Our support team mediates all disputes. You can raise a recovery request and communicate through our dedicated support chat to resolve issues quickly.",
+              },
+            ].map((faq, i) => (
+              <ScrollFadeIn key={i} delay={i * 80}>
+                <FAQItem question={faq.q} answer={faq.a} />
+              </ScrollFadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="border-t bg-muted/30 px-4 py-12 sm:px-6 md:py-20">
         <ScrollFadeIn className="mx-auto max-w-6xl">
           <Card className="overflow-hidden border-0 bg-gradient-to-br from-primary to-primary/80 shadow-xl">
             <CardContent className="flex flex-col items-center gap-6 p-8 text-center sm:p-12 md:flex-row md:text-left">
