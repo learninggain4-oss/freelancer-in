@@ -368,6 +368,14 @@ const Index = () => {
     }
   }
 
+  // Parallax scroll offset for hero background
+  const [scrollY, setScrollY] = useState(0);
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
