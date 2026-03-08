@@ -9,6 +9,7 @@ interface WalletCardProps {
   availableBalance: number;
   holdBalance: number;
   compact?: boolean;
+  walletActive?: boolean;
 }
 
 const WalletCard = ({
