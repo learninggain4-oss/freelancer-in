@@ -385,20 +385,37 @@ const AdminWalletManagement = () => {
             {loadingUsers && <Skeleton className="h-10 w-full" />}
             <div className="max-h-[400px] space-y-2 overflow-y-auto">
               {filteredUsers.map((u) => (
-                <button
+                <div
                   key={u.id}
-                  className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted"
-                  onClick={() => { setSelectedUser(u); setSearch(""); setTxPage(1); setWPage(1); }}
+                  className="flex w-full items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted"
                 >
-                  <div>
+                  <button
+                    className="flex-1 text-left"
+                    onClick={() => { setSelectedUser(u); setSearch(""); setTxPage(1); setWPage(1); }}
+                  >
                     <p className="font-medium text-foreground">{u.full_name?.[0]}</p>
                     <p className="text-xs text-muted-foreground">{u.user_code?.[0]} · {u.email}</p>
+                    {u.wallet_number && (
+                      <p className="text-xs text-muted-foreground">Wallet: {u.wallet_number}</p>
+                    )}
+                  </button>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right text-sm">
+                      <p className="font-semibold text-foreground">₹{Number(u.available_balance).toLocaleString("en-IN")}</p>
+                      <p className="text-xs text-muted-foreground">Hold: ₹{Number(u.hold_balance).toLocaleString("en-IN")}</p>
+                    </div>
+                    <div className="flex flex-col items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                      <Switch
+                        checked={u.wallet_active}
+                        onCheckedChange={(checked) => toggleWalletMutation.mutate({ id: u.id, active: checked })}
+                        disabled={toggleWalletMutation.isPending}
+                      />
+                      <span className={`text-[10px] font-medium ${u.wallet_active ? "text-accent" : "text-destructive"}`}>
+                        {u.wallet_active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right text-sm">
-                    <p className="font-semibold text-foreground">₹{Number(u.available_balance).toLocaleString("en-IN")}</p>
-                    <p className="text-xs text-muted-foreground">Hold: ₹{Number(u.hold_balance).toLocaleString("en-IN")}</p>
-                  </div>
-                </button>
+                </div>
               ))}
               {!loadingUsers && filteredUsers.length === 0 && (
                 <p className="py-4 text-center text-sm text-muted-foreground">No {userTab}s found</p>
