@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import WalletCard from "@/components/wallet/WalletCard";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -14,8 +16,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, PlusCircle, ArrowUpRight } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const PAGE_SIZE = 15;
 
@@ -35,8 +38,10 @@ const typeBadgeVariant = (type: string) => {
 };
 
 const AdminWallet = () => {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const [page, setPage] = useState(1);
+  const [addAmount, setAddAmount] = useState("");
+  const queryClient = useQueryClient();
 
   const { data: transactions, isLoading } = useQuery({
     queryKey: ["admin-wallet-transactions", profile?.id, page],
@@ -58,6 +63,29 @@ const AdminWallet = () => {
     enabled: !!profile?.id,
   });
 
+  const addMoneyMutation = useMutation({
+    mutationFn: async () => {
+      const amount = Number(addAmount);
+      if (!amount || amount <= 0) throw new Error("Enter a valid amount");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const res = await supabase.functions.invoke("wallet-operations", {
+        body: { action: "add_money", amount },
+      });
+      if (res.error) throw new Error(res.error.message);
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success(`₹${Number(addAmount).toLocaleString("en-IN")} added to wallet`);
+      setAddAmount("");
+      refreshProfile();
+      queryClient.invalidateQueries({ queryKey: ["admin-wallet-transactions"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   if (!profile) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -74,7 +102,7 @@ const AdminWallet = () => {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-foreground">My Wallet</h2>
 
-      <div className="max-w-md">
+      <div className="grid gap-6 md:grid-cols-2">
         <WalletCard
           name={profile.full_name?.join(" ") || "Admin"}
           userCode={profile.user_code?.join(", ") || ""}
@@ -82,6 +110,33 @@ const AdminWallet = () => {
           availableBalance={Number(profile.available_balance) || 0}
           holdBalance={Number(profile.hold_balance) || 0}
         />
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <PlusCircle className="h-4 w-4" /> Add Money
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Amount (₹)</Label>
+              <Input
+                type="number"
+                placeholder="Enter amount"
+                value={addAmount}
+                onChange={(e) => setAddAmount(e.target.value)}
+              />
+            </div>
+            <Button
+              className="w-full"
+              onClick={() => addMoneyMutation.mutate()}
+              disabled={addMoneyMutation.isPending}
+            >
+              <ArrowUpRight className="mr-2 h-4 w-4" />
+              {addMoneyMutation.isPending ? "Processing..." : "Add to Wallet"}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
