@@ -101,8 +101,8 @@ const ClientWallet = () => {
             <Label>Amount (₹)</Label>
             <Input type="number" placeholder="Enter amount" value={addAmount} onChange={(e) => setAddAmount(e.target.value)} />
           </div>
-          <Button className="w-full" onClick={() => addMoneyMutation.mutate()} disabled={addMoneyMutation.isPending}>
-            <ArrowUpRight className="mr-2 h-4 w-4" /> {addMoneyMutation.isPending ? "Processing..." : "Add to Wallet"}
+          <Button className="w-full" onClick={() => addMoneyMutation.mutate()} disabled={addMoneyMutation.isPending || !(profile as any)?.wallet_active}>
+            <ArrowUpRight className="mr-2 h-4 w-4" /> {addMoneyMutation.isPending ? "Processing..." : !(profile as any)?.wallet_active ? "Wallet Inactive" : "Add to Wallet"}
           </Button>
         </CardContent>
       </Card>

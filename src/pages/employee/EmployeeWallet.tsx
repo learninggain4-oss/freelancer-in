@@ -183,8 +183,8 @@ const EmployeeWallet = () => {
               <span>Your bank details must be verified before you can withdraw. Go to your Profile to submit for verification.</span>
             </div>
           )}
-          <Button className="w-full" onClick={() => withdrawMutation.mutate()} disabled={withdrawMutation.isPending || !isBankVerified}>
-            {withdrawMutation.isPending ? "Submitting..." : !isBankVerified ? "Bank Verification Required" : "Enter Withdrawal"}
+          <Button className="w-full" onClick={() => withdrawMutation.mutate()} disabled={withdrawMutation.isPending || !isBankVerified || !(profile as any)?.wallet_active}>
+            {withdrawMutation.isPending ? "Submitting..." : !(profile as any)?.wallet_active ? "Wallet Inactive" : !isBankVerified ? "Bank Verification Required" : "Enter Withdrawal"}
           </Button>
         </CardContent>
       </Card>
