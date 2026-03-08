@@ -21,6 +21,7 @@ const ClientRegister = lazy(() => import("./pages/register/ClientRegister"));
 const VerificationPending = lazy(() => import("./pages/VerificationPending"));
 const EmployeeDashboard = lazy(() => import("./pages/employee/EmployeeDashboard"));
 const EmployeeProjects = lazy(() => import("./pages/employee/EmployeeProjects"));
+const EmployeeRequests = lazy(() => import("./pages/employee/EmployeeRequests"));
 const EmployeeWallet = lazy(() => import("./pages/employee/EmployeeWallet"));
 const EmployeeAttendance = lazy(() => import("./pages/employee/EmployeeAttendance"));
 const EmployeeProfile = lazy(() => import("./pages/employee/EmployeeProfile"));
@@ -146,6 +147,7 @@ const AppContent = () => {
               <Route path="dashboard" element={<EmployeeDashboard />} />
               <Route path="attendance" element={<EmployeeAttendance />} />
               <Route path="projects" element={<EmployeeProjects />} />
+              <Route path="requests" element={<EmployeeRequests />} />
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
               <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
               <Route path="wallet" element={<EmployeeWallet />} />
