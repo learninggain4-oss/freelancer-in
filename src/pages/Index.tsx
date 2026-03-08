@@ -27,7 +27,8 @@ const steps = [
   { step: "04", title: "Get Paid", description: "Receive secure payments directly to your UPI or bank account." },
 ];
 
-const trustedCompanies = [
+// Fallback companies if DB is empty or loading
+const fallbackCompanies = [
   { name: "TCS", logo: "/logos/tcs.png" },
   { name: "Infosys", logo: "/logos/infosys.png" },
   { name: "Wipro", logo: "/logos/wipro.png" },
