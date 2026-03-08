@@ -28,7 +28,7 @@ const WalletCard = ({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/85 to-primary/60 p-5 text-primary-foreground shadow-lg">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/85 to-primary/60 p-5 text-primary-foreground shadow-lg animate-fade-in">
       {/* Decorative elements */}
       <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary-foreground/10" />
       <div className="absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-primary-foreground/5" />
