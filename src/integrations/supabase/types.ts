@@ -1005,6 +1005,7 @@ export type Database = {
           user_type: Database["public"]["Enums"]["user_type"]
           wallet_number: string | null
           whatsapp_number: string | null
+          withdrawal_password_hash: string | null
           work_experience: string | null
         }
         Insert: {
@@ -1058,6 +1059,7 @@ export type Database = {
           user_type: Database["public"]["Enums"]["user_type"]
           wallet_number?: string | null
           whatsapp_number?: string | null
+          withdrawal_password_hash?: string | null
           work_experience?: string | null
         }
         Update: {
@@ -1111,6 +1113,7 @@ export type Database = {
           user_type?: Database["public"]["Enums"]["user_type"]
           wallet_number?: string | null
           whatsapp_number?: string | null
+          withdrawal_password_hash?: string | null
           work_experience?: string | null
         }
         Relationships: [
