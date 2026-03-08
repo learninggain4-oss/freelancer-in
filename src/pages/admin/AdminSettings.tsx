@@ -580,7 +580,7 @@ const AdminSettings = () => {
                     await Promise.all([
                       supabase.from("app_settings").upsert({ key: "employee_code_prefix", value: empPrefix.trim() }, { onConflict: "key" }),
                       supabase.from("app_settings").upsert({ key: "employee_code_digits", value: String(d) }, { onConflict: "key" }),
-                      supabase.from("app_settings").upsert({ key: "employee_code_separator", value: empSeparator }, { onConflict: "key" }),
+                      supabase.from("app_settings").upsert({ key: "employee_code_separator", value: empSeparator === "none" ? "" : empSeparator }, { onConflict: "key" }),
                       supabase.from("app_settings").upsert({ key: "employee_code_include_year", value: String(empIncludeYear) }, { onConflict: "key" }),
                       supabase.from("app_settings").upsert({ key: "employee_code_include_month", value: String(empIncludeMonth) }, { onConflict: "key" }),
                     ]);
