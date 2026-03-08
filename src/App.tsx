@@ -99,6 +99,7 @@ const App = () => (
               <Route path="/register/client" element={<ClientRegister />} />
               <Route path="/verification-pending" element={<VerificationPending />} />
               <Route path="/install" element={<InstallApp />} />
+              <Route path="/complete-profile" element={<CompleteProfile />} />
               <Route path="/legal/:slug" element={<LegalDocument />} />
 
               {/* Employee Routes */}
