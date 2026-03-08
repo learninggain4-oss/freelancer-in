@@ -83,13 +83,23 @@ const Categories = () => {
         </div>
 
         {/* CTA */}
-        <div className="mt-12 text-center">
-          <p className="text-sm text-muted-foreground mb-4">Can't find what you're looking for?</p>
-          <Link to="/register/client">
-            <Button className="gap-2">
-              Post a Custom Job <ArrowLeft className="h-4 w-4 rotate-180" />
-            </Button>
-          </Link>
+        <div className="mt-12 rounded-xl border bg-muted/30 p-6 sm:p-8 text-center">
+          <p className="text-lg font-semibold text-foreground mb-2">Can't find what you're looking for?</p>
+          <p className="text-sm text-muted-foreground mb-6">Join our platform and get started today</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link to="/register/employee">
+              <Button variant="outline" size="lg" className="w-full sm:w-auto gap-2">
+                <Briefcase className="h-4 w-4" />
+                Join as Employee
+              </Button>
+            </Link>
+            <Link to="/register/client">
+              <Button size="lg" className="w-full sm:w-auto gap-2">
+                <Users className="h-4 w-4" />
+                Post a Custom Job
+              </Button>
+            </Link>
+          </div>
         </div>
       </main>
     </div>
