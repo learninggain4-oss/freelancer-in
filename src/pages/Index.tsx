@@ -295,23 +295,25 @@ const Index = () => {
       {/* Features */}
       <section className="border-t bg-muted/30 px-4 py-12 sm:px-6 md:py-20">
         <div className="mx-auto max-w-6xl">
-          <div className="mx-auto mb-10 max-w-lg text-center">
+          <ScrollFadeIn className="mx-auto mb-10 max-w-lg text-center">
             <h2 className="text-2xl font-bold text-foreground sm:text-3xl">Everything you need</h2>
             <p className="mt-2 text-sm text-muted-foreground sm:text-base">
               A complete platform designed for professional freelancing
             </p>
-          </div>
+          </ScrollFadeIn>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {features.map((feature) => (
-              <Card key={feature.title} className="border bg-card transition-all hover:shadow-lg hover:-translate-y-0.5">
-                <CardContent className="p-5 sm:p-6">
-                  <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                    <feature.icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <h3 className="text-sm font-semibold text-foreground sm:text-base">{feature.title}</h3>
-                  <p className="mt-1.5 text-xs text-muted-foreground sm:text-sm leading-relaxed">{feature.description}</p>
-                </CardContent>
-              </Card>
+            {features.map((feature, i) => (
+              <ScrollFadeIn key={feature.title} delay={i * 120}>
+                <Card className="border bg-card transition-all hover:shadow-lg hover:-translate-y-0.5 h-full">
+                  <CardContent className="p-5 sm:p-6">
+                    <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+                      <feature.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-foreground sm:text-base">{feature.title}</h3>
+                    <p className="mt-1.5 text-xs text-muted-foreground sm:text-sm leading-relaxed">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              </ScrollFadeIn>
             ))}
           </div>
         </div>
@@ -320,17 +322,19 @@ const Index = () => {
       {/* How it works */}
       <section className="px-4 py-12 sm:px-6 md:py-20">
         <div className="mx-auto max-w-6xl">
-          <div className="mx-auto mb-10 max-w-lg text-center">
+          <ScrollFadeIn className="mx-auto mb-10 max-w-lg text-center">
             <h2 className="text-2xl font-bold text-foreground sm:text-3xl">How it works</h2>
             <p className="mt-2 text-sm text-muted-foreground sm:text-base">Get started in four simple steps</p>
-          </div>
+          </ScrollFadeIn>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {steps.map((s) => (
-              <div key={s.step} className="relative text-center sm:text-left">
-                <span className="text-4xl font-extrabold text-primary/10 sm:text-5xl">{s.step}</span>
-                <h3 className="mt-1 text-sm font-semibold text-foreground sm:text-base">{s.title}</h3>
-                <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{s.description}</p>
-              </div>
+            {steps.map((s, i) => (
+              <ScrollFadeIn key={s.step} delay={i * 150}>
+                <div className="relative text-center sm:text-left">
+                  <span className="text-4xl font-extrabold text-primary/10 sm:text-5xl">{s.step}</span>
+                  <h3 className="mt-1 text-sm font-semibold text-foreground sm:text-base">{s.title}</h3>
+                  <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{s.description}</p>
+                </div>
+              </ScrollFadeIn>
             ))}
           </div>
         </div>
