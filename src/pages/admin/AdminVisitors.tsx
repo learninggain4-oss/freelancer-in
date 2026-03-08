@@ -125,8 +125,8 @@ const AdminVisitors = () => {
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
-            <div className="rounded-lg bg-green-500/10 p-2.5">
-              <UserCheck className="h-5 w-5 text-green-600" />
+            <div className="rounded-lg bg-emerald-500/10 p-2.5">
+              <UserCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Registered Visitors</p>
