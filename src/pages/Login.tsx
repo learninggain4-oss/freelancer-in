@@ -20,6 +20,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [showTotpDialog, setShowTotpDialog] = useState(false);
+  const [pendingAdminNav, setPendingAdminNav] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, user, profile, loading: authLoading } = useAuth();
