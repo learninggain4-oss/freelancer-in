@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Code, Palette, PenTool, BarChart3, Camera, Music, Globe, Megaphone, FileText, Wrench, GraduationCap, Heart, Headphones, ShoppingCart, Cpu, BookOpen, Smartphone, TrendingUp, Layers, Search, Printer, Database, Shield, Monitor, Mic, MapPin, Scissors, Truck, Landmark, Stethoscope, Scale, Leaf, Gamepad2, Plane, Baby, Dog, Gem, Bike, Utensils, Lightbulb, Briefcase, Users } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, Code, Palette, PenTool, BarChart3, Camera, Music, Globe, Megaphone, FileText, Wrench, GraduationCap, Heart, Headphones, ShoppingCart, Cpu, BookOpen, Smartphone, TrendingUp, Layers, Search, Printer, Database, Shield, Monitor, Mic, MapPin, Scissors, Truck, Landmark, Stethoscope, Scale, Leaf, Gamepad2, Plane, Baby, Dog, Gem, Bike, Utensils, Lightbulb, Briefcase, Users, X } from "lucide-react";
 
 const categories = [
   { icon: Code, label: "Web Development", count: "450+" },
