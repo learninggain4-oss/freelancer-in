@@ -162,6 +162,69 @@ const ScrollFadeIn = ({ children, className = "", delay = 0 }: { children: React
   );
 };
 
+const allCategories = [
+  { icon: Code, label: "Web Development", count: "450+" },
+  { icon: Palette, label: "Graphic Design", count: "380+" },
+  { icon: PenTool, label: "Content Writing", count: "320+" },
+  { icon: BarChart3, label: "Digital Marketing", count: "290+" },
+  { icon: Camera, label: "Video & Animation", count: "210+" },
+  { icon: Music, label: "Music & Audio", count: "150+" },
+  { icon: Globe, label: "Translation", count: "180+" },
+  { icon: Megaphone, label: "Social Media", count: "200+" },
+  { icon: FileText, label: "Data Entry", count: "160+" },
+  { icon: Wrench, label: "IT & Networking", count: "130+" },
+  { icon: GraduationCap, label: "Online Tutoring", count: "120+" },
+  { icon: Heart, label: "Lifestyle & Wellness", count: "110+" },
+  { icon: Headphones, label: "Customer Support", count: "140+" },
+  { icon: ShoppingCart, label: "E-commerce", count: "170+" },
+  { icon: Cpu, label: "AI & Machine Learning", count: "90+" },
+  { icon: BookOpen, label: "Academic Writing", count: "100+" },
+  { icon: PhoneIcon, label: "App Development", count: "260+" },
+  { icon: TrendingUp, label: "Business Consulting", count: "85+" },
+  { icon: Layers, label: "UI/UX Design", count: "230+" },
+  { icon: Search, label: "SEO Services", count: "190+" },
+];
+
+const CategoriesGrid = () => {
+  const [showAll, setShowAll] = useState(false);
+  const visible = showAll ? allCategories : allCategories.slice(0, 8);
+
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        {visible.map((cat, i) => (
+          <ScrollFadeIn key={cat.label} delay={i * 80}>
+            <Card className="group border bg-card transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/20 cursor-pointer">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 transition-colors group-hover:bg-primary/20">
+                  <cat.icon className="h-5 w-5 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">{cat.label}</p>
+                  <p className="text-xs text-muted-foreground">{cat.count} services</p>
+                </div>
+              </CardContent>
+            </Card>
+          </ScrollFadeIn>
+        ))}
+      </div>
+      <div className="mt-6 text-center">
+        <Button
+          variant="outline"
+          onClick={() => setShowAll(!showAll)}
+          className="gap-2 transition-transform hover:scale-105"
+        >
+          {showAll ? (
+            <>Show Less <ChevronUp className="h-4 w-4" /></>
+          ) : (
+            <>View All {allCategories.length} Categories <ChevronDown className="h-4 w-4" /></>
+          )}
+        </Button>
+      </div>
+    </>
+  );
+};
+
 const TestimonialCarousel = ({ testimonials }: { testimonials: any[] }) => {
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
