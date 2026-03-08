@@ -133,7 +133,7 @@ const AnimatedCounter = ({ value }: { value: string }) => {
   }, [value]);
 
   return (
-    <p ref={ref} className="text-2xl font-extrabold text-foreground sm:text-3xl">
+    <p ref={ref} className="text-2xl font-extrabold text-white sm:text-3xl">
       {display}
     </p>
   );
