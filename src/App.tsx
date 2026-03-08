@@ -66,6 +66,7 @@ const AdminOnlineStatus = lazy(() => import("./pages/admin/AdminOnlineStatus"));
 const AdminHeroSlides = lazy(() => import("./pages/admin/AdminHeroSlides"));
 const AdminVisitors = lazy(() => import("./pages/admin/AdminVisitors"));
 const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
+const AdminWalletTransactions = lazy(() => import("./pages/admin/AdminWalletTransactions"));
 const Categories = lazy(() => import("./pages/Categories"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
