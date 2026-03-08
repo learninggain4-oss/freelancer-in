@@ -46,6 +46,10 @@
     --input: 214 32% 91%;
     --ring: 217 91% 60%;
 
+    --wallet-from: 217 91% 60%;
+    --wallet-via: 217 91% 50%;
+    --wallet-to: 232 70% 50%;
+
     --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
