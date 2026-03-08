@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { Briefcase, Shield, MessageCircle, CreditCard, Users, ArrowRight, Star, CheckCircle, Download, Smartphone, Share, Building2 } from "lucide-react";
+import { Briefcase, Shield, MessageCircle, CreditCard, Users, ArrowRight, Star, CheckCircle, Download, Smartphone, Share, Building2, Quote } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 const features = [
   { icon: Shield, title: "Verified Profiles", description: "WhatsApp-verified users with admin approval for authentic interactions." },
