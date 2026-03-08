@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Briefcase, Shield, MessageCircle, CreditCard, Users, ArrowRight, Star, CheckCircle, Download, Smartphone, Share, Building2, Quote, Code, Palette, PenTool, BarChart3, Camera, Music, Globe, Megaphone, FileText, Wrench, GraduationCap, Heart, Headphones, ShoppingCart, Cpu, BookOpen, Smartphone as PhoneIcon, TrendingUp, Layers, Search, ChevronDown, ChevronUp } from "lucide-react";
+import slideFreelancer from "@/assets/slide-freelancer.jpg";
+import slideCollaborate from "@/assets/slide-collaborate.jpg";
+import slidePayments from "@/assets/slide-payments.jpg";
 import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
