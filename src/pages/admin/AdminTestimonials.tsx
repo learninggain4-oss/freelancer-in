@@ -196,13 +196,20 @@ const AdminTestimonials = () => {
     </div>
   );
 
-  const RatingDisplay = ({ value }: { value: number }) => (
+  const InlineRatingPicker = ({ id, value }: { id: string; value: number }) => (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map((star) => (
-        <Star
+        <button
           key={star}
-          className={cn("h-4 w-4", star <= value ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30")}
-        />
+          type="button"
+          onClick={() => updateRating.mutate({ id, rating: star })}
+          className="hover:scale-125 transition-transform"
+          title={`Set rating to ${star}`}
+        >
+          <Star
+            className={cn("h-4 w-4 transition-colors", star <= value ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30 hover:text-yellow-300")}
+          />
+        </button>
       ))}
     </div>
   );
