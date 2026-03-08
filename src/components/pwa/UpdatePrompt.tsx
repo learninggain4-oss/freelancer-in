@@ -18,7 +18,7 @@ const UpdatePrompt = () => {
       if (registration) {
         setInterval(() => {
           registration.update();
-        }, 60 * 1000);
+        }, 15 * 1000);
       }
     },
   });
