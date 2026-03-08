@@ -16,6 +16,7 @@ import {
   UserCheck,
   Building2,
   Edit,
+  UserPlus,
   FileText,
   Layers,
   IndianRupee,
@@ -58,6 +59,7 @@ const navItems = [
   { label: "Notifications", icon: Bell, path: "/admin/notifications" },
   { label: "Announcements", icon: Megaphone, path: "/admin/announcements" },
   { label: "Settings", icon: Settings, path: "/admin/settings" },
+  { label: "Referrals", icon: UserPlus, path: "/admin/referrals" },
   { label: "Sessions", icon: Monitor, path: "/admin/sessions" },
   { label: "Testimonials", icon: MessageSquareQuote, path: "/admin/testimonials" },
 ];
