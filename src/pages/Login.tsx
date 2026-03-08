@@ -22,6 +22,7 @@ const Login = () => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [showTotpDialog, setShowTotpDialog] = useState(false);
   const [pendingAdminNav, setPendingAdminNav] = useState(false);
+  const [pendingUserNav, setPendingUserNav] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, user, profile, loading: authLoading } = useAuth();
