@@ -155,26 +155,19 @@ const EmployeeAttendance = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           {!todayRecord ? (
-            <Button onClick={() => openFaceDialog("check_in")} disabled={loading} className="w-full gap-2">
-              <Camera className="h-4 w-4" />
+            <Button onClick={handleCheckIn} disabled={loading} className="w-full gap-2">
               <LogIn className="h-4 w-4" />
-              Check In with Face Verification
+              Check In
             </Button>
           ) : !todayRecord.check_out_at ? (
             <>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4" />
                 Checked in at {format(new Date(todayRecord.check_in_at), "hh:mm a")}
-                {todayRecord.check_in_photo_path && (
-                  <Badge variant="outline" className="text-xs gap-1">
-                    <Camera className="h-3 w-3" /> Verified
-                  </Badge>
-                )}
               </div>
-              <Button onClick={() => openFaceDialog("check_out")} disabled={loading} variant="secondary" className="w-full gap-2">
-                <Camera className="h-4 w-4" />
+              <Button onClick={handleCheckOut} disabled={loading} variant="secondary" className="w-full gap-2">
                 <LogOut className="h-4 w-4" />
-                Check Out with Face Verification
+                Check Out
               </Button>
             </>
           ) : (
@@ -182,15 +175,13 @@ const EmployeeAttendance = () => {
               <div className="flex items-center gap-2">
                 <LogIn className="h-4 w-4 text-accent" />
                 In: {format(new Date(todayRecord.check_in_at), "hh:mm a")}
-                {todayRecord.check_in_photo_path && <Camera className="h-3 w-3 text-accent" />}
               </div>
               <div className="flex items-center gap-2">
                 <LogOut className="h-4 w-4 text-accent" />
                 Out: {format(new Date(todayRecord.check_out_at), "hh:mm a")}
-                {todayRecord.check_out_photo_path && <Camera className="h-3 w-3 text-accent" />}
               </div>
               <Badge variant="secondary" className="mt-2 bg-accent/10 text-accent">
-                ✅ Attendance Complete (Face Verified)
+                ✅ Attendance Complete
               </Badge>
             </div>
           )}
