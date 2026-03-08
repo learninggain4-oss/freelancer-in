@@ -96,8 +96,8 @@ const AdminWallet = () => {
       if (!transferSearch || transferSearch.length < 2) return [];
       const { data } = await supabase
         .from("profiles")
-        .select("id, full_name, user_code, user_type")
-        .or(`full_name.cs.{${transferSearch}},user_code.cs.{${transferSearch}},email.ilike.%${transferSearch}%`)
+        .select("id, full_name, user_code, user_type, wallet_number")
+        .ilike("wallet_number", `%${transferSearch}%`)
         .neq("id", profile?.id ?? "")
         .limit(5);
       return data || [];
@@ -203,7 +203,7 @@ const AdminWallet = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search by name, code or email..."
+                placeholder="Search by wallet address..."
                 value={transferSearch}
                 onChange={(e) => {
                   setTransferSearch(e.target.value);
@@ -220,12 +220,12 @@ const AdminWallet = () => {
                     className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-accent/50 transition-colors"
                     onClick={() => {
                       setSelectedRecipient(u);
-                      setTransferSearch(u.full_name?.[0] || "");
+                      setTransferSearch(u.wallet_number || "");
                     }}
                   >
                     <span className="font-medium">{u.full_name?.[0]}</span>
                     <span className="text-xs text-muted-foreground">
-                      {u.user_code?.[0]} · {u.user_type}
+                      {u.wallet_number} · {u.user_type}
                     </span>
                   </button>
                 ))}
@@ -234,7 +234,7 @@ const AdminWallet = () => {
             {selectedRecipient && (
               <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-sm">
                 <span className="font-medium">{selectedRecipient.full_name?.[0]}</span>
-                <Badge variant="secondary" className="text-xs">{selectedRecipient.user_code?.[0]}</Badge>
+                <Badge variant="secondary" className="text-xs">{(selectedRecipient as any).wallet_number}</Badge>
                 <button
                   className="ml-auto text-xs text-destructive hover:underline"
                   onClick={() => { setSelectedRecipient(null); setTransferSearch(""); }}
