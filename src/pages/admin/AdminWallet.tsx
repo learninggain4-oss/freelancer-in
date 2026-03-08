@@ -41,6 +41,10 @@ const AdminWallet = () => {
   const { profile, refreshProfile } = useAuth();
   const [page, setPage] = useState(1);
   const [addAmount, setAddAmount] = useState("");
+  const [transferAmount, setTransferAmount] = useState("");
+  const [transferSearch, setTransferSearch] = useState("");
+  const [selectedRecipient, setSelectedRecipient] = useState<{ id: string; full_name: string[]; user_code: string[]; user_type: string } | null>(null);
+  const [transferDescription, setTransferDescription] = useState("");
   const queryClient = useQueryClient();
 
   const { data: transactions, isLoading } = useQuery({
