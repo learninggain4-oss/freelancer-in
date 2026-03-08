@@ -193,6 +193,7 @@ const AdminClients = () => {
               <TableHead>Email</TableHead>
               <TableHead className="text-right">Balance</TableHead>
               <TableHead className="text-center">Projects</TableHead>
+              <TableHead className="text-center">Payment Sharing</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
