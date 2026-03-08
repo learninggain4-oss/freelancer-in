@@ -22,6 +22,7 @@ const SideDrawer = ({ open, onOpenChange }: SideDrawerProps) => {
 
   const menuItems = [
     { label: "Get Free", icon: Gift, path: `${basePath}/get-free` },
+    { label: "App", icon: Smartphone, path: `${basePath}/app` },
     { label: "Account Settings", icon: Settings, path: `${basePath}/settings` },
     { label: "Help & Support", icon: HelpCircle, path: `${basePath}/help-support` },
     { label: "Notification Settings", icon: Bell, path: "/notifications" },
