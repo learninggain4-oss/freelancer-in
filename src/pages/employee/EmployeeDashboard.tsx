@@ -17,7 +17,6 @@ import {
   MessageSquare,
   Loader2,
   Copy,
-  HelpCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -241,20 +240,6 @@ const EmployeeDashboard = () => {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Help & Support */}
-      <Card className="border-0 shadow-sm cursor-pointer transition-colors hover:bg-muted/50 active:scale-[0.98]" onClick={() => navigate("/employee/help-support")}>
-        <CardContent className="flex items-center gap-3 p-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-            <HelpCircle className="h-5 w-5 text-primary" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-foreground">Help & Support</p>
-            <p className="text-xs text-muted-foreground">Chat with our support team</p>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </CardContent>
       </Card>
 
