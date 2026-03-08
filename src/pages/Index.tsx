@@ -583,11 +583,18 @@ const Index = () => {
                   ))}
                 </div>
               </div>
-              <Link to="/register/employee">
-                <Button size="lg" variant="secondary" className="gap-2 whitespace-nowrap">
-                  Create Free Account <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link to="/register/employee">
+                  <Button size="lg" variant="secondary" className="gap-2 whitespace-nowrap w-full sm:w-auto">
+                    <Briefcase className="h-4 w-4" /> Join as Employee
+                  </Button>
+                </Link>
+                <Link to="/register/client">
+                  <Button size="lg" variant="outline" className="gap-2 whitespace-nowrap w-full sm:w-auto border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">
+                    <Users className="h-4 w-4" /> Join as Client
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </ScrollFadeIn>
