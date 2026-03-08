@@ -5,17 +5,23 @@ import { supabase } from "@/integrations/supabase/client";
 
 const GetCoins = () => {
   const [coinRate, setCoinRate] = useState<number>(100);
+  const [minCoins, setMinCoins] = useState<number>(250);
+  const userCoins = 0; // placeholder until coin tracking is implemented
 
   useEffect(() => {
-    const fetchRate = async () => {
+    const fetchSettings = async () => {
       const { data } = await supabase
         .from("app_settings")
-        .select("value")
-        .eq("key", "coin_conversion_rate")
-        .maybeSingle();
-      if (data?.value) setCoinRate(Number(data.value) || 100);
+        .select("key, value")
+        .in("key", ["coin_conversion_rate", "min_coin_conversion"]);
+      if (data) {
+        for (const row of data) {
+          if (row.key === "coin_conversion_rate") setCoinRate(Number(row.value) || 100);
+          if (row.key === "min_coin_conversion") setMinCoins(Number(row.value) || 250);
+        }
+      }
     };
-    fetchRate();
+    fetchSettings();
   }, []);
 
   return (
