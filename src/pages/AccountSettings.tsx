@@ -30,6 +30,33 @@ const AccountSettings = () => {
   const [referralHistory, setReferralHistory] = useState<ReferralEntry[]>([]);
   const [terms, setTerms] = useState("");
   const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(false);
+
+  const {
+    needRefresh: [needRefresh],
+    updateServiceWorker,
+  } = useRegisterSW();
+
+  const handleCheckUpdate = useCallback(async () => {
+    setChecking(true);
+    try {
+      const registrations = await navigator.serviceWorker?.getRegistrations();
+      if (registrations?.length) {
+        await Promise.all(registrations.map((r) => r.update()));
+      }
+      if (!needRefresh) {
+        toast({ title: "You're up to date!", description: "No new updates available." });
+      }
+    } catch {
+      toast({ title: "Could not check for updates", variant: "destructive" });
+    } finally {
+      setChecking(false);
+    }
+  }, [needRefresh, toast]);
+
+  const handleUpdate = useCallback(() => {
+    updateServiceWorker(true);
+  }, [updateServiceWorker]);
 
   useEffect(() => {
     const fetchData = async () => {
