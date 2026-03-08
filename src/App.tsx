@@ -67,6 +67,7 @@ const Categories = lazy(() => import("./pages/Categories"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
+import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 import AnnouncementPopup from "@/components/announcements/AnnouncementPopup";
 import UpdatePrompt from "@/components/pwa/UpdatePrompt";
 
