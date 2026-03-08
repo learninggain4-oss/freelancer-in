@@ -381,14 +381,6 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Audit log
-        await adminClient.from("admin_audit_logs").insert({
-          admin_id: callerUserId,
-          action: "invite_user",
-          target_profile_id: null,
-          target_profile_name: email,
-          details: { email, user_type, invited_user_id: invitedUserId },
-        });
 
         return new Response(JSON.stringify({ success: true, message: `Invite sent to ${email}` }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
