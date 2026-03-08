@@ -291,9 +291,19 @@ const Index = () => {
 
       {/* Hero */}
       <section className="relative overflow-hidden px-4 pb-12 pt-16 sm:px-6 md:pb-20 md:pt-24">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
-        <div className="absolute -right-32 -top-32 -z-10 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute -bottom-32 -left-32 -z-10 h-96 w-96 rounded-full bg-accent/5 blur-3xl" />
+        {/* Background Video */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 -z-20 h-full w-full object-cover"
+          poster=""
+        >
+          <source src="/hero-bg.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 -z-10 bg-foreground/60" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/20 via-transparent to-foreground/80" />
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-2xl text-center lg:max-w-3xl">
             <div className="mb-5 inline-flex items-center gap-1.5 rounded-full border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground animate-fade-in">
