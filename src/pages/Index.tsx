@@ -437,12 +437,12 @@ const Index = () => {
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-center animate-fade-in" style={{ animationDelay: "1.5s", animationFillMode: "both" }}>
               <Link to="/register/employee" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full gap-2 text-base sm:px-8 transition-transform hover:scale-105">
-                  Join as Employee <ArrowRight className="h-4 w-4" />
+                  <Briefcase className="h-4 w-4" /> Join as Employee <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/register/client" className="w-full sm:w-auto">
                 <Button size="lg" variant="outline" className="w-full gap-2 text-base sm:px-8 transition-transform hover:scale-105">
-                  Join as Client <ArrowRight className="h-4 w-4" />
+                  <Users className="h-4 w-4" /> Join as Client <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
             </div>
