@@ -142,6 +142,7 @@ const AppContent = () => {
               }
             >
               <Route path="dashboard" element={<EmployeeDashboard />} />
+              <Route path="attendance" element={<EmployeeAttendance />} />
               <Route path="projects" element={<EmployeeProjects />} />
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
               <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
