@@ -79,7 +79,7 @@ const HeroAnimatedText = () => {
         </span>
       ))}
       <span
-        className="inline-block bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent transition-all duration-700"
+        className="inline-block bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent transition-all duration-700"
         style={{
           opacity: showHighlight ? 1 : 0,
           transform: showHighlight ? "translateY(0) scale(1)" : "translateY(20px) scale(0.9)",
