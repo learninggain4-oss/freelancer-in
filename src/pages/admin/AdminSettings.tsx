@@ -580,7 +580,17 @@ const AdminSettings = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {needRefresh ? (
+          {updating ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">Updating... {Math.min(Math.round(updateProgress), 100)}%</p>
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-200"
+                  style={{ width: `${Math.min(updateProgress, 100)}%` }}
+                />
+              </div>
+            </div>
+          ) : needRefresh ? (
             <>
               <p className="text-sm text-muted-foreground">A new version is available. Update now to get the latest features and fixes.</p>
               <Button onClick={handleUpdate} className="w-full gap-2">
