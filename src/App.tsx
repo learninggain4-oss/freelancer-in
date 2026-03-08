@@ -22,6 +22,7 @@ const VerificationPending = lazy(() => import("./pages/VerificationPending"));
 const EmployeeDashboard = lazy(() => import("./pages/employee/EmployeeDashboard"));
 const EmployeeProjects = lazy(() => import("./pages/employee/EmployeeProjects"));
 const EmployeeWallet = lazy(() => import("./pages/employee/EmployeeWallet"));
+const EmployeeAttendance = lazy(() => import("./pages/employee/EmployeeAttendance"));
 const EmployeeProfile = lazy(() => import("./pages/employee/EmployeeProfile"));
 const ClientDashboard = lazy(() => import("./pages/client/ClientDashboard"));
 const ClientWallet = lazy(() => import("./pages/client/ClientWallet"));
@@ -141,6 +142,7 @@ const AppContent = () => {
               }
             >
               <Route path="dashboard" element={<EmployeeDashboard />} />
+              <Route path="attendance" element={<EmployeeAttendance />} />
               <Route path="projects" element={<EmployeeProjects />} />
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
               <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
@@ -171,6 +173,7 @@ const AppContent = () => {
               }
             >
               <Route path="dashboard" element={<ClientDashboard />} />
+              <Route path="attendance" element={<EmployeeAttendance />} />
               <Route path="wallet" element={<ClientWallet />} />
               <Route path="projects" element={<ClientProjects />} />
               <Route path="projects/create" element={<CreateProject />} />

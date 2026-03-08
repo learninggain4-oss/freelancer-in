@@ -1,4 +1,4 @@
-import { Home, Briefcase, Wallet, HelpCircle, Menu } from "lucide-react";
+import { Home, Briefcase, Wallet, HelpCircle, Menu, ClipboardCheck } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,7 @@ const BottomTabBar = ({ userType, onMenuClick }: BottomTabBarProps) => {
 
   const tabs = [
     { label: "Dashboard", icon: Home, path: `${base}/dashboard` },
+    { label: "Attendance", icon: ClipboardCheck, path: `${base}/attendance` },
     { label: "Jobs", icon: Briefcase, path: `${base}/projects` },
     { label: "Wallet", icon: Wallet, path: `${base}/wallet` },
     { label: "Help", icon: HelpCircle, path: `${base}/help-support` },
