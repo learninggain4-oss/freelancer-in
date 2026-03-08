@@ -2,6 +2,7 @@ import { useRegisterSW } from "virtual:pwa-register/react";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "@/hooks/use-toast";
 
 const UpdatePrompt = () => {
   const [updating, setUpdating] = useState(false);
@@ -41,6 +42,10 @@ const UpdatePrompt = () => {
       updateServiceWorker(true).then(() => {
         clearInterval(intervalRef.current);
         setProgress(100);
+        setTimeout(() => {
+          setUpdating(false);
+          toast({ title: "Update complete", description: "App has been updated to the latest version." });
+        }, 500);
       });
     }
 
