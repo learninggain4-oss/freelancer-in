@@ -975,8 +975,6 @@ Deno.serve(async (req) => {
 
         await supabase.from("withdrawals").update(updates).eq("id", withdrawal_id);
 
-        const { data: tpName } = await supabase.from("profiles").select("full_name").eq("id", target_profile_id).single();
-        await supabase.from("admin_audit_logs").insert({ admin_id: callerProfile.id, action: "edit_withdrawal", target_profile_id, target_profile_name: (tpName?.full_name as any)?.[0] || null, details: { withdrawal_id, old: { amount: oldW.amount, status: oldW.status }, new: { amount: amount ?? oldW.amount, status: status ?? oldW.status, review_notes: review_notes ?? oldW.review_notes }, adjust_balance } });
         break;
       }
 
