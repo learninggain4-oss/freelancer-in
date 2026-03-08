@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { loginSchema, type LoginFormData } from "@/lib/validations/registration";
 import { supabase } from "@/integrations/supabase/client";
+import TotpVerifyDialog from "@/components/admin/TotpVerifyDialog";
 
 
 
@@ -19,6 +20,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [showTotpDialog, setShowTotpDialog] = useState(false);
+  const [pendingAdminNav, setPendingAdminNav] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, user, profile, loading: authLoading } = useAuth();
@@ -72,6 +75,15 @@ const Login = () => {
             _role: "admin" as const,
           });
           if (adminCheck) {
+            // Check if admin has TOTP enabled
+            const totpRes = await supabase.functions.invoke("admin-totp", {
+              body: { action: "check_status" },
+            });
+            if (totpRes.data?.is_enabled) {
+              setPendingAdminNav(true);
+              setShowTotpDialog(true);
+              return;
+            }
             navigate("/admin/dashboard", { replace: true });
           } else {
             const base = prof.user_type === "employee" ? "/employee" : "/client";
@@ -150,6 +162,21 @@ const Login = () => {
           <Link to="/"><Button variant="ghost" size="sm">← Back to Home</Button></Link>
         </div>
       </div>
+
+      <TotpVerifyDialog
+        open={showTotpDialog}
+        onClose={() => {
+          setShowTotpDialog(false);
+          setPendingAdminNav(false);
+        }}
+        onVerified={() => {
+          setShowTotpDialog(false);
+          setPendingAdminNav(false);
+          navigate("/admin/dashboard", { replace: true });
+        }}
+        title="Admin Verification"
+        description="Enter your Google Authenticator code to continue."
+      />
     </div>
   );
 };

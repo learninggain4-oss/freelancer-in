@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, PlusCircle, ArrowUpRight, SendHorizontal, Search, History } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import TotpVerifyDialog from "@/components/admin/TotpVerifyDialog";
 
 const AdminWallet = () => {
   const { profile, refreshProfile } = useAuth();
@@ -20,7 +21,37 @@ const AdminWallet = () => {
   const [transferSearch, setTransferSearch] = useState("");
   const [selectedRecipient, setSelectedRecipient] = useState<{ id: string; full_name: string[]; user_code: string[]; user_type: string } | null>(null);
   const [transferDescription, setTransferDescription] = useState("");
+  const [showTotpForTransfer, setShowTotpForTransfer] = useState(false);
+  const [showTotpForAddMoney, setShowTotpForAddMoney] = useState(false);
   const queryClient = useQueryClient();
+
+  const { data: totpStatus } = useQuery({
+    queryKey: ["admin-totp-status"],
+    queryFn: async () => {
+      const res = await supabase.functions.invoke("admin-totp", {
+        body: { action: "check_status" },
+      });
+      return res.data as { is_enabled: boolean };
+    },
+  });
+
+  const requireTotp = totpStatus?.is_enabled ?? false;
+
+  const handleAddMoney = () => {
+    if (requireTotp) {
+      setShowTotpForAddMoney(true);
+    } else {
+      addMoneyMutation.mutate();
+    }
+  };
+
+  const handleTransfer = () => {
+    if (requireTotp) {
+      setShowTotpForTransfer(true);
+    } else {
+      transferMutation.mutate();
+    }
+  };
 
   const addMoneyMutation = useMutation({
     mutationFn: async () => {
@@ -131,7 +162,7 @@ const AdminWallet = () => {
             </div>
             <Button
               className="w-full"
-              onClick={() => addMoneyMutation.mutate()}
+              onClick={handleAddMoney}
               disabled={addMoneyMutation.isPending}
             >
               <ArrowUpRight className="mr-2 h-4 w-4" />
@@ -214,7 +245,7 @@ const AdminWallet = () => {
           </div>
           <Button
             className="w-full"
-            onClick={() => transferMutation.mutate()}
+            onClick={handleTransfer}
             disabled={transferMutation.isPending || !selectedRecipient}
           >
             <SendHorizontal className="mr-2 h-4 w-4" />
@@ -232,6 +263,28 @@ const AdminWallet = () => {
           </Button>
         </CardHeader>
       </Card>
+
+      <TotpVerifyDialog
+        open={showTotpForAddMoney}
+        onClose={() => setShowTotpForAddMoney(false)}
+        onVerified={() => {
+          setShowTotpForAddMoney(false);
+          addMoneyMutation.mutate();
+        }}
+        title="Verify to Add Money"
+        description="Enter your authenticator code to add money to the wallet."
+      />
+
+      <TotpVerifyDialog
+        open={showTotpForTransfer}
+        onClose={() => setShowTotpForTransfer(false)}
+        onVerified={() => {
+          setShowTotpForTransfer(false);
+          transferMutation.mutate();
+        }}
+        title="Verify to Transfer"
+        description="Enter your authenticator code to complete this transfer."
+      />
     </div>
   );
 };

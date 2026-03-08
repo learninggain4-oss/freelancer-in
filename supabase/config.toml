@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.manage-ip-block]
 verify_jwt = false
+
+[functions.admin-totp]
+verify_jwt = false

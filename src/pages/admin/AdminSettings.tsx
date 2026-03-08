@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Clock, Landmark, Gift, CreditCard, RefreshCw, Download, Search, X } from "lucide-react";
+import TotpSetupCard from "@/components/admin/TotpSetupCard";
 
 type ClientPaymentRow = {
   id: string;
@@ -608,6 +609,8 @@ const AdminSettings = () => {
           )}
         </CardContent>
       </Card>
+
+      <TotpSetupCard />
     </div>
   );
 };
