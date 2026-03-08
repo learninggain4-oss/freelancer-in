@@ -30,6 +30,97 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+/** Typewriter-style animated hero heading */
+const HeroAnimatedText = () => {
+  const words = ["Connect.", "Collaborate."];
+  const [visibleWords, setVisibleWords] = useState(0);
+  const [showHighlight, setShowHighlight] = useState(false);
+
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    words.forEach((_, i) => {
+      timers.push(setTimeout(() => setVisibleWords(i + 1), 300 + i * 400));
+    });
+    timers.push(setTimeout(() => setShowHighlight(true), 300 + words.length * 400 + 200));
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  return (
+    <>
+      {words.map((word, i) => (
+        <span
+          key={word}
+          className="inline-block transition-all duration-500"
+          style={{
+            opacity: i < visibleWords ? 1 : 0,
+            transform: i < visibleWords ? "translateY(0)" : "translateY(20px)",
+            transitionDelay: `${i * 100}ms`,
+          }}
+        >
+          {word}{" "}
+        </span>
+      ))}
+      <span
+        className="inline-block bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent transition-all duration-700"
+        style={{
+          opacity: showHighlight ? 1 : 0,
+          transform: showHighlight ? "translateY(0) scale(1)" : "translateY(20px) scale(0.9)",
+        }}
+      >
+        Get Paid.
+      </span>
+    </>
+  );
+};
+
+/** Animated counter that counts up to the stat value */
+const AnimatedCounter = ({ value }: { value: string }) => {
+  const [display, setDisplay] = useState(value);
+  const ref = useRef<HTMLParagraphElement>(null);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated.current) {
+          hasAnimated.current = true;
+          // Extract numeric part
+          const numMatch = value.match(/[\d]+/);
+          if (!numMatch) return;
+          const target = parseInt(numMatch[0]);
+          const prefix = value.slice(0, value.indexOf(numMatch[0]));
+          const suffix = value.slice(value.indexOf(numMatch[0]) + numMatch[0].length);
+          const duration = 1500;
+          const startTime = performance.now();
+
+          const animate = (now: number) => {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // Ease out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = Math.round(eased * target);
+            setDisplay(`${prefix}${current}${suffix}`);
+            if (progress < 1) requestAnimationFrame(animate);
+          };
+          requestAnimationFrame(animate);
+        }
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [value]);
+
+  return (
+    <p ref={ref} className="text-2xl font-extrabold text-foreground sm:text-3xl">
+      {display}
+    </p>
+  );
+};
+
 const Index = () => {
   const { user, profile, loading } = useAuth();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
