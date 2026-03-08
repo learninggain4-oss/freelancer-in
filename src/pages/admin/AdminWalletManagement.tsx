@@ -62,16 +62,6 @@ type Withdrawal = {
   is_cleared: boolean;
 };
 
-type AuditLog = {
-  id: string;
-  admin_id: string;
-  action: string;
-  target_profile_id: string | null;
-  target_profile_name: string | null;
-  details: Record<string, any>;
-  created_at: string;
-  admin_profile?: { full_name: string[] } | null;
-};
 
 const AdminWalletManagement = () => {
   const queryClient = useQueryClient();
