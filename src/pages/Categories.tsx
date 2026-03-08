@@ -108,6 +108,7 @@ const Categories = () => {
             </Card>
           ))}
         </div>
+        )}
 
         {/* CTA */}
         <div className="mt-12 rounded-xl border bg-muted/30 p-6 sm:p-8 text-center">
