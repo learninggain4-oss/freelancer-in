@@ -708,6 +708,16 @@ const AdminSettings = () => {
               Save
             </Button>
           </div>
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label>Minimum Coins for Conversion</Label>
+              <Input type="number" min="1" max="1000000" value={minCoinConversion} onChange={(e) => setMinCoinConversion(e.target.value)} />
+            </div>
+            <Button onClick={() => handleSaveSetting("min_coin_conversion", minCoinConversion, "Min coin conversion", 1, 1000000)} disabled={saving === "min_coin_conversion"} className="gap-1">
+              {saving === "min_coin_conversion" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

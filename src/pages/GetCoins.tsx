@@ -90,6 +90,27 @@ const GetCoins = () => {
         </CardContent>
       </Card>
 
+      {/* Convert to Wallet */}
+      <Card className="border-accent/20 bg-gradient-to-br from-accent/5 to-primary/5">
+        <CardContent className="py-5 space-y-3">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground mb-1">
+              Minimum <span className="font-semibold text-foreground">{minCoins} Coins</span> required for conversion
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {coinRate} Coins = ₹1 • You have {userCoins} coins (≈ ₹{(userCoins / coinRate).toFixed(2)})
+            </p>
+          </div>
+          <Button
+            className="w-full gap-2"
+            disabled={userCoins < minCoins}
+          >
+            <IndianRupee className="h-4 w-4" />
+            {userCoins >= minCoins ? "Convert to Wallet" : `Minimum ${minCoins} Coins Required`}
+          </Button>
+        </CardContent>
+      </Card>
+
       <p className="text-center text-xs text-muted-foreground">
         Coin rewards system coming soon. Stay tuned!
       </p>
