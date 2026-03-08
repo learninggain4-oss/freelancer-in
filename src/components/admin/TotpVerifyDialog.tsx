@@ -27,6 +27,7 @@ const TotpVerifyDialog = ({
   onVerified,
   title = "Two-Factor Verification",
   description = "Enter the 6-digit code from your Google Authenticator app.",
+  functionName = "admin-totp",
 }: TotpVerifyDialogProps) => {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
