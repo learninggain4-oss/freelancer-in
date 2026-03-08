@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.user-totp]
 verify_jwt = false
+
+[functions.withdrawal-password]
+verify_jwt = false
