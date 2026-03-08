@@ -12,7 +12,7 @@ import {
   Calendar,
   User,
   FileText,
-  MessageSquare,
+  
   Send,
   Tag,
   Paperclip,
