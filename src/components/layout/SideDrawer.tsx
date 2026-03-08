@@ -1,4 +1,4 @@
-import { Settings, HelpCircle, Bell, FileText, Shield, LogOut, Gift, Smartphone } from "lucide-react";
+import { Settings, User, Bell, FileText, Shield, LogOut, Gift, Smartphone } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -21,10 +21,10 @@ const SideDrawer = ({ open, onOpenChange }: SideDrawerProps) => {
   const basePath = profile?.user_type === "client" ? "/client" : "/employee";
 
   const menuItems = [
+    { label: "Profile", icon: User, path: `${basePath}/profile` },
     { label: "Get Free", icon: Gift, path: `${basePath}/get-free` },
     { label: "App", icon: Smartphone, path: `${basePath}/app` },
     { label: "Account Settings", icon: Settings, path: `${basePath}/settings` },
-    { label: "Help & Support", icon: HelpCircle, path: `${basePath}/help-support` },
     { label: "Notification Settings", icon: Bell, path: "/notifications" },
     { label: "Terms of Service", icon: FileText, path: "/legal/terms-of-service" },
     { label: "Privacy Policy", icon: Shield, path: "/legal/privacy-policy" },
