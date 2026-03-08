@@ -17,7 +17,6 @@ import AadhaarVerificationCard from "@/components/verification/AadhaarVerificati
 import BankVerificationCard from "@/components/verification/BankVerificationCard";
 import ProfileRegistrationData from "@/components/profile/ProfileRegistrationData";
 import ProfilePhotoUpload from "@/components/profile/ProfilePhotoUpload";
-import ReviewsList from "@/components/reviews/ReviewsList";
 
 const EmployeeProfile = () => {
   const { profile, refreshProfile } = useAuth();
@@ -233,8 +232,6 @@ const EmployeeProfile = () => {
       </Card>
 
       {profile?.id && <ProfileRegistrationData profileId={profile.id} />}
-
-      {profile?.id && <ReviewsList profileId={profile.id} />}
 
       <AadhaarVerificationCard />
       <BankVerificationCard />

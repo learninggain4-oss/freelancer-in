@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users, Clock, CheckCircle, Wallet, Fingerprint, Landmark,
   LifeBuoy, Briefcase, Edit, UserCheck, Building2,
-  IndianRupee, UserPlus, MessageSquare, Star,
+  IndianRupee, UserPlus, MessageSquare,
 } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -27,13 +27,11 @@ const AdminDashboard = () => {
     employeesInvited: 0,
     clientsInvited: 0,
     unreadSupportChats: 0,
-    totalReviews: 0,
-    avgRating: "0",
   });
 
   useEffect(() => {
     const fetchStats = async () => {
-      const [profiles, withdrawals, aadhaar, bank, recovery, jobs, transactions, referredProfiles, supportMessages, reviews] = await Promise.all([
+      const [profiles, withdrawals, aadhaar, bank, recovery, jobs, transactions, referredProfiles, supportMessages] = await Promise.all([
         supabase.from("profiles").select("id, approval_status, user_type, edit_request_status"),
         supabase.from("withdrawals").select("id").eq("status", "pending"),
         supabase.from("aadhaar_verifications").select("id").eq("status", "pending"),
@@ -43,13 +41,11 @@ const AdminDashboard = () => {
         supabase.from("transactions").select("profile_id, amount, type"),
         supabase.from("profiles").select("id, user_type, referred_by").not("referred_by", "is", null),
         supabase.from("messages").select("id, is_read, chat_room_id, chat_rooms!inner(type)").eq("is_read", false).eq("chat_rooms.type", "support"),
-        supabase.from("reviews" as any).select("rating"),
       ]);
 
       const allProfiles = profiles.data || [];
       const allTransactions = transactions.data || [];
       const referredUsers = referredProfiles.data || [];
-      const allReviews = (reviews.data as any[]) || [];
 
       const employeeIds = new Set(allProfiles.filter(p => p.user_type === "employee").map(p => p.id));
       const clientIds = new Set(allProfiles.filter(p => p.user_type === "client").map(p => p.id));
@@ -79,10 +75,6 @@ const AdminDashboard = () => {
         employeesInvited: referredUsers.filter(p => p.user_type === "employee").length,
         clientsInvited: referredUsers.filter(p => p.user_type === "client").length,
         unreadSupportChats: supportMessages.data?.length || 0,
-        totalReviews: allReviews.length,
-        avgRating: allReviews.length > 0
-          ? (allReviews.reduce((sum: number, r: any) => sum + Number(r.rating), 0) / allReviews.length).toFixed(1)
-          : "0",
       });
     };
     fetchStats();
@@ -107,8 +99,6 @@ const AdminDashboard = () => {
     { label: "Pending Recovery", value: stats.pendingRecovery, icon: LifeBuoy, color: "text-destructive", path: "/admin/recovery-requests" },
     { label: "Total Jobs", value: stats.totalJobs, icon: Briefcase, color: "text-accent", path: "/admin/jobs" },
     { label: "Profile Edits", value: stats.pendingProfileEdits, icon: Edit, color: "text-warning", path: "/admin/profile-edits" },
-    { label: "Total Reviews", value: stats.totalReviews, icon: Star, color: "text-warning", path: "/admin/reviews" },
-    { label: "Avg Rating", value: `⭐ ${stats.avgRating}`, icon: Star, color: "text-warning", path: "/admin/reviews" },
   ];
 
   return (

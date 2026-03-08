@@ -18,9 +18,7 @@ import {
   Tag,
   Paperclip,
   Sparkles,
-  Star,
 } from "lucide-react";
-import ReviewDialog from "@/components/reviews/ReviewDialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -95,35 +93,6 @@ const InquiryCard = ({ project: p, onApply, isPending }: { project: any; onApply
         </Button>
       </CardContent>
     </Card>
-  );
-};
-
-/** Shows Review button only for completed projects */
-const CompletedReviewButton = ({ projectId, projectName, profileId }: { projectId: string; projectName: string; profileId?: string }) => {
-  const { data: project } = useQuery({
-    queryKey: ["project-status", projectId],
-    queryFn: async () => {
-      const { data } = await supabase.from("projects").select("status, client_id, client:client_id(full_name)").eq("id", projectId).maybeSingle();
-      return data;
-    },
-  });
-
-  if (!project || project.status !== "completed" || !profileId) return null;
-
-  return (
-    <div className="px-4 pb-4">
-      <ReviewDialog
-        projectId={projectId}
-        projectName={projectName}
-        revieweeId={project.client_id}
-        revieweeName={(project.client as any)?.full_name?.[0] ?? "Client"}
-        trigger={
-          <Button size="sm" variant="outline" className="w-full gap-1">
-            <Star className="h-3 w-3" /> Review Client
-          </Button>
-        }
-      />
-    </div>
   );
 };
 
@@ -305,9 +274,6 @@ const EmployeeProjects = () => {
                     <Badge className={statusColor[r.status]}>{r.status}</Badge>
                   </div>
                 </CardContent>
-                {r.status === "approved" && r.project && (
-                  <CompletedReviewButton projectId={r.project_id} projectName={r.project?.name} profileId={profile?.id} />
-                )}
               </Card>
           ) :
 

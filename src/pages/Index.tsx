@@ -1,11 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Briefcase, Shield, MessageCircle, CreditCard, Users, ArrowRight, Star, CheckCircle, Download, Smartphone, Share, ChevronDown } from "lucide-react";
+import { Briefcase, Shield, MessageCircle, CreditCard, Users, ArrowRight, Star, CheckCircle, Download, Smartphone, Share, Building2 } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 
 const features = [
   { icon: Shield, title: "Verified Profiles", description: "WhatsApp-verified users with admin approval for authentic interactions." },
@@ -27,20 +25,9 @@ const steps = [
   { step: "04", title: "Get Paid", description: "Receive secure payments directly to your UPI or bank account." },
 ];
 
-// Fallback companies if DB is empty or loading
-const fallbackCompanies = [
-  { name: "TCS", logo: "/logos/tcs.png" },
-  { name: "Infosys", logo: "/logos/infosys.png" },
-  { name: "Wipro", logo: "/logos/wipro.png" },
-  { name: "HCL Tech", logo: "/logos/hcltech.png" },
-  { name: "Tech Mahindra", logo: "/logos/techmahindra.png" },
-  { name: "Accenture", logo: "/logos/accenture.png" },
-  { name: "Cognizant", logo: "/logos/cognizant.png" },
-  { name: "Paytm", logo: "/logos/paytm.png" },
-  { name: "Reliance", logo: "/logos/reliance.png" },
-  { name: "Flipkart", logo: "/logos/flipkart.png" },
-  { name: "Razorpay", logo: "/logos/razorpay.png" },
-  { name: "Zoho", logo: "/logos/zoho.png" },
+const trustedCompanies = [
+  "TCS", "Infosys", "Wipro", "HCL Tech", "Tech Mahindra",
+  "Accenture", "Cognizant", "Flipkart", "Razorpay", "Zoho",
 ];
 
 interface BeforeInstallPromptEvent extends Event {
@@ -170,129 +157,6 @@ const ScrollFadeIn = ({ children, className = "", delay = 0 }: { children: React
   );
 };
 
-/** Collapsible FAQ item */
-const FAQItem = ({ question, answer }: { question: string; answer: string }) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="rounded-lg border bg-card transition-colors">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-4 p-4 text-left sm:p-5"
-      >
-        <span className="text-sm font-semibold text-foreground sm:text-base">{question}</span>
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-      <div
-        className="overflow-hidden transition-all duration-300"
-        style={{ maxHeight: open ? "200px" : "0", opacity: open ? 1 : 0 }}
-      >
-        <p className="px-4 pb-4 text-sm leading-relaxed text-muted-foreground sm:px-5 sm:pb-5">{answer}</p>
-      </div>
-    </div>
-  );
-};
-
-/** Dynamic testimonials section */
-const TestimonialsSection = () => {
-  const { data: testimonials = [], isLoading } = useQuery({
-    queryKey: ["landing-testimonials"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("testimonials")
-        .select("id, name, role, quote, rating, photo_path")
-        .eq("is_active", true)
-        .order("display_order", { ascending: true });
-      return data ?? [];
-    },
-    staleTime: 300_000,
-  });
-
-  if (isLoading || testimonials.length === 0) return null;
-
-  return (
-    <section className="border-t bg-muted/30 px-4 py-12 sm:px-6 md:py-20">
-      <div className="mx-auto max-w-6xl">
-        <ScrollFadeIn className="mx-auto mb-10 max-w-lg text-center">
-          <h2 className="text-2xl font-bold text-foreground sm:text-3xl">What Clients Say</h2>
-          <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-            Hear from businesses that found the perfect freelancers
-          </p>
-        </ScrollFadeIn>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {testimonials.map((t: any, i: number) => (
-            <ScrollFadeIn key={t.id} delay={i * 150}>
-              <Card className="h-full border bg-card transition-all hover:shadow-lg hover:-translate-y-0.5">
-                <CardContent className="flex flex-col gap-4 p-5 sm:p-6">
-                  <div className="flex gap-0.5">
-                    {Array.from({ length: 5 }).map((_, si) => (
-                      <Star key={si} className={`h-4 w-4 ${si < t.rating ? "fill-warning text-warning" : "text-muted"}`} />
-                    ))}
-                  </div>
-                  <p className="flex-1 text-sm leading-relaxed text-muted-foreground italic">"{t.quote}"</p>
-                  <div className="flex items-center gap-3 pt-2 border-t">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary overflow-hidden">
-                      {t.photo_path ? (
-                        <img src={t.photo_path} alt={t.name} className="h-full w-full object-cover" />
-                      ) : (
-                        t.name.charAt(0)
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{t.name}</p>
-                      <p className="text-xs text-muted-foreground">{t.role}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </ScrollFadeIn>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
-
-/** Dynamic FAQ section that fetches from Supabase */
-const FAQSection = () => {
-  const { data: faqs = [], isLoading } = useQuery({
-    queryKey: ["landing-faqs"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("faqs" as any)
-        .select("id, question, answer")
-        .eq("is_active", true)
-        .order("display_order", { ascending: true });
-      if (error) throw error;
-      return (data as unknown as { id: string; question: string; answer: string }[]);
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  if (isLoading || faqs.length === 0) return null;
-
-  return (
-    <section className="border-t px-4 py-12 sm:px-6 md:py-20">
-      <div className="mx-auto max-w-3xl">
-        <ScrollFadeIn className="mb-10 text-center">
-          <h2 className="text-2xl font-bold text-foreground sm:text-3xl">Frequently Asked Questions</h2>
-          <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-            Got questions? We've got answers.
-          </p>
-        </ScrollFadeIn>
-        <div className="space-y-3">
-          {faqs.map((faq, i) => (
-            <ScrollFadeIn key={faq.id} delay={i * 80}>
-              <FAQItem question={faq.question} answer={faq.answer} />
-            </ScrollFadeIn>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
-
 const Index = () => {
   const { user, profile, loading } = useAuth();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -301,27 +165,6 @@ const Index = () => {
   const [showIOSTip, setShowIOSTip] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
-
-  const { data: dbCompanies } = useQuery({
-    queryKey: ["trusted-companies-landing"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("trusted_companies")
-        .select("*")
-        .eq("is_active", true)
-        .order("display_order", { ascending: true });
-      if (error) throw error;
-      return data.map((c: any) => ({
-        name: c.name,
-        logo: c.logo_path
-          ? supabase.storage.from("company-logos").getPublicUrl(c.logo_path).data.publicUrl
-          : null,
-      }));
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const trustedCompanies = dbCompanies && dbCompanies.length > 0 ? dbCompanies : fallbackCompanies;
 
   useEffect(() => {
     setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
@@ -468,17 +311,13 @@ const Index = () => {
               <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-background to-transparent" />
               <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-background to-transparent" />
               <div className="animate-scroll-left flex w-max gap-8 sm:gap-12">
-                {[...trustedCompanies, ...trustedCompanies].map((company, i) => (
+                {[...trustedCompanies, ...trustedCompanies].map((name, i) => (
                   <div
-                    key={`${company.name}-${i}`}
-                    className="flex shrink-0 items-center gap-3 rounded-lg border bg-card/60 px-5 py-2.5 shadow-sm"
+                    key={`${name}-${i}`}
+                    className="flex shrink-0 items-center gap-2 rounded-lg border bg-card/60 px-5 py-2.5 shadow-sm"
                   >
-                    {company.logo ? (
-                      <img src={company.logo} alt={company.name} className="h-7 w-7 object-contain" />
-                    ) : (
-                      <div className="h-7 w-7 rounded bg-muted" />
-                    )}
-                    <span className="whitespace-nowrap text-sm font-semibold text-muted-foreground">{company.name}</span>
+                    <Building2 className="h-4 w-4 text-primary/60" />
+                    <span className="whitespace-nowrap text-sm font-semibold text-muted-foreground">{name}</span>
                   </div>
                 ))}
               </div>
@@ -533,12 +372,6 @@ const Index = () => {
           </div>
         </div>
       </section>
-
-      {/* What Clients Say */}
-      <TestimonialsSection />
-
-      {/* FAQ */}
-      <FAQSection />
 
       {/* CTA */}
       <section className="border-t bg-muted/30 px-4 py-12 sm:px-6 md:py-20">

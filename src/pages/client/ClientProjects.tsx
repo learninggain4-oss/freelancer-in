@@ -5,9 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Plus, IndianRupee, Calendar, MessageSquare, Pencil, Trash2, Star } from "lucide-react";
+import { Search, Plus, IndianRupee, Calendar, MessageSquare, Pencil, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import ReviewDialog from "@/components/reviews/ReviewDialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -172,22 +171,9 @@ const ClientProjects = () => {
                       </>
                     )}
                     {(p.status === "in_progress" || p.status === "job_confirmed" || p.status === "payment_processing" || p.status === "validation" || p.status === "completed" || p.status === "cancelled") && (
-                      <Button size="sm" variant="outline" className="flex-1" onClick={() => navigate(`/client/projects/chat/${p.id}`)}>
-                        <MessageSquare className="mr-1 h-3 w-3" /> Chat
+                      <Button size="sm" variant="outline" className="w-full" onClick={() => navigate(`/client/projects/chat/${p.id}`)}>
+                        <MessageSquare className="mr-1 h-3 w-3" /> Validation Chat
                       </Button>
-                    )}
-                    {p.status === "completed" && p.assigned_employee_id && (
-                      <ReviewDialog
-                        projectId={p.id}
-                        projectName={p.name}
-                        revieweeId={p.assigned_employee_id}
-                        revieweeName="Employee"
-                        trigger={
-                          <Button size="sm" variant="outline" className="gap-1">
-                            <Star className="h-3 w-3" /> Review
-                          </Button>
-                        }
-                      />
                     )}
                   </div>
                 </CardContent>
