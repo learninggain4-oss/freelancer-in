@@ -161,6 +161,7 @@ const EmployeeDashboard = () => {
         walletNumber={profile?.wallet_number}
         availableBalance={profile?.available_balance ?? 0}
         holdBalance={profile?.hold_balance ?? 0}
+        walletActive={(profile as any)?.wallet_active ?? true}
       />
 
       {/* Quick actions */}

@@ -9,6 +9,7 @@ interface WalletCardProps {
   availableBalance: number;
   holdBalance: number;
   compact?: boolean;
+  walletActive?: boolean;
 }
 
 const WalletCard = ({
@@ -18,6 +19,7 @@ const WalletCard = ({
   availableBalance,
   holdBalance,
   compact = false,
+  walletActive = true,
 }: WalletCardProps) => {
   const totalBalance = availableBalance + holdBalance;
   const [pressed, setPressed] = useState(false);
@@ -37,7 +39,7 @@ const WalletCard = ({
   return (
     <div
       onPointerDown={handlePress}
-      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-wallet-from via-wallet-via to-wallet-to p-5 text-primary-foreground shadow-lg animate-fade-in cursor-pointer select-none active:scale-[0.98] transition-transform duration-150"
+      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br from-wallet-from via-wallet-via to-wallet-to p-5 text-primary-foreground shadow-lg animate-fade-in cursor-pointer select-none active:scale-[0.98] transition-transform duration-150 ${!walletActive ? "grayscale opacity-75" : ""}`}
     >
       {/* Shimmer sweep */}
       <div
@@ -61,6 +63,9 @@ const WalletCard = ({
       <div className="relative flex items-center gap-2 text-sm font-medium text-primary-foreground/80">
         <Wallet className="h-4 w-4" />
         <span>Freelancer Wallet</span>
+        <span className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${walletActive ? "bg-emerald-500/20 text-emerald-200" : "bg-red-500/25 text-red-200"}`}>
+          {walletActive ? "Active" : "Inactive"}
+        </span>
       </div>
 
       {/* Main balance */}
