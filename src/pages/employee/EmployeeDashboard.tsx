@@ -245,6 +245,9 @@ const EmployeeDashboard = () => {
         </CardContent>
       </Card>
 
+      {/* Request Status */}
+      <RequestStatusSection />
+
       {/* Recent transactions */}
       <Card className="border-0 shadow-sm">
         <CardHeader className="flex-row items-center justify-between pb-3">
