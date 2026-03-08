@@ -130,7 +130,8 @@ const AdminWalletManagement = () => {
     return (
       (u.full_name?.[0] || "").toLowerCase().includes(q) ||
       (u.user_code?.[0] || "").toLowerCase().includes(q) ||
-      (u.email || "").toLowerCase().includes(q)
+      (u.email || "").toLowerCase().includes(q) ||
+      (u.wallet_number || "").toLowerCase().includes(q)
     );
   });
 
