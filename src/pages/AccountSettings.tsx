@@ -256,6 +256,33 @@ const AccountSettings = () => {
               )}
             </CardContent>
           </Card>
+
+          <Card className={needRefresh ? "border-primary/30 bg-primary/5" : ""}>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Download className="h-5 w-5 text-primary" />
+                App Updates
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {needRefresh ? (
+                <>
+                  <p className="text-sm text-muted-foreground">A new version is available. Update now to get the latest features and fixes.</p>
+                  <Button onClick={handleUpdate} className="w-full gap-2">
+                    <RefreshCw className="h-4 w-4" /> Update Now
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground">Your app is up to date.</p>
+                  <Button variant="outline" onClick={handleCheckUpdate} disabled={checking} className="w-full gap-2">
+                    {checking ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                    Check for Updates
+                  </Button>
+                </>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Tab: Account */}
