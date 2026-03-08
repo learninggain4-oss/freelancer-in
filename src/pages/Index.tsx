@@ -162,6 +162,83 @@ const ScrollFadeIn = ({ children, className = "", delay = 0 }: { children: React
   );
 };
 
+const TestimonialCarousel = ({ testimonials }: { testimonials: any[] }) => {
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!api) return;
+    setCount(api.scrollSnapList().length);
+    setCurrent(api.selectedScrollSnap());
+    api.on("select", () => setCurrent(api.selectedScrollSnap()));
+  }, [api]);
+
+  return (
+    <div className="mx-auto w-full max-w-5xl">
+      <Carousel setApi={setApi} opts={{ align: "start", loop: true }} plugins={[Autoplay({ delay: 4000, stopOnInteraction: false })]}>
+        <CarouselContent className="-ml-4">
+          {testimonials.map((t) => (
+            <CarouselItem key={t.id} className="pl-4 sm:basis-1/2 lg:basis-1/3">
+              <Card className="group h-full border bg-card transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 hover:border-primary/20">
+                <CardContent className="flex h-full flex-col p-5 sm:p-6">
+                  <Quote className="mb-3 h-8 w-8 text-primary/20 transition-all duration-300 group-hover:text-primary/40 group-hover:scale-110" />
+                  <p className="flex-1 text-sm text-muted-foreground leading-relaxed italic">
+                    "{t.quote}"
+                  </p>
+                  <div className="mt-4 flex items-center gap-3 border-t pt-4">
+                    {t.photo_path ? (
+                      <img
+                        src={t.photo_path}
+                        alt={t.name}
+                        className="h-10 w-10 rounded-full object-cover border transition-transform duration-300 group-hover:scale-110"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold transition-transform duration-300 group-hover:scale-110">
+                        {t.name.charAt(0)}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{t.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{t.role}</p>
+                    </div>
+                    <div className="ml-auto flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          className={cn(
+                            "h-3.5 w-3.5 transition-transform duration-300",
+                            s <= t.rating ? "fill-yellow-400 text-yellow-400 group-hover:scale-110" : "text-muted-foreground/30"
+                          )}
+                          style={{ transitionDelay: `${s * 50}ms` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        <CarouselPrevious className="hidden sm:flex -left-4 lg:-left-12" />
+        <CarouselNext className="hidden sm:flex -right-4 lg:-right-12" />
+      </Carousel>
+      <div className="flex justify-center gap-1.5 mt-6">
+        {Array.from({ length: count }).map((_, i) => (
+          <button
+            key={i}
+            onClick={() => api?.scrollTo(i)}
+            className={cn(
+              "h-2 rounded-full transition-all duration-300",
+              i === current ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const Index = () => {
   const { user, profile, loading } = useAuth();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
