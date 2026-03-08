@@ -57,6 +57,7 @@ const navItems = [
   { label: "Notifications", icon: Bell, path: "/admin/notifications" },
   { label: "Announcements", icon: Megaphone, path: "/admin/announcements" },
   { label: "Trusted Cos.", icon: Building2, path: "/admin/trusted-companies" },
+  { label: "Reviews", icon: Star, path: "/admin/reviews" },
   { label: "Settings", icon: Settings, path: "/admin/settings" },
   { label: "Sessions", icon: Monitor, path: "/admin/sessions" },
 ];
