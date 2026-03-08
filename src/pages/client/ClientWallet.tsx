@@ -13,6 +13,7 @@ import {
   IndianRupee,
   PlusCircle,
   ArrowUpRight,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -82,6 +83,13 @@ const ClientWallet = () => {
         walletActive={(profile as any)?.wallet_active ?? true}
       />
 
+      {!(profile as any)?.wallet_active && (
+        <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>Your wallet is currently inactive. Adding money is disabled. Please contact support for assistance.</span>
+        </div>
+      )}
+
       {/* Add Money */}
       <Card>
         <CardHeader className="pb-3">
@@ -94,8 +102,8 @@ const ClientWallet = () => {
             <Label>Amount (₹)</Label>
             <Input type="number" placeholder="Enter amount" value={addAmount} onChange={(e) => setAddAmount(e.target.value)} />
           </div>
-          <Button className="w-full" onClick={() => addMoneyMutation.mutate()} disabled={addMoneyMutation.isPending}>
-            <ArrowUpRight className="mr-2 h-4 w-4" /> {addMoneyMutation.isPending ? "Processing..." : "Add to Wallet"}
+          <Button className="w-full" onClick={() => addMoneyMutation.mutate()} disabled={addMoneyMutation.isPending || !(profile as any)?.wallet_active}>
+            <ArrowUpRight className="mr-2 h-4 w-4" /> {addMoneyMutation.isPending ? "Processing..." : !(profile as any)?.wallet_active ? "Wallet Inactive" : "Add to Wallet"}
           </Button>
         </CardContent>
       </Card>
