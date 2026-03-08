@@ -36,6 +36,8 @@ type Profile = {
   user_type: string;
   available_balance: number;
   hold_balance: number;
+  wallet_number: string | null;
+  wallet_active: boolean;
 };
 
 type Transaction = {
@@ -112,7 +114,7 @@ const AdminWalletManagement = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, user_code, email, user_type, available_balance, hold_balance")
+        .select("id, full_name, user_code, email, user_type, available_balance, hold_balance, wallet_number, wallet_active")
         .in("user_type", ["employee", "client"])
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -128,7 +130,8 @@ const AdminWalletManagement = () => {
     return (
       (u.full_name?.[0] || "").toLowerCase().includes(q) ||
       (u.user_code?.[0] || "").toLowerCase().includes(q) ||
-      (u.email || "").toLowerCase().includes(q)
+      (u.email || "").toLowerCase().includes(q) ||
+      (u.wallet_number || "").toLowerCase().includes(q)
     );
   });
 
@@ -139,7 +142,7 @@ const AdminWalletManagement = () => {
       if (!selectedUser?.id) return null;
       const { data } = await supabase
         .from("profiles")
-        .select("id, full_name, user_code, email, user_type, available_balance, hold_balance")
+        .select("id, full_name, user_code, email, user_type, available_balance, hold_balance, wallet_number, wallet_active")
         .eq("id", selectedUser.id)
         .single();
       return data as Profile | null;
@@ -280,6 +283,19 @@ const AdminWalletManagement = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const toggleWalletMutation = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase.from("profiles").update({ wallet_active: active } as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      toast.success(vars.active ? "Wallet activated" : "Wallet deactivated");
+      queryClient.invalidateQueries({ queryKey: ["admin-wallet-all-users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-wallet-user"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ["admin-wallet-user"] });
     queryClient.invalidateQueries({ queryKey: ["admin-wallet-transactions"] });
@@ -301,7 +317,7 @@ const AdminWalletManagement = () => {
     if (q.length < 2) { setTransferTargetResults([]); return; }
     const { data } = await supabase
       .from("profiles")
-      .select("id, full_name, user_code, email, user_type, available_balance, hold_balance")
+      .select("id, full_name, user_code, email, user_type, available_balance, hold_balance, wallet_number, wallet_active")
       .or(`email.ilike.%${q}%,full_name.cs.{${q}}`)
       .neq("id", selectedUser?.id || "")
       .limit(5);
@@ -370,20 +386,37 @@ const AdminWalletManagement = () => {
             {loadingUsers && <Skeleton className="h-10 w-full" />}
             <div className="max-h-[400px] space-y-2 overflow-y-auto">
               {filteredUsers.map((u) => (
-                <button
+                <div
                   key={u.id}
-                  className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted"
-                  onClick={() => { setSelectedUser(u); setSearch(""); setTxPage(1); setWPage(1); }}
+                  className="flex w-full items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted"
                 >
-                  <div>
+                  <button
+                    className="flex-1 text-left"
+                    onClick={() => { setSelectedUser(u); setSearch(""); setTxPage(1); setWPage(1); }}
+                  >
                     <p className="font-medium text-foreground">{u.full_name?.[0]}</p>
                     <p className="text-xs text-muted-foreground">{u.user_code?.[0]} · {u.email}</p>
+                    {u.wallet_number && (
+                      <p className="text-xs text-muted-foreground">Wallet: {u.wallet_number}</p>
+                    )}
+                  </button>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right text-sm">
+                      <p className="font-semibold text-foreground">₹{Number(u.available_balance).toLocaleString("en-IN")}</p>
+                      <p className="text-xs text-muted-foreground">Hold: ₹{Number(u.hold_balance).toLocaleString("en-IN")}</p>
+                    </div>
+                    <div className="flex flex-col items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                      <Switch
+                        checked={u.wallet_active}
+                        onCheckedChange={(checked) => toggleWalletMutation.mutate({ id: u.id, active: checked })}
+                        disabled={toggleWalletMutation.isPending}
+                      />
+                      <span className={`text-[10px] font-medium ${u.wallet_active ? "text-accent" : "text-destructive"}`}>
+                        {u.wallet_active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right text-sm">
-                    <p className="font-semibold text-foreground">₹{Number(u.available_balance).toLocaleString("en-IN")}</p>
-                    <p className="text-xs text-muted-foreground">Hold: ₹{Number(u.hold_balance).toLocaleString("en-IN")}</p>
-                  </div>
-                </button>
+                </div>
               ))}
               {!loadingUsers && filteredUsers.length === 0 && (
                 <p className="py-4 text-center text-sm text-muted-foreground">No {userTab}s found</p>

@@ -1003,6 +1003,7 @@ export type Database = {
           user_code: string[]
           user_id: string
           user_type: Database["public"]["Enums"]["user_type"]
+          wallet_active: boolean
           wallet_number: string | null
           whatsapp_number: string | null
           withdrawal_password_hash: string | null
@@ -1057,6 +1058,7 @@ export type Database = {
           user_code: string[]
           user_id: string
           user_type: Database["public"]["Enums"]["user_type"]
+          wallet_active?: boolean
           wallet_number?: string | null
           whatsapp_number?: string | null
           withdrawal_password_hash?: string | null
@@ -1111,6 +1113,7 @@ export type Database = {
           user_code?: string[]
           user_id?: string
           user_type?: Database["public"]["Enums"]["user_type"]
+          wallet_active?: boolean
           wallet_number?: string | null
           whatsapp_number?: string | null
           withdrawal_password_hash?: string | null
