@@ -53,6 +53,7 @@ const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications")
 const LegalDocument = lazy(() => import("./pages/LegalDocument"));
 const AccountSettings = lazy(() => import("./pages/AccountSettings"));
 const GetFree = lazy(() => import("./pages/GetFree"));
+const GetCoins = lazy(() => import("./pages/GetCoins"));
 const AppPage = lazy(() => import("./pages/AppPage"));
 const EmployeeSupportChat = lazy(() => import("./pages/employee/EmployeeSupportChat"));
 const HelpSupport = lazy(() => import("./pages/HelpSupport"));
