@@ -146,8 +146,8 @@ const AdminSettings = () => {
           if (row.key === "employee_code_include_month") setEmpIncludeMonth(row.value === "true");
           if (row.key === "client_code_include_year") setCltIncludeYear(row.value === "true");
           if (row.key === "client_code_include_month") setCltIncludeMonth(row.value === "true");
-          if (row.key === "employee_code_separator") setEmpSeparator(row.value);
-          if (row.key === "client_code_separator") setCltSeparator(row.value);
+          if (row.key === "employee_code_separator") setEmpSeparator(row.value || "none");
+          if (row.key === "client_code_separator") setCltSeparator(row.value || "none");
         }
       }
       setLoading(false);
