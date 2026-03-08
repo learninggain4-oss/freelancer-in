@@ -555,7 +555,7 @@ const AdminSettings = () => {
               <p className="text-xs text-muted-foreground">
                 Preview: <span className="font-mono font-bold">{(() => {
                   const p = empPrefix || "EMP";
-                  const s = empSeparator;
+                  const s = empSeparator === "none" ? "" : empSeparator;
                   const d = Number(empDigits) || 5;
                   const num = "0".repeat(d - 1) + "1";
                   const year = new Date().getFullYear().toString();
