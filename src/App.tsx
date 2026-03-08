@@ -71,8 +71,10 @@ import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
 import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 import { useVisitorTracking } from "@/hooks/use-visitor-tracking";
+import { useIpBlockCheck } from "@/hooks/use-ip-block-check";
 import AnnouncementPopup from "@/components/announcements/AnnouncementPopup";
 import UpdatePrompt from "@/components/pwa/UpdatePrompt";
+import BlockedScreen from "@/components/BlockedScreen";
 
 const queryClient = new QueryClient();
 
@@ -90,6 +92,119 @@ const PageLoader = () => (
   </div>
 );
 
+const AppContent = () => {
+  const { blocked, loading } = useIpBlockCheck();
+
+  if (loading) return <PageLoader />;
+  if (blocked) return <BlockedScreen />;
+
+  return (
+    <>
+      <GlobalChatNotifier />
+      <AnnouncementPopup />
+      <UpdatePrompt />
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/register/employee" element={<EmployeeRegister />} />
+            <Route path="/register/client" element={<ClientRegister />} />
+            <Route path="/verification-pending" element={<VerificationPending />} />
+            <Route path="/install" element={<InstallApp />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/complete-profile" element={<CompleteProfile />} />
+            <Route path="/legal/:slug" element={<LegalDocument />} />
+
+            {/* Employee Routes */}
+            <Route
+              path="/employee"
+              element={
+                <ProtectedRoute>
+                  <AppLayout userType="employee" />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<EmployeeDashboard />} />
+              <Route path="projects" element={<EmployeeProjects />} />
+              <Route path="projects/chat/:projectId" element={<ChatRoom />} />
+              <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
+              <Route path="wallet" element={<EmployeeWallet />} />
+              <Route path="profile" element={<EmployeeProfile />} />
+              <Route path="settings" element={<AccountSettings />} />
+              <Route path="help-support" element={<HelpSupport />} />
+            </Route>
+
+            {/* Client Routes */}
+            <Route
+              path="/client"
+              element={
+                <ProtectedRoute>
+                  <AppLayout userType="client" />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<ClientDashboard />} />
+              <Route path="wallet" element={<ClientWallet />} />
+              <Route path="projects" element={<ClientProjects />} />
+              <Route path="projects/create" element={<CreateProject />} />
+              <Route path="projects/chat/:projectId" element={<ChatRoom />} />
+              <Route path="withdrawals" element={<ClientWithdrawals />} />
+              <Route path="profile" element={<ClientProfile />} />
+              <Route path="settings" element={<AccountSettings />} />
+              <Route path="help-support" element={<HelpSupport />} />
+            </Route>
+
+            {/* Admin Routes */}
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }
+            >
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="employees" element={<AdminEmployees />} />
+              <Route path="clients" element={<AdminClients />} />
+              <Route path="withdrawals" element={<AdminWithdrawals />} />
+              <Route path="verifications" element={<AdminVerifications />} />
+              <Route path="bank-verifications" element={<AdminBankVerifications />} />
+              <Route path="profile-edits" element={<AdminProfileEdits />} />
+              <Route path="users/:profileId" element={<AdminProfileEdit />} />
+              <Route path="legal-documents" element={<AdminLegalDocuments />} />
+              <Route path="jobs" element={<AdminJobs />} />
+              <Route path="recovery-requests" element={<AdminRecoveryRequests />} />
+              <Route path="recovery-chat/:projectId" element={<AdminRecoveryChat />} />
+              <Route path="services" element={<AdminServiceManagement />} />
+              <Route path="wallet-management" element={<AdminWalletManagement />} />
+              <Route path="settings" element={<AdminSettings />} />
+              <Route path="announcements" element={<AdminAnnouncements />} />
+              <Route path="notifications" element={<AdminNotifications />} />
+              <Route path="help-support" element={<AdminHelpSupport />} />
+              <Route path="support-reporting" element={<AdminSupportReporting />} />
+              <Route path="payment-methods" element={<AdminPaymentMethods />} />
+              <Route path="countdowns" element={<AdminCountdowns />} />
+              <Route path="validation" element={<AdminValidation />} />
+              <Route path="sessions" element={<AdminSessions />} />
+              <Route path="testimonials" element={<AdminTestimonials />} />
+              <Route path="referrals" element={<AdminReferrals />} />
+              <Route path="online-status" element={<AdminOnlineStatus />} />
+              <Route path="hero-slides" element={<AdminHeroSlides />} />
+              <Route path="visitors" element={<AdminVisitors />} />
+            </Route>
+
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
+    </>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -97,107 +212,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <GlobalChatNotifier />
-          <AnnouncementPopup />
-          <UpdatePrompt />
-          <ErrorBoundary>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/register/employee" element={<EmployeeRegister />} />
-              <Route path="/register/client" element={<ClientRegister />} />
-              <Route path="/verification-pending" element={<VerificationPending />} />
-              <Route path="/install" element={<InstallApp />} />
-              <Route path="/categories" element={<Categories />} />
-              <Route path="/complete-profile" element={<CompleteProfile />} />
-              <Route path="/legal/:slug" element={<LegalDocument />} />
-
-              {/* Employee Routes */}
-              <Route
-                path="/employee"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout userType="employee" />
-                  </ProtectedRoute>
-                }
-              >
-                <Route path="dashboard" element={<EmployeeDashboard />} />
-                <Route path="projects" element={<EmployeeProjects />} />
-                <Route path="projects/chat/:projectId" element={<ChatRoom />} />
-                <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
-                <Route path="wallet" element={<EmployeeWallet />} />
-                <Route path="profile" element={<EmployeeProfile />} />
-                <Route path="settings" element={<AccountSettings />} />
-                <Route path="help-support" element={<HelpSupport />} />
-              </Route>
-
-              {/* Client Routes */}
-              <Route
-                path="/client"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout userType="client" />
-                  </ProtectedRoute>
-                }
-              >
-                <Route path="dashboard" element={<ClientDashboard />} />
-                <Route path="wallet" element={<ClientWallet />} />
-                <Route path="projects" element={<ClientProjects />} />
-                <Route path="projects/create" element={<CreateProject />} />
-                <Route path="projects/chat/:projectId" element={<ChatRoom />} />
-                <Route path="withdrawals" element={<ClientWithdrawals />} />
-                <Route path="profile" element={<ClientProfile />} />
-                <Route path="settings" element={<AccountSettings />} />
-                <Route path="help-support" element={<HelpSupport />} />
-              </Route>
-
-              {/* Admin Routes */}
-              <Route
-                path="/admin"
-                element={
-                  <AdminRoute>
-                    <AdminLayout />
-                  </AdminRoute>
-                }
-              >
-                <Route path="dashboard" element={<AdminDashboard />} />
-                <Route path="users" element={<AdminUsers />} />
-                <Route path="employees" element={<AdminEmployees />} />
-                <Route path="clients" element={<AdminClients />} />
-                <Route path="withdrawals" element={<AdminWithdrawals />} />
-                <Route path="verifications" element={<AdminVerifications />} />
-                <Route path="bank-verifications" element={<AdminBankVerifications />} />
-                <Route path="profile-edits" element={<AdminProfileEdits />} />
-                <Route path="users/:profileId" element={<AdminProfileEdit />} />
-                <Route path="legal-documents" element={<AdminLegalDocuments />} />
-                <Route path="jobs" element={<AdminJobs />} />
-                <Route path="recovery-requests" element={<AdminRecoveryRequests />} />
-                <Route path="recovery-chat/:projectId" element={<AdminRecoveryChat />} />
-                <Route path="services" element={<AdminServiceManagement />} />
-                <Route path="wallet-management" element={<AdminWalletManagement />} />
-                <Route path="settings" element={<AdminSettings />} />
-                <Route path="announcements" element={<AdminAnnouncements />} />
-                <Route path="notifications" element={<AdminNotifications />} />
-                <Route path="help-support" element={<AdminHelpSupport />} />
-                <Route path="support-reporting" element={<AdminSupportReporting />} />
-                <Route path="payment-methods" element={<AdminPaymentMethods />} />
-                <Route path="countdowns" element={<AdminCountdowns />} />
-                <Route path="validation" element={<AdminValidation />} />
-                <Route path="sessions" element={<AdminSessions />} />
-                <Route path="testimonials" element={<AdminTestimonials />} />
-                <Route path="referrals" element={<AdminReferrals />} />
-                <Route path="online-status" element={<AdminOnlineStatus />} />
-                <Route path="hero-slides" element={<AdminHeroSlides />} />
-                <Route path="visitors" element={<AdminVisitors />} />
-              </Route>
-
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-          </ErrorBoundary>
+          <AppContent />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

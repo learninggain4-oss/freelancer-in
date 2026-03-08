@@ -58,7 +58,18 @@ serve(async (req) => {
 
     if (error) throw error;
 
-    return new Response(JSON.stringify({ success: true }), {
+    // Check if this IP is blocked
+    let blocked = false;
+    if (ip_address) {
+      const { data: blockData } = await supabaseAdmin
+        .from("blocked_ips")
+        .select("id")
+        .eq("ip_address", ip_address)
+        .maybeSingle();
+      blocked = !!blockData;
+    }
+
+    return new Response(JSON.stringify({ success: true, blocked }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
