@@ -153,64 +153,14 @@ const EmployeeDashboard = () => {
       </div>
 
       <div className="space-y-5 p-4 pb-8">
-      {/* Hero greeting */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary/70 p-5 text-primary-foreground">
-        <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-primary-foreground/10" />
-        <div className="absolute -bottom-4 -right-2 h-16 w-16 rounded-full bg-primary-foreground/5" />
-        <p className="text-sm font-medium text-primary-foreground/80">Welcome back,</p>
-        <h1 className="mt-0.5 text-xl font-bold">
-          {Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Employee"}
-        </h1>
-        <div className="mt-3 flex items-baseline gap-1">
-          <span className="text-3xl font-extrabold">₹{totalBalance.toLocaleString("en-IN")}</span>
-          <span className="text-sm text-primary-foreground/70">total balance</span>
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <Badge variant="secondary" className="bg-primary-foreground/15 text-primary-foreground border-0 text-xs">
-            {Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—"}
-          </Badge>
-          {profile?.wallet_number && (
-            <Badge
-              variant="secondary"
-              className="bg-primary-foreground/15 text-primary-foreground border-0 text-xs cursor-pointer active:scale-95 transition-transform"
-              onClick={copyWalletNumber}
-            >
-              <Wallet className="mr-1 h-3 w-3" /> {profile.wallet_number}
-              <Copy className="ml-1 h-3 w-3 opacity-60" />
-            </Badge>
-          )}
-        </div>
-      </div>
-
-      {/* Balance split cards */}
-      <div className="grid grid-cols-2 gap-3">
-        <Card className="border-0 shadow-sm bg-accent/5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-accent">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
-                <Wallet className="h-4 w-4" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">Available</span>
-            </div>
-            <p className="mt-2 text-lg font-bold text-foreground">
-              ₹{(profile?.available_balance ?? 0).toLocaleString("en-IN")}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm bg-warning/5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-warning">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/10">
-                <Clock className="h-4 w-4" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">On Hold</span>
-            </div>
-            <p className="mt-2 text-lg font-bold text-foreground">
-              ₹{(profile?.hold_balance ?? 0).toLocaleString("en-IN")}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Wallet Card */}
+      <WalletCard
+        name={Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Employee"}
+        userCode={Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—"}
+        walletNumber={profile?.wallet_number}
+        availableBalance={profile?.available_balance ?? 0}
+        holdBalance={profile?.hold_balance ?? 0}
+      />
 
       {/* Quick actions */}
       <div className="grid grid-cols-4 gap-2">
