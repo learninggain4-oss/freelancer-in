@@ -31,6 +31,7 @@ import {
   Clock,
   BadgeCheck,
   Monitor,
+  MessageSquareQuote,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -58,6 +59,7 @@ const navItems = [
   { label: "Announcements", icon: Megaphone, path: "/admin/announcements" },
   { label: "Settings", icon: Settings, path: "/admin/settings" },
   { label: "Sessions", icon: Monitor, path: "/admin/sessions" },
+  { label: "Testimonials", icon: MessageSquareQuote, path: "/admin/testimonials" },
 ];
 
 const AdminLayout = () => {
