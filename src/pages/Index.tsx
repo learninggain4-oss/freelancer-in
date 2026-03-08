@@ -438,7 +438,7 @@ const Index = () => {
             className="h-full w-full object-cover"
             poster=""
           >
-            <source src="https://cdn.pixabay.com/video/2020/05/25/40130-424930032_large.mp4" type="video/mp4" />
+            <source src="https://cdn.pixabay.com/video/2016/09/01/4830-181802498_large.mp4" type="video/mp4" />
           </video>
         </div>
         {/* Dark overlay for readability */}
