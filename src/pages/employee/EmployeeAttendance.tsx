@@ -64,67 +64,41 @@ const EmployeeAttendance = () => {
     fetchMonthRecords();
   }, [profile, currentMonth]);
 
-  const openFaceDialog = (action: "check_in" | "check_out") => {
-    setFaceAction(action);
-    setFaceDialogOpen(true);
-  };
-
-  const uploadPhoto = async (blob: Blob, type: "check_in" | "check_out"): Promise<string | null> => {
-    if (!profile) return null;
-    const fileName = `${profile.id}/${todayStr}_${type}_${Date.now()}.jpg`;
-    const { error } = await supabase.storage
-      .from("attendance-photos")
-      .upload(fileName, blob, { contentType: "image/jpeg", upsert: true });
-    if (error) {
-      console.error("Photo upload error:", error);
-      return null;
-    }
-    return fileName;
-  };
-
-  const handleFaceCaptured = useCallback(async (blob: Blob) => {
+  const handleCheckIn = async () => {
     if (!profile) return;
     setLoading(true);
-
-    const photoPath = await uploadPhoto(blob, faceAction);
-    if (!photoPath) {
-      toast({ title: "Error", description: "Failed to upload verification photo.", variant: "destructive" });
-      setLoading(false);
-      return;
-    }
-
-    if (faceAction === "check_in") {
-      const { error } = await supabase.from("attendance").insert({
-        profile_id: profile.id,
-        date: todayStr,
-        check_in_at: new Date().toISOString(),
-        status: "present",
-        check_in_photo_path: photoPath,
-      });
-      setLoading(false);
-      if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-      } else {
-        toast({ title: "Checked In ✅", description: "Your attendance has been recorded with face verification." });
-        fetchTodayRecord();
-        fetchMonthRecords();
-      }
+    const { error } = await supabase.from("attendance").insert({
+      profile_id: profile.id,
+      date: todayStr,
+      check_in_at: new Date().toISOString(),
+      status: "present",
+    });
+    setLoading(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      if (!todayRecord) { setLoading(false); return; }
-      const { error } = await supabase
-        .from("attendance")
-        .update({ check_out_at: new Date().toISOString(), check_out_photo_path: photoPath })
-        .eq("id", todayRecord.id);
-      setLoading(false);
-      if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-      } else {
-        toast({ title: "Checked Out 👋", description: "See you tomorrow! Face verification recorded." });
-        fetchTodayRecord();
-        fetchMonthRecords();
-      }
+      toast({ title: "Checked In ✅", description: "Your attendance has been recorded." });
+      fetchTodayRecord();
+      fetchMonthRecords();
     }
-  }, [profile, faceAction, todayRecord, todayStr]);
+  };
+
+  const handleCheckOut = async () => {
+    if (!profile || !todayRecord) return;
+    setLoading(true);
+    const { error } = await supabase
+      .from("attendance")
+      .update({ check_out_at: new Date().toISOString() })
+      .eq("id", todayRecord.id);
+    setLoading(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Checked Out 👋", description: "See you tomorrow!" });
+      fetchTodayRecord();
+      fetchMonthRecords();
+    }
+  };
 
   // Calendar day styling
   const presentDays = useMemo(
