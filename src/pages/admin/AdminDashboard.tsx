@@ -79,6 +79,10 @@ const AdminDashboard = () => {
         employeesInvited: referredUsers.filter(p => p.user_type === "employee").length,
         clientsInvited: referredUsers.filter(p => p.user_type === "client").length,
         unreadSupportChats: supportMessages.data?.length || 0,
+        totalReviews: allReviews.length,
+        avgRating: allReviews.length > 0
+          ? (allReviews.reduce((sum: number, r: any) => sum + Number(r.rating), 0) / allReviews.length).toFixed(1)
+          : "0",
       });
     };
     fetchStats();
