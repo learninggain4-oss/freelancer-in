@@ -27,6 +27,8 @@ const AdminDashboard = () => {
     employeesInvited: 0,
     clientsInvited: 0,
     unreadSupportChats: 0,
+    totalReviews: 0,
+    avgRating: "0",
   });
 
   useEffect(() => {
