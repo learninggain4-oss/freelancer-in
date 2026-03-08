@@ -64,11 +64,13 @@ const AdminTestimonials = lazy(() => import("./pages/admin/AdminTestimonials"));
 const AdminReferrals = lazy(() => import("./pages/admin/AdminReferrals"));
 const AdminOnlineStatus = lazy(() => import("./pages/admin/AdminOnlineStatus"));
 const AdminHeroSlides = lazy(() => import("./pages/admin/AdminHeroSlides"));
+const AdminVisitors = lazy(() => import("./pages/admin/AdminVisitors"));
 const Categories = lazy(() => import("./pages/Categories"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
 import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
+import { useVisitorTracking } from "@/hooks/use-visitor-tracking";
 import AnnouncementPopup from "@/components/announcements/AnnouncementPopup";
 import UpdatePrompt from "@/components/pwa/UpdatePrompt";
 
@@ -78,6 +80,7 @@ const queryClient = new QueryClient();
 const GlobalChatNotifier = () => {
   useChatNotifications();
   usePresenceHeartbeat();
+  useVisitorTracking();
   return null;
 };
 
@@ -188,6 +191,7 @@ const App = () => (
                 <Route path="referrals" element={<AdminReferrals />} />
                 <Route path="online-status" element={<AdminOnlineStatus />} />
                 <Route path="hero-slides" element={<AdminHeroSlides />} />
+                <Route path="visitors" element={<AdminVisitors />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

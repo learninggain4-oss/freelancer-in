@@ -35,6 +35,7 @@ import {
   MessageSquareQuote,
   Wifi,
   SlidersHorizontal,
+  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,7 @@ const navItems = [
   { label: "Online Status", icon: Wifi, path: "/admin/online-status" },
   { label: "Hero Slideshow", icon: SlidersHorizontal, path: "/admin/hero-slides" },
   { label: "Testimonials", icon: MessageSquareQuote, path: "/admin/testimonials" },
+  { label: "Site Visitors", icon: Eye, path: "/admin/visitors" },
 ];
 
 const AdminLayout = () => {
