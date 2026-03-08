@@ -319,6 +319,7 @@ const AccountSettings = () => {
         {/* Tab: Security */}
         <TabsContent value="security" className="space-y-4 mt-4">
           <UserTotpSetupCard />
+          <WithdrawalPasswordCard />
         </TabsContent>
 
         {/* Tab: Account */}
