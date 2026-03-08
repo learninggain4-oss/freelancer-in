@@ -35,6 +35,9 @@ const trustedCompanies = [
   { name: "Cognizant", logo: "/logos/cognizant.png" },
   { name: "Paytm", logo: "/logos/paytm.png" },
   { name: "Reliance", logo: "/logos/reliance.png" },
+  { name: "Flipkart", logo: "/logos/flipkart.png" },
+  { name: "Razorpay", logo: "/logos/razorpay.png" },
+  { name: "Zoho", logo: "/logos/zoho.png" },
 ];
 
 interface BeforeInstallPromptEvent extends Event {
