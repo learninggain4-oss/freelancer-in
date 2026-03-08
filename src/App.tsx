@@ -91,6 +91,7 @@ const App = () => (
         <AuthProvider>
           <GlobalChatNotifier />
           <AnnouncementPopup />
+          <UpdatePrompt />
           <ErrorBoundary>
           <Suspense fallback={<PageLoader />}>
             <Routes>
