@@ -153,6 +153,7 @@ const AdminSettings = () => {
           if (row.key === "employee_code_separator") setEmpSeparator(row.value || "none");
           if (row.key === "client_code_separator") setCltSeparator(row.value || "none");
           if (row.key === "coin_conversion_rate") setCoinRate(row.value);
+          if (row.key === "min_coin_conversion") setMinCoinConversion(row.value);
         }
       }
       setLoading(false);
