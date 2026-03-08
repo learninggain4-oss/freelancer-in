@@ -33,22 +33,10 @@ const steps = [
   { step: "04", title: "Get Paid", description: "Receive secure payments directly to your UPI or bank account." },
 ];
 
-const heroSlides = [
-  {
-    image: slideFreelancer,
-    title: "Find Top Freelance Talent",
-    subtitle: "Browse verified professionals across 2,700+ categories and hire the perfect match for your project.",
-  },
-  {
-    image: slideCollaborate,
-    title: "Collaborate Seamlessly",
-    subtitle: "Manage projects with real-time chat, file sharing, and milestone tracking — all in one place.",
-  },
-  {
-    image: slidePayments,
-    title: "Secure & Fast Payments",
-    subtitle: "Pay and get paid instantly via UPI or bank transfer with full transaction transparency.",
-  },
+const fallbackSlides = [
+  { image_path: slideFreelancer, title: "Find Top Freelance Talent", subtitle: "Browse verified professionals across 2,700+ categories and hire the perfect match for your project." },
+  { image_path: slideCollaborate, title: "Collaborate Seamlessly", subtitle: "Manage projects with real-time chat, file sharing, and milestone tracking — all in one place." },
+  { image_path: slidePayments, title: "Secure & Fast Payments", subtitle: "Pay and get paid instantly via UPI or bank transfer with full transaction transparency." },
 ];
 
 const trustedCompanies = [
