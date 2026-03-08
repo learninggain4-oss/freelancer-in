@@ -461,9 +461,6 @@ const AdminWalletManagement = () => {
             <TabsList>
               <TabsTrigger value="transactions">Transactions ({transactions.length})</TabsTrigger>
               <TabsTrigger value="withdrawals">Withdrawals ({withdrawals.length})</TabsTrigger>
-              <TabsTrigger value="audit">
-                <ScrollText className="mr-1 h-3.5 w-3.5" /> Audit Log ({auditLogs.length})
-              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="transactions">
