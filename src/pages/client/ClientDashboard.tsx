@@ -17,6 +17,7 @@ import {
   ArrowDownToLine,
   Loader2,
   Copy,
+  HelpCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
