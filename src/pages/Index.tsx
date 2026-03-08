@@ -170,6 +170,30 @@ const ScrollFadeIn = ({ children, className = "", delay = 0 }: { children: React
   );
 };
 
+/** Collapsible FAQ item */
+const FAQItem = ({ question, answer }: { question: string; answer: string }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-lg border bg-card transition-colors">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-4 p-4 text-left sm:p-5"
+      >
+        <span className="text-sm font-semibold text-foreground sm:text-base">{question}</span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      <div
+        className="overflow-hidden transition-all duration-300"
+        style={{ maxHeight: open ? "200px" : "0", opacity: open ? 1 : 0 }}
+      >
+        <p className="px-4 pb-4 text-sm leading-relaxed text-muted-foreground sm:px-5 sm:pb-5">{answer}</p>
+      </div>
+    </div>
+  );
+};
+
 const Index = () => {
   const { user, profile, loading } = useAuth();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
