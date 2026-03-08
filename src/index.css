@@ -97,6 +97,10 @@
     --input: 217 33% 17%;
     --ring: 217 91% 60%;
 
+    --wallet-from: 220 60% 20%;
+    --wallet-via: 230 50% 28%;
+    --wallet-to: 250 45% 35%;
+
     --sidebar-background: 222 47% 6%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 217 91% 60%;
