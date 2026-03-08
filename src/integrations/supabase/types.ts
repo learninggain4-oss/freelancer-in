@@ -260,6 +260,44 @@ export type Database = {
           },
         ]
       }
+      attendance: {
+        Row: {
+          check_in_at: string
+          check_out_at: string | null
+          created_at: string
+          date: string
+          id: string
+          profile_id: string
+          status: string
+        }
+        Insert: {
+          check_in_at?: string
+          check_out_at?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          profile_id: string
+          status?: string
+        }
+        Update: {
+          check_in_at?: string
+          check_out_at?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          profile_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_verifications: {
         Row: {
           attempt_count: number
