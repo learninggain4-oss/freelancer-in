@@ -54,6 +54,18 @@ const AdminTestimonials = () => {
     },
   });
 
+  // Auto-refresh when testimonials table changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-testimonials-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'testimonials' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['admin-testimonials'] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
+
   const uploadPhoto = async (file: File): Promise<string> => {
     const ext = file.name.split(".").pop();
     const path = `testimonials/${Date.now()}.${ext}`;
