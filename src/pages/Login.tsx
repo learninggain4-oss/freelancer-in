@@ -179,14 +179,22 @@ const Login = () => {
         onClose={() => {
           setShowTotpDialog(false);
           setPendingAdminNav(false);
+          setPendingUserNav(null);
         }}
         onVerified={() => {
           setShowTotpDialog(false);
-          setPendingAdminNav(false);
-          navigate("/admin/dashboard", { replace: true });
+          if (pendingAdminNav) {
+            setPendingAdminNav(false);
+            navigate("/admin/dashboard", { replace: true });
+          } else if (pendingUserNav) {
+            const dest = pendingUserNav;
+            setPendingUserNav(null);
+            navigate(dest, { replace: true });
+          }
         }}
-        title="Admin Verification"
+        title={pendingAdminNav ? "Admin Verification" : "Two-Factor Verification"}
         description="Enter your Google Authenticator code to continue."
+        functionName={pendingAdminNav ? "admin-totp" : "user-totp"}
       />
     </div>
   );
