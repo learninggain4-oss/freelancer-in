@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, PlusCircle, ArrowUpRight, SendHorizontal, Search, History } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import TotpVerifyDialog from "@/components/admin/TotpVerifyDialog";
 
 const AdminWallet = () => {
   const { profile, refreshProfile } = useAuth();
