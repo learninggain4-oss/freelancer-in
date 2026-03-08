@@ -878,7 +878,7 @@ Deno.serve(async (req) => {
           { user_id: from.user_id, title: "Funds Transferred", message: `₹${amount.toLocaleString("en-IN")} transferred to ${(to.full_name as any)?.[0]} by admin.`, type: "financial" },
           { user_id: to.user_id, title: "Funds Received", message: `₹${amount.toLocaleString("en-IN")} received from ${(from.full_name as any)?.[0]} by admin.`, type: "financial" },
         ]);
-        await supabase.from("admin_audit_logs").insert({ admin_id: callerProfile.id, action: "wallet_transfer", target_profile_id: from.id, target_profile_name: (from.full_name as any)?.[0] || null, details: { amount, from_id: from.id, to_id: to.id, to_name: (to.full_name as any)?.[0] || null, description: description || "Admin transfer" } });
+        
         break;
       }
 
