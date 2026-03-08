@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Briefcase, Shield, MessageCircle, CreditCard, Users, ArrowRight, Star, CheckCircle, Download, Smartphone, Share, Building2 } from "lucide-react";
+import { Briefcase, Shield, MessageCircle, CreditCard, Users, ArrowRight, Star, CheckCircle, Download, Smartphone, Share } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,8 +26,16 @@ const steps = [
 ];
 
 const trustedCompanies = [
-  "TCS", "Infosys", "Wipro", "HCL Tech", "Tech Mahindra",
-  "Accenture", "Cognizant", "Flipkart", "Razorpay", "Zoho",
+  { name: "TCS", logo: "/logos/tcs.png" },
+  { name: "Infosys", logo: "/logos/infosys.png" },
+  { name: "Wipro", logo: "/logos/wipro.png" },
+  { name: "HCL Tech", logo: "/logos/hcltech.png" },
+  { name: "Tech Mahindra", logo: "/logos/techmahindra.png" },
+  { name: "Accenture", logo: "/logos/accenture.png" },
+  { name: "Cognizant", logo: "/logos/cognizant.png" },
+  { name: "Flipkart", logo: "/logos/flipkart.png" },
+  { name: "Razorpay", logo: "/logos/razorpay.png" },
+  { name: "Zoho", logo: "/logos/zoho.png" },
 ];
 
 interface BeforeInstallPromptEvent extends Event {
@@ -311,13 +319,13 @@ const Index = () => {
               <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-background to-transparent" />
               <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-background to-transparent" />
               <div className="animate-scroll-left flex w-max gap-8 sm:gap-12">
-                {[...trustedCompanies, ...trustedCompanies].map((name, i) => (
+                {[...trustedCompanies, ...trustedCompanies].map((company, i) => (
                   <div
-                    key={`${name}-${i}`}
-                    className="flex shrink-0 items-center gap-2 rounded-lg border bg-card/60 px-5 py-2.5 shadow-sm"
+                    key={`${company.name}-${i}`}
+                    className="flex shrink-0 items-center gap-3 rounded-lg border bg-card/60 px-5 py-2.5 shadow-sm"
                   >
-                    <Building2 className="h-4 w-4 text-primary/60" />
-                    <span className="whitespace-nowrap text-sm font-semibold text-muted-foreground">{name}</span>
+                    <img src={company.logo} alt={company.name} className="h-7 w-7 object-contain" />
+                    <span className="whitespace-nowrap text-sm font-semibold text-muted-foreground">{company.name}</span>
                   </div>
                 ))}
               </div>
