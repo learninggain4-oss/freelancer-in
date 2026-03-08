@@ -11,13 +11,21 @@ const BottomTabBar = ({ userType, onMenuClick }: BottomTabBarProps) => {
   const location = useLocation();
   const base = userType === "employee" ? "/employee" : "/client";
 
-  const tabs = [
-    { label: "Dashboard", icon: Home, path: `${base}/dashboard` },
-    { label: "Attendance", icon: ClipboardCheck, path: `${base}/attendance` },
-    { label: "Jobs", icon: Briefcase, path: `${base}/projects` },
-    { label: "Wallet", icon: Wallet, path: `${base}/wallet` },
-    { label: "Help", icon: HelpCircle, path: `${base}/help-support` },
-  ];
+  const tabs = userType === "employee"
+    ? [
+        { label: "Dashboard", icon: Home, path: `${base}/dashboard` },
+        { label: "Jobs", icon: Briefcase, path: `${base}/projects` },
+        { label: "Requests", icon: FileText, path: `${base}/requests` },
+        { label: "Wallet", icon: Wallet, path: `${base}/wallet` },
+        { label: "Help", icon: HelpCircle, path: `${base}/help-support` },
+      ]
+    : [
+        { label: "Dashboard", icon: Home, path: `${base}/dashboard` },
+        { label: "Attendance", icon: ClipboardCheck, path: `${base}/attendance` },
+        { label: "Jobs", icon: Briefcase, path: `${base}/projects` },
+        { label: "Wallet", icon: Wallet, path: `${base}/wallet` },
+        { label: "Help", icon: HelpCircle, path: `${base}/help-support` },
+      ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-card pb-safe">
