@@ -263,13 +263,6 @@ Deno.serve(async (req) => {
           .eq("user_id", user_id)
           .maybeSingle();
 
-        await adminClient.from("admin_audit_logs").insert({
-          admin_id: callerUserId,
-          action: "force_logout",
-          target_profile_id: targetProfile?.id || null,
-          target_profile_name: targetProfile?.full_name?.[0] || "Unknown",
-          details: { scope: "global" },
-        });
 
         return new Response(JSON.stringify({ success: true, message: "User logged out from all sessions" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
