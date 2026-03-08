@@ -62,10 +62,12 @@ const AdminValidation = lazy(() => import("./pages/admin/AdminValidation"));
 const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"));
 const AdminTestimonials = lazy(() => import("./pages/admin/AdminTestimonials"));
 const AdminReferrals = lazy(() => import("./pages/admin/AdminReferrals"));
+const AdminOnlineStatus = lazy(() => import("./pages/admin/AdminOnlineStatus"));
 const Categories = lazy(() => import("./pages/Categories"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
+import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 import AnnouncementPopup from "@/components/announcements/AnnouncementPopup";
 import UpdatePrompt from "@/components/pwa/UpdatePrompt";
 
@@ -74,6 +76,7 @@ const queryClient = new QueryClient();
 /** Activates global chat toast notifications for logged-in users */
 const GlobalChatNotifier = () => {
   useChatNotifications();
+  usePresenceHeartbeat();
   return null;
 };
 
@@ -182,6 +185,7 @@ const App = () => (
                 <Route path="sessions" element={<AdminSessions />} />
                 <Route path="testimonials" element={<AdminTestimonials />} />
                 <Route path="referrals" element={<AdminReferrals />} />
+                <Route path="online-status" element={<AdminOnlineStatus />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

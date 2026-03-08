@@ -33,6 +33,7 @@ import {
   BadgeCheck,
   Monitor,
   MessageSquareQuote,
+  Wifi,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,7 @@ const navItems = [
   { label: "Settings", icon: Settings, path: "/admin/settings" },
   { label: "Referrals", icon: UserPlus, path: "/admin/referrals" },
   { label: "Sessions", icon: Monitor, path: "/admin/sessions" },
+  { label: "Online Status", icon: Wifi, path: "/admin/online-status" },
   { label: "Testimonials", icon: MessageSquareQuote, path: "/admin/testimonials" },
 ];
 
