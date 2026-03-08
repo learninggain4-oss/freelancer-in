@@ -200,9 +200,9 @@ const AdminClients = () => {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">Loading…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="py-8 text-center text-muted-foreground">Loading…</TableCell></TableRow>
             ) : paginated.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">No clients found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="py-8 text-center text-muted-foreground">No clients found</TableCell></TableRow>
             ) : (
               paginated.map((c) => (
                 <TableRow key={c.id}>
