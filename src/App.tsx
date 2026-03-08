@@ -15,6 +15,7 @@ const Index = lazy(() => import("./pages/Index"));
 const Login = lazy(() => import("./pages/Login"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
 const EmployeeRegister = lazy(() => import("./pages/register/EmployeeRegister"));
 const ClientRegister = lazy(() => import("./pages/register/ClientRegister"));
 const VerificationPending = lazy(() => import("./pages/VerificationPending"));
@@ -98,6 +99,7 @@ const App = () => (
               <Route path="/register/client" element={<ClientRegister />} />
               <Route path="/verification-pending" element={<VerificationPending />} />
               <Route path="/install" element={<InstallApp />} />
+              <Route path="/complete-profile" element={<CompleteProfile />} />
               <Route path="/legal/:slug" element={<LegalDocument />} />
 
               {/* Employee Routes */}
