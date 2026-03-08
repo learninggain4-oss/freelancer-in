@@ -920,8 +920,6 @@ Deno.serve(async (req) => {
           type: type ?? oldTx.type,
         }).eq("id", transaction_id);
 
-        const { data: tpName } = await supabase.from("profiles").select("full_name").eq("id", target_profile_id).single();
-        await supabase.from("admin_audit_logs").insert({ admin_id: callerProfile.id, action: "edit_transaction", target_profile_id, target_profile_name: (tpName?.full_name as any)?.[0] || null, details: { transaction_id, old: { amount: oldTx.amount, type: oldTx.type, description: oldTx.description }, new: { amount: amount ?? oldTx.amount, type: type ?? oldTx.type, description: description ?? oldTx.description }, adjust_balance } });
         break;
       }
 
