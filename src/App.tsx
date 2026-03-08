@@ -72,6 +72,8 @@ const AdminVisitors = lazy(() => import("./pages/admin/AdminVisitors"));
 const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
 const AdminWalletTransactions = lazy(() => import("./pages/admin/AdminWalletTransactions"));
 const Categories = lazy(() => import("./pages/Categories"));
+const TransactionHistory = lazy(() => import("./pages/wallet/TransactionHistory"));
+const WithdrawalHistory = lazy(() => import("./pages/wallet/WithdrawalHistory"));
 const ProfilePersonalInfo = lazy(() => import("./pages/profile/ProfilePersonalInfo"));
 const ProfileProfessional = lazy(() => import("./pages/profile/ProfileProfessional"));
 const ProfileBankDetails = lazy(() => import("./pages/profile/ProfileBankDetails"));
@@ -147,6 +149,8 @@ const AppContent = () => {
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
               <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
               <Route path="wallet" element={<EmployeeWallet />} />
+              <Route path="wallet/transactions" element={<TransactionHistory />} />
+              <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
               <Route path="profile" element={<EmployeeProfile />} />
               <Route path="profile/personal" element={<ProfilePersonalInfo />} />
               <Route path="profile/professional" element={<ProfileProfessional />} />
@@ -175,6 +179,8 @@ const AppContent = () => {
               <Route path="dashboard" element={<ClientDashboard />} />
               <Route path="attendance" element={<EmployeeAttendance />} />
               <Route path="wallet" element={<ClientWallet />} />
+              <Route path="wallet/transactions" element={<TransactionHistory />} />
+              <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
               <Route path="projects" element={<ClientProjects />} />
               <Route path="projects/create" element={<CreateProject />} />
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />

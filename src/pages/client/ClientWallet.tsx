@@ -5,63 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Wallet,
-  Clock,
-  IndianRupee,
-  PlusCircle,
-  ArrowUpRight,
-  AlertCircle,
-} from "lucide-react";
+import { PlusCircle, ArrowUpRight, AlertCircle, Receipt, History } from "lucide-react";
 import { toast } from "sonner";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { WithdrawalCountdown } from "@/components/withdrawal/WithdrawalCountdown";
-
-const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
-  completed: "default",
-  approved: "default",
-  pending: "secondary",
-  rejected: "destructive",
-};
+import { useNavigate } from "react-router-dom";
 
 const ClientWallet = () => {
   const { profile, refreshProfile } = useAuth();
   const [addAmount, setAddAmount] = useState("");
   const queryClient = useQueryClient();
-
-  const { data: transactions = [], isLoading: tLoading } = useQuery({
-    queryKey: ["client-transactions", profile?.id],
-    queryFn: async () => {
-      if (!profile?.id) return [];
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .eq("profile_id", profile.id)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!profile?.id,
-  });
-
-  const { data: withdrawals = [], isLoading: wLoading } = useQuery({
-    queryKey: ["client-withdrawals-wallet", profile?.id],
-    queryFn: async () => {
-      if (!profile?.id) return [];
-      const { data, error } = await supabase
-        .from("withdrawals")
-        .select("id, employee_id, amount, method, status, review_notes, reviewed_at, requested_at, employee:employee_id(full_name, user_code)")
-        .order("requested_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!profile?.id,
-  });
+  const navigate = useNavigate();
 
   const addMoneyMutation = useMutation({
     mutationFn: async () => {
@@ -77,7 +32,7 @@ const ClientWallet = () => {
       if (res.data?.error) throw new Error(res.data.error);
       return res.data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast.success(`₹${Number(addAmount).toLocaleString("en-IN")} added to wallet`);
       setAddAmount("");
       refreshProfile();
@@ -85,11 +40,6 @@ const ClientWallet = () => {
     },
     onError: (e: any) => toast.error(e.message),
   });
-
-  const getEmployeeName = (emp: any) => {
-    if (!emp) return "Employee";
-    return Array.isArray(emp.full_name) ? emp.full_name.join(" ") : emp.full_name;
-  };
 
   return (
     <div className="space-y-6 p-4">
@@ -111,6 +61,26 @@ const ClientWallet = () => {
         </div>
       )}
 
+      {/* Quick Links */}
+      <div className="grid grid-cols-2 gap-3">
+        <Button
+          variant="outline"
+          className="flex h-auto flex-col items-center gap-2 py-4"
+          onClick={() => navigate("/client/wallet/transactions")}
+        >
+          <Receipt className="h-5 w-5 text-primary" />
+          <span className="text-sm font-medium">Transactions</span>
+        </Button>
+        <Button
+          variant="outline"
+          className="flex h-auto flex-col items-center gap-2 py-4"
+          onClick={() => navigate("/client/wallet/withdrawals")}
+        >
+          <History className="h-5 w-5 text-primary" />
+          <span className="text-sm font-medium">Withdrawals</span>
+        </Button>
+      </div>
+
       {/* Add Money */}
       <Card>
         <CardHeader className="pb-3">
@@ -128,73 +98,6 @@ const ClientWallet = () => {
           </Button>
         </CardContent>
       </Card>
-
-      <Tabs defaultValue="transactions" className="w-full">
-        <TabsList className="w-full">
-          <TabsTrigger value="transactions" className="flex-1">Transactions</TabsTrigger>
-          <TabsTrigger value="withdrawals" className="flex-1">Withdrawals</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="transactions">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Transaction History</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {tLoading ? (
-                Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
-              ) : transactions.length > 0 ? (
-                transactions.map((tx: any) => (
-                  <div key={tx.id} className="flex items-center justify-between rounded-lg border p-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">{tx.description}</p>
-                      <p className="text-xs text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</p>
-                    </div>
-                    <span className={`ml-3 text-sm font-semibold ${tx.type === "credit" ? "text-accent" : "text-destructive"}`}>
-                      {tx.type === "credit" ? "+" : "-"}₹{Number(tx.amount).toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="py-4 text-center text-sm text-muted-foreground">No transactions yet</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="withdrawals">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Withdrawal History</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {wLoading ? (
-                Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
-              ) : withdrawals.length > 0 ? (
-                withdrawals.map((w: any) => (
-                  <div key={w.id} className="space-y-2 rounded-lg border p-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{getEmployeeName((w as any).employee)}</p>
-                        <p className="text-xs text-muted-foreground">₹{Number(w.amount).toLocaleString("en-IN")} • {w.method} • {new Date(w.requested_at).toLocaleDateString()}</p>
-                      </div>
-                      <Badge variant={statusVariant[w.status] ?? "secondary"}>{w.status}</Badge>
-                    </div>
-                    {w.status === "pending" && (
-                      <WithdrawalCountdown requestedAt={w.requested_at} />
-                    )}
-                    {w.status === "rejected" && w.review_notes && (
-                      <p className="text-xs text-destructive">Reason: {w.review_notes}</p>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <p className="py-4 text-center text-sm text-muted-foreground">No withdrawals yet</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
     </div>
   );
 };
