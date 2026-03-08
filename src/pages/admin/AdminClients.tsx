@@ -47,7 +47,7 @@ const AdminClients = () => {
     const [{ data: cls }, { data: projs }] = await Promise.all([
       supabase
         .from("profiles")
-        .select("id, full_name, user_code, email, approval_status, available_balance, hold_balance, is_disabled, created_at, mobile_number")
+        .select("id, full_name, user_code, email, approval_status, available_balance, hold_balance, is_disabled, created_at, mobile_number, payment_sharing_enabled")
         .eq("user_type", "client")
         .order("created_at", { ascending: false }),
       supabase
