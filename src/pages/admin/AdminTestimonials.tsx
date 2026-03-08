@@ -142,6 +142,18 @@ const AdminTestimonials = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-testimonials"] }),
   });
 
+  const updateRating = useMutation({
+    mutationFn: async ({ id, rating }: { id: string; rating: number }) => {
+      const { error } = await supabase.from("testimonials").update({ rating }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-testimonials"] });
+      toast({ title: "Rating updated" });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   const resetForm = () => {
     setForm({ name: "", role: "", quote: "", rating: 5, is_active: true, display_order: 0 });
     setPhotoFile(null);
@@ -184,13 +196,20 @@ const AdminTestimonials = () => {
     </div>
   );
 
-  const RatingDisplay = ({ value }: { value: number }) => (
+  const InlineRatingPicker = ({ id, value }: { id: string; value: number }) => (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map((star) => (
-        <Star
+        <button
           key={star}
-          className={cn("h-4 w-4", star <= value ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30")}
-        />
+          type="button"
+          onClick={() => updateRating.mutate({ id, rating: star })}
+          className="hover:scale-125 transition-transform"
+          title={`Set rating to ${star}`}
+        >
+          <Star
+            className={cn("h-4 w-4 transition-colors", star <= value ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30 hover:text-yellow-300")}
+          />
+        </button>
       ))}
     </div>
   );
@@ -308,7 +327,7 @@ const AdminTestimonials = () => {
                   <div className="min-w-0">
                     <p className="font-semibold text-foreground truncate">{t.name}</p>
                     <p className="text-xs text-muted-foreground truncate">{t.role}</p>
-                    <RatingDisplay value={t.rating} />
+                    <InlineRatingPicker id={t.id} value={t.rating} />
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground line-clamp-3">"{t.quote}"</p>
