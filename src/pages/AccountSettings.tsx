@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useRegisterSW } from "virtual:pwa-register/react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Gift, Users, Check, Loader2, Share2, UserCheck, Briefcase, Clock } from "lucide-react";
+import { Copy, Gift, Users, Check, Loader2, Share2, UserCheck, Briefcase, Clock, RefreshCw, Download } from "lucide-react";
 import { format } from "date-fns";
 
 interface ReferralEntry {
@@ -29,6 +30,33 @@ const AccountSettings = () => {
   const [referralHistory, setReferralHistory] = useState<ReferralEntry[]>([]);
   const [terms, setTerms] = useState("");
   const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(false);
+
+  const {
+    needRefresh: [needRefresh],
+    updateServiceWorker,
+  } = useRegisterSW();
+
+  const handleCheckUpdate = useCallback(async () => {
+    setChecking(true);
+    try {
+      const registrations = await navigator.serviceWorker?.getRegistrations();
+      if (registrations?.length) {
+        await Promise.all(registrations.map((r) => r.update()));
+      }
+      if (!needRefresh) {
+        toast({ title: "You're up to date!", description: "No new updates available." });
+      }
+    } catch {
+      toast({ title: "Could not check for updates", variant: "destructive" });
+    } finally {
+      setChecking(false);
+    }
+  }, [needRefresh, toast]);
+
+  const handleUpdate = useCallback(() => {
+    updateServiceWorker(true);
+  }, [updateServiceWorker]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -225,6 +253,33 @@ const AccountSettings = () => {
                     </div>
                   ))}
                 </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className={needRefresh ? "border-primary/30 bg-primary/5" : ""}>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Download className="h-5 w-5 text-primary" />
+                App Updates
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {needRefresh ? (
+                <>
+                  <p className="text-sm text-muted-foreground">A new version is available. Update now to get the latest features and fixes.</p>
+                  <Button onClick={handleUpdate} className="w-full gap-2">
+                    <RefreshCw className="h-4 w-4" /> Update Now
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground">Your app is up to date.</p>
+                  <Button variant="outline" onClick={handleCheckUpdate} disabled={checking} className="w-full gap-2">
+                    {checking ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                    Check for Updates
+                  </Button>
+                </>
               )}
             </CardContent>
           </Card>
