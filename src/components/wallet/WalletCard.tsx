@@ -29,6 +29,11 @@ const WalletCard = ({
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-wallet-from via-wallet-via to-wallet-to p-5 text-primary-foreground shadow-lg animate-fade-in">
+      {/* Shimmer sweep */}
+      <div className="pointer-events-none absolute inset-0 animate-shimmer">
+        <div className="h-full w-1/2 bg-gradient-to-r from-transparent via-primary-foreground/10 to-transparent skew-x-[-20deg]" />
+      </div>
+
       {/* Decorative elements */}
       <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary-foreground/10" />
       <div className="absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-primary-foreground/5" />
