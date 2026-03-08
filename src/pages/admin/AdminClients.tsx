@@ -98,6 +98,20 @@ const AdminClients = () => {
     }
   };
 
+  const handleTogglePaymentSharing = async (client: ClientRow) => {
+    const newVal = !client.payment_sharing_enabled;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ payment_sharing_enabled: newVal })
+      .eq("id", client.id);
+    if (error) {
+      toast.error("Failed to update payment sharing");
+    } else {
+      toast.success(`Payment sharing ${newVal ? "enabled" : "disabled"} for ${client.full_name?.[0]}`);
+      setClients((prev) => prev.map((c) => c.id === client.id ? { ...c, payment_sharing_enabled: newVal } : c));
+    }
+  };
+
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return clients;
