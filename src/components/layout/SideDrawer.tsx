@@ -1,4 +1,4 @@
-import { Settings, User, Bell, FileText, Shield, LogOut, Gift, Smartphone } from "lucide-react";
+import { Settings, User, Bell, FileText, Shield, LogOut, Coins, Smartphone } from "lucide-react";
 import {
   Sheet,
   SheetContent,
