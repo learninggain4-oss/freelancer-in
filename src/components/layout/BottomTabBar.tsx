@@ -24,7 +24,7 @@ const BottomTabBar = ({ userType, onMenuClick }: BottomTabBarProps) => {
         { label: "Attendance", icon: ClipboardCheck, path: `${base}/attendance` },
         { label: "Jobs", icon: Briefcase, path: `${base}/projects` },
         { label: "Wallet", icon: Wallet, path: `${base}/wallet` },
-        { label: "Help", icon: HelpCircle, path: `${base}/help-support` },
+        { label: "Help", icon: CircleHelp, path: `${base}/help-support` },
       ];
 
   return (
