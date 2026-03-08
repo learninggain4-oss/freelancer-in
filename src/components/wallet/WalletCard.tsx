@@ -39,7 +39,7 @@ const WalletCard = ({
   return (
     <div
       onPointerDown={handlePress}
-      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-wallet-from via-wallet-via to-wallet-to p-5 text-primary-foreground shadow-lg animate-fade-in cursor-pointer select-none active:scale-[0.98] transition-transform duration-150"
+      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br from-wallet-from via-wallet-via to-wallet-to p-5 text-primary-foreground shadow-lg animate-fade-in cursor-pointer select-none active:scale-[0.98] transition-transform duration-150 ${!walletActive ? "grayscale opacity-75" : ""}`}
     >
       {/* Shimmer sweep */}
       <div
