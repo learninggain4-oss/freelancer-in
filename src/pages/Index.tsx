@@ -376,6 +376,55 @@ const Index = () => {
         </div>
       </section>
 
+      {/* What Clients Say */}
+      {testimonials.length > 0 && (
+        <section className="border-t bg-muted/30 px-4 py-12 sm:px-6 md:py-20">
+          <div className="mx-auto max-w-6xl">
+            <ScrollFadeIn className="mx-auto mb-10 max-w-lg text-center">
+              <h2 className="text-2xl font-bold text-foreground sm:text-3xl">What Clients Say</h2>
+              <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+                Hear from professionals who trust our platform
+              </p>
+            </ScrollFadeIn>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {testimonials.map((t, i) => (
+                <ScrollFadeIn key={t.id} delay={i * 120}>
+                  <Card className="h-full border bg-card transition-all hover:shadow-lg hover:-translate-y-0.5">
+                    <CardContent className="flex h-full flex-col p-5 sm:p-6">
+                      <Quote className="mb-3 h-8 w-8 text-primary/20" />
+                      <p className="flex-1 text-sm text-muted-foreground leading-relaxed italic">
+                        "{t.quote}"
+                      </p>
+                      <div className="mt-4 flex items-center gap-3 border-t pt-4">
+                        {t.photo_path ? (
+                          <img src={t.photo_path} alt={t.name} className="h-10 w-10 rounded-full object-cover border" />
+                        ) : (
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
+                            {t.name.charAt(0)}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-foreground truncate">{t.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{t.role}</p>
+                        </div>
+                        <div className="ml-auto flex gap-0.5">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star
+                              key={s}
+                              className={cn("h-3.5 w-3.5", s <= t.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30")}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </ScrollFadeIn>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* CTA */}
       <section className="border-t bg-muted/30 px-4 py-12 sm:px-6 md:py-20">
         <ScrollFadeIn className="mx-auto max-w-6xl">
