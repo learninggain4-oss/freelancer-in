@@ -1,3 +1,4 @@
+import { useState, useCallback } from "react";
 import { Wallet, Clock, Copy, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,6 +20,12 @@ const WalletCard = ({
   compact = false,
 }: WalletCardProps) => {
   const totalBalance = availableBalance + holdBalance;
+  const [pressed, setPressed] = useState(false);
+
+  const handlePress = useCallback(() => {
+    setPressed(true);
+    setTimeout(() => setPressed(false), 600);
+  }, []);
 
   const copyWalletNumber = () => {
     if (walletNumber) {
@@ -28,10 +35,19 @@ const WalletCard = ({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-wallet-from via-wallet-via to-wallet-to p-5 text-primary-foreground shadow-lg animate-fade-in">
+    <div
+      onPointerDown={handlePress}
+      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-wallet-from via-wallet-via to-wallet-to p-5 text-primary-foreground shadow-lg animate-fade-in cursor-pointer select-none active:scale-[0.98] transition-transform duration-150"
+    >
       {/* Shimmer sweep */}
-      <div className="pointer-events-none absolute inset-0 animate-shimmer">
-        <div className="h-full w-1/2 bg-gradient-to-r from-transparent via-primary-foreground/10 to-transparent skew-x-[-20deg]" />
+      <div
+        className={`pointer-events-none absolute inset-0 ${pressed ? "animate-shimmer-fast" : "animate-shimmer"}`}
+      >
+        <div
+          className={`h-full w-1/2 bg-gradient-to-r from-transparent to-transparent skew-x-[-20deg] transition-colors duration-150 ${
+            pressed ? "via-primary-foreground/25" : "via-primary-foreground/10"
+          }`}
+        />
       </div>
 
       {/* Decorative elements */}
