@@ -73,14 +73,14 @@ const ProfilePhotoUpload = () => {
   return (
     <div className="flex flex-col items-center gap-2">
       <div className="relative">
-        <Avatar className="h-20 w-20 border-2 border-border">
+        <Avatar className="h-28 w-28 border-2 border-border">
           <AvatarImage src={photoUrl ?? undefined} alt="Profile" />
-          <AvatarFallback className="text-lg bg-muted text-muted-foreground">{initials}</AvatarFallback>
+          <AvatarFallback className="text-2xl bg-muted text-muted-foreground">{initials}</AvatarFallback>
         </Avatar>
         <Button
           size="icon"
           variant="secondary"
-          className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full shadow"
+          className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full shadow"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploadMutation.isPending}
         >
