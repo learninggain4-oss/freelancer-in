@@ -71,8 +71,10 @@ import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
 import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 import { useVisitorTracking } from "@/hooks/use-visitor-tracking";
+import { useIpBlockCheck } from "@/hooks/use-ip-block-check";
 import AnnouncementPopup from "@/components/announcements/AnnouncementPopup";
 import UpdatePrompt from "@/components/pwa/UpdatePrompt";
+import BlockedScreen from "@/components/BlockedScreen";
 
 const queryClient = new QueryClient();
 
@@ -90,16 +92,17 @@ const PageLoader = () => (
   </div>
 );
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <GlobalChatNotifier />
-          <AnnouncementPopup />
-          <UpdatePrompt />
+const AppContent = () => {
+  const { blocked, loading } = useIpBlockCheck();
+
+  if (loading) return <PageLoader />;
+  if (blocked) return <BlockedScreen />;
+
+  return (
+    <>
+      <GlobalChatNotifier />
+      <AnnouncementPopup />
+      <UpdatePrompt />
           <ErrorBoundary>
           <Suspense fallback={<PageLoader />}>
             <Routes>
