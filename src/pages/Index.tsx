@@ -179,6 +179,27 @@ const Index = () => {
   const [showBanner, setShowBanner] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
+  const { data: dbCompanies } = useQuery({
+    queryKey: ["trusted-companies-landing"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("trusted_companies")
+        .select("*")
+        .eq("is_active", true)
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return data.map((c: any) => ({
+        name: c.name,
+        logo: c.logo_path
+          ? supabase.storage.from("company-logos").getPublicUrl(c.logo_path).data.publicUrl
+          : null,
+      }));
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const trustedCompanies = dbCompanies && dbCompanies.length > 0 ? dbCompanies : fallbackCompanies;
+
   useEffect(() => {
     setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
     if (window.matchMedia("(display-mode: standalone)").matches) {
