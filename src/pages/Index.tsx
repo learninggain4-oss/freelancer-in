@@ -26,8 +26,16 @@ const steps = [
 ];
 
 const trustedCompanies = [
-  "TCS", "Infosys", "Wipro", "HCL Tech", "Tech Mahindra",
-  "Accenture", "Cognizant", "Flipkart", "Razorpay", "Zoho",
+  { name: "TCS", logo: "/logos/tcs.png" },
+  { name: "Infosys", logo: "/logos/infosys.png" },
+  { name: "Wipro", logo: "/logos/wipro.png" },
+  { name: "HCL Tech", logo: "/logos/hcltech.png" },
+  { name: "Tech Mahindra", logo: "/logos/techmahindra.png" },
+  { name: "Accenture", logo: "/logos/accenture.png" },
+  { name: "Cognizant", logo: "/logos/cognizant.png" },
+  { name: "Flipkart", logo: "/logos/flipkart.png" },
+  { name: "Razorpay", logo: "/logos/razorpay.png" },
+  { name: "Zoho", logo: "/logos/zoho.png" },
 ];
 
 interface BeforeInstallPromptEvent extends Event {
