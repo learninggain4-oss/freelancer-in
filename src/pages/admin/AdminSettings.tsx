@@ -32,6 +32,12 @@ const AdminSettings = () => {
   const [cltPrefix, setCltPrefix] = useState("");
   const [empDigits, setEmpDigits] = useState("");
   const [cltDigits, setCltDigits] = useState("");
+  const [empIncludeYear, setEmpIncludeYear] = useState(false);
+  const [empIncludeMonth, setEmpIncludeMonth] = useState(false);
+  const [cltIncludeYear, setCltIncludeYear] = useState(false);
+  const [cltIncludeMonth, setCltIncludeMonth] = useState(false);
+  const [empSeparator, setEmpSeparator] = useState("-");
+  const [cltSeparator, setCltSeparator] = useState("-");
   const [clientPaymentSharing, setClientPaymentSharing] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
