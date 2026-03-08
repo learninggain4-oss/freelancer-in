@@ -123,6 +123,12 @@ const AdminSettings = () => {
           "employee_code_digits",
           "client_code_digits",
           "client_payment_sharing_enabled",
+          "employee_code_include_year",
+          "employee_code_include_month",
+          "client_code_include_year",
+          "client_code_include_month",
+          "employee_code_separator",
+          "client_code_separator",
         ]);
       if (data) {
         for (const row of data) {
@@ -136,6 +142,12 @@ const AdminSettings = () => {
           if (row.key === "employee_code_digits") setEmpDigits(row.value);
           if (row.key === "client_code_digits") setCltDigits(row.value);
           if (row.key === "client_payment_sharing_enabled") setClientPaymentSharing(row.value !== "false");
+          if (row.key === "employee_code_include_year") setEmpIncludeYear(row.value === "true");
+          if (row.key === "employee_code_include_month") setEmpIncludeMonth(row.value === "true");
+          if (row.key === "client_code_include_year") setCltIncludeYear(row.value === "true");
+          if (row.key === "client_code_include_month") setCltIncludeMonth(row.value === "true");
+          if (row.key === "employee_code_separator") setEmpSeparator(row.value);
+          if (row.key === "client_code_separator") setCltSeparator(row.value);
         }
       }
       setLoading(false);
