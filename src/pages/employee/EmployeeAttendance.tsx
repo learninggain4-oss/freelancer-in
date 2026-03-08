@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
-import { format, startOfMonth, endOfMonth, isSameDay, differenceInDays } from "date-fns";
-import { ClipboardCheck, LogIn, LogOut, CalendarDays, Flame, Clock } from "lucide-react";
+import { format, startOfMonth, endOfMonth, isSameDay } from "date-fns";
+import { ClipboardCheck, LogIn, LogOut, CalendarDays, Flame, Clock, Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
+import FaceVerificationDialog from "@/components/attendance/FaceVerificationDialog";
 
 interface AttendanceRecord {
   id: string;
@@ -17,6 +18,8 @@ interface AttendanceRecord {
   check_in_at: string;
   check_out_at: string | null;
   status: string;
+  check_in_photo_path: string | null;
+  check_out_photo_path: string | null;
 }
 
 const EmployeeAttendance = () => {
@@ -26,6 +29,8 @@ const EmployeeAttendance = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(false);
+  const [faceDialogOpen, setFaceDialogOpen] = useState(false);
+  const [faceAction, setFaceAction] = useState<"check_in" | "check_out">("check_in");
 
   const today = new Date();
   const todayStr = format(today, "yyyy-MM-dd");
@@ -62,41 +67,67 @@ const EmployeeAttendance = () => {
     fetchMonthRecords();
   }, [profile, currentMonth]);
 
-  const handleCheckIn = async () => {
-    if (!profile) return;
-    setLoading(true);
-    const { error } = await supabase.from("attendance").insert({
-      profile_id: profile.id,
-      date: todayStr,
-      check_in_at: new Date().toISOString(),
-      status: "present",
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Checked In ✅", description: "Your attendance has been recorded." });
-      fetchTodayRecord();
-      fetchMonthRecords();
-    }
+  const openFaceDialog = (action: "check_in" | "check_out") => {
+    setFaceAction(action);
+    setFaceDialogOpen(true);
   };
 
-  const handleCheckOut = async () => {
-    if (!profile || !todayRecord) return;
-    setLoading(true);
-    const { error } = await supabase
-      .from("attendance")
-      .update({ check_out_at: new Date().toISOString() })
-      .eq("id", todayRecord.id);
-    setLoading(false);
+  const uploadPhoto = async (blob: Blob, type: "check_in" | "check_out"): Promise<string | null> => {
+    if (!profile) return null;
+    const fileName = `${profile.id}/${todayStr}_${type}_${Date.now()}.jpg`;
+    const { error } = await supabase.storage
+      .from("attendance-photos")
+      .upload(fileName, blob, { contentType: "image/jpeg", upsert: true });
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Checked Out 👋", description: "See you tomorrow!" });
-      fetchTodayRecord();
-      fetchMonthRecords();
+      console.error("Photo upload error:", error);
+      return null;
     }
+    return fileName;
   };
+
+  const handleFaceCaptured = useCallback(async (blob: Blob) => {
+    if (!profile) return;
+    setLoading(true);
+
+    const photoPath = await uploadPhoto(blob, faceAction);
+    if (!photoPath) {
+      toast({ title: "Error", description: "Failed to upload verification photo.", variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+
+    if (faceAction === "check_in") {
+      const { error } = await supabase.from("attendance").insert({
+        profile_id: profile.id,
+        date: todayStr,
+        check_in_at: new Date().toISOString(),
+        status: "present",
+        check_in_photo_path: photoPath,
+      });
+      setLoading(false);
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Checked In ✅", description: "Your attendance has been recorded with face verification." });
+        fetchTodayRecord();
+        fetchMonthRecords();
+      }
+    } else {
+      if (!todayRecord) { setLoading(false); return; }
+      const { error } = await supabase
+        .from("attendance")
+        .update({ check_out_at: new Date().toISOString(), check_out_photo_path: photoPath })
+        .eq("id", todayRecord.id);
+      setLoading(false);
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Checked Out 👋", description: "See you tomorrow! Face verification recorded." });
+        fetchTodayRecord();
+        fetchMonthRecords();
+      }
+    }
+  }, [profile, faceAction, todayRecord, todayStr]);
 
   // Calendar day styling
   const presentDays = useMemo(
@@ -108,11 +139,9 @@ const EmployeeAttendance = () => {
     [monthRecords]
   );
 
-  // Stats
   const totalPresent = monthRecords.filter((r) => r.check_out_at).length;
   const totalHalfDay = monthRecords.filter((r) => !r.check_out_at).length;
 
-  // Streak calculation
   const streak = useMemo(() => {
     let count = 0;
     const sorted = [...monthRecords].sort(
@@ -131,7 +160,6 @@ const EmployeeAttendance = () => {
     return count;
   }, [monthRecords, todayStr]);
 
-  // Selected day detail
   const selectedRecord = selectedDate
     ? monthRecords.find((r) => isSameDay(new Date(r.date), selectedDate))
     : null;
@@ -144,7 +172,6 @@ const EmployeeAttendance = () => {
 
   return (
     <div className="space-y-4 pb-20">
-      {/* Header */}
       <div className="flex items-center gap-2">
         <ClipboardCheck className="h-6 w-6 text-primary" />
         <h1 className="text-xl font-bold text-foreground">Attendance</h1>
@@ -157,19 +184,26 @@ const EmployeeAttendance = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           {!todayRecord ? (
-            <Button onClick={handleCheckIn} disabled={loading} className="w-full gap-2">
+            <Button onClick={() => openFaceDialog("check_in")} disabled={loading} className="w-full gap-2">
+              <Camera className="h-4 w-4" />
               <LogIn className="h-4 w-4" />
-              Check In
+              Check In with Face Verification
             </Button>
           ) : !todayRecord.check_out_at ? (
             <>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4" />
                 Checked in at {format(new Date(todayRecord.check_in_at), "hh:mm a")}
+                {todayRecord.check_in_photo_path && (
+                  <Badge variant="outline" className="text-xs gap-1">
+                    <Camera className="h-3 w-3" /> Verified
+                  </Badge>
+                )}
               </div>
-              <Button onClick={handleCheckOut} disabled={loading} variant="secondary" className="w-full gap-2">
+              <Button onClick={() => openFaceDialog("check_out")} disabled={loading} variant="secondary" className="w-full gap-2">
+                <Camera className="h-4 w-4" />
                 <LogOut className="h-4 w-4" />
-                Check Out
+                Check Out with Face Verification
               </Button>
             </>
           ) : (
@@ -177,13 +211,15 @@ const EmployeeAttendance = () => {
               <div className="flex items-center gap-2">
                 <LogIn className="h-4 w-4 text-accent" />
                 In: {format(new Date(todayRecord.check_in_at), "hh:mm a")}
+                {todayRecord.check_in_photo_path && <Camera className="h-3 w-3 text-accent" />}
               </div>
               <div className="flex items-center gap-2">
                 <LogOut className="h-4 w-4 text-accent" />
                 Out: {format(new Date(todayRecord.check_out_at), "hh:mm a")}
+                {todayRecord.check_out_photo_path && <Camera className="h-3 w-3 text-accent" />}
               </div>
               <Badge variant="secondary" className="mt-2 bg-accent/10 text-accent">
-                ✅ Attendance Complete
+                ✅ Attendance Complete (Face Verified)
               </Badge>
             </div>
           )}
@@ -233,7 +269,6 @@ const EmployeeAttendance = () => {
             disabled={(date) => date > today}
           />
 
-          {/* Legend */}
           <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
               <div className="h-3 w-3 rounded-sm bg-accent/20 border border-accent" />
@@ -245,7 +280,6 @@ const EmployeeAttendance = () => {
             </div>
           </div>
 
-          {/* Selected day detail */}
           {selectedDate && (
             <div className="mt-3 p-3 rounded-md bg-muted/50 text-sm">
               <p className="font-medium text-foreground">{format(selectedDate, "dd MMM yyyy")}</p>
@@ -266,6 +300,14 @@ const EmployeeAttendance = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Face Verification Dialog */}
+      <FaceVerificationDialog
+        open={faceDialogOpen}
+        onOpenChange={setFaceDialogOpen}
+        onCaptured={handleFaceCaptured}
+        title={faceAction === "check_in" ? "Check-In Verification" : "Check-Out Verification"}
+      />
     </div>
   );
 };
