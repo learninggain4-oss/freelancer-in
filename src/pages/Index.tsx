@@ -555,6 +555,15 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Slideshow */}
+      <section className="border-t px-4 py-12 sm:px-6 md:py-20">
+        <div className="mx-auto max-w-6xl">
+          <ScrollFadeIn>
+            <HeroSlideshow />
+          </ScrollFadeIn>
+        </div>
+      </section>
+
       {/* Trusted Companies */}
       <section className="border-t px-4 py-10 sm:px-6">
         <div className="mx-auto max-w-6xl">
