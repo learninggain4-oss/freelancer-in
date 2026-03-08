@@ -303,7 +303,7 @@ const AdminWalletManagement = () => {
     if (q.length < 2) { setTransferTargetResults([]); return; }
     const { data } = await supabase
       .from("profiles")
-      .select("id, full_name, user_code, email, user_type, available_balance, hold_balance")
+      .select("id, full_name, user_code, email, user_type, available_balance, hold_balance, wallet_number, wallet_active")
       .or(`email.ilike.%${q}%,full_name.cs.{${q}}`)
       .neq("id", selectedUser?.id || "")
       .limit(5);
