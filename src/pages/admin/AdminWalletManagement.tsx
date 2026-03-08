@@ -36,6 +36,8 @@ type Profile = {
   user_type: string;
   available_balance: number;
   hold_balance: number;
+  wallet_number: string | null;
+  wallet_active: boolean;
 };
 
 type Transaction = {
