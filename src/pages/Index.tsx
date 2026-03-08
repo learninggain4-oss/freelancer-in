@@ -25,6 +25,11 @@ const steps = [
   { step: "04", title: "Get Paid", description: "Receive secure payments directly to your UPI or bank account." },
 ];
 
+const trustedCompanies = [
+  "TCS", "Infosys", "Wipro", "HCL Tech", "Tech Mahindra",
+  "Accenture", "Cognizant", "Flipkart", "Razorpay", "Zoho",
+];
+
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
