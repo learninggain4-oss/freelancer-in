@@ -29,6 +29,7 @@ type ClientRow = {
   is_disabled: boolean;
   created_at: string;
   mobile_number: string | null;
+  payment_sharing_enabled: boolean;
 };
 
 const AdminClients = () => {
