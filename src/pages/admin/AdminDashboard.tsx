@@ -33,7 +33,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     const fetchStats = async () => {
-      const [profiles, withdrawals, aadhaar, bank, recovery, jobs, transactions, referredProfiles, supportMessages] = await Promise.all([
+      const [profiles, withdrawals, aadhaar, bank, recovery, jobs, transactions, referredProfiles, supportMessages, reviews] = await Promise.all([
         supabase.from("profiles").select("id, approval_status, user_type, edit_request_status"),
         supabase.from("withdrawals").select("id").eq("status", "pending"),
         supabase.from("aadhaar_verifications").select("id").eq("status", "pending"),
@@ -43,6 +43,7 @@ const AdminDashboard = () => {
         supabase.from("transactions").select("profile_id, amount, type"),
         supabase.from("profiles").select("id, user_type, referred_by").not("referred_by", "is", null),
         supabase.from("messages").select("id, is_read, chat_room_id, chat_rooms!inner(type)").eq("is_read", false).eq("chat_rooms.type", "support"),
+        supabase.from("reviews" as any).select("rating"),
       ]);
 
       const allProfiles = profiles.data || [];
