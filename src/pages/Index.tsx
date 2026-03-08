@@ -135,24 +135,23 @@ const Index = () => {
         <div className="absolute -bottom-32 -left-32 -z-10 h-96 w-96 rounded-full bg-accent/5 blur-3xl" />
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-2xl text-center lg:max-w-3xl">
-            <div className="mb-5 inline-flex items-center gap-1.5 rounded-full border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+            <div className="mb-5 inline-flex items-center gap-1.5 rounded-full border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground animate-fade-in">
               <Star className="h-3 w-3 text-warning" /> Trusted by professionals across India
             </div>
             <h1 className="mb-4 text-4xl font-extrabold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-              Connect. Collaborate.{" "}
-              <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Get Paid.</span>
+              <HeroAnimatedText />
             </h1>
-            <p className="mb-8 text-base text-muted-foreground sm:text-lg lg:text-xl">
+            <p className="mb-8 text-base text-muted-foreground sm:text-lg lg:text-xl animate-fade-in" style={{ animationDelay: "1.2s", animationFillMode: "both" }}>
               The all-in-one platform connecting skilled freelancers with clients. Manage projects, communicate in real-time, and handle payments seamlessly.
             </p>
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center animate-fade-in" style={{ animationDelay: "1.5s", animationFillMode: "both" }}>
               <Link to="/register/employee" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full gap-2 text-base sm:px-8">
+                <Button size="lg" className="w-full gap-2 text-base sm:px-8 transition-transform hover:scale-105">
                   Join as Employee <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/register/client" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full gap-2 text-base sm:px-8">
+                <Button size="lg" variant="outline" className="w-full gap-2 text-base sm:px-8 transition-transform hover:scale-105">
                   Join as Client <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
@@ -161,9 +160,9 @@ const Index = () => {
 
           {/* Stats */}
           <div className="mx-auto mt-12 grid max-w-md grid-cols-3 gap-4 sm:max-w-lg md:mt-16">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <p className="text-2xl font-extrabold text-foreground sm:text-3xl">{stat.value}</p>
+            {stats.map((stat, i) => (
+              <div key={stat.label} className="text-center animate-fade-in" style={{ animationDelay: `${1.8 + i * 0.15}s`, animationFillMode: "both" }}>
+                <AnimatedCounter value={stat.value} />
                 <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{stat.label}</p>
               </div>
             ))}
