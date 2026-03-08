@@ -468,7 +468,50 @@ const Index = () => {
         </div>
       </section>
 
-      {/* What Clients Say */}
+      {/* Categories */}
+      <section className="border-t bg-muted/30 px-4 py-12 sm:px-6 md:py-20">
+        <div className="mx-auto max-w-6xl">
+          <ScrollFadeIn className="mx-auto mb-10 max-w-lg text-center">
+            <h2 className="text-2xl font-bold text-foreground sm:text-3xl">
+              Get work done in over <span className="text-primary">2,700+</span> different Categories
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+              Whatever your project needs, we have the right talent for you
+            </p>
+          </ScrollFadeIn>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {[
+              { icon: Code, label: "Web Development", count: "450+" },
+              { icon: Palette, label: "Graphic Design", count: "380+" },
+              { icon: PenTool, label: "Content Writing", count: "320+" },
+              { icon: BarChart3, label: "Digital Marketing", count: "290+" },
+              { icon: Camera, label: "Video & Animation", count: "210+" },
+              { icon: Music, label: "Music & Audio", count: "150+" },
+              { icon: Globe, label: "Translation", count: "180+" },
+              { icon: Megaphone, label: "Social Media", count: "200+" },
+              { icon: FileText, label: "Data Entry", count: "160+" },
+              { icon: Wrench, label: "IT & Networking", count: "130+" },
+              { icon: GraduationCap, label: "Online Tutoring", count: "120+" },
+              { icon: Heart, label: "Lifestyle & Wellness", count: "110+" },
+            ].map((cat, i) => (
+              <ScrollFadeIn key={cat.label} delay={i * 80}>
+                <Card className="group border bg-card transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/20 cursor-pointer">
+                  <CardContent className="flex items-center gap-3 p-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 transition-colors group-hover:bg-primary/20">
+                      <cat.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{cat.label}</p>
+                      <p className="text-xs text-muted-foreground">{cat.count} services</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </ScrollFadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {testimonials.length > 0 && (
         <section className="border-t bg-muted/30 px-4 py-12 sm:px-6 md:py-20">
           <div className="mx-auto max-w-6xl">
