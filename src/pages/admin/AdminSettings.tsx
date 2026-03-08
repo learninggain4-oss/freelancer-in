@@ -150,6 +150,7 @@ const AdminSettings = () => {
           if (row.key === "client_code_include_month") setCltIncludeMonth(row.value === "true");
           if (row.key === "employee_code_separator") setEmpSeparator(row.value || "none");
           if (row.key === "client_code_separator") setCltSeparator(row.value || "none");
+          if (row.key === "coin_conversion_rate") setCoinRate(row.value);
         }
       }
       setLoading(false);
