@@ -28,8 +28,6 @@ const EmployeeAttendance = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(false);
-  const [faceDialogOpen, setFaceDialogOpen] = useState(false);
-  const [faceAction, setFaceAction] = useState<"check_in" | "check_out">("check_in");
 
   const today = new Date();
   const todayStr = format(today, "yyyy-MM-dd");
