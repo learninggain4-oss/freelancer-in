@@ -66,6 +66,7 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
 import AnnouncementPopup from "@/components/announcements/AnnouncementPopup";
+import UpdatePrompt from "@/components/pwa/UpdatePrompt";
 
 const queryClient = new QueryClient();
 
