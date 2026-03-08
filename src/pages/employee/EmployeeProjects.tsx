@@ -276,6 +276,9 @@ const EmployeeProjects = () => {
                     <Badge className={statusColor[r.status]}>{r.status}</Badge>
                   </div>
                 </CardContent>
+                {r.status === "approved" && r.project && (
+                  <CompletedReviewButton projectId={r.project_id} projectName={r.project?.name} profileId={profile?.id} />
+                )}
               </Card>
           ) :
 
