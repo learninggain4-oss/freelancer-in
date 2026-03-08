@@ -31,6 +31,8 @@ const steps = [
   { step: "02", title: "Find Projects", description: "Browse available jobs or post your project requirements." },
   { step: "03", title: "Collaborate", description: "Work together with real-time chat and file sharing." },
   { step: "04", title: "Get Paid", description: "Receive secure payments directly to your UPI or bank account." },
+];
+
 const heroSlides = [
   {
     image: slideFreelancer,
