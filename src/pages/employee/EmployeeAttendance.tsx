@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,9 +7,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
 import { format, startOfMonth, endOfMonth, isSameDay } from "date-fns";
-import { ClipboardCheck, LogIn, LogOut, CalendarDays, Flame, Clock, Camera } from "lucide-react";
+import { ClipboardCheck, LogIn, LogOut, CalendarDays, Flame, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import FaceVerificationDialog from "@/components/attendance/FaceVerificationDialog";
 
 interface AttendanceRecord {
   id: string;
