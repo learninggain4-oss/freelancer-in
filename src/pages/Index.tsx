@@ -202,7 +202,7 @@ const HeroSlideshow = () => {
   if (slides.length === 0) return null;
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl" style={{ aspectRatio: "16/4" }}>
+    <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl" style={{ aspectRatio: "12/4" }}>
       {slides.map((slide, i) => (
         <div
           key={i}
