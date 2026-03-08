@@ -142,6 +142,18 @@ const AdminTestimonials = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-testimonials"] }),
   });
 
+  const updateRating = useMutation({
+    mutationFn: async ({ id, rating }: { id: string; rating: number }) => {
+      const { error } = await supabase.from("testimonials").update({ rating }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-testimonials"] });
+      toast({ title: "Rating updated" });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   const resetForm = () => {
     setForm({ name: "", role: "", quote: "", rating: 5, is_active: true, display_order: 0 });
     setPhotoFile(null);
