@@ -218,6 +218,8 @@ const ClientProfile = () => {
 
       {profile?.id && <ProfileRegistrationData profileId={profile.id} />}
 
+      {profile?.id && <ReviewsList profileId={profile.id} />}
+
       <AadhaarVerificationCard />
       <BankVerificationCard />
     </div>
