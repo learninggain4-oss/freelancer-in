@@ -21,7 +21,37 @@ const AdminWallet = () => {
   const [transferSearch, setTransferSearch] = useState("");
   const [selectedRecipient, setSelectedRecipient] = useState<{ id: string; full_name: string[]; user_code: string[]; user_type: string } | null>(null);
   const [transferDescription, setTransferDescription] = useState("");
+  const [showTotpForTransfer, setShowTotpForTransfer] = useState(false);
+  const [showTotpForAddMoney, setShowTotpForAddMoney] = useState(false);
   const queryClient = useQueryClient();
+
+  const { data: totpStatus } = useQuery({
+    queryKey: ["admin-totp-status"],
+    queryFn: async () => {
+      const res = await supabase.functions.invoke("admin-totp", {
+        body: { action: "check_status" },
+      });
+      return res.data as { is_enabled: boolean };
+    },
+  });
+
+  const requireTotp = totpStatus?.is_enabled ?? false;
+
+  const handleAddMoney = () => {
+    if (requireTotp) {
+      setShowTotpForAddMoney(true);
+    } else {
+      addMoneyMutation.mutate();
+    }
+  };
+
+  const handleTransfer = () => {
+    if (requireTotp) {
+      setShowTotpForTransfer(true);
+    } else {
+      transferMutation.mutate();
+    }
+  };
 
   const addMoneyMutation = useMutation({
     mutationFn: async () => {
