@@ -235,72 +235,16 @@ const EmployeeProjects = () => {
         </Button>
       )}
 
-      <Tabs defaultValue="inquiries" className="w-full">
-        <TabsList className="w-full">
-          <TabsTrigger value="inquiries" className="flex-1 text-xs">Inquiries</TabsTrigger>
-          <TabsTrigger value="requests" className="flex-1 text-xs">Requests</TabsTrigger>
-          <TabsTrigger value="submissions" className="flex-1 text-xs">Submissions</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="inquiries" className="mt-4 space-y-3">
-          {loadingInquiries ?
+      <div className="space-y-3">
+        {loadingInquiries ?
           Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-40 w-full" />) :
           inquiries.length > 0 ?
-          inquiries.map((p: any) =>
-           <InquiryCard key={p.id} project={p} onApply={() => applyMutation.mutate(p.id)} isPending={applyMutation.isPending} />
-          ) :
-
-          <p className="py-8 text-center text-sm text-muted-foreground">No open projects available</p>
-          }
-        </TabsContent>
-
-        <TabsContent value="requests" className="mt-4 space-y-3">
-          {loadingRequests ?
-          Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />) :
-          requests.length > 0 ?
-          requests.map((r: any) =>
-          <Card key={r.id}>
-                <CardContent className="flex items-center justify-between p-4">
-                  <div>
-                    <h3 className="font-semibold text-foreground">{r.project?.name ?? "Project"}</h3>
-                    <p className="text-xs text-muted-foreground">Applied: {new Date(r.applied_at).toLocaleDateString()}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {r.status === "approved" &&
-                <Button size="sm" variant="outline" onClick={() => navigate(`/employee/projects/chat/${r.project_id}`)}>
-                        <MessageSquare className="mr-1 h-3 w-3" /> Chat
-                      </Button>
-                }
-                    <Badge className={statusColor[r.status]}>{r.status}</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-          ) :
-
-          <p className="py-8 text-center text-sm text-muted-foreground">No applications yet</p>
-          }
-        </TabsContent>
-
-        <TabsContent value="submissions" className="mt-4 space-y-3">
-          {loadingSubmissions ?
-          <Skeleton className="h-16 w-full" /> :
-          submissions.length > 0 ?
-          submissions.map((s: any) =>
-          <Card key={s.id}>
-                <CardContent className="flex items-center justify-between p-4">
-                  <div>
-                    <h3 className="font-semibold text-foreground">{s.project?.name ?? "Project"}</h3>
-                    <p className="text-xs text-muted-foreground">Submitted: {new Date(s.submitted_at).toLocaleDateString()}</p>
-                  </div>
-                  <Badge className="bg-primary/10 text-primary">Submitted</Badge>
-                </CardContent>
-              </Card>
-          ) :
-
-          <p className="py-8 text-center text-sm text-muted-foreground">No submissions yet</p>
-          }
-        </TabsContent>
-      </Tabs>
+            inquiries.map((p: any) =>
+              <InquiryCard key={p.id} project={p} onApply={() => applyMutation.mutate(p.id)} isPending={applyMutation.isPending} />
+            ) :
+            <p className="py-8 text-center text-sm text-muted-foreground">No open projects available</p>
+        }
+      </div>
     </div>);
 
 };
