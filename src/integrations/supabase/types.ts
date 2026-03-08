@@ -890,6 +890,7 @@ export type Database = {
           hold_balance: number
           id: string
           is_disabled: boolean
+          last_seen_at: string | null
           marital_status:
             | Database["public"]["Enums"]["marital_status_type"]
             | null
@@ -942,6 +943,7 @@ export type Database = {
           hold_balance?: number
           id?: string
           is_disabled?: boolean
+          last_seen_at?: string | null
           marital_status?:
             | Database["public"]["Enums"]["marital_status_type"]
             | null
@@ -994,6 +996,7 @@ export type Database = {
           hold_balance?: number
           id?: string
           is_disabled?: boolean
+          last_seen_at?: string | null
           marital_status?:
             | Database["public"]["Enums"]["marital_status_type"]
             | null
