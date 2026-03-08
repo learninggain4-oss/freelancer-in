@@ -162,6 +162,21 @@ const Login = () => {
           <Link to="/"><Button variant="ghost" size="sm">← Back to Home</Button></Link>
         </div>
       </div>
+
+      <TotpVerifyDialog
+        open={showTotpDialog}
+        onClose={() => {
+          setShowTotpDialog(false);
+          setPendingAdminNav(false);
+        }}
+        onVerified={() => {
+          setShowTotpDialog(false);
+          setPendingAdminNav(false);
+          navigate("/admin/dashboard", { replace: true });
+        }}
+        title="Admin Verification"
+        description="Enter your Google Authenticator code to continue."
+      />
     </div>
   );
 };
