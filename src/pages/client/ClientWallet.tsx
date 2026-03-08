@@ -21,11 +21,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { WithdrawalCountdown } from "@/components/withdrawal/WithdrawalCountdown";
 
-const txBadgeVariant: Record<string, "default" | "secondary" | "destructive"> = {
-  credit: "default",
-  debit: "destructive",
-  hold: "secondary",
-  release: "default",
+const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
+  completed: "default",
+  approved: "default",
+  pending: "secondary",
+  rejected: "destructive",
 };
 
 const ClientWallet = () => {

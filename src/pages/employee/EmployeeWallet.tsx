@@ -190,57 +190,68 @@ const EmployeeWallet = () => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-base">Withdrawal History</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          {wLoading ? (
-            Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
-          ) : withdrawals.length > 0 ? (
-            withdrawals.map((w: any) => (
-              <div key={w.id} className="space-y-2 rounded-lg border p-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">₹{Number(w.amount).toLocaleString("en-IN")}</p>
-                    <p className="text-xs text-muted-foreground">{w.method} • {new Date(w.requested_at).toLocaleDateString()}</p>
-                  </div>
-                  <Badge variant={statusVariant[w.status] ?? "secondary"}>{w.status}</Badge>
-                </div>
-                {w.status === "pending" && (
-                  <WithdrawalCountdown requestedAt={w.requested_at} />
-                )}
-                {w.status === "rejected" && w.review_notes && (
-                  <p className="text-xs text-destructive">Reason: {w.review_notes}</p>
-                )}
-              </div>
-            ))
-          ) : (
-            <p className="py-4 text-center text-sm text-muted-foreground">No withdrawals yet</p>
-          )}
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="transactions" className="w-full">
+        <TabsList className="w-full">
+          <TabsTrigger value="transactions" className="flex-1">Transactions</TabsTrigger>
+          <TabsTrigger value="withdrawals" className="flex-1">Withdrawals</TabsTrigger>
+        </TabsList>
 
-      <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-base">Transaction History</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          {tLoading ? (
-            Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
-          ) : transactions.length > 0 ? (
-            transactions.map((tx: any) => (
-              <div key={tx.id} className="flex items-center justify-between rounded-lg border p-3">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">{tx.description}</p>
-                  <p className="text-xs text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</p>
-                </div>
-                <span className={`ml-3 text-sm font-semibold ${tx.type === "credit" ? "text-accent" : "text-destructive"}`}>
-                  {tx.type === "credit" ? "+" : "-"}₹{Number(tx.amount).toLocaleString("en-IN")}
-                </span>
-              </div>
-            ))
-          ) : (
-            <p className="py-4 text-center text-sm text-muted-foreground">No transactions yet</p>
-          )}
-        </CardContent>
-      </Card>
+        <TabsContent value="transactions">
+          <Card>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Transaction History</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              {tLoading ? (
+                Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
+              ) : transactions.length > 0 ? (
+                transactions.map((tx: any) => (
+                  <div key={tx.id} className="flex items-center justify-between rounded-lg border p-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">{tx.description}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <span className={`ml-3 text-sm font-semibold ${tx.type === "credit" ? "text-accent" : "text-destructive"}`}>
+                      {tx.type === "credit" ? "+" : "-"}₹{Number(tx.amount).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="py-4 text-center text-sm text-muted-foreground">No transactions yet</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="withdrawals">
+          <Card>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Withdrawal History</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              {wLoading ? (
+                Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
+              ) : withdrawals.length > 0 ? (
+                withdrawals.map((w: any) => (
+                  <div key={w.id} className="space-y-2 rounded-lg border p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">₹{Number(w.amount).toLocaleString("en-IN")}</p>
+                        <p className="text-xs text-muted-foreground">{w.method} • {new Date(w.requested_at).toLocaleDateString()}</p>
+                      </div>
+                      <Badge variant={statusVariant[w.status] ?? "secondary"}>{w.status}</Badge>
+                    </div>
+                    {w.status === "pending" && (
+                      <WithdrawalCountdown requestedAt={w.requested_at} />
+                    )}
+                    {w.status === "rejected" && w.review_notes && (
+                      <p className="text-xs text-destructive">Reason: {w.review_notes}</p>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="py-4 text-center text-sm text-muted-foreground">No withdrawals yet</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
