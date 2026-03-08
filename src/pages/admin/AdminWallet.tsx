@@ -263,6 +263,28 @@ const AdminWallet = () => {
           </Button>
         </CardHeader>
       </Card>
+
+      <TotpVerifyDialog
+        open={showTotpForAddMoney}
+        onClose={() => setShowTotpForAddMoney(false)}
+        onVerified={() => {
+          setShowTotpForAddMoney(false);
+          addMoneyMutation.mutate();
+        }}
+        title="Verify to Add Money"
+        description="Enter your authenticator code to add money to the wallet."
+      />
+
+      <TotpVerifyDialog
+        open={showTotpForTransfer}
+        onClose={() => setShowTotpForTransfer(false)}
+        onVerified={() => {
+          setShowTotpForTransfer(false);
+          transferMutation.mutate();
+        }}
+        title="Verify to Transfer"
+        description="Enter your authenticator code to complete this transfer."
+      />
     </div>
   );
 };
