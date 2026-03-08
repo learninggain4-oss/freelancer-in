@@ -683,6 +683,31 @@ const AdminSettings = () => {
         </CardContent>
       </Card>
 
+      {/* Coin Conversion Rate */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Coins className="h-4 w-4 text-primary" />
+            Coin Conversion Rate
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Set how many coins equal ₹1. For example, 100 means 100 Coins = ₹1.
+          </p>
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label>Coins per ₹1</Label>
+              <Input type="number" min="1" max="100000" value={coinRate} onChange={(e) => setCoinRate(e.target.value)} />
+            </div>
+            <Button onClick={() => handleSaveSetting("coin_conversion_rate", coinRate, "Coin rate", 1, 100000)} disabled={saving === "coin_conversion_rate"} className="gap-1">
+              {saving === "coin_conversion_rate" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* App Updates */}
       <Card className={needRefresh ? "border-primary/30 bg-primary/5" : ""}>
         <CardHeader className="pb-3">
