@@ -46,6 +46,7 @@ const AccountSettings = () => {
       if (registrations?.length) {
         await Promise.all(registrations.map((r) => r.update()));
       }
+      await new Promise((r) => setTimeout(r, 1500));
       if (!needRefresh) {
         toast({ title: "You're up to date!", description: "No new updates available." });
       }
@@ -57,7 +58,22 @@ const AccountSettings = () => {
   }, [needRefresh, toast]);
 
   const handleUpdate = useCallback(() => {
-    updateServiceWorker(true);
+    setUpdating(true);
+    setUpdateProgress(0);
+    const interval = setInterval(() => {
+      setUpdateProgress((prev) => {
+        if (prev >= 90) {
+          clearInterval(interval);
+          return 95;
+        }
+        return prev + Math.random() * 15 + 5;
+      });
+    }, 200);
+    updateServiceWorker(true).finally(() => {
+      clearInterval(interval);
+      setUpdateProgress(100);
+      setTimeout(() => window.location.reload(), 300);
+    });
   }, [updateServiceWorker]);
 
   useEffect(() => {
