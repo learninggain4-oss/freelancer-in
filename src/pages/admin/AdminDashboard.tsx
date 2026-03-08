@@ -107,6 +107,8 @@ const AdminDashboard = () => {
     { label: "Pending Recovery", value: stats.pendingRecovery, icon: LifeBuoy, color: "text-destructive", path: "/admin/recovery-requests" },
     { label: "Total Jobs", value: stats.totalJobs, icon: Briefcase, color: "text-accent", path: "/admin/jobs" },
     { label: "Profile Edits", value: stats.pendingProfileEdits, icon: Edit, color: "text-warning", path: "/admin/profile-edits" },
+    { label: "Total Reviews", value: stats.totalReviews, icon: Star, color: "text-warning", path: "/admin/reviews" },
+    { label: "Avg Rating", value: `⭐ ${stats.avgRating}`, icon: Star, color: "text-warning", path: "/admin/reviews" },
   ];
 
   return (
