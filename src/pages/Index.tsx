@@ -4,6 +4,7 @@ import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -400,7 +401,7 @@ const Index = () => {
                 Hear from professionals who trust our platform
               </p>
             </ScrollFadeIn>
-            <Carousel opts={{ align: "start", loop: true }} className="mx-auto w-full max-w-5xl">
+            <Carousel opts={{ align: "start", loop: true }} plugins={[Autoplay({ delay: 4000, stopOnInteraction: false })]} className="mx-auto w-full max-w-5xl">
               <CarouselContent className="-ml-4">
                 {testimonials.map((t) => (
                   <CarouselItem key={t.id} className="pl-4 sm:basis-1/2 lg:basis-1/3">
