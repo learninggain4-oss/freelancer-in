@@ -37,7 +37,7 @@ const BottomTabBar = ({ userType, onMenuClick }: BottomTabBarProps) => {
               key={tab.path}
               to={tab.path}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 px-3 py-2 text-xs transition-colors",
+                "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] transition-colors",
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
@@ -50,7 +50,7 @@ const BottomTabBar = ({ userType, onMenuClick }: BottomTabBarProps) => {
         })}
         <button
           onClick={onMenuClick}
-          className="flex flex-col items-center justify-center gap-0.5 px-3 py-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
         >
           <Menu className="h-5 w-5" />
           <span>Menu</span>
