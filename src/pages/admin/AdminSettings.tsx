@@ -146,8 +146,8 @@ const AdminSettings = () => {
           if (row.key === "employee_code_include_month") setEmpIncludeMonth(row.value === "true");
           if (row.key === "client_code_include_year") setCltIncludeYear(row.value === "true");
           if (row.key === "client_code_include_month") setCltIncludeMonth(row.value === "true");
-          if (row.key === "employee_code_separator") setEmpSeparator(row.value);
-          if (row.key === "client_code_separator") setCltSeparator(row.value);
+          if (row.key === "employee_code_separator") setEmpSeparator(row.value || "none");
+          if (row.key === "client_code_separator") setCltSeparator(row.value || "none");
         }
       }
       setLoading(false);
@@ -538,7 +538,7 @@ const AdminSettings = () => {
                     <SelectItem value="-">Hyphen (-)</SelectItem>
                     <SelectItem value="/">Slash (/)</SelectItem>
                     <SelectItem value=".">Dot (.)</SelectItem>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -555,7 +555,7 @@ const AdminSettings = () => {
               <p className="text-xs text-muted-foreground">
                 Preview: <span className="font-mono font-bold">{(() => {
                   const p = empPrefix || "EMP";
-                  const s = empSeparator;
+                  const s = empSeparator === "none" ? "" : empSeparator;
                   const d = Number(empDigits) || 5;
                   const num = "0".repeat(d - 1) + "1";
                   const year = new Date().getFullYear().toString();
@@ -580,7 +580,7 @@ const AdminSettings = () => {
                     await Promise.all([
                       supabase.from("app_settings").upsert({ key: "employee_code_prefix", value: empPrefix.trim() }, { onConflict: "key" }),
                       supabase.from("app_settings").upsert({ key: "employee_code_digits", value: String(d) }, { onConflict: "key" }),
-                      supabase.from("app_settings").upsert({ key: "employee_code_separator", value: empSeparator }, { onConflict: "key" }),
+                      supabase.from("app_settings").upsert({ key: "employee_code_separator", value: empSeparator === "none" ? "" : empSeparator }, { onConflict: "key" }),
                       supabase.from("app_settings").upsert({ key: "employee_code_include_year", value: String(empIncludeYear) }, { onConflict: "key" }),
                       supabase.from("app_settings").upsert({ key: "employee_code_include_month", value: String(empIncludeMonth) }, { onConflict: "key" }),
                     ]);
@@ -619,7 +619,7 @@ const AdminSettings = () => {
                     <SelectItem value="-">Hyphen (-)</SelectItem>
                     <SelectItem value="/">Slash (/)</SelectItem>
                     <SelectItem value=".">Dot (.)</SelectItem>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -636,7 +636,7 @@ const AdminSettings = () => {
               <p className="text-xs text-muted-foreground">
                 Preview: <span className="font-mono font-bold">{(() => {
                   const p = cltPrefix || "CLT";
-                  const s = cltSeparator;
+                  const s = cltSeparator === "none" ? "" : cltSeparator;
                   const d = Number(cltDigits) || 5;
                   const num = "0".repeat(d - 1) + "1";
                   const year = new Date().getFullYear().toString();
@@ -661,7 +661,7 @@ const AdminSettings = () => {
                     await Promise.all([
                       supabase.from("app_settings").upsert({ key: "client_code_prefix", value: cltPrefix.trim() }, { onConflict: "key" }),
                       supabase.from("app_settings").upsert({ key: "client_code_digits", value: String(d) }, { onConflict: "key" }),
-                      supabase.from("app_settings").upsert({ key: "client_code_separator", value: cltSeparator }, { onConflict: "key" }),
+                      supabase.from("app_settings").upsert({ key: "client_code_separator", value: cltSeparator === "none" ? "" : cltSeparator }, { onConflict: "key" }),
                       supabase.from("app_settings").upsert({ key: "client_code_include_year", value: String(cltIncludeYear) }, { onConflict: "key" }),
                       supabase.from("app_settings").upsert({ key: "client_code_include_month", value: String(cltIncludeMonth) }, { onConflict: "key" }),
                     ]);
