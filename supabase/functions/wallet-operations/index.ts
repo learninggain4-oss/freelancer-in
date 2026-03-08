@@ -819,7 +819,7 @@ Deno.serve(async (req) => {
         await supabase.from("profiles").update({ available_balance: newBal }).eq("id", tp.id);
         await supabase.from("transactions").insert({ profile_id: tp.id, type: "credit", amount, description: description || "Admin: added to wallet" });
         await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Wallet Credited", message: `₹${amount.toLocaleString("en-IN")} has been added to your wallet by admin.`, type: "financial" });
-        await supabase.from("admin_audit_logs").insert({ admin_id: callerProfile.id, action: "wallet_add", target_profile_id: tp.id, target_profile_name: (tp.full_name as any)?.[0] || null, details: { amount, description: description || "Admin: added to wallet", balance_before: Number(tp.available_balance), balance_after: newBal } });
+        
         result.new_balance = newBal;
         break;
       }
