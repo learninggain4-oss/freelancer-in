@@ -1,4 +1,5 @@
 import { useState } from "react";
+import WalletCard from "@/components/wallet/WalletCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -72,30 +73,13 @@ const ClientWallet = () => {
     <div className="space-y-6 p-4">
       <h1 className="text-2xl font-bold text-foreground">Wallet</h1>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Wallet className="h-4 w-4" /><span className="text-xs">Available</span>
-            </div>
-            <p className="mt-1 text-xl font-bold text-foreground">
-              <IndianRupee className="inline h-4 w-4" />
-              {(profile?.available_balance ?? 0).toLocaleString("en-IN")}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="border-warning/20 bg-warning/5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="h-4 w-4" /><span className="text-xs">On Hold</span>
-            </div>
-            <p className="mt-1 text-xl font-bold text-foreground">
-              <IndianRupee className="inline h-4 w-4" />
-              {(profile?.hold_balance ?? 0).toLocaleString("en-IN")}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <WalletCard
+        name={Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Client"}
+        userCode={Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—"}
+        walletNumber={profile?.wallet_number}
+        availableBalance={profile?.available_balance ?? 0}
+        holdBalance={profile?.hold_balance ?? 0}
+      />
 
       {/* Add Money */}
       <Card>
