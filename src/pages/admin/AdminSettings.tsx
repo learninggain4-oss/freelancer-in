@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Clock, Landmark, Gift, CreditCard, RefreshCw, Download, Search, X } from "lucide-react";
+import { Loader2, Save, Clock, Landmark, Gift, CreditCard, RefreshCw, Download, Search, X, Coins } from "lucide-react";
 import TotpSetupCard from "@/components/admin/TotpSetupCard";
 
 type ClientPaymentRow = {
@@ -28,6 +28,7 @@ const AdminSettings = () => {
   const [signupBonus, setSignupBonus] = useState("");
   const [jobBonus, setJobBonus] = useState("");
   const [referralTerms, setReferralTerms] = useState("");
+  const [coinRate, setCoinRate] = useState("");
   const [empPrefix, setEmpPrefix] = useState("");
   const [cltPrefix, setCltPrefix] = useState("");
   const [empDigits, setEmpDigits] = useState("");
@@ -128,6 +129,7 @@ const AdminSettings = () => {
           "client_code_include_year",
           "client_code_include_month",
           "employee_code_separator",
+          "coin_conversion_rate",
           "client_code_separator",
         ]);
       if (data) {
@@ -148,6 +150,7 @@ const AdminSettings = () => {
           if (row.key === "client_code_include_month") setCltIncludeMonth(row.value === "true");
           if (row.key === "employee_code_separator") setEmpSeparator(row.value || "none");
           if (row.key === "client_code_separator") setCltSeparator(row.value || "none");
+          if (row.key === "coin_conversion_rate") setCoinRate(row.value);
         }
       }
       setLoading(false);
@@ -676,6 +679,31 @@ const AdminSettings = () => {
                 Save Client Code
               </Button>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Coin Conversion Rate */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Coins className="h-4 w-4 text-primary" />
+            Coin Conversion Rate
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Set how many coins equal ₹1. For example, 100 means 100 Coins = ₹1.
+          </p>
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label>Coins per ₹1</Label>
+              <Input type="number" min="1" max="100000" value={coinRate} onChange={(e) => setCoinRate(e.target.value)} />
+            </div>
+            <Button onClick={() => handleSaveSetting("coin_conversion_rate", coinRate, "Coin rate", 1, 100000)} disabled={saving === "coin_conversion_rate"} className="gap-1">
+              {saving === "coin_conversion_rate" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
           </div>
         </CardContent>
       </Card>
