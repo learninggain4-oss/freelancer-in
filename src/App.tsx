@@ -61,6 +61,7 @@ const AdminCountdowns = lazy(() => import("./pages/admin/AdminCountdowns"));
 const AdminValidation = lazy(() => import("./pages/admin/AdminValidation"));
 const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"));
 const AdminTestimonials = lazy(() => import("./pages/admin/AdminTestimonials"));
+const Categories = lazy(() => import("./pages/Categories"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
@@ -100,6 +101,7 @@ const App = () => (
               <Route path="/register/client" element={<ClientRegister />} />
               <Route path="/verification-pending" element={<VerificationPending />} />
               <Route path="/install" element={<InstallApp />} />
+              <Route path="/categories" element={<Categories />} />
               <Route path="/complete-profile" element={<CompleteProfile />} />
               <Route path="/legal/:slug" element={<LegalDocument />} />
 

@@ -208,7 +208,7 @@ const CategoriesGrid = () => {
           </ScrollFadeIn>
         ))}
       </div>
-      <div className="mt-6 text-center">
+      <div className="mt-6 flex justify-center gap-3">
         <Button
           variant="outline"
           onClick={() => setShowAll(!showAll)}
@@ -217,9 +217,14 @@ const CategoriesGrid = () => {
           {showAll ? (
             <>Show Less <ChevronUp className="h-4 w-4" /></>
           ) : (
-            <>View All {allCategories.length} Categories <ChevronDown className="h-4 w-4" /></>
+            <>View More <ChevronDown className="h-4 w-4" /></>
           )}
         </Button>
+        <Link to="/categories">
+          <Button className="gap-2 transition-transform hover:scale-105">
+            View All Categories <ArrowRight className="h-4 w-4" />
+          </Button>
+        </Link>
       </div>
     </>
   );
