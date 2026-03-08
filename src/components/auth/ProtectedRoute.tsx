@@ -33,6 +33,15 @@ const ProtectedRoute = ({ children, requiredApproval = true }: ProtectedRoutePro
     return <Navigate to="/verification-pending" replace />;
   }
 
+  // Redirect invited users with incomplete profiles
+  if (
+    profile.full_name &&
+    profile.full_name.length > 0 &&
+    profile.full_name[0] === "PENDING"
+  ) {
+    return <Navigate to="/complete-profile" replace />;
+  }
+
   return <>{children}</>;
 };
 
