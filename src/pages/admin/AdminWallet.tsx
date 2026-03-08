@@ -245,7 +245,7 @@ const AdminWallet = () => {
           </div>
           <Button
             className="w-full"
-            onClick={() => transferMutation.mutate()}
+            onClick={handleTransfer}
             disabled={transferMutation.isPending || !selectedRecipient}
           >
             <SendHorizontal className="mr-2 h-4 w-4" />
