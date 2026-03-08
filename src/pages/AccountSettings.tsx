@@ -315,6 +315,11 @@ const AccountSettings = () => {
           </Card>
         </TabsContent>
 
+        {/* Tab: Security */}
+        <TabsContent value="security" className="space-y-4 mt-4">
+          <UserTotpSetupCard />
+        </TabsContent>
+
         {/* Tab: Account */}
         <TabsContent value="account" className="space-y-4 mt-4">
           <Card>
