@@ -96,8 +96,8 @@ const AdminWallet = () => {
       if (!transferSearch || transferSearch.length < 2) return [];
       const { data } = await supabase
         .from("profiles")
-        .select("id, full_name, user_code, user_type")
-        .or(`full_name.cs.{${transferSearch}},user_code.cs.{${transferSearch}},email.ilike.%${transferSearch}%`)
+        .select("id, full_name, user_code, user_type, wallet_number")
+        .ilike("wallet_number", `%${transferSearch}%`)
         .neq("id", profile?.id ?? "")
         .limit(5);
       return data || [];
