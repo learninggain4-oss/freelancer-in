@@ -63,7 +63,7 @@ const AdminWalletTransactions = () => {
         .order("created_at", { ascending: false });
 
       if (typeFilter !== "all") {
-        query = query.eq("type", typeFilter);
+        query = query.eq("type", typeFilter as "credit" | "debit" | "hold" | "release");
       }
 
       if (searchQuery.trim()) {

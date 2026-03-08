@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import WalletCard from "@/components/wallet/WalletCard";
@@ -8,64 +8,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Loader2, ChevronLeft, ChevronRight, PlusCircle, ArrowUpRight, SendHorizontal, Search } from "lucide-react";
-import { format } from "date-fns";
+import { Loader2, PlusCircle, ArrowUpRight, SendHorizontal, Search, History } from "lucide-react";
 import { toast } from "sonner";
-
-const PAGE_SIZE = 15;
-
-const typeBadgeVariant = (type: string) => {
-  switch (type) {
-    case "credit":
-      return "default";
-    case "debit":
-      return "destructive";
-    case "hold":
-      return "secondary";
-    case "release":
-      return "outline";
-    default:
-      return "secondary";
-  }
-};
+import { useNavigate } from "react-router-dom";
 
 const AdminWallet = () => {
   const { profile, refreshProfile } = useAuth();
-  const [page, setPage] = useState(1);
+  const navigate = useNavigate();
   const [addAmount, setAddAmount] = useState("");
   const [transferAmount, setTransferAmount] = useState("");
   const [transferSearch, setTransferSearch] = useState("");
   const [selectedRecipient, setSelectedRecipient] = useState<{ id: string; full_name: string[]; user_code: string[]; user_type: string } | null>(null);
   const [transferDescription, setTransferDescription] = useState("");
   const queryClient = useQueryClient();
-
-  const { data: transactions, isLoading } = useQuery({
-    queryKey: ["admin-wallet-transactions", profile?.id, page],
-    queryFn: async () => {
-      if (!profile?.id) return { items: [], total: 0 };
-      const from = (page - 1) * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-
-      const { data, count, error } = await supabase
-        .from("transactions")
-        .select("*", { count: "exact" })
-        .eq("profile_id", profile.id)
-        .order("created_at", { ascending: false })
-        .range(from, to);
-
-      if (error) throw error;
-      return { items: data || [], total: count || 0 };
-    },
-    enabled: !!profile?.id,
-  });
 
   const addMoneyMutation = useMutation({
     mutationFn: async () => {
@@ -144,10 +99,6 @@ const AdminWallet = () => {
       </div>
     );
   }
-
-  const totalPages = Math.ceil((transactions?.total || 0) / PAGE_SIZE);
-  const showFrom = (page - 1) * PAGE_SIZE + 1;
-  const showTo = Math.min(page * PAGE_SIZE, transactions?.total || 0);
 
   return (
     <div className="space-y-6">
@@ -273,81 +224,13 @@ const AdminWallet = () => {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Transaction History</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => navigate("/admin/wallet/transactions")}>
+            <History className="mr-2 h-4 w-4" />
+            View All
+          </Button>
         </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center py-10">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          ) : !transactions?.items.length ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              No transactions yet.
-            </p>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {transactions.items.map((tx) => (
-                    <TableRow key={tx.id}>
-                      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                        {format(new Date(tx.created_at), "dd MMM yyyy, hh:mm a")}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={typeBadgeVariant(tx.type)} className="capitalize">
-                          {tx.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="max-w-[200px] truncate text-sm">
-                        {tx.description}
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        ₹{Number(tx.amount).toLocaleString("en-IN")}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              {totalPages > 1 && (
-                <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-                  <span>
-                    Showing {showFrom}–{showTo} of {transactions.total}
-                  </span>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      disabled={page <= 1}
-                      onClick={() => setPage((p) => p - 1)}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      disabled={page >= totalPages}
-                      onClick={() => setPage((p) => p + 1)}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
       </Card>
     </div>
   );
