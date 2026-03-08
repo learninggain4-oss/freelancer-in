@@ -149,6 +149,8 @@ const AppContent = () => {
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
               <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
               <Route path="wallet" element={<EmployeeWallet />} />
+              <Route path="wallet/transactions" element={<TransactionHistory />} />
+              <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
               <Route path="profile" element={<EmployeeProfile />} />
               <Route path="profile/personal" element={<ProfilePersonalInfo />} />
               <Route path="profile/professional" element={<ProfileProfessional />} />
