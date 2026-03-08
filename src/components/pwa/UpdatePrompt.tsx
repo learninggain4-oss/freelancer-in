@@ -3,6 +3,7 @@ import { RefreshCw } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
+import confetti from "canvas-confetti";
 
 const UpdatePrompt = () => {
   const [updating, setUpdating] = useState(false);
