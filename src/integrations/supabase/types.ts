@@ -1661,6 +1661,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          photo_path: string | null
           quote: string
           rating: number
           role: string
@@ -1672,6 +1673,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          photo_path?: string | null
           quote: string
           rating?: number
           role: string
@@ -1683,6 +1685,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          photo_path?: string | null
           quote?: string
           rating?: number
           role?: string
