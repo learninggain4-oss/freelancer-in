@@ -42,6 +42,7 @@ import { Button } from "@/components/ui/button";
 
 const navItems = [
   { label: "Overview", icon: LayoutDashboard, path: "/admin/dashboard" },
+  { label: "My Wallet", icon: Wallet, path: "/admin/wallet" },
   { label: "Users", icon: Users, path: "/admin/users" },
   { label: "Employees", icon: UserCheck, path: "/admin/employees" },
   { label: "Clients", icon: Building2, path: "/admin/clients" },

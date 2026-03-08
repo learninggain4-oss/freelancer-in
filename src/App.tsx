@@ -65,6 +65,7 @@ const AdminReferrals = lazy(() => import("./pages/admin/AdminReferrals"));
 const AdminOnlineStatus = lazy(() => import("./pages/admin/AdminOnlineStatus"));
 const AdminHeroSlides = lazy(() => import("./pages/admin/AdminHeroSlides"));
 const AdminVisitors = lazy(() => import("./pages/admin/AdminVisitors"));
+const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
 const Categories = lazy(() => import("./pages/Categories"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
@@ -195,6 +196,7 @@ const AppContent = () => {
               <Route path="online-status" element={<AdminOnlineStatus />} />
               <Route path="hero-slides" element={<AdminHeroSlides />} />
               <Route path="visitors" element={<AdminVisitors />} />
+              <Route path="wallet" element={<AdminWallet />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
