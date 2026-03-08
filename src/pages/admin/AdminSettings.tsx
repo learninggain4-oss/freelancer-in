@@ -129,6 +129,7 @@ const AdminSettings = () => {
           "client_code_include_year",
           "client_code_include_month",
           "employee_code_separator",
+          "coin_conversion_rate",
           "client_code_separator",
         ]);
       if (data) {
