@@ -162,7 +162,7 @@ const AdminWallet = () => {
             </div>
             <Button
               className="w-full"
-              onClick={() => addMoneyMutation.mutate()}
+              onClick={handleAddMoney}
               disabled={addMoneyMutation.isPending}
             >
               <ArrowUpRight className="mr-2 h-4 w-4" />
