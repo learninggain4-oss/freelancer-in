@@ -49,6 +49,7 @@ const AdminDashboard = () => {
       const allProfiles = profiles.data || [];
       const allTransactions = transactions.data || [];
       const referredUsers = referredProfiles.data || [];
+      const allReviews = (reviews.data as any[]) || [];
 
       const employeeIds = new Set(allProfiles.filter(p => p.user_type === "employee").map(p => p.id));
       const clientIds = new Set(allProfiles.filter(p => p.user_type === "client").map(p => p.id));
