@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Clock, Landmark, Gift, CreditCard, RefreshCw, Download, Search, X } from "lucide-react";
 import TotpSetupCard from "@/components/admin/TotpSetupCard";
@@ -31,6 +32,12 @@ const AdminSettings = () => {
   const [cltPrefix, setCltPrefix] = useState("");
   const [empDigits, setEmpDigits] = useState("");
   const [cltDigits, setCltDigits] = useState("");
+  const [empIncludeYear, setEmpIncludeYear] = useState(false);
+  const [empIncludeMonth, setEmpIncludeMonth] = useState(false);
+  const [cltIncludeYear, setCltIncludeYear] = useState(false);
+  const [cltIncludeMonth, setCltIncludeMonth] = useState(false);
+  const [empSeparator, setEmpSeparator] = useState("-");
+  const [cltSeparator, setCltSeparator] = useState("-");
   const [clientPaymentSharing, setClientPaymentSharing] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -116,6 +123,12 @@ const AdminSettings = () => {
           "employee_code_digits",
           "client_code_digits",
           "client_payment_sharing_enabled",
+          "employee_code_include_year",
+          "employee_code_include_month",
+          "client_code_include_year",
+          "client_code_include_month",
+          "employee_code_separator",
+          "client_code_separator",
         ]);
       if (data) {
         for (const row of data) {
@@ -129,6 +142,12 @@ const AdminSettings = () => {
           if (row.key === "employee_code_digits") setEmpDigits(row.value);
           if (row.key === "client_code_digits") setCltDigits(row.value);
           if (row.key === "client_payment_sharing_enabled") setClientPaymentSharing(row.value !== "false");
+          if (row.key === "employee_code_include_year") setEmpIncludeYear(row.value === "true");
+          if (row.key === "employee_code_include_month") setEmpIncludeMonth(row.value === "true");
+          if (row.key === "client_code_include_year") setCltIncludeYear(row.value === "true");
+          if (row.key === "client_code_include_month") setCltIncludeMonth(row.value === "true");
+          if (row.key === "employee_code_separator") setEmpSeparator(row.value);
+          if (row.key === "client_code_separator") setCltSeparator(row.value);
         }
       }
       setLoading(false);
@@ -493,9 +512,10 @@ const AdminSettings = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Configure the prefix and number of digits for auto-generated user codes. Changes apply to new registrations only.
+            Configure the prefix, digits, separator, and date components for auto-generated user codes. Changes apply to new registrations only.
           </p>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-6 sm:grid-cols-2">
+            {/* Employee Code */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold">Employee Code</h4>
               <div className="flex items-end gap-2">
@@ -508,8 +528,46 @@ const AdminSettings = () => {
                   <Input type="number" min="3" max="10" value={empDigits} onChange={(e) => setEmpDigits(e.target.value)} />
                 </div>
               </div>
+              <div>
+                <Label>Separator</Label>
+                <Select value={empSeparator} onValueChange={setEmpSeparator}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="-">Hyphen (-)</SelectItem>
+                    <SelectItem value="/">Slash (/)</SelectItem>
+                    <SelectItem value=".">Dot (.)</SelectItem>
+                    <SelectItem value="">None</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border p-2.5">
+                <Label htmlFor="emp-year" className="text-sm">Include Year</Label>
+                <Switch id="emp-year" checked={empIncludeYear} onCheckedChange={(checked) => { setEmpIncludeYear(checked); if (!checked) setEmpIncludeMonth(false); }} />
+              </div>
+              {empIncludeYear && (
+                <div className="flex items-center justify-between rounded-lg border p-2.5">
+                  <Label htmlFor="emp-month" className="text-sm">Include Month</Label>
+                  <Switch id="emp-month" checked={empIncludeMonth} onCheckedChange={setEmpIncludeMonth} />
+                </div>
+              )}
               <p className="text-xs text-muted-foreground">
-                Preview: <span className="font-mono font-bold">{empPrefix || "EMP"}{("0".repeat(Number(empDigits) || 5)).slice(0, -1)}1</span>
+                Preview: <span className="font-mono font-bold">{(() => {
+                  const p = empPrefix || "EMP";
+                  const s = empSeparator;
+                  const d = Number(empDigits) || 5;
+                  const num = "0".repeat(d - 1) + "1";
+                  const year = new Date().getFullYear().toString();
+                  const month = String(new Date().getMonth() + 1).padStart(2, "0");
+                  let code = p;
+                  if (empIncludeYear) {
+                    code += s + year;
+                    if (empIncludeMonth) code += s + month;
+                  }
+                  code += (empIncludeYear ? s : "") + num;
+                  return code;
+                })()}</span>
               </p>
               <Button
                 size="sm"
@@ -519,8 +577,13 @@ const AdminSettings = () => {
                   if (isNaN(d) || d < 3 || d > 10) { toast({ title: "Invalid", description: "Digits must be 3-10", variant: "destructive" }); return; }
                   setSaving("emp_code");
                   try {
-                    await supabase.from("app_settings").upsert({ key: "employee_code_prefix", value: empPrefix.trim() }, { onConflict: "key" });
-                    await supabase.from("app_settings").upsert({ key: "employee_code_digits", value: String(d) }, { onConflict: "key" });
+                    await Promise.all([
+                      supabase.from("app_settings").upsert({ key: "employee_code_prefix", value: empPrefix.trim() }, { onConflict: "key" }),
+                      supabase.from("app_settings").upsert({ key: "employee_code_digits", value: String(d) }, { onConflict: "key" }),
+                      supabase.from("app_settings").upsert({ key: "employee_code_separator", value: empSeparator }, { onConflict: "key" }),
+                      supabase.from("app_settings").upsert({ key: "employee_code_include_year", value: String(empIncludeYear) }, { onConflict: "key" }),
+                      supabase.from("app_settings").upsert({ key: "employee_code_include_month", value: String(empIncludeMonth) }, { onConflict: "key" }),
+                    ]);
                     toast({ title: "Saved", description: "Employee code settings updated" });
                   } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
                   finally { setSaving(null); }
@@ -532,6 +595,8 @@ const AdminSettings = () => {
                 Save Employee Code
               </Button>
             </div>
+
+            {/* Client Code */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold">Client Code</h4>
               <div className="flex items-end gap-2">
@@ -544,8 +609,46 @@ const AdminSettings = () => {
                   <Input type="number" min="3" max="10" value={cltDigits} onChange={(e) => setCltDigits(e.target.value)} />
                 </div>
               </div>
+              <div>
+                <Label>Separator</Label>
+                <Select value={cltSeparator} onValueChange={setCltSeparator}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="-">Hyphen (-)</SelectItem>
+                    <SelectItem value="/">Slash (/)</SelectItem>
+                    <SelectItem value=".">Dot (.)</SelectItem>
+                    <SelectItem value="">None</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border p-2.5">
+                <Label htmlFor="clt-year" className="text-sm">Include Year</Label>
+                <Switch id="clt-year" checked={cltIncludeYear} onCheckedChange={(checked) => { setCltIncludeYear(checked); if (!checked) setCltIncludeMonth(false); }} />
+              </div>
+              {cltIncludeYear && (
+                <div className="flex items-center justify-between rounded-lg border p-2.5">
+                  <Label htmlFor="clt-month" className="text-sm">Include Month</Label>
+                  <Switch id="clt-month" checked={cltIncludeMonth} onCheckedChange={setCltIncludeMonth} />
+                </div>
+              )}
               <p className="text-xs text-muted-foreground">
-                Preview: <span className="font-mono font-bold">{cltPrefix || "CLT"}{("0".repeat(Number(cltDigits) || 5)).slice(0, -1)}1</span>
+                Preview: <span className="font-mono font-bold">{(() => {
+                  const p = cltPrefix || "CLT";
+                  const s = cltSeparator;
+                  const d = Number(cltDigits) || 5;
+                  const num = "0".repeat(d - 1) + "1";
+                  const year = new Date().getFullYear().toString();
+                  const month = String(new Date().getMonth() + 1).padStart(2, "0");
+                  let code = p;
+                  if (cltIncludeYear) {
+                    code += s + year;
+                    if (cltIncludeMonth) code += s + month;
+                  }
+                  code += (cltIncludeYear ? s : "") + num;
+                  return code;
+                })()}</span>
               </p>
               <Button
                 size="sm"
@@ -555,8 +658,13 @@ const AdminSettings = () => {
                   if (isNaN(d) || d < 3 || d > 10) { toast({ title: "Invalid", description: "Digits must be 3-10", variant: "destructive" }); return; }
                   setSaving("clt_code");
                   try {
-                    await supabase.from("app_settings").upsert({ key: "client_code_prefix", value: cltPrefix.trim() }, { onConflict: "key" });
-                    await supabase.from("app_settings").upsert({ key: "client_code_digits", value: String(d) }, { onConflict: "key" });
+                    await Promise.all([
+                      supabase.from("app_settings").upsert({ key: "client_code_prefix", value: cltPrefix.trim() }, { onConflict: "key" }),
+                      supabase.from("app_settings").upsert({ key: "client_code_digits", value: String(d) }, { onConflict: "key" }),
+                      supabase.from("app_settings").upsert({ key: "client_code_separator", value: cltSeparator }, { onConflict: "key" }),
+                      supabase.from("app_settings").upsert({ key: "client_code_include_year", value: String(cltIncludeYear) }, { onConflict: "key" }),
+                      supabase.from("app_settings").upsert({ key: "client_code_include_month", value: String(cltIncludeMonth) }, { onConflict: "key" }),
+                    ]);
                     toast({ title: "Saved", description: "Client code settings updated" });
                   } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
                   finally { setSaving(null); }
