@@ -609,6 +609,8 @@ const AdminSettings = () => {
           )}
         </CardContent>
       </Card>
+
+      <TotpSetupCard />
     </div>
   );
 };
