@@ -1,4 +1,4 @@
-import { Settings, HelpCircle, Bell, FileText, Shield, LogOut, Gift } from "lucide-react";
+import { Settings, HelpCircle, Bell, FileText, Shield, LogOut, Gift, Smartphone } from "lucide-react";
 import {
   Sheet,
   SheetContent,
