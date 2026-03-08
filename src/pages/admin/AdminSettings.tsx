@@ -29,6 +29,7 @@ const AdminSettings = () => {
   const [jobBonus, setJobBonus] = useState("");
   const [referralTerms, setReferralTerms] = useState("");
   const [coinRate, setCoinRate] = useState("");
+  const [minCoinConversion, setMinCoinConversion] = useState("");
   const [empPrefix, setEmpPrefix] = useState("");
   const [cltPrefix, setCltPrefix] = useState("");
   const [empDigits, setEmpDigits] = useState("");
@@ -130,6 +131,7 @@ const AdminSettings = () => {
           "client_code_include_month",
           "employee_code_separator",
           "coin_conversion_rate",
+          "min_coin_conversion",
           "client_code_separator",
         ]);
       if (data) {
@@ -151,6 +153,7 @@ const AdminSettings = () => {
           if (row.key === "employee_code_separator") setEmpSeparator(row.value || "none");
           if (row.key === "client_code_separator") setCltSeparator(row.value || "none");
           if (row.key === "coin_conversion_rate") setCoinRate(row.value);
+          if (row.key === "min_coin_conversion") setMinCoinConversion(row.value);
         }
       }
       setLoading(false);
@@ -702,6 +705,16 @@ const AdminSettings = () => {
             </div>
             <Button onClick={() => handleSaveSetting("coin_conversion_rate", coinRate, "Coin rate", 1, 100000)} disabled={saving === "coin_conversion_rate"} className="gap-1">
               {saving === "coin_conversion_rate" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          </div>
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label>Minimum Coins for Conversion</Label>
+              <Input type="number" min="1" max="1000000" value={minCoinConversion} onChange={(e) => setMinCoinConversion(e.target.value)} />
+            </div>
+            <Button onClick={() => handleSaveSetting("min_coin_conversion", minCoinConversion, "Min coin conversion", 1, 1000000)} disabled={saving === "min_coin_conversion"} className="gap-1">
+              {saving === "min_coin_conversion" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Save
             </Button>
           </div>

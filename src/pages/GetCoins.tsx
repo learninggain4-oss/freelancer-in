@@ -1,21 +1,28 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Coins, Star, CheckCircle, Trophy, IndianRupee } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const GetCoins = () => {
   const [coinRate, setCoinRate] = useState<number>(100);
+  const [minCoins, setMinCoins] = useState<number>(250);
+  const userCoins = 0; // placeholder until coin tracking is implemented
 
   useEffect(() => {
-    const fetchRate = async () => {
+    const fetchSettings = async () => {
       const { data } = await supabase
         .from("app_settings")
-        .select("value")
-        .eq("key", "coin_conversion_rate")
-        .maybeSingle();
-      if (data?.value) setCoinRate(Number(data.value) || 100);
+        .select("key, value")
+        .in("key", ["coin_conversion_rate", "min_coin_conversion"]);
+      if (data) {
+        for (const row of data) {
+          if (row.key === "coin_conversion_rate") setCoinRate(Number(row.value) || 100);
+          if (row.key === "min_coin_conversion") setMinCoins(Number(row.value) || 250);
+        }
+      }
     };
-    fetchRate();
+    fetchSettings();
   }, []);
 
   return (
@@ -81,6 +88,27 @@ const GetCoins = () => {
               </li>
             ))}
           </ul>
+        </CardContent>
+      </Card>
+
+      {/* Convert to Wallet */}
+      <Card className="border-accent/20 bg-gradient-to-br from-accent/5 to-primary/5">
+        <CardContent className="py-5 space-y-3">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground mb-1">
+              Minimum <span className="font-semibold text-foreground">{minCoins} Coins</span> required for conversion
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {coinRate} Coins = ₹1 • You have {userCoins} coins (≈ ₹{(userCoins / coinRate).toFixed(2)})
+            </p>
+          </div>
+          <Button
+            className="w-full gap-2"
+            disabled={userCoins < minCoins}
+          >
+            <IndianRupee className="h-4 w-4" />
+            {userCoins >= minCoins ? "Convert to Wallet" : `Minimum ${minCoins} Coins Required`}
+          </Button>
         </CardContent>
       </Card>
 
