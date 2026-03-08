@@ -196,6 +196,7 @@ const AppContent = () => {
               <Route path="online-status" element={<AdminOnlineStatus />} />
               <Route path="hero-slides" element={<AdminHeroSlides />} />
               <Route path="visitors" element={<AdminVisitors />} />
+              <Route path="wallet" element={<AdminWallet />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
