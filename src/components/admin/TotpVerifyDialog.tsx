@@ -18,6 +18,7 @@ interface TotpVerifyDialogProps {
   onVerified: () => void;
   title?: string;
   description?: string;
+  functionName?: string;
 }
 
 const TotpVerifyDialog = ({
@@ -26,6 +27,7 @@ const TotpVerifyDialog = ({
   onVerified,
   title = "Two-Factor Verification",
   description = "Enter the 6-digit code from your Google Authenticator app.",
+  functionName = "admin-totp",
 }: TotpVerifyDialogProps) => {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -37,7 +39,7 @@ const TotpVerifyDialog = ({
     }
     setLoading(true);
     try {
-      const res = await supabase.functions.invoke("admin-totp", {
+      const res = await supabase.functions.invoke(functionName, {
         body: { action: "verify", code },
       });
       if (res.error) throw new Error(res.error.message);

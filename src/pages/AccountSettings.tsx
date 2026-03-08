@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Copy, Gift, Users, Check, Loader2, Share2, UserCheck, Briefcase, Clock, RefreshCw, Download } from "lucide-react";
+import UserTotpSetupCard from "@/components/auth/UserTotpSetupCard";
 import { format } from "date-fns";
 
 interface ReferralEntry {
@@ -146,9 +147,10 @@ const AccountSettings = () => {
       <h2 className="text-2xl font-bold text-foreground">Account Settings</h2>
 
       <Tabs defaultValue="referral" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="referral">Invite & Earn</TabsTrigger>
           <TabsTrigger value="history">Referral History</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
 
@@ -311,6 +313,11 @@ const AccountSettings = () => {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Tab: Security */}
+        <TabsContent value="security" className="space-y-4 mt-4">
+          <UserTotpSetupCard />
         </TabsContent>
 
         {/* Tab: Account */}

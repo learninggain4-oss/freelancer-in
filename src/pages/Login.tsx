@@ -22,6 +22,7 @@ const Login = () => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [showTotpDialog, setShowTotpDialog] = useState(false);
   const [pendingAdminNav, setPendingAdminNav] = useState(false);
+  const [pendingUserNav, setPendingUserNav] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, user, profile, loading: authLoading } = useAuth();
@@ -87,7 +88,17 @@ const Login = () => {
             navigate("/admin/dashboard", { replace: true });
           } else {
             const base = prof.user_type === "employee" ? "/employee" : "/client";
-            navigate(`${base}/dashboard`, { replace: true });
+            const dest = `${base}/dashboard`;
+            // Check if user has TOTP enabled
+            const userTotpRes = await supabase.functions.invoke("user-totp", {
+              body: { action: "check_status_by_id", user_id: session.user.id },
+            });
+            if (userTotpRes.data?.is_enabled) {
+              setPendingUserNav(dest);
+              setShowTotpDialog(true);
+              return;
+            }
+            navigate(dest, { replace: true });
           }
           return;
         }
@@ -168,14 +179,22 @@ const Login = () => {
         onClose={() => {
           setShowTotpDialog(false);
           setPendingAdminNav(false);
+          setPendingUserNav(null);
         }}
         onVerified={() => {
           setShowTotpDialog(false);
-          setPendingAdminNav(false);
-          navigate("/admin/dashboard", { replace: true });
+          if (pendingAdminNav) {
+            setPendingAdminNav(false);
+            navigate("/admin/dashboard", { replace: true });
+          } else if (pendingUserNav) {
+            const dest = pendingUserNav;
+            setPendingUserNav(null);
+            navigate(dest, { replace: true });
+          }
         }}
-        title="Admin Verification"
+        title={pendingAdminNav ? "Admin Verification" : "Two-Factor Verification"}
         description="Enter your Google Authenticator code to continue."
+        functionName={pendingAdminNav ? "admin-totp" : "user-totp"}
       />
     </div>
   );
