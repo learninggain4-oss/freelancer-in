@@ -661,7 +661,7 @@ const AdminSettings = () => {
                     await Promise.all([
                       supabase.from("app_settings").upsert({ key: "client_code_prefix", value: cltPrefix.trim() }, { onConflict: "key" }),
                       supabase.from("app_settings").upsert({ key: "client_code_digits", value: String(d) }, { onConflict: "key" }),
-                      supabase.from("app_settings").upsert({ key: "client_code_separator", value: cltSeparator }, { onConflict: "key" }),
+                      supabase.from("app_settings").upsert({ key: "client_code_separator", value: cltSeparator === "none" ? "" : cltSeparator }, { onConflict: "key" }),
                       supabase.from("app_settings").upsert({ key: "client_code_include_year", value: String(cltIncludeYear) }, { onConflict: "key" }),
                       supabase.from("app_settings").upsert({ key: "client_code_include_month", value: String(cltIncludeMonth) }, { onConflict: "key" }),
                     ]);
