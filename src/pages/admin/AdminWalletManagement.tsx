@@ -114,7 +114,7 @@ const AdminWalletManagement = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, user_code, email, user_type, available_balance, hold_balance")
+        .select("id, full_name, user_code, email, user_type, available_balance, hold_balance, wallet_number, wallet_active")
         .in("user_type", ["employee", "client"])
         .order("created_at", { ascending: false });
       if (error) throw error;
