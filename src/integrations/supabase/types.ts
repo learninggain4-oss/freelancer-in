@@ -263,7 +263,9 @@ export type Database = {
       attendance: {
         Row: {
           check_in_at: string
+          check_in_photo_path: string | null
           check_out_at: string | null
+          check_out_photo_path: string | null
           created_at: string
           date: string
           id: string
@@ -272,7 +274,9 @@ export type Database = {
         }
         Insert: {
           check_in_at?: string
+          check_in_photo_path?: string | null
           check_out_at?: string | null
+          check_out_photo_path?: string | null
           created_at?: string
           date?: string
           id?: string
@@ -281,7 +285,9 @@ export type Database = {
         }
         Update: {
           check_in_at?: string
+          check_in_photo_path?: string | null
           check_out_at?: string | null
+          check_out_photo_path?: string | null
           created_at?: string
           date?: string
           id?: string
