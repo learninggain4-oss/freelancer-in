@@ -11,7 +11,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, X, ChevronLeft, ChevronRight, Pencil, Users, Wallet, FolderOpen, ShieldOff, ShieldCheck, Trash2 } from "lucide-react";
+import { Search, X, ChevronLeft, ChevronRight, Pencil, Users, Wallet, FolderOpen, ShieldOff, ShieldCheck, Trash2, CreditCard } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
