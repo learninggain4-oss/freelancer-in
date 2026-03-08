@@ -188,17 +188,6 @@ Deno.serve(async (req) => {
           await adminClient.from("support_conversations").delete().eq("id", supportConvo.id);
         }
 
-        // 6. Clean up audit log references & delete logs where this user was the admin
-        await adminClient.from("admin_audit_logs").update({ target_profile_id: null }).eq("target_profile_id", pid);
-        await adminClient.from("admin_audit_logs").delete().eq("admin_id", pid);
-
-        await adminClient.from("admin_audit_logs").insert({
-          admin_id: callerUserId,
-          action: "permanent_delete_user",
-          target_profile_id: null,
-          target_profile_name: profile.full_name?.[0] || "Unknown",
-          details: { reason: "Permanent deletion by admin", deleted_profile_id: pid },
-        });
 
         // 7. Delete the profile (check for errors)
         const { error: profileDeleteError } = await adminClient.from("profiles").delete().eq("id", pid);
@@ -274,13 +263,6 @@ Deno.serve(async (req) => {
           .eq("user_id", user_id)
           .maybeSingle();
 
-        await adminClient.from("admin_audit_logs").insert({
-          admin_id: callerUserId,
-          action: "force_logout",
-          target_profile_id: targetProfile?.id || null,
-          target_profile_name: targetProfile?.full_name?.[0] || "Unknown",
-          details: { scope: "global" },
-        });
 
         return new Response(JSON.stringify({ success: true, message: "User logged out from all sessions" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -399,14 +381,6 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Audit log
-        await adminClient.from("admin_audit_logs").insert({
-          admin_id: callerUserId,
-          action: "invite_user",
-          target_profile_id: null,
-          target_profile_name: email,
-          details: { email, user_type, invited_user_id: invitedUserId },
-        });
 
         return new Response(JSON.stringify({ success: true, message: `Invite sent to ${email}` }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
