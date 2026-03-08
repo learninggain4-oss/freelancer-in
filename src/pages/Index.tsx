@@ -428,23 +428,9 @@ const Index = () => {
 
       {/* Hero */}
       <section className="relative overflow-hidden px-4 pb-12 pt-16 sm:px-6 md:pb-20 md:pt-24">
-        {/* Background Video */}
-        <div className="absolute inset-0 -z-20 overflow-hidden">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="h-full w-full object-cover"
-            poster="" key="hero-video"
-          >
-            <source src="https://cdn.pixabay.com/video/2016/09/01/4830-181802498_large.mp4" type="video/mp4" />
-          </video>
-        </div>
-        {/* Dark overlay for readability */}
-        <div className="absolute inset-0 -z-10 bg-background/85 backdrop-blur-[2px]" />
-        <div className="absolute -right-32 -top-32 -z-10 h-96 w-96 rounded-full bg-primary/10 blur-3xl" style={{ transform: `translate(${scrollY * -0.08}px, ${scrollY * 0.25}px)` }} />
-        <div className="absolute -bottom-32 -left-32 -z-10 h-96 w-96 rounded-full bg-accent/10 blur-3xl" style={{ transform: `translate(${scrollY * 0.1}px, ${scrollY * -0.2}px)` }} />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/5 via-transparent to-transparent" style={{ transform: `translateY(${scrollY * 0.15}px)` }} />
+        <div className="absolute -right-32 -top-32 -z-10 h-96 w-96 rounded-full bg-primary/5 blur-3xl" style={{ transform: `translate(${scrollY * -0.08}px, ${scrollY * 0.25}px)` }} />
+        <div className="absolute -bottom-32 -left-32 -z-10 h-96 w-96 rounded-full bg-accent/5 blur-3xl" style={{ transform: `translate(${scrollY * 0.1}px, ${scrollY * -0.2}px)` }} />
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-2xl text-center lg:max-w-3xl">
             <div className="mb-5 inline-flex items-center gap-1.5 rounded-full border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground animate-fade-in">
