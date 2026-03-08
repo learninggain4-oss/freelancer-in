@@ -1,4 +1,4 @@
-import { Settings, User, Bell, FileText, Shield, LogOut, Gift, Smartphone } from "lucide-react";
+import { Settings, User, Bell, FileText, Shield, LogOut, Gift, Smartphone, Coins } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -23,6 +23,7 @@ const SideDrawer = ({ open, onOpenChange }: SideDrawerProps) => {
   const menuItems = [
     { label: "Profile", icon: User, path: `${basePath}/profile` },
     { label: "Get Free", icon: Gift, path: `${basePath}/get-free` },
+    { label: "Get Coins", icon: Coins, path: `${basePath}/get-coins` },
     { label: "App", icon: Smartphone, path: `${basePath}/app` },
     { label: "Account Settings", icon: Settings, path: `${basePath}/settings` },
     { label: "Notification Settings", icon: Bell, path: "/notifications" },

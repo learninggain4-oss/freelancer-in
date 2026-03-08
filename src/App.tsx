@@ -53,6 +53,7 @@ const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications")
 const LegalDocument = lazy(() => import("./pages/LegalDocument"));
 const AccountSettings = lazy(() => import("./pages/AccountSettings"));
 const GetFree = lazy(() => import("./pages/GetFree"));
+const GetCoins = lazy(() => import("./pages/GetCoins"));
 const AppPage = lazy(() => import("./pages/AppPage"));
 const EmployeeSupportChat = lazy(() => import("./pages/employee/EmployeeSupportChat"));
 const HelpSupport = lazy(() => import("./pages/HelpSupport"));
@@ -155,6 +156,7 @@ const AppContent = () => {
               <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
               <Route path="settings" element={<AccountSettings />} />
               <Route path="get-free" element={<GetFree />} />
+              <Route path="get-coins" element={<GetCoins />} />
               <Route path="app" element={<AppPage />} />
               <Route path="help-support" element={<HelpSupport />} />
             </Route>
@@ -185,6 +187,7 @@ const AppContent = () => {
               <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
               <Route path="settings" element={<AccountSettings />} />
               <Route path="get-free" element={<GetFree />} />
+              <Route path="get-coins" element={<GetCoins />} />
               <Route path="app" element={<AppPage />} />
               <Route path="help-support" element={<HelpSupport />} />
             </Route>
