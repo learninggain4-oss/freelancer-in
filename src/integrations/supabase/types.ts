@@ -546,6 +546,36 @@ export type Database = {
           },
         ]
       }
+      faqs: {
+        Row: {
+          answer: string
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          question: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          question?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       legal_documents: {
         Row: {
           content: string
@@ -1406,6 +1436,61 @@ export type Database = {
           },
         ]
       }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          project_id: string
+          rating: number
+          reviewee_id: string
+          reviewer_id: string
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          project_id: string
+          rating: number
+          reviewee_id: string
+          reviewer_id: string
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          project_id?: string
+          rating?: number
+          reviewee_id?: string
+          reviewer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_reviewee_id_fkey"
+            columns: ["reviewee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_categories: {
         Row: {
           created_at: string
@@ -1569,6 +1654,45 @@ export type Database = {
           },
         ]
       }
+      testimonials: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          photo_path: string | null
+          quote: string
+          rating: number
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          photo_path?: string | null
+          quote: string
+          rating?: number
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          photo_path?: string | null
+          quote?: string
+          rating?: number
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -1609,6 +1733,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trusted_companies: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          logo_path: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          logo_path?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          logo_path?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
