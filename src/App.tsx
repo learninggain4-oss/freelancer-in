@@ -171,6 +171,14 @@ const AppContent = () => {
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
               <Route path="withdrawals" element={<ClientWithdrawals />} />
               <Route path="profile" element={<ClientProfile />} />
+              <Route path="profile/personal" element={<ProfilePersonalInfo />} />
+              <Route path="profile/professional" element={<ProfileProfessional />} />
+              <Route path="profile/bank-details" element={<ProfileBankDetails />} />
+              <Route path="profile/work-experience" element={<ProfileWorkExperience />} />
+              <Route path="profile/services" element={<ProfileServices />} />
+              <Route path="profile/emergency-contacts" element={<ProfileEmergencyContacts />} />
+              <Route path="profile/aadhaar-verification" element={<ProfileAadhaarVerification />} />
+              <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
               <Route path="settings" element={<AccountSettings />} />
               <Route path="help-support" element={<HelpSupport />} />
             </Route>
