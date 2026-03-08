@@ -619,7 +619,7 @@ const AdminSettings = () => {
                     <SelectItem value="-">Hyphen (-)</SelectItem>
                     <SelectItem value="/">Slash (/)</SelectItem>
                     <SelectItem value=".">Dot (.)</SelectItem>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
