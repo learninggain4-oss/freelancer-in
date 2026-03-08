@@ -263,13 +263,6 @@ const EmployeeAttendance = () => {
         </CardContent>
       </Card>
 
-      {/* Face Verification Dialog */}
-      <FaceVerificationDialog
-        open={faceDialogOpen}
-        onOpenChange={setFaceDialogOpen}
-        onCaptured={handleFaceCaptured}
-        title={faceAction === "check_in" ? "Check-In Verification" : "Check-Out Verification"}
-      />
     </div>
   );
 };
