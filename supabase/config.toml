@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.admin-totp]
 verify_jwt = false
+
+[functions.user-totp]
+verify_jwt = false
