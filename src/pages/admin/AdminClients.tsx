@@ -211,6 +211,13 @@ const AdminClients = () => {
                   <TableCell className="max-w-[160px] truncate text-sm">{c.email}</TableCell>
                   <TableCell className="text-right font-mono text-sm">₹{Number(c.available_balance).toLocaleString("en-IN")}</TableCell>
                   <TableCell className="text-center">{projectCounts[c.id] || 0}</TableCell>
+                  <TableCell className="text-center">
+                    <Switch
+                      checked={c.payment_sharing_enabled}
+                      onCheckedChange={() => handleTogglePaymentSharing(c)}
+                      aria-label="Toggle payment sharing"
+                    />
+                  </TableCell>
                   <TableCell>{statusBadge(c)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
