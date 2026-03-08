@@ -297,7 +297,35 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Features */}
+      {/* Trusted Companies */}
+      <section className="border-t px-4 py-10 sm:px-6">
+        <div className="mx-auto max-w-6xl">
+          <ScrollFadeIn className="text-center mb-6">
+            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              Trusted by professionals from leading companies
+            </p>
+          </ScrollFadeIn>
+          <ScrollFadeIn delay={100}>
+            <div className="relative overflow-hidden">
+              {/* Gradient fades */}
+              <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-background to-transparent" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-background to-transparent" />
+              <div className="animate-scroll-left flex w-max gap-8 sm:gap-12">
+                {[...trustedCompanies, ...trustedCompanies].map((name, i) => (
+                  <div
+                    key={`${name}-${i}`}
+                    className="flex shrink-0 items-center gap-2 rounded-lg border bg-card/60 px-5 py-2.5 shadow-sm"
+                  >
+                    <Building2 className="h-4 w-4 text-primary/60" />
+                    <span className="whitespace-nowrap text-sm font-semibold text-muted-foreground">{name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </ScrollFadeIn>
+        </div>
+      </section>
+
       <section className="border-t bg-muted/30 px-4 py-12 sm:px-6 md:py-20">
         <div className="mx-auto max-w-6xl">
           <ScrollFadeIn className="mx-auto mb-10 max-w-lg text-center">
