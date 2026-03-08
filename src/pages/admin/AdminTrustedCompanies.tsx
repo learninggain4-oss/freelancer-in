@@ -308,22 +308,35 @@ const AdminTrustedCompanies = () => {
             </div>
             <div className="space-y-2">
               <Label>Logo</Label>
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border bg-muted">
-                  {logoPreview ? (
-                    <img src={logoPreview} alt="Preview" className="h-12 w-12 object-contain" />
-                  ) : (
-                    <Building2 className="h-6 w-6 text-muted-foreground" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors hover:bg-muted">
-                    <Upload className="h-4 w-4" />
-                    Upload Logo
-                    <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                  </label>
-                  <p className="mt-1 text-xs text-muted-foreground">PNG or JPG, max 2MB</p>
-                </div>
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors ${
+                  isDragging
+                    ? "border-primary bg-primary/5"
+                    : "border-muted-foreground/25 hover:border-muted-foreground/50"
+                }`}
+              >
+                {logoPreview ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <img src={logoPreview} alt="Preview" className="h-16 w-16 object-contain" />
+                    <p className="text-xs text-muted-foreground">Drag a new image or click below to replace</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload className="h-8 w-8 text-muted-foreground" />
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Drag & drop logo here
+                    </p>
+                    <p className="text-xs text-muted-foreground">PNG or JPG, max 2MB</p>
+                  </div>
+                )}
+                <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted">
+                  <Upload className="h-3.5 w-3.5" />
+                  Browse Files
+                  <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                </label>
               </div>
             </div>
             <div className="space-y-2">
