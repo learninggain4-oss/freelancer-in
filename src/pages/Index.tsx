@@ -350,7 +350,11 @@ const Index = () => {
                     key={`${company.name}-${i}`}
                     className="flex shrink-0 items-center gap-3 rounded-lg border bg-card/60 px-5 py-2.5 shadow-sm"
                   >
-                    <img src={company.logo} alt={company.name} className="h-7 w-7 object-contain" />
+                    {company.logo ? (
+                      <img src={company.logo} alt={company.name} className="h-7 w-7 object-contain" />
+                    ) : (
+                      <div className="h-7 w-7 rounded bg-muted" />
+                    )}
                     <span className="whitespace-nowrap text-sm font-semibold text-muted-foreground">{company.name}</span>
                   </div>
                 ))}
