@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { loginSchema, type LoginFormData } from "@/lib/validations/registration";
 import { supabase } from "@/integrations/supabase/client";
+import TotpVerifyDialog from "@/components/admin/TotpVerifyDialog";
 
 
 
