@@ -62,6 +62,7 @@ const AdminValidation = lazy(() => import("./pages/admin/AdminValidation"));
 const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"));
 const AdminTestimonials = lazy(() => import("./pages/admin/AdminTestimonials"));
 const AdminReferrals = lazy(() => import("./pages/admin/AdminReferrals"));
+const AdminOnlineStatus = lazy(() => import("./pages/admin/AdminOnlineStatus"));
 const Categories = lazy(() => import("./pages/Categories"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
