@@ -282,6 +282,19 @@ const AdminWalletManagement = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const toggleWalletMutation = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase.from("profiles").update({ wallet_active: active } as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      toast.success(vars.active ? "Wallet activated" : "Wallet deactivated");
+      queryClient.invalidateQueries({ queryKey: ["admin-wallet-all-users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-wallet-user"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ["admin-wallet-user"] });
     queryClient.invalidateQueries({ queryKey: ["admin-wallet-transactions"] });
