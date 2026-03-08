@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, ChevronLeft, ChevronRight, PlusCircle, ArrowUpRight } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, PlusCircle, ArrowUpRight, SendHorizontal, Search } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
