@@ -1,4 +1,4 @@
-import { Home, Briefcase, Wallet, User, Menu } from "lucide-react";
+import { Home, Briefcase, Wallet, HelpCircle, Menu } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +15,7 @@ const BottomTabBar = ({ userType, onMenuClick }: BottomTabBarProps) => {
     { label: "Dashboard", icon: Home, path: `${base}/dashboard` },
     { label: "Jobs", icon: Briefcase, path: `${base}/projects` },
     { label: "Wallet", icon: Wallet, path: `${base}/wallet` },
-    { label: "Profile", icon: User, path: `${base}/profile` },
+    { label: "Help", icon: HelpCircle, path: `${base}/help-support` },
   ];
 
   return (
