@@ -3,6 +3,7 @@ import { RefreshCw } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
+import confetti from "canvas-confetti";
 
 const UpdatePrompt = () => {
   const [updating, setUpdating] = useState(false);
@@ -44,6 +45,7 @@ const UpdatePrompt = () => {
         setProgress(100);
         setTimeout(() => {
           setUpdating(false);
+          confetti({ particleCount: 120, spread: 80, origin: { y: 0.9 } });
           toast({ title: "Update complete", description: "App has been updated to the latest version." });
         }, 500);
       });
