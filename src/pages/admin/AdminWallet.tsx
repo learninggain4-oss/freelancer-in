@@ -190,7 +190,88 @@ const AdminWallet = () => {
         </Card>
       </div>
 
+      {/* Transfer Money */}
       <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <SendHorizontal className="h-4 w-4" /> Transfer Money
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Search Recipient</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, code or email..."
+                value={transferSearch}
+                onChange={(e) => {
+                  setTransferSearch(e.target.value);
+                  if (selectedRecipient) setSelectedRecipient(null);
+                }}
+                className="pl-9"
+              />
+            </div>
+            {!selectedRecipient && recipientResults.length > 0 && (
+              <div className="rounded-md border bg-popover shadow-md">
+                {recipientResults.map((u: any) => (
+                  <button
+                    key={u.id}
+                    className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-accent/50 transition-colors"
+                    onClick={() => {
+                      setSelectedRecipient(u);
+                      setTransferSearch(u.full_name?.[0] || "");
+                    }}
+                  >
+                    <span className="font-medium">{u.full_name?.[0]}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {u.user_code?.[0]} · {u.user_type}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {selectedRecipient && (
+              <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-sm">
+                <span className="font-medium">{selectedRecipient.full_name?.[0]}</span>
+                <Badge variant="secondary" className="text-xs">{selectedRecipient.user_code?.[0]}</Badge>
+                <button
+                  className="ml-auto text-xs text-destructive hover:underline"
+                  onClick={() => { setSelectedRecipient(null); setTransferSearch(""); }}
+                >
+                  Change
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label>Amount (₹)</Label>
+            <Input
+              type="number"
+              placeholder="Enter amount"
+              value={transferAmount}
+              onChange={(e) => setTransferAmount(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Description (optional)</Label>
+            <Input
+              placeholder="Reason for transfer"
+              value={transferDescription}
+              onChange={(e) => setTransferDescription(e.target.value)}
+            />
+          </div>
+          <Button
+            className="w-full"
+            onClick={() => transferMutation.mutate()}
+            disabled={transferMutation.isPending || !selectedRecipient}
+          >
+            <SendHorizontal className="mr-2 h-4 w-4" />
+            {transferMutation.isPending ? "Processing..." : "Transfer"}
+          </Button>
+        </CardContent>
+      </Card>
+
         <CardHeader>
           <CardTitle className="text-lg">Transaction History</CardTitle>
         </CardHeader>
