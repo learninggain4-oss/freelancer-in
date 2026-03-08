@@ -90,7 +90,53 @@ const AdminWallet = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  if (!profile) {
+  const { data: recipientResults = [] } = useQuery({
+    queryKey: ["admin-transfer-search", transferSearch],
+    queryFn: async () => {
+      if (!transferSearch || transferSearch.length < 2) return [];
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, full_name, user_code, user_type")
+        .or(`full_name.cs.{${transferSearch}},user_code.cs.{${transferSearch}},email.ilike.%${transferSearch}%`)
+        .neq("id", profile?.id ?? "")
+        .limit(5);
+      return data || [];
+    },
+    enabled: transferSearch.length >= 2,
+  });
+
+  const transferMutation = useMutation({
+    mutationFn: async () => {
+      const amt = Number(transferAmount);
+      if (!amt || amt <= 0) throw new Error("Enter a valid amount");
+      if (!selectedRecipient) throw new Error("Select a recipient");
+      if (!profile?.id) throw new Error("Not authenticated");
+
+      const res = await supabase.functions.invoke("wallet-operations", {
+        body: {
+          action: "admin_wallet_transfer",
+          target_profile_id: profile.id,
+          transfer_to_profile_id: selectedRecipient.id,
+          amount: amt,
+          description: transferDescription || undefined,
+        },
+      });
+      if (res.error) throw new Error(res.error.message);
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success(`₹${Number(transferAmount).toLocaleString("en-IN")} transferred to ${selectedRecipient?.full_name?.[0]}`);
+      setTransferAmount("");
+      setTransferSearch("");
+      setSelectedRecipient(null);
+      setTransferDescription("");
+      refreshProfile();
+      queryClient.invalidateQueries({ queryKey: ["admin-wallet-transactions"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
