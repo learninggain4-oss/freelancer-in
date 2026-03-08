@@ -181,6 +181,7 @@ const App = () => (
                 <Route path="validation" element={<AdminValidation />} />
                 <Route path="sessions" element={<AdminSessions />} />
                 <Route path="testimonials" element={<AdminTestimonials />} />
+                <Route path="referrals" element={<AdminReferrals />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

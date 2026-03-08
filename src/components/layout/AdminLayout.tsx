@@ -16,6 +16,7 @@ import {
   UserCheck,
   Building2,
   Edit,
+  UserPlus,
   FileText,
   Layers,
   IndianRupee,
