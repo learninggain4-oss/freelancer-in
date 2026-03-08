@@ -39,7 +39,7 @@ const TotpVerifyDialog = ({
     }
     setLoading(true);
     try {
-      const res = await supabase.functions.invoke("admin-totp", {
+      const res = await supabase.functions.invoke(functionName, {
         body: { action: "verify", code },
       });
       if (res.error) throw new Error(res.error.message);
