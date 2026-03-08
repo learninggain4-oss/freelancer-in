@@ -205,7 +205,7 @@ const FAQSection = () => {
         .eq("is_active", true)
         .order("display_order", { ascending: true });
       if (error) throw error;
-      return data as { id: string; question: string; answer: string }[];
+      return (data as unknown as { id: string; question: string; answer: string }[]);
     },
     staleTime: 5 * 60 * 1000,
   });
