@@ -31,6 +31,22 @@ const steps = [
   { step: "02", title: "Find Projects", description: "Browse available jobs or post your project requirements." },
   { step: "03", title: "Collaborate", description: "Work together with real-time chat and file sharing." },
   { step: "04", title: "Get Paid", description: "Receive secure payments directly to your UPI or bank account." },
+const heroSlides = [
+  {
+    image: slideFreelancer,
+    title: "Find Top Freelance Talent",
+    subtitle: "Browse verified professionals across 2,700+ categories and hire the perfect match for your project.",
+  },
+  {
+    image: slideCollaborate,
+    title: "Collaborate Seamlessly",
+    subtitle: "Manage projects with real-time chat, file sharing, and milestone tracking — all in one place.",
+  },
+  {
+    image: slidePayments,
+    title: "Secure & Fast Payments",
+    subtitle: "Pay and get paid instantly via UPI or bank transfer with full transaction transparency.",
+  },
 ];
 
 const trustedCompanies = [
