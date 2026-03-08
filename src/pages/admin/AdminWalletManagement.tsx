@@ -99,10 +99,8 @@ const AdminWalletManagement = () => {
   // Pagination
   const TX_PAGE_SIZE = 15;
   const W_PAGE_SIZE = 15;
-  const AL_PAGE_SIZE = 15;
   const [txPage, setTxPage] = useState(1);
   const [wPage, setWPage] = useState(1);
-  const [alPage, setAlPage] = useState(1);
   const [showClearedTx, setShowClearedTx] = useState(false);
   const [showClearedW, setShowClearedW] = useState(false);
 
