@@ -18,6 +18,7 @@ interface TotpVerifyDialogProps {
   onVerified: () => void;
   title?: string;
   description?: string;
+  functionName?: string;
 }
 
 const TotpVerifyDialog = ({
