@@ -28,6 +28,7 @@ const AdminSettings = () => {
   const [signupBonus, setSignupBonus] = useState("");
   const [jobBonus, setJobBonus] = useState("");
   const [referralTerms, setReferralTerms] = useState("");
+  const [coinRate, setCoinRate] = useState("");
   const [empPrefix, setEmpPrefix] = useState("");
   const [cltPrefix, setCltPrefix] = useState("");
   const [empDigits, setEmpDigits] = useState("");
