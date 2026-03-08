@@ -154,37 +154,6 @@ const EmployeeProjects = () => {
     }
   });
 
-  // Fetch my applications (requests)
-  const { data: requests = [], isLoading: loadingRequests } = useQuery({
-    queryKey: ["employee-requests", profile?.id],
-    queryFn: async () => {
-      if (!profile?.id) return [];
-      const { data, error } = await supabase.
-      from("project_applications").
-      select("*, project:project_id(name)").
-      eq("employee_id", profile.id).
-      order("applied_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!profile?.id
-  });
-
-  // Fetch my submissions
-  const { data: submissions = [], isLoading: loadingSubmissions } = useQuery({
-    queryKey: ["employee-submissions", profile?.id],
-    queryFn: async () => {
-      if (!profile?.id) return [];
-      const { data, error } = await supabase.
-      from("project_submissions").
-      select("*, project:project_id(name, end_date)").
-      eq("employee_id", profile.id).
-      order("submitted_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!profile?.id
-  });
 
   // Apply to project
   const applyMutation = useMutation({
