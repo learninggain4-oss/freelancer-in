@@ -220,12 +220,12 @@ const AdminWallet = () => {
                     className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-accent/50 transition-colors"
                     onClick={() => {
                       setSelectedRecipient(u);
-                      setTransferSearch(u.full_name?.[0] || "");
+                      setTransferSearch(u.wallet_number || "");
                     }}
                   >
                     <span className="font-medium">{u.full_name?.[0]}</span>
                     <span className="text-xs text-muted-foreground">
-                      {u.user_code?.[0]} · {u.user_type}
+                      {u.wallet_number} · {u.user_type}
                     </span>
                   </button>
                 ))}
