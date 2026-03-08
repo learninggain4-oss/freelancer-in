@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Briefcase, Shield, MessageCircle, CreditCard, Users, ArrowRight, Star, CheckCircle, Download, Smartphone, Share } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const features = [
   { icon: Shield, title: "Verified Profiles", description: "WhatsApp-verified users with admin approval for authentic interactions." },
@@ -25,7 +27,8 @@ const steps = [
   { step: "04", title: "Get Paid", description: "Receive secure payments directly to your UPI or bank account." },
 ];
 
-const trustedCompanies = [
+// Fallback companies if DB is empty or loading
+const fallbackCompanies = [
   { name: "TCS", logo: "/logos/tcs.png" },
   { name: "Infosys", logo: "/logos/infosys.png" },
   { name: "Wipro", logo: "/logos/wipro.png" },
@@ -175,6 +178,27 @@ const Index = () => {
   const [showIOSTip, setShowIOSTip] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  const { data: dbCompanies } = useQuery({
+    queryKey: ["trusted-companies-landing"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("trusted_companies")
+        .select("*")
+        .eq("is_active", true)
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return data.map((c: any) => ({
+        name: c.name,
+        logo: c.logo_path
+          ? supabase.storage.from("company-logos").getPublicUrl(c.logo_path).data.publicUrl
+          : null,
+      }));
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const trustedCompanies = dbCompanies && dbCompanies.length > 0 ? dbCompanies : fallbackCompanies;
 
   useEffect(() => {
     setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
@@ -326,7 +350,11 @@ const Index = () => {
                     key={`${company.name}-${i}`}
                     className="flex shrink-0 items-center gap-3 rounded-lg border bg-card/60 px-5 py-2.5 shadow-sm"
                   >
-                    <img src={company.logo} alt={company.name} className="h-7 w-7 object-contain" />
+                    {company.logo ? (
+                      <img src={company.logo} alt={company.name} className="h-7 w-7 object-contain" />
+                    ) : (
+                      <div className="h-7 w-7 rounded bg-muted" />
+                    )}
                     <span className="whitespace-nowrap text-sm font-semibold text-muted-foreground">{company.name}</span>
                   </div>
                 ))}
