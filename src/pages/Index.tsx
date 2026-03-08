@@ -475,65 +475,7 @@ const Index = () => {
       </section>
 
       {/* What Clients Say */}
-      <section className="border-t bg-muted/30 px-4 py-12 sm:px-6 md:py-20">
-        <div className="mx-auto max-w-6xl">
-          <ScrollFadeIn className="mx-auto mb-10 max-w-lg text-center">
-            <h2 className="text-2xl font-bold text-foreground sm:text-3xl">What Clients Say</h2>
-            <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-              Hear from businesses that found the perfect freelancers
-            </p>
-          </ScrollFadeIn>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              {
-                name: "Rajesh Kumar",
-                role: "Startup Founder",
-                rating: 5,
-                quote: "Freelancer helped us find talented developers quickly. The payment system is transparent and the project management tools are excellent.",
-              },
-              {
-                name: "Priya Sharma",
-                role: "Marketing Director",
-                rating: 5,
-                quote: "The verification process gives us confidence in every hire. We've completed over 20 projects seamlessly through this platform.",
-              },
-              {
-                name: "Amit Patel",
-                role: "Small Business Owner",
-                rating: 4,
-                quote: "Real-time chat and file sharing made collaboration effortless. The secure UPI payments are a huge plus for Indian businesses.",
-              },
-            ].map((testimonial, i) => (
-              <ScrollFadeIn key={testimonial.name} delay={i * 150}>
-                <Card className="h-full border bg-card transition-all hover:shadow-lg hover:-translate-y-0.5">
-                  <CardContent className="flex flex-col gap-4 p-5 sm:p-6">
-                    <div className="flex gap-0.5">
-                      {Array.from({ length: 5 }).map((_, si) => (
-                        <Star
-                          key={si}
-                          className={`h-4 w-4 ${si < testimonial.rating ? "fill-warning text-warning" : "text-muted"}`}
-                        />
-                      ))}
-                    </div>
-                    <p className="flex-1 text-sm leading-relaxed text-muted-foreground italic">
-                      "{testimonial.quote}"
-                    </p>
-                    <div className="flex items-center gap-3 pt-2 border-t">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                        {testimonial.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{testimonial.name}</p>
-                        <p className="text-xs text-muted-foreground">{testimonial.role}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </ScrollFadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
+      <TestimonialsSection />
 
       {/* FAQ */}
       <FAQSection />
