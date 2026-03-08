@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users, Clock, CheckCircle, Wallet, Fingerprint, Landmark,
   LifeBuoy, Briefcase, Edit, UserCheck, Building2,
-  IndianRupee, UserPlus, MessageSquare,
+  IndianRupee, UserPlus, MessageSquare, Star,
 } from "lucide-react";
 
 const AdminDashboard = () => {
