@@ -68,6 +68,14 @@ const AdminVisitors = lazy(() => import("./pages/admin/AdminVisitors"));
 const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
 const AdminWalletTransactions = lazy(() => import("./pages/admin/AdminWalletTransactions"));
 const Categories = lazy(() => import("./pages/Categories"));
+const ProfilePersonalInfo = lazy(() => import("./pages/profile/ProfilePersonalInfo"));
+const ProfileProfessional = lazy(() => import("./pages/profile/ProfileProfessional"));
+const ProfileBankDetails = lazy(() => import("./pages/profile/ProfileBankDetails"));
+const ProfileWorkExperience = lazy(() => import("./pages/profile/ProfileWorkExperience"));
+const ProfileServices = lazy(() => import("./pages/profile/ProfileServices"));
+const ProfileEmergencyContacts = lazy(() => import("./pages/profile/ProfileEmergencyContacts"));
+const ProfileAadhaarVerification = lazy(() => import("./pages/profile/ProfileAadhaarVerification"));
+const ProfileBankVerification = lazy(() => import("./pages/profile/ProfileBankVerification"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
@@ -135,6 +143,14 @@ const AppContent = () => {
               <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
               <Route path="wallet" element={<EmployeeWallet />} />
               <Route path="profile" element={<EmployeeProfile />} />
+              <Route path="profile/personal" element={<ProfilePersonalInfo />} />
+              <Route path="profile/professional" element={<ProfileProfessional />} />
+              <Route path="profile/bank-details" element={<ProfileBankDetails />} />
+              <Route path="profile/work-experience" element={<ProfileWorkExperience />} />
+              <Route path="profile/services" element={<ProfileServices />} />
+              <Route path="profile/emergency-contacts" element={<ProfileEmergencyContacts />} />
+              <Route path="profile/aadhaar-verification" element={<ProfileAadhaarVerification />} />
+              <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
               <Route path="settings" element={<AccountSettings />} />
               <Route path="help-support" element={<HelpSupport />} />
             </Route>
@@ -155,6 +171,14 @@ const AppContent = () => {
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
               <Route path="withdrawals" element={<ClientWithdrawals />} />
               <Route path="profile" element={<ClientProfile />} />
+              <Route path="profile/personal" element={<ProfilePersonalInfo />} />
+              <Route path="profile/professional" element={<ProfileProfessional />} />
+              <Route path="profile/bank-details" element={<ProfileBankDetails />} />
+              <Route path="profile/work-experience" element={<ProfileWorkExperience />} />
+              <Route path="profile/services" element={<ProfileServices />} />
+              <Route path="profile/emergency-contacts" element={<ProfileEmergencyContacts />} />
+              <Route path="profile/aadhaar-verification" element={<ProfileAadhaarVerification />} />
+              <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
               <Route path="settings" element={<AccountSettings />} />
               <Route path="help-support" element={<HelpSupport />} />
             </Route>

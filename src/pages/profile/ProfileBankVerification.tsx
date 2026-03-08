@@ -1,0 +1,25 @@
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import BankVerificationCard from "@/components/verification/BankVerificationCard";
+
+const ProfileBankVerification = () => {
+  const { profile } = useAuth();
+  const navigate = useNavigate();
+  const base = profile?.user_type === "employee" ? "/employee" : "/client";
+
+  return (
+    <div className="space-y-4 p-4">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={() => navigate(`${base}/profile`)}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <h1 className="text-xl font-bold text-foreground">Bank Verification</h1>
+      </div>
+      <BankVerificationCard />
+    </div>
+  );
+};
+
+export default ProfileBankVerification;
