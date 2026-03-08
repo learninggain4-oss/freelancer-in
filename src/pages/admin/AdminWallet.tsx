@@ -38,8 +38,10 @@ const typeBadgeVariant = (type: string) => {
 };
 
 const AdminWallet = () => {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const [page, setPage] = useState(1);
+  const [addAmount, setAddAmount] = useState("");
+  const queryClient = useQueryClient();
 
   const { data: transactions, isLoading } = useQuery({
     queryKey: ["admin-wallet-transactions", profile?.id, page],
