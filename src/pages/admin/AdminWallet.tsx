@@ -272,6 +272,7 @@ const AdminWallet = () => {
         </CardContent>
       </Card>
 
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg">Transaction History</CardTitle>
         </CardHeader>
