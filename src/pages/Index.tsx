@@ -183,6 +183,72 @@ const ScrollFadeIn = ({ children, className = "", delay = 0 }: { children: React
   );
 };
 
+const HeroSlideshow = () => {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % heroSlides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl" style={{ aspectRatio: "16/7" }}>
+      {heroSlides.map((slide, i) => (
+        <div
+          key={i}
+          className="absolute inset-0 transition-all duration-700 ease-in-out"
+          style={{
+            opacity: i === current ? 1 : 0,
+            transform: i === current ? "scale(1)" : "scale(1.05)",
+          }}
+        >
+          <img
+            src={slide.image}
+            alt={slide.title}
+            className="h-full w-full object-cover"
+            loading={i === 0 ? "eager" : "lazy"}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/30 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8 md:p-10">
+            <h3
+              className="text-lg font-bold text-primary-foreground sm:text-2xl md:text-3xl transition-all duration-500"
+              style={{
+                opacity: i === current ? 1 : 0,
+                transform: i === current ? "translateY(0)" : "translateY(20px)",
+              }}
+            >
+              {slide.title}
+            </h3>
+            <p
+              className="mt-1.5 max-w-xl text-xs text-primary-foreground/80 sm:text-sm md:text-base transition-all duration-500 delay-100"
+              style={{
+                opacity: i === current ? 1 : 0,
+                transform: i === current ? "translateY(0)" : "translateY(20px)",
+              }}
+            >
+              {slide.subtitle}
+            </p>
+          </div>
+        </div>
+      ))}
+      <div className="absolute bottom-3 right-4 flex gap-1.5 sm:bottom-5 sm:right-6">
+        {heroSlides.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrent(i)}
+            className={cn(
+              "h-2 rounded-full transition-all duration-300",
+              i === current ? "w-6 bg-primary-foreground" : "w-2 bg-primary-foreground/40 hover:bg-primary-foreground/60"
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const allCategories = [
   { icon: Code, label: "Web Development", count: "450+" },
   { icon: Palette, label: "Graphic Design", count: "380+" },
