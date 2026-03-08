@@ -11,8 +11,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, X, ChevronLeft, ChevronRight, Pencil, Users, Wallet, FolderOpen, ShieldOff, ShieldCheck, Trash2, CreditCard } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
+import { Search, X, ChevronLeft, ChevronRight, Pencil, Users, Wallet, FolderOpen, ShieldOff, ShieldCheck, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -29,7 +28,6 @@ type ClientRow = {
   is_disabled: boolean;
   created_at: string;
   mobile_number: string | null;
-  payment_sharing_enabled: boolean;
 };
 
 const AdminClients = () => {
@@ -47,7 +45,7 @@ const AdminClients = () => {
     const [{ data: cls }, { data: projs }] = await Promise.all([
       supabase
         .from("profiles")
-        .select("id, full_name, user_code, email, approval_status, available_balance, hold_balance, is_disabled, created_at, mobile_number, payment_sharing_enabled")
+        .select("id, full_name, user_code, email, approval_status, available_balance, hold_balance, is_disabled, created_at, mobile_number")
         .eq("user_type", "client")
         .order("created_at", { ascending: false }),
       supabase
@@ -95,20 +93,6 @@ const AdminClients = () => {
     } else {
       toast.success("Client permanently deleted");
       fetchData();
-    }
-  };
-
-  const handleTogglePaymentSharing = async (client: ClientRow) => {
-    const newVal = !client.payment_sharing_enabled;
-    const { error } = await supabase
-      .from("profiles")
-      .update({ payment_sharing_enabled: newVal })
-      .eq("id", client.id);
-    if (error) {
-      toast.error("Failed to update payment sharing");
-    } else {
-      toast.success(`Payment sharing ${newVal ? "enabled" : "disabled"} for ${client.full_name?.[0]}`);
-      setClients((prev) => prev.map((c) => c.id === client.id ? { ...c, payment_sharing_enabled: newVal } : c));
     }
   };
 
@@ -193,16 +177,15 @@ const AdminClients = () => {
               <TableHead>Email</TableHead>
               <TableHead className="text-right">Balance</TableHead>
               <TableHead className="text-center">Projects</TableHead>
-              <TableHead className="text-center">Payment Sharing</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={8} className="py-8 text-center text-muted-foreground">Loading…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">Loading…</TableCell></TableRow>
             ) : paginated.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="py-8 text-center text-muted-foreground">No clients found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">No clients found</TableCell></TableRow>
             ) : (
               paginated.map((c) => (
                 <TableRow key={c.id}>
@@ -211,13 +194,6 @@ const AdminClients = () => {
                   <TableCell className="max-w-[160px] truncate text-sm">{c.email}</TableCell>
                   <TableCell className="text-right font-mono text-sm">₹{Number(c.available_balance).toLocaleString("en-IN")}</TableCell>
                   <TableCell className="text-center">{projectCounts[c.id] || 0}</TableCell>
-                  <TableCell className="text-center">
-                    <Switch
-                      checked={c.payment_sharing_enabled}
-                      onCheckedChange={() => handleTogglePaymentSharing(c)}
-                      aria-label="Toggle payment sharing"
-                    />
-                  </TableCell>
                   <TableCell>{statusBadge(c)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">

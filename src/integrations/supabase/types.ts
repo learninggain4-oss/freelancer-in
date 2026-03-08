@@ -894,7 +894,6 @@ export type Database = {
             | Database["public"]["Enums"]["marital_status_type"]
             | null
           mobile_number: string | null
-          payment_sharing_enabled: boolean
           previous_job_details: string | null
           profile_photo_path: string | null
           referral_code: string
@@ -946,7 +945,6 @@ export type Database = {
             | Database["public"]["Enums"]["marital_status_type"]
             | null
           mobile_number?: string | null
-          payment_sharing_enabled?: boolean
           previous_job_details?: string | null
           profile_photo_path?: string | null
           referral_code: string
@@ -998,7 +996,6 @@ export type Database = {
             | Database["public"]["Enums"]["marital_status_type"]
             | null
           mobile_number?: string | null
-          payment_sharing_enabled?: boolean
           previous_job_details?: string | null
           profile_photo_path?: string | null
           referral_code?: string

@@ -238,31 +238,14 @@ const PaymentExchangePanel = ({
   });
 
   const { data: clientSharingEnabled = true } = useQuery({
-    queryKey: ["client-payment-sharing-setting", projectId],
+    queryKey: ["client-payment-sharing-setting"],
     queryFn: async () => {
-      // Check global setting
-      const { data: globalSetting } = await supabase
+      const { data } = await supabase
         .from("app_settings")
         .select("value")
         .eq("key", "client_payment_sharing_enabled")
         .maybeSingle();
-      const globalEnabled = globalSetting?.value !== "false";
-      if (!globalEnabled) return false;
-
-      // Check per-client setting via project's client_id
-      const { data: project } = await supabase
-        .from("projects")
-        .select("client_id")
-        .eq("id", projectId)
-        .maybeSingle();
-      if (!project?.client_id) return globalEnabled;
-
-      const { data: clientProfile } = await supabase
-        .from("profiles")
-        .select("payment_sharing_enabled")
-        .eq("id", project.client_id)
-        .maybeSingle();
-      return clientProfile?.payment_sharing_enabled !== false;
+      return data?.value !== "false";
     },
   });
 
