@@ -22,6 +22,7 @@ const VerificationPending = lazy(() => import("./pages/VerificationPending"));
 const EmployeeDashboard = lazy(() => import("./pages/employee/EmployeeDashboard"));
 const EmployeeProjects = lazy(() => import("./pages/employee/EmployeeProjects"));
 const EmployeeWallet = lazy(() => import("./pages/employee/EmployeeWallet"));
+const EmployeeAttendance = lazy(() => import("./pages/employee/EmployeeAttendance"));
 const EmployeeProfile = lazy(() => import("./pages/employee/EmployeeProfile"));
 const ClientDashboard = lazy(() => import("./pages/client/ClientDashboard"));
 const ClientWallet = lazy(() => import("./pages/client/ClientWallet"));
