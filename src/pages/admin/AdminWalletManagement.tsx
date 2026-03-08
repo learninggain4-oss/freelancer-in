@@ -186,21 +186,6 @@ const AdminWalletManagement = () => {
     enabled: !!selectedUser?.id,
   });
 
-  // Audit Logs
-  const { data: auditLogs = [], isLoading: loadingAL } = useQuery({
-    queryKey: ["admin-wallet-audit-logs", selectedUser?.id],
-    queryFn: async () => {
-      if (!selectedUser?.id) return [];
-      const { data } = await supabase
-        .from("admin_audit_logs")
-        .select("*, admin_profile:profiles!admin_audit_logs_admin_id_fkey(full_name)")
-        .eq("target_profile_id", selectedUser.id)
-        .order("created_at", { ascending: false })
-        .limit(100);
-      return (data || []) as AuditLog[];
-    },
-    enabled: !!selectedUser?.id,
-  });
 
   const walletAction = useMutation({
     mutationFn: async (params: {
