@@ -202,7 +202,7 @@ const HeroSlideshow = () => {
   if (slides.length === 0) return null;
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl" style={{ aspectRatio: "16/7" }}>
+    <div className="relative w-full overflow-hidden rounded-2xl shadow-2xl" style={{ aspectRatio: "16/5" }}>
       {slides.map((slide, i) => (
         <div
           key={i}
@@ -219,7 +219,7 @@ const HeroSlideshow = () => {
             loading={i === 0 ? "eager" : "lazy"}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/30 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8 md:p-10">
+          <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6 md:p-8">
             <h3
               className="text-lg font-bold text-primary-foreground sm:text-2xl md:text-3xl transition-all duration-500"
               style={{
