@@ -135,7 +135,6 @@ const EmployeeDashboard = () => {
     { icon: Briefcase, label: "Jobs", to: "/employee/projects", color: "text-primary" },
     { icon: ArrowDownToLine, label: "Withdraw", to: "/employee/wallet", color: "text-accent" },
     { icon: FileText, label: "Submissions", to: "/employee/projects", color: "text-warning" },
-    { icon: MessageSquare, label: "Messages", to: "/employee/projects", color: "text-secondary" },
   ];
 
   return (
