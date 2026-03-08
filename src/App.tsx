@@ -60,6 +60,7 @@ const AdminPaymentMethods = lazy(() => import("./pages/admin/AdminPaymentMethods
 const AdminCountdowns = lazy(() => import("./pages/admin/AdminCountdowns"));
 const AdminValidation = lazy(() => import("./pages/admin/AdminValidation"));
 const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"));
+const AdminTrustedCompanies = lazy(() => import("./pages/admin/AdminTrustedCompanies"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
