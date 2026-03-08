@@ -391,6 +391,41 @@ export type Database = {
           },
         ]
       }
+      coin_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          profile_id: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          id?: string
+          profile_id: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          profile_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coin_transactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       countdowns: {
         Row: {
           created_at: string
@@ -963,6 +998,7 @@ export type Database = {
           bank_holder_name: string | null
           bank_ifsc_code: string | null
           bank_name: string | null
+          coin_balance: number
           created_at: string
           date_of_birth: string | null
           disabled_reason: string | null
@@ -1018,6 +1054,7 @@ export type Database = {
           bank_holder_name?: string | null
           bank_ifsc_code?: string | null
           bank_name?: string | null
+          coin_balance?: number
           created_at?: string
           date_of_birth?: string | null
           disabled_reason?: string | null
@@ -1073,6 +1110,7 @@ export type Database = {
           bank_holder_name?: string | null
           bank_ifsc_code?: string | null
           bank_name?: string | null
+          coin_balance?: number
           created_at?: string
           date_of_birth?: string | null
           disabled_reason?: string | null
