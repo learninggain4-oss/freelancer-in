@@ -175,6 +175,7 @@ const App = () => (
                 <Route path="countdowns" element={<AdminCountdowns />} />
                 <Route path="validation" element={<AdminValidation />} />
                 <Route path="sessions" element={<AdminSessions />} />
+                <Route path="testimonials" element={<AdminTestimonials />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

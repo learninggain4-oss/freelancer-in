@@ -59,6 +59,7 @@ const navItems = [
   { label: "Announcements", icon: Megaphone, path: "/admin/announcements" },
   { label: "Settings", icon: Settings, path: "/admin/settings" },
   { label: "Sessions", icon: Monitor, path: "/admin/sessions" },
+  { label: "Testimonials", icon: Quote, path: "/admin/testimonials" },
 ];
 
 const AdminLayout = () => {
