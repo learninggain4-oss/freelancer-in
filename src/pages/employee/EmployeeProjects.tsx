@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,7 @@ import {
   Calendar,
   User,
   FileText,
-  MessageSquare,
+  
   Send,
   Tag,
   Paperclip,
@@ -102,7 +101,7 @@ const EmployeeProjects = () => {
   const [mySkillsActive, setMySkillsActive] = useState(false);
   const { profile } = useAuth();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  
 
   // Fetch categories for filter
   const { data: categories = [] } = useQuery({
@@ -155,37 +154,6 @@ const EmployeeProjects = () => {
     }
   });
 
-  // Fetch my applications (requests)
-  const { data: requests = [], isLoading: loadingRequests } = useQuery({
-    queryKey: ["employee-requests", profile?.id],
-    queryFn: async () => {
-      if (!profile?.id) return [];
-      const { data, error } = await supabase.
-      from("project_applications").
-      select("*, project:project_id(name)").
-      eq("employee_id", profile.id).
-      order("applied_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!profile?.id
-  });
-
-  // Fetch my submissions
-  const { data: submissions = [], isLoading: loadingSubmissions } = useQuery({
-    queryKey: ["employee-submissions", profile?.id],
-    queryFn: async () => {
-      if (!profile?.id) return [];
-      const { data, error } = await supabase.
-      from("project_submissions").
-      select("*, project:project_id(name, end_date)").
-      eq("employee_id", profile.id).
-      order("submitted_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!profile?.id
-  });
 
   // Apply to project
   const applyMutation = useMutation({
@@ -235,72 +203,16 @@ const EmployeeProjects = () => {
         </Button>
       )}
 
-      <Tabs defaultValue="inquiries" className="w-full">
-        <TabsList className="w-full">
-          <TabsTrigger value="inquiries" className="flex-1 text-xs">Inquiries</TabsTrigger>
-          <TabsTrigger value="requests" className="flex-1 text-xs">Requests</TabsTrigger>
-          <TabsTrigger value="submissions" className="flex-1 text-xs">Submissions</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="inquiries" className="mt-4 space-y-3">
-          {loadingInquiries ?
+      <div className="space-y-3">
+        {loadingInquiries ?
           Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-40 w-full" />) :
           inquiries.length > 0 ?
-          inquiries.map((p: any) =>
-           <InquiryCard key={p.id} project={p} onApply={() => applyMutation.mutate(p.id)} isPending={applyMutation.isPending} />
-          ) :
-
-          <p className="py-8 text-center text-sm text-muted-foreground">No open projects available</p>
-          }
-        </TabsContent>
-
-        <TabsContent value="requests" className="mt-4 space-y-3">
-          {loadingRequests ?
-          Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />) :
-          requests.length > 0 ?
-          requests.map((r: any) =>
-          <Card key={r.id}>
-                <CardContent className="flex items-center justify-between p-4">
-                  <div>
-                    <h3 className="font-semibold text-foreground">{r.project?.name ?? "Project"}</h3>
-                    <p className="text-xs text-muted-foreground">Applied: {new Date(r.applied_at).toLocaleDateString()}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {r.status === "approved" &&
-                <Button size="sm" variant="outline" onClick={() => navigate(`/employee/projects/chat/${r.project_id}`)}>
-                        <MessageSquare className="mr-1 h-3 w-3" /> Chat
-                      </Button>
-                }
-                    <Badge className={statusColor[r.status]}>{r.status}</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-          ) :
-
-          <p className="py-8 text-center text-sm text-muted-foreground">No applications yet</p>
-          }
-        </TabsContent>
-
-        <TabsContent value="submissions" className="mt-4 space-y-3">
-          {loadingSubmissions ?
-          <Skeleton className="h-16 w-full" /> :
-          submissions.length > 0 ?
-          submissions.map((s: any) =>
-          <Card key={s.id}>
-                <CardContent className="flex items-center justify-between p-4">
-                  <div>
-                    <h3 className="font-semibold text-foreground">{s.project?.name ?? "Project"}</h3>
-                    <p className="text-xs text-muted-foreground">Submitted: {new Date(s.submitted_at).toLocaleDateString()}</p>
-                  </div>
-                  <Badge className="bg-primary/10 text-primary">Submitted</Badge>
-                </CardContent>
-              </Card>
-          ) :
-
-          <p className="py-8 text-center text-sm text-muted-foreground">No submissions yet</p>
-          }
-        </TabsContent>
-      </Tabs>
+            inquiries.map((p: any) =>
+              <InquiryCard key={p.id} project={p} onApply={() => applyMutation.mutate(p.id)} isPending={applyMutation.isPending} />
+            ) :
+            <p className="py-8 text-center text-sm text-muted-foreground">No open projects available</p>
+        }
+      </div>
     </div>);
 
 };
