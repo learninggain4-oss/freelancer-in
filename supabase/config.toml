@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.withdrawal-password]
 verify_jwt = false
+
+[functions.coin-operations]
+verify_jwt = false

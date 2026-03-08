@@ -1,13 +1,19 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Coins, Star, CheckCircle, Trophy, IndianRupee } from "lucide-react";
+import { Coins, Star, CheckCircle, Trophy, IndianRupee, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const GetCoins = () => {
+  const { profile, refreshProfile } = useAuth();
   const [coinRate, setCoinRate] = useState<number>(100);
   const [minCoins, setMinCoins] = useState<number>(250);
-  const userCoins = 0; // placeholder until coin tracking is implemented
+  const [converting, setConverting] = useState(false);
+  const [totalRedeemed, setTotalRedeemed] = useState(0);
+
+  const userCoins = (profile as any)?.coin_balance ?? 0;
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -24,6 +30,42 @@ const GetCoins = () => {
     };
     fetchSettings();
   }, []);
+
+  useEffect(() => {
+    if (!profile) return;
+    const fetchRedeemed = async () => {
+      const { data } = await supabase
+        .from("coin_transactions" as any)
+        .select("amount")
+        .eq("profile_id", profile.id)
+        .eq("type", "conversion");
+      if (data) {
+        const total = (data as any[]).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+        setTotalRedeemed(total);
+      }
+    };
+    fetchRedeemed();
+  }, [profile]);
+
+  const handleConvert = async () => {
+    if (userCoins < minCoins) return;
+    setConverting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("coin-operations", {
+        body: { action: "convert_coins" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Converted ${data.coins_converted} coins to ₹${Number(data.rupees_credited).toFixed(2)}`);
+      await refreshProfile();
+      // Refresh redeemed count
+      setTotalRedeemed((prev) => prev + (data.coins_converted || 0));
+    } catch (err: any) {
+      toast.error(err.message || "Conversion failed");
+    } finally {
+      setConverting(false);
+    }
+  };
 
   return (
     <div className="space-y-6 px-4 py-6">
@@ -45,24 +87,24 @@ const GetCoins = () => {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <Coins className="h-5 w-5 text-primary" />
-            Earn Coins
+            Your Coins
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Complete activities on the platform and earn coins that you can redeem for rewards!
+            Complete activities on the platform and earn coins that you can convert to wallet balance!
           </p>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg bg-background p-3 text-center">
               <Coins className="mx-auto mb-1 h-5 w-5 text-amber-500" />
-              <p className="text-xl font-bold text-foreground">0</p>
-              <p className="text-xs text-muted-foreground">Total Coins</p>
-              <p className="text-[10px] text-muted-foreground">≈ ₹{(0 / coinRate).toFixed(2)}</p>
+              <p className="text-xl font-bold text-foreground">{userCoins}</p>
+              <p className="text-xs text-muted-foreground">Available Coins</p>
+              <p className="text-[10px] text-muted-foreground">≈ ₹{(userCoins / coinRate).toFixed(2)}</p>
             </div>
             <div className="rounded-lg bg-background p-3 text-center">
               <Trophy className="mx-auto mb-1 h-5 w-5 text-amber-500" />
-              <p className="text-xl font-bold text-foreground">0</p>
+              <p className="text-xl font-bold text-foreground">{totalRedeemed}</p>
               <p className="text-xs text-muted-foreground">Redeemed</p>
             </div>
           </div>
@@ -104,17 +146,22 @@ const GetCoins = () => {
           </div>
           <Button
             className="w-full gap-2"
-            disabled={userCoins < minCoins}
+            disabled={userCoins < minCoins || converting}
+            onClick={handleConvert}
           >
-            <IndianRupee className="h-4 w-4" />
-            {userCoins >= minCoins ? "Convert to Wallet" : `Minimum ${minCoins} Coins Required`}
+            {converting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <IndianRupee className="h-4 w-4" />
+            )}
+            {converting
+              ? "Converting..."
+              : userCoins >= minCoins
+                ? `Convert ${userCoins} Coins to ₹${(userCoins / coinRate).toFixed(2)}`
+                : `Minimum ${minCoins} Coins Required`}
           </Button>
         </CardContent>
       </Card>
-
-      <p className="text-center text-xs text-muted-foreground">
-        Coin rewards system coming soon. Stay tuned!
-      </p>
     </div>
   );
 };
