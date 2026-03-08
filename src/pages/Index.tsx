@@ -194,6 +194,45 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
   );
 };
 
+/** Dynamic FAQ section that fetches from Supabase */
+const FAQSection = () => {
+  const { data: faqs = [], isLoading } = useQuery({
+    queryKey: ["landing-faqs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("faqs" as any)
+        .select("id, question, answer")
+        .eq("is_active", true)
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return data as { id: string; question: string; answer: string }[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  if (isLoading || faqs.length === 0) return null;
+
+  return (
+    <section className="border-t px-4 py-12 sm:px-6 md:py-20">
+      <div className="mx-auto max-w-3xl">
+        <ScrollFadeIn className="mb-10 text-center">
+          <h2 className="text-2xl font-bold text-foreground sm:text-3xl">Frequently Asked Questions</h2>
+          <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+            Got questions? We've got answers.
+          </p>
+        </ScrollFadeIn>
+        <div className="space-y-3">
+          {faqs.map((faq, i) => (
+            <ScrollFadeIn key={faq.id} delay={i * 80}>
+              <FAQItem question={faq.question} answer={faq.answer} />
+            </ScrollFadeIn>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const Index = () => {
   const { user, profile, loading } = useAuth();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
