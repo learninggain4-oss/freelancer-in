@@ -101,7 +101,7 @@ const EmployeeProjects = () => {
   const [mySkillsActive, setMySkillsActive] = useState(false);
   const { profile } = useAuth();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  
 
   // Fetch categories for filter
   const { data: categories = [] } = useQuery({
