@@ -141,7 +141,7 @@ const AdminWalletManagement = () => {
       if (!selectedUser?.id) return null;
       const { data } = await supabase
         .from("profiles")
-        .select("id, full_name, user_code, email, user_type, available_balance, hold_balance")
+        .select("id, full_name, user_code, email, user_type, available_balance, hold_balance, wallet_number, wallet_active")
         .eq("id", selectedUser.id)
         .single();
       return data as Profile | null;
