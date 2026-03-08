@@ -76,6 +76,7 @@ const queryClient = new QueryClient();
 /** Activates global chat toast notifications for logged-in users */
 const GlobalChatNotifier = () => {
   useChatNotifications();
+  usePresenceHeartbeat();
   return null;
 };
 
