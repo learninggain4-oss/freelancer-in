@@ -86,6 +86,7 @@ const ProfileServices = lazy(() => import("./pages/profile/ProfileServices"));
 const ProfileEmergencyContacts = lazy(() => import("./pages/profile/ProfileEmergencyContacts"));
 const ProfileAadhaarVerification = lazy(() => import("./pages/profile/ProfileAadhaarVerification"));
 const ProfileBankVerification = lazy(() => import("./pages/profile/ProfileBankVerification"));
+const ProfileUpiApps = lazy(() => import("./pages/profile/ProfileUpiApps"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
