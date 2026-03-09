@@ -71,6 +71,7 @@ const navItems = [
   { label: "Testimonials", icon: MessageSquareQuote, path: "/admin/testimonials" },
   { label: "Site Visitors", icon: Eye, path: "/admin/visitors" },
   { label: "Attendance", icon: ClipboardCheck, path: "/admin/attendance" },
+  { label: "Banks", icon: Landmark, path: "/admin/banks" },
 ];
 
 const AdminLayout = () => {
