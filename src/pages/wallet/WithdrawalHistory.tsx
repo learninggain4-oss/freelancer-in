@@ -53,6 +53,11 @@ const WithdrawalHistory = () => {
     return Array.isArray(emp.full_name) ? emp.full_name.join(" ") : emp.full_name;
   };
 
+  const copyOrderId = (orderId: string) => {
+    navigator.clipboard.writeText(orderId);
+    toast.success("Order ID copied!");
+  };
+
   return (
     <div className="space-y-4 p-4">
       <div className="flex items-center gap-3">
