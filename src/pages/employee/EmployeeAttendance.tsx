@@ -9,6 +9,7 @@ import { toast } from "@/components/ui/use-toast";
 import { format, startOfMonth, endOfMonth, isSameDay } from "date-fns";
 import { ClipboardCheck, LogIn, LogOut, CalendarDays, Flame, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import FaceVerificationDialog from "@/components/attendance/FaceVerificationDialog";
 
 interface AttendanceRecord {
   id: string;
@@ -28,6 +29,10 @@ const EmployeeAttendance = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(false);
+  const [faceDialogOpen, setFaceDialogOpen] = useState(false);
+  const [faceAction, setFaceAction] = useState<"check-in" | "check-out">("check-in");
+  const [checkInPhotoUrl, setCheckInPhotoUrl] = useState<string | null>(null);
+  const [checkOutPhotoUrl, setCheckOutPhotoUrl] = useState<string | null>(null);
 
   const today = new Date();
   const todayStr = format(today, "yyyy-MM-dd");
@@ -41,6 +46,24 @@ const EmployeeAttendance = () => {
       .eq("date", todayStr)
       .maybeSingle();
     setTodayRecord(data as AttendanceRecord | null);
+
+    // Fetch signed URLs for photos
+    if (data?.check_in_photo_path) {
+      const { data: urlData } = await supabase.storage
+        .from("attendance-photos")
+        .createSignedUrl(data.check_in_photo_path, 3600);
+      setCheckInPhotoUrl(urlData?.signedUrl || null);
+    } else {
+      setCheckInPhotoUrl(null);
+    }
+    if (data?.check_out_photo_path) {
+      const { data: urlData } = await supabase.storage
+        .from("attendance-photos")
+        .createSignedUrl(data.check_out_photo_path, 3600);
+      setCheckOutPhotoUrl(urlData?.signedUrl || null);
+    } else {
+      setCheckOutPhotoUrl(null);
+    }
   };
 
   const fetchMonthRecords = async () => {
@@ -64,39 +87,68 @@ const EmployeeAttendance = () => {
     fetchMonthRecords();
   }, [profile, currentMonth]);
 
-  const handleCheckIn = async () => {
-    if (!profile) return;
-    setLoading(true);
-    const { error } = await supabase.from("attendance").insert({
-      profile_id: profile.id,
-      date: todayStr,
-      check_in_at: new Date().toISOString(),
-      status: "present",
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Checked In ✅", description: "Your attendance has been recorded." });
-      fetchTodayRecord();
-      fetchMonthRecords();
-    }
+  const openFaceDialog = (action: "check-in" | "check-out") => {
+    setFaceAction(action);
+    setFaceDialogOpen(true);
   };
 
-  const handleCheckOut = async () => {
-    if (!profile || !todayRecord) return;
-    setLoading(true);
-    const { error } = await supabase
-      .from("attendance")
-      .update({ check_out_at: new Date().toISOString() })
-      .eq("id", todayRecord.id);
-    setLoading(false);
+  const uploadPhoto = async (blob: Blob): Promise<string | null> => {
+    if (!profile) return null;
+    const filePath = `${profile.id}/${todayStr}-${faceAction}.jpg`;
+    const { error } = await supabase.storage
+      .from("attendance-photos")
+      .upload(filePath, blob, { upsert: true, contentType: "image/jpeg" });
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Upload Error", description: error.message, variant: "destructive" });
+      return null;
+    }
+    return filePath;
+  };
+
+  const handleFaceCaptured = async (blob: Blob) => {
+    if (!profile) return;
+    setLoading(true);
+    setFaceDialogOpen(false);
+
+    const photoPath = await uploadPhoto(blob);
+    if (!photoPath) {
+      setLoading(false);
+      return;
+    }
+
+    if (faceAction === "check-in") {
+      const { error } = await supabase.from("attendance").insert({
+        profile_id: profile.id,
+        date: todayStr,
+        check_in_at: new Date().toISOString(),
+        status: "present",
+        check_in_photo_path: photoPath,
+      });
+      setLoading(false);
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Checked In ✅", description: "Your attendance has been recorded." });
+        fetchTodayRecord();
+        fetchMonthRecords();
+      }
     } else {
-      toast({ title: "Checked Out 👋", description: "See you tomorrow!" });
-      fetchTodayRecord();
-      fetchMonthRecords();
+      if (!todayRecord) {
+        setLoading(false);
+        return;
+      }
+      const { error } = await supabase
+        .from("attendance")
+        .update({ check_out_at: new Date().toISOString(), check_out_photo_path: photoPath })
+        .eq("id", todayRecord.id);
+      setLoading(false);
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Checked Out 👋", description: "See you tomorrow!" });
+        fetchTodayRecord();
+        fetchMonthRecords();
+      }
     }
   };
 
@@ -155,7 +207,7 @@ const EmployeeAttendance = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           {!todayRecord ? (
-            <Button onClick={handleCheckIn} disabled={loading} className="w-full gap-2">
+            <Button onClick={() => openFaceDialog("check-in")} disabled={loading} className="w-full gap-2">
               <LogIn className="h-4 w-4" />
               Check In
             </Button>
@@ -165,13 +217,16 @@ const EmployeeAttendance = () => {
                 <Clock className="h-4 w-4" />
                 Checked in at {format(new Date(todayRecord.check_in_at), "hh:mm a")}
               </div>
-              <Button onClick={handleCheckOut} disabled={loading} variant="secondary" className="w-full gap-2">
+              {checkInPhotoUrl && (
+                <img src={checkInPhotoUrl} alt="Check-in selfie" className="w-16 h-16 rounded-md object-cover border" />
+              )}
+              <Button onClick={() => openFaceDialog("check-out")} disabled={loading} variant="secondary" className="w-full gap-2">
                 <LogOut className="h-4 w-4" />
                 Check Out
               </Button>
             </>
           ) : (
-            <div className="space-y-1 text-sm text-muted-foreground">
+            <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <LogIn className="h-4 w-4 text-accent" />
                 In: {format(new Date(todayRecord.check_in_at), "hh:mm a")}
@@ -180,6 +235,12 @@ const EmployeeAttendance = () => {
                 <LogOut className="h-4 w-4 text-accent" />
                 Out: {format(new Date(todayRecord.check_out_at), "hh:mm a")}
               </div>
+              {(checkInPhotoUrl || checkOutPhotoUrl) && (
+                <div className="flex gap-2 pt-1">
+                  {checkInPhotoUrl && <img src={checkInPhotoUrl} alt="Check-in" className="w-14 h-14 rounded-md object-cover border" />}
+                  {checkOutPhotoUrl && <img src={checkOutPhotoUrl} alt="Check-out" className="w-14 h-14 rounded-md object-cover border" />}
+                </div>
+              )}
               <Badge variant="secondary" className="mt-2 bg-accent/10 text-accent">
                 ✅ Attendance Complete
               </Badge>
@@ -263,6 +324,12 @@ const EmployeeAttendance = () => {
         </CardContent>
       </Card>
 
+      <FaceVerificationDialog
+        open={faceDialogOpen}
+        onOpenChange={setFaceDialogOpen}
+        onCaptured={handleFaceCaptured}
+        title={faceAction === "check-in" ? "Check In Verification" : "Check Out Verification"}
+      />
     </div>
   );
 };
