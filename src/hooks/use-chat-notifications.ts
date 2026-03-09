@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { playNotificationSound, showBrowserPush } from "@/utils/notification-sounds";
 
 /**
  * Global hook: shows a toast when a new chat message arrives
@@ -63,6 +64,9 @@ export const useChatNotifications = () => {
             description: "New chat message",
             duration: 5000,
           });
+
+          playNotificationSound("chat");
+          showBrowserPush(senderName, preview, "chat");
         }
       )
       .subscribe();
