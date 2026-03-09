@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Coins, Star, CheckCircle, Trophy, IndianRupee, Loader2 } from "lucide-react";
+import { Coins, CheckCircle, Briefcase, Calendar, Star, Users, Trophy, IndianRupee, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -12,6 +12,13 @@ const GetCoins = () => {
   const [minCoins, setMinCoins] = useState<number>(250);
   const [converting, setConverting] = useState(false);
   const [totalRedeemed, setTotalRedeemed] = useState(0);
+  const [rewards, setRewards] = useState({
+    complete_profile: 1000,
+    complete_project: 2000,
+    daily_attendance: 3000,
+    star_review: 3000,
+    referral_10: 10000,
+  });
 
   const userCoins = (profile as any)?.coin_balance ?? 0;
 
@@ -20,11 +27,29 @@ const GetCoins = () => {
       const { data } = await supabase
         .from("app_settings")
         .select("key, value")
-        .in("key", ["coin_conversion_rate", "min_coin_conversion"]);
+        .in("key", [
+          "coin_conversion_rate",
+          "min_coin_conversion",
+          "coin_reward_complete_profile",
+          "coin_reward_complete_project",
+          "coin_reward_daily_attendance",
+          "coin_reward_5star_review",
+          "coin_reward_referral_10",
+        ]);
       if (data) {
         for (const row of data) {
           if (row.key === "coin_conversion_rate") setCoinRate(Number(row.value) || 100);
           if (row.key === "min_coin_conversion") setMinCoins(Number(row.value) || 250);
+          if (row.key === "coin_reward_complete_profile")
+            setRewards((prev) => ({ ...prev, complete_profile: Number(row.value) || 1000 }));
+          if (row.key === "coin_reward_complete_project")
+            setRewards((prev) => ({ ...prev, complete_project: Number(row.value) || 2000 }));
+          if (row.key === "coin_reward_daily_attendance")
+            setRewards((prev) => ({ ...prev, daily_attendance: Number(row.value) || 3000 }));
+          if (row.key === "coin_reward_5star_review")
+            setRewards((prev) => ({ ...prev, star_review: Number(row.value) || 3000 }));
+          if (row.key === "coin_reward_referral_10")
+            setRewards((prev) => ({ ...prev, referral_10: Number(row.value) || 10000 }));
         }
       }
     };
@@ -58,7 +83,6 @@ const GetCoins = () => {
       if (data?.error) throw new Error(data.error);
       toast.success(`Converted ${data.coins_converted} coins to ₹${Number(data.rupees_credited).toFixed(2)}`);
       await refreshProfile();
-      // Refresh redeemed count
       setTotalRedeemed((prev) => prev + (data.coins_converted || 0));
     } catch (err: any) {
       toast.error(err.message || "Conversion failed");
@@ -66,6 +90,14 @@ const GetCoins = () => {
       setConverting(false);
     }
   };
+
+  const earnActivities = [
+    { icon: CheckCircle, text: "Complete Your Profile", coins: rewards.complete_profile },
+    { icon: Briefcase, text: "Complete a Project", coins: rewards.complete_project },
+    { icon: Calendar, text: "Daily Attendance Present", coins: rewards.daily_attendance },
+    { icon: Star, text: "Receive a 5-Star Review", coins: rewards.star_review },
+    { icon: Users, text: "Refer 10 Friends", coins: rewards.referral_10 },
+  ];
 
   return (
     <div className="space-y-6 px-4 py-6">
@@ -117,16 +149,11 @@ const GetCoins = () => {
         </CardHeader>
         <CardContent>
           <ul className="space-y-3">
-            {[
-              { icon: CheckCircle, text: "Complete your profile", coins: 50 },
-              { icon: Star, text: "Complete a project", coins: 100 },
-              { icon: Star, text: "Receive a 5-star review", coins: 25 },
-              { icon: CheckCircle, text: "Refer a friend", coins: 75 },
-            ].map((item, i) => (
+            {earnActivities.map((item, i) => (
               <li key={i} className="flex items-center gap-3 text-sm">
                 <item.icon className="h-4 w-4 shrink-0 text-accent" />
                 <span className="flex-1 text-foreground">{item.text}</span>
-                <span className="font-semibold text-amber-500">+{item.coins}</span>
+                <span className="font-semibold text-amber-500">+{item.coins.toLocaleString()}</span>
               </li>
             ))}
           </ul>
@@ -138,10 +165,10 @@ const GetCoins = () => {
         <CardContent className="py-5 space-y-3">
           <div className="text-center">
             <p className="text-sm text-muted-foreground mb-1">
-              Minimum <span className="font-semibold text-foreground">{minCoins} Coins</span> required for conversion
+              Minimum <span className="font-semibold text-foreground">{minCoins.toLocaleString()} Coins</span> required for conversion
             </p>
             <p className="text-xs text-muted-foreground">
-              {coinRate} Coins = ₹1 • You have {userCoins} coins (≈ ₹{(userCoins / coinRate).toFixed(2)})
+              {coinRate} Coins = ₹1 • You have {userCoins.toLocaleString()} coins (≈ ₹{(userCoins / coinRate).toFixed(2)})
             </p>
           </div>
           <Button
@@ -157,8 +184,8 @@ const GetCoins = () => {
             {converting
               ? "Converting..."
               : userCoins >= minCoins
-                ? `Convert ${userCoins} Coins to ₹${(userCoins / coinRate).toFixed(2)}`
-                : `Minimum ${minCoins} Coins Required`}
+                ? `Convert ${userCoins.toLocaleString()} Coins to ₹${(userCoins / coinRate).toFixed(2)}`
+                : `Minimum ${minCoins.toLocaleString()} Coins Required`}
           </Button>
         </CardContent>
       </Card>
