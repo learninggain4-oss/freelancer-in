@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,8 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  Loader2, Plus, Save, Trash2, Edit2, X, CreditCard, Eye, EyeOff,
-  GripVertical, Check,
+  Loader2, Plus, Trash2, Edit2, X, CreditCard,
+  GripVertical, Check, Upload, Image as ImageIcon,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -23,9 +23,12 @@ type PaymentMethod = {
   name: string;
   is_active: boolean;
   display_order: number;
+  logo_path: string | null;
   created_at: string;
   updated_at: string;
 };
+
+const BUCKET = "payment-method-logos";
 
 const AdminPaymentMethods = () => {
   const qc = useQueryClient();
@@ -33,6 +36,10 @@ const AdminPaymentMethods = () => {
   const [newName, setNewName] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [bannerUploading, setBannerUploading] = useState(false);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const { data: methods = [], isLoading } = useQuery({
     queryKey: ["admin-payment-methods"],
@@ -45,6 +52,30 @@ const AdminPaymentMethods = () => {
       return data as PaymentMethod[];
     },
   });
+
+  const { data: bannerPath } = useQuery({
+    queryKey: ["upi-banner-setting"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "upi_banner_path")
+        .maybeSingle();
+      return data?.value || "";
+    },
+  });
+
+  const getLogoUrl = (path: string | null) => {
+    if (!path) return null;
+    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+    return data.publicUrl;
+  };
+
+  const getBannerUrl = (path: string) => {
+    if (!path) return null;
+    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+    return data.publicUrl;
+  };
 
   const addMutation = useMutation({
     mutationFn: async (name: string) => {
@@ -101,6 +132,57 @@ const AdminPaymentMethods = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const handleLogoUpload = async (methodId: string, file: File) => {
+    setUploadingId(methodId);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `logos/${methodId}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { error: updateError } = await supabase
+        .from("payment_methods")
+        .update({ logo_path: path })
+        .eq("id", methodId);
+      if (updateError) throw updateError;
+
+      qc.invalidateQueries({ queryKey: ["admin-payment-methods"] });
+      toast.success("Logo uploaded");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
+  const handleBannerUpload = async (file: File) => {
+    setBannerUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `banners/upi-banner.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { error: updateError } = await supabase
+        .from("app_settings")
+        .upsert({ key: "upi_banner_path", value: path });
+      if (updateError) throw updateError;
+
+      qc.invalidateQueries({ queryKey: ["upi-banner-setting"] });
+      toast.success("Banner uploaded");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setBannerUploading(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -118,6 +200,53 @@ const AdminPaymentMethods = () => {
           {showAdd ? "Cancel" : "Add Method"}
         </Button>
       </div>
+
+      {/* Banner Upload */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ImageIcon className="h-4 w-4 text-primary" />
+            UPI Page Banner
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {bannerPath && getBannerUrl(bannerPath) && (
+            <img
+              src={getBannerUrl(bannerPath)!}
+              alt="UPI Banner"
+              className="w-full h-32 object-cover rounded-lg border"
+            />
+          )}
+          <input
+            ref={bannerInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleBannerUpload(f);
+              e.target.value = "";
+            }}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1"
+            disabled={bannerUploading}
+            onClick={() => bannerInputRef.current?.click()}
+          >
+            {bannerUploading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="h-4 w-4" />
+            )}
+            {bannerPath ? "Change Banner" : "Upload Banner"}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Recommended: 1920x1080 for best quality
+          </p>
+        </CardContent>
+      </Card>
 
       {showAdd && (
         <Card>
@@ -151,6 +280,17 @@ const AdminPaymentMethods = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f && uploadingId) handleLogoUpload(uploadingId, f);
+              e.target.value = "";
+            }}
+          />
           {methods.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">No payment methods yet.</p>
           ) : (
@@ -162,6 +302,27 @@ const AdminPaymentMethods = () => {
                 >
                   <GripVertical className="h-4 w-4 text-muted-foreground/50" />
                   <span className="text-xs font-mono text-muted-foreground w-6">#{m.display_order}</span>
+
+                  {/* Logo */}
+                  <div
+                    className="h-10 w-10 rounded-lg border bg-white flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary transition-colors"
+                    onClick={() => {
+                      setUploadingId(m.id);
+                      fileInputRef.current?.click();
+                    }}
+                  >
+                    {uploadingId === m.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    ) : m.logo_path ? (
+                      <img
+                        src={getLogoUrl(m.logo_path)!}
+                        alt={m.name}
+                        className="h-full w-full object-contain p-1"
+                      />
+                    ) : (
+                      <Upload className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </div>
 
                   {editId === m.id ? (
                     <div className="flex flex-1 items-center gap-2">

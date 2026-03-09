@@ -16,6 +16,7 @@ interface PaymentMethod {
   name: string;
   is_active: boolean;
   display_order: number;
+  logo_path: string | null;
 }
 
 interface SavedApp {
@@ -26,23 +27,7 @@ interface SavedApp {
   is_primary: boolean;
 }
 
-const LOGO_MAP: Record<string, string> = {
-  paytm: "/upi-logos/paytm.png",
-  phonepe: "/upi-logos/phonepe.png",
-  mobikwik: "/upi-logos/mobikwik.png",
-  supermoney: "/upi-logos/supermoney.png",
-  freo: "/upi-logos/freo.png",
-  slice: "/upi-logos/slice.png",
-  twid: "/upi-logos/twid.png",
-  airtel: "/upi-logos/airtel.png",
-  freecharge: "/upi-logos/freecharge.png",
-  "bank transfer": "/upi-logos/bank-transfer.png",
-};
-
-const getLogoUrl = (name: string) => {
-  const key = name.toLowerCase().trim();
-  return LOGO_MAP[key] || null;
-};
+const BUCKET = "payment-method-logos";
 
 const ProfileUpiApps = () => {
   const { profile } = useAuth();
@@ -75,6 +60,18 @@ const ProfileUpiApps = () => {
     },
   });
 
+  const { data: bannerPath } = useQuery({
+    queryKey: ["upi-banner-setting"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "upi_banner_path")
+        .maybeSingle();
+      return data?.value || "";
+    },
+  });
+
   const [localState, setLocalState] = useState<
     Record<string, { enabled: boolean; phone: string; is_primary: boolean }>
   >({});
@@ -91,6 +88,18 @@ const ProfileUpiApps = () => {
     }
     setLocalState(state);
   }, [methods, savedApps]);
+
+  const getLogoUrl = (path: string | null) => {
+    if (!path) return null;
+    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+    return data.publicUrl;
+  };
+
+  const getBannerUrl = () => {
+    if (!bannerPath) return "/upi-banner.jpg"; // fallback to static
+    const { data } = supabase.storage.from(BUCKET).getPublicUrl(bannerPath);
+    return data.publicUrl;
+  };
 
   const saveMutation = useMutation({
     mutationFn: async ({
@@ -181,7 +190,7 @@ const ProfileUpiApps = () => {
       {/* Banner */}
       <div className="relative overflow-hidden rounded-b-3xl">
         <img
-          src="/upi-banner.jpg"
+          src={getBannerUrl()}
           alt="UPI Payment Apps"
           className="w-full h-44 object-cover"
         />
@@ -236,7 +245,7 @@ const ProfileUpiApps = () => {
             {methods.map((m) => {
               const s = localState[m.id];
               if (!s) return null;
-              const logoUrl = getLogoUrl(m.name);
+              const logoUrl = getLogoUrl(m.logo_path);
               return (
                 <Card
                   key={m.id}
