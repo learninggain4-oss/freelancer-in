@@ -30,6 +30,11 @@ const AdminSettings = () => {
   const [referralTerms, setReferralTerms] = useState("");
   const [coinRate, setCoinRate] = useState("");
   const [minCoinConversion, setMinCoinConversion] = useState("");
+  const [rewardCompleteProfile, setRewardCompleteProfile] = useState("");
+  const [rewardCompleteProject, setRewardCompleteProject] = useState("");
+  const [rewardDailyAttendance, setRewardDailyAttendance] = useState("");
+  const [reward5StarReview, setReward5StarReview] = useState("");
+  const [rewardReferral10, setRewardReferral10] = useState("");
   const [empPrefix, setEmpPrefix] = useState("");
   const [cltPrefix, setCltPrefix] = useState("");
   const [empDigits, setEmpDigits] = useState("");
