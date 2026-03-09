@@ -117,9 +117,21 @@ const ProfileBankDetails = () => {
                 <SelectTrigger>
                   <SelectValue placeholder="Select bank" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[300px]">
                   {INDIAN_BANKS.map((bank) => (
-                    <SelectItem key={bank} value={bank}>{bank}</SelectItem>
+                    <SelectItem key={bank.name} value={bank.name}>
+                      <div className="flex items-center gap-2">
+                        {bank.logo && (
+                          <img 
+                            src={bank.logo} 
+                            alt={bank.name} 
+                            className="h-5 w-5 object-contain"
+                            onError={(e) => (e.currentTarget.style.display = 'none')}
+                          />
+                        )}
+                        <span>{bank.name}</span>
+                      </div>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
