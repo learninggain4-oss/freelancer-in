@@ -164,6 +164,11 @@ const AdminSettings = () => {
           if (row.key === "client_code_separator") setCltSeparator(row.value || "none");
           if (row.key === "coin_conversion_rate") setCoinRate(row.value);
           if (row.key === "min_coin_conversion") setMinCoinConversion(row.value);
+          if (row.key === "coin_reward_complete_profile") setRewardCompleteProfile(row.value);
+          if (row.key === "coin_reward_complete_project") setRewardCompleteProject(row.value);
+          if (row.key === "coin_reward_daily_attendance") setRewardDailyAttendance(row.value);
+          if (row.key === "coin_reward_5star_review") setReward5StarReview(row.value);
+          if (row.key === "coin_reward_referral_10") setRewardReferral10(row.value);
         }
       }
       setLoading(false);
