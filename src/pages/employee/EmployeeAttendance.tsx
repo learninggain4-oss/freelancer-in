@@ -9,7 +9,7 @@ import { toast } from "@/components/ui/use-toast";
 import { format, startOfMonth, endOfMonth, isSameDay } from "date-fns";
 import { ClipboardCheck, LogIn, LogOut, CalendarDays, Flame, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FaceVerificationDialog } from "@/components/attendance/FaceVerificationDialog";
+import FaceVerificationDialog from "@/components/attendance/FaceVerificationDialog";
 
 interface AttendanceRecord {
   id: string;
