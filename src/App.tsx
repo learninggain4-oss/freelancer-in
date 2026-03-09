@@ -31,6 +31,7 @@ const ClientProjects = lazy(() => import("./pages/client/ClientProjects"));
 const CreateProject = lazy(() => import("./pages/client/CreateProject"));
 const ClientWithdrawals = lazy(() => import("./pages/client/ClientWithdrawals"));
 const ClientProfile = lazy(() => import("./pages/client/ClientProfile"));
+const ClientAttendance = lazy(() => import("./pages/client/ClientAttendance"));
 const ChatRoom = lazy(() => import("./components/chat/ChatRoom"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
@@ -179,7 +180,7 @@ const AppContent = () => {
               }
             >
               <Route path="dashboard" element={<ClientDashboard />} />
-              <Route path="attendance" element={<EmployeeAttendance />} />
+              <Route path="attendance" element={<ClientAttendance />} />
               <Route path="wallet" element={<ClientWallet />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
