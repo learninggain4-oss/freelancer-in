@@ -74,6 +74,14 @@ const WithdrawalHistory = () => {
           ) : withdrawals.length > 0 ? (
             withdrawals.map((w: any) => (
               <div key={w.id} className="space-y-2 rounded-lg border p-3">
+                {w.order_id && (
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-sm font-semibold text-primary">{w.order_id}</span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyOrderId(w.order_id)}>
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <div>
                     {!isEmployee && (
