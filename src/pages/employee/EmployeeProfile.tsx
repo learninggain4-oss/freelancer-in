@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
   User, Briefcase, Landmark, Building2, AlertCircle,
-  ShieldCheck, BadgeCheck, ChevronRight, Wallet,
+  ShieldCheck, BadgeCheck, ChevronRight, Wallet, CreditCard,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ProfilePhotoUpload from "@/components/profile/ProfilePhotoUpload";
