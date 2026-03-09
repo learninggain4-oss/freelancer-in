@@ -27,6 +27,7 @@ const SideDrawer = ({ open, onOpenChange }: SideDrawerProps) => {
     { label: "App", icon: Smartphone, path: `${basePath}/app` },
     { label: "Account Settings", icon: Settings, path: `${basePath}/settings` },
     { label: "Notifications", icon: Bell, path: `${basePath}/notifications` },
+    { label: "Notification Settings", icon: BellRing, path: `${basePath}/settings?tab=notifications` },
     { label: "Terms of Service", icon: FileText, path: "/legal/terms-of-service" },
     { label: "Privacy Policy", icon: Shield, path: "/legal/privacy-policy" },
   ];
