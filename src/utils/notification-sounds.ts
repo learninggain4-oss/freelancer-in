@@ -300,3 +300,45 @@ export const loadSoundPreferences = (): SoundPreferences => {
 export const saveSoundPreferences = (prefs: SoundPreferences) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
 };
+
+/* ─── Play a short notification sound for the given category ─── */
+let _audioCtx: AudioContext | null = null;
+const getAudioCtx = (): AudioContext => {
+  if (!_audioCtx || _audioCtx.state === "closed") {
+    _audioCtx = new AudioContext();
+  }
+  return _audioCtx;
+};
+
+export const playNotificationSound = (category: SoundCategory) => {
+  try {
+    const prefs = loadSoundPreferences();
+    if (!prefs.enabled) return;
+    const catPref = prefs.sounds[category];
+    if (!catPref?.enabled) return;
+
+    const ringtone = RINGTONES.find((r) => r.id === catPref.ringtoneId) ?? RINGTONES[0];
+    const ctx = getAudioCtx();
+    if (ctx.state === "suspended") ctx.resume();
+    ringtone.play(ctx, 2.5); // short 2.5s burst
+  } catch {
+    // Silently ignore audio errors (autoplay restrictions, etc.)
+  }
+};
+
+/* ─── Show a native browser push notification ─── */
+export const showBrowserPush = (title: string, body: string, _category: SoundCategory) => {
+  try {
+    const prefs = loadSoundPreferences();
+    if (!prefs.pushEnabled) return;
+    if (typeof Notification === "undefined") return;
+    if (Notification.permission !== "granted") return;
+
+    new Notification(title, {
+      body,
+      icon: "/pwa-icon-512.png",
+    });
+  } catch {
+    // Silently ignore
+  }
+};

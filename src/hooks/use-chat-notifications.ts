@@ -64,6 +64,9 @@ export const useChatNotifications = () => {
             description: "New chat message",
             duration: 5000,
           });
+
+          playNotificationSound("chat");
+          showBrowserPush(senderName, preview, "chat");
         }
       )
       .subscribe();

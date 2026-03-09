@@ -51,8 +51,19 @@ export const useNotifications = () => {
           table: "notifications",
           filter: `user_id=eq.${user.id}`,
         },
-        () => {
+        (payload) => {
           queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
+
+          const n = payload.new as Notification;
+          const typeMap: Record<string, SoundCategory> = {
+            info: "project",
+            warning: "alert",
+            success: "announcement",
+            error: "alert",
+          };
+          const category: SoundCategory = typeMap[n.type] || "project";
+          playNotificationSound(category);
+          showBrowserPush(n.title, n.message, category);
         }
       )
       .subscribe();

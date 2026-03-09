@@ -67,6 +67,8 @@ const AnnouncementPopup = () => {
       if (undismissed) {
         setAnnouncement(undismissed);
         setOpen(true);
+        playNotificationSound("announcement");
+        showBrowserPush(undismissed.title, undismissed.message, "announcement");
       }
     };
 
