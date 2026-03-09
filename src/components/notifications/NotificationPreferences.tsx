@@ -41,6 +41,14 @@ const SOUND_TONES = [
   { value: "bell", label: "Soft Bell", freq: 600, type: "sine" as OscillatorType, duration: 0.3 },
   { value: "beep", label: "Alert Beep", freq: 1200, type: "square" as OscillatorType, duration: 0.1 },
   { value: "pop", label: "Digital Pop", freq: 520, type: "triangle" as OscillatorType, duration: 0.08 },
+  { value: "ding", label: "Gentle Ding", freq: 740, type: "sine" as OscillatorType, duration: 0.2 },
+  { value: "ping", label: "Sharp Ping", freq: 1600, type: "sine" as OscillatorType, duration: 0.06 },
+  { value: "buzz", label: "Retro Buzz", freq: 440, type: "sawtooth" as OscillatorType, duration: 0.12 },
+  { value: "hum", label: "Soft Hum", freq: 320, type: "sine" as OscillatorType, duration: 0.4 },
+  { value: "crystal", label: "Crystal", freq: 1400, type: "sine" as OscillatorType, duration: 0.25 },
+  { value: "pulse", label: "Pulse", freq: 900, type: "square" as OscillatorType, duration: 0.15 },
+  { value: "whoosh", label: "Whoosh", freq: 200, type: "triangle" as OscillatorType, duration: 0.35 },
+  { value: "chirp", label: "Chirp", freq: 1800, type: "triangle" as OscillatorType, duration: 0.05 },
 ];
 
 const playTone = (toneValue: string, volume: number) => {
