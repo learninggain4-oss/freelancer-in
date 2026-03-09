@@ -29,7 +29,7 @@ const WithdrawalHistory = () => {
       if (isEmployee) {
         const { data, error } = await supabase
           .from("withdrawals")
-          .select("id, employee_id, amount, method, status, review_notes, reviewed_at, requested_at")
+          .select("id, employee_id, amount, method, status, review_notes, reviewed_at, requested_at, order_id")
           .eq("employee_id", profile.id)
           .order("requested_at", { ascending: false })
           .limit(100);
