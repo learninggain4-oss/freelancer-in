@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -19,14 +20,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { Search, Users, CheckCircle, Clock, UserCheck, Timer } from "lucide-react";
+import { Search, Users, CheckCircle, Clock, UserCheck, Timer, Camera, Download, Eye } from "lucide-react";
 import { formatDuration } from "@/utils/attendance-helpers";
+import { toast } from "sonner";
 
 const AdminAttendance = () => {
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [userTypeFilter, setUserTypeFilter] = useState<string>("all");
+  const [photoDialog, setPhotoDialog] = useState<{ open: boolean; url: string; title: string }>({
+    open: false,
+    url: "",
+    title: "",
+  });
 
   const { data: attendanceRecords = [], isLoading } = useQuery({
     queryKey: ["admin-attendance", dateFilter],
@@ -54,6 +67,51 @@ const AdminAttendance = () => {
       return data || [];
     },
   });
+
+  const getSignedUrl = async (path: string): Promise<string | null> => {
+    if (!path) return null;
+    const { data, error } = await supabase.storage
+      .from("attendance-photos")
+      .createSignedUrl(path, 3600); // 1 hour expiry
+    if (error) {
+      console.error("Error getting signed URL:", error);
+      return null;
+    }
+    return data.signedUrl;
+  };
+
+  const handleViewPhoto = async (path: string | null, title: string) => {
+    if (!path) {
+      toast.error("No photo available");
+      return;
+    }
+    const url = await getSignedUrl(path);
+    if (url) {
+      setPhotoDialog({ open: true, url, title });
+    } else {
+      toast.error("Failed to load photo");
+    }
+  };
+
+  const handleDownloadPhoto = async (path: string | null, fileName: string) => {
+    if (!path) {
+      toast.error("No photo available");
+      return;
+    }
+    const url = await getSignedUrl(path);
+    if (url) {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Download started");
+    } else {
+      toast.error("Failed to download photo");
+    }
+  };
 
   const filteredRecords = attendanceRecords.filter((record) => {
     const profile = record.profile;
@@ -180,7 +238,9 @@ const AdminAttendance = () => {
                     <TableHead>Type</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Check In</TableHead>
+                    <TableHead>Check In Photo</TableHead>
                     <TableHead>Check Out</TableHead>
+                    <TableHead>Check Out Photo</TableHead>
                     <TableHead>Duration</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
@@ -218,9 +278,85 @@ const AdminAttendance = () => {
                           {format(new Date(record.check_in_at), "h:mm a")}
                         </TableCell>
                         <TableCell>
+                          {record.check_in_photo_path ? (
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() =>
+                                  handleViewPhoto(
+                                    record.check_in_photo_path,
+                                    `Check-in Photo - ${record.profile?.full_name?.join(" ")}`
+                                  )
+                                }
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() =>
+                                  handleDownloadPhoto(
+                                    record.check_in_photo_path,
+                                    `check-in-${record.profile?.user_code?.[0] || record.id}.jpg`
+                                  )
+                                }
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="flex items-center gap-1 text-muted-foreground">
+                              <Camera className="h-4 w-4" />
+                              No photo
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
                           {record.check_out_at
                             ? format(new Date(record.check_out_at), "h:mm a")
                             : "-"}
+                        </TableCell>
+                        <TableCell>
+                          {record.check_out_photo_path ? (
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() =>
+                                  handleViewPhoto(
+                                    record.check_out_photo_path,
+                                    `Check-out Photo - ${record.profile?.full_name?.join(" ")}`
+                                  )
+                                }
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() =>
+                                  handleDownloadPhoto(
+                                    record.check_out_photo_path,
+                                    `check-out-${record.profile?.user_code?.[0] || record.id}.jpg`
+                                  )
+                                }
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : record.check_out_at ? (
+                            <span className="flex items-center gap-1 text-muted-foreground">
+                              <Camera className="h-4 w-4" />
+                              No photo
+                            </span>
+                          ) : (
+                            "-"
+                          )}
                         </TableCell>
                         <TableCell>
                           {duration ? (
@@ -252,6 +388,38 @@ const AdminAttendance = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Photo Preview Dialog */}
+      <Dialog open={photoDialog.open} onOpenChange={(open) => setPhotoDialog((prev) => ({ ...prev, open }))}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{photoDialog.title}</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center">
+            <img
+              src={photoDialog.url}
+              alt={photoDialog.title}
+              className="max-h-[70vh] rounded-lg object-contain"
+            />
+          </div>
+          <div className="flex justify-end">
+            <Button
+              onClick={() => {
+                const link = document.createElement("a");
+                link.href = photoDialog.url;
+                link.download = "attendance-photo.jpg";
+                link.target = "_blank";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
