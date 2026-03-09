@@ -31,6 +31,7 @@ const ClientProjects = lazy(() => import("./pages/client/ClientProjects"));
 const CreateProject = lazy(() => import("./pages/client/CreateProject"));
 const ClientWithdrawals = lazy(() => import("./pages/client/ClientWithdrawals"));
 const ClientProfile = lazy(() => import("./pages/client/ClientProfile"));
+const ClientAttendance = lazy(() => import("./pages/client/ClientAttendance"));
 const ChatRoom = lazy(() => import("./components/chat/ChatRoom"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
