@@ -435,6 +435,38 @@ export type Database = {
           },
         ]
       }
+      coin_reward_claims: {
+        Row: {
+          created_at: string
+          id: string
+          profile_id: string
+          reference_id: string | null
+          reward_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          profile_id: string
+          reference_id?: string | null
+          reward_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          profile_id?: string
+          reference_id?: string | null
+          reward_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coin_reward_claims_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coin_transactions: {
         Row: {
           amount: number
