@@ -55,6 +55,7 @@ const AdminWalletManagement = lazy(() => import("./pages/admin/AdminWalletManage
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 const LegalDocument = lazy(() => import("./pages/LegalDocument"));
 const AccountSettings = lazy(() => import("./pages/AccountSettings"));
+const NotificationSettings = lazy(() => import("./pages/NotificationSettings"));
 const GetFree = lazy(() => import("./pages/GetFree"));
 const GetCoins = lazy(() => import("./pages/GetCoins"));
 const AppPage = lazy(() => import("./pages/AppPage"));
