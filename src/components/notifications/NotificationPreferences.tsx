@@ -17,7 +17,10 @@ interface Prefs {
   system: boolean;
   sound: boolean;
   push: boolean;
-  soundTone: string;
+  projectTone: string;
+  withdrawalTone: string;
+  transactionTone: string;
+  systemTone: string;
   soundVolume: number;
   chatSound: boolean;
   vibration: boolean;
@@ -30,7 +33,10 @@ const defaults: Prefs = {
   system: true,
   sound: true,
   push: false,
-  soundTone: "chime",
+  projectTone: "chime",
+  withdrawalTone: "bell",
+  transactionTone: "ding",
+  systemTone: "beep",
   soundVolume: 70,
   chatSound: true,
   vibration: true,
@@ -49,6 +55,14 @@ const SOUND_TONES = [
   { value: "pulse", label: "Pulse", freq: 900, type: "square" as OscillatorType, duration: 0.15 },
   { value: "whoosh", label: "Whoosh", freq: 200, type: "triangle" as OscillatorType, duration: 0.35 },
   { value: "chirp", label: "Chirp", freq: 1800, type: "triangle" as OscillatorType, duration: 0.05 },
+  { value: "twinkle", label: "Twinkle", freq: 1100, type: "sine" as OscillatorType, duration: 0.18 },
+  { value: "knock", label: "Knock", freq: 350, type: "square" as OscillatorType, duration: 0.07 },
+  { value: "ripple", label: "Ripple", freq: 660, type: "triangle" as OscillatorType, duration: 0.28 },
+  { value: "alarm", label: "Alarm", freq: 1500, type: "sawtooth" as OscillatorType, duration: 0.2 },
+  { value: "bubble", label: "Bubble", freq: 480, type: "sine" as OscillatorType, duration: 0.12 },
+  { value: "spark", label: "Spark", freq: 2000, type: "sine" as OscillatorType, duration: 0.04 },
+  { value: "gong", label: "Gong", freq: 260, type: "sine" as OscillatorType, duration: 0.5 },
+  { value: "trill", label: "Trill", freq: 1050, type: "triangle" as OscillatorType, duration: 0.15 },
 ];
 
 const playTone = (toneValue: string, volume: number) => {
@@ -70,11 +84,28 @@ const playTone = (toneValue: string, volume: number) => {
   }
 };
 
+type ToneKey = "projectTone" | "withdrawalTone" | "transactionTone" | "systemTone";
+
+const categories = [
+  { key: "project" as const, toneKey: "projectTone" as ToneKey, label: "Project Updates", desc: "Applications, assignments, validation", icon: Briefcase },
+  { key: "withdrawal" as const, toneKey: "withdrawalTone" as ToneKey, label: "Withdrawal Updates", desc: "Status changes for withdrawals", icon: Wallet },
+  { key: "transaction" as const, toneKey: "transactionTone" as ToneKey, label: "Transaction Updates", desc: "Balance and payment notifications", icon: Wallet },
+  { key: "system" as const, toneKey: "systemTone" as ToneKey, label: "System & Announcements", desc: "Admin announcements and alerts", icon: Megaphone },
+];
+
 const NotificationPreferences = () => {
   const [prefs, setPrefs] = useState<Prefs>(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(PREF_KEY) || "{}");
-      return { ...defaults, ...saved };
+      // Migrate old soundTone to per-category if needed
+      const migrated = { ...defaults, ...saved };
+      if (saved.soundTone && !saved.projectTone) {
+        migrated.projectTone = saved.soundTone;
+        migrated.withdrawalTone = saved.soundTone;
+        migrated.transactionTone = saved.soundTone;
+        migrated.systemTone = saved.soundTone;
+      }
+      return migrated;
     } catch {
       return defaults;
     }
@@ -91,31 +122,54 @@ const NotificationPreferences = () => {
     setPrefs((p) => ({ ...p, [key]: value }));
   }, []);
 
-  const categories = [
-    { key: "project" as const, label: "Project Updates", desc: "Applications, assignments, validation", icon: Briefcase },
-    { key: "withdrawal" as const, label: "Withdrawal Updates", desc: "Status changes for withdrawals", icon: Wallet },
-    { key: "transaction" as const, label: "Transaction Updates", desc: "Balance and payment notifications", icon: Wallet },
-    { key: "system" as const, label: "System & Announcements", desc: "Admin announcements and alerts", icon: Megaphone },
-  ];
-
   return (
     <div className="space-y-4">
-      {/* Notification Categories */}
+      {/* Notification Categories with per-category sound selectors */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Notification Categories</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {categories.map((cat) => (
-            <div key={cat.key} className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <cat.icon className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <Label className="text-sm font-medium">{cat.label}</Label>
-                  <p className="text-xs text-muted-foreground">{cat.desc}</p>
+          {categories.map((cat, idx) => (
+            <div key={cat.key}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <cat.icon className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <Label className="text-sm font-medium">{cat.label}</Label>
+                    <p className="text-xs text-muted-foreground">{cat.desc}</p>
+                  </div>
                 </div>
+                <Switch checked={prefs[cat.key]} onCheckedChange={() => toggle(cat.key)} />
               </div>
-              <Switch checked={prefs[cat.key]} onCheckedChange={() => toggle(cat.key)} />
+              {prefs[cat.key] && prefs.sound && (
+                <div className="ml-7 mt-2 flex items-center gap-2">
+                  <Select
+                    value={prefs[cat.toneKey]}
+                    onValueChange={(v) => updatePref(cat.toneKey, v)}
+                  >
+                    <SelectTrigger className="h-8 flex-1 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SOUND_TONES.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => playTone(prefs[cat.toneKey], prefs.soundVolume)}
+                  >
+                    <Play className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )}
+              {idx < categories.length - 1 && <Separator className="mt-4" />}
             </div>
           ))}
         </CardContent>
@@ -127,7 +181,6 @@ const NotificationPreferences = () => {
           <CardTitle className="text-base">Sound Options</CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
-          {/* Master sound toggle */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Volume2 className="h-4 w-4 text-muted-foreground" />
@@ -142,36 +195,6 @@ const NotificationPreferences = () => {
           {prefs.sound && (
             <>
               <Separator />
-              {/* Tone selector */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Notification Sound</Label>
-                <div className="flex items-center gap-2">
-                  <Select
-                    value={prefs.soundTone}
-                    onValueChange={(v) => updatePref("soundTone", v)}
-                  >
-                    <SelectTrigger className="flex-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SOUND_TONES.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>
-                          {t.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => playTone(prefs.soundTone, prefs.soundVolume)}
-                  >
-                    <Play className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Volume slider */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label className="text-sm font-medium">Volume</Label>
@@ -188,7 +211,6 @@ const NotificationPreferences = () => {
 
               <Separator />
 
-              {/* Chat sound toggle */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <MessageSquare className="h-4 w-4 text-muted-foreground" />
