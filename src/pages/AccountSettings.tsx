@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserTotpSetupCard from "@/components/auth/UserTotpSetupCard";
 import WithdrawalPasswordCard from "@/components/settings/WithdrawalPasswordCard";
+import NotificationPreferences from "@/components/notifications/NotificationPreferences";
 
 const AccountSettings = () => {
   const { profile } = useAuth();
@@ -14,10 +15,16 @@ const AccountSettings = () => {
       <h2 className="text-2xl font-bold text-foreground">Account Settings</h2>
 
       <Tabs defaultValue="security" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
+
+        {/* Tab: Notifications */}
+        <TabsContent value="notifications" className="space-y-4 mt-4">
+          <NotificationPreferences />
+        </TabsContent>
 
         {/* Tab: Security */}
         <TabsContent value="security" className="space-y-4 mt-4">

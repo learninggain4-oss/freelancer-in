@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export interface Notification {
   id: string;
@@ -10,13 +11,36 @@ export interface Notification {
   message: string;
   type: string;
   is_read: boolean;
+  is_cleared: boolean;
   reference_id: string | null;
   reference_type: string | null;
   created_at: string;
 }
 
+const NOTIFICATION_ROUTE_MAP: Record<string, string> = {
+  withdrawal: "wallet/withdrawals",
+  project: "projects",
+  application: "requests",
+  transaction: "wallet/transactions",
+  attendance: "attendance",
+  wallet: "wallet",
+};
+
+export const getNotificationRoute = (
+  referenceType: string | null,
+  referenceId: string | null,
+  basePath: string
+): string | null => {
+  if (!referenceType) return null;
+  if (referenceType === "chat" && referenceId) {
+    return `${basePath}/projects/chat/${referenceId}`;
+  }
+  const segment = NOTIFICATION_ROUTE_MAP[referenceType];
+  return segment ? `${basePath}/${segment}` : null;
+};
+
 export const useNotifications = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: notifications = [], isLoading } = useQuery({
@@ -27,8 +51,9 @@ export const useNotifications = () => {
         .from("notifications")
         .select("*")
         .eq("user_id", user.id)
+        .eq("is_cleared", false)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(200);
       if (error) throw error;
       return data as Notification[];
     },
@@ -89,5 +114,44 @@ export const useNotifications = () => {
     },
   });
 
-  return { notifications, unreadCount, isLoading, markAsRead, markAllAsRead };
+  const clearNotification = useMutation({
+    mutationFn: async (notificationId: string) => {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_cleared: true })
+        .eq("id", notificationId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+    },
+  });
+
+  const clearAllRead = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) return;
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_cleared: true })
+        .eq("user_id", user.id)
+        .eq("is_read", true);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+    },
+  });
+
+  const basePath = profile?.user_type === "client" ? "/client" : "/employee";
+
+  return {
+    notifications,
+    unreadCount,
+    isLoading,
+    markAsRead,
+    markAllAsRead,
+    clearNotification,
+    clearAllRead,
+    basePath,
+  };
 };
