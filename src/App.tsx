@@ -55,11 +55,9 @@ const AdminWalletManagement = lazy(() => import("./pages/admin/AdminWalletManage
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 const LegalDocument = lazy(() => import("./pages/LegalDocument"));
 const AccountSettings = lazy(() => import("./pages/AccountSettings"));
-const Notifications = lazy(() => import("./pages/Notifications"));
 const GetFree = lazy(() => import("./pages/GetFree"));
 const GetCoins = lazy(() => import("./pages/GetCoins"));
 const AppPage = lazy(() => import("./pages/AppPage"));
-const NotificationSettings = lazy(() => import("./pages/NotificationSettings"));
 const EmployeeSupportChat = lazy(() => import("./pages/employee/EmployeeSupportChat"));
 const HelpSupport = lazy(() => import("./pages/HelpSupport"));
 const AdminHelpSupport = lazy(() => import("./pages/admin/AdminHelpSupport"));
@@ -170,8 +168,6 @@ const AppContent = () => {
               <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
               <Route path="profile/upi-apps" element={<ProfileUpiApps />} />
               <Route path="settings" element={<AccountSettings />} />
-              <Route path="notifications" element={<Notifications />} />
-              <Route path="notification-settings" element={<NotificationSettings />} />
               <Route path="get-free" element={<GetFree />} />
               <Route path="get-coins" element={<GetCoins />} />
               <Route path="app" element={<AppPage />} />
@@ -207,8 +203,6 @@ const AppContent = () => {
               <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
               <Route path="profile/upi-apps" element={<ProfileUpiApps />} />
               <Route path="settings" element={<AccountSettings />} />
-              <Route path="notifications" element={<Notifications />} />
-              <Route path="notification-settings" element={<NotificationSettings />} />
               <Route path="get-free" element={<GetFree />} />
               <Route path="get-coins" element={<GetCoins />} />
               <Route path="app" element={<AppPage />} />
