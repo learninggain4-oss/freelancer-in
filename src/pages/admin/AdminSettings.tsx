@@ -138,6 +138,11 @@ const AdminSettings = () => {
           "coin_conversion_rate",
           "min_coin_conversion",
           "client_code_separator",
+          "coin_reward_complete_profile",
+          "coin_reward_complete_project",
+          "coin_reward_daily_attendance",
+          "coin_reward_5star_review",
+          "coin_reward_referral_10",
         ]);
       if (data) {
         for (const row of data) {
