@@ -70,6 +70,7 @@ const navItems = [
   { label: "Hero Slideshow", icon: SlidersHorizontal, path: "/admin/hero-slides" },
   { label: "Testimonials", icon: MessageSquareQuote, path: "/admin/testimonials" },
   { label: "Site Visitors", icon: Eye, path: "/admin/visitors" },
+  { label: "Attendance", icon: ClipboardCheck, path: "/admin/attendance" },
 ];
 
 const AdminLayout = () => {
