@@ -207,7 +207,7 @@ const EmployeeAttendance = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           {!todayRecord ? (
-            <Button onClick={handleCheckIn} disabled={loading} className="w-full gap-2">
+            <Button onClick={() => openFaceDialog("check-in")} disabled={loading} className="w-full gap-2">
               <LogIn className="h-4 w-4" />
               Check In
             </Button>
@@ -217,13 +217,16 @@ const EmployeeAttendance = () => {
                 <Clock className="h-4 w-4" />
                 Checked in at {format(new Date(todayRecord.check_in_at), "hh:mm a")}
               </div>
-              <Button onClick={handleCheckOut} disabled={loading} variant="secondary" className="w-full gap-2">
+              {checkInPhotoUrl && (
+                <img src={checkInPhotoUrl} alt="Check-in selfie" className="w-16 h-16 rounded-md object-cover border" />
+              )}
+              <Button onClick={() => openFaceDialog("check-out")} disabled={loading} variant="secondary" className="w-full gap-2">
                 <LogOut className="h-4 w-4" />
                 Check Out
               </Button>
             </>
           ) : (
-            <div className="space-y-1 text-sm text-muted-foreground">
+            <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <LogIn className="h-4 w-4 text-accent" />
                 In: {format(new Date(todayRecord.check_in_at), "hh:mm a")}
@@ -232,6 +235,12 @@ const EmployeeAttendance = () => {
                 <LogOut className="h-4 w-4 text-accent" />
                 Out: {format(new Date(todayRecord.check_out_at), "hh:mm a")}
               </div>
+              {(checkInPhotoUrl || checkOutPhotoUrl) && (
+                <div className="flex gap-2 pt-1">
+                  {checkInPhotoUrl && <img src={checkInPhotoUrl} alt="Check-in" className="w-14 h-14 rounded-md object-cover border" />}
+                  {checkOutPhotoUrl && <img src={checkOutPhotoUrl} alt="Check-out" className="w-14 h-14 rounded-md object-cover border" />}
+                </div>
+              )}
               <Badge variant="secondary" className="mt-2 bg-accent/10 text-accent">
                 ✅ Attendance Complete
               </Badge>
