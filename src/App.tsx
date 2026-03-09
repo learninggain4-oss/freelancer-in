@@ -59,6 +59,7 @@ const Notifications = lazy(() => import("./pages/Notifications"));
 const GetFree = lazy(() => import("./pages/GetFree"));
 const GetCoins = lazy(() => import("./pages/GetCoins"));
 const AppPage = lazy(() => import("./pages/AppPage"));
+const NotificationSettings = lazy(() => import("./pages/NotificationSettings"));
 const EmployeeSupportChat = lazy(() => import("./pages/employee/EmployeeSupportChat"));
 const HelpSupport = lazy(() => import("./pages/HelpSupport"));
 const AdminHelpSupport = lazy(() => import("./pages/admin/AdminHelpSupport"));
