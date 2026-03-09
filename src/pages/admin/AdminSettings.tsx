@@ -701,6 +701,91 @@ const AdminSettings = () => {
         </CardContent>
       </Card>
 
+      {/* Coin Rewards Configuration */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Coins className="h-4 w-4 text-primary" />
+            Coin Rewards Configuration
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Configure how many coins employees earn for each activity.
+          </p>
+          
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label className="flex items-center gap-2">
+                <CheckCircle className="h-3.5 w-3.5 text-accent" />
+                Complete Your Profile
+              </Label>
+              <Input type="number" min="0" max="999999" value={rewardCompleteProfile} onChange={(e) => setRewardCompleteProfile(e.target.value)} />
+            </div>
+            <Button onClick={() => handleSaveSetting("coin_reward_complete_profile", rewardCompleteProfile, "Complete Profile reward", 0, 999999)} disabled={saving === "coin_reward_complete_profile"} className="gap-1">
+              {saving === "coin_reward_complete_profile" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          </div>
+
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label className="flex items-center gap-2">
+                <Briefcase className="h-3.5 w-3.5 text-accent" />
+                Complete a Project
+              </Label>
+              <Input type="number" min="0" max="999999" value={rewardCompleteProject} onChange={(e) => setRewardCompleteProject(e.target.value)} />
+            </div>
+            <Button onClick={() => handleSaveSetting("coin_reward_complete_project", rewardCompleteProject, "Complete Project reward", 0, 999999)} disabled={saving === "coin_reward_complete_project"} className="gap-1">
+              {saving === "coin_reward_complete_project" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          </div>
+
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label className="flex items-center gap-2">
+                <Calendar className="h-3.5 w-3.5 text-accent" />
+                Daily Attendance Present
+              </Label>
+              <Input type="number" min="0" max="999999" value={rewardDailyAttendance} onChange={(e) => setRewardDailyAttendance(e.target.value)} />
+            </div>
+            <Button onClick={() => handleSaveSetting("coin_reward_daily_attendance", rewardDailyAttendance, "Daily Attendance reward", 0, 999999)} disabled={saving === "coin_reward_daily_attendance"} className="gap-1">
+              {saving === "coin_reward_daily_attendance" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          </div>
+
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label className="flex items-center gap-2">
+                <Star className="h-3.5 w-3.5 text-accent" />
+                Receive a 5-Star Review
+              </Label>
+              <Input type="number" min="0" max="999999" value={reward5StarReview} onChange={(e) => setReward5StarReview(e.target.value)} />
+            </div>
+            <Button onClick={() => handleSaveSetting("coin_reward_5star_review", reward5StarReview, "5-Star Review reward", 0, 999999)} disabled={saving === "coin_reward_5star_review"} className="gap-1">
+              {saving === "coin_reward_5star_review" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          </div>
+
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label className="flex items-center gap-2">
+                <Users className="h-3.5 w-3.5 text-accent" />
+                Refer 10 Friends
+              </Label>
+              <Input type="number" min="0" max="999999" value={rewardReferral10} onChange={(e) => setRewardReferral10(e.target.value)} />
+            </div>
+            <Button onClick={() => handleSaveSetting("coin_reward_referral_10", rewardReferral10, "Referral 10 reward", 0, 999999)} disabled={saving === "coin_reward_referral_10"} className="gap-1">
+              {saving === "coin_reward_referral_10" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Coin Conversion Rate */}
       <Card>
         <CardHeader className="pb-3">
