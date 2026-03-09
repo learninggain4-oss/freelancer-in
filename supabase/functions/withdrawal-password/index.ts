@@ -132,6 +132,46 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (action === "reset") {
+      // Reset withdrawal password by verifying account login password
+      const { account_password, new_password } = await req.json().catch(() => ({})) || {};
+      const loginPassword = (await req.json().catch(() => null)) ? undefined : undefined;
+      // Re-read body since we already consumed it above — use params from initial parse
+      // Actually the body was already parsed at line 47, let me use the variables from the request body
+    }
+
+    // Handle reset action: verify login password, then set new withdrawal password
+    if (action === "reset_withdrawal") {
+      const { data: signInData, error: signInError } = await userClient.auth.signInWithPassword({
+        email: user.email!,
+        password: password, // user sends their account password in 'password' field
+      });
+      if (signInError) {
+        return new Response(
+          JSON.stringify({ error: "Account password is incorrect" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Clear the withdrawal password so user can set a new one
+      const { error: updateError } = await adminClient
+        .from("profiles")
+        .update({ withdrawal_password_hash: null })
+        .eq("id", profile.id);
+
+      if (updateError) {
+        return new Response(
+          JSON.stringify({ error: "Failed to reset withdrawal password" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
