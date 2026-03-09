@@ -30,9 +30,9 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // User client to get auth user
-    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: { user }, error: authError } = await userClient.auth.getUser();
@@ -44,9 +44,9 @@ Deno.serve(async (req) => {
     }
 
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
-    const { action, password, current_password } = await req.json();
+    const body = await req.json();
+    const { action, password, current_password, account_password, new_password } = body;
 
-    // Get profile
     const { data: profile } = await adminClient
       .from("profiles")
       .select("id, withdrawal_password_hash")
@@ -75,7 +75,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // If already has a password, require current password
       if (profile.withdrawal_password_hash) {
         if (!current_password) {
           return new Response(
@@ -133,18 +132,25 @@ Deno.serve(async (req) => {
     }
 
     if (action === "reset") {
-      // Reset withdrawal password by verifying account login password
-      const { account_password, new_password } = await req.json().catch(() => ({})) || {};
-      const loginPassword = (await req.json().catch(() => null)) ? undefined : undefined;
-      // Re-read body since we already consumed it above — use params from initial parse
-      // Actually the body was already parsed at line 47, let me use the variables from the request body
-    }
+      // Verify user's account login password to authorize reset
+      if (!account_password) {
+        return new Response(
+          JSON.stringify({ error: "Account password is required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (!new_password || new_password.length < 6) {
+        return new Response(
+          JSON.stringify({ error: "New password must be at least 6 characters" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
-    // Handle reset action: verify login password, then set new withdrawal password
-    if (action === "reset_withdrawal") {
-      const { data: signInData, error: signInError } = await userClient.auth.signInWithPassword({
+      // Verify account password by attempting sign-in
+      const verifyClient = createClient(supabaseUrl, anonKey);
+      const { error: signInError } = await verifyClient.auth.signInWithPassword({
         email: user.email!,
-        password: password, // user sends their account password in 'password' field
+        password: account_password,
       });
       if (signInError) {
         return new Response(
@@ -153,10 +159,10 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Clear the withdrawal password so user can set a new one
+      const hash = await hashPassword(new_password);
       const { error: updateError } = await adminClient
         .from("profiles")
-        .update({ withdrawal_password_hash: null })
+        .update({ withdrawal_password_hash: hash })
         .eq("id", profile.id);
 
       if (updateError) {
