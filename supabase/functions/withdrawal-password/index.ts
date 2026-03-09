@@ -30,9 +30,9 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // User client to get auth user
-    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: { user }, error: authError } = await userClient.auth.getUser();
@@ -44,9 +44,9 @@ Deno.serve(async (req) => {
     }
 
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
-    const { action, password, current_password } = await req.json();
+    const body = await req.json();
+    const { action, password, current_password, account_password, new_password } = body;
 
-    // Get profile
     const { data: profile } = await adminClient
       .from("profiles")
       .select("id, withdrawal_password_hash")
@@ -75,7 +75,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // If already has a password, require current password
       if (profile.withdrawal_password_hash) {
         if (!current_password) {
           return new Response(
@@ -128,6 +127,53 @@ Deno.serve(async (req) => {
       const valid = hash === profile.withdrawal_password_hash;
       return new Response(
         JSON.stringify({ valid }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "reset") {
+      // Verify user's account login password to authorize reset
+      if (!account_password) {
+        return new Response(
+          JSON.stringify({ error: "Account password is required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (!new_password || new_password.length < 6) {
+        return new Response(
+          JSON.stringify({ error: "New password must be at least 6 characters" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Verify account password by attempting sign-in
+      const verifyClient = createClient(supabaseUrl, anonKey);
+      const { error: signInError } = await verifyClient.auth.signInWithPassword({
+        email: user.email!,
+        password: account_password,
+      });
+      if (signInError) {
+        return new Response(
+          JSON.stringify({ error: "Account password is incorrect" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const hash = await hashPassword(new_password);
+      const { error: updateError } = await adminClient
+        .from("profiles")
+        .update({ withdrawal_password_hash: hash })
+        .eq("id", profile.id);
+
+      if (updateError) {
+        return new Response(
+          JSON.stringify({ error: "Failed to reset withdrawal password" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
