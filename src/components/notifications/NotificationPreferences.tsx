@@ -42,72 +42,43 @@ const defaults: Prefs = {
   vibration: true,
 };
 
-const SOUND_TONES: { value: string; label: string; freq: number; type: OscillatorType; duration: number; loop?: boolean }[] = [
-  { value: "chime", label: "Default Chime", freq: 880, type: "sine", duration: 0.15 },
-  { value: "bell", label: "Soft Bell", freq: 600, type: "sine", duration: 0.3 },
-  { value: "beep", label: "Alert Beep", freq: 1200, type: "square", duration: 0.1 },
-  { value: "pop", label: "Digital Pop", freq: 520, type: "triangle", duration: 0.08 },
-  { value: "ding", label: "Gentle Ding", freq: 740, type: "sine", duration: 0.2 },
-  { value: "ping", label: "Sharp Ping", freq: 1600, type: "sine", duration: 0.06 },
-  { value: "buzz", label: "Retro Buzz", freq: 440, type: "sawtooth", duration: 0.12 },
-  { value: "hum", label: "Soft Hum", freq: 320, type: "sine", duration: 0.4 },
-  { value: "crystal", label: "Crystal", freq: 1400, type: "sine", duration: 0.25 },
-  { value: "pulse", label: "Pulse", freq: 900, type: "square", duration: 0.15 },
-  { value: "whoosh", label: "Whoosh", freq: 200, type: "triangle", duration: 0.35 },
-  { value: "chirp", label: "Chirp", freq: 1800, type: "triangle", duration: 0.05 },
-  { value: "twinkle", label: "Twinkle", freq: 1100, type: "sine", duration: 0.18 },
-  { value: "knock", label: "Knock", freq: 350, type: "square", duration: 0.07 },
-  { value: "ripple", label: "Ripple", freq: 660, type: "triangle", duration: 0.28 },
-  { value: "alarm", label: "Alarm", freq: 1500, type: "sawtooth", duration: 0.2 },
-  { value: "bubble", label: "Bubble", freq: 480, type: "sine", duration: 0.12 },
-  { value: "spark", label: "Spark", freq: 2000, type: "sine", duration: 0.04 },
-  { value: "gong", label: "Gong", freq: 260, type: "sine", duration: 0.5 },
-  { value: "trill", label: "Trill", freq: 1050, type: "triangle", duration: 0.15 },
-  { value: "classic-ring", label: "Classic Ring", freq: 1000, type: "sine", duration: 0.35 },
-  { value: "phone-buzz", label: "Phone Buzz", freq: 700, type: "sawtooth", duration: 0.25 },
-  { value: "marimba", label: "Marimba", freq: 550, type: "triangle", duration: 0.22 },
-  { value: "xylophone", label: "Xylophone", freq: 1300, type: "sine", duration: 0.15 },
-  { value: "harp", label: "Harp", freq: 830, type: "sine", duration: 0.45 },
-  { value: "flute", label: "Flute", freq: 1150, type: "triangle", duration: 0.3 },
-  { value: "siren", label: "Siren", freq: 950, type: "sawtooth", duration: 0.35 },
-  { value: "radar", label: "Radar", freq: 1700, type: "square", duration: 0.1 },
-  { value: "droplet", label: "Droplet", freq: 420, type: "sine", duration: 0.15 },
-  { value: "echo", label: "Echo", freq: 780, type: "triangle", duration: 0.4 },
-  // Loop tones (play 3x in quick succession)
-  { value: "loop-ring", label: "Loop Ring", freq: 880, type: "sine", duration: 0.12, loop: true },
-  { value: "loop-pulse", label: "Loop Pulse", freq: 600, type: "square", duration: 0.08, loop: true },
-  { value: "loop-chime", label: "Loop Chime", freq: 1100, type: "sine", duration: 0.15, loop: true },
-  { value: "loop-buzz", label: "Loop Buzz", freq: 450, type: "sawtooth", duration: 0.1, loop: true },
-  { value: "loop-trill", label: "Loop Trill", freq: 1400, type: "triangle", duration: 0.06, loop: true },
-  { value: "loop-bell", label: "Loop Bell", freq: 700, type: "sine", duration: 0.18, loop: true },
-  { value: "loop-alarm", label: "Loop Alarm", freq: 1200, type: "sawtooth", duration: 0.1, loop: true },
-  { value: "loop-ping", label: "Loop Ping", freq: 1600, type: "sine", duration: 0.05, loop: true },
-  { value: "loop-melody", label: "Loop Melody", freq: 520, type: "triangle", duration: 0.2, loop: true },
-  { value: "loop-siren", label: "Loop Siren", freq: 900, type: "sawtooth", duration: 0.15, loop: true },
+const SOUND_TONES = [
+  { value: "chime", label: "Default Chime", freq: 880, type: "sine" as OscillatorType, duration: 0.15 },
+  { value: "bell", label: "Soft Bell", freq: 600, type: "sine" as OscillatorType, duration: 0.3 },
+  { value: "beep", label: "Alert Beep", freq: 1200, type: "square" as OscillatorType, duration: 0.1 },
+  { value: "pop", label: "Digital Pop", freq: 520, type: "triangle" as OscillatorType, duration: 0.08 },
+  { value: "ding", label: "Gentle Ding", freq: 740, type: "sine" as OscillatorType, duration: 0.2 },
+  { value: "ping", label: "Sharp Ping", freq: 1600, type: "sine" as OscillatorType, duration: 0.06 },
+  { value: "buzz", label: "Retro Buzz", freq: 440, type: "sawtooth" as OscillatorType, duration: 0.12 },
+  { value: "hum", label: "Soft Hum", freq: 320, type: "sine" as OscillatorType, duration: 0.4 },
+  { value: "crystal", label: "Crystal", freq: 1400, type: "sine" as OscillatorType, duration: 0.25 },
+  { value: "pulse", label: "Pulse", freq: 900, type: "square" as OscillatorType, duration: 0.15 },
+  { value: "whoosh", label: "Whoosh", freq: 200, type: "triangle" as OscillatorType, duration: 0.35 },
+  { value: "chirp", label: "Chirp", freq: 1800, type: "triangle" as OscillatorType, duration: 0.05 },
+  { value: "twinkle", label: "Twinkle", freq: 1100, type: "sine" as OscillatorType, duration: 0.18 },
+  { value: "knock", label: "Knock", freq: 350, type: "square" as OscillatorType, duration: 0.07 },
+  { value: "ripple", label: "Ripple", freq: 660, type: "triangle" as OscillatorType, duration: 0.28 },
+  { value: "alarm", label: "Alarm", freq: 1500, type: "sawtooth" as OscillatorType, duration: 0.2 },
+  { value: "bubble", label: "Bubble", freq: 480, type: "sine" as OscillatorType, duration: 0.12 },
+  { value: "spark", label: "Spark", freq: 2000, type: "sine" as OscillatorType, duration: 0.04 },
+  { value: "gong", label: "Gong", freq: 260, type: "sine" as OscillatorType, duration: 0.5 },
+  { value: "trill", label: "Trill", freq: 1050, type: "triangle" as OscillatorType, duration: 0.15 },
 ];
-
-const playSingleTone = (ctx: AudioContext, tone: typeof SOUND_TONES[0], volume: number, startTime: number) => {
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = tone.type;
-  osc.frequency.setValueAtTime(tone.freq, startTime);
-  gain.gain.setValueAtTime((volume / 100) * 0.5, startTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, startTime + tone.duration + 0.1);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start(startTime);
-  osc.stop(startTime + tone.duration + 0.15);
-};
 
 const playTone = (toneValue: string, volume: number) => {
   try {
     const ctx = new AudioContext();
     const tone = SOUND_TONES.find((t) => t.value === toneValue) || SOUND_TONES[0];
-    const repeats = tone.loop ? 3 : 1;
-    const gap = 0.2;
-    for (let i = 0; i < repeats; i++) {
-      playSingleTone(ctx, tone, volume, ctx.currentTime + i * (tone.duration + gap));
-    }
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = tone.type;
+    osc.frequency.setValueAtTime(tone.freq, ctx.currentTime);
+    gain.gain.setValueAtTime((volume / 100) * 0.5, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + tone.duration + 0.1);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + tone.duration + 0.15);
   } catch {
     // Web Audio not supported
   }
