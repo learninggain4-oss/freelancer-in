@@ -668,6 +668,51 @@ export type Database = {
           },
         ]
       }
+      employee_payment_apps: {
+        Row: {
+          created_at: string
+          id: string
+          is_primary: boolean
+          payment_method_id: string
+          phone_number: string | null
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          payment_method_id: string
+          phone_number?: string | null
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          payment_method_id?: string
+          phone_number?: string | null
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_payment_apps_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_payment_apps_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_services: {
         Row: {
           category_id: string

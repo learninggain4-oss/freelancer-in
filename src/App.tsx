@@ -86,6 +86,7 @@ const ProfileServices = lazy(() => import("./pages/profile/ProfileServices"));
 const ProfileEmergencyContacts = lazy(() => import("./pages/profile/ProfileEmergencyContacts"));
 const ProfileAadhaarVerification = lazy(() => import("./pages/profile/ProfileAadhaarVerification"));
 const ProfileBankVerification = lazy(() => import("./pages/profile/ProfileBankVerification"));
+const ProfileUpiApps = lazy(() => import("./pages/profile/ProfileUpiApps"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
@@ -165,6 +166,7 @@ const AppContent = () => {
               <Route path="profile/emergency-contacts" element={<ProfileEmergencyContacts />} />
               <Route path="profile/aadhaar-verification" element={<ProfileAadhaarVerification />} />
               <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
+              <Route path="profile/upi-apps" element={<ProfileUpiApps />} />
               <Route path="settings" element={<AccountSettings />} />
               <Route path="get-free" element={<GetFree />} />
               <Route path="get-coins" element={<GetCoins />} />
@@ -199,6 +201,7 @@ const AppContent = () => {
               <Route path="profile/emergency-contacts" element={<ProfileEmergencyContacts />} />
               <Route path="profile/aadhaar-verification" element={<ProfileAadhaarVerification />} />
               <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
+              <Route path="profile/upi-apps" element={<ProfileUpiApps />} />
               <Route path="settings" element={<AccountSettings />} />
               <Route path="get-free" element={<GetFree />} />
               <Route path="get-coins" element={<GetCoins />} />
