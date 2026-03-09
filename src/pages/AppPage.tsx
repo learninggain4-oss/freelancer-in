@@ -7,9 +7,17 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, RefreshCw, Download, Smartphone, Info, CheckCircle2 } from "lucide-react";
 import confetti from "canvas-confetti";
 
+declare const __BUILD_TIME__: string;
+
 type Phase = "idle" | "checking" | "downloading" | "done";
 
+const formatVersion = (iso: string) => {
+  const d = new Date(iso);
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}-${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}`;
+};
+
 const AppPage = () => {
+  const appVersion = formatVersion(__BUILD_TIME__);
   const { toast } = useToast();
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState(0);
