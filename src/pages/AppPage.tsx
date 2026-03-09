@@ -168,6 +168,10 @@ const AppPage = () => {
             <span className="text-sm font-medium">Freelancer</span>
           </div>
           <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Version</span>
+            <span className="text-sm font-medium font-mono">{appVersion}</span>
+          </div>
+          <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Mode</span>
             <span className="text-sm font-medium">{isStandalone ? "Installed (PWA)" : "Browser"}</span>
           </div>
