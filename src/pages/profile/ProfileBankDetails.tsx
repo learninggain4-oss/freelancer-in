@@ -6,9 +6,48 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Landmark, User, Save, X, Edit, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+
+const INDIAN_BANKS = [
+  "State Bank of India (SBI)",
+  "HDFC Bank",
+  "ICICI Bank",
+  "Punjab National Bank (PNB)",
+  "Bank of Baroda",
+  "Canara Bank",
+  "Axis Bank",
+  "Union Bank of India",
+  "Bank of India",
+  "Indian Bank",
+  "Central Bank of India",
+  "Indian Overseas Bank",
+  "UCO Bank",
+  "IDBI Bank",
+  "Kotak Mahindra Bank",
+  "IndusInd Bank",
+  "Yes Bank",
+  "Federal Bank",
+  "South Indian Bank",
+  "RBL Bank",
+  "Bandhan Bank",
+  "IDFC First Bank",
+  "Karnataka Bank",
+  "City Union Bank",
+  "Karur Vysya Bank",
+  "Tamilnad Mercantile Bank",
+  "DCB Bank",
+  "Jammu & Kashmir Bank",
+  "Punjab & Sind Bank",
+  "Bank of Maharashtra",
+  "India Post Payments Bank",
+  "Paytm Payments Bank",
+  "Airtel Payments Bank",
+  "Fino Payments Bank",
+  "Other",
+];
 
 const ProfileBankDetails = () => {
   const { profile, refreshProfile } = useAuth();
@@ -24,7 +63,6 @@ const ProfileBankDetails = () => {
       bank_name: profile?.bank_name ?? "",
       bank_account_number: profile?.bank_account_number ?? "",
       bank_ifsc_code: profile?.bank_ifsc_code ?? "",
-      upi_id: profile?.upi_id ?? "",
     });
     setEditing(true);
   };
@@ -75,7 +113,16 @@ const ProfileBankDetails = () => {
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Bank Name</Label>
-              <Input value={form.bank_name ?? ""} onChange={(e) => setForm((p) => ({ ...p, bank_name: e.target.value }))} />
+              <Select value={form.bank_name ?? ""} onValueChange={(val) => setForm((p) => ({ ...p, bank_name: val }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select bank" />
+                </SelectTrigger>
+                <SelectContent>
+                  {INDIAN_BANKS.map((bank) => (
+                    <SelectItem key={bank} value={bank}>{bank}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Account Number</Label>
@@ -84,10 +131,6 @@ const ProfileBankDetails = () => {
             <div className="space-y-1">
               <Label className="text-xs">IFSC Code</Label>
               <Input value={form.bank_ifsc_code ?? ""} onChange={(e) => setForm((p) => ({ ...p, bank_ifsc_code: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">UPI ID</Label>
-              <Input value={form.upi_id ?? ""} onChange={(e) => setForm((p) => ({ ...p, upi_id: e.target.value }))} />
             </div>
             <div className="flex gap-2 pt-2">
               <Button className="flex-1" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
@@ -106,7 +149,6 @@ const ProfileBankDetails = () => {
             <InfoRow icon={Landmark} label="Bank Name" value={profile?.bank_name} />
             <InfoRow icon={Landmark} label="Account Number" value={profile?.bank_account_number} />
             <InfoRow icon={Landmark} label="IFSC Code" value={profile?.bank_ifsc_code} />
-            <InfoRow icon={Landmark} label="UPI ID" value={profile?.upi_id} />
           </CardContent>
         </Card>
       )}
