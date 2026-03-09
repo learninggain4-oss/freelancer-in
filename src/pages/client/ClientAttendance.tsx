@@ -22,7 +22,7 @@ interface AttendanceRecord {
   check_out_photo_path: string | null;
 }
 
-const EmployeeAttendance = () => {
+const ClientAttendance = () => {
   const { profile } = useAuth();
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
   const [monthRecords, setMonthRecords] = useState<AttendanceRecord[]>([]);
@@ -322,4 +322,4 @@ const EmployeeAttendance = () => {
   );
 };
 
-export default EmployeeAttendance;
+export default ClientAttendance;
