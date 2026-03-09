@@ -205,6 +205,7 @@ const AppContent = () => {
               <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
               <Route path="profile/upi-apps" element={<ProfileUpiApps />} />
               <Route path="settings" element={<AccountSettings />} />
+              <Route path="notification-settings" element={<NotificationSettings />} />
               <Route path="get-free" element={<GetFree />} />
               <Route path="get-coins" element={<GetCoins />} />
               <Route path="app" element={<AppPage />} />
