@@ -86,20 +86,28 @@ const SOUND_TONES: { value: string; label: string; freq: number; type: Oscillato
   { value: "loop-siren", label: "Loop Siren", freq: 900, type: "sawtooth", duration: 0.15, loop: true },
 ];
 
+const playSingleTone = (ctx: AudioContext, tone: typeof SOUND_TONES[0], volume: number, startTime: number) => {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = tone.type;
+  osc.frequency.setValueAtTime(tone.freq, startTime);
+  gain.gain.setValueAtTime((volume / 100) * 0.5, startTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, startTime + tone.duration + 0.1);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(startTime);
+  osc.stop(startTime + tone.duration + 0.15);
+};
+
 const playTone = (toneValue: string, volume: number) => {
   try {
     const ctx = new AudioContext();
     const tone = SOUND_TONES.find((t) => t.value === toneValue) || SOUND_TONES[0];
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = tone.type;
-    osc.frequency.setValueAtTime(tone.freq, ctx.currentTime);
-    gain.gain.setValueAtTime((volume / 100) * 0.5, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + tone.duration + 0.1);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + tone.duration + 0.15);
+    const repeats = tone.loop ? 3 : 1;
+    const gap = 0.2;
+    for (let i = 0; i < repeats; i++) {
+      playSingleTone(ctx, tone, volume, ctx.currentTime + i * (tone.duration + gap));
+    }
   } catch {
     // Web Audio not supported
   }
