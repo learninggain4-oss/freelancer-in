@@ -2162,6 +2162,8 @@ export type Database = {
           id: string
           is_cleared: boolean
           method: string
+          order_id: string | null
+          order_number: number
           requested_at: string
           review_notes: string | null
           reviewed_at: string | null
@@ -2178,6 +2180,8 @@ export type Database = {
           id?: string
           is_cleared?: boolean
           method?: string
+          order_id?: string | null
+          order_number?: number
           requested_at?: string
           review_notes?: string | null
           reviewed_at?: string | null
@@ -2194,6 +2198,8 @@ export type Database = {
           id?: string
           is_cleared?: boolean
           method?: string
+          order_id?: string | null
+          order_number?: number
           requested_at?: string
           review_notes?: string | null
           reviewed_at?: string | null
