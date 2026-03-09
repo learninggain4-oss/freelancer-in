@@ -1,4 +1,5 @@
 import { Bell, Check } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -6,17 +7,26 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useNotifications } from "@/hooks/use-notifications";
+import { useNotifications, getNotificationRoute } from "@/hooks/use-notifications";
 import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
 
 const NotificationBell = () => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const navigate = useNavigate();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, basePath } =
+    useNotifications();
 
   const typeIcon: Record<string, string> = {
     info: "bg-primary/10 text-primary",
     success: "bg-accent/10 text-accent",
     warning: "bg-warning/10 text-warning",
     error: "bg-destructive/10 text-destructive",
+  };
+
+  const handleClick = (n: (typeof notifications)[0]) => {
+    if (!n.is_read) markAsRead.mutate(n.id);
+    const route = getNotificationRoute(n.reference_type, n.reference_id, basePath);
+    if (route) navigate(route);
   };
 
   return (
@@ -51,29 +61,48 @@ const NotificationBell = () => {
               No notifications
             </p>
           ) : (
-            notifications.map((n) => (
+            notifications.slice(0, 20).map((n) => (
               <button
                 key={n.id}
-                onClick={() => !n.is_read && markAsRead.mutate(n.id)}
+                onClick={() => handleClick(n)}
                 className={cn(
                   "flex w-full items-start gap-3 border-b px-4 py-3 text-left transition-colors hover:bg-muted/50",
                   !n.is_read && "bg-primary/5"
                 )}
               >
-                <div className={cn("mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full", typeIcon[n.type] ?? typeIcon.info)}>
-                  {n.is_read ? <Check className="h-3.5 w-3.5" /> : <Bell className="h-3.5 w-3.5" />}
+                <div
+                  className={cn(
+                    "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+                    typeIcon[n.type] ?? typeIcon.info
+                  )}
+                >
+                  {n.is_read ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    <Bell className="h-3.5 w-3.5" />
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground">{n.title}</p>
                   <p className="truncate text-xs text-muted-foreground">{n.message}</p>
                   <p className="mt-0.5 text-[10px] text-muted-foreground">
-                    {new Date(n.created_at).toLocaleString()}
+                    {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                   </p>
                 </div>
               </button>
             ))
           )}
         </ScrollArea>
+        <div className="border-t px-4 py-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full text-xs text-primary"
+            onClick={() => navigate(`${basePath}/notifications`)}
+          >
+            View all notifications
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   );
