@@ -63,6 +63,16 @@ const SOUND_TONES = [
   { value: "spark", label: "Spark", freq: 2000, type: "sine" as OscillatorType, duration: 0.04 },
   { value: "gong", label: "Gong", freq: 260, type: "sine" as OscillatorType, duration: 0.5 },
   { value: "trill", label: "Trill", freq: 1050, type: "triangle" as OscillatorType, duration: 0.15 },
+  { value: "blip", label: "Blip", freq: 1300, type: "square" as OscillatorType, duration: 0.05 },
+  { value: "sonar", label: "Sonar", freq: 550, type: "sine" as OscillatorType, duration: 0.35 },
+  { value: "zap", label: "Zap", freq: 2200, type: "sawtooth" as OscillatorType, duration: 0.04 },
+  { value: "flutter", label: "Flutter", freq: 700, type: "triangle" as OscillatorType, duration: 0.22 },
+  { value: "clang", label: "Clang", freq: 380, type: "square" as OscillatorType, duration: 0.18 },
+  { value: "whistle", label: "Whistle", freq: 1900, type: "sine" as OscillatorType, duration: 0.3 },
+  { value: "pluck", label: "Pluck", freq: 620, type: "triangle" as OscillatorType, duration: 0.08 },
+  { value: "drone", label: "Drone", freq: 180, type: "sawtooth" as OscillatorType, duration: 0.45 },
+  { value: "tap", label: "Tap", freq: 950, type: "square" as OscillatorType, duration: 0.03 },
+  { value: "shimmer", label: "Shimmer", freq: 1700, type: "sine" as OscillatorType, duration: 0.28 },
 ];
 
 const playTone = (toneValue: string, volume: number) => {
