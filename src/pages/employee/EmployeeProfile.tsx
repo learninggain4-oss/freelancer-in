@@ -56,6 +56,7 @@ const EmployeeProfile = () => {
     { icon: User, label: "Personal Information", path: "/employee/profile/personal", color: "text-primary" },
     { icon: Briefcase, label: "Professional", path: "/employee/profile/professional", color: "text-accent" },
     { icon: Landmark, label: "Bank Details", path: "/employee/profile/bank-details", color: "text-warning" },
+    { icon: CreditCard, label: "UPI Payment Apps", path: "/employee/profile/upi-apps", color: "text-accent" },
     { icon: Building2, label: "Work Experience", path: "/employee/profile/work-experience", color: "text-secondary" },
     { icon: Briefcase, label: "Services", path: "/employee/profile/services", color: "text-primary" },
     { icon: AlertCircle, label: "Emergency Contacts", path: "/employee/profile/emergency-contacts", color: "text-destructive" },
