@@ -180,7 +180,7 @@ const AppContent = () => {
               }
             >
               <Route path="dashboard" element={<ClientDashboard />} />
-              <Route path="attendance" element={<EmployeeAttendance />} />
+              <Route path="attendance" element={<ClientAttendance />} />
               <Route path="wallet" element={<ClientWallet />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
