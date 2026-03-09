@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Briefcase, Wallet, MessageSquare, Megaphone, Volume2, BellRing } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { Briefcase, Wallet, Megaphone, Volume2, BellRing, Play, MessageSquare, Vibrate } from "lucide-react";
 
 const PREF_KEY = "notification_prefs";
 
@@ -14,6 +17,10 @@ interface Prefs {
   system: boolean;
   sound: boolean;
   push: boolean;
+  soundTone: string;
+  soundVolume: number;
+  chatSound: boolean;
+  vibration: boolean;
 }
 
 const defaults: Prefs = {
@@ -23,6 +30,36 @@ const defaults: Prefs = {
   system: true,
   sound: true,
   push: false,
+  soundTone: "chime",
+  soundVolume: 70,
+  chatSound: true,
+  vibration: true,
+};
+
+const SOUND_TONES = [
+  { value: "chime", label: "Default Chime", freq: 880, type: "sine" as OscillatorType, duration: 0.15 },
+  { value: "bell", label: "Soft Bell", freq: 600, type: "sine" as OscillatorType, duration: 0.3 },
+  { value: "beep", label: "Alert Beep", freq: 1200, type: "square" as OscillatorType, duration: 0.1 },
+  { value: "pop", label: "Digital Pop", freq: 520, type: "triangle" as OscillatorType, duration: 0.08 },
+];
+
+const playTone = (toneValue: string, volume: number) => {
+  try {
+    const ctx = new AudioContext();
+    const tone = SOUND_TONES.find((t) => t.value === toneValue) || SOUND_TONES[0];
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = tone.type;
+    osc.frequency.setValueAtTime(tone.freq, ctx.currentTime);
+    gain.gain.setValueAtTime((volume / 100) * 0.5, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + tone.duration + 0.1);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + tone.duration + 0.15);
+  } catch {
+    // Web Audio not supported
+  }
 };
 
 const NotificationPreferences = () => {
@@ -42,6 +79,10 @@ const NotificationPreferences = () => {
   const toggle = (key: keyof Prefs) =>
     setPrefs((p) => ({ ...p, [key]: !p[key] }));
 
+  const updatePref = useCallback(<K extends keyof Prefs>(key: K, value: Prefs[K]) => {
+    setPrefs((p) => ({ ...p, [key]: value }));
+  }, []);
+
   const categories = [
     { key: "project" as const, label: "Project Updates", desc: "Applications, assignments, validation", icon: Briefcase },
     { key: "withdrawal" as const, label: "Withdrawal Updates", desc: "Status changes for withdrawals", icon: Wallet },
@@ -51,6 +92,7 @@ const NotificationPreferences = () => {
 
   return (
     <div className="space-y-4">
+      {/* Notification Categories */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Notification Categories</CardTitle>
@@ -71,22 +113,95 @@ const NotificationPreferences = () => {
         </CardContent>
       </Card>
 
+      {/* Sound Options */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Alert Preferences</CardTitle>
+          <CardTitle className="text-base">Sound Options</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5">
+          {/* Master sound toggle */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Volume2 className="h-4 w-4 text-muted-foreground" />
               <div>
                 <Label className="text-sm font-medium">Sound Alerts</Label>
-                <p className="text-xs text-muted-foreground">Play a chime for new notifications</p>
+                <p className="text-xs text-muted-foreground">Play a sound for new notifications</p>
               </div>
             </div>
             <Switch checked={prefs.sound} onCheckedChange={() => toggle("sound")} />
           </div>
-          <Separator />
+
+          {prefs.sound && (
+            <>
+              <Separator />
+              {/* Tone selector */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Notification Sound</Label>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={prefs.soundTone}
+                    onValueChange={(v) => updatePref("soundTone", v)}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SOUND_TONES.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => playTone(prefs.soundTone, prefs.soundVolume)}
+                  >
+                    <Play className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Volume slider */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Volume</Label>
+                  <span className="text-xs text-muted-foreground">{prefs.soundVolume}%</span>
+                </div>
+                <Slider
+                  value={[prefs.soundVolume]}
+                  onValueChange={([v]) => updatePref("soundVolume", v)}
+                  min={0}
+                  max={100}
+                  step={5}
+                />
+              </div>
+
+              <Separator />
+
+              {/* Chat sound toggle */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <Label className="text-sm font-medium">Chat Message Sound</Label>
+                    <p className="text-xs text-muted-foreground">Sound for incoming chat messages</p>
+                  </div>
+                </div>
+                <Switch checked={prefs.chatSound} onCheckedChange={() => toggle("chatSound")} />
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Alert Preferences */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Alert Preferences</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <BellRing className="h-4 w-4 text-muted-foreground" />
@@ -96,6 +211,17 @@ const NotificationPreferences = () => {
               </div>
             </div>
             <Switch checked={prefs.push} onCheckedChange={() => toggle("push")} />
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Vibrate className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <Label className="text-sm font-medium">Vibration</Label>
+                <p className="text-xs text-muted-foreground">Vibrate on notifications (mobile)</p>
+              </div>
+            </div>
+            <Switch checked={prefs.vibration} onCheckedChange={() => toggle("vibration")} />
           </div>
         </CardContent>
       </Card>

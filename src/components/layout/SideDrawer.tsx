@@ -1,4 +1,4 @@
-import { Settings, User, Bell, FileText, Shield, LogOut, Gift, Smartphone, Coins } from "lucide-react";
+import { Settings, User, Bell, FileText, Shield, LogOut, Gift, Smartphone, Coins, Volume2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -27,6 +27,7 @@ const SideDrawer = ({ open, onOpenChange }: SideDrawerProps) => {
     { label: "App", icon: Smartphone, path: `${basePath}/app` },
     { label: "Account Settings", icon: Settings, path: `${basePath}/settings` },
     { label: "Notifications", icon: Bell, path: `${basePath}/notifications` },
+    { label: "Notification Settings", icon: Volume2, path: `${basePath}/notification-settings` },
     { label: "Terms of Service", icon: FileText, path: "/legal/terms-of-service" },
     { label: "Privacy Policy", icon: Shield, path: "/legal/privacy-policy" },
   ];
