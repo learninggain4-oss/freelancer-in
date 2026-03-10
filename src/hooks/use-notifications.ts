@@ -28,6 +28,7 @@ export const useNotifications = () => {
         .from("notifications")
         .select("*")
         .eq("user_id", user.id)
+        .eq("is_cleared", false)
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
@@ -101,5 +102,33 @@ export const useNotifications = () => {
     },
   });
 
-  return { notifications, unreadCount, isLoading, markAsRead, markAllAsRead };
+  const deleteNotification = useMutation({
+    mutationFn: async (notificationId: string) => {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_cleared: true })
+        .eq("id", notificationId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+    },
+  });
+
+  const clearAllRead = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) return;
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_cleared: true })
+        .eq("user_id", user.id)
+        .eq("is_read", true);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+    },
+  });
+
+  return { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification, clearAllRead };
 };
