@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Coins, CheckCircle, Briefcase, Calendar, Star, Users, Trophy, IndianRupee, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +13,7 @@ const GetCoins = () => {
   const [minCoins, setMinCoins] = useState<number>(250);
   const [converting, setConverting] = useState(false);
   const [totalRedeemed, setTotalRedeemed] = useState(0);
+  const [claimedRewards, setClaimedRewards] = useState<string[]>([]);
   const [rewards, setRewards] = useState({
     complete_profile: 1000,
     complete_project: 2000,
@@ -56,6 +58,21 @@ const GetCoins = () => {
     fetchSettings();
   }, []);
 
+  // Fetch claimed reward types
+  useEffect(() => {
+    if (!profile?.id) return;
+    const fetchClaimed = async () => {
+      const { data } = await supabase
+        .from("coin_reward_claims" as any)
+        .select("reward_type")
+        .eq("profile_id", profile.id);
+      if (data) {
+        setClaimedRewards((data as any[]).map((r) => r.reward_type));
+      }
+    };
+    fetchClaimed();
+  }, [profile?.id]);
+
   useEffect(() => {
     if (!profile) return;
     const fetchRedeemed = async () => {
@@ -91,12 +108,15 @@ const GetCoins = () => {
     }
   };
 
+  // Check if a reward type has been claimed
+  const isCompleted = (rewardType: string) => claimedRewards.includes(rewardType);
+
   const earnActivities = [
-    { icon: CheckCircle, text: "Complete Your Profile", coins: rewards.complete_profile },
-    { icon: Briefcase, text: "Complete a Project", coins: rewards.complete_project },
-    { icon: Calendar, text: "Daily Attendance Present", coins: rewards.daily_attendance },
-    { icon: Star, text: "Receive a 5-Star Review", coins: rewards.star_review },
-    { icon: Users, text: "Refer 10 Friends", coins: rewards.referral_10 },
+    { icon: CheckCircle, text: "Complete Your Profile", coins: rewards.complete_profile, rewardType: "complete_profile" },
+    { icon: Briefcase, text: "Complete a Project", coins: rewards.complete_project, rewardType: "complete_project" },
+    { icon: Calendar, text: "Daily Attendance Present", coins: rewards.daily_attendance, rewardType: "daily_attendance" },
+    { icon: Star, text: "Receive a 5-Star Review", coins: rewards.star_review, rewardType: "5star_review" },
+    { icon: Users, text: "Refer 10 Friends", coins: rewards.referral_10, rewardType: "referral_10" },
   ];
 
   return (
@@ -149,13 +169,22 @@ const GetCoins = () => {
         </CardHeader>
         <CardContent>
           <ul className="space-y-3">
-            {earnActivities.map((item, i) => (
-              <li key={i} className="flex items-center gap-3 text-sm">
-                <item.icon className="h-4 w-4 shrink-0 text-accent" />
-                <span className="flex-1 text-foreground">{item.text}</span>
-                <span className="font-semibold text-amber-500">+{item.coins.toLocaleString()}</span>
-              </li>
-            ))}
+            {earnActivities.map((item, i) => {
+              const completed = isCompleted(item.rewardType);
+              return (
+                <li key={i} className={`flex items-center gap-3 text-sm rounded-lg p-2 ${completed ? "bg-accent/10" : ""}`}>
+                  <item.icon className={`h-4 w-4 shrink-0 ${completed ? "text-accent" : "text-muted-foreground"}`} />
+                  <span className={`flex-1 ${completed ? "text-accent font-medium" : "text-foreground"}`}>{item.text}</span>
+                  {completed ? (
+                    <Badge variant="outline" className="border-accent/30 text-accent text-[10px] gap-1">
+                      <CheckCircle className="h-3 w-3" /> Completed
+                    </Badge>
+                  ) : (
+                    <span className="font-semibold text-amber-500">+{item.coins.toLocaleString()}</span>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </CardContent>
       </Card>

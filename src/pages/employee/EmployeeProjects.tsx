@@ -12,7 +12,6 @@ import {
   Calendar,
   User,
   FileText,
-  
   Send,
   Tag,
   Paperclip,
@@ -22,6 +21,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const statusColor: Record<string, string> = {
   open: "bg-accent/10 text-accent",
@@ -99,9 +108,9 @@ const EmployeeProjects = () => {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [mySkillsActive, setMySkillsActive] = useState(false);
+  const [confirmProject, setConfirmProject] = useState<any>(null);
   const { profile } = useAuth();
   const queryClient = useQueryClient();
-  
 
   // Fetch categories for filter
   const { data: categories = [] } = useQuery({
@@ -154,7 +163,6 @@ const EmployeeProjects = () => {
     }
   });
 
-
   // Apply to project
   const applyMutation = useMutation({
     mutationFn: async (projectId: string) => {
@@ -167,10 +175,15 @@ const EmployeeProjects = () => {
     },
     onSuccess: () => {
       toast.success("Application submitted!");
+      setConfirmProject(null);
       queryClient.invalidateQueries({ queryKey: ["employee-requests"] });
     },
-    onError: (e: any) => toast.error(e.message)
+    onError: (e: any) => { toast.error(e.message); setConfirmProject(null); }
   });
+
+  const handleApplyClick = (project: any) => {
+    setConfirmProject(project);
+  };
 
   return (
     <div className="space-y-4 p-4">
@@ -208,13 +221,37 @@ const EmployeeProjects = () => {
           Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-40 w-full" />) :
           inquiries.length > 0 ?
             inquiries.map((p: any) =>
-              <InquiryCard key={p.id} project={p} onApply={() => applyMutation.mutate(p.id)} isPending={applyMutation.isPending} />
+              <InquiryCard key={p.id} project={p} onApply={() => handleApplyClick(p)} isPending={applyMutation.isPending} />
             ) :
             <p className="py-8 text-center text-sm text-muted-foreground">No open projects available</p>
         }
       </div>
-    </div>);
 
+      {/* Job Application Confirmation Dialog */}
+      <AlertDialog open={!!confirmProject} onOpenChange={(open) => { if (!open) setConfirmProject(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Application</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to apply for <span className="font-semibold text-foreground">"{confirmProject?.name}"</span>?
+              {confirmProject?.amount && (
+                <span className="block mt-1">Budget: ₹{Number(confirmProject.amount).toLocaleString("en-IN")} • Validation Fee: ₹{Number(confirmProject.validation_fees).toLocaleString("en-IN")}</span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => confirmProject && applyMutation.mutate(confirmProject.id)}
+              disabled={applyMutation.isPending}
+            >
+              {applyMutation.isPending ? "Applying..." : "Yes, Apply"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
 };
 
 export default EmployeeProjects;

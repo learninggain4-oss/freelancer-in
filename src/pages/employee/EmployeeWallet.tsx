@@ -5,17 +5,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowDownToLine, BadgeCheck, AlertCircle, Receipt, History, CheckCircle2 } from "lucide-react";
+import { ArrowDownToLine, BadgeCheck, AlertCircle, Receipt, History, CheckCircle2, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const EmployeeWallet = () => {
   const { profile, refreshProfile } = useAuth();
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [method, setMethod] = useState<"upi" | "bank">("upi");
   const [selectedUpiAppId, setSelectedUpiAppId] = useState<string | null>(null);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [withdrawalPassword, setWithdrawalPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [verifyingPassword, setVerifyingPassword] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -38,6 +50,20 @@ const EmployeeWallet = () => {
   });
 
   const isBankVerified = bankVerification?.status === "verified";
+
+  // Check if withdrawal password is set
+  const { data: passwordStatus } = useQuery({
+    queryKey: ["withdrawal-password-status"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("withdrawal-password", {
+        body: { action: "status" },
+      });
+      if (error) return { has_password: false };
+      return data as { has_password: boolean };
+    },
+  });
+
+  const hasWithdrawalPassword = passwordStatus?.has_password ?? false;
 
   // Fetch employee's saved UPI payment apps with logos
   const { data: upiApps } = useQuery({
@@ -109,12 +135,55 @@ const EmployeeWallet = () => {
       toast.success("Withdrawal request submitted");
       setWithdrawAmount("");
       setSelectedUpiAppId(null);
+      setShowPasswordDialog(false);
+      setWithdrawalPassword("");
       refreshProfile();
       queryClient.invalidateQueries({ queryKey: ["employee-withdrawals"] });
       queryClient.invalidateQueries({ queryKey: ["employee-transactions"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const handleWithdrawClick = () => {
+    if (!hasWithdrawalPassword) {
+      toast.error("Please create a Withdrawal Password first in Account Settings");
+      navigate("/account-settings");
+      return;
+    }
+    // Validate inputs before showing password dialog
+    const amount = Number(withdrawAmount);
+    if (!amount || amount <= 0) { toast.error("Enter a valid amount"); return; }
+    if (amount > (profile?.available_balance ?? 0)) { toast.error("Insufficient balance"); return; }
+    if (method === "upi" && !selectedUpiAppId) { toast.error("Please select a UPI app"); return; }
+    if (method === "bank" && !savedBank) { toast.error("No bank account saved"); return; }
+
+    setShowPasswordDialog(true);
+  };
+
+  const handleVerifyAndWithdraw = async () => {
+    if (!withdrawalPassword) {
+      toast.error("Enter your withdrawal password");
+      return;
+    }
+    setVerifyingPassword(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("withdrawal-password", {
+        body: { action: "verify", password: withdrawalPassword },
+      });
+      if (error) throw new Error("Verification failed");
+      if (data?.error) throw new Error(data.error);
+      if (!data?.valid) {
+        toast.error("Incorrect withdrawal password");
+        return;
+      }
+      // Password verified, proceed with withdrawal
+      withdrawMutation.mutate();
+    } catch (err: any) {
+      toast.error(err.message || "Password verification failed");
+    } finally {
+      setVerifyingPassword(false);
+    }
+  };
 
   return (
     <div className="space-y-6 p-4">
@@ -147,6 +216,19 @@ const EmployeeWallet = () => {
           <span className="text-sm font-medium">Withdrawals</span>
         </Button>
       </div>
+
+      {/* Withdrawal Password Warning */}
+      {passwordStatus && !hasWithdrawalPassword && (
+        <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm text-warning">
+          <Lock className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <span>You must create a Withdrawal Password before you can withdraw funds.</span>
+            <Button variant="link" size="sm" className="h-auto p-0 ml-1 text-warning underline" onClick={() => navigate("/account-settings")}>
+              Create Now →
+            </Button>
+          </div>
+        </div>
+      )}
 
       <Card>
         <CardHeader className="pb-3">
@@ -260,7 +342,7 @@ const EmployeeWallet = () => {
           )}
           <Button
             className="w-full"
-            onClick={() => withdrawMutation.mutate()}
+            onClick={handleWithdrawClick}
             disabled={
               withdrawMutation.isPending ||
               !isBankVerified ||
@@ -274,12 +356,56 @@ const EmployeeWallet = () => {
               ? "Wallet Inactive"
               : !isBankVerified
               ? "Bank Verification Required"
+              : !hasWithdrawalPassword
+              ? "Set Withdrawal Password First"
               : method === "upi" && !selectedUpiAppId
               ? "Select a UPI App"
               : "Enter Withdrawal"}
           </Button>
         </CardContent>
       </Card>
+
+      {/* Withdrawal Password Verification Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={(open) => { setShowPasswordDialog(open); if (!open) setWithdrawalPassword(""); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-primary" />
+              Withdrawal Password
+            </DialogTitle>
+            <DialogDescription>
+              Enter your withdrawal password to confirm this withdrawal of ₹{Number(withdrawAmount).toLocaleString("en-IN")}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter withdrawal password"
+                value={withdrawalPassword}
+                onChange={(e) => setWithdrawalPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleVerifyAndWithdraw()}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 h-10 w-10"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>Cancel</Button>
+            <Button onClick={handleVerifyAndWithdraw} disabled={verifyingPassword || withdrawMutation.isPending}>
+              {verifyingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {verifyingPassword ? "Verifying..." : "Confirm Withdrawal"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
