@@ -28,6 +28,7 @@ export const useNotifications = () => {
         .from("notifications")
         .select("*")
         .eq("user_id", user.id)
+        .eq("is_cleared", false)
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
