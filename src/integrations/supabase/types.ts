@@ -2148,6 +2148,50 @@ export type Database = {
         }
         Relationships: []
       }
+      user_bank_accounts: {
+        Row: {
+          bank_account_number: string
+          bank_holder_name: string
+          bank_ifsc_code: string
+          bank_name: string
+          created_at: string
+          id: string
+          is_locked: boolean
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          bank_account_number: string
+          bank_holder_name: string
+          bank_ifsc_code: string
+          bank_name: string
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          bank_account_number?: string
+          bank_holder_name?: string
+          bank_ifsc_code?: string
+          bank_name?: string
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_bank_accounts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
