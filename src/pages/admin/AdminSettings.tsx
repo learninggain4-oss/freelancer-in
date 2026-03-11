@@ -57,48 +57,8 @@ const AdminSettings = () => {
   const [clientsLoading, setClientsLoading] = useState(false);
   const [updatingClients, setUpdatingClients] = useState(false);
 
-  const {
-    needRefresh: [needRefresh],
-    updateServiceWorker,
-  } = useRegisterSW();
 
-  const handleCheckUpdate = useCallback(async () => {
-    setChecking(true);
-    try {
-      const registrations = await navigator.serviceWorker?.getRegistrations();
-      if (registrations?.length) {
-        await Promise.all(registrations.map((r) => r.update()));
-      }
-      // Wait briefly for needRefresh to potentially change
-      await new Promise((r) => setTimeout(r, 1500));
-      if (!needRefresh) {
-        toast({ title: "You're up to date!", description: "No new updates available." });
-      }
-    } catch {
-      toast({ title: "Could not check for updates", variant: "destructive" });
-    } finally {
-      setChecking(false);
-    }
-  }, [needRefresh, toast]);
 
-  const handleUpdate = useCallback(() => {
-    setUpdating(true);
-    setUpdateProgress(0);
-    const interval = setInterval(() => {
-      setUpdateProgress((prev) => {
-        if (prev >= 90) {
-          clearInterval(interval);
-          return 95;
-        }
-        return prev + Math.random() * 15 + 5;
-      });
-    }, 200);
-    updateServiceWorker(true).finally(() => {
-      clearInterval(interval);
-      setUpdateProgress(100);
-      setTimeout(() => window.location.reload(), 300);
-    });
-  }, [updateServiceWorker]);
 
   const fetchClients = useCallback(async () => {
     setClientsLoading(true);
