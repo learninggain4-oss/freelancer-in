@@ -4,6 +4,15 @@
  */
 
 const ONESIGNAL_APP_ID = "c2875b6b-8c7c-4190-b65b-b424dcd3c67d";
+const ONESIGNAL_READY_TIMEOUT_MS = 15000;
+
+const oneSignalInitOptions = {
+  appId: ONESIGNAL_APP_ID,
+  allowLocalhostAsSecureOrigin: true,
+  notifyButton: { enable: false },
+  serviceWorkerParam: { scope: "/" },
+  serviceWorkerPath: "/OneSignalSDKWorker.js",
+};
 
 declare global {
   interface Window {
@@ -14,61 +23,63 @@ declare global {
 
 let loggedInExternalId: string | null = null;
 let loginInFlight = false;
-
-/**
- * Returns a promise that resolves with the ready OneSignal object.
- * Handles the case where the SDK may already be initialized.
- */
-const getOneSignal = (): Promise<any> => {
-  return new Promise((resolve) => {
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    window.OneSignalDeferred.push(async (OneSignal: any) => {
-      resolve(OneSignal);
-    });
-  });
-};
-
-let osPromise: Promise<any> | null = null;
+let oneSignalReadyPromise: Promise<any> | null = null;
+let oneSignalInitialized = false;
 
 const ensureOneSignal = (): Promise<any> => {
-  if (osPromise) return osPromise;
-  osPromise = getOneSignal();
-  return osPromise;
+  if (oneSignalReadyPromise) return oneSignalReadyPromise;
+
+  oneSignalReadyPromise = new Promise((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => {
+      oneSignalReadyPromise = null;
+      reject(new Error("OneSignal initialization timeout"));
+    }, ONESIGNAL_READY_TIMEOUT_MS);
+
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async (OneSignal: any) => {
+      try {
+        if (!oneSignalInitialized) {
+          try {
+            await OneSignal.init(oneSignalInitOptions);
+            console.log("OneSignal initialized successfully");
+          } catch (e: any) {
+            if (!e?.message?.includes("already initialized")) {
+              throw e;
+            }
+            console.log("OneSignal was already initialized");
+          }
+          oneSignalInitialized = true;
+        }
+
+        window.clearTimeout(timeoutId);
+        resolve(OneSignal);
+      } catch (e) {
+        window.clearTimeout(timeoutId);
+        oneSignalReadyPromise = null;
+        reject(e);
+      }
+    });
+  });
+
+  return oneSignalReadyPromise;
 };
 
 export const initOneSignal = () => {
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  window.OneSignalDeferred.push(async (OneSignal: any) => {
-    try {
-      await OneSignal.init({
-        appId: ONESIGNAL_APP_ID,
-        allowLocalhostAsSecureOrigin: true,
-        notifyButton: { enable: false },
-        serviceWorkerParam: { scope: "/" },
-        serviceWorkerPath: "/OneSignalSDKWorker.js",
-      });
-      console.log("OneSignal initialized successfully");
-    } catch (e: any) {
-      // "SDK already initialized" is expected on hot-reload / revisit — safe to ignore
-      if (e?.message?.includes("already initialized")) {
-        console.log("OneSignal was already initialized");
-      } else {
-        console.warn("OneSignal init error:", e);
-      }
-    }
-  });
+  ensureOneSignal().catch((e) => console.warn("OneSignal init error:", e));
 };
 
 export const loginOneSignal = (userId: string) => {
-  if (!userId) return;
+  const normalizedUserId = userId?.trim();
+  if (!normalizedUserId) return;
+
   ensureOneSignal()
     .then(async (OneSignal) => {
-      if (!OneSignal?.login || loginInFlight || loggedInExternalId === userId) return;
+      if (!OneSignal?.login || loginInFlight || loggedInExternalId === normalizedUserId) return;
       loginInFlight = true;
       try {
-        await OneSignal.login(userId);
-        loggedInExternalId = userId;
-        console.log("OneSignal login success:", userId);
+        await OneSignal.login(normalizedUserId);
+        loggedInExternalId = normalizedUserId;
+        console.log("OneSignal login success:", normalizedUserId);
       } catch (e) {
         console.warn("OneSignal login error:", e);
       } finally {
