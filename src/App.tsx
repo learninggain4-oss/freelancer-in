@@ -175,6 +175,7 @@ const AppContent = () => {
               <Route path="get-coins" element={<GetCoins />} />
               <Route path="app" element={<AppPage />} />
               <Route path="help-support" element={<HelpSupport />} />
+              <Route path="notifications" element={<Notifications />} />
             </Route>
 
             {/* Client Routes */}
