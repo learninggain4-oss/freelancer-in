@@ -96,7 +96,7 @@ import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 import { useVisitorTracking } from "@/hooks/use-visitor-tracking";
 import { useIpBlockCheck } from "@/hooks/use-ip-block-check";
 import AnnouncementPopup from "@/components/announcements/AnnouncementPopup";
-import UpdatePrompt from "@/components/pwa/UpdatePrompt";
+
 import BlockedScreen from "@/components/BlockedScreen";
 
 const queryClient = new QueryClient();
@@ -125,7 +125,7 @@ const AppContent = () => {
     <>
       <GlobalChatNotifier />
       <AnnouncementPopup />
-      <UpdatePrompt />
+      
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
