@@ -2284,6 +2284,63 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_types: {
+        Row: {
+          color: string
+          created_at: string
+          daily_withdrawal_limit: number
+          description: string
+          display_order: number
+          icon_name: string
+          id: string
+          is_active: boolean
+          is_cleared: boolean
+          max_balance: number
+          min_balance: number
+          name: string
+          perks: string[]
+          transaction_limit: number
+          updated_at: string
+          upgrade_requirements: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          daily_withdrawal_limit?: number
+          description?: string
+          display_order?: number
+          icon_name?: string
+          id?: string
+          is_active?: boolean
+          is_cleared?: boolean
+          max_balance?: number
+          min_balance?: number
+          name: string
+          perks?: string[]
+          transaction_limit?: number
+          updated_at?: string
+          upgrade_requirements?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          daily_withdrawal_limit?: number
+          description?: string
+          display_order?: number
+          icon_name?: string
+          id?: string
+          is_active?: boolean
+          is_cleared?: boolean
+          max_balance?: number
+          min_balance?: number
+          name?: string
+          perks?: string[]
+          transaction_limit?: number
+          updated_at?: string
+          upgrade_requirements?: string
+        }
+        Relationships: []
+      }
       withdrawals: {
         Row: {
           amount: number
