@@ -27,9 +27,21 @@ async function importVapidKeys(publicKeyB64: string, privateKeyB64: string) {
   const privRaw = base64UrlDecode(privateKeyB64);
 
   const publicKey = await crypto.subtle.importKey("raw", pubRaw, { name: "ECDSA", namedCurve: "P-256" }, true, []);
+
+  // VAPID private keys are raw 32-byte keys, import as JWK
+  const privKeyBytes = privRaw;
+  const jwk = {
+    kty: "EC",
+    crv: "P-256",
+    x: base64UrlEncode(pubRaw.slice(1, 33)),
+    y: base64UrlEncode(pubRaw.slice(33, 65)),
+    d: base64UrlEncode(privKeyBytes),
+    ext: true,
+  };
+
   const privateKey = await crypto.subtle.importKey(
-    "pkcs8",
-    privRaw,
+    "jwk",
+    jwk,
     { name: "ECDSA", namedCurve: "P-256" },
     true,
     ["sign"]
