@@ -55,7 +55,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        if (session?.user) {
+      if (session?.user) {
+          loginOneSignal(session.user.id);
           setTimeout(() => fetchProfile(session.user.id).catch(() => {}), 0);
         } else {
           setProfile(null);
