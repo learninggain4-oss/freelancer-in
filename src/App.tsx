@@ -125,7 +125,7 @@ const AppContent = () => {
   if (blocked) return <BlockedScreen />;
 
   return (
-    <NotificationPermissionGate>
+    <>
       <GlobalChatNotifier />
       <AnnouncementPopup />
       <UpdatePrompt />
