@@ -265,7 +265,7 @@ const AppContent = () => {
           </Routes>
         </Suspense>
       </ErrorBoundary>
-    </NotificationPermissionGate>
+    </>
   );
 };
 
