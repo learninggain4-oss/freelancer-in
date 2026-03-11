@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,14 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Send, Users, Loader2 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Bell, Send, Users, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
+
+type TargetMode = "all" | "employees" | "clients" | "custom";
 
 const AdminPushNotifications = () => {
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
-  const [sendToAll, setSendToAll] = useState(true);
+  const [targetMode, setTargetMode] = useState<TargetMode>("all");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: subscribers = [], isLoading } = useQuery({
     queryKey: ["push-subscribers"],
@@ -25,7 +29,6 @@ const AdminPushNotifications = () => {
       if (error) throw error;
       const rows = (data || []) as any[];
 
-      // Fetch profile names
       const profileIds = [...new Set(rows.map((s) => s.profile_id).filter(Boolean))];
       let profileMap: Record<string, any> = {};
       if (profileIds.length > 0) {
@@ -39,7 +42,6 @@ const AdminPushNotifications = () => {
         }, {});
       }
 
-      // Group by user_id
       const grouped: Record<string, any> = {};
       for (const sub of rows) {
         if (!grouped[sub.user_id]) {
@@ -55,19 +57,35 @@ const AdminPushNotifications = () => {
         }
         grouped[sub.user_id].device_count++;
       }
-      return Object.values(grouped);
+      return Object.values(grouped) as any[];
     },
   });
 
+  const filteredSubscribers = useMemo(() => {
+    let list = subscribers;
+    if (targetMode === "employees") list = list.filter((s: any) => s.user_type === "employee");
+    if (targetMode === "clients") list = list.filter((s: any) => s.user_type === "client");
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter((s: any) => s.name?.toLowerCase().includes(q) || s.email?.toLowerCase().includes(q));
+    }
+    return list;
+  }, [subscribers, targetMode, searchQuery]);
+
+  const resolvedUserIds = useMemo(() => {
+    if (targetMode === "all") return [];
+    if (targetMode === "custom") return selectedUsers;
+    return filteredSubscribers.map((s: any) => s.user_id);
+  }, [targetMode, selectedUsers, filteredSubscribers]);
+
   const sendMutation = useMutation({
     mutationFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
       const { data, error } = await supabase.functions.invoke("send-push-notification", {
         body: {
           title,
           message,
-          send_to_all: sendToAll,
-          user_ids: sendToAll ? [] : selectedUsers,
+          send_to_all: targetMode === "all",
+          user_ids: resolvedUserIds,
         },
       });
       if (error) throw error;
@@ -89,11 +107,41 @@ const AdminPushNotifications = () => {
     );
   };
 
+  const selectAllVisible = () => {
+    const visibleIds = filteredSubscribers.map((s: any) => s.user_id);
+    setSelectedUsers((prev) => [...new Set([...prev, ...visibleIds])]);
+  };
+
+  const deselectAllVisible = () => {
+    const visibleIds = new Set(filteredSubscribers.map((s: any) => s.user_id));
+    setSelectedUsers((prev) => prev.filter((id) => !visibleIds.has(id)));
+  };
+
+  const employeeCount = subscribers.filter((s: any) => s.user_type === "employee").length;
+  const clientCount = subscribers.filter((s: any) => s.user_type === "client").length;
+
+  const canSend =
+    title &&
+    message &&
+    !sendMutation.isPending &&
+    (targetMode === "all" || targetMode === "employees" || targetMode === "clients"
+      ? filteredSubscribers.length > 0
+      : selectedUsers.length > 0);
+
+  const targetLabel =
+    targetMode === "all"
+      ? `all ${subscribers.length} subscriber(s)`
+      : targetMode === "employees"
+      ? `${filteredSubscribers.length} employee(s)`
+      : targetMode === "clients"
+      ? `${filteredSubscribers.length} client(s)`
+      : `${selectedUsers.length} selected user(s)`;
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-foreground">Push Notifications</h2>
-        <p className="text-muted-foreground">Send push notifications to users with enabled notifications</p>
+        <p className="text-muted-foreground">Send push notifications to employees and clients</p>
       </div>
 
       {/* Compose */}
@@ -107,38 +155,32 @@ const AdminPushNotifications = () => {
         <CardContent className="space-y-4">
           <div>
             <label className="text-sm font-medium">Title</label>
-            <Input
-              placeholder="Notification title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
+            <Input placeholder="Notification title" value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
           <div>
             <label className="text-sm font-medium">Message</label>
-            <Textarea
-              placeholder="Notification message"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={3}
-            />
+            <Textarea placeholder="Notification message" value={message} onChange={(e) => setMessage(e.target.value)} rows={3} />
           </div>
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="send-all"
-              checked={sendToAll}
-              onCheckedChange={(checked) => setSendToAll(!!checked)}
-            />
-            <label htmlFor="send-all" className="text-sm font-medium cursor-pointer">
-              Send to all subscribers
-            </label>
+
+          <div>
+            <label className="text-sm font-medium mb-2 block">Send To</label>
+            <Tabs value={targetMode} onValueChange={(v) => { setTargetMode(v as TargetMode); setSelectedUsers([]); }}>
+              <TabsList className="w-full grid grid-cols-4">
+                <TabsTrigger value="all">All ({subscribers.length})</TabsTrigger>
+                <TabsTrigger value="employees">Employees ({employeeCount})</TabsTrigger>
+                <TabsTrigger value="clients">Clients ({clientCount})</TabsTrigger>
+                <TabsTrigger value="custom">Custom</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
+
           <Button
             onClick={() => sendMutation.mutate()}
-            disabled={!title || !message || sendMutation.isPending || (!sendToAll && selectedUsers.length === 0)}
+            disabled={!canSend}
             className="w-full gap-2"
           >
             {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
-            Send Push Notification
+            Send to {targetLabel}
           </Button>
         </CardContent>
       </Card>
@@ -149,25 +191,46 @@ const AdminPushNotifications = () => {
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
             Subscribers
-            <Badge variant="secondary">{subscribers.length}</Badge>
+            <Badge variant="secondary">{filteredSubscribers.length}</Badge>
           </CardTitle>
-          <CardDescription>Users who have enabled push notifications</CardDescription>
+          <CardDescription>
+            {targetMode === "all" ? "All subscribers" : targetMode === "custom" ? "Select individual users" : `Showing ${targetMode}`}
+          </CardDescription>
+          <div className="relative mt-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          {targetMode === "custom" && filteredSubscribers.length > 0 && (
+            <div className="flex gap-2 mt-2">
+              <Button variant="outline" size="sm" onClick={selectAllVisible}>Select all visible</Button>
+              <Button variant="outline" size="sm" onClick={deselectAllVisible}>Deselect all visible</Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : subscribers.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">No subscribers yet</p>
+          ) : filteredSubscribers.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">No subscribers found</p>
           ) : (
-            <div className="space-y-2">
-              {subscribers.map((sub: any) => (
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              {filteredSubscribers.map((sub: any) => (
                 <div
                   key={sub.user_id}
-                  className="flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                  className={`flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50 ${
+                    targetMode === "custom" && selectedUsers.includes(sub.user_id) ? "border-primary bg-primary/5" : ""
+                  }`}
+                  onClick={() => targetMode === "custom" && toggleUser(sub.user_id)}
+                  role={targetMode === "custom" ? "button" : undefined}
                 >
-                  {!sendToAll && (
+                  {targetMode === "custom" && (
                     <Checkbox
                       checked={selectedUsers.includes(sub.user_id)}
                       onCheckedChange={() => toggleUser(sub.user_id)}
