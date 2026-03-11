@@ -76,6 +76,7 @@ const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
 const AdminWalletTransactions = lazy(() => import("./pages/admin/AdminWalletTransactions"));
 const AdminAttendance = lazy(() => import("./pages/admin/AdminAttendance"));
 const AdminBanks = lazy(() => import("./pages/admin/AdminBanks"));
+const AdminPushNotifications = lazy(() => import("./pages/admin/AdminPushNotifications"));
 const Categories = lazy(() => import("./pages/Categories"));
 const TransactionHistory = lazy(() => import("./pages/wallet/TransactionHistory"));
 const WithdrawalHistory = lazy(() => import("./pages/wallet/WithdrawalHistory"));
@@ -97,6 +98,8 @@ import { useIpBlockCheck } from "@/hooks/use-ip-block-check";
 import AnnouncementPopup from "@/components/announcements/AnnouncementPopup";
 import UpdatePrompt from "@/components/pwa/UpdatePrompt";
 import BlockedScreen from "@/components/BlockedScreen";
+import NotificationPermissionGate from "@/components/notifications/NotificationPermissionGate";
+import { usePushSubscription } from "@/hooks/use-push-subscription";
 
 const queryClient = new QueryClient();
 
@@ -105,6 +108,7 @@ const GlobalChatNotifier = () => {
   useChatNotifications();
   usePresenceHeartbeat();
   useVisitorTracking();
+  usePushSubscription();
   return null;
 };
 
@@ -121,7 +125,7 @@ const AppContent = () => {
   if (blocked) return <BlockedScreen />;
 
   return (
-    <>
+    <NotificationPermissionGate>
       <GlobalChatNotifier />
       <AnnouncementPopup />
       <UpdatePrompt />
@@ -254,13 +258,14 @@ const AppContent = () => {
               <Route path="wallet/transactions" element={<AdminWalletTransactions />} />
               <Route path="attendance" element={<AdminAttendance />} />
               <Route path="banks" element={<AdminBanks />} />
+              <Route path="push-notifications" element={<AdminPushNotifications />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </ErrorBoundary>
-    </>
+    </NotificationPermissionGate>
   );
 };
 
