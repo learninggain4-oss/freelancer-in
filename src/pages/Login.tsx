@@ -170,7 +170,6 @@ const Login = () => {
           <Link to="/register/employee" className="font-medium text-primary hover:underline">Register here</Link>
         </p>
         <div className="mt-2 text-center">
-          <Link to="/"><Button variant="ghost" size="sm">← Back to Home</Button></Link>
         </div>
       </div>
 
