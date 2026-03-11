@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { loginOneSignal, logoutOneSignal } from "@/lib/onesignal";
 
 type Profile = Tables<"profiles">;
 
