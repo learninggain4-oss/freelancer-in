@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,25 +14,25 @@ const ProfilePersonalInfo = () => {
   const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<Record<string, string>>({});
+  const [whatsappNumber, setWhatsappNumber] = useState("");
 
   const base = profile?.user_type === "employee" ? "/employee" : "/client";
 
   const startEditing = () => {
-    setForm({
-      mobile_number: profile?.mobile_number ?? "",
-      whatsapp_number: profile?.whatsapp_number ?? "",
-    });
+    setWhatsappNumber(profile?.whatsapp_number ?? "");
     setEditing(true);
   };
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("profiles").update(form as any).eq("id", profile!.id);
+      const { error } = await supabase
+        .from("profiles")
+        .update({ whatsapp_number: whatsappNumber } as any)
+        .eq("id", profile!.id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Updated successfully.");
+      toast.success("WhatsApp number updated.");
       setEditing(false);
       refreshProfile();
     },
@@ -66,13 +66,10 @@ const ProfilePersonalInfo = () => {
       {editing ? (
         <Card>
           <CardContent className="space-y-3 pt-6">
-            <div className="space-y-1">
-              <Label className="text-xs">Mobile Number</Label>
-              <Input value={form.mobile_number ?? ""} onChange={(e) => setForm((p) => ({ ...p, mobile_number: e.target.value }))} />
-            </div>
+            <p className="text-xs text-muted-foreground">Only WhatsApp number can be edited. Contact admin to change other details.</p>
             <div className="space-y-1">
               <Label className="text-xs">WhatsApp Number</Label>
-              <Input value={form.whatsapp_number ?? ""} onChange={(e) => setForm((p) => ({ ...p, whatsapp_number: e.target.value }))} />
+              <Input value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} />
             </div>
             <div className="flex gap-2 pt-2">
               <Button className="flex-1" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>

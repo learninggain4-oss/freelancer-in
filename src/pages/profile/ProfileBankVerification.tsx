@@ -15,7 +15,7 @@ const ProfileBankVerification = () => {
         <Button variant="ghost" size="icon" onClick={() => navigate(`${base}/profile`)}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-xl font-bold text-foreground">Bank Verification</h1>
+        <h1 className="text-xl font-bold text-foreground">Self Bank Verification</h1>
       </div>
       <BankVerificationCard />
     </div>

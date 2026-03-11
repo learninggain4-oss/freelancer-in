@@ -15,7 +15,7 @@ const ProfileAadhaarVerification = () => {
         <Button variant="ghost" size="icon" onClick={() => navigate(`${base}/profile`)}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-xl font-bold text-foreground">Aadhaar Verification</h1>
+        <h1 className="text-xl font-bold text-foreground">Self Real Name Verification</h1>
       </div>
       <AadhaarVerificationCard />
     </div>
