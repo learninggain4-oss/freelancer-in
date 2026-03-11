@@ -5,14 +5,6 @@
 
 const ONESIGNAL_APP_ID = "c2875b6b-8c7c-4190-b65b-b424dcd3c67d";
 
-const ONESIGNAL_INIT_OPTIONS = {
-  appId: ONESIGNAL_APP_ID,
-  allowLocalhostAsSecureOrigin: true,
-  notifyButton: { enable: false },
-  serviceWorkerParam: { scope: "/" },
-  serviceWorkerPath: "/OneSignalSDKWorker.js",
-};
-
 declare global {
   interface Window {
     OneSignalDeferred?: Array<(OneSignal: any) => void>;
@@ -20,84 +12,91 @@ declare global {
   }
 }
 
-let initStarted = false;
-let oneSignalReadyPromise: Promise<any> | null = null;
 let loggedInExternalId: string | null = null;
 let loginInFlight = false;
 
-const getOneSignalReady = () => {
-  if (oneSignalReadyPromise) return oneSignalReadyPromise;
-
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-
-  oneSignalReadyPromise = new Promise((resolve, reject) => {
-    window.OneSignalDeferred!.push(async (OneSignal: any) => {
-      try {
-        if (!initStarted) {
-          initStarted = true;
-          await OneSignal.init(ONESIGNAL_INIT_OPTIONS);
-        }
-        resolve(OneSignal);
-      } catch (error) {
-        initStarted = false;
-        oneSignalReadyPromise = null;
-        reject(error);
-      }
+/**
+ * Returns a promise that resolves with the ready OneSignal object.
+ * Handles the case where the SDK may already be initialized.
+ */
+const getOneSignal = (): Promise<any> => {
+  return new Promise((resolve) => {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async (OneSignal: any) => {
+      resolve(OneSignal);
     });
   });
+};
 
-  return oneSignalReadyPromise;
+let osPromise: Promise<any> | null = null;
+
+const ensureOneSignal = (): Promise<any> => {
+  if (osPromise) return osPromise;
+  osPromise = getOneSignal();
+  return osPromise;
 };
 
 export const initOneSignal = () => {
-  void getOneSignalReady().catch((error) => {
-    console.warn("OneSignal init failed:", error);
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(async (OneSignal: any) => {
+    try {
+      await OneSignal.init({
+        appId: ONESIGNAL_APP_ID,
+        allowLocalhostAsSecureOrigin: true,
+        notifyButton: { enable: false },
+        serviceWorkerParam: { scope: "/" },
+        serviceWorkerPath: "/OneSignalSDKWorker.js",
+      });
+      console.log("OneSignal initialized successfully");
+    } catch (e: any) {
+      // "SDK already initialized" is expected on hot-reload / revisit — safe to ignore
+      if (e?.message?.includes("already initialized")) {
+        console.log("OneSignal was already initialized");
+      } else {
+        console.warn("OneSignal init error:", e);
+      }
+    }
   });
 };
 
 export const loginOneSignal = (userId: string) => {
   if (!userId) return;
-
-  void getOneSignalReady()
+  ensureOneSignal()
     .then(async (OneSignal) => {
       if (!OneSignal?.login || loginInFlight || loggedInExternalId === userId) return;
       loginInFlight = true;
       try {
         await OneSignal.login(userId);
         loggedInExternalId = userId;
+        console.log("OneSignal login success:", userId);
+      } catch (e) {
+        console.warn("OneSignal login error:", e);
       } finally {
         loginInFlight = false;
       }
     })
-    .catch((e) => {
-      console.warn("OneSignal login failed:", e);
-    });
+    .catch((e) => console.warn("OneSignal login failed:", e));
 };
 
 export const logoutOneSignal = () => {
-  void getOneSignalReady()
+  ensureOneSignal()
     .then(async (OneSignal) => {
       if (!OneSignal?.logout) return;
       await OneSignal.logout();
       loggedInExternalId = null;
     })
-    .catch((e) => {
-      console.warn("OneSignal logout failed:", e);
-    });
+    .catch((e) => console.warn("OneSignal logout failed:", e));
 };
 
 export const promptForPushPermission = () => {
-  void getOneSignalReady()
+  ensureOneSignal()
     .then(async (OneSignal) => {
       const notifications = OneSignal?.Notifications;
       if (!notifications?.requestPermission) return;
-
       const permission = notifications.permission;
       if (permission !== true && permission !== "granted") {
         await notifications.requestPermission();
       }
     })
-    .catch((e) => {
-      console.warn("OneSignal permission request failed:", e);
-    });
+    .catch((e) => console.warn("OneSignal permission request failed:", e));
 };
