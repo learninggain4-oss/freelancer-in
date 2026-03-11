@@ -88,6 +88,7 @@ const ProfileEmergencyContacts = lazy(() => import("./pages/profile/ProfileEmerg
 const ProfileAadhaarVerification = lazy(() => import("./pages/profile/ProfileAadhaarVerification"));
 const ProfileBankVerification = lazy(() => import("./pages/profile/ProfileBankVerification"));
 const ProfileUpiApps = lazy(() => import("./pages/profile/ProfileUpiApps"));
+const Notifications = lazy(() => import("./pages/Notifications"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
@@ -174,6 +175,7 @@ const AppContent = () => {
               <Route path="get-coins" element={<GetCoins />} />
               <Route path="app" element={<AppPage />} />
               <Route path="help-support" element={<HelpSupport />} />
+              <Route path="notifications" element={<Notifications />} />
             </Route>
 
             {/* Client Routes */}
@@ -210,6 +212,7 @@ const AppContent = () => {
               <Route path="get-coins" element={<GetCoins />} />
               <Route path="app" element={<AppPage />} />
               <Route path="help-support" element={<HelpSupport />} />
+              <Route path="notifications" element={<Notifications />} />
             </Route>
 
             {/* Admin Routes */}

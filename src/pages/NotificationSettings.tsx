@@ -67,18 +67,22 @@ const NotificationSettings = () => {
   );
 
   const handleTogglePush = async () => {
-    if (!("Notification" in window)) {
-      toast.error("Push notifications not supported in this browser");
-      return;
-    }
     if (!prefs.pushEnabled) {
-      const permission = await Notification.requestPermission();
-      if (permission === "granted") {
-        save({ ...prefs, pushEnabled: true });
-        toast.success("Push notifications enabled");
-      } else {
-        toast.error("Permission denied for push notifications");
-      }
+      // Use OneSignal to prompt for push permission
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      window.OneSignalDeferred.push(async (OneSignal: any) => {
+        try {
+          const permission = await OneSignal.Notifications.requestPermission();
+          if (permission) {
+            save({ ...prefs, pushEnabled: true });
+            toast.success("Push notifications enabled via OneSignal");
+          } else {
+            toast.error("Permission denied for push notifications");
+          }
+        } catch {
+          toast.error("Could not enable push notifications");
+        }
+      });
     } else {
       save({ ...prefs, pushEnabled: false });
     }

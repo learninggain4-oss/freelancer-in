@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { loginOneSignal, logoutOneSignal } from "@/lib/onesignal";
 
 type Profile = Tables<"profiles">;
 
@@ -54,7 +55,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        if (session?.user) {
+      if (session?.user) {
+          loginOneSignal(session.user.id);
           setTimeout(() => fetchProfile(session.user.id).catch(() => {}), 0);
         } else {
           setProfile(null);
@@ -116,6 +118,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    logoutOneSignal();
     await supabase.auth.signOut();
     setProfile(null);
   };

@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Bell, Check, Trash2, MessageCircle, Briefcase, AlertTriangle, Megaphone, Inbox, ExternalLink } from "lucide-react";
+import { Bell, Check, Trash2, MessageCircle, Briefcase, AlertTriangle, Megaphone, Inbox, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNotifications, type Notification } from "@/hooks/use-notifications";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow, isToday, isYesterday } from "date-fns";
+import { formatDistanceToNow, isToday, isYesterday, format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 type FilterTab = "all" | "unread" | "chat" | "project" | "alert";
 
@@ -22,7 +22,7 @@ function getDateGroup(dateStr: string): string {
   const d = new Date(dateStr);
   if (isToday(d)) return "Today";
   if (isYesterday(d)) return "Yesterday";
-  return "Earlier";
+  return format(d, "MMMM d, yyyy");
 }
 
 function groupByDate(items: Notification[]): Record<string, Notification[]> {
@@ -34,14 +34,10 @@ function groupByDate(items: Notification[]): Record<string, Notification[]> {
   return groups;
 }
 
-interface NotificationPanelProps {
-  onClose: () => void;
-  onViewAll?: () => void;
-}
-
-const NotificationPanel = ({ onClose, onViewAll }: NotificationPanelProps) => {
+const Notifications = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, clearAllRead } = useNotifications();
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
+  const navigate = useNavigate();
 
   const filtered = notifications.filter((n) => {
     switch (activeTab) {
@@ -54,52 +50,63 @@ const NotificationPanel = ({ onClose, onViewAll }: NotificationPanelProps) => {
   });
 
   const grouped = groupByDate(filtered);
-  const groupOrder = ["Today", "Yesterday", "Earlier"];
+  const groupOrder = Object.keys(grouped).sort((a, b) => {
+    if (a === "Today") return -1;
+    if (b === "Today") return 1;
+    if (a === "Yesterday") return -1;
+    if (b === "Yesterday") return 1;
+    return new Date(b).getTime() - new Date(a).getTime();
+  });
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg font-bold text-foreground">Notifications</h2>
+      <div className="sticky top-0 z-20 bg-background border-b">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-lg font-bold text-foreground">Notifications</h1>
+          </div>
           {unreadCount > 0 && (
             <Badge variant="destructive" className="h-5 min-w-5 justify-center rounded-full px-1.5 text-[10px]">
               {unreadCount}
             </Badge>
           )}
         </div>
-        <div className="flex items-center gap-1">
-          {unreadCount > 0 && (
-            <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => markAllAsRead.mutate()}>
-              <Check className="mr-1 h-3 w-3" /> Mark all read
-            </Button>
-          )}
-          {notifications.some((n) => n.is_read) && (
-            <Button variant="ghost" size="sm" className="text-xs text-destructive" onClick={() => clearAllRead.mutate()}>
-              <Trash2 className="mr-1 h-3 w-3" /> Clear read
-            </Button>
-          )}
+
+        {/* Actions */}
+        <div className="flex items-center justify-between px-4 pb-2">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as FilterTab)}>
+            <TabsList>
+              <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
+              <TabsTrigger value="unread" className="text-xs">Unread</TabsTrigger>
+              <TabsTrigger value="chat" className="text-xs">Chat</TabsTrigger>
+              <TabsTrigger value="project" className="text-xs">Projects</TabsTrigger>
+              <TabsTrigger value="alert" className="text-xs">Alerts</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="flex gap-1">
+            {unreadCount > 0 && (
+              <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => markAllAsRead.mutate()}>
+                <Check className="mr-1 h-3 w-3" /> Read all
+              </Button>
+            )}
+            {notifications.some((n) => n.is_read) && (
+              <Button variant="ghost" size="sm" className="text-xs text-destructive" onClick={() => clearAllRead.mutate()}>
+                <Trash2 className="mr-1 h-3 w-3" /> Clear
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="border-b px-4 py-2">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as FilterTab)}>
-          <TabsList className="w-full">
-            <TabsTrigger value="all" className="flex-1 text-xs">All</TabsTrigger>
-            <TabsTrigger value="unread" className="flex-1 text-xs">Unread</TabsTrigger>
-            <TabsTrigger value="chat" className="flex-1 text-xs">Chat</TabsTrigger>
-            <TabsTrigger value="project" className="flex-1 text-xs">Projects</TabsTrigger>
-            <TabsTrigger value="alert" className="flex-1 text-xs">Alerts</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-
-      {/* Notification List */}
-      <ScrollArea className="flex-1">
+      {/* List */}
+      <div className="flex-1 overflow-y-auto">
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-            <Inbox className="mb-3 h-12 w-12 opacity-40" />
+          <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
+            <Inbox className="mb-3 h-16 w-16 opacity-30" />
             <p className="text-sm font-medium">No notifications</p>
             <p className="text-xs">You're all caught up!</p>
           </div>
@@ -109,7 +116,7 @@ const NotificationPanel = ({ onClose, onViewAll }: NotificationPanelProps) => {
             if (!items?.length) return null;
             return (
               <div key={group}>
-                <div className="sticky top-0 z-10 bg-muted/80 px-4 py-1.5 backdrop-blur-sm">
+                <div className="sticky top-[105px] z-10 bg-muted/80 px-4 py-1.5 backdrop-blur-sm">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{group}</p>
                 </div>
                 {items.map((n) => {
@@ -125,7 +132,7 @@ const NotificationPanel = ({ onClose, onViewAll }: NotificationPanelProps) => {
                     >
                       <button
                         onClick={() => !n.is_read && markAsRead.mutate(n.id)}
-                        className={cn("mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full", config.classes)}
+                        className={cn("mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full", config.classes)}
                       >
                         {n.is_read ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
                       </button>
@@ -153,18 +160,9 @@ const NotificationPanel = ({ onClose, onViewAll }: NotificationPanelProps) => {
             );
           })
         )}
-      </ScrollArea>
-
-      {/* View All link */}
-      {onViewAll && (
-        <div className="border-t px-4 py-2">
-          <Button variant="ghost" className="w-full text-xs text-primary" onClick={onViewAll}>
-            <ExternalLink className="mr-1 h-3 w-3" /> View all notifications
-          </Button>
-        </div>
-      )}
+      </div>
     </div>
   );
 };
 
-export default NotificationPanel;
+export default Notifications;
