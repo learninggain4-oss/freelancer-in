@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   User, Briefcase, Landmark, Building2, AlertCircle,
   ShieldCheck, BadgeCheck, ChevronRight, Wallet,
-  Mail, Phone, Calendar, GraduationCap, Copy, Check,
+  Mail, Phone, Calendar, GraduationCap, Copy, Check, Coins,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ProfilePhotoUpload from "@/components/profile/ProfilePhotoUpload";

@@ -4,18 +4,16 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import {
   User, Briefcase, Landmark, Building2, AlertCircle,
   ShieldCheck, BadgeCheck, ChevronRight, Wallet, CreditCard,
-  Mail, Phone, Calendar, MapPin, GraduationCap, Copy, Check,
+  Mail, Phone, Calendar, GraduationCap, Copy, Check, Coins,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ProfilePhotoUpload from "@/components/profile/ProfilePhotoUpload";
 import { useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-
 const EmployeeProfile = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
