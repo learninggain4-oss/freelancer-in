@@ -117,6 +117,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    logoutOneSignal();
     await supabase.auth.signOut();
     setProfile(null);
   };
