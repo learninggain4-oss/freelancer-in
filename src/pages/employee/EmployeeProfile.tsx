@@ -57,20 +57,64 @@ const EmployeeProfile = () => {
     },
   });
 
+  const { data: workExpCount } = useQuery({
+    queryKey: ["work-exp-count", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("documents")
+        .select("*", { count: "exact", head: true })
+        .eq("profile_id", profile!.id)
+        .eq("document_type", "work_experience");
+      // Also check profile field
+      return profile?.work_experience ? 1 : (count ?? 0);
+    },
+  });
+
+  const { data: emergencyCount } = useQuery({
+    queryKey: ["emergency-count", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("employee_emergency_contacts")
+        .select("*", { count: "exact", head: true })
+        .eq("profile_id", profile!.id);
+      return count ?? 0;
+    },
+  });
+
+  const { data: bankAccountCount } = useQuery({
+    queryKey: ["bank-account-count", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      // Check profile-level bank details
+      if (profile?.bank_name && profile?.bank_account_number) return 1;
+      return 0;
+    },
+  });
+
   const isVerified = aadhaarStatus === "verified";
+  const bankVerified = bankVerifStatus === "verified";
   const walletNumber = (profile as any)?.wallet_number ?? "—";
   const fullName = Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Employee";
   const userCode = Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—";
 
-  const fields = [
-    profile?.full_name, profile?.email, profile?.mobile_number,
-    profile?.whatsapp_number, profile?.date_of_birth, profile?.gender,
-    profile?.education_level, profile?.work_experience,
-    profile?.emergency_contact_name, profile?.emergency_contact_phone,
-    profile?.bank_name, profile?.bank_account_number,
+  // 8-section completion checklist
+  const personalComplete = !!(profile?.full_name && profile?.email && profile?.mobile_number && profile?.date_of_birth && profile?.gender);
+  const professionalComplete = !!(profile?.education_level);
+  const bankComplete = !!(bankAccountCount && bankAccountCount > 0);
+  const workExpComplete = !!(workExpCount && workExpCount > 0);
+  const serviceComplete = !!(servicesCount && servicesCount > 0);
+  const emergencyComplete = !!(emergencyCount && emergencyCount > 0);
+  const selfRealNameComplete = isVerified;
+  const selfBankVerifComplete = bankVerified;
+
+  const completionItems = [
+    personalComplete, professionalComplete, bankComplete, workExpComplete,
+    serviceComplete, emergencyComplete, selfRealNameComplete, selfBankVerifComplete,
   ];
-  const filled = fields.filter(Boolean).length;
-  const completion = Math.round((filled / fields.length) * 100);
+  const filled = completionItems.filter(Boolean).length;
+  const completion = Math.round((filled / completionItems.length) * 100);
 
   const handleCopyWallet = () => {
     if (walletNumber !== "—") {
