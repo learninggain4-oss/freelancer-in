@@ -24,6 +24,8 @@ export const initOneSignal = () => {
       appId: ONESIGNAL_APP_ID,
       allowLocalhostAsSecureOrigin: true,
       notifyButton: { enable: false },
+      serviceWorkerParam: { scope: "/" },
+      serviceWorkerPath: "/OneSignalSDKWorker.js",
     });
   });
 };
@@ -32,7 +34,10 @@ export const loginOneSignal = (userId: string) => {
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async (OneSignal: any) => {
     try {
-      await OneSignal.login(userId);
+      // Wait for OneSignal to be fully ready
+      if (OneSignal.User && OneSignal.login) {
+        await OneSignal.login(userId);
+      }
     } catch (e) {
       console.warn("OneSignal login failed:", e);
     }
@@ -43,9 +48,27 @@ export const logoutOneSignal = () => {
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async (OneSignal: any) => {
     try {
-      await OneSignal.logout();
+      if (OneSignal.logout) {
+        await OneSignal.logout();
+      }
     } catch (e) {
       console.warn("OneSignal logout failed:", e);
+    }
+  });
+};
+
+export const promptForPushPermission = () => {
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(async (OneSignal: any) => {
+    try {
+      if (OneSignal.Notifications) {
+        const permission = OneSignal.Notifications.permission;
+        if (!permission) {
+          await OneSignal.Notifications.requestPermission();
+        }
+      }
+    } catch (e) {
+      console.warn("OneSignal permission request failed:", e);
     }
   });
 };
