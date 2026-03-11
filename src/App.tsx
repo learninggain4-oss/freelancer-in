@@ -76,6 +76,8 @@ const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
 const AdminWalletTransactions = lazy(() => import("./pages/admin/AdminWalletTransactions"));
 const AdminAttendance = lazy(() => import("./pages/admin/AdminAttendance"));
 const AdminBanks = lazy(() => import("./pages/admin/AdminBanks"));
+const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
+const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));
 const TransactionHistory = lazy(() => import("./pages/wallet/TransactionHistory"));
 const WithdrawalHistory = lazy(() => import("./pages/wallet/WithdrawalHistory"));
@@ -176,6 +178,7 @@ const AppContent = () => {
               <Route path="app" element={<AppPage />} />
               <Route path="help-support" element={<HelpSupport />} />
               <Route path="notifications" element={<Notifications />} />
+              <Route path="review" element={<UserReview />} />
             </Route>
 
             {/* Client Routes */}
@@ -213,6 +216,7 @@ const AppContent = () => {
               <Route path="app" element={<AppPage />} />
               <Route path="help-support" element={<HelpSupport />} />
               <Route path="notifications" element={<Notifications />} />
+              <Route path="review" element={<UserReview />} />
             </Route>
 
             {/* Admin Routes */}
@@ -257,6 +261,7 @@ const AppContent = () => {
               <Route path="wallet/transactions" element={<AdminWalletTransactions />} />
               <Route path="attendance" element={<AdminAttendance />} />
               <Route path="banks" element={<AdminBanks />} />
+              <Route path="reviews" element={<AdminReviews />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
