@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   User, Briefcase, Landmark, Building2, AlertCircle,
   ShieldCheck, BadgeCheck, ChevronRight, Wallet,
-  Mail, Phone, Calendar, GraduationCap, Copy, Check,
+  Mail, Phone, Calendar, GraduationCap, Copy, Check, Coins,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ProfilePhotoUpload from "@/components/profile/ProfilePhotoUpload";
@@ -58,20 +58,69 @@ const ClientProfile = () => {
     },
   });
 
+  const { data: servicesCount } = useQuery({
+    queryKey: ["services-count", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("employee_services")
+        .select("*", { count: "exact", head: true })
+        .eq("profile_id", profile!.id);
+      return count ?? 0;
+    },
+  });
+
+  const { data: workExpCount } = useQuery({
+    queryKey: ["work-exp-count", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      return profile?.work_experience ? 1 : 0;
+    },
+  });
+
+  const { data: emergencyCount } = useQuery({
+    queryKey: ["emergency-count", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("employee_emergency_contacts")
+        .select("*", { count: "exact", head: true })
+        .eq("profile_id", profile!.id);
+      return count ?? 0;
+    },
+  });
+
+  const { data: bankAccountCount } = useQuery({
+    queryKey: ["bank-account-count", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      if (profile?.bank_name && profile?.bank_account_number) return 1;
+      return 0;
+    },
+  });
+
   const isVerified = aadhaarStatus === "verified";
+  const bankVerified = bankVerifStatus === "verified";
   const walletNumber = (profile as any)?.wallet_number ?? "—";
   const fullName = Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Client";
   const userCode = Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—";
 
-  const fields = [
-    profile?.full_name, profile?.email, profile?.mobile_number,
-    profile?.whatsapp_number, profile?.date_of_birth, profile?.gender,
-    profile?.education_level, profile?.work_experience,
-    profile?.emergency_contact_name, profile?.emergency_contact_phone,
-    profile?.bank_name, profile?.bank_account_number,
+  // 8-section completion checklist
+  const personalComplete = !!(profile?.full_name && profile?.email && profile?.mobile_number && profile?.date_of_birth && profile?.gender);
+  const professionalComplete = !!(profile?.education_level);
+  const bankComplete = !!(bankAccountCount && bankAccountCount > 0);
+  const workExpComplete = !!(workExpCount && workExpCount > 0);
+  const serviceComplete = !!(servicesCount && servicesCount > 0);
+  const emergencyComplete = !!(emergencyCount && emergencyCount > 0);
+  const selfRealNameComplete = isVerified;
+  const selfBankVerifComplete = bankVerified;
+
+  const completionItems = [
+    personalComplete, professionalComplete, bankComplete, workExpComplete,
+    serviceComplete, emergencyComplete, selfRealNameComplete, selfBankVerifComplete,
   ];
-  const filled = fields.filter(Boolean).length;
-  const completion = Math.round((filled / fields.length) * 100);
+  const filled = completionItems.filter(Boolean).length;
+  const completion = Math.round((filled / completionItems.length) * 100);
 
   const handleCopyWallet = () => {
     if (walletNumber !== "—") {
@@ -195,13 +244,19 @@ const ClientProfile = () => {
       <Card>
         <CardContent className="p-4">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-sm font-medium text-foreground">Profile Completion</span>
+            <div>
+              <span className="text-sm font-medium text-foreground">Profile Completion</span>
+              <div className="flex items-center gap-1 mt-0.5">
+                <Coins className="h-3.5 w-3.5 text-warning" />
+                <span className="text-[11px] text-warning font-medium">+1000 Reward Coins on 100% completion</span>
+              </div>
+            </div>
             <span className={`text-lg font-bold ${completionColor}`}>{completion}%</span>
           </div>
           <Progress value={completion} className="h-2.5" />
           {completion < 100 && (
             <p className="mt-2 text-xs text-muted-foreground">
-              Complete your profile for a better experience on the platform.
+              Complete all 8 sections: Personal Info, Professional, Bank Details, Work Experience, Services, Emergency Contacts, Self Real Name Verification & Self Bank Verification.
             </p>
           )}
         </CardContent>
