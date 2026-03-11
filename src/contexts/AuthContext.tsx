@@ -1,8 +1,8 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
-import { loginOneSignal, logoutOneSignal } from "@/lib/onesignal";
+import { loginOneSignal, logoutOneSignal, promptForPushPermission } from "@/lib/onesignal";
 
 type Profile = Tables<"profiles">;
 
@@ -24,6 +24,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const hasPromptedPushPermissionRef = useRef(false);
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
@@ -50,13 +51,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (user) await fetchProfile(user.id);
   };
 
+  const requestPushPermissionOnce = () => {
+    if (hasPromptedPushPermissionRef.current) return;
+    hasPromptedPushPermissionRef.current = true;
+    window.setTimeout(() => {
+      promptForPushPermission();
+    }, 500);
+  };
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-      if (session?.user) {
+        if (session?.user) {
           loginOneSignal(session.user.id);
+          requestPushPermissionOnce();
           setTimeout(() => fetchProfile(session.user.id).catch(() => {}), 0);
         } else {
           setProfile(null);
@@ -69,6 +79,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        loginOneSignal(session.user.id);
+        requestPushPermissionOnce();
         fetchProfile(session.user.id).catch(() => {});
       }
       setLoading(false);
@@ -118,6 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    hasPromptedPushPermissionRef.current = false;
     logoutOneSignal();
     await supabase.auth.signOut();
     setProfile(null);
