@@ -181,6 +181,7 @@ const AppContent = () => {
               <Route path="help-support" element={<HelpSupport />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="review" element={<UserReview />} />
+              <Route path="wallet-types" element={<WalletTypes />} />
             </Route>
 
             {/* Client Routes */}
