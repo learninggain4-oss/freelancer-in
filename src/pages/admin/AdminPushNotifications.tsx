@@ -19,28 +19,29 @@ const AdminPushNotifications = () => {
   const { data: subscribers = [], isLoading } = useQuery({
     queryKey: ["push-subscribers"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("push_subscriptions" as any)
+      const { data, error } = await (supabase as any)
+        .from("push_subscriptions")
         .select("user_id, profile_id, created_at, endpoint");
       if (error) throw error;
+      const rows = (data || []) as any[];
 
       // Fetch profile names
-      const profileIds = [...new Set((data || []).map((s: any) => s.profile_id).filter(Boolean))];
-      let profileMap: Record<string, string> = {};
+      const profileIds = [...new Set(rows.map((s) => s.profile_id).filter(Boolean))];
+      let profileMap: Record<string, any> = {};
       if (profileIds.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles")
           .select("id, full_name, email, user_type")
-          .in("id", profileIds);
-        profileMap = (profiles || []).reduce((acc: any, p: any) => {
+          .in("id", profileIds as string[]);
+        profileMap = (profiles || []).reduce((acc: any, p) => {
           acc[p.id] = { name: p.full_name?.[0] || p.email, email: p.email, user_type: p.user_type };
           return acc;
         }, {});
       }
 
-      // Group by user_id (one user may have multiple endpoints)
+      // Group by user_id
       const grouped: Record<string, any> = {};
-      for (const sub of data || []) {
+      for (const sub of rows) {
         if (!grouped[sub.user_id]) {
           const profile = sub.profile_id ? profileMap[sub.profile_id] : null;
           grouped[sub.user_id] = {
