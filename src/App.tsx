@@ -125,7 +125,7 @@ const AppContent = () => {
     <>
       <GlobalChatNotifier />
       <AnnouncementPopup />
-      <UpdatePrompt />
+      
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
