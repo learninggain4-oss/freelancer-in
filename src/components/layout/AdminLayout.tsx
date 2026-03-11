@@ -37,7 +37,7 @@ import {
   SlidersHorizontal,
   Eye,
   ClipboardCheck,
-} from "lucide-react";
+  Star,
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
