@@ -59,7 +59,6 @@ async function createJWT(claims: Record<string, unknown>, privateKey: CryptoKey)
     s = sig.slice(32, 64);
   }
 
-  // Pad/trim to 32 bytes each
   const padTo32 = (a: Uint8Array) => {
     if (a.length === 32) return a;
     if (a.length > 32) return a.slice(a.length - 32);
@@ -75,6 +74,49 @@ async function createJWT(claims: Record<string, unknown>, privateKey: CryptoKey)
   return `${header}.${payload}.${base64UrlEncode(rawSig)}`;
 }
 
+function concatUint8(...arrays: Uint8Array[]): Uint8Array {
+  const total = arrays.reduce((a, b) => a + b.length, 0);
+  const result = new Uint8Array(total);
+  let offset = 0;
+  for (const arr of arrays) {
+    result.set(arr, offset);
+    offset += arr.length;
+  }
+  return result;
+}
+
+// Proper HKDF extract + expand
+async function hkdfExtract(salt: Uint8Array, ikm: Uint8Array): Promise<Uint8Array> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    salt.length ? salt : new Uint8Array(32),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  return new Uint8Array(await crypto.subtle.sign("HMAC", key, ikm));
+}
+
+async function hkdfExpand(prk: Uint8Array, info: Uint8Array, length: number): Promise<Uint8Array> {
+  const key = await crypto.subtle.importKey("raw", prk, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const infoWithCounter = concatUint8(info, new Uint8Array([1]));
+  const okm = new Uint8Array(await crypto.subtle.sign("HMAC", key, infoWithCounter));
+  return okm.slice(0, length);
+}
+
+async function hkdf(salt: Uint8Array, ikm: Uint8Array, info: Uint8Array, length: number): Promise<Uint8Array> {
+  const prk = await hkdfExtract(salt, ikm);
+  return hkdfExpand(prk, info, length);
+}
+
+function createInfo(type: string, clientPublicKey: Uint8Array, serverPublicKey: Uint8Array): Uint8Array {
+  const encoder = new TextEncoder();
+  const header = encoder.encode(`Content-Encoding: ${type}\0`);
+  const clientInfo = concatUint8(encoder.encode("P-256\0"), new Uint8Array([0, 65]), clientPublicKey);
+  const serverInfo = concatUint8(new Uint8Array([0, 65]), serverPublicKey);
+  return concatUint8(header, clientInfo, serverInfo);
+}
+
 async function sendWebPush(
   subscription: { endpoint: string; p256dh: string; auth_key: string },
   payload: string,
@@ -85,9 +127,7 @@ async function sendWebPush(
   const { publicKey, privateKey, publicKeyRaw } = await importVapidKeys(vapidPublicKey, vapidPrivateKey);
 
   // ECDH
-  const localKeyPair = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, [
-    "deriveBits",
-  ]);
+  const localKeyPair = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
   const localPublicKeyRaw = new Uint8Array(await crypto.subtle.exportKey("raw", localKeyPair.publicKey));
 
   const clientAuthSecret = base64UrlDecode(subscription.auth_key);
@@ -105,35 +145,6 @@ async function sendWebPush(
     await crypto.subtle.deriveBits({ name: "ECDH", public: clientPubKey }, localKeyPair.privateKey, 256)
   );
 
-  // HKDF helpers
-  async function hkdf(salt: Uint8Array, ikm: Uint8Array, info: Uint8Array, length: number): Promise<Uint8Array> {
-    const key = await crypto.subtle.importKey("raw", ikm, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-    const prk = new Uint8Array(await crypto.subtle.sign("HMAC", key, salt.length ? salt : new Uint8Array(32)));
-    const prkKey = await crypto.subtle.importKey("raw", prk, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-    const infoLen = new Uint8Array([...info, 1]);
-    const okm = new Uint8Array(await crypto.subtle.sign("HMAC", prkKey, infoLen));
-    return okm.slice(0, length);
-  }
-
-  function concatUint8(...arrays: Uint8Array[]): Uint8Array {
-    const total = arrays.reduce((a, b) => a + b.length, 0);
-    const result = new Uint8Array(total);
-    let offset = 0;
-    for (const arr of arrays) {
-      result.set(arr, offset);
-      offset += arr.length;
-    }
-    return result;
-  }
-
-  function createInfo(type: string, clientPublicKey: Uint8Array, serverPublicKey: Uint8Array): Uint8Array {
-    const encoder = new TextEncoder();
-    const header = encoder.encode(`Content-Encoding: ${type}\0`);
-    const clientInfo = concatUint8(encoder.encode("P-256\0"), new Uint8Array([0, 65]), clientPublicKey);
-    const serverInfo = concatUint8(new Uint8Array([0, 65]), serverPublicKey);
-    return concatUint8(header, clientInfo, serverInfo);
-  }
-
   // Derive encryption keys using auth secret
   const authInfo = new TextEncoder().encode("Content-Encoding: auth\0");
   const prk = await hkdf(clientAuthSecret, sharedSecret, authInfo, 32);
@@ -147,13 +158,14 @@ async function sendWebPush(
   // Encrypt payload
   const paddedPayload = concatUint8(new Uint8Array([0, 0]), new TextEncoder().encode(payload));
 
-  const cryptoKey = await crypto.subtle.importKey("raw", contentEncryptionKey, { name: "AES-GCM" }, false, [
-    "encrypt",
-  ]);
+  const cryptoKey = await crypto.subtle.importKey("raw", contentEncryptionKey, { name: "AES-GCM" }, false, ["encrypt"]);
 
   const encrypted = new Uint8Array(
     await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, cryptoKey, paddedPayload)
   );
+
+  // Salt for Encryption header
+  const salt = crypto.getRandomValues(new Uint8Array(16));
 
   // VAPID JWT
   const url = new URL(subscription.endpoint);
@@ -169,12 +181,15 @@ async function sendWebPush(
       "Content-Type": "application/octet-stream",
       "Content-Encoding": "aesgcm",
       "Crypto-Key": `dh=${base64UrlEncode(localPublicKeyRaw)}`,
-      Encryption: `salt=${base64UrlEncode(crypto.getRandomValues(new Uint8Array(16)))}`,
+      Encryption: `salt=${base64UrlEncode(salt)}`,
       Authorization: vapidAuth,
       TTL: "86400",
     },
     body: encrypted,
   });
+
+  const responseText = await response.text();
+  console.log(`Push to ${subscription.endpoint.slice(0, 50)}... status=${response.status} body=${responseText}`);
 
   return { status: response.status, ok: response.ok, statusText: response.statusText };
 }
@@ -194,6 +209,7 @@ Deno.serve(async (req) => {
     const vapidSubject = Deno.env.get("VAPID_SUBJECT") || "mailto:admin@freelancer-india.lovable.app";
 
     if (!vapidPublicKey || !vapidPrivateKey) {
+      console.error("VAPID keys not configured");
       return new Response(JSON.stringify({ error: "VAPID keys not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -208,7 +224,7 @@ Deno.serve(async (req) => {
       const token = authHeader.replace("Bearer ", "");
       const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
       const { data: { user } } = await anonClient.auth.getUser(token);
-      
+
       if (!user) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401,
@@ -233,6 +249,7 @@ Deno.serve(async (req) => {
     }
 
     const { title, message, user_ids, send_to_all } = await req.json();
+    console.log(`Sending push: title="${title}" send_to_all=${send_to_all} user_ids=${JSON.stringify(user_ids)}`);
 
     if (!title || !message) {
       return new Response(JSON.stringify({ error: "Title and message are required" }), {
@@ -248,11 +265,17 @@ Deno.serve(async (req) => {
     }
 
     const { data: subscriptions, error } = await query;
-    if (error) throw error;
+    if (error) {
+      console.error("DB error fetching subscriptions:", error);
+      throw error;
+    }
+
+    console.log(`Found ${(subscriptions || []).length} subscription(s)`);
 
     const payload = JSON.stringify({ title, body: message, url: "/" });
     let sent = 0;
     let failed = 0;
+    const errors: string[] = [];
 
     for (const sub of subscriptions || []) {
       try {
@@ -267,21 +290,30 @@ Deno.serve(async (req) => {
           sent++;
         } else {
           failed++;
+          errors.push(`${sub.endpoint.slice(0, 50)}: ${result.status} ${result.statusText}`);
           // Remove expired subscriptions
           if (result.status === 404 || result.status === 410) {
             await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+            console.log(`Removed expired subscription ${sub.id}`);
           }
         }
-      } catch {
+      } catch (e) {
         failed++;
+        const errMsg = e instanceof Error ? e.message : String(e);
+        errors.push(`${sub.endpoint?.slice(0, 50)}: ${errMsg}`);
+        console.error(`Push error for sub ${sub.id}:`, errMsg);
       }
     }
 
+    console.log(`Push results: sent=${sent} failed=${failed}`);
+    if (errors.length) console.log(`Errors: ${JSON.stringify(errors)}`);
+
     return new Response(
-      JSON.stringify({ success: true, sent, failed, total: (subscriptions || []).length }),
+      JSON.stringify({ success: true, sent, failed, total: (subscriptions || []).length, errors: errors.slice(0, 5) }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    console.error("send-push-notification error:", err);
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
