@@ -98,6 +98,8 @@ import { useIpBlockCheck } from "@/hooks/use-ip-block-check";
 import AnnouncementPopup from "@/components/announcements/AnnouncementPopup";
 import UpdatePrompt from "@/components/pwa/UpdatePrompt";
 import BlockedScreen from "@/components/BlockedScreen";
+import NotificationPermissionGate from "@/components/notifications/NotificationPermissionGate";
+import { usePushSubscription } from "@/hooks/use-push-subscription";
 
 const queryClient = new QueryClient();
 
