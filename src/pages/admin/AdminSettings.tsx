@@ -47,9 +47,8 @@ const AdminSettings = () => {
   const [clientPaymentSharing, setClientPaymentSharing] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
-  const [checking, setChecking] = useState(false);
-  const [updating, setUpdating] = useState(false);
-  const [updateProgress, setUpdateProgress] = useState(0);
+
+
 
   // Client payment sharing per-client state
   const [clients, setClients] = useState<ClientPaymentRow[]>([]);
