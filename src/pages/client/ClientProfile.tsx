@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   User, Briefcase, Landmark, Building2, AlertCircle,
   ShieldCheck, BadgeCheck, ChevronRight, Wallet,
-  Mail, Phone, Calendar, GraduationCap, Copy, Check,
+  Mail, Phone, Calendar, GraduationCap, Copy, Check, Coins,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ProfilePhotoUpload from "@/components/profile/ProfilePhotoUpload";
@@ -58,20 +58,73 @@ const ClientProfile = () => {
     },
   });
 
+  const { data: bankAccountsCount } = useQuery({
+    queryKey: ["bank-accounts-count", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("user_bank_accounts")
+        .select("*", { count: "exact", head: true })
+        .eq("profile_id", profile!.id);
+      return count ?? 0;
+    },
+  });
+
+  const { data: emergencyCount } = useQuery({
+    queryKey: ["emergency-count", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("employee_emergency_contacts")
+        .select("*", { count: "exact", head: true })
+        .eq("profile_id", profile!.id);
+      return count ?? 0;
+    },
+  });
+
+  const { data: servicesCount } = useQuery({
+    queryKey: ["services-count", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("employee_services")
+        .select("*", { count: "exact", head: true })
+        .eq("profile_id", profile!.id);
+      return count ?? 0;
+    },
+  });
+
+  const { data: rewardCoins } = useQuery({
+    queryKey: ["profile-completion-reward"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "coin_reward_profile_completion")
+        .maybeSingle();
+      return data?.value ? parseInt(data.value) : 1000;
+    },
+  });
+
   const isVerified = aadhaarStatus === "verified";
   const walletNumber = (profile as any)?.wallet_number ?? "—";
   const fullName = Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Client";
   const userCode = Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—";
 
-  const fields = [
-    profile?.full_name, profile?.email, profile?.mobile_number,
-    profile?.whatsapp_number, profile?.date_of_birth, profile?.gender,
-    profile?.education_level, profile?.work_experience,
-    profile?.emergency_contact_name, profile?.emergency_contact_phone,
-    profile?.bank_name, profile?.bank_account_number,
-  ];
-  const filled = fields.filter(Boolean).length;
-  const completion = Math.round((filled / fields.length) * 100);
+  // Profile completion: 9 criteria
+  const personalFilled = !!(profile?.full_name && profile?.email && profile?.mobile_number && profile?.date_of_birth && profile?.gender);
+  const professionalFilled = !!(profile?.education_level);
+  const bankAdded = (bankAccountsCount ?? 0) >= 1;
+  const workExpFilled = !!(profile?.work_experience);
+  const serviceFilled = (servicesCount ?? 0) >= 1;
+  const emergencyFilled = (emergencyCount ?? 0) >= 1;
+  const aadhaarDone = aadhaarStatus === "verified";
+  const bankVerifDone = bankVerifStatus === "verified";
+  const photoUploaded = !!(profile?.profile_photo_path);
+
+  const completionItems = [personalFilled, professionalFilled, bankAdded, workExpFilled, serviceFilled, emergencyFilled, aadhaarDone, bankVerifDone, photoUploaded];
+  const filledCount = completionItems.filter(Boolean).length;
+  const completion = Math.round((filledCount / completionItems.length) * 100);
 
   const handleCopyWallet = () => {
     if (walletNumber !== "—") {
@@ -194,14 +247,25 @@ const ClientProfile = () => {
       {/* Profile Completion */}
       <Card>
         <CardContent className="p-4">
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-1 flex items-center justify-between">
             <span className="text-sm font-medium text-foreground">Profile Completion</span>
             <span className={`text-lg font-bold ${completionColor}`}>{completion}%</span>
+          </div>
+          <div className="mb-3 flex items-center gap-1.5">
+            <Coins className="h-3.5 w-3.5 text-warning" />
+            <span className="text-xs font-medium text-warning">
+              Reward: +{rewardCoins ?? 1000} Coins on 100% completion
+            </span>
           </div>
           <Progress value={completion} className="h-2.5" />
           {completion < 100 && (
             <p className="mt-2 text-xs text-muted-foreground">
-              Complete your profile for a better experience on the platform.
+              Complete all sections: Personal Info, Professional, Bank Details, Work Experience, Services, Emergency Contacts, Photo, Self Real Name & Bank Verification.
+            </p>
+          )}
+          {completion === 100 && (
+            <p className="mt-2 text-xs text-accent font-medium">
+              🎉 Your profile is 100% complete!
             </p>
           )}
         </CardContent>
