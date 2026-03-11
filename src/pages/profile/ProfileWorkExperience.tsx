@@ -119,67 +119,6 @@ const ProfileWorkExperience = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const FormCard = () => (
-    <Card>
-      <CardContent className="space-y-3 pt-6">
-        <div className="space-y-1">
-          <Label className="text-xs">Company Name *</Label>
-          <Input value={form.company_name} onChange={(e) => setForm((p) => ({ ...p, company_name: e.target.value }))} />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Company Type</Label>
-          <Select value={form.company_type} onValueChange={(v) => setForm((p) => ({ ...p, company_type: v }))}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="private">Private</SelectItem>
-              <SelectItem value="government">Government</SelectItem>
-              <SelectItem value="freelance">Freelance</SelectItem>
-              <SelectItem value="startup">Startup</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Work Description</Label>
-          <Textarea value={form.work_description} onChange={(e) => setForm((p) => ({ ...p, work_description: e.target.value }))} rows={3} />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Start Year *</Label>
-            <Select value={String(form.start_year)} onValueChange={(v) => setForm((p) => ({ ...p, start_year: Number(v) }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent className="max-h-[200px]">
-                {years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          {!form.is_current && (
-            <div className="space-y-1">
-              <Label className="text-xs">End Year</Label>
-              <Select value={String(form.end_year ?? currentYear)} onValueChange={(v) => setForm((p) => ({ ...p, end_year: Number(v) }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent className="max-h-[200px]">
-                  {years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Switch checked={form.is_current} onCheckedChange={(v) => setForm((p) => ({ ...p, is_current: v, end_year: v ? null : currentYear }))} />
-          <Label className="text-xs">Currently working here</Label>
-        </div>
-        <div className="flex gap-2 pt-2">
-          <Button className="flex-1" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
-            <Save className="mr-1 h-3 w-3" /> {editingId ? "Update" : "Save"}
-          </Button>
-          <Button variant="outline" onClick={resetForm}>
-            <X className="mr-1 h-3 w-3" /> Cancel
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
   return (
     <div className="space-y-4 p-4">
       <div className="flex items-center gap-3">
@@ -194,7 +133,66 @@ const ProfileWorkExperience = () => {
         )}
       </div>
 
-      {(adding || editingId) && <FormCard />}
+      {(adding || editingId) && (
+        <Card>
+          <CardContent className="space-y-3 pt-6">
+            <div className="space-y-1">
+              <Label className="text-xs">Company Name *</Label>
+              <Input value={form.company_name} onChange={(e) => setForm((p) => ({ ...p, company_name: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Company Type</Label>
+              <Select value={form.company_type} onValueChange={(v) => setForm((p) => ({ ...p, company_type: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="private">Private</SelectItem>
+                  <SelectItem value="government">Government</SelectItem>
+                  <SelectItem value="freelance">Freelance</SelectItem>
+                  <SelectItem value="startup">Startup</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Work Description</Label>
+              <Textarea value={form.work_description} onChange={(e) => setForm((p) => ({ ...p, work_description: e.target.value }))} rows={3} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Start Year *</Label>
+                <Select value={String(form.start_year)} onValueChange={(v) => setForm((p) => ({ ...p, start_year: Number(v) }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {!form.is_current && (
+                <div className="space-y-1">
+                  <Label className="text-xs">End Year</Label>
+                  <Select value={String(form.end_year ?? currentYear)} onValueChange={(v) => setForm((p) => ({ ...p, end_year: Number(v) }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent className="max-h-[200px]">
+                      {years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={form.is_current} onCheckedChange={(v) => setForm((p) => ({ ...p, is_current: v, end_year: v ? null : currentYear }))} />
+              <Label className="text-xs">Currently working here</Label>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button className="flex-1" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+                <Save className="mr-1 h-3 w-3" /> {editingId ? "Update" : "Save"}
+              </Button>
+              <Button variant="outline" onClick={resetForm}>
+                <X className="mr-1 h-3 w-3" /> Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="pt-6">

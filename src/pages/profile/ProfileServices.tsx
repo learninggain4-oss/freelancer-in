@@ -98,46 +98,6 @@ const ProfileServices = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const FormCard = () => (
-    <Card>
-      <CardContent className="space-y-3 pt-6">
-        <div className="space-y-1">
-          <Label className="text-xs">Service Title *</Label>
-          <Input value={form.service_title} onChange={(e) => setForm((p) => ({ ...p, service_title: e.target.value }))} />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Category *</Label>
-          <Select value={form.category_id} onValueChange={(v) => setForm((p) => ({ ...p, category_id: v }))}>
-            <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-            <SelectContent className="max-h-[250px]">
-              {categories.map((c: any) => (
-                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Hourly Rate (₹)</Label>
-            <Input type="number" value={form.hourly_rate} onChange={(e) => setForm((p) => ({ ...p, hourly_rate: e.target.value }))} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Min Budget (₹)</Label>
-            <Input type="number" value={form.minimum_budget} onChange={(e) => setForm((p) => ({ ...p, minimum_budget: e.target.value }))} />
-          </div>
-        </div>
-        <div className="flex gap-2 pt-2">
-          <Button className="flex-1" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
-            <Save className="mr-1 h-3 w-3" /> {editingId ? "Update" : "Save"}
-          </Button>
-          <Button variant="outline" onClick={resetForm}>
-            <X className="mr-1 h-3 w-3" /> Cancel
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
   return (
     <div className="space-y-4 p-4">
       <div className="flex items-center gap-3">
@@ -152,7 +112,45 @@ const ProfileServices = () => {
         )}
       </div>
 
-      {(adding || editingId) && <FormCard />}
+      {(adding || editingId) && (
+        <Card>
+          <CardContent className="space-y-3 pt-6">
+            <div className="space-y-1">
+              <Label className="text-xs">Service Title *</Label>
+              <Input value={form.service_title} onChange={(e) => setForm((p) => ({ ...p, service_title: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Category *</Label>
+              <Select value={form.category_id} onValueChange={(v) => setForm((p) => ({ ...p, category_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                <SelectContent className="max-h-[250px]">
+                  {categories.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Hourly Rate (₹)</Label>
+                <Input type="number" value={form.hourly_rate} onChange={(e) => setForm((p) => ({ ...p, hourly_rate: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Min Budget (₹)</Label>
+                <Input type="number" value={form.minimum_budget} onChange={(e) => setForm((p) => ({ ...p, minimum_budget: e.target.value }))} />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button className="flex-1" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+                <Save className="mr-1 h-3 w-3" /> {editingId ? "Update" : "Save"}
+              </Button>
+              <Button variant="outline" onClick={resetForm}>
+                <X className="mr-1 h-3 w-3" /> Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="pt-6">
