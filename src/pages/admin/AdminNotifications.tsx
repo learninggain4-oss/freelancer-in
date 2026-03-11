@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Bell, Pencil, EyeOff, ChevronUp, Save } from "lucide-react";
+import { Search, Bell, Pencil, EyeOff, ChevronUp, Save, Send, Users, User } from "lucide-react";
 import { toast } from "sonner";
 
 type Notification = {
@@ -33,6 +34,13 @@ const AdminNotifications = () => {
   const [showCleared, setShowCleared] = useState(false);
   const [expandedEdit, setExpandedEdit] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
+
+  // Send push notification form state
+  const [pushTitle, setPushTitle] = useState("");
+  const [pushMessage, setPushMessage] = useState("");
+  const [pushTarget, setPushTarget] = useState<"all" | "employees" | "clients" | "individual">("all");
+  const [pushUserId, setPushUserId] = useState("");
+  const [pushType, setPushType] = useState("info");
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ["admin-notifications", search, showCleared],
@@ -57,6 +65,78 @@ const AdminNotifications = () => {
       }
       return results;
     },
+  });
+
+  // Fetch users for individual targeting
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ["admin-all-profiles-for-push"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, user_code, user_type")
+        .order("full_name", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const sendPushMutation = useMutation({
+    mutationFn: async () => {
+      if (!pushTitle.trim()) throw new Error("Title is required");
+
+      if (pushTarget === "individual") {
+        if (!pushUserId) throw new Error("Select a user");
+        // Insert notification into DB (triggers OneSignal push via DB trigger)
+        const { error } = await supabase.from("notifications").insert({
+          user_id: pushUserId,
+          title: pushTitle,
+          message: pushMessage,
+          type: pushType,
+        });
+        if (error) throw error;
+      } else if (pushTarget === "all") {
+        // Send to all users
+        const targetUsers = allUsers;
+        for (const u of targetUsers) {
+          await supabase.from("notifications").insert({
+            user_id: u.user_id,
+            title: pushTitle,
+            message: pushMessage,
+            type: pushType,
+          });
+        }
+        // Also send OneSignal push to all
+        await supabase.functions.invoke("send-onesignal", {
+          body: { action: "push_to_all", title: pushTitle, message: pushMessage, type: pushType },
+        });
+      } else {
+        // employees or clients
+        const targetUsers = allUsers.filter(u => u.user_type === (pushTarget === "employees" ? "employee" : "client"));
+        for (const u of targetUsers) {
+          await supabase.from("notifications").insert({
+            user_id: u.user_id,
+            title: pushTitle,
+            message: pushMessage,
+            type: pushType,
+          });
+        }
+        // Send OneSignal to specific users
+        const userIds = targetUsers.map(u => u.user_id);
+        if (userIds.length > 0) {
+          await supabase.functions.invoke("send-onesignal", {
+            body: { action: "push_to_users", user_ids: userIds, title: pushTitle, message: pushMessage, type: pushType },
+          });
+        }
+      }
+    },
+    onSuccess: () => {
+      toast.success("Notification sent successfully!");
+      setPushTitle("");
+      setPushMessage("");
+      setPushUserId("");
+      queryClient.invalidateQueries({ queryKey: ["admin-notifications"] });
+    },
+    onError: (e: any) => toast.error(e.message),
   });
 
   const clearMutation = useMutation({
@@ -120,6 +200,79 @@ const AdminNotifications = () => {
           <Label htmlFor="show-cleared-notif" className="text-xs text-muted-foreground">Show cleared</Label>
         </div>
       </div>
+
+      {/* Send Push Notification Card */}
+      <Card className="border-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Send className="h-4 w-4 text-primary" />
+            Send Push Notification
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Target</Label>
+              <Select value={pushTarget} onValueChange={(v: any) => setPushTarget(v)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all"><div className="flex items-center gap-2"><Users className="h-3 w-3" /> All Users</div></SelectItem>
+                  <SelectItem value="employees"><div className="flex items-center gap-2"><User className="h-3 w-3" /> Employees Only</div></SelectItem>
+                  <SelectItem value="clients"><div className="flex items-center gap-2"><User className="h-3 w-3" /> Clients Only</div></SelectItem>
+                  <SelectItem value="individual"><div className="flex items-center gap-2"><User className="h-3 w-3" /> Individual User</div></SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {pushTarget === "individual" && (
+              <div className="space-y-1">
+                <Label className="text-xs">User</Label>
+                <Select value={pushUserId} onValueChange={setPushUserId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select user..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allUsers.map((u) => (
+                      <SelectItem key={u.user_id} value={u.user_id}>
+                        {u.full_name?.[0] || "Unknown"} ({u.user_code?.[0] || ""})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Title</Label>
+              <Input value={pushTitle} onChange={(e) => setPushTitle(e.target.value)} placeholder="Notification title..." />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Type</Label>
+              <Select value={pushType} onValueChange={setPushType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="info">Info</SelectItem>
+                  <SelectItem value="success">Success</SelectItem>
+                  <SelectItem value="warning">Warning</SelectItem>
+                  <SelectItem value="error">Error</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Message</Label>
+            <Textarea value={pushMessage} onChange={(e) => setPushMessage(e.target.value)} placeholder="Notification message..." rows={2} />
+          </div>
+          <Button className="w-full" onClick={() => sendPushMutation.mutate()} disabled={sendPushMutation.isPending || !pushTitle.trim()}>
+            <Send className="mr-2 h-4 w-4" />
+            {sendPushMutation.isPending ? "Sending..." : "Send Notification"}
+          </Button>
+        </CardContent>
+      </Card>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Check, Trash2, MessageCircle, Briefcase, AlertTriangle, Megaphone, Inbox } from "lucide-react";
+import { Bell, Check, Trash2, MessageCircle, Briefcase, AlertTriangle, Megaphone, Inbox, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -36,9 +36,10 @@ function groupByDate(items: Notification[]): Record<string, Notification[]> {
 
 interface NotificationPanelProps {
   onClose: () => void;
+  onViewAll?: () => void;
 }
 
-const NotificationPanel = ({ onClose }: NotificationPanelProps) => {
+const NotificationPanel = ({ onClose, onViewAll }: NotificationPanelProps) => {
   const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, clearAllRead } = useNotifications();
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
 
@@ -153,6 +154,15 @@ const NotificationPanel = ({ onClose }: NotificationPanelProps) => {
           })
         )}
       </ScrollArea>
+
+      {/* View All link */}
+      {onViewAll && (
+        <div className="border-t px-4 py-2">
+          <Button variant="ghost" className="w-full text-xs text-primary" onClick={onViewAll}>
+            <ExternalLink className="mr-1 h-3 w-3" /> View all notifications
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
