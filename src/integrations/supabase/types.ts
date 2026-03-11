@@ -2192,6 +2192,53 @@ export type Database = {
           },
         ]
       }
+      user_reviews: {
+        Row: {
+          admin_response: string | null
+          comment: string
+          created_at: string
+          id: string
+          is_cleared: boolean
+          photo_name: string | null
+          photo_path: string | null
+          profile_id: string
+          rating: number
+          updated_at: string
+        }
+        Insert: {
+          admin_response?: string | null
+          comment?: string
+          created_at?: string
+          id?: string
+          is_cleared?: boolean
+          photo_name?: string | null
+          photo_path?: string | null
+          profile_id: string
+          rating: number
+          updated_at?: string
+        }
+        Update: {
+          admin_response?: string | null
+          comment?: string
+          created_at?: string
+          id?: string
+          is_cleared?: boolean
+          photo_name?: string | null
+          photo_path?: string | null
+          profile_id?: string
+          rating?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_reviews_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
