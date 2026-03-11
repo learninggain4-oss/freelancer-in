@@ -108,6 +108,7 @@ const GlobalChatNotifier = () => {
   useChatNotifications();
   usePresenceHeartbeat();
   useVisitorTracking();
+  usePushSubscription();
   return null;
 };
 
