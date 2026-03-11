@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Clock, Landmark, Gift, CreditCard, RefreshCw, Download, Search, X, Coins, CheckCircle, Briefcase, Calendar, Star, Users } from "lucide-react";
+import { Loader2, Save, Clock, Landmark, Gift, CreditCard, Search, X, Coins, CheckCircle, Briefcase, Calendar, Star, Users } from "lucide-react";
 import TotpSetupCard from "@/components/admin/TotpSetupCard";
 
 type ClientPaymentRow = {
