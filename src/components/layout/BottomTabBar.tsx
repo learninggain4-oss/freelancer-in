@@ -29,7 +29,7 @@ const BottomTabBar = ({ userType, onMenuClick }: BottomTabBarProps) => {
       ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-card pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-card/95 backdrop-blur-md pb-safe">
       <div className="mx-auto flex h-16 max-w-lg items-center justify-around">
         {tabs.map((tab) => {
           const isActive = location.pathname.startsWith(tab.path);
@@ -38,22 +38,29 @@ const BottomTabBar = ({ userType, onMenuClick }: BottomTabBarProps) => {
               key={tab.path}
               to={tab.path}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] transition-colors",
+                "nav-link flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-all duration-200",
                 isActive
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "text-primary scale-105"
+                  : "text-muted-foreground active:text-foreground"
               )}
             >
-              <tab.icon className="h-5 w-5" />
+              <div className={cn(
+                "flex items-center justify-center rounded-full p-1 transition-all duration-200",
+                isActive && "bg-primary/10"
+              )}>
+                <tab.icon className={cn("h-5 w-5", isActive && "stroke-[2.5]")} />
+              </div>
               <span>{tab.label}</span>
             </NavLink>
           );
         })}
         <button
           onClick={onMenuClick}
-          className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
+          className="nav-link flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground transition-all duration-200 active:text-foreground"
         >
-          <Menu className="h-5 w-5" />
+          <div className="flex items-center justify-center rounded-full p-1">
+            <Menu className="h-5 w-5" />
+          </div>
           <span>Menu</span>
         </button>
       </div>
