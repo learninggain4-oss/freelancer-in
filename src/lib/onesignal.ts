@@ -12,6 +12,7 @@ const oneSignalInitOptions = {
   notifyButton: { enable: false },
   serviceWorkerParam: { scope: "/" },
   serviceWorkerPath: "/OneSignalSDKWorker.js",
+  serviceWorkerUpdaterPath: "/OneSignalSDKUpdaterWorker.js",
 };
 
 declare global {
