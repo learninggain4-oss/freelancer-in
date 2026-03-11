@@ -91,7 +91,7 @@ const ClientProfile = () => {
     { icon: AlertCircle, label: "Emergency Contacts", path: "/client/profile/emergency-contacts", color: "text-destructive", desc: "Safety contacts" },
     {
       icon: ShieldCheck,
-      label: "Aadhaar Verification",
+      label: "Self Real Name Verification",
       path: "/client/profile/aadhaar-verification",
       color: "text-accent",
       desc: "Identity verification",
@@ -99,7 +99,7 @@ const ClientProfile = () => {
     },
     {
       icon: Landmark,
-      label: "Bank Verification",
+      label: "Self Bank Verification",
       path: "/client/profile/bank-verification",
       color: "text-primary",
       desc: "Bank account verification",

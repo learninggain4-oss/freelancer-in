@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, Phone, Star, Smartphone } from "lucide-react";
+import { ArrowLeft, Loader2, Phone, Smartphone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -60,20 +60,8 @@ const ProfileUpiApps = () => {
     },
   });
 
-  const { data: bannerPath } = useQuery({
-    queryKey: ["upi-banner-setting"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("app_settings")
-        .select("value")
-        .eq("key", "upi_banner_path")
-        .maybeSingle();
-      return data?.value || "";
-    },
-  });
-
   const [localState, setLocalState] = useState<
-    Record<string, { enabled: boolean; phone: string; is_primary: boolean }>
+    Record<string, { enabled: boolean; phone: string }>
   >({});
 
   useEffect(() => {
@@ -83,7 +71,6 @@ const ProfileUpiApps = () => {
       state[m.id] = {
         enabled: !!saved,
         phone: saved?.phone_number ?? "",
-        is_primary: saved?.is_primary ?? false,
       };
     }
     setLocalState(state);
@@ -95,31 +82,13 @@ const ProfileUpiApps = () => {
     return data.publicUrl;
   };
 
-  const getBannerUrl = () => {
-    if (!bannerPath) return "/upi-banner.jpg"; // fallback to static
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(bannerPath);
-    return data.publicUrl;
-  };
-
   const saveMutation = useMutation({
-    mutationFn: async ({
-      methodId,
-      phone,
-      isPrimary,
-    }: {
-      methodId: string;
-      phone: string;
-      isPrimary: boolean;
-    }) => {
+    mutationFn: async ({ methodId, phone }: { methodId: string; phone: string }) => {
       const existing = savedApps.find((s) => s.payment_method_id === methodId);
       if (existing) {
         const { error } = await supabase
           .from("employee_payment_apps" as any)
-          .update({
-            phone_number: phone,
-            is_primary: isPrimary,
-            updated_at: new Date().toISOString(),
-          } as any)
+          .update({ phone_number: phone, updated_at: new Date().toISOString() } as any)
           .eq("id", existing.id);
         if (error) throw error;
       } else {
@@ -129,7 +98,7 @@ const ProfileUpiApps = () => {
             profile_id: profile!.id,
             payment_method_id: methodId,
             phone_number: phone,
-            is_primary: isPrimary,
+            is_primary: false,
           } as any);
         if (error) throw error;
       }
@@ -174,11 +143,7 @@ const ProfileUpiApps = () => {
       toast.error("Please enter a phone number");
       return;
     }
-    saveMutation.mutate({
-      methodId,
-      phone: s.phone.trim(),
-      isPrimary: s.is_primary,
-    });
+    saveMutation.mutate({ methodId, phone: s.phone.trim() });
   };
 
   const basePath = profile?.user_type === "client" ? "/client" : "/employee";
@@ -186,171 +151,125 @@ const ProfileUpiApps = () => {
   const enabledCount = Object.values(localState).filter((s) => s.enabled).length;
 
   return (
-    <div className="space-y-0">
-      {/* Banner */}
-      <div className="relative overflow-hidden rounded-b-3xl">
-        <img
-          src={getBannerUrl()}
-          alt="UPI Payment Apps"
-          className="w-full h-44 object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-        <div className="absolute top-4 left-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="bg-white/20 backdrop-blur-sm text-white hover:bg-white/30"
-            onClick={() => navigate(`${basePath}/profile`)}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </div>
-        <div className="absolute bottom-4 left-5 right-5">
-          <h1 className="text-2xl font-bold text-white drop-shadow-lg">
-            UPI Payment Apps
-          </h1>
-          <p className="text-white/80 text-sm mt-0.5">
-            Link your preferred payment apps
-          </p>
+    <div className="space-y-4 p-4">
+      <div className="flex items-center gap-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(`${basePath}/profile`)}
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-xl font-bold text-foreground">UPI Payment Apps</h1>
+      </div>
+
+      {/* Stats strip */}
+      <div className="flex gap-3">
+        <div className="flex-1 rounded-xl bg-primary/10 border border-primary/20 p-3 text-center">
+          <Smartphone className="h-5 w-5 text-primary mx-auto mb-1" />
+          <p className="text-lg font-bold text-foreground">{enabledCount}</p>
+          <p className="text-[10px] text-muted-foreground">Apps Linked</p>
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
-        {/* Stats strip */}
-        <div className="flex gap-3">
-          <div className="flex-1 rounded-xl bg-primary/10 border border-primary/20 p-3 text-center">
-            <Smartphone className="h-5 w-5 text-primary mx-auto mb-1" />
-            <p className="text-lg font-bold text-foreground">{enabledCount}</p>
-            <p className="text-[10px] text-muted-foreground">Apps Linked</p>
-          </div>
-          <div className="flex-1 rounded-xl bg-accent/10 border border-accent/20 p-3 text-center">
-            <Star className="h-5 w-5 text-accent mx-auto mb-1" />
-            <p className="text-lg font-bold text-foreground">
-              {Object.values(localState).filter((s) => s.is_primary).length}
-            </p>
-            <p className="text-[10px] text-muted-foreground">Primary Set</p>
-          </div>
+      {loading ? (
+        <div className="flex justify-center py-10">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
-
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </div>
-        ) : methods.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground py-10">
-            No payment methods available.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {methods.map((m) => {
-              const s = localState[m.id];
-              if (!s) return null;
-              const logoUrl = getLogoUrl(m.logo_path);
-              return (
-                <Card
-                  key={m.id}
-                  className={`transition-all duration-200 ${
-                    s.enabled
-                      ? "border-primary/30 shadow-md shadow-primary/5"
-                      : "hover:border-muted-foreground/20"
-                  }`}
-                >
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white border border-border overflow-hidden p-1.5">
-                          {logoUrl ? (
-                            <img
-                              src={logoUrl}
-                              alt={m.name}
-                              className="h-full w-full object-contain"
-                            />
-                          ) : (
-                            <span className="text-primary font-bold text-base">
-                              {m.name.charAt(0)}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-foreground text-sm">
-                            {m.name}
+      ) : methods.length === 0 ? (
+        <p className="text-center text-sm text-muted-foreground py-10">
+          No payment methods available.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {methods.map((m) => {
+            const s = localState[m.id];
+            if (!s) return null;
+            const logoUrl = getLogoUrl(m.logo_path);
+            return (
+              <Card
+                key={m.id}
+                className={`transition-all duration-200 ${
+                  s.enabled
+                    ? "border-primary/30 shadow-md shadow-primary/5"
+                    : "hover:border-muted-foreground/20"
+                }`}
+              >
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white border border-border overflow-hidden p-1.5">
+                        {logoUrl ? (
+                          <img
+                            src={logoUrl}
+                            alt={m.name}
+                            className="h-full w-full object-contain"
+                          />
+                        ) : (
+                          <span className="text-primary font-bold text-base">
+                            {m.name.charAt(0)}
                           </span>
-                          {s.enabled && s.phone && (
-                            <p className="text-[11px] text-muted-foreground">
-                              {s.phone}
-                            </p>
-                          )}
-                        </div>
+                        )}
                       </div>
-                      <Switch
-                        checked={s.enabled}
-                        onCheckedChange={(v) => handleToggle(m.id, v)}
-                      />
+                      <div>
+                        <span className="font-semibold text-foreground text-sm">
+                          {m.name}
+                        </span>
+                        {s.enabled && s.phone && (
+                          <p className="text-[11px] text-muted-foreground">
+                            {s.phone}
+                          </p>
+                        )}
+                      </div>
                     </div>
+                    <Switch
+                      checked={s.enabled}
+                      onCheckedChange={(v) => handleToggle(m.id, v)}
+                    />
+                  </div>
 
-                    {s.enabled && (
-                      <div className="space-y-3 pt-1 border-t border-border/50">
-                        <div className="space-y-1.5 pt-3">
-                          <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            Phone Number
-                          </Label>
-                          <Input
-                            placeholder="Enter phone number"
-                            value={s.phone}
-                            onChange={(e) =>
-                              setLocalState((prev) => ({
-                                ...prev,
-                                [m.id]: {
-                                  ...prev[m.id],
-                                  phone: e.target.value,
-                                },
-                              }))
-                            }
-                          />
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            id={`primary-${m.id}`}
-                            checked={s.is_primary}
-                            onCheckedChange={(v) =>
-                              setLocalState((prev) => ({
-                                ...prev,
-                                [m.id]: { ...prev[m.id], is_primary: v },
-                              }))
-                            }
-                          />
-                          <Label
-                            htmlFor={`primary-${m.id}`}
-                            className="text-xs flex items-center gap-1"
-                          >
-                            <Star className="h-3 w-3 text-warning" /> Set as
-                            primary
-                          </Label>
-                        </div>
-
-                        <Button
-                          size="sm"
-                          className="w-full"
-                          onClick={() => handleSave(m.id)}
-                          disabled={saveMutation.isPending}
-                        >
-                          {saveMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            "Save"
-                          )}
-                        </Button>
+                  {s.enabled && (
+                    <div className="space-y-3 pt-1 border-t border-border/50">
+                      <div className="space-y-1.5 pt-3">
+                        <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          Phone Number
+                        </Label>
+                        <Input
+                          placeholder="Enter phone number"
+                          value={s.phone}
+                          onChange={(e) =>
+                            setLocalState((prev) => ({
+                              ...prev,
+                              [m.id]: {
+                                ...prev[m.id],
+                                phone: e.target.value,
+                              },
+                            }))
+                          }
+                        />
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </div>
+
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        onClick={() => handleSave(m.id)}
+                        disabled={saveMutation.isPending}
+                      >
+                        {saveMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Save"
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
