@@ -157,15 +157,18 @@ async function sendWebPush(
     await crypto.subtle.deriveBits({ name: "ECDH", public: clientPubKey }, localKeyPair.privateKey, 256)
   );
 
+  // Salt MUST be generated first and used in key derivation
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+
   // Derive encryption keys using auth secret
   const authInfo = new TextEncoder().encode("Content-Encoding: auth\0");
   const prk = await hkdf(clientAuthSecret, sharedSecret, authInfo, 32);
 
   const cekInfo = createInfo("aesgcm", clientPublicKey, localPublicKeyRaw);
-  const contentEncryptionKey = await hkdf(new Uint8Array(0), prk, cekInfo, 16);
+  const contentEncryptionKey = await hkdf(salt, prk, cekInfo, 16);
 
   const nonceInfo = createInfo("nonce", clientPublicKey, localPublicKeyRaw);
-  const nonce = await hkdf(new Uint8Array(0), prk, nonceInfo, 12);
+  const nonce = await hkdf(salt, prk, nonceInfo, 12);
 
   // Encrypt payload
   const paddedPayload = concatUint8(new Uint8Array([0, 0]), new TextEncoder().encode(payload));
@@ -175,9 +178,6 @@ async function sendWebPush(
   const encrypted = new Uint8Array(
     await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, cryptoKey, paddedPayload)
   );
-
-  // Salt for Encryption header
-  const salt = crypto.getRandomValues(new Uint8Array(16));
 
   // VAPID JWT
   const url = new URL(subscription.endpoint);
