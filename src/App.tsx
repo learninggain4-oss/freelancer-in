@@ -76,6 +76,8 @@ const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
 const AdminWalletTransactions = lazy(() => import("./pages/admin/AdminWalletTransactions"));
 const AdminAttendance = lazy(() => import("./pages/admin/AdminAttendance"));
 const AdminBanks = lazy(() => import("./pages/admin/AdminBanks"));
+const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
+const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));
 const TransactionHistory = lazy(() => import("./pages/wallet/TransactionHistory"));
 const WithdrawalHistory = lazy(() => import("./pages/wallet/WithdrawalHistory"));
