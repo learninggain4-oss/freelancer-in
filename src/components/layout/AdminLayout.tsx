@@ -74,6 +74,7 @@ const navItems = [
   { label: "Attendance", icon: ClipboardCheck, path: "/admin/attendance" },
   { label: "Banks", icon: Landmark, path: "/admin/banks" },
   { label: "User Reviews", icon: Star, path: "/admin/reviews" },
+  { label: "Wallet Types", icon: Wallet, path: "/admin/wallet-types" },
 ];
 
 const AdminLayout = () => {

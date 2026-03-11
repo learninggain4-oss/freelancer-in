@@ -266,6 +266,7 @@ const AppContent = () => {
               <Route path="attendance" element={<AdminAttendance />} />
               <Route path="banks" element={<AdminBanks />} />
               <Route path="reviews" element={<AdminReviews />} />
+              <Route path="wallet-types" element={<AdminWalletTypes />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

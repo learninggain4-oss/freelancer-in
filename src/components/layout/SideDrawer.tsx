@@ -25,6 +25,7 @@ const SideDrawer = ({ open, onOpenChange }: SideDrawerProps) => {
     { label: "Write a Review", icon: Star, path: `${basePath}/review` },
     { label: "Get Free", icon: Gift, path: `${basePath}/get-free` },
     { label: "Get Coins", icon: Coins, path: `${basePath}/get-coins` },
+    { label: "Wallet Types", icon: Wallet, path: `${basePath}/wallet-types` },
     { label: "App", icon: Smartphone, path: `${basePath}/app` },
     { label: "Account Settings", icon: Settings, path: `${basePath}/settings` },
     { label: "Notification Settings", icon: Bell, path: `${basePath}/notification-settings` },
