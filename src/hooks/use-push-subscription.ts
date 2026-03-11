@@ -24,8 +24,8 @@ export function usePushSubscription() {
 
     const subscribe = async () => {
       try {
-        const registration = await navigator.serviceWorker.register("/sw-push.js");
-        await navigator.serviceWorker.ready;
+        // Use the PWA service worker registration (which imports sw-push.js via importScripts)
+        const registration = await navigator.serviceWorker.ready;
 
         let subscription = await registration.pushManager.getSubscription();
 
