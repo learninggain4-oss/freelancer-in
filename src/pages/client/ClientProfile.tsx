@@ -244,13 +244,19 @@ const ClientProfile = () => {
       <Card>
         <CardContent className="p-4">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-sm font-medium text-foreground">Profile Completion</span>
+            <div>
+              <span className="text-sm font-medium text-foreground">Profile Completion</span>
+              <div className="flex items-center gap-1 mt-0.5">
+                <Coins className="h-3.5 w-3.5 text-warning" />
+                <span className="text-[11px] text-warning font-medium">+1000 Reward Coins on 100% completion</span>
+              </div>
+            </div>
             <span className={`text-lg font-bold ${completionColor}`}>{completion}%</span>
           </div>
           <Progress value={completion} className="h-2.5" />
           {completion < 100 && (
             <p className="mt-2 text-xs text-muted-foreground">
-              Complete your profile for a better experience on the platform.
+              Complete all 8 sections: Personal Info, Professional, Bank Details, Work Experience, Services, Emergency Contacts, Self Real Name Verification & Self Bank Verification.
             </p>
           )}
         </CardContent>
