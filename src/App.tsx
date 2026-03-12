@@ -133,7 +133,8 @@ const AppContent = () => {
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            <Route path="/" element={<Login />} />
+            <Route path="/" element={<SmartRoot />} />
+            <Route path="/landing" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
