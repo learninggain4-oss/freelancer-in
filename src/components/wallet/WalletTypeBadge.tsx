@@ -64,7 +64,7 @@ const WalletTypeBadge = ({ balance, compact = false }: WalletTypeBadgeProps) => 
 
   return (
     <button
-      onClick={() => navigate("/wallet-types")}
+      onClick={() => navigate("wallet-types")}
       className={`group relative flex w-full items-center gap-3 overflow-hidden rounded-xl border p-3.5 transition-all hover:shadow-md active:scale-[0.98] ${colors.bg} ${colors.border}`}
     >
       <div className={`absolute inset-0 bg-gradient-to-r ${colors.glow} to-transparent opacity-50`} />
