@@ -1,11 +1,24 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Wallet, Crown, Shield, Zap, Star, ChevronRight } from "lucide-react";
+import { Loader2, Wallet, Crown, Shield, Zap, Star, Check, Infinity } from "lucide-react";
 
 const iconMap: Record<string, React.ElementType> = {
   Wallet, Crown, Shield, Zap, Star,
+};
+
+const tierGradients: Record<string, string> = {
+  Silver: "from-slate-200 via-slate-100 to-slate-50 dark:from-slate-700 dark:via-slate-800 dark:to-slate-900",
+  Gold: "from-yellow-200 via-amber-100 to-yellow-50 dark:from-yellow-900 dark:via-amber-900 dark:to-yellow-950",
+  Platinum: "from-purple-200 via-violet-100 to-purple-50 dark:from-purple-900 dark:via-violet-900 dark:to-purple-950",
+  Diamond: "from-blue-200 via-sky-100 to-blue-50 dark:from-blue-900 dark:via-sky-900 dark:to-blue-950",
+};
+
+const tierShine: Record<string, string> = {
+  Silver: "bg-gradient-to-br from-slate-400/20 to-transparent",
+  Gold: "bg-gradient-to-br from-yellow-400/30 to-transparent",
+  Platinum: "bg-gradient-to-br from-purple-400/20 to-transparent",
+  Diamond: "bg-gradient-to-br from-blue-400/30 to-transparent",
 };
 
 const WalletTypes = () => {
@@ -35,109 +48,200 @@ const WalletTypes = () => {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold text-foreground">Wallet Types</h1>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Wallet className="mb-3 h-12 w-12 text-muted-foreground" />
-            <p className="text-muted-foreground">No wallet types available yet.</p>
-          </CardContent>
-        </Card>
+        <div className="rounded-xl border bg-card p-12 text-center">
+          <Wallet className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
+          <p className="text-muted-foreground">No wallet types available yet.</p>
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-foreground">Wallet Types</h1>
-      <p className="text-sm text-muted-foreground">
-        Explore the different wallet tiers and their benefits.
-      </p>
+  const formatValue = (value: string | number | null, prefix = "₹") => {
+    if (value === null || value === undefined) return "N/A";
+    const str = String(value);
+    if (str === "Unlimited" || str === "0") return null; // handled separately
+    const num = Number(value);
+    if (!isNaN(num) && num > 0) return `${prefix}${num.toLocaleString("en-IN")}`;
+    return str;
+  };
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {walletTypes.map((wt) => {
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Wallet Plans</h1>
+        <p className="text-sm text-muted-foreground">
+          Choose the wallet tier that fits your needs. Silver is free for everyone!
+        </p>
+      </div>
+
+      {/* Tier Cards */}
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2">
+        {walletTypes.map((wt, index) => {
           const IconComp = iconMap[wt.icon_name] || Wallet;
+          const gradient = tierGradients[wt.name] || tierGradients.Silver;
+          const shine = tierShine[wt.name] || tierShine.Silver;
+          const isFree = wt.wallet_price === "Free";
+          const isUnlimitedCapacity = Number(wt.wallet_max_capacity) === 0;
+          const isUnlimitedWithdrawal = wt.monthly_withdrawal_limit === "Unlimited";
+
+          const details = [
+            {
+              label: "Wallet Price",
+              value: isFree ? "Free" : wt.wallet_price,
+              highlight: isFree,
+            },
+            {
+              label: "Monthly Min Balance",
+              value: Number(wt.monthly_min_balance) === 0 ? "₹0" : `₹${Number(wt.monthly_min_balance).toLocaleString("en-IN")}`,
+            },
+            {
+              label: "Monthly Withdrawals",
+              value: isUnlimitedWithdrawal ? "Unlimited" : wt.monthly_withdrawal_limit,
+              isUnlimited: isUnlimitedWithdrawal,
+            },
+            {
+              label: "Wallet Capacity",
+              value: isUnlimitedCapacity ? "Unlimited" : `₹${Number(wt.wallet_max_capacity).toLocaleString("en-IN")}`,
+              isUnlimited: isUnlimitedCapacity,
+            },
+            {
+              label: "Wallet Validity",
+              value: wt.wallet_expiry || "Unlimited",
+              isUnlimited: true,
+            },
+            {
+              label: "Monthly Transactions",
+              value: wt.monthly_transaction_limit,
+            },
+            {
+              label: "Min Withdrawal",
+              value: Number(wt.minimum_withdrawal) === 0 ? "₹0" : `₹${Number(wt.minimum_withdrawal).toLocaleString("en-IN")}`,
+            },
+          ];
+
           return (
-            <Card
+            <div
               key={wt.id}
-              className="relative overflow-hidden border-2 transition-shadow hover:shadow-lg"
-              style={{ borderColor: wt.color }}
+              className={`group relative overflow-hidden rounded-2xl border-2 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl bg-gradient-to-br ${gradient}`}
+              style={{ borderColor: `${wt.color}40` }}
             >
+              {/* Shine overlay */}
+              <div className={`pointer-events-none absolute inset-0 ${shine} opacity-60`} />
+
+              {/* Top accent bar */}
               <div
-                className="absolute inset-x-0 top-0 h-1.5"
-                style={{ backgroundColor: wt.color }}
+                className="h-1.5 w-full"
+                style={{ background: `linear-gradient(90deg, ${wt.color}, ${wt.color}88, ${wt.color})` }}
               />
-              <CardHeader className="flex flex-row items-center gap-3 pb-2 pt-5">
-                <div
-                  className="flex h-10 w-10 items-center justify-center rounded-full"
-                  style={{ backgroundColor: `${wt.color}20`, color: wt.color }}
-                >
-                  <IconComp className="h-5 w-5" />
-                </div>
-                <div className="flex-1">
-                  <CardTitle className="text-lg">{wt.name}</CardTitle>
-                  {wt.description && (
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {wt.description}
-                    </p>
+
+              {/* Header */}
+              <div className="relative px-5 pt-5 pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg transition-transform duration-300 group-hover:scale-110"
+                      style={{
+                        background: `linear-gradient(135deg, ${wt.color}, ${wt.color}CC)`,
+                        boxShadow: `0 8px 24px ${wt.color}40`,
+                      }}
+                    >
+                      <IconComp className="h-7 w-7 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold tracking-tight text-foreground">{wt.name}</h2>
+                      {wt.description && (
+                        <p className="mt-0.5 text-xs text-muted-foreground max-w-[200px]">{wt.description}</p>
+                      )}
+                    </div>
+                  </div>
+                  {isFree && (
+                    <Badge
+                      className="border-0 text-xs font-bold px-3 py-1 rounded-full shadow-sm"
+                      style={{
+                        background: `linear-gradient(135deg, #10B981, #059669)`,
+                        color: "white",
+                      }}
+                    >
+                      FREE
+                    </Badge>
                   )}
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {/* Limits */}
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { label: "Min Balance", value: `₹${Number(wt.min_balance).toLocaleString("en-IN")}` },
-                    { label: "Max Balance", value: `₹${Number(wt.max_balance).toLocaleString("en-IN")}` },
-                    { label: "Daily Withdrawal", value: `₹${Number(wt.daily_withdrawal_limit).toLocaleString("en-IN")}` },
-                    { label: "Per Transaction", value: `₹${Number(wt.transaction_limit).toLocaleString("en-IN")}` },
-                  ].map((item) => (
-                    <div key={item.label} className="rounded-md bg-muted/50 p-2">
-                      <p className="text-[10px] font-medium uppercase text-muted-foreground">
-                        {item.label}
-                      </p>
-                      <p className="text-sm font-semibold text-foreground">
-                        {item.value}
-                      </p>
-                    </div>
-                  ))}
-                </div>
 
-                {/* Perks */}
-                {wt.perks && (wt.perks as string[]).length > 0 && (
-                  <div>
-                    <p className="mb-1.5 text-xs font-semibold text-muted-foreground uppercase">
-                      Perks
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {(wt.perks as string[]).map((perk, i) => (
-                        <Badge
-                          key={i}
-                          variant="secondary"
-                          className="text-xs"
-                          style={{
-                            backgroundColor: `${wt.color}15`,
-                            color: wt.color,
-                            borderColor: `${wt.color}30`,
-                          }}
+                {/* Price tag */}
+                {!isFree && (
+                  <div className="mt-3 inline-flex items-baseline gap-1">
+                    <span className="text-2xl font-extrabold text-foreground">{wt.wallet_price?.replace("/Yearly", "")}</span>
+                    <span className="text-xs font-medium text-muted-foreground">/year</span>
+                  </div>
+                )}
+                {isFree && (
+                  <div className="mt-3 inline-flex items-baseline gap-1">
+                    <span className="text-2xl font-extrabold text-foreground">₹0</span>
+                    <span className="text-xs font-medium text-muted-foreground">forever</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Divider */}
+              <div className="mx-5 h-px" style={{ background: `${wt.color}25` }} />
+
+              {/* Details grid */}
+              <div className="relative px-5 py-4 space-y-2.5">
+                {details.map((detail) => (
+                  <div key={detail.label} className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-muted-foreground">{detail.label}</span>
+                    <span className={`text-sm font-semibold flex items-center gap-1 ${detail.highlight ? "text-emerald-600 dark:text-emerald-400" : detail.isUnlimited ? "text-foreground" : "text-foreground"}`}>
+                      {detail.isUnlimited && detail.value === "Unlimited" && (
+                        <Infinity className="h-3.5 w-3.5" style={{ color: wt.color }} />
+                      )}
+                      {detail.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Divider */}
+              <div className="mx-5 h-px" style={{ background: `${wt.color}25` }} />
+
+              {/* Perks */}
+              {wt.perks && (wt.perks as string[]).length > 0 && (
+                <div className="relative px-5 py-4">
+                  <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    What's included
+                  </p>
+                  <div className="space-y-2">
+                    {(wt.perks as string[]).map((perk, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <div
+                          className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full"
+                          style={{ backgroundColor: `${wt.color}20` }}
                         >
-                          {perk}
-                        </Badge>
-                      ))}
-                    </div>
+                          <Check className="h-3 w-3" style={{ color: wt.color }} />
+                        </div>
+                        <span className="text-xs font-medium text-foreground">{perk}</span>
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Upgrade Requirements */}
-                {wt.upgrade_requirements && (
-                  <div className="flex items-start gap-2 rounded-md border border-dashed p-2.5">
-                    <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground">
-                      <span className="font-medium text-foreground">Upgrade: </span>
-                      {wt.upgrade_requirements}
-                    </p>
+              {/* Upgrade note */}
+              {wt.upgrade_requirements && !isFree && (
+                <div className="px-5 pb-5">
+                  <div
+                    className="rounded-xl px-4 py-3 text-xs font-medium"
+                    style={{
+                      backgroundColor: `${wt.color}10`,
+                      color: wt.color,
+                      border: `1px dashed ${wt.color}30`,
+                    }}
+                  >
+                    {wt.upgrade_requirements}
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </div>
+              )}
+            </div>
           );
         })}
       </div>

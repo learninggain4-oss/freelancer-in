@@ -2288,56 +2288,68 @@ export type Database = {
         Row: {
           color: string
           created_at: string
-          daily_withdrawal_limit: number
           description: string
           display_order: number
           icon_name: string
           id: string
           is_active: boolean
           is_cleared: boolean
-          max_balance: number
-          min_balance: number
+          minimum_withdrawal: number | null
+          monthly_min_balance: number
+          monthly_transaction_limit: string | null
+          monthly_withdrawal_limit: string | null
           name: string
           perks: string[]
           transaction_limit: number
           updated_at: string
           upgrade_requirements: string
+          wallet_expiry: string | null
+          wallet_max_capacity: number
+          wallet_price: string | null
         }
         Insert: {
           color?: string
           created_at?: string
-          daily_withdrawal_limit?: number
           description?: string
           display_order?: number
           icon_name?: string
           id?: string
           is_active?: boolean
           is_cleared?: boolean
-          max_balance?: number
-          min_balance?: number
+          minimum_withdrawal?: number | null
+          monthly_min_balance?: number
+          monthly_transaction_limit?: string | null
+          monthly_withdrawal_limit?: string | null
           name: string
           perks?: string[]
           transaction_limit?: number
           updated_at?: string
           upgrade_requirements?: string
+          wallet_expiry?: string | null
+          wallet_max_capacity?: number
+          wallet_price?: string | null
         }
         Update: {
           color?: string
           created_at?: string
-          daily_withdrawal_limit?: number
           description?: string
           display_order?: number
           icon_name?: string
           id?: string
           is_active?: boolean
           is_cleared?: boolean
-          max_balance?: number
-          min_balance?: number
+          minimum_withdrawal?: number | null
+          monthly_min_balance?: number
+          monthly_transaction_limit?: string | null
+          monthly_withdrawal_limit?: string | null
           name?: string
           perks?: string[]
           transaction_limit?: number
           updated_at?: string
           upgrade_requirements?: string
+          wallet_expiry?: string | null
+          wallet_max_capacity?: number
+          wallet_price?: string | null
         }
         Relationships: []
       }
