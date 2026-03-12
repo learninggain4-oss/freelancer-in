@@ -1,11 +1,26 @@
 import { useState } from "react";
 import WalletCard from "@/components/wallet/WalletCard";
+import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowDownToLine, BadgeCheck, AlertCircle, Receipt, History, CheckCircle2, Lock, Loader2, Eye, EyeOff } from "lucide-react";
+import {
+  ArrowDownToLine,
+  BadgeCheck,
+  AlertCircle,
+  Receipt,
+  History,
+  CheckCircle2,
+  Lock,
+  Loader2,
+  Eye,
+  EyeOff,
+  Sparkles,
+  ChevronRight,
+  Wallet,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,7 +66,6 @@ const EmployeeWallet = () => {
 
   const isBankVerified = bankVerification?.status === "verified";
 
-  // Check if withdrawal password is set
   const { data: passwordStatus } = useQuery({
     queryKey: ["withdrawal-password-status"],
     queryFn: async () => {
@@ -65,7 +79,6 @@ const EmployeeWallet = () => {
 
   const hasWithdrawalPassword = passwordStatus?.has_password ?? false;
 
-  // Fetch employee's saved UPI payment apps with logos
   const { data: upiApps } = useQuery({
     queryKey: ["employee-upi-apps", profile?.id],
     enabled: !!profile?.id,
@@ -79,7 +92,6 @@ const EmployeeWallet = () => {
     },
   });
 
-  // Fetch bank logo
   const { data: bankRecord } = useQuery({
     queryKey: ["bank-logo", savedBankName],
     enabled: !!savedBankName,
@@ -150,21 +162,16 @@ const EmployeeWallet = () => {
       navigate("/account-settings");
       return;
     }
-    // Validate inputs before showing password dialog
     const amount = Number(withdrawAmount);
     if (!amount || amount <= 0) { toast.error("Enter a valid amount"); return; }
     if (amount > (profile?.available_balance ?? 0)) { toast.error("Insufficient balance"); return; }
     if (method === "upi" && !selectedUpiAppId) { toast.error("Please select a UPI app"); return; }
     if (method === "bank" && !savedBank) { toast.error("No bank account saved"); return; }
-
     setShowPasswordDialog(true);
   };
 
   const handleVerifyAndWithdraw = async () => {
-    if (!withdrawalPassword) {
-      toast.error("Enter your withdrawal password");
-      return;
-    }
+    if (!withdrawalPassword) { toast.error("Enter your withdrawal password"); return; }
     setVerifyingPassword(true);
     try {
       const { data, error } = await supabase.functions.invoke("withdrawal-password", {
@@ -172,11 +179,7 @@ const EmployeeWallet = () => {
       });
       if (error) throw new Error("Verification failed");
       if (data?.error) throw new Error(data.error);
-      if (!data?.valid) {
-        toast.error("Incorrect withdrawal password");
-        return;
-      }
-      // Password verified, proceed with withdrawal
+      if (!data?.valid) { toast.error("Incorrect withdrawal password"); return; }
       withdrawMutation.mutate();
     } catch (err: any) {
       toast.error(err.message || "Password verification failed");
@@ -186,40 +189,77 @@ const EmployeeWallet = () => {
   };
 
   return (
-    <div className="space-y-6 p-4">
-      <h1 className="text-2xl font-bold text-foreground">Wallet</h1>
+    <div className="space-y-5 p-4 pb-8">
+      {/* Header */}
+      <div className="flex items-center justify-between animate-fade-in-up">
+        <div>
+          <div className="flex items-center gap-2">
+            <Wallet className="h-5 w-5 text-primary" />
+            <h1 className="text-xl font-bold tracking-tight text-foreground">My Wallet</h1>
+          </div>
+          <p className="mt-0.5 text-sm text-muted-foreground">Manage your funds & withdrawals</p>
+        </div>
+        <WalletTypeBadge balance={profile?.available_balance ?? 0} compact />
+      </div>
 
-      <WalletCard
-        name={Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Employee"}
-        userCode={Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—"}
-        walletNumber={profile?.wallet_number}
-        availableBalance={profile?.available_balance ?? 0}
-        holdBalance={profile?.hold_balance ?? 0}
-        walletActive={(profile as any)?.wallet_active ?? true}
-      />
+      {/* Wallet Card */}
+      <div className="animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
+        <WalletCard
+          name={Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Employee"}
+          userCode={Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—"}
+          walletNumber={profile?.wallet_number}
+          availableBalance={profile?.available_balance ?? 0}
+          holdBalance={profile?.hold_balance ?? 0}
+          walletActive={(profile as any)?.wallet_active ?? true}
+        />
+      </div>
 
+      {/* Wallet Type Card */}
+      <div className="animate-fade-in-up" style={{ animationDelay: "0.08s" }}>
+        <WalletTypeBadge balance={profile?.available_balance ?? 0} />
+      </div>
+
+      {/* Wallet Inactive Warning */}
       {!(profile as any)?.wallet_active && (
-        <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+        <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive animate-fade-in-up">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>Your wallet is currently inactive. Withdrawals are disabled. Please contact support for assistance.</span>
+          <span>Your wallet is currently inactive. Withdrawals are disabled. Please contact support.</span>
         </div>
       )}
 
-      {/* Quick Links */}
-      <div className="grid grid-cols-2 gap-3">
-        <Button variant="outline" className="flex h-auto flex-col items-center gap-2 py-4" onClick={() => navigate("/employee/wallet/transactions")}>
-          <Receipt className="h-5 w-5 text-primary" />
-          <span className="text-sm font-medium">Transactions</span>
-        </Button>
-        <Button variant="outline" className="flex h-auto flex-col items-center gap-2 py-4" onClick={() => navigate("/employee/wallet/withdrawals")}>
-          <History className="h-5 w-5 text-primary" />
-          <span className="text-sm font-medium">Withdrawals</span>
-        </Button>
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 gap-3 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+        <button
+          onClick={() => navigate("/employee/wallet/transactions")}
+          className="group flex items-center gap-3 rounded-xl bg-card p-4 shadow-sm ring-1 ring-border/50 transition-all hover:shadow-md hover:ring-border active:scale-95"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 transition-transform group-hover:scale-110">
+            <Receipt className="h-5 w-5 text-primary" />
+          </div>
+          <div className="text-left">
+            <p className="text-sm font-semibold text-foreground">Transactions</p>
+            <p className="text-[11px] text-muted-foreground">View history</p>
+          </div>
+          <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+        </button>
+        <button
+          onClick={() => navigate("/employee/wallet/withdrawals")}
+          className="group flex items-center gap-3 rounded-xl bg-card p-4 shadow-sm ring-1 ring-border/50 transition-all hover:shadow-md hover:ring-border active:scale-95"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 transition-transform group-hover:scale-110">
+            <History className="h-5 w-5 text-accent" />
+          </div>
+          <div className="text-left">
+            <p className="text-sm font-semibold text-foreground">Withdrawals</p>
+            <p className="text-[11px] text-muted-foreground">Track requests</p>
+          </div>
+          <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+        </button>
       </div>
 
       {/* Withdrawal Password Warning */}
       {passwordStatus && !hasWithdrawalPassword && (
-        <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm text-warning">
+        <div className="flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-warning animate-fade-in-up">
           <Lock className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
             <span>You must create a Withdrawal Password before you can withdraw funds.</span>
@@ -230,23 +270,52 @@ const EmployeeWallet = () => {
         </div>
       )}
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ArrowDownToLine className="h-4 w-4" /> Request Withdrawal
-            {isBankVerified && <BadgeCheck className="h-4 w-4 text-accent" />}
-          </CardTitle>
+      {/* Request Withdrawal Card */}
+      <Card className="border-0 shadow-sm animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
+        <CardHeader className="flex-row items-center gap-2 pb-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+            <ArrowDownToLine className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <CardTitle className="text-sm font-semibold text-foreground">Request Withdrawal</CardTitle>
+            {isBankVerified && (
+              <div className="flex items-center gap-1 text-[10px] text-accent font-medium mt-0.5">
+                <BadgeCheck className="h-3 w-3" /> Bank Verified
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Amount (₹)</Label>
-            <Input type="number" placeholder="Enter amount" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} />
+            <Label className="text-xs font-medium">Amount (₹)</Label>
+            <Input
+              type="number"
+              placeholder="Enter amount"
+              value={withdrawAmount}
+              onChange={(e) => setWithdrawAmount(e.target.value)}
+              className="h-12 text-lg font-semibold"
+            />
           </div>
+
           <div className="space-y-2">
-            <Label>Payment Method</Label>
+            <Label className="text-xs font-medium">Payment Method</Label>
             <div className="flex gap-2">
-              <Button type="button" variant={method === "upi" ? "default" : "outline"} className="flex-1" onClick={() => setMethod("upi")}>UPI</Button>
-              <Button type="button" variant={method === "bank" ? "default" : "outline"} className="flex-1" onClick={() => setMethod("bank")}>Bank Transfer</Button>
+              <Button
+                type="button"
+                variant={method === "upi" ? "default" : "outline"}
+                className="flex-1 h-11"
+                onClick={() => setMethod("upi")}
+              >
+                UPI
+              </Button>
+              <Button
+                type="button"
+                variant={method === "bank" ? "default" : "outline"}
+                className="flex-1 h-11"
+                onClick={() => setMethod("bank")}
+              >
+                Bank Transfer
+              </Button>
             </div>
           </div>
 
@@ -264,15 +333,13 @@ const EmployeeWallet = () => {
                         key={app.id}
                         type="button"
                         onClick={() => setSelectedUpiAppId(app.id)}
-                        className={`relative flex flex-col items-center gap-2 rounded-lg border-2 p-3 transition-all ${
+                        className={`relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all ${
                           isSelected
                             ? "border-primary bg-primary/5 shadow-sm"
                             : "border-border bg-card hover:border-primary/40"
                         }`}
                       >
-                        {isSelected && (
-                          <CheckCircle2 className="absolute right-1.5 top-1.5 h-4 w-4 text-primary" />
-                        )}
+                        {isSelected && <CheckCircle2 className="absolute right-1.5 top-1.5 h-4 w-4 text-primary" />}
                         {logoUrl ? (
                           <img src={logoUrl} alt={pm?.name} className="h-10 w-10 rounded-md object-contain" />
                         ) : (
@@ -281,18 +348,14 @@ const EmployeeWallet = () => {
                           </div>
                         )}
                         <span className="text-xs font-medium text-foreground truncate w-full text-center">{pm?.name}</span>
-                        {app.phone_number && (
-                          <span className="text-[10px] text-muted-foreground">{app.phone_number}</span>
-                        )}
-                        {app.is_primary && (
-                          <span className="text-[10px] font-medium text-primary">Primary</span>
-                        )}
+                        {app.phone_number && <span className="text-[10px] text-muted-foreground">{app.phone_number}</span>}
+                        {app.is_primary && <span className="text-[10px] font-medium text-primary">Primary</span>}
                       </button>
                     );
                   })}
                 </div>
               ) : (
-                <div className="rounded-lg border border-dashed p-4 text-center">
+                <div className="rounded-xl border border-dashed p-4 text-center">
                   <p className="text-sm text-muted-foreground">No UPI apps saved</p>
                   <Button variant="link" size="sm" className="mt-1 h-auto p-0 text-xs" onClick={() => navigate("/profile/upi-apps")}>
                     Add UPI Apps in Profile →
@@ -304,13 +367,9 @@ const EmployeeWallet = () => {
             <div className="space-y-2">
               <p className="text-xs font-medium text-muted-foreground">Bank Account Details</p>
               {savedBank ? (
-                <div className="flex items-start gap-3 rounded-lg border p-3">
+                <div className="flex items-start gap-3 rounded-xl border p-3">
                   {bankRecord?.logo_path ? (
-                    <img
-                      src={getBankLogoUrl(bankRecord.logo_path) ?? ""}
-                      alt={savedBankName ?? "Bank"}
-                      className="h-10 w-10 rounded-md object-contain shrink-0"
-                    />
+                    <img src={getBankLogoUrl(bankRecord.logo_path) ?? ""} alt={savedBankName ?? "Bank"} className="h-10 w-10 rounded-md object-contain shrink-0" />
                   ) : (
                     <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted text-xs font-bold text-muted-foreground shrink-0">
                       {savedBankName?.charAt(0) ?? "B"}
@@ -324,7 +383,7 @@ const EmployeeWallet = () => {
                   </div>
                 </div>
               ) : (
-                <div className="rounded-lg border border-dashed p-4 text-center">
+                <div className="rounded-xl border border-dashed p-4 text-center">
                   <p className="text-sm text-muted-foreground">No bank details saved</p>
                   <Button variant="link" size="sm" className="mt-1 h-auto p-0 text-xs" onClick={() => navigate("/profile/bank-details")}>
                     Add Bank Details in Profile →
@@ -335,13 +394,14 @@ const EmployeeWallet = () => {
           )}
 
           {!isBankVerified && (
-            <div className="flex items-start gap-2 rounded-md bg-warning/10 p-3 text-sm text-warning">
+            <div className="flex items-start gap-2 rounded-xl bg-warning/10 p-3 text-sm text-warning">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>Your bank details must be verified before you can withdraw. Go to your Profile to submit for verification.</span>
+              <span>Bank details must be verified before withdrawing. Submit for verification in your Profile.</span>
             </div>
           )}
+
           <Button
-            className="w-full"
+            className="w-full h-12 text-sm font-semibold"
             onClick={handleWithdrawClick}
             disabled={
               withdrawMutation.isPending ||
@@ -365,7 +425,7 @@ const EmployeeWallet = () => {
         </CardContent>
       </Card>
 
-      {/* Withdrawal Password Verification Dialog */}
+      {/* Withdrawal Password Dialog */}
       <Dialog open={showPasswordDialog} onOpenChange={(open) => { setShowPasswordDialog(open); if (!open) setWithdrawalPassword(""); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
