@@ -55,7 +55,7 @@ const WalletTypeBadge = ({ balance, compact = false }: WalletTypeBadgeProps) => 
   if (compact) {
     return (
       <button
-      onClick={() => navigate("wallet-types")}
+      onClick={() => navigate(`${basePath}/wallet-types`)}
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all hover:scale-105 active:scale-95 ${colors.bg} ${colors.text} ${colors.border}`}
       >
         <Icon className="h-3 w-3" />
