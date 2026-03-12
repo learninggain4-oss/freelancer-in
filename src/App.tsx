@@ -119,6 +119,14 @@ const PageLoader = () => (
   </div>
 );
 
+/** Show landing page in browser, login in installed PWA */
+const SmartRoot = () => {
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as any).standalone === true;
+  return isStandalone ? <Login /> : <Index />;
+};
+
 const AppContent = () => {
   const { blocked, loading } = useIpBlockCheck();
 
