@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useMemo } from "react";
 import WalletCard from "@/components/wallet/WalletCard";
+import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -176,6 +177,11 @@ const EmployeeDashboard = () => {
             holdBalance={profile?.hold_balance ?? 0}
             walletActive={(profile as any)?.wallet_active ?? true}
           />
+        </div>
+
+        {/* Wallet Type */}
+        <div className="animate-fade-in-up" style={{ animationDelay: "0.07s" }}>
+          <WalletTypeBadge balance={profile?.available_balance ?? 0} />
         </div>
 
         {/* Quick Actions */}
