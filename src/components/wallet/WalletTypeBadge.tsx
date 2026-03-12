@@ -73,7 +73,7 @@ const WalletTypeBadge = ({ balance, compact = false }: WalletTypeBadgeProps) => 
     { label: "Wallet Validity", value: currentTier.wallet_expiry || "Unlimited" },
     { label: "Monthly Transactions", value: currentTier.monthly_transaction_limit },
     { label: "Min Withdrawal", value: Number(currentTier.minimum_withdrawal) === 0 ? "₹0" : `₹${Number(currentTier.minimum_withdrawal).toLocaleString("en-IN")}` },
-    { label: "Max Withdrawal", value: Number(currentTier.maximum_withdrawal) === 0 ? "Unlimited" : `₹${Number(currentTier.maximum_withdrawal).toLocaleString("en-IN")}` },
+    { label: "Max Withdrawal", value: "Check plan details" },
   ];
 
   const perks = (currentTier as any).perks;
