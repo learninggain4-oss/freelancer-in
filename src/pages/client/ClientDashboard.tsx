@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useMemo } from "react";
 import WalletCard from "@/components/wallet/WalletCard";
+import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
