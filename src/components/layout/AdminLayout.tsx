@@ -123,7 +123,7 @@ const AdminLayout = () => {
       >
         <div className="flex items-center gap-2 border-b px-5 py-4">
           <ShieldCheck className="h-6 w-6 text-primary" />
-          <span className="text-lg font-bold text-foreground">Admin Panel</span>
+          <span className="text-lg font-bold text-foreground">Bank Manager</span>
           <button
             className="ml-auto lg:hidden"
             onClick={() => setSidebarOpen(false)}
@@ -178,7 +178,7 @@ const AdminLayout = () => {
           >
             <Menu className="h-5 w-5 text-muted-foreground" />
           </button>
-          <h1 className="text-lg font-bold text-primary lg:hidden">Admin</h1>
+          <h1 className="text-lg font-bold text-primary lg:hidden">Bank Manager</h1>
           {isSubPage && (
             <div className="ml-auto flex items-center gap-1.5 text-sm lg:ml-0">
               <button
