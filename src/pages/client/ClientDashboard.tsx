@@ -100,7 +100,7 @@ const ClientDashboard = () => {
     if (h < 17) return "Good Afternoon";
     return "Good Evening";
   }, []);
-  const firstName = Array.isArray(profile?.full_name) ? profile.full_name[0] : profile?.full_name?.split(" ")[0] ?? "there";
+  const firstName = Array.isArray(profile?.full_name) ? profile.full_name[0] : (profile?.full_name ?? "there");
 
   const quickActions = [
     { icon: Plus, label: "New Job", to: "/client/projects/create", gradient: "from-primary/10 to-primary/5", iconColor: "text-primary" },

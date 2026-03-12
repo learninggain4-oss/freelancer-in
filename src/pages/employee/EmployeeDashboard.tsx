@@ -132,7 +132,7 @@ const EmployeeDashboard = () => {
     if (h < 17) return "Good Afternoon";
     return "Good Evening";
   }, []);
-  const firstName = Array.isArray(profile?.full_name) ? profile.full_name[0] : profile?.full_name?.split(" ")[0] ?? "there";
+  const firstName = Array.isArray(profile?.full_name) ? profile.full_name[0] : (profile?.full_name ?? "there");
 
   const quickActions = [
     { icon: Briefcase, label: "Jobs", to: "/employee/projects", gradient: "from-primary/10 to-primary/5", iconColor: "text-primary" },
