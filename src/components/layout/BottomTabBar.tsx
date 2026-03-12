@@ -18,6 +18,7 @@ const BottomTabBar = ({ userType, onMenuClick }: BottomTabBarProps) => {
         { label: "Attendance", icon: ClipboardCheck, path: `${base}/attendance` },
         { label: "Requests", icon: FileText, path: `${base}/requests` },
         { label: "Wallet", icon: Wallet, path: `${base}/wallet` },
+        { label: "Wallet Types", icon: Crown, path: `${base}/wallet-types` },
         { label: "Messages", icon: MessagesSquare, path: `${base}/help-support` },
       ]
     : [
@@ -25,6 +26,7 @@ const BottomTabBar = ({ userType, onMenuClick }: BottomTabBarProps) => {
         { label: "Attendance", icon: ClipboardCheck, path: `${base}/attendance` },
         { label: "Jobs", icon: Briefcase, path: `${base}/projects` },
         { label: "Wallet", icon: Wallet, path: `${base}/wallet` },
+        { label: "Wallet Types", icon: Crown, path: `${base}/wallet-types` },
         { label: "Help", icon: CircleHelp, path: `${base}/help-support` },
       ];
 
