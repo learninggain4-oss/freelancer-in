@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Shield, Crown, Zap, Star, ChevronRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const tierIcons: Record<string, React.ElementType> = {
   Silver: Shield,
@@ -24,6 +24,8 @@ interface WalletTypeBadgeProps {
 
 const WalletTypeBadge = ({ balance, compact = false }: WalletTypeBadgeProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = location.pathname.startsWith("/client") ? "/client" : "/employee";
 
   const { data: walletTypes = [] } = useQuery({
     queryKey: ["wallet-types-active"],
@@ -53,8 +55,8 @@ const WalletTypeBadge = ({ balance, compact = false }: WalletTypeBadgeProps) => 
   if (compact) {
     return (
       <button
-        onClick={() => navigate("/wallet-types")}
-        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all hover:scale-105 active:scale-95 ${colors.bg} ${colors.text} ${colors.border}`}
+      onClick={() => navigate(`${basePath}/wallet-types`)}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-all hover:scale-105 active:scale-95 ${colors.bg} ${colors.text} ${colors.border}`}
       >
         <Icon className="h-3 w-3" />
         {tierName}
@@ -64,7 +66,7 @@ const WalletTypeBadge = ({ balance, compact = false }: WalletTypeBadgeProps) => 
 
   return (
     <button
-      onClick={() => navigate("/wallet-types")}
+      onClick={() => navigate(`${basePath}/wallet-types`)}
       className={`group relative flex w-full items-center gap-3 overflow-hidden rounded-xl border p-3.5 transition-all hover:shadow-md active:scale-[0.98] ${colors.bg} ${colors.border}`}
     >
       <div className={`absolute inset-0 bg-gradient-to-r ${colors.glow} to-transparent opacity-50`} />
