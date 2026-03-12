@@ -304,6 +304,38 @@ export type Database = {
           },
         ]
       }
+      bank_ifsc_codes: {
+        Row: {
+          bank_id: string
+          branch_name: string | null
+          created_at: string
+          id: string
+          ifsc_code: string
+        }
+        Insert: {
+          bank_id: string
+          branch_name?: string | null
+          created_at?: string
+          id?: string
+          ifsc_code: string
+        }
+        Update: {
+          bank_id?: string
+          branch_name?: string | null
+          created_at?: string
+          id?: string
+          ifsc_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_ifsc_codes_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: false
+            referencedRelation: "banks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_verifications: {
         Row: {
           attempt_count: number
@@ -366,6 +398,7 @@ export type Database = {
       }
       banks: {
         Row: {
+          account_number_digits: number | null
           created_at: string
           display_order: number
           id: string
@@ -375,6 +408,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          account_number_digits?: number | null
           created_at?: string
           display_order?: number
           id?: string
@@ -384,6 +418,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          account_number_digits?: number | null
           created_at?: string
           display_order?: number
           id?: string
