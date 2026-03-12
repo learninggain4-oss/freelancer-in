@@ -123,7 +123,7 @@ const AdminLayout = () => {
       >
         <div className="flex items-center gap-2 border-b px-5 py-4">
           <ShieldCheck className="h-6 w-6 text-primary" />
-          <span className="text-lg font-bold text-foreground">Admin Panel</span>
+          <span className="text-lg font-bold text-foreground">Bank Manager</span>
           <button
             className="ml-auto lg:hidden"
             onClick={() => setSidebarOpen(false)}
