@@ -147,6 +147,11 @@ const ClientDashboard = () => {
           />
         </div>
 
+        {/* Wallet Type */}
+        <div className="animate-fade-in-up" style={{ animationDelay: "0.07s" }}>
+          <WalletTypeBadge balance={profile?.available_balance ?? 0} />
+        </div>
+
         {/* Quick Actions */}
         <div className="grid grid-cols-4 gap-2.5 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
           {quickActions.map((action) => (
