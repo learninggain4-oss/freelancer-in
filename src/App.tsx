@@ -119,6 +119,14 @@ const PageLoader = () => (
   </div>
 );
 
+/** Show landing page in browser, login in installed PWA */
+const SmartRoot = () => {
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as any).standalone === true;
+  return isStandalone ? <Login /> : <Index />;
+};
+
 const AppContent = () => {
   const { blocked, loading } = useIpBlockCheck();
 
@@ -133,7 +141,8 @@ const AppContent = () => {
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            <Route path="/" element={<Login />} />
+            <Route path="/" element={<SmartRoot />} />
+            <Route path="/landing" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
