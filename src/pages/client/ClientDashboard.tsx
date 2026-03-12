@@ -107,7 +107,7 @@ const ClientDashboard = () => {
     { icon: Plus, label: "New Job", to: "/client/projects/create", gradient: "from-primary/10 to-primary/5", iconColor: "text-primary" },
     { icon: Wallet, label: "Add Money", to: "/client/wallet", gradient: "from-accent/10 to-accent/5", iconColor: "text-accent" },
     { icon: ArrowDownToLine, label: "Withdrawals", to: "/client/withdrawals", gradient: "from-warning/10 to-warning/5", iconColor: "text-warning" },
-    { icon: Star, label: "Wallet Types", to: "/wallet-types", gradient: "from-secondary/10 to-secondary/5", iconColor: "text-secondary" },
+    { icon: Star, label: "Wallet Types", to: "/client/wallet-types", gradient: "from-secondary/10 to-secondary/5", iconColor: "text-secondary" },
   ];
 
   return (

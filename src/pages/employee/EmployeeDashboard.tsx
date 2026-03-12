@@ -139,7 +139,7 @@ const EmployeeDashboard = () => {
     { icon: Briefcase, label: "Jobs", to: "/employee/projects", gradient: "from-primary/10 to-primary/5", iconColor: "text-primary" },
     { icon: ArrowDownToLine, label: "Withdraw", to: "/employee/wallet", gradient: "from-accent/10 to-accent/5", iconColor: "text-accent" },
     { icon: FileText, label: "Submissions", to: "/employee/projects", gradient: "from-warning/10 to-warning/5", iconColor: "text-warning" },
-    { icon: Star, label: "Wallet Types", to: "/wallet-types", gradient: "from-secondary/10 to-secondary/5", iconColor: "text-secondary" },
+    { icon: Star, label: "Wallet Types", to: "/employee/wallet-types", gradient: "from-secondary/10 to-secondary/5", iconColor: "text-secondary" },
   ];
 
   return (
