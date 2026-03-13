@@ -113,6 +113,7 @@ const GlobalChatNotifier = () => {
   useChatNotifications();
   usePresenceHeartbeat();
   useVisitorTracking();
+  usePwaInstallTracking();
   return null;
 };
 
