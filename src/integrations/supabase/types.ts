@@ -1626,6 +1626,53 @@ export type Database = {
           },
         ]
       }
+      pwa_install_status: {
+        Row: {
+          created_at: string
+          id: string
+          is_installed: boolean
+          is_standalone: boolean
+          last_checked_at: string
+          profile_id: string
+          prompt_accepted: boolean | null
+          prompt_shown: boolean
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_installed?: boolean
+          is_standalone?: boolean
+          last_checked_at?: string
+          profile_id: string
+          prompt_accepted?: boolean | null
+          prompt_shown?: boolean
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_installed?: boolean
+          is_standalone?: boolean
+          last_checked_at?: string
+          profile_id?: string
+          prompt_accepted?: boolean | null
+          prompt_shown?: boolean
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pwa_install_status_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quick_reply_analytics: {
         Row: {
           category: string
