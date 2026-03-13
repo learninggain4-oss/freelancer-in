@@ -98,6 +98,7 @@ const Notifications = lazy(() => import("./pages/Notifications"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
+import { usePwaInstallTracking } from "@/hooks/use-pwa-install-tracking";
 import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 import { useVisitorTracking } from "@/hooks/use-visitor-tracking";
 import { useIpBlockCheck } from "@/hooks/use-ip-block-check";
