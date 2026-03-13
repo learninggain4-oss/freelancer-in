@@ -7,7 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Gift, Users, Check, Loader2, Share2, UserCheck, Briefcase, Clock } from "lucide-react";
+import {
+  Copy, Gift, Users, Check, Loader2, Share2, UserCheck,
+  Briefcase, Clock, Sparkles, Trophy, ChevronRight,
+} from "lucide-react";
 import { format } from "date-fns";
 
 interface ReferralEntry {
@@ -32,31 +35,20 @@ const GetFree = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (!profile) return;
-
       const [profRes, historyRes, settingsRes] = await Promise.all([
         supabase.from("profiles").select("referral_code").eq("id", profile.id).single(),
         supabase.rpc("get_referral_history"),
         supabase.from("app_settings").select("key, value").in("key", ["referral_terms_conditions"]),
       ]);
-
       if (profRes.data) setReferralCode((profRes.data as any).referral_code || "");
-
       if (historyRes.data) {
         const arr = historyRes.data as any as ReferralEntry[];
         setReferralHistory(arr);
-        setReferralStats({
-          total: arr.length,
-          signupPaid: arr.filter((r) => r.signup_bonus_paid).length,
-          jobPaid: arr.filter((r) => r.job_bonus_paid).length,
-        });
+        setReferralStats({ total: arr.length, signupPaid: arr.filter((r) => r.signup_bonus_paid).length, jobPaid: arr.filter((r) => r.job_bonus_paid).length });
       }
-
       if (settingsRes.data) {
-        for (const s of settingsRes.data) {
-          if (s.key === "referral_terms_conditions") setTerms(s.value);
-        }
+        for (const s of settingsRes.data) { if (s.key === "referral_terms_conditions") setTerms(s.value); }
       }
-
       setLoading(false);
     };
     fetchData();
@@ -66,11 +58,9 @@ const GetFree = () => {
     try {
       await navigator.clipboard.writeText(referralCode);
       setCopied(true);
-      toast({ title: "Copied!", description: "Referral code copied to clipboard" });
+      toast({ title: "Copied!", description: "Referral code copied" });
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast({ title: "Failed to copy", variant: "destructive" });
-    }
+    } catch { toast({ title: "Failed to copy", variant: "destructive" }); }
   };
 
   const handleShare = async (type: "employee" | "client") => {
@@ -78,154 +68,132 @@ const GetFree = () => {
     const link = `${window.location.origin}/register/${type}?ref=${referralCode}`;
     const text = `Join Freelancer as a ${label} using my referral code: ${referralCode}\nSign up at ${link}`;
     if (navigator.share) {
-      try {
-        await navigator.share({ title: `Join Freelancer as ${label}`, text });
-      } catch { /* cancelled */ }
-    } else {
-      handleCopy();
-    }
+      try { await navigator.share({ title: `Join Freelancer as ${label}`, text }); } catch {}
+    } else { handleCopy(); }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
   return (
-    <div className="space-y-6 px-4 py-6">
-      <h2 className="text-2xl font-bold text-foreground">Get Free</h2>
+    <div className="space-y-5 p-4 pb-8">
+      {/* Hero Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-accent via-accent/80 to-emerald-500/70 p-5 text-white">
+        <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute -bottom-4 -left-4 h-20 w-20 rounded-full bg-white/5 blur-xl" />
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+            <Gift className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold tracking-tight">Get Free</h1>
+            <p className="text-xs opacity-80">Invite friends & earn rewards</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-3 gap-2.5 animate-fade-in-up">
+        {[
+          { icon: Users, value: referralStats.total, label: "Referred", color: "text-primary", bg: "bg-primary/10" },
+          { icon: Trophy, value: referralStats.signupPaid, label: "Signup Bonus", color: "text-accent", bg: "bg-accent/10" },
+          { icon: Briefcase, value: referralStats.jobPaid, label: "Job Bonus", color: "text-warning", bg: "bg-warning/10" },
+        ].map((s) => (
+          <Card key={s.label} className="border-0 shadow-sm">
+            <CardContent className="flex flex-col items-center p-3 gap-1">
+              <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${s.bg}`}>
+                <s.icon className={`h-4.5 w-4.5 ${s.color}`} />
+              </div>
+              <span className="text-xl font-bold text-foreground">{s.value}</span>
+              <span className="text-[10px] text-muted-foreground">{s.label}</span>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
       <Tabs defaultValue="referral" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="referral">Invite & Earn</TabsTrigger>
-          <TabsTrigger value="history">Referral History</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 h-11 rounded-xl">
+          <TabsTrigger value="referral" className="gap-1.5 rounded-lg text-xs font-semibold">
+            <Sparkles className="h-3.5 w-3.5" /> Invite & Earn
+          </TabsTrigger>
+          <TabsTrigger value="history" className="gap-1.5 rounded-lg text-xs font-semibold">
+            <Clock className="h-3.5 w-3.5" /> History
+          </TabsTrigger>
         </TabsList>
 
-        {/* Tab: Invite & Earn */}
         <TabsContent value="referral" className="space-y-4 mt-4">
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Gift className="h-5 w-5 text-primary" />
-                Invite & Earn
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Share your referral code with friends and earn bonuses when they join and complete work!
-              </p>
+          {/* Referral Code Card */}
+          <Card className="border-0 shadow-sm overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-accent via-emerald-400 to-accent" />
+            <CardContent className="space-y-4 p-4">
+              <p className="text-sm text-muted-foreground">Share your referral code and earn bonuses when friends join and complete work!</p>
               <div className="flex items-center gap-2">
-                <Input
-                  readOnly
-                  value={referralCode}
-                  className="font-mono text-lg font-bold tracking-widest text-center bg-background"
-                />
-                <Button variant="outline" size="icon" onClick={handleCopy} className="shrink-0">
-                  {copied ? <Check className="h-4 w-4 text-accent" /> : <Copy className="h-4 w-4" />}
+                <Input readOnly value={referralCode} className="font-mono text-lg font-bold tracking-widest text-center bg-muted/30 h-12 rounded-xl" />
+                <Button variant="outline" size="icon" onClick={handleCopy} className="shrink-0 h-12 w-12 rounded-xl">
+                  {copied ? <Check className="h-5 w-5 text-accent" /> : <Copy className="h-5 w-5" />}
                 </Button>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1 text-xs gap-1.5" onClick={() => handleShare("employee")}>
-                  <Share2 className="h-3.5 w-3.5" /> Invite as Employee
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" className="gap-1.5 rounded-xl h-11" onClick={() => handleShare("employee")}>
+                  <Share2 className="h-4 w-4" /> As Employee
                 </Button>
-                <Button variant="outline" className="flex-1 text-xs gap-1.5" onClick={() => handleShare("client")}>
-                  <Share2 className="h-3.5 w-3.5" /> Invite as Client
+                <Button variant="outline" className="gap-1.5 rounded-xl h-11" onClick={() => handleShare("client")}>
+                  <Share2 className="h-4 w-4" /> As Client
                 </Button>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-lg bg-background p-3 text-center">
-                  <Users className="mx-auto mb-1 h-4 w-4 text-muted-foreground" />
-                  <p className="text-lg font-bold text-foreground">{referralStats.total}</p>
-                  <p className="text-xs text-muted-foreground">Referred</p>
-                </div>
-                <div className="rounded-lg bg-background p-3 text-center">
-                  <p className="text-lg font-bold text-accent">{referralStats.signupPaid}</p>
-                  <p className="text-xs text-muted-foreground">Signup Bonus</p>
-                </div>
-                <div className="rounded-lg bg-background p-3 text-center">
-                  <p className="text-lg font-bold text-accent">{referralStats.jobPaid}</p>
-                  <p className="text-xs text-muted-foreground">Job Bonus</p>
-                </div>
               </div>
             </CardContent>
           </Card>
 
           {terms && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Referral Terms & Conditions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="whitespace-pre-line text-sm text-muted-foreground">{terms.replace(/\\n/g, "\n")}</p>
-              </CardContent>
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-2"><CardTitle className="text-sm">Terms & Conditions</CardTitle></CardHeader>
+              <CardContent><p className="whitespace-pre-line text-xs text-muted-foreground">{terms.replace(/\\n/g, "\n")}</p></CardContent>
             </Card>
           )}
         </TabsContent>
 
-        {/* Tab: Referral History */}
-        <TabsContent value="history" className="space-y-4 mt-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="h-5 w-5 text-primary" />
-                Referral History
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {referralHistory.length === 0 ? (
-                <div className="py-8 text-center">
-                  <Users className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
-                  <p className="text-sm font-medium text-muted-foreground">No referrals yet</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Share your referral code with friends to start earning!</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {referralHistory.map((r) => (
-                    <div key={r.referral_id} className="flex items-start gap-3 rounded-lg border p-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                        <Users className="h-4 w-4 text-primary" />
+        <TabsContent value="history" className="space-y-3 mt-4">
+          {referralHistory.length === 0 ? (
+            <div className="flex flex-col items-center py-12 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-3">
+                <Users className="h-7 w-7 text-muted-foreground/40" />
+              </div>
+              <p className="text-sm font-semibold text-muted-foreground">No referrals yet</p>
+              <p className="mt-1 text-xs text-muted-foreground">Share your code to start earning!</p>
+            </div>
+          ) : (
+            referralHistory.map((r) => (
+              <Card key={r.referral_id} className="border-0 shadow-sm">
+                <CardContent className="flex items-start gap-3 p-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                    <Users className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-semibold text-foreground truncate">{r.referred_name}</p>
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">{r.referred_user_type}</Badge>
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-3 flex-wrap">
+                      <div className="flex items-center gap-1">
+                        <UserCheck className="h-3.5 w-3.5" /><span className="text-xs">Signup</span>
+                        <Badge className={`h-4 px-1.5 text-[10px] border-0 ${r.signup_bonus_paid ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"}`}>
+                          {r.signup_bonus_paid ? "Paid" : "Pending"}
+                        </Badge>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-semibold text-foreground truncate">{r.referred_name}</p>
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                            {r.referred_user_type === "employee" ? "Employee" : "Client"}
-                          </Badge>
-                        </div>
-                        <div className="mt-1.5 flex items-center gap-3 flex-wrap">
-                          <div className="flex items-center gap-1">
-                            <UserCheck className="h-3.5 w-3.5" />
-                            <span className="text-xs">Signup</span>
-                            {r.signup_bonus_paid ? (
-                              <Badge className="h-4 px-1.5 text-[10px] bg-accent text-accent-foreground">Paid</Badge>
-                            ) : (
-                              <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">Pending</Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Briefcase className="h-3.5 w-3.5" />
-                            <span className="text-xs">Job</span>
-                            {r.job_bonus_paid ? (
-                              <Badge className="h-4 px-1.5 text-[10px] bg-accent text-accent-foreground">Paid</Badge>
-                            ) : (
-                              <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">Pending</Badge>
-                            )}
-                          </div>
-                        </div>
-                        <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          {format(new Date(r.created_at), "dd MMM yyyy")}
-                        </p>
+                      <div className="flex items-center gap-1">
+                        <Briefcase className="h-3.5 w-3.5" /><span className="text-xs">Job</span>
+                        <Badge className={`h-4 px-1.5 text-[10px] border-0 ${r.job_bonus_paid ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"}`}>
+                          {r.job_bonus_paid ? "Paid" : "Pending"}
+                        </Badge>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <Clock className="h-3 w-3" /> {format(new Date(r.created_at), "dd MMM yyyy")}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </TabsContent>
       </Tabs>
     </div>
