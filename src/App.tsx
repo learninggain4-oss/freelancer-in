@@ -78,6 +78,8 @@ const AdminAttendance = lazy(() => import("./pages/admin/AdminAttendance"));
 const AdminBanks = lazy(() => import("./pages/admin/AdminBanks"));
 const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
 const AdminWalletTypes = lazy(() => import("./pages/admin/AdminWalletTypes"));
+const AdminIpBlocking = lazy(() => import("./pages/admin/AdminIpBlocking"));
+const AdminPwaInstalls = lazy(() => import("./pages/admin/AdminPwaInstalls"));
 const WalletTypes = lazy(() => import("./pages/WalletTypes"));
 const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));

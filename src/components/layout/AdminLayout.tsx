@@ -72,6 +72,13 @@ const navSections: { title: string; items: NavItem[] }[] = [
     ],
   },
   {
+    title: "Security & Monitoring",
+    items: [
+      { label: "IP Blocking", icon: ShieldCheck, path: "/admin/ip-blocking" },
+      { label: "App Installs", icon: Monitor, path: "/admin/pwa-installs" },
+    ],
+  },
+  {
     title: "Content & Config",
     items: [
       { label: "Hero Slideshow", icon: SlidersHorizontal, path: "/admin/hero-slides" },
