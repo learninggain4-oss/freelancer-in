@@ -78,6 +78,8 @@ const AdminAttendance = lazy(() => import("./pages/admin/AdminAttendance"));
 const AdminBanks = lazy(() => import("./pages/admin/AdminBanks"));
 const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
 const AdminWalletTypes = lazy(() => import("./pages/admin/AdminWalletTypes"));
+const AdminIpBlocking = lazy(() => import("./pages/admin/AdminIpBlocking"));
+const AdminPwaInstalls = lazy(() => import("./pages/admin/AdminPwaInstalls"));
 const WalletTypes = lazy(() => import("./pages/WalletTypes"));
 const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));
@@ -96,6 +98,7 @@ const Notifications = lazy(() => import("./pages/Notifications"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
 import { useChatNotifications } from "@/hooks/use-chat-notifications";
+import { usePwaInstallTracking } from "@/hooks/use-pwa-install-tracking";
 import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 import { useVisitorTracking } from "@/hooks/use-visitor-tracking";
 import { useIpBlockCheck } from "@/hooks/use-ip-block-check";
@@ -110,6 +113,7 @@ const GlobalChatNotifier = () => {
   useChatNotifications();
   usePresenceHeartbeat();
   useVisitorTracking();
+  usePwaInstallTracking();
   return null;
 };
 
@@ -276,6 +280,8 @@ const AppContent = () => {
               <Route path="banks" element={<AdminBanks />} />
               <Route path="reviews" element={<AdminReviews />} />
               <Route path="wallet-types" element={<AdminWalletTypes />} />
+              <Route path="ip-blocking" element={<AdminIpBlocking />} />
+              <Route path="pwa-installs" element={<AdminPwaInstalls />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

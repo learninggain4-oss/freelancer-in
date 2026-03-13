@@ -62,7 +62,7 @@ const WalletCard = ({
       {/* Header */}
       <div className="relative flex items-center gap-2 text-sm font-medium text-primary-foreground/80">
         <Wallet className="h-4 w-4" />
-        <span>Freelancer Wallet</span>
+        <span>FlexPay Wallet</span>
         <span className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${walletActive ? "bg-emerald-500/20 text-emerald-200" : "bg-red-500/25 text-red-200"}`}>
           {walletActive ? "Active" : "Inactive"}
         </span>
