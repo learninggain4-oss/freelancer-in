@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import WalletCard from "@/components/wallet/WalletCard";
 import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
+import TransferDialog from "@/components/wallet/TransferDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,9 @@ import { useNavigate } from "react-router-dom";
 const ClientWallet = () => {
   const { profile, refreshProfile } = useAuth();
   const [addAmount, setAddAmount] = useState("");
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [showAddMoney, setShowAddMoney] = useState(false);
+  const addMoneyRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -49,6 +53,11 @@ const ClientWallet = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const scrollToAddMoney = () => {
+    setShowAddMoney(true);
+    setTimeout(() => addMoneyRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+  };
+
   return (
     <div className="space-y-5 p-4 pb-8">
       {/* Header */}
@@ -72,6 +81,8 @@ const ClientWallet = () => {
           availableBalance={profile?.available_balance ?? 0}
           holdBalance={profile?.hold_balance ?? 0}
           walletActive={(profile as any)?.wallet_active ?? true}
+          onAddMoney={scrollToAddMoney}
+          onTransfer={() => setShowTransfer(true)}
         />
       </div>
 
@@ -119,34 +130,47 @@ const ClientWallet = () => {
       </div>
 
       {/* Add Money Card */}
-      <Card className="border-0 shadow-sm animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
-        <CardHeader className="flex-row items-center gap-2 pb-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
-            <PlusCircle className="h-4 w-4 text-accent" />
-          </div>
-          <CardTitle className="text-sm font-semibold text-foreground">Add Money</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-xs font-medium">Amount (₹)</Label>
-            <Input
-              type="number"
-              placeholder="Enter amount"
-              value={addAmount}
-              onChange={(e) => setAddAmount(e.target.value)}
-              className="h-12 text-lg font-semibold"
-            />
-          </div>
-          <Button
-            className="w-full h-12 text-sm font-semibold"
-            onClick={() => addMoneyMutation.mutate()}
-            disabled={addMoneyMutation.isPending || !(profile as any)?.wallet_active}
-          >
-            <ArrowUpRight className="mr-2 h-4 w-4" />
-            {addMoneyMutation.isPending ? "Processing..." : !(profile as any)?.wallet_active ? "Wallet Inactive" : "Add to Wallet"}
-          </Button>
-        </CardContent>
-      </Card>
+      <div ref={addMoneyRef}>
+        <Card className="border-0 shadow-sm animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
+          <CardHeader className="flex-row items-center gap-2 pb-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+              <PlusCircle className="h-4 w-4 text-accent" />
+            </div>
+            <CardTitle className="text-sm font-semibold text-foreground">Add Money</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Amount (₹)</Label>
+              <Input
+                type="number"
+                placeholder="Enter amount"
+                value={addAmount}
+                onChange={(e) => setAddAmount(e.target.value)}
+                className="h-12 text-lg font-semibold"
+              />
+            </div>
+            <Button
+              className="w-full h-12 text-sm font-semibold"
+              onClick={() => addMoneyMutation.mutate()}
+              disabled={addMoneyMutation.isPending || !(profile as any)?.wallet_active}
+            >
+              <ArrowUpRight className="mr-2 h-4 w-4" />
+              {addMoneyMutation.isPending ? "Processing..." : !(profile as any)?.wallet_active ? "Wallet Inactive" : "Add to Wallet"}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Transfer Dialog */}
+      <TransferDialog
+        open={showTransfer}
+        onOpenChange={setShowTransfer}
+        maxBalance={profile?.available_balance ?? 0}
+        onSuccess={() => {
+          refreshProfile();
+          queryClient.invalidateQueries({ queryKey: ["client-transactions"] });
+        }}
+      />
     </div>
   );
 };

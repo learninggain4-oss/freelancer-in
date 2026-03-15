@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, order_id } =
+    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, order_id, target_wallet_number } =
       await req.json();
 
     // Get the caller's profile
@@ -1023,6 +1023,79 @@ Deno.serve(async (req) => {
 
         await supabase.from("withdrawals").delete().eq("id", withdrawal_id);
 
+        break;
+      }
+
+      case "transfer_to_wallet": {
+        if (!target_wallet_number || typeof target_wallet_number !== "string")
+          throw new Error("Missing target wallet number");
+        if (!amount || amount <= 0) throw new Error("Invalid amount");
+        if (amount > Number(callerProfile.available_balance))
+          throw new Error("Insufficient balance");
+
+        // Look up recipient
+        const { data: recipient, error: rErr } = await supabase
+          .from("profiles")
+          .select("id, user_id, full_name, wallet_number, wallet_active")
+          .eq("wallet_number", target_wallet_number.trim())
+          .single();
+        if (rErr || !recipient) throw new Error("Recipient wallet not found");
+        if (recipient.id === callerProfile.id)
+          throw new Error("Cannot transfer to your own wallet");
+        if (!recipient.wallet_active)
+          throw new Error("Recipient wallet is inactive");
+
+        // Deduct from sender
+        await supabase
+          .from("profiles")
+          .update({ available_balance: Number(callerProfile.available_balance) - amount })
+          .eq("id", callerProfile.id);
+
+        // Credit recipient
+        const { data: recProfile } = await supabase
+          .from("profiles")
+          .select("available_balance")
+          .eq("id", recipient.id)
+          .single();
+        await supabase
+          .from("profiles")
+          .update({ available_balance: Number(recProfile?.available_balance ?? 0) + amount })
+          .eq("id", recipient.id);
+
+        const recipientName = Array.isArray(recipient.full_name) ? recipient.full_name[0] : recipient.full_name;
+
+        // Record transactions
+        await supabase.from("transactions").insert([
+          {
+            profile_id: callerProfile.id,
+            type: "debit" as const,
+            amount,
+            description: `Transfer to wallet ${target_wallet_number}`,
+          },
+          {
+            profile_id: recipient.id,
+            type: "credit" as const,
+            amount,
+            description: `Transfer received from wallet`,
+          },
+        ]);
+
+        // Notify recipient
+        const { data: senderProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", callerProfile.id)
+          .single();
+        const senderName = Array.isArray(senderProfile?.full_name) ? senderProfile.full_name[0] : senderProfile?.full_name ?? "Someone";
+
+        await supabase.from("notifications").insert({
+          user_id: recipient.user_id,
+          title: "Money Received! 💰",
+          message: `${senderName} sent you ₹${amount.toLocaleString("en-IN")} via FlexPay wallet transfer.`,
+          type: "financial",
+        });
+
+        result.recipient_name = recipientName;
         break;
       }
 

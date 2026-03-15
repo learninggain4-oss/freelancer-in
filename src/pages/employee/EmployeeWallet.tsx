@@ -1,6 +1,7 @@
 import { useState } from "react";
 import WalletCard from "@/components/wallet/WalletCard";
 import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
+import TransferDialog from "@/components/wallet/TransferDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ const EmployeeWallet = () => {
   const [withdrawalPassword, setWithdrawalPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [verifyingPassword, setVerifyingPassword] = useState(false);
+  const [showTransfer, setShowTransfer] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -230,6 +232,7 @@ const EmployeeWallet = () => {
           availableBalance={profile?.available_balance ?? 0}
           holdBalance={profile?.hold_balance ?? 0}
           walletActive={(profile as any)?.wallet_active ?? true}
+          onTransfer={() => setShowTransfer(true)}
         />
       </div>
 
@@ -504,6 +507,17 @@ const EmployeeWallet = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Transfer Dialog */}
+      <TransferDialog
+        open={showTransfer}
+        onOpenChange={setShowTransfer}
+        maxBalance={profile?.available_balance ?? 0}
+        onSuccess={() => {
+          refreshProfile();
+          queryClient.invalidateQueries({ queryKey: ["employee-transactions"] });
+        }}
+      />
     </div>
   );
 };
