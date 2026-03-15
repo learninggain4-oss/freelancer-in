@@ -299,6 +299,32 @@ const AdminSettings = () => {
         </CardContent>
       </Card>
 
+      {/* Withdrawal Order ID Format */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Receipt className="h-4 w-4 text-primary" />
+            Withdrawal Order ID Format
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Set the required number of digits for the Order ID that employees must enter when requesting a withdrawal.
+          </p>
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label>Order ID Length (digits)</Label>
+              <Input type="number" min="5" max="30" value={orderIdLength} onChange={(e) => setOrderIdLength(e.target.value)} />
+            </div>
+            <Button onClick={() => handleSaveSetting("withdrawal_order_id_length", orderIdLength, "Order ID length", 5, 30)} disabled={saving === "withdrawal_order_id_length"} className="gap-1">
+              {saving === "withdrawal_order_id_length" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">Current format: {orderIdLength}-digit numeric Order ID</p>
+        </CardContent>
+      </Card>
+
       {/* Referral Bonus Settings */}
       <Card>
         <CardHeader className="pb-3">
