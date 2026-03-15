@@ -45,6 +45,7 @@ const EmployeeWallet = () => {
   const [withdrawalPassword, setWithdrawalPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [verifyingPassword, setVerifyingPassword] = useState(false);
+  const [showTransfer, setShowTransfer] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
