@@ -83,6 +83,9 @@ const ClientWithdrawals = () => {
                     <p className="text-xs text-muted-foreground">
                       {Array.isArray(w.employee?.user_code) ? w.employee.user_code.join("") : w.employee?.user_code} • {w.method}
                     </p>
+                    {w.order_id && (
+                      <p className="text-xs text-muted-foreground font-mono">Order ID: {w.order_id}</p>
+                    )}
                   </div>
                   <span className="flex items-center text-base font-bold text-foreground">
                     <IndianRupee className="h-4 w-4" />{Number(w.amount).toLocaleString("en-IN")}
