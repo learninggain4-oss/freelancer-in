@@ -335,6 +335,7 @@ const EmployeeWallet = () => {
             </p>
           </div>
 
+          <div className="space-y-2">
             <Label className="text-xs font-medium">Payment Method</Label>
             <div className="flex gap-2">
               <Button
