@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Clock, Landmark, Gift, CreditCard, Search, X, Coins, CheckCircle, Briefcase, Calendar, Star, Users } from "lucide-react";
+import { Loader2, Save, Clock, Landmark, Gift, CreditCard, Search, X, Coins, CheckCircle, Briefcase, Calendar, Star, Users, Receipt } from "lucide-react";
 import TotpSetupCard from "@/components/admin/TotpSetupCard";
 
 type ClientPaymentRow = {
@@ -45,6 +45,7 @@ const AdminSettings = () => {
   const [empSeparator, setEmpSeparator] = useState("-");
   const [cltSeparator, setCltSeparator] = useState("-");
   const [clientPaymentSharing, setClientPaymentSharing] = useState(true);
+  const [orderIdLength, setOrderIdLength] = useState("15");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
 
@@ -101,6 +102,7 @@ const AdminSettings = () => {
           "coin_reward_daily_attendance",
           "coin_reward_5star_review",
           "coin_reward_referral_10",
+          "withdrawal_order_id_length",
         ]);
       if (data) {
         for (const row of data) {
@@ -127,6 +129,7 @@ const AdminSettings = () => {
           if (row.key === "coin_reward_daily_attendance") setRewardDailyAttendance(row.value);
           if (row.key === "coin_reward_5star_review") setReward5StarReview(row.value);
           if (row.key === "coin_reward_referral_10") setRewardReferral10(row.value);
+          if (row.key === "withdrawal_order_id_length") setOrderIdLength(row.value || "15");
         }
       }
       setLoading(false);
@@ -293,6 +296,32 @@ const AdminSettings = () => {
               Save
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Withdrawal Order ID Format */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Receipt className="h-4 w-4 text-primary" />
+            Withdrawal Order ID Format
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Set the required number of digits for the Order ID that employees must enter when requesting a withdrawal.
+          </p>
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label>Order ID Length (digits)</Label>
+              <Input type="number" min="5" max="30" value={orderIdLength} onChange={(e) => setOrderIdLength(e.target.value)} />
+            </div>
+            <Button onClick={() => handleSaveSetting("withdrawal_order_id_length", orderIdLength, "Order ID length", 5, 30)} disabled={saving === "withdrawal_order_id_length"} className="gap-1">
+              {saving === "withdrawal_order_id_length" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">Current format: {orderIdLength}-digit numeric Order ID</p>
         </CardContent>
       </Card>
 

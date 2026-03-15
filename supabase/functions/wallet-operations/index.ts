@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type } =
+    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, order_id } =
       await req.json();
 
     // Get the caller's profile
@@ -104,6 +104,33 @@ Deno.serve(async (req) => {
         if (amount > Number(callerProfile.available_balance))
           throw new Error("Insufficient balance");
 
+        // Validate order_id
+        if (!order_id || typeof order_id !== "string" || !order_id.trim())
+          throw new Error("Order ID is required");
+
+        // Get configurable length from app_settings (default 15)
+        const { data: orderLenSetting } = await supabase
+          .from("app_settings")
+          .select("value")
+          .eq("key", "withdrawal_order_id_length")
+          .maybeSingle();
+        const requiredLen = Number(orderLenSetting?.value) || 15;
+
+        const trimmedOrderId = order_id.trim();
+        if (!/^\d+$/.test(trimmedOrderId))
+          throw new Error("Order ID must contain only digits");
+        if (trimmedOrderId.length !== requiredLen)
+          throw new Error(`Order ID must be exactly ${requiredLen} digits`);
+
+        // Check for duplicate order_id
+        const { data: existingOrder } = await supabase
+          .from("withdrawals")
+          .select("id")
+          .eq("order_id", trimmedOrderId)
+          .maybeSingle();
+        if (existingOrder)
+          throw new Error("This Order ID has already been used");
+
         // Check bank verification status
         const { data: bankVerif } = await supabase
           .from("bank_verifications")
@@ -127,6 +154,7 @@ Deno.serve(async (req) => {
           .insert({
             employee_id: callerProfile.id,
             amount,
+            order_id: trimmedOrderId,
             method: upi_id ? "UPI" : "Bank Transfer",
             upi_id: upi_id || null,
             bank_account_number: bank_account_number || null,
@@ -142,7 +170,7 @@ Deno.serve(async (req) => {
           profile_id: callerProfile.id,
           type: "debit",
           amount,
-          description: "Withdrawal requested (pending approval)",
+          description: `Withdrawal requested (Order ID: ${trimmedOrderId})`,
           reference_id: newW.id,
         });
 

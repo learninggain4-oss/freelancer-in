@@ -37,6 +37,7 @@ import {
 const EmployeeWallet = () => {
   const { profile, refreshProfile } = useAuth();
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [orderId, setOrderId] = useState("");
   const [method, setMethod] = useState<"upi" | "bank">("upi");
   const [selectedUpiAppId, setSelectedUpiAppId] = useState<string | null>(null);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
@@ -74,6 +75,18 @@ const EmployeeWallet = () => {
       });
       if (error) return { has_password: false };
       return data as { has_password: boolean };
+    },
+  });
+
+  const { data: orderIdFormat } = useQuery({
+    queryKey: ["order-id-format-setting"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "withdrawal_order_id_length")
+        .maybeSingle();
+      return Number(data?.value) || 15;
     },
   });
 
@@ -133,6 +146,7 @@ const EmployeeWallet = () => {
         body: {
           action: "request_withdrawal",
           amount,
+          order_id: orderId.trim(),
           bank_holder_name: savedHolderName || null,
           upi_id: method === "upi" ? (selectedApp as any)?.payment_methods?.name : null,
           bank_account_number: method === "bank" ? savedBank : null,
@@ -146,6 +160,7 @@ const EmployeeWallet = () => {
     onSuccess: () => {
       toast.success("Withdrawal request submitted");
       setWithdrawAmount("");
+      setOrderId("");
       setSelectedUpiAppId(null);
       setShowPasswordDialog(false);
       setWithdrawalPassword("");
@@ -165,6 +180,10 @@ const EmployeeWallet = () => {
     const amount = Number(withdrawAmount);
     if (!amount || amount <= 0) { toast.error("Enter a valid amount"); return; }
     if (amount > (profile?.available_balance ?? 0)) { toast.error("Insufficient balance"); return; }
+    const requiredLen = orderIdFormat || 15;
+    if (!orderId.trim()) { toast.error("Order ID is required"); return; }
+    if (orderId.trim().length !== requiredLen) { toast.error(`Order ID must be exactly ${requiredLen} digits`); return; }
+    if (!/^\d+$/.test(orderId.trim())) { toast.error("Order ID must contain only digits"); return; }
     if (method === "upi" && !selectedUpiAppId) { toast.error("Please select a UPI app"); return; }
     if (method === "bank" && !savedBank) { toast.error("No bank account saved"); return; }
     setShowPasswordDialog(true);
@@ -295,6 +314,25 @@ const EmployeeWallet = () => {
               onChange={(e) => setWithdrawAmount(e.target.value)}
               className="h-12 text-lg font-semibold"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs font-medium">Order ID ({orderIdFormat || 15} digits)</Label>
+            <Input
+              type="text"
+              inputMode="numeric"
+              placeholder={`Enter ${orderIdFormat || 15}-digit Order ID`}
+              value={orderId}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, "").slice(0, orderIdFormat || 15);
+                setOrderId(val);
+              }}
+              maxLength={orderIdFormat || 15}
+              className="h-12 text-lg font-semibold tracking-widest"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              {orderId.length}/{orderIdFormat || 15} digits entered
+            </p>
           </div>
 
           <div className="space-y-2">

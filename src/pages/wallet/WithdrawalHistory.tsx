@@ -28,7 +28,7 @@ const WithdrawalHistory = () => {
       if (isEmployee) {
         const { data, error } = await supabase
           .from("withdrawals")
-          .select("id, employee_id, amount, method, status, review_notes, reviewed_at, requested_at")
+          .select("id, employee_id, amount, method, status, review_notes, reviewed_at, requested_at, order_id")
           .eq("employee_id", profile.id)
           .order("requested_at", { ascending: false })
           .limit(100);
@@ -37,7 +37,7 @@ const WithdrawalHistory = () => {
       } else {
         const { data, error } = await supabase
           .from("withdrawals")
-          .select("id, employee_id, amount, method, status, review_notes, reviewed_at, requested_at, employee:employee_id(full_name, user_code)")
+          .select("id, employee_id, amount, method, status, review_notes, reviewed_at, requested_at, order_id, employee:employee_id(full_name, user_code)")
           .order("requested_at", { ascending: false })
           .limit(100);
         if (error) throw error;
@@ -75,6 +75,9 @@ const WithdrawalHistory = () => {
                     )}
                     <p className="text-sm font-medium text-foreground">₹{Number(w.amount).toLocaleString("en-IN")}</p>
                     <p className="text-xs text-muted-foreground">{w.method} • {new Date(w.requested_at).toLocaleDateString()}</p>
+                    {w.order_id && (
+                      <p className="text-xs text-muted-foreground font-mono">Order ID: {w.order_id}</p>
+                    )}
                   </div>
                   <Badge variant={statusVariant[w.status] ?? "secondary"}>{w.status}</Badge>
                 </div>

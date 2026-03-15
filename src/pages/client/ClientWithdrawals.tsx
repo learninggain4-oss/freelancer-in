@@ -29,7 +29,7 @@ const ClientWithdrawals = () => {
       if (!profile?.id) return [];
       const { data, error } = await supabase
         .from("withdrawals")
-        .select("id, employee_id, amount, method, status, review_notes, reviewed_at, reviewed_by, requested_at, employee:employee_id(full_name, user_code)")
+        .select("id, employee_id, amount, method, status, review_notes, reviewed_at, reviewed_by, requested_at, order_id, employee:employee_id(full_name, user_code)")
         .order("requested_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -83,6 +83,9 @@ const ClientWithdrawals = () => {
                     <p className="text-xs text-muted-foreground">
                       {Array.isArray(w.employee?.user_code) ? w.employee.user_code.join("") : w.employee?.user_code} • {w.method}
                     </p>
+                    {w.order_id && (
+                      <p className="text-xs text-muted-foreground font-mono">Order ID: {w.order_id}</p>
+                    )}
                   </div>
                   <span className="flex items-center text-base font-bold text-foreground">
                     <IndianRupee className="h-4 w-4" />{Number(w.amount).toLocaleString("en-IN")}
@@ -120,6 +123,9 @@ const ClientWithdrawals = () => {
                 <div>
                   <p className="text-sm font-medium text-foreground">{getEmployeeName(w.employee)}</p>
                   <p className="text-xs text-muted-foreground">₹{Number(w.amount).toLocaleString("en-IN")} • {new Date(w.requested_at).toLocaleDateString()}</p>
+                    {w.order_id && (
+                      <p className="text-xs text-muted-foreground font-mono">Order ID: {w.order_id}</p>
+                    )}
                 </div>
                 <Badge variant={statusVariant[w.status] ?? "secondary"}>{w.status}</Badge>
               </div>
