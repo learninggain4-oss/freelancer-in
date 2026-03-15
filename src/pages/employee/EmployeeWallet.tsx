@@ -507,6 +507,17 @@ const EmployeeWallet = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Transfer Dialog */}
+      <TransferDialog
+        open={showTransfer}
+        onOpenChange={setShowTransfer}
+        maxBalance={profile?.available_balance ?? 0}
+        onSuccess={() => {
+          refreshProfile();
+          queryClient.invalidateQueries({ queryKey: ["employee-transactions"] });
+        }}
+      />
     </div>
   );
 };
