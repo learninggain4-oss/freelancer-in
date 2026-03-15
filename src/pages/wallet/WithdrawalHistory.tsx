@@ -75,6 +75,9 @@ const WithdrawalHistory = () => {
                     )}
                     <p className="text-sm font-medium text-foreground">₹{Number(w.amount).toLocaleString("en-IN")}</p>
                     <p className="text-xs text-muted-foreground">{w.method} • {new Date(w.requested_at).toLocaleDateString()}</p>
+                    {w.order_id && (
+                      <p className="text-xs text-muted-foreground font-mono">Order ID: {w.order_id}</p>
+                    )}
                   </div>
                   <Badge variant={statusVariant[w.status] ?? "secondary"}>{w.status}</Badge>
                 </div>

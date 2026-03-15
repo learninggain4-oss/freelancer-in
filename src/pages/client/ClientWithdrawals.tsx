@@ -123,6 +123,9 @@ const ClientWithdrawals = () => {
                 <div>
                   <p className="text-sm font-medium text-foreground">{getEmployeeName(w.employee)}</p>
                   <p className="text-xs text-muted-foreground">₹{Number(w.amount).toLocaleString("en-IN")} • {new Date(w.requested_at).toLocaleDateString()}</p>
+                    {w.order_id && (
+                      <p className="text-xs text-muted-foreground font-mono">Order ID: {w.order_id}</p>
+                    )}
                 </div>
                 <Badge variant={statusVariant[w.status] ?? "secondary"}>{w.status}</Badge>
               </div>
