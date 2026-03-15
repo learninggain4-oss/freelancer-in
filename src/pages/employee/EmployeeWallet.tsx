@@ -180,6 +180,10 @@ const EmployeeWallet = () => {
     const amount = Number(withdrawAmount);
     if (!amount || amount <= 0) { toast.error("Enter a valid amount"); return; }
     if (amount > (profile?.available_balance ?? 0)) { toast.error("Insufficient balance"); return; }
+    const requiredLen = orderIdFormat || 15;
+    if (!orderId.trim()) { toast.error("Order ID is required"); return; }
+    if (orderId.trim().length !== requiredLen) { toast.error(`Order ID must be exactly ${requiredLen} digits`); return; }
+    if (!/^\d+$/.test(orderId.trim())) { toast.error("Order ID must contain only digits"); return; }
     if (method === "upi" && !selectedUpiAppId) { toast.error("Please select a UPI app"); return; }
     if (method === "bank" && !savedBank) { toast.error("No bank account saved"); return; }
     setShowPasswordDialog(true);
