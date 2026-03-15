@@ -78,6 +78,18 @@ const EmployeeWallet = () => {
     },
   });
 
+  const { data: orderIdFormat } = useQuery({
+    queryKey: ["order-id-format-setting"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "withdrawal_order_id_length")
+        .maybeSingle();
+      return Number(data?.value) || 15;
+    },
+  });
+
   const hasWithdrawalPassword = passwordStatus?.has_password ?? false;
 
   const { data: upiApps } = useQuery({
