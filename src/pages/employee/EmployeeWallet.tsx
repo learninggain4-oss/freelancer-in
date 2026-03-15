@@ -160,6 +160,7 @@ const EmployeeWallet = () => {
     onSuccess: () => {
       toast.success("Withdrawal request submitted");
       setWithdrawAmount("");
+      setOrderId("");
       setSelectedUpiAppId(null);
       setShowPasswordDialog(false);
       setWithdrawalPassword("");
