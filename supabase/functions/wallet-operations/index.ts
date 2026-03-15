@@ -1027,26 +1027,76 @@ Deno.serve(async (req) => {
       }
 
       case "transfer_to_wallet": {
-        // Wallet-to-wallet transfer using wallet number
-        const { target_wallet_number } = await req.json().catch(() => ({}));
-        const tWallet = (await req.json().catch(() => null)) || {};
-        // Re-parse from the already-parsed body
-        const targetWalletNum = (await req.json().catch(() => ({})))?.target_wallet_number;
-        // Actually we already destructured above, let me use the variables from line 60
-        const twn = (req as any).__body?.target_wallet_number;
-        // The body was already parsed at line 60, so we need to get target_wallet_number from there
-        // It should already be in the destructured variables. Let me check - it's not in the destructure.
-        // We need to get it from the parsed body. Let me just use a different approach.
-        
+        if (!target_wallet_number || typeof target_wallet_number !== "string")
+          throw new Error("Missing target wallet number");
         if (!amount || amount <= 0) throw new Error("Invalid amount");
         if (amount > Number(callerProfile.available_balance))
           throw new Error("Insufficient balance");
 
-        // Get target_wallet_number from the original request body
-        // Since the body was already consumed, we need to add it to the destructure
-        // But we can't re-read the body. The variable wasn't destructured.
-        // Let's throw an error for now and fix the destructure.
-        throw new Error("Transfer not supported yet");
+        // Look up recipient
+        const { data: recipient, error: rErr } = await supabase
+          .from("profiles")
+          .select("id, user_id, full_name, wallet_number, wallet_active")
+          .eq("wallet_number", target_wallet_number.trim())
+          .single();
+        if (rErr || !recipient) throw new Error("Recipient wallet not found");
+        if (recipient.id === callerProfile.id)
+          throw new Error("Cannot transfer to your own wallet");
+        if (!recipient.wallet_active)
+          throw new Error("Recipient wallet is inactive");
+
+        // Deduct from sender
+        await supabase
+          .from("profiles")
+          .update({ available_balance: Number(callerProfile.available_balance) - amount })
+          .eq("id", callerProfile.id);
+
+        // Credit recipient
+        const { data: recProfile } = await supabase
+          .from("profiles")
+          .select("available_balance")
+          .eq("id", recipient.id)
+          .single();
+        await supabase
+          .from("profiles")
+          .update({ available_balance: Number(recProfile?.available_balance ?? 0) + amount })
+          .eq("id", recipient.id);
+
+        const recipientName = Array.isArray(recipient.full_name) ? recipient.full_name[0] : recipient.full_name;
+
+        // Record transactions
+        await supabase.from("transactions").insert([
+          {
+            profile_id: callerProfile.id,
+            type: "debit" as const,
+            amount,
+            description: `Transfer to wallet ${target_wallet_number}`,
+          },
+          {
+            profile_id: recipient.id,
+            type: "credit" as const,
+            amount,
+            description: `Transfer received from wallet`,
+          },
+        ]);
+
+        // Notify recipient
+        const { data: senderProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", callerProfile.id)
+          .single();
+        const senderName = Array.isArray(senderProfile?.full_name) ? senderProfile.full_name[0] : senderProfile?.full_name ?? "Someone";
+
+        await supabase.from("notifications").insert({
+          user_id: recipient.user_id,
+          title: "Money Received! 💰",
+          message: `${senderName} sent you ₹${amount.toLocaleString("en-IN")} via FlexPay wallet transfer.`,
+          type: "financial",
+        });
+
+        result.recipient_name = recipientName;
+        break;
       }
 
       default:
