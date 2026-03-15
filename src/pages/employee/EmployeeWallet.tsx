@@ -146,6 +146,7 @@ const EmployeeWallet = () => {
         body: {
           action: "request_withdrawal",
           amount,
+          order_id: orderId.trim(),
           bank_holder_name: savedHolderName || null,
           upi_id: method === "upi" ? (selectedApp as any)?.payment_methods?.name : null,
           bank_account_number: method === "bank" ? savedBank : null,
