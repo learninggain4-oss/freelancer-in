@@ -1,0 +1,1 @@
+INSERT INTO app_settings (key, value) VALUES ('withdrawal_order_id_length', '15') ON CONFLICT (key) DO NOTHING;
