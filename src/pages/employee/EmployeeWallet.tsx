@@ -348,20 +348,27 @@ const EmployeeWallet = () => {
 
           <div className="space-y-2">
             <Label className="text-xs font-medium">Order ID ({orderIdFormat || 15} digits)</Label>
-            <Input
-              type="text"
-              inputMode="numeric"
-              placeholder={`Enter ${orderIdFormat || 15}-digit Order ID`}
-              value={orderId}
-              onChange={(e) => {
-                const val = e.target.value.replace(/\D/g, "").slice(0, orderIdFormat || 15);
-                setOrderId(val);
-              }}
-              maxLength={orderIdFormat || 15}
-              className="h-12 text-lg font-semibold tracking-widest"
-            />
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                inputMode="numeric"
+                placeholder="Auto-generated"
+                value={orderId}
+                readOnly
+                className="h-12 text-lg font-semibold tracking-widest flex-1 bg-muted/50"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 px-4"
+                onClick={() => setOrderId(generateOrderId(orderIdFormat || 15))}
+              >
+                <Sparkles className="h-4 w-4 mr-1" />
+                Generate
+              </Button>
+            </div>
             <p className="text-[11px] text-muted-foreground">
-              {orderId.length}/{orderIdFormat || 15} digits entered
+              {orderId ? `Format: DDMMYY + ${(orderIdFormat || 15) - 6} random digits` : "Click Generate to create a unique Order ID"}
             </p>
           </div>
 

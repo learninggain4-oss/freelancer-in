@@ -215,6 +215,8 @@ const AppContent = () => {
               <Route path="wallet" element={<ClientWallet />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
+              <Route path="wallet/qr" element={<WalletQRPage />} />
+              <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="projects" element={<ClientProjects />} />
               <Route path="projects/create" element={<CreateProject />} />
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
