@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import WalletCard from "@/components/wallet/WalletCard";
 import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
 import TransferDialog from "@/components/wallet/TransferDialog";
@@ -48,6 +49,32 @@ const EmployeeWallet = () => {
   const [showTransfer, setShowTransfer] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Auto-generate Order ID: DDMMYY + 9 random digits = 15 digits
+  const generateOrderId = (len: number) => {
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, "0");
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const yy = String(now.getFullYear()).slice(-2);
+    const datePrefix = dd + mm + yy; // 6 digits
+    const remaining = len - 6;
+    let rand = "";
+    for (let i = 0; i < remaining; i++) {
+      rand += Math.floor(Math.random() * 10).toString();
+    }
+    return datePrefix + rand;
+  };
+
+  // Handle scanned wallet from QR scanner
+  useEffect(() => {
+    const state = location.state as { scannedWallet?: string } | null;
+    if (state?.scannedWallet) {
+      setShowTransfer(true);
+      // Clear state to avoid re-triggering
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const savedBank = profile?.bank_account_number;
   const savedIfsc = profile?.bank_ifsc_code;
@@ -321,20 +348,27 @@ const EmployeeWallet = () => {
 
           <div className="space-y-2">
             <Label className="text-xs font-medium">Order ID ({orderIdFormat || 15} digits)</Label>
-            <Input
-              type="text"
-              inputMode="numeric"
-              placeholder={`Enter ${orderIdFormat || 15}-digit Order ID`}
-              value={orderId}
-              onChange={(e) => {
-                const val = e.target.value.replace(/\D/g, "").slice(0, orderIdFormat || 15);
-                setOrderId(val);
-              }}
-              maxLength={orderIdFormat || 15}
-              className="h-12 text-lg font-semibold tracking-widest"
-            />
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                inputMode="numeric"
+                placeholder="Auto-generated"
+                value={orderId}
+                readOnly
+                className="h-12 text-lg font-semibold tracking-widest flex-1 bg-muted/50"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 px-4"
+                onClick={() => setOrderId(generateOrderId(orderIdFormat || 15))}
+              >
+                <Sparkles className="h-4 w-4 mr-1" />
+                Generate
+              </Button>
+            </div>
             <p className="text-[11px] text-muted-foreground">
-              {orderId.length}/{orderIdFormat || 15} digits entered
+              {orderId ? `Format: DDMMYY + ${(orderIdFormat || 15) - 6} random digits` : "Click Generate to create a unique Order ID"}
             </p>
           </div>
 
@@ -512,6 +546,7 @@ const EmployeeWallet = () => {
       <TransferDialog
         open={showTransfer}
         onOpenChange={setShowTransfer}
+        initialWalletNumber={(location.state as any)?.scannedWallet || ""}
         maxBalance={profile?.available_balance ?? 0}
         onSuccess={() => {
           refreshProfile();

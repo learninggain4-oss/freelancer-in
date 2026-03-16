@@ -85,6 +85,8 @@ const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));
 const TransactionHistory = lazy(() => import("./pages/wallet/TransactionHistory"));
 const WithdrawalHistory = lazy(() => import("./pages/wallet/WithdrawalHistory"));
+const WalletQRPage = lazy(() => import("./pages/wallet/WalletQRPage"));
+const WalletScanPage = lazy(() => import("./pages/wallet/WalletScanPage"));
 const ProfilePersonalInfo = lazy(() => import("./pages/profile/ProfilePersonalInfo"));
 const ProfileProfessional = lazy(() => import("./pages/profile/ProfileProfessional"));
 const ProfileBankDetails = lazy(() => import("./pages/profile/ProfileBankDetails"));
@@ -176,6 +178,8 @@ const AppContent = () => {
               <Route path="wallet" element={<EmployeeWallet />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
+              <Route path="wallet/qr" element={<WalletQRPage />} />
+              <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="profile" element={<EmployeeProfile />} />
               <Route path="profile/personal" element={<ProfilePersonalInfo />} />
               <Route path="profile/professional" element={<ProfileProfessional />} />
@@ -211,6 +215,8 @@ const AppContent = () => {
               <Route path="wallet" element={<ClientWallet />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
+              <Route path="wallet/qr" element={<WalletQRPage />} />
+              <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="projects" element={<ClientProjects />} />
               <Route path="projects/create" element={<CreateProject />} />
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />

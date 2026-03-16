@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import WalletCard from "@/components/wallet/WalletCard";
 import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
 import TransferDialog from "@/components/wallet/TransferDialog";
@@ -29,6 +30,16 @@ const ClientWallet = () => {
   const addMoneyRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Handle scanned wallet from QR scanner
+  useEffect(() => {
+    const state = location.state as { scannedWallet?: string } | null;
+    if (state?.scannedWallet) {
+      setShowTransfer(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const addMoneyMutation = useMutation({
     mutationFn: async () => {
@@ -165,6 +176,7 @@ const ClientWallet = () => {
       <TransferDialog
         open={showTransfer}
         onOpenChange={setShowTransfer}
+        initialWalletNumber={(location.state as any)?.scannedWallet || ""}
         maxBalance={profile?.available_balance ?? 0}
         onSuccess={() => {
           refreshProfile();

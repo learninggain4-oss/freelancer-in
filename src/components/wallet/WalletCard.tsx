@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
-import { Wallet, Clock, Copy, CreditCard, QrCode, PlusCircle, ArrowLeftRight, X, Shield, Star, Crown, Zap } from "lucide-react";
+import { Wallet, Clock, Copy, CreditCard, QrCode, PlusCircle, ArrowLeftRight, Shield, Star, Crown, Zap, ScanLine } from "lucide-react";
 import { toast } from "sonner";
-import { QRCodeSVG } from "qrcode.react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const tierIcons: Record<string, React.ElementType> = {
   Silver: Shield,
@@ -44,7 +44,7 @@ const WalletCard = ({
 }: WalletCardProps) => {
   const totalBalance = availableBalance + holdBalance;
   const [pressed, setPressed] = useState(false);
-  const [showQR, setShowQR] = useState(false);
+  const navigate = useNavigate();
 
   const { data: walletTypes = [] } = useQuery({
     queryKey: ["wallet-types-active"],
@@ -77,6 +77,8 @@ const WalletCard = ({
       toast.success("Wallet number copied!");
     }
   };
+
+  const basePath = window.location.pathname.includes("/client/") ? "/client" : "/employee";
 
   return (
     <div
@@ -129,7 +131,7 @@ const WalletCard = ({
 
       {/* Action Buttons Row */}
       {!compact && walletActive && (
-        <div className="relative mt-4 flex items-center gap-2">
+        <div className="relative mt-4 flex items-center gap-2 flex-wrap">
           {onAddMoney && (
             <button
               onClick={(e) => { e.stopPropagation(); onAddMoney(); }}
@@ -148,37 +150,22 @@ const WalletCard = ({
               Transfer
             </button>
           )}
+          <button
+            onClick={(e) => { e.stopPropagation(); navigate(`${basePath}/wallet/scan`); }}
+            className="flex items-center gap-1.5 rounded-lg bg-primary-foreground/15 px-3 py-2 text-xs font-semibold text-primary-foreground backdrop-blur-sm transition-all hover:bg-primary-foreground/25 active:scale-95"
+          >
+            <ScanLine className="h-3.5 w-3.5" />
+            Scan QR
+          </button>
           {walletNumber && (
             <button
-              onClick={(e) => { e.stopPropagation(); setShowQR(!showQR); }}
+              onClick={(e) => { e.stopPropagation(); navigate(`${basePath}/wallet/qr`); }}
               className="flex items-center gap-1.5 rounded-lg bg-primary-foreground/15 px-3 py-2 text-xs font-semibold text-primary-foreground backdrop-blur-sm transition-all hover:bg-primary-foreground/25 active:scale-95 ml-auto"
             >
               <QrCode className="h-3.5 w-3.5" />
-              {showQR ? "Hide QR" : "My QR"}
+              My QR
             </button>
           )}
-        </div>
-      )}
-
-      {/* QR Code Section */}
-      {showQR && walletNumber && !compact && (
-        <div className="relative mt-4 flex flex-col items-center gap-2 rounded-xl bg-white p-4 shadow-inner">
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowQR(false); }}
-            className="absolute right-2 top-2 rounded-full bg-gray-100 p-1 text-gray-500 hover:bg-gray-200"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-          <QRCodeSVG
-            value={walletNumber}
-            size={160}
-            level="H"
-            includeMargin={false}
-            bgColor="#ffffff"
-            fgColor="#1e293b"
-          />
-          <p className="text-[11px] font-medium text-slate-600">Wallet: {walletNumber}</p>
-          <p className="text-[10px] text-slate-400">Scan to send money to this wallet</p>
         </div>
       )}
 
