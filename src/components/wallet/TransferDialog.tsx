@@ -43,21 +43,19 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
     }
     setLookingUp(true);
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("full_name, wallet_number")
-        .eq("wallet_number", walletNumber)
-        .maybeSingle();
-      if (error) throw error;
-      if (!data) {
-        toast.error("No wallet found with this number");
+      const res = await supabase.functions.invoke("wallet-operations", {
+        body: { action: "lookup_wallet", target_wallet_number: walletNumber },
+      });
+      if (res.error) throw new Error(res.error.message);
+      if (res.data?.error) {
+        toast.error(res.data.error);
         setRecipientName(null);
         return;
       }
-      const name = Array.isArray(data.full_name) ? data.full_name.join(" ") : data.full_name;
-      setRecipientName(name);
-    } catch {
-      toast.error("Failed to look up wallet");
+      setRecipientName(res.data.recipient_name);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to look up wallet");
+      setRecipientName(null);
     } finally {
       setLookingUp(false);
     }
