@@ -20,13 +20,21 @@ interface TransferDialogProps {
   onOpenChange: (open: boolean) => void;
   maxBalance: number;
   onSuccess: () => void;
+  initialWalletNumber?: string;
 }
 
-const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess }: TransferDialogProps) => {
-  const [walletNumber, setWalletNumber] = useState("");
+const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWalletNumber }: TransferDialogProps) => {
+  const [walletNumber, setWalletNumber] = useState(initialWalletNumber || "");
   const [amount, setAmount] = useState("");
   const [recipientName, setRecipientName] = useState<string | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
+
+  // Auto-lookup when initialWalletNumber is provided
+  useState(() => {
+    if (initialWalletNumber && initialWalletNumber.length === 12) {
+      setWalletNumber(initialWalletNumber);
+    }
+  });
 
   const lookupWallet = async () => {
     if (walletNumber.length !== 12) {
