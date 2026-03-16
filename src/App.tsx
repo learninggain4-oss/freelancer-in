@@ -178,6 +178,8 @@ const AppContent = () => {
               <Route path="wallet" element={<EmployeeWallet />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
+              <Route path="wallet/qr" element={<WalletQRPage />} />
+              <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="profile" element={<EmployeeProfile />} />
               <Route path="profile/personal" element={<ProfilePersonalInfo />} />
               <Route path="profile/professional" element={<ProfileProfessional />} />
