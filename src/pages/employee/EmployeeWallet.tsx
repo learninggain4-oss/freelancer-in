@@ -546,6 +546,7 @@ const EmployeeWallet = () => {
       <TransferDialog
         open={showTransfer}
         onOpenChange={setShowTransfer}
+        initialWalletNumber={(location.state as any)?.scannedWallet || ""}
         maxBalance={profile?.available_balance ?? 0}
         onSuccess={() => {
           refreshProfile();
