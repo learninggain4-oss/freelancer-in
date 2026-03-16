@@ -49,6 +49,32 @@ const EmployeeWallet = () => {
   const [showTransfer, setShowTransfer] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Auto-generate Order ID: DDMMYY + 9 random digits = 15 digits
+  const generateOrderId = (len: number) => {
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, "0");
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const yy = String(now.getFullYear()).slice(-2);
+    const datePrefix = dd + mm + yy; // 6 digits
+    const remaining = len - 6;
+    let rand = "";
+    for (let i = 0; i < remaining; i++) {
+      rand += Math.floor(Math.random() * 10).toString();
+    }
+    return datePrefix + rand;
+  };
+
+  // Handle scanned wallet from QR scanner
+  useEffect(() => {
+    const state = location.state as { scannedWallet?: string } | null;
+    if (state?.scannedWallet) {
+      setShowTransfer(true);
+      // Clear state to avoid re-triggering
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const savedBank = profile?.bank_account_number;
   const savedIfsc = profile?.bank_ifsc_code;
