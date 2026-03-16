@@ -1026,6 +1026,29 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "lookup_wallet": {
+        if (!target_wallet_number || typeof target_wallet_number !== "string")
+          throw new Error("Missing wallet number");
+        if (target_wallet_number.trim().length !== 12)
+          throw new Error("Invalid wallet number");
+
+        const { data: lookupResult, error: lookupErr } = await supabase
+          .from("profiles")
+          .select("full_name, wallet_number, wallet_active")
+          .eq("wallet_number", target_wallet_number.trim())
+          .maybeSingle();
+        if (lookupErr) throw new Error("Lookup failed");
+        if (!lookupResult) throw new Error("No wallet found with this number");
+        if (lookupResult.wallet_number === callerProfile.wallet_number)
+          throw new Error("This is your own wallet");
+        if (!lookupResult.wallet_active)
+          throw new Error("This wallet is inactive");
+
+        const lookupName = Array.isArray(lookupResult.full_name) ? lookupResult.full_name.join(" ") : lookupResult.full_name;
+        result.recipient_name = lookupName;
+        break;
+      }
+
       case "transfer_to_wallet": {
         if (!target_wallet_number || typeof target_wallet_number !== "string")
           throw new Error("Missing target wallet number");
