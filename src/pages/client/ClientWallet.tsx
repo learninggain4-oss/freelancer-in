@@ -30,6 +30,16 @@ const ClientWallet = () => {
   const addMoneyRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Handle scanned wallet from QR scanner
+  useEffect(() => {
+    const state = location.state as { scannedWallet?: string } | null;
+    if (state?.scannedWallet) {
+      setShowTransfer(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const addMoneyMutation = useMutation({
     mutationFn: async () => {
