@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Camera, ImagePlus } from "lucide-react";
@@ -57,10 +57,10 @@ const WalletScanPage = () => {
   const stopScanner = async () => {
     if (scannerRef.current) {
       try {
-        const isRunning = await scannerRef.current.isScanning;
-        if (isRunning) {
-          await scannerRef.current.stop();
-        }
+        await scannerRef.current.stop();
+      } catch {}
+      try {
+        await scannerRef.current.clear();
       } catch {}
       scannerRef.current = null;
     }
@@ -71,7 +71,7 @@ const WalletScanPage = () => {
     fileInputRef.current?.click();
   };
 
-  const handleGalleryFile: React.ChangeEventHandler<HTMLInputElement> = async (event) => {
+  const handleGalleryFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
