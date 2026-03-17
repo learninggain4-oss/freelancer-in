@@ -1,7 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Loader2, Wallet, Crown, Shield, Zap, Star, Check, Infinity } from "lucide-react";
+import { toast } from "sonner";
 
 const iconMap: Record<string, React.ElementType> = {
   Wallet, Crown, Shield, Zap, Star,
@@ -22,6 +25,10 @@ const tierShine: Record<string, string> = {
 };
 
 const WalletTypes = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = location.pathname.startsWith("/client") ? "/client" : "/employee";
+
   const { data: walletTypes = [], isLoading } = useQuery({
     queryKey: ["wallet-types"],
     queryFn: async () => {
@@ -56,13 +63,9 @@ const WalletTypes = () => {
     );
   }
 
-  const formatValue = (value: string | number | null, prefix = "₹") => {
-    if (value === null || value === undefined) return "N/A";
-    const str = String(value);
-    if (str === "Unlimited" || str === "0") return null; // handled separately
-    const num = Number(value);
-    if (!isNaN(num) && num > 0) return `${prefix}${num.toLocaleString("en-IN")}`;
-    return str;
+  const handleUpgrade = (planName: string) => {
+    toast.success(`Upgrade request started for ${planName}.`);
+    navigate(`${basePath}/help-support`, { state: { upgradePlan: planName } });
   };
 
   return (
@@ -77,7 +80,7 @@ const WalletTypes = () => {
 
       {/* Tier Cards */}
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2">
-        {walletTypes.map((wt, index) => {
+        {walletTypes.map((wt) => {
           const IconComp = iconMap[wt.icon_name] || Wallet;
           const gradient = tierGradients[wt.name] || tierGradients.Silver;
           const shine = tierShine[wt.name] || tierShine.Silver;
@@ -228,7 +231,7 @@ const WalletTypes = () => {
 
               {/* Upgrade note */}
               {wt.upgrade_requirements && !isFree && (
-                <div className="px-5 pb-5">
+                <div className="px-5 pb-3">
                   <div
                     className="rounded-xl px-4 py-3 text-xs font-medium"
                     style={{
@@ -241,6 +244,19 @@ const WalletTypes = () => {
                   </div>
                 </div>
               )}
+
+              {/* Upgrade action */}
+              <div className="px-5 pb-5">
+                <Button
+                  type="button"
+                  className="w-full"
+                  variant={isFree ? "secondary" : "default"}
+                  disabled={isFree}
+                  onClick={() => handleUpgrade(wt.name)}
+                >
+                  {isFree ? "Current Plan" : `Upgrade to ${wt.name}`}
+                </Button>
+              </div>
             </div>
           );
         })}

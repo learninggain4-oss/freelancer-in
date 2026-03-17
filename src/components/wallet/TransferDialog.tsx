@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -29,12 +29,12 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
   const [recipientName, setRecipientName] = useState<string | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
 
-  // Auto-lookup when initialWalletNumber is provided
-  useState(() => {
-    if (initialWalletNumber && initialWalletNumber.length === 12) {
+  useEffect(() => {
+    if (open && initialWalletNumber && initialWalletNumber.length === 12) {
       setWalletNumber(initialWalletNumber);
+      setRecipientName(null);
     }
-  });
+  }, [initialWalletNumber, open]);
 
   const lookupWallet = async () => {
     if (walletNumber.length !== 12) {
