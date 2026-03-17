@@ -101,7 +101,10 @@ Deno.serve(async (req) => {
         if (callerProfile.user_type !== "employee")
           throw new Error("Only employees can request withdrawals");
         if (!amount || amount <= 0) throw new Error("Invalid amount");
-        if (amount > Number(callerProfile.available_balance))
+
+        const requestedAmount = Number(amount);
+        const originalBalance = Number(callerProfile.available_balance);
+        if (requestedAmount > originalBalance)
           throw new Error("Insufficient balance");
 
         // Validate order_id
@@ -140,41 +143,72 @@ Deno.serve(async (req) => {
         if (!bankVerif || bankVerif.status !== "verified")
           throw new Error("Bank details must be verified before requesting withdrawals. Please submit your bank details for verification in your profile.");
 
-        // Deduct from available balance
-        await supabase
-          .from("profiles")
-          .update({
-            available_balance: Number(callerProfile.available_balance) - amount,
-          })
-          .eq("id", callerProfile.id);
+        const nextBalance = originalBalance - requestedAmount;
+        let deducted = false;
+        let createdWithdrawalId: string | null = null;
 
-        // Create withdrawal record
-        const { data: newW, error: wErr } = await supabase
-          .from("withdrawals")
-          .insert({
-            employee_id: callerProfile.id,
-            amount,
-            order_id: trimmedOrderId,
-            method: upi_id ? "UPI" : "Bank Transfer",
-            upi_id: upi_id || null,
-            bank_account_number: bank_account_number || null,
-            bank_ifsc_code: bank_ifsc_code || null,
-            bank_holder_name: bank_holder_name || null,
-          })
-          .select("id")
-          .single();
-        if (wErr) throw wErr;
+        try {
+          const { error: deductErr } = await supabase
+            .from("profiles")
+            .update({ available_balance: nextBalance })
+            .eq("id", callerProfile.id);
+          if (deductErr) throw deductErr;
+          deducted = true;
 
-        // Record transaction
-        await supabase.from("transactions").insert({
-          profile_id: callerProfile.id,
-          type: "debit",
-          amount,
-          description: `Withdrawal requested (Order ID: ${trimmedOrderId})`,
-          reference_id: newW.id,
-        });
+          const { data: newW, error: wErr } = await supabase
+            .from("withdrawals")
+            .insert({
+              employee_id: callerProfile.id,
+              amount: requestedAmount,
+              order_id: trimmedOrderId,
+              method: upi_id ? "UPI" : "Bank Transfer",
+              upi_id: upi_id || null,
+              bank_account_number: bank_account_number || null,
+              bank_ifsc_code: bank_ifsc_code || null,
+              bank_holder_name: bank_holder_name || null,
+            })
+            .select("id")
+            .single();
+          if (wErr || !newW) throw wErr || new Error("Failed to create withdrawal record");
+          createdWithdrawalId = newW.id;
 
-        result.withdrawal_id = newW.id;
+          const { error: txErr } = await supabase.from("transactions").insert({
+            profile_id: callerProfile.id,
+            type: "debit",
+            amount: requestedAmount,
+            description: `Withdrawal requested (Order ID: ${trimmedOrderId})`,
+            reference_id: newW.id,
+          });
+          if (txErr) throw txErr;
+
+          result.withdrawal_id = newW.id;
+          result.new_balance = nextBalance;
+        } catch (innerError: unknown) {
+          const rollbackErrors: string[] = [];
+
+          if (createdWithdrawalId) {
+            const { error: cleanupErr } = await supabase
+              .from("withdrawals")
+              .delete()
+              .eq("id", createdWithdrawalId);
+            if (cleanupErr) rollbackErrors.push("failed to remove incomplete withdrawal record");
+          }
+
+          if (deducted) {
+            const { error: restoreErr } = await supabase
+              .from("profiles")
+              .update({ available_balance: originalBalance })
+              .eq("id", callerProfile.id);
+            if (restoreErr) rollbackErrors.push("failed to restore deducted wallet balance");
+          }
+
+          const rootCause = innerError instanceof Error ? innerError.message : "unknown server error";
+          if (rollbackErrors.length > 0) {
+            throw new Error(`Withdrawal failed (${rootCause}) and rollback was partial: ${rollbackErrors.join(", ")}. Please contact support immediately.`);
+          }
+          throw new Error(`Withdrawal failed: ${rootCause}. No money was deducted.`);
+        }
+
         break;
       }
 
