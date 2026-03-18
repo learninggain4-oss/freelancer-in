@@ -160,6 +160,28 @@ const EmployeeWallet = () => {
     return supabase.storage.from("bank-logos").getPublicUrl(path).data.publicUrl;
   };
 
+  const parseEdgeFunctionError = async (invokeError: any) => {
+    if (!invokeError) return "Request failed";
+    const fallback = invokeError?.message || "Request failed";
+    const response = invokeError?.context;
+
+    if (!response || typeof response.clone !== "function") {
+      return fallback;
+    }
+
+    try {
+      const cloned = response.clone();
+      const body = await cloned.json();
+      if (body?.error && typeof body.error === "string") {
+        return body.error;
+      }
+    } catch {
+      // ignore json parse errors and fallback below
+    }
+
+    return fallback;
+  };
+
   const selectedApp = upiApps?.find((a) => a.id === selectedUpiAppId);
 
   const withdrawMutation = useMutation({
@@ -183,7 +205,12 @@ const EmployeeWallet = () => {
           bank_name: method === "bank" ? savedBankName : null,
         },
       });
-      if (res.error) throw new Error(res.error.message);
+
+      if (res.error) {
+        const message = await parseEdgeFunctionError(res.error);
+        throw new Error(message);
+      }
+
       if (res.data?.error) throw new Error(res.data.error);
     },
     onSuccess: () => {
