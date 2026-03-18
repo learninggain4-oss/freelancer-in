@@ -11,6 +11,32 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 
+type ErrorLike = {
+  message?: unknown;
+  details?: unknown;
+  hint?: unknown;
+  code?: unknown;
+  error?: unknown;
+};
+
+function formatErrorMessage(error: unknown, fallback = "Unknown error"): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "string" && error) return error;
+
+  if (error && typeof error === "object") {
+    const e = error as ErrorLike;
+    const message = typeof e.message === "string" ? e.message : typeof e.error === "string" ? e.error : "";
+    const details = typeof e.details === "string" ? e.details : "";
+    const hint = typeof e.hint === "string" ? e.hint : "";
+    const code = typeof e.code === "string" ? e.code : "";
+
+    const parts = [message, details, hint ? `Hint: ${hint}` : "", code ? `Code: ${code}` : ""].filter(Boolean);
+    if (parts.length > 0) return parts.join(" | ");
+  }
+
+  return fallback;
+}
+
 function checkRateLimit(userId: string): boolean {
   const now = Date.now();
   const entry = rateLimitMap.get(userId);
@@ -63,7 +89,7 @@ Deno.serve(async (req) => {
     // Get the caller's profile
     const { data: callerProfile, error: cpErr } = await supabase
       .from("profiles")
-      .select("id, user_id, user_type, available_balance, hold_balance, approval_status")
+      .select("id, user_id, user_type, available_balance, hold_balance, approval_status, wallet_number")
       .eq("user_id", user.id)
       .single();
     if (cpErr || !callerProfile) throw new Error("Profile not found");
@@ -152,7 +178,9 @@ Deno.serve(async (req) => {
             .from("profiles")
             .update({ available_balance: nextBalance })
             .eq("id", callerProfile.id);
-          if (deductErr) throw deductErr;
+          if (deductErr) {
+            throw new Error(formatErrorMessage(deductErr, "Failed to deduct wallet balance"));
+          }
           deducted = true;
 
           const { data: newW, error: wErr } = await supabase
@@ -169,7 +197,16 @@ Deno.serve(async (req) => {
             })
             .select("id")
             .single();
-          if (wErr || !newW) throw wErr || new Error("Failed to create withdrawal record");
+
+          if (wErr) {
+            const dbMessage = formatErrorMessage(wErr, "Failed to create withdrawal record");
+            if (dbMessage.toLowerCase().includes("idx_withdrawals_order_id") || dbMessage.toLowerCase().includes("duplicate key")) {
+              throw new Error("This Order ID has already been used. Please generate a new Order ID and try again.");
+            }
+            throw new Error(dbMessage);
+          }
+
+          if (!newW) throw new Error("Failed to create withdrawal record");
           createdWithdrawalId = newW.id;
 
           const { error: txErr } = await supabase.from("transactions").insert({
@@ -179,7 +216,9 @@ Deno.serve(async (req) => {
             description: `Withdrawal requested (Order ID: ${trimmedOrderId})`,
             reference_id: newW.id,
           });
-          if (txErr) throw txErr;
+          if (txErr) {
+            throw new Error(formatErrorMessage(txErr, "Failed to create withdrawal transaction"));
+          }
 
           result.withdrawal_id = newW.id;
           result.new_balance = nextBalance;
@@ -202,7 +241,7 @@ Deno.serve(async (req) => {
             if (restoreErr) rollbackErrors.push("failed to restore deducted wallet balance");
           }
 
-          const rootCause = innerError instanceof Error ? innerError.message : "unknown server error";
+          const rootCause = formatErrorMessage(innerError, "unknown server error");
           if (rollbackErrors.length > 0) {
             throw new Error(`Withdrawal failed (${rootCause}) and rollback was partial: ${rollbackErrors.join(", ")}. Please contact support immediately.`);
           }
