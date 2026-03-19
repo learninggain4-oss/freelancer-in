@@ -195,7 +195,6 @@ const EmployeeWallet = () => {
         body: {
           action: "request_withdrawal",
           amount,
-          order_id: orderId.trim(),
           bank_holder_name: savedHolderName || null,
           upi_id: method === "upi" ? (selectedApp as any)?.payment_methods?.name : null,
           bank_account_number: method === "bank" ? savedBank : null,
@@ -210,11 +209,16 @@ const EmployeeWallet = () => {
       }
 
       if (res.data?.error) throw new Error(res.data.error);
+      return res.data;
     },
-    onSuccess: () => {
-      toast.success("Withdrawal request submitted");
+    onSuccess: (data: any) => {
+      const generatedOrderId = typeof data?.order_id === "string" ? data.order_id : null;
+      toast.success(
+        generatedOrderId
+          ? `Withdrawal request submitted • Order ID: ${generatedOrderId}`
+          : "Withdrawal request submitted"
+      );
       setWithdrawAmount("");
-      setOrderId("");
       setSelectedUpiAppId(null);
       setShowPasswordDialog(false);
       setWithdrawalPassword("");
