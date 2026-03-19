@@ -38,7 +38,6 @@ import {
 const EmployeeWallet = () => {
   const { profile, refreshProfile } = useAuth();
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [orderId, setOrderId] = useState("");
   const [method, setMethod] = useState<"upi" | "bank">("upi");
   const [selectedUpiAppId, setSelectedUpiAppId] = useState<string | null>(null);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
