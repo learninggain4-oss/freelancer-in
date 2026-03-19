@@ -372,28 +372,15 @@ const EmployeeWallet = () => {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs font-medium">Order ID ({orderIdFormat || 15} digits)</Label>
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                inputMode="numeric"
-                placeholder="Auto-generated"
-                value={orderId}
-                readOnly
-                className="h-12 text-lg font-semibold tracking-widest flex-1 bg-muted/50"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 px-4"
-                onClick={() => setOrderId(generateOrderId(orderIdFormat || 15))}
-              >
-                <Sparkles className="h-4 w-4 mr-1" />
-                Generate
-              </Button>
-            </div>
+            <Label className="text-xs font-medium">Order ID</Label>
+            <Input
+              type="text"
+              value="Auto-generated on confirmation"
+              readOnly
+              className="h-12 text-sm font-medium bg-muted/50"
+            />
             <p className="text-[11px] text-muted-foreground">
-              {orderId ? `Format: DDMMYY + ${(orderIdFormat || 15) - 6} random digits` : "Click Generate to create a unique Order ID"}
+              A unique {orderIdFormat || 15}-digit Order ID is generated automatically for every withdrawal.
             </p>
           </div>
 
