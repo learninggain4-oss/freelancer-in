@@ -49,20 +49,6 @@ const EmployeeWallet = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Auto-generate Order ID: DDMMYY + 9 random digits = 15 digits
-  const generateOrderId = (len: number) => {
-    const now = new Date();
-    const dd = String(now.getDate()).padStart(2, "0");
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    const yy = String(now.getFullYear()).slice(-2);
-    const datePrefix = dd + mm + yy; // 6 digits
-    const remaining = len - 6;
-    let rand = "";
-    for (let i = 0; i < remaining; i++) {
-      rand += Math.floor(Math.random() * 10).toString();
-    }
-    return datePrefix + rand;
-  };
 
   // Handle scanned wallet from QR scanner
   useEffect(() => {
