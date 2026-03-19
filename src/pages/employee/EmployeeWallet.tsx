@@ -19,7 +19,6 @@ import {
   Loader2,
   Eye,
   EyeOff,
-  Sparkles,
   ChevronRight,
   Wallet,
 } from "lucide-react";
@@ -39,7 +38,6 @@ import {
 const EmployeeWallet = () => {
   const { profile, refreshProfile } = useAuth();
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [orderId, setOrderId] = useState("");
   const [method, setMethod] = useState<"upi" | "bank">("upi");
   const [selectedUpiAppId, setSelectedUpiAppId] = useState<string | null>(null);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
@@ -51,20 +49,6 @@ const EmployeeWallet = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Auto-generate Order ID: DDMMYY + 9 random digits = 15 digits
-  const generateOrderId = (len: number) => {
-    const now = new Date();
-    const dd = String(now.getDate()).padStart(2, "0");
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    const yy = String(now.getFullYear()).slice(-2);
-    const datePrefix = dd + mm + yy; // 6 digits
-    const remaining = len - 6;
-    let rand = "";
-    for (let i = 0; i < remaining; i++) {
-      rand += Math.floor(Math.random() * 10).toString();
-    }
-    return datePrefix + rand;
-  };
 
   // Handle scanned wallet from QR scanner
   useEffect(() => {
@@ -161,22 +145,36 @@ const EmployeeWallet = () => {
   };
 
   const parseEdgeFunctionError = async (invokeError: any) => {
-    if (!invokeError) return "Request failed";
-    const fallback = invokeError?.message || "Request failed";
+    if (!invokeError) return "Withdrawal request failed";
+    const fallback = invokeError?.message || "Withdrawal request failed";
     const response = invokeError?.context;
 
-    if (!response || typeof response.clone !== "function") {
-      return fallback;
-    }
+    const parseBodyText = (raw: string) => {
+      if (!raw) return null;
+      try {
+        const parsed = JSON.parse(raw);
+        return typeof parsed?.error === "string" ? parsed.error : null;
+      } catch {
+        return null;
+      }
+    };
 
     try {
-      const cloned = response.clone();
-      const body = await cloned.json();
-      if (body?.error && typeof body.error === "string") {
-        return body.error;
+      if (response?.clone && typeof response.clone === "function") {
+        const text = await response.clone().text();
+        const parsedError = parseBodyText(text);
+        if (parsedError) return parsedError;
+      } else if (response?.text && typeof response.text === "function") {
+        const text = await response.text();
+        const parsedError = parseBodyText(text);
+        if (parsedError) return parsedError;
       }
     } catch {
-      // ignore json parse errors and fallback below
+      // ignore parse errors and use fallback below
+    }
+
+    if (typeof fallback === "string" && fallback.includes("non-2xx")) {
+      return "Withdrawal request failed. Please try again.";
     }
 
     return fallback;
@@ -197,7 +195,6 @@ const EmployeeWallet = () => {
         body: {
           action: "request_withdrawal",
           amount,
-          order_id: orderId.trim(),
           bank_holder_name: savedHolderName || null,
           upi_id: method === "upi" ? (selectedApp as any)?.payment_methods?.name : null,
           bank_account_number: method === "bank" ? savedBank : null,
@@ -212,11 +209,16 @@ const EmployeeWallet = () => {
       }
 
       if (res.data?.error) throw new Error(res.data.error);
+      return res.data;
     },
-    onSuccess: () => {
-      toast.success("Withdrawal request submitted");
+    onSuccess: (data: any) => {
+      const generatedOrderId = typeof data?.order_id === "string" ? data.order_id : null;
+      toast.success(
+        generatedOrderId
+          ? `Withdrawal request submitted • Order ID: ${generatedOrderId}`
+          : "Withdrawal request submitted"
+      );
       setWithdrawAmount("");
-      setOrderId("");
       setSelectedUpiAppId(null);
       setShowPasswordDialog(false);
       setWithdrawalPassword("");
@@ -236,10 +238,6 @@ const EmployeeWallet = () => {
     const amount = Number(withdrawAmount);
     if (!amount || amount <= 0) { toast.error("Enter a valid amount"); return; }
     if (amount > (profile?.available_balance ?? 0)) { toast.error("Insufficient balance"); return; }
-    const requiredLen = orderIdFormat || 15;
-    if (!orderId.trim()) { toast.error("Order ID is required"); return; }
-    if (orderId.trim().length !== requiredLen) { toast.error(`Order ID must be exactly ${requiredLen} digits`); return; }
-    if (!/^\d+$/.test(orderId.trim())) { toast.error("Order ID must contain only digits"); return; }
     if (method === "upi" && !selectedUpiAppId) { toast.error("Please select a UPI app"); return; }
     if (method === "bank" && !savedBank) { toast.error("No bank account saved"); return; }
     setShowPasswordDialog(true);
@@ -374,28 +372,15 @@ const EmployeeWallet = () => {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs font-medium">Order ID ({orderIdFormat || 15} digits)</Label>
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                inputMode="numeric"
-                placeholder="Auto-generated"
-                value={orderId}
-                readOnly
-                className="h-12 text-lg font-semibold tracking-widest flex-1 bg-muted/50"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 px-4"
-                onClick={() => setOrderId(generateOrderId(orderIdFormat || 15))}
-              >
-                <Sparkles className="h-4 w-4 mr-1" />
-                Generate
-              </Button>
-            </div>
+            <Label className="text-xs font-medium">Order ID</Label>
+            <Input
+              type="text"
+              value="Auto-generated on confirmation"
+              readOnly
+              className="h-12 text-sm font-medium bg-muted/50"
+            />
             <p className="text-[11px] text-muted-foreground">
-              {orderId ? `Format: DDMMYY + ${(orderIdFormat || 15) - 6} random digits` : "Click Generate to create a unique Order ID"}
+              A unique {orderIdFormat || 15}-digit Order ID is generated automatically for every withdrawal.
             </p>
           </div>
 

@@ -51,6 +51,36 @@ function checkRateLimit(userId: string): boolean {
   return true;
 }
 
+function generateWithdrawalOrderId(length: number): string {
+  const safeLength = Number.isFinite(length) ? Math.max(5, Math.floor(length)) : 15;
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, "0");
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const yy = String(now.getFullYear()).slice(-2);
+  const datePrefix = `${dd}${mm}${yy}`;
+
+  if (safeLength <= datePrefix.length) {
+    return datePrefix.slice(-safeLength);
+  }
+
+  const randomLength = safeLength - datePrefix.length;
+  let randomDigits = "";
+  for (let i = 0; i < randomLength; i++) {
+    randomDigits += Math.floor(Math.random() * 10).toString();
+  }
+
+  return `${datePrefix}${randomDigits}`;
+}
+
+function isDuplicateOrderIdError(error: unknown): boolean {
+  const message = formatErrorMessage(error, "").toLowerCase();
+  return (
+    (message.includes("duplicate key") && message.includes("order_id")) ||
+    message.includes("idx_withdrawals_order_id") ||
+    message.includes("withdrawals_order_id_key")
+  );
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -83,7 +113,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, order_id, target_wallet_number } =
+    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, target_wallet_number } =
       await req.json();
 
     // Get the caller's profile
@@ -133,10 +163,6 @@ Deno.serve(async (req) => {
         if (requestedAmount > originalBalance)
           throw new Error("Insufficient balance");
 
-        // Validate order_id
-        if (!order_id || typeof order_id !== "string" || !order_id.trim())
-          throw new Error("Order ID is required");
-
         // Get configurable length from app_settings (default 15)
         const { data: orderLenSetting } = await supabase
           .from("app_settings")
@@ -144,21 +170,7 @@ Deno.serve(async (req) => {
           .eq("key", "withdrawal_order_id_length")
           .maybeSingle();
         const requiredLen = Number(orderLenSetting?.value) || 15;
-
-        const trimmedOrderId = order_id.trim();
-        if (!/^\d+$/.test(trimmedOrderId))
-          throw new Error("Order ID must contain only digits");
-        if (trimmedOrderId.length !== requiredLen)
-          throw new Error(`Order ID must be exactly ${requiredLen} digits`);
-
-        // Check for duplicate order_id
-        const { data: existingOrder } = await supabase
-          .from("withdrawals")
-          .select("id")
-          .eq("order_id", trimmedOrderId)
-          .maybeSingle();
-        if (existingOrder)
-          throw new Error("This Order ID has already been used");
+        const safeOrderLen = Math.max(5, requiredLen);
 
         // Check bank verification status
         const { data: bankVerif } = await supabase
@@ -183,44 +195,59 @@ Deno.serve(async (req) => {
           }
           deducted = true;
 
-          const { data: newW, error: wErr } = await supabase
-            .from("withdrawals")
-            .insert({
-              employee_id: callerProfile.id,
-              amount: requestedAmount,
-              order_id: trimmedOrderId,
-              method: upi_id ? "UPI" : "Bank Transfer",
-              upi_id: upi_id || null,
-              bank_account_number: bank_account_number || null,
-              bank_ifsc_code: bank_ifsc_code || null,
-              bank_holder_name: bank_holder_name || null,
-            })
-            .select("id")
-            .single();
+          const maxOrderIdAttempts = 10;
+          let generatedOrderId: string | null = null;
+          let newWithdrawalId: string | null = null;
 
-          if (wErr) {
-            const dbMessage = formatErrorMessage(wErr, "Failed to create withdrawal record");
-            if (dbMessage.toLowerCase().includes("idx_withdrawals_order_id") || dbMessage.toLowerCase().includes("duplicate key")) {
-              throw new Error("This Order ID has already been used. Please generate a new Order ID and try again.");
+          for (let attempt = 1; attempt <= maxOrderIdAttempts; attempt++) {
+            const candidateOrderId = generateWithdrawalOrderId(safeOrderLen);
+            const { data: newW, error: wErr } = await supabase
+              .from("withdrawals")
+              .insert({
+                employee_id: callerProfile.id,
+                amount: requestedAmount,
+                order_id: candidateOrderId,
+                method: upi_id ? "UPI" : "Bank Transfer",
+                upi_id: upi_id || null,
+                bank_account_number: bank_account_number || null,
+                bank_ifsc_code: bank_ifsc_code || null,
+                bank_holder_name: bank_holder_name || null,
+              })
+              .select("id")
+              .single();
+
+            if (!wErr && newW?.id) {
+              generatedOrderId = candidateOrderId;
+              newWithdrawalId = newW.id;
+              break;
             }
-            throw new Error(dbMessage);
+
+            if (isDuplicateOrderIdError(wErr) && attempt < maxOrderIdAttempts) {
+              continue;
+            }
+
+            throw new Error(formatErrorMessage(wErr, "Failed to create withdrawal record"));
           }
 
-          if (!newW) throw new Error("Failed to create withdrawal record");
-          createdWithdrawalId = newW.id;
+          if (!generatedOrderId || !newWithdrawalId) {
+            throw new Error("Could not generate a unique Order ID. Please try again.");
+          }
+
+          createdWithdrawalId = newWithdrawalId;
 
           const { error: txErr } = await supabase.from("transactions").insert({
             profile_id: callerProfile.id,
             type: "debit",
             amount: requestedAmount,
-            description: `Withdrawal requested (Order ID: ${trimmedOrderId})`,
-            reference_id: newW.id,
+            description: `Withdrawal requested (Order ID: ${generatedOrderId})`,
+            reference_id: newWithdrawalId,
           });
           if (txErr) {
             throw new Error(formatErrorMessage(txErr, "Failed to create withdrawal transaction"));
           }
 
-          result.withdrawal_id = newW.id;
+          result.withdrawal_id = newWithdrawalId;
+          result.order_id = generatedOrderId;
           result.new_balance = nextBalance;
         } catch (innerError: unknown) {
           const rollbackErrors: string[] = [];
