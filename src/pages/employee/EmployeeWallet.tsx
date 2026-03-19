@@ -19,7 +19,6 @@ import {
   Loader2,
   Eye,
   EyeOff,
-  Sparkles,
   ChevronRight,
   Wallet,
 } from "lucide-react";

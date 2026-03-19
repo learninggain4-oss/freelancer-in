@@ -51,6 +51,36 @@ function checkRateLimit(userId: string): boolean {
   return true;
 }
 
+function generateWithdrawalOrderId(length: number): string {
+  const safeLength = Number.isFinite(length) ? Math.max(5, Math.floor(length)) : 15;
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, "0");
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const yy = String(now.getFullYear()).slice(-2);
+  const datePrefix = `${dd}${mm}${yy}`;
+
+  if (safeLength <= datePrefix.length) {
+    return datePrefix.slice(-safeLength);
+  }
+
+  const randomLength = safeLength - datePrefix.length;
+  let randomDigits = "";
+  for (let i = 0; i < randomLength; i++) {
+    randomDigits += Math.floor(Math.random() * 10).toString();
+  }
+
+  return `${datePrefix}${randomDigits}`;
+}
+
+function isDuplicateOrderIdError(error: unknown): boolean {
+  const message = formatErrorMessage(error, "").toLowerCase();
+  return (
+    (message.includes("duplicate key") && message.includes("order_id")) ||
+    message.includes("idx_withdrawals_order_id") ||
+    message.includes("withdrawals_order_id_key")
+  );
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
