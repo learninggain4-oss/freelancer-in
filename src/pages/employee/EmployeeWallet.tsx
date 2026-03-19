@@ -145,22 +145,36 @@ const EmployeeWallet = () => {
   };
 
   const parseEdgeFunctionError = async (invokeError: any) => {
-    if (!invokeError) return "Request failed";
-    const fallback = invokeError?.message || "Request failed";
+    if (!invokeError) return "Withdrawal request failed";
+    const fallback = invokeError?.message || "Withdrawal request failed";
     const response = invokeError?.context;
 
-    if (!response || typeof response.clone !== "function") {
-      return fallback;
-    }
+    const parseBodyText = (raw: string) => {
+      if (!raw) return null;
+      try {
+        const parsed = JSON.parse(raw);
+        return typeof parsed?.error === "string" ? parsed.error : null;
+      } catch {
+        return null;
+      }
+    };
 
     try {
-      const cloned = response.clone();
-      const body = await cloned.json();
-      if (body?.error && typeof body.error === "string") {
-        return body.error;
+      if (response?.clone && typeof response.clone === "function") {
+        const text = await response.clone().text();
+        const parsedError = parseBodyText(text);
+        if (parsedError) return parsedError;
+      } else if (response?.text && typeof response.text === "function") {
+        const text = await response.text();
+        const parsedError = parseBodyText(text);
+        if (parsedError) return parsedError;
       }
     } catch {
-      // ignore json parse errors and fallback below
+      // ignore parse errors and use fallback below
+    }
+
+    if (typeof fallback === "string" && fallback.includes("non-2xx")) {
+      return "Withdrawal request failed. Please try again.";
     }
 
     return fallback;
