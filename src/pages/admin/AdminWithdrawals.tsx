@@ -130,7 +130,7 @@ const AdminWithdrawals = () => {
         </TableHeader>
         <TableBody>
           {items.length === 0 ? (
-            <TableRow><TableCell colSpan={8} className="py-12 text-center text-muted-foreground">No withdrawals found</TableCell></TableRow>
+            <TableRow><TableCell colSpan={9} className="py-12 text-center text-muted-foreground">No withdrawals found</TableCell></TableRow>
           ) : items.map(w => (
             <>
               <TableRow key={w.id} className={cn("transition-colors", w.is_cleared && "opacity-50")}>
