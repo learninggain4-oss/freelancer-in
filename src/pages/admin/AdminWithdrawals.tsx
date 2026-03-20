@@ -118,6 +118,7 @@ const AdminWithdrawals = () => {
         <TableHeader>
           <TableRow className="bg-muted/30">
             <TableHead>Employee</TableHead>
+            <TableHead>Order ID</TableHead>
             <TableHead>Amount</TableHead>
             <TableHead>Method</TableHead>
             <TableHead>Bank Details</TableHead>
