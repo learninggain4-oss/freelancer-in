@@ -968,7 +968,26 @@ Deno.serve(async (req) => {
         break;
       }
 
-      case "admin_wallet_transfer": {
+      case "admin_wallet_release": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!target_profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
+
+        const { data: tp } = await supabase.from("profiles").select("id, available_balance, hold_balance, user_id, full_name").eq("id", target_profile_id).single();
+        if (!tp) throw new Error("Target profile not found");
+
+        const releaseAmt = Math.min(amount, Number(tp.hold_balance));
+        if (releaseAmt <= 0) throw new Error("No held balance to release");
+
+        await supabase.from("profiles").update({ hold_balance: Number(tp.hold_balance) - releaseAmt, available_balance: Number(tp.available_balance) + releaseAmt }).eq("id", tp.id);
+        await supabase.from("transactions").insert({ profile_id: tp.id, type: "release", amount: releaseAmt, description: description || "Admin: hold released to available" });
+        await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Balance Released", message: `₹${releaseAmt.toLocaleString("en-IN")} has been released from hold to your available balance by admin.`, type: "financial" });
+
+        result.released_amount = releaseAmt;
+        break;
+      }
+
+
         const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
         if (!roleCheck) throw new Error("Admin access required");
         if (!target_profile_id || !transfer_to_profile_id || !amount || amount <= 0) throw new Error("Missing parameters");
