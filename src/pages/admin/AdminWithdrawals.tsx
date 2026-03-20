@@ -22,7 +22,7 @@ type Withdrawal = {
   requested_at: string; review_notes: string | null; employee_id: string;
   upi_id: string | null; bank_account_number: string | null;
   bank_ifsc_code: string | null; bank_holder_name: string | null;
-  is_cleared?: boolean;
+  is_cleared?: boolean; order_id?: string | null;
   employee?: { full_name: string[]; user_code: string[]; email: string };
   bankVerified?: boolean;
 };
