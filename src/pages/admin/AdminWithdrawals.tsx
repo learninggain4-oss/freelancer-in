@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, BadgeCheck, Pencil, Save, EyeOff, ChevronDown, ChevronUp, Wallet, Clock, TrendingDown } from "lucide-react";
+import { CheckCircle, XCircle, BadgeCheck, Pencil, Save, EyeOff, ChevronDown, ChevronUp, Wallet, Clock, TrendingDown, Copy } from "lucide-react";
 import { WithdrawalCountdown } from "@/components/withdrawal/WithdrawalCountdown";
 import { cn } from "@/lib/utils";
 
