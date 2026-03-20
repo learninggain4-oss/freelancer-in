@@ -220,7 +220,7 @@ const AdminWithdrawals = () => {
               </TableRow>
               {expandedEdit === w.id && (
                 <TableRow>
-                  <TableCell colSpan={8} className="bg-muted/20 p-4">
+                  <TableCell colSpan={9} className="bg-muted/20 p-4">
                     <div className="grid gap-3 sm:grid-cols-4">
                       <div className="space-y-1"><Label className="text-xs">Amount (₹)</Label><Input type="number" value={editForm.amount} onChange={e => setEditForm((f: any) => ({ ...f, amount: e.target.value }))} /></div>
                       <div className="space-y-1"><Label className="text-xs">Method</Label><Input value={editForm.method} onChange={e => setEditForm((f: any) => ({ ...f, method: e.target.value }))} /></div>

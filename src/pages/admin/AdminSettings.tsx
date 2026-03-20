@@ -319,13 +319,57 @@ const AdminSettings = () => {
             Withdrawal Order ID Format
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Set the required number of digits for the Order ID that employees must enter when requesting a withdrawal.
+            Configure the format of the auto-generated Order ID for withdrawal requests.
           </p>
+
+          {/* Prefix */}
           <div className="flex items-end gap-3">
             <div className="flex-1">
-              <Label>Order ID Length (digits)</Label>
+              <Label>Prefix (optional)</Label>
+              <Input placeholder="e.g. WD, ORD" value={orderIdPrefix} onChange={(e) => setOrderIdPrefix(e.target.value.toUpperCase())} maxLength={10} />
+            </div>
+            <Button onClick={async () => {
+              setSaving("withdrawal_order_id_prefix");
+              try {
+                await supabase.from("app_settings").upsert({ key: "withdrawal_order_id_prefix", value: orderIdPrefix }, { onConflict: "key" });
+                toast({ title: "Saved", description: `Prefix set to "${orderIdPrefix || "(none)"}"` });
+              } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
+              finally { setSaving(null); }
+            }} disabled={saving === "withdrawal_order_id_prefix"} className="gap-1">
+              {saving === "withdrawal_order_id_prefix" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save
+            </Button>
+          </div>
+
+          {/* Include Year / Month / Date toggles */}
+          <div className="space-y-3">
+            <Label className="text-xs font-medium text-muted-foreground">Include in Order ID</Label>
+            {[
+              { label: "Include Year (YY)", key: "withdrawal_order_id_include_year", checked: orderIdIncludeYear, set: setOrderIdIncludeYear },
+              { label: "Include Month (MM)", key: "withdrawal_order_id_include_month", checked: orderIdIncludeMonth, set: setOrderIdIncludeMonth },
+              { label: "Include Date (DD)", key: "withdrawal_order_id_include_date", checked: orderIdIncludeDate, set: setOrderIdIncludeDate },
+            ].map((item) => (
+              <div key={item.key} className="flex items-center justify-between rounded-lg border p-3">
+                <Label htmlFor={item.key} className="text-sm">{item.label}</Label>
+                <Switch id={item.key} checked={item.checked} onCheckedChange={async (checked) => {
+                  item.set(checked);
+                  setSaving(item.key);
+                  try {
+                    await supabase.from("app_settings").upsert({ key: item.key, value: String(checked) }, { onConflict: "key" });
+                    toast({ title: "Saved", description: `${item.label} ${checked ? "enabled" : "disabled"}` });
+                  } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
+                  finally { setSaving(null); }
+                }} />
+              </div>
+            ))}
+          </div>
+
+          {/* Random digits length */}
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label>Random Digits Length</Label>
               <Input type="number" min="5" max="30" value={orderIdLength} onChange={(e) => setOrderIdLength(e.target.value)} />
             </div>
             <Button onClick={() => handleSaveSetting("withdrawal_order_id_length", orderIdLength, "Order ID length", 5, 30)} disabled={saving === "withdrawal_order_id_length"} className="gap-1">
@@ -333,7 +377,18 @@ const AdminSettings = () => {
               Save
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">Current format: {orderIdLength}-digit numeric Order ID</p>
+
+          {/* Preview */}
+          <div className="rounded-lg bg-muted/50 p-3">
+            <p className="text-xs text-muted-foreground mb-1">Preview format:</p>
+            <p className="text-sm font-mono font-medium text-foreground">
+              {orderIdPrefix ? `${orderIdPrefix}` : ""}
+              {orderIdIncludeDate ? "DD" : ""}
+              {orderIdIncludeMonth ? "MM" : ""}
+              {orderIdIncludeYear ? "YY" : ""}
+              {`${"X".repeat(Math.min(Number(orderIdLength) || 5, 10))}...`}
+            </p>
+          </div>
         </CardContent>
       </Card>
 

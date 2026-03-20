@@ -77,7 +77,14 @@ const WithdrawalHistory = () => {
                     <p className="text-sm font-medium text-foreground">₹{Number(w.amount).toLocaleString("en-IN")}</p>
                     <p className="text-xs text-muted-foreground">{w.method} • {new Date(w.requested_at).toLocaleDateString()}</p>
                     {w.order_id && (
-                      <p className="text-xs text-muted-foreground font-mono">Order ID: {w.order_id}</p>
+                      <button
+                        className="flex items-center gap-1 text-xs text-muted-foreground font-mono hover:text-primary transition-colors"
+                        onClick={() => { navigator.clipboard.writeText(w.order_id); toast.success("Order ID copied"); }}
+                        title="Click to copy"
+                      >
+                        Order ID: {w.order_id}
+                        <Copy className="h-3 w-3" />
+                      </button>
                     )}
                   </div>
                   <Badge variant={statusVariant[w.status] ?? "secondary"}>{w.status}</Badge>
