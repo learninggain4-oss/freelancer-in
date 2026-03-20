@@ -46,6 +46,10 @@ const AdminSettings = () => {
   const [cltSeparator, setCltSeparator] = useState("-");
   const [clientPaymentSharing, setClientPaymentSharing] = useState(true);
   const [orderIdLength, setOrderIdLength] = useState("15");
+  const [orderIdPrefix, setOrderIdPrefix] = useState("");
+  const [orderIdIncludeYear, setOrderIdIncludeYear] = useState(false);
+  const [orderIdIncludeMonth, setOrderIdIncludeMonth] = useState(false);
+  const [orderIdIncludeDate, setOrderIdIncludeDate] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
 
