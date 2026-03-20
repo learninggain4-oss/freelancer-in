@@ -333,6 +333,7 @@ const AdminWalletManagement = () => {
       add: "admin_wallet_add",
       deduct: "admin_wallet_deduct",
       hold: "admin_wallet_hold",
+      release: "admin_wallet_release",
       transfer: "admin_wallet_transfer",
     };
 
