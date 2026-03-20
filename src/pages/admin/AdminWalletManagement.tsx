@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Search, Wallet, IndianRupee, Clock, PlusCircle, MinusCircle,
-  Lock, ArrowRightLeft, Pencil, Trash2, User, ChevronLeft, ChevronRight, EyeOff,
+  Lock, ArrowRightLeft, Pencil, Trash2, User, ChevronLeft, ChevronRight, EyeOff, Unlock,
 } from "lucide-react";
 
 type Profile = {
