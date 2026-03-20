@@ -72,7 +72,7 @@ const AdminWalletManagement = () => {
 
   // Action dialogs
   const [actionDialog, setActionDialog] = useState<{
-    type: "add" | "deduct" | "hold" | "transfer" | null;
+    type: "add" | "deduct" | "hold" | "release" | "transfer" | null;
   }>({ type: null });
   const [actionAmount, setActionAmount] = useState("");
   const [actionDescription, setActionDescription] = useState("");
