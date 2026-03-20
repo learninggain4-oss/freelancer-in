@@ -40,7 +40,7 @@ const AdminWithdrawals = () => {
 
   const fetchWithdrawals = async () => {
     setLoading(true);
-    let query = supabase.from("withdrawals").select("id, amount, method, status, requested_at, review_notes, employee_id, upi_id, bank_account_number, bank_ifsc_code, bank_holder_name, is_cleared").order("requested_at", { ascending: false });
+    let query = supabase.from("withdrawals").select("id, amount, method, status, requested_at, review_notes, employee_id, upi_id, bank_account_number, bank_ifsc_code, bank_holder_name, is_cleared, order_id").order("requested_at", { ascending: false });
     if (!showCleared) query = query.eq("is_cleared", false);
     const { data: wData } = await query;
 
