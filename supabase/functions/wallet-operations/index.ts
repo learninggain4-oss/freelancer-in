@@ -987,7 +987,7 @@ Deno.serve(async (req) => {
         break;
       }
 
-
+      case "admin_wallet_transfer": {
         const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
         if (!roleCheck) throw new Error("Admin access required");
         if (!target_profile_id || !transfer_to_profile_id || !amount || amount <= 0) throw new Error("Missing parameters");
