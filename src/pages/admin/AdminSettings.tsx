@@ -107,6 +107,10 @@ const AdminSettings = () => {
           "coin_reward_5star_review",
           "coin_reward_referral_10",
           "withdrawal_order_id_length",
+          "withdrawal_order_id_prefix",
+          "withdrawal_order_id_include_year",
+          "withdrawal_order_id_include_month",
+          "withdrawal_order_id_include_date",
         ]);
       if (data) {
         for (const row of data) {
