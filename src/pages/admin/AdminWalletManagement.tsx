@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Search, Wallet, IndianRupee, Clock, PlusCircle, MinusCircle,
-  Lock, ArrowRightLeft, Pencil, Trash2, User, ChevronLeft, ChevronRight, EyeOff,
+  Lock, ArrowRightLeft, Pencil, Trash2, User, ChevronLeft, ChevronRight, EyeOff, Unlock,
 } from "lucide-react";
 
 type Profile = {
@@ -72,7 +72,7 @@ const AdminWalletManagement = () => {
 
   // Action dialogs
   const [actionDialog, setActionDialog] = useState<{
-    type: "add" | "deduct" | "hold" | "transfer" | null;
+    type: "add" | "deduct" | "hold" | "release" | "transfer" | null;
   }>({ type: null });
   const [actionAmount, setActionAmount] = useState("");
   const [actionDescription, setActionDescription] = useState("");
@@ -333,6 +333,7 @@ const AdminWalletManagement = () => {
       add: "admin_wallet_add",
       deduct: "admin_wallet_deduct",
       hold: "admin_wallet_hold",
+      release: "admin_wallet_release",
       transfer: "admin_wallet_transfer",
     };
 
@@ -474,7 +475,7 @@ const AdminWalletManagement = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
             <Button variant="outline" className="gap-2" onClick={() => setActionDialog({ type: "add" })}>
               <PlusCircle className="h-4 w-4 text-accent" /> Add Money
             </Button>
@@ -483,6 +484,9 @@ const AdminWalletManagement = () => {
             </Button>
             <Button variant="outline" className="gap-2" onClick={() => setActionDialog({ type: "hold" })}>
               <Lock className="h-4 w-4 text-warning" /> Hold Amount
+            </Button>
+            <Button variant="outline" className="gap-2" onClick={() => setActionDialog({ type: "release" as any })}>
+              <Unlock className="h-4 w-4 text-primary" /> Release Amount
             </Button>
             <Button variant="outline" className="gap-2" onClick={() => setActionDialog({ type: "transfer" })}>
               <ArrowRightLeft className="h-4 w-4 text-primary" /> Transfer
@@ -720,6 +724,7 @@ const AdminWalletManagement = () => {
               {actionDialog.type === "add" && "Add Money"}
               {actionDialog.type === "deduct" && "Deduct Money"}
               {actionDialog.type === "hold" && "Hold Amount"}
+              {actionDialog.type === "release" && "Release Amount"}
               {actionDialog.type === "transfer" && "Transfer Funds"}
             </DialogTitle>
             <DialogDescription>

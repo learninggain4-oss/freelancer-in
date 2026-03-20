@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, BadgeCheck, Pencil, Save, EyeOff, ChevronDown, ChevronUp, Wallet, Clock, TrendingDown } from "lucide-react";
+import { CheckCircle, XCircle, BadgeCheck, Pencil, Save, EyeOff, ChevronDown, ChevronUp, Wallet, Clock, TrendingDown, Copy } from "lucide-react";
 import { WithdrawalCountdown } from "@/components/withdrawal/WithdrawalCountdown";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +22,7 @@ type Withdrawal = {
   requested_at: string; review_notes: string | null; employee_id: string;
   upi_id: string | null; bank_account_number: string | null;
   bank_ifsc_code: string | null; bank_holder_name: string | null;
-  is_cleared?: boolean;
+  is_cleared?: boolean; order_id?: string | null;
   employee?: { full_name: string[]; user_code: string[]; email: string };
   bankVerified?: boolean;
 };
@@ -40,7 +40,7 @@ const AdminWithdrawals = () => {
 
   const fetchWithdrawals = async () => {
     setLoading(true);
-    let query = supabase.from("withdrawals").select("id, amount, method, status, requested_at, review_notes, employee_id, upi_id, bank_account_number, bank_ifsc_code, bank_holder_name, is_cleared").order("requested_at", { ascending: false });
+    let query = supabase.from("withdrawals").select("id, amount, method, status, requested_at, review_notes, employee_id, upi_id, bank_account_number, bank_ifsc_code, bank_holder_name, is_cleared, order_id").order("requested_at", { ascending: false });
     if (!showCleared) query = query.eq("is_cleared", false);
     const { data: wData } = await query;
 
@@ -118,6 +118,7 @@ const AdminWithdrawals = () => {
         <TableHeader>
           <TableRow className="bg-muted/30">
             <TableHead>Employee</TableHead>
+            <TableHead>Order ID</TableHead>
             <TableHead>Amount</TableHead>
             <TableHead>Method</TableHead>
             <TableHead>Bank Details</TableHead>
@@ -129,7 +130,7 @@ const AdminWithdrawals = () => {
         </TableHeader>
         <TableBody>
           {items.length === 0 ? (
-            <TableRow><TableCell colSpan={8} className="py-12 text-center text-muted-foreground">No withdrawals found</TableCell></TableRow>
+            <TableRow><TableCell colSpan={9} className="py-12 text-center text-muted-foreground">No withdrawals found</TableCell></TableRow>
           ) : items.map(w => (
             <>
               <TableRow key={w.id} className={cn("transition-colors", w.is_cleared && "opacity-50")}>
@@ -146,6 +147,18 @@ const AdminWithdrawals = () => {
                       </div>
                     </div>
                   </div>
+                </TableCell>
+                <TableCell>
+                  {w.order_id ? (
+                    <button
+                      className="group flex items-center gap-1 font-mono text-xs text-foreground hover:text-primary transition-colors"
+                      onClick={() => { navigator.clipboard.writeText(w.order_id!); toast.success("Order ID copied"); }}
+                      title="Click to copy"
+                    >
+                      {w.order_id}
+                      <Copy className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  ) : <span className="text-xs text-muted-foreground">—</span>}
                 </TableCell>
                 <TableCell className="font-bold text-foreground">₹{Number(w.amount).toLocaleString()}</TableCell>
                 <TableCell><Badge variant="secondary" className="text-[10px] uppercase">{w.method}</Badge></TableCell>
@@ -207,7 +220,7 @@ const AdminWithdrawals = () => {
               </TableRow>
               {expandedEdit === w.id && (
                 <TableRow>
-                  <TableCell colSpan={8} className="bg-muted/20 p-4">
+                  <TableCell colSpan={9} className="bg-muted/20 p-4">
                     <div className="grid gap-3 sm:grid-cols-4">
                       <div className="space-y-1"><Label className="text-xs">Amount (₹)</Label><Input type="number" value={editForm.amount} onChange={e => setEditForm((f: any) => ({ ...f, amount: e.target.value }))} /></div>
                       <div className="space-y-1"><Label className="text-xs">Method</Label><Input value={editForm.method} onChange={e => setEditForm((f: any) => ({ ...f, method: e.target.value }))} /></div>
