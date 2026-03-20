@@ -724,6 +724,7 @@ const AdminWalletManagement = () => {
               {actionDialog.type === "add" && "Add Money"}
               {actionDialog.type === "deduct" && "Deduct Money"}
               {actionDialog.type === "hold" && "Hold Amount"}
+              {actionDialog.type === "release" && "Release Amount"}
               {actionDialog.type === "transfer" && "Transfer Funds"}
             </DialogTitle>
             <DialogDescription>
