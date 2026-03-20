@@ -148,6 +148,18 @@ const AdminWithdrawals = () => {
                     </div>
                   </div>
                 </TableCell>
+                <TableCell>
+                  {w.order_id ? (
+                    <button
+                      className="group flex items-center gap-1 font-mono text-xs text-foreground hover:text-primary transition-colors"
+                      onClick={() => { navigator.clipboard.writeText(w.order_id!); toast.success("Order ID copied"); }}
+                      title="Click to copy"
+                    >
+                      {w.order_id}
+                      <Copy className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  ) : <span className="text-xs text-muted-foreground">—</span>}
+                </TableCell>
                 <TableCell className="font-bold text-foreground">₹{Number(w.amount).toLocaleString()}</TableCell>
                 <TableCell><Badge variant="secondary" className="text-[10px] uppercase">{w.method}</Badge></TableCell>
                 <TableCell>
