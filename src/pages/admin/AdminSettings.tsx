@@ -138,6 +138,10 @@ const AdminSettings = () => {
           if (row.key === "coin_reward_5star_review") setReward5StarReview(row.value);
           if (row.key === "coin_reward_referral_10") setRewardReferral10(row.value);
           if (row.key === "withdrawal_order_id_length") setOrderIdLength(row.value || "15");
+          if (row.key === "withdrawal_order_id_prefix") setOrderIdPrefix(row.value || "");
+          if (row.key === "withdrawal_order_id_include_year") setOrderIdIncludeYear(row.value === "true");
+          if (row.key === "withdrawal_order_id_include_month") setOrderIdIncludeMonth(row.value === "true");
+          if (row.key === "withdrawal_order_id_include_date") setOrderIdIncludeDate(row.value !== "false");
         }
       }
       setLoading(false);
