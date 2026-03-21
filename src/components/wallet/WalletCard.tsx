@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Wallet, Clock, Copy, CreditCard, QrCode, PlusCircle, ArrowLeftRight, Shield, Star, Crown, Zap, ScanLine } from "lucide-react";
+import { Wallet, Clock, Copy, CreditCard, QrCode, PlusCircle, ArrowLeftRight, Shield, Star, Crown, Zap, ScanLine, ArrowDownToLine } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,7 @@ interface WalletCardProps {
   walletActive?: boolean;
   onAddMoney?: () => void;
   onTransfer?: () => void;
+  onWithdraw?: () => void;
 }
 
 const WalletCard = ({
@@ -41,6 +42,7 @@ const WalletCard = ({
   walletActive = true,
   onAddMoney,
   onTransfer,
+  onWithdraw,
 }: WalletCardProps) => {
   const totalBalance = availableBalance + holdBalance;
   const [pressed, setPressed] = useState(false);
@@ -148,6 +150,15 @@ const WalletCard = ({
             >
               <ArrowLeftRight className="h-3.5 w-3.5" />
               Transfer
+            </button>
+          )}
+          {onWithdraw && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onWithdraw(); }}
+              className="flex items-center gap-1.5 rounded-lg bg-primary-foreground/15 px-3 py-2 text-xs font-semibold text-primary-foreground backdrop-blur-sm transition-all hover:bg-primary-foreground/25 active:scale-95"
+            >
+              <ArrowDownToLine className="h-3.5 w-3.5" />
+              Withdraw
             </button>
           )}
           <button

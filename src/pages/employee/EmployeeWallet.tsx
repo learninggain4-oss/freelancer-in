@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import WalletCard from "@/components/wallet/WalletCard";
 import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
@@ -45,6 +45,7 @@ const EmployeeWallet = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [verifyingPassword, setVerifyingPassword] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
+  const withdrawalSectionRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
@@ -285,6 +286,7 @@ const EmployeeWallet = () => {
           holdBalance={profile?.hold_balance ?? 0}
           walletActive={(profile as any)?.wallet_active ?? true}
           onTransfer={() => setShowTransfer(true)}
+          onWithdraw={() => withdrawalSectionRef.current?.scrollIntoView({ behavior: "smooth" })}
         />
       </div>
 
@@ -345,6 +347,7 @@ const EmployeeWallet = () => {
       )}
 
       {/* Request Withdrawal Card */}
+      <div ref={withdrawalSectionRef}>
       <Card className="border-0 shadow-sm animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
         <CardHeader className="flex-row items-center gap-2 pb-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
@@ -511,6 +514,7 @@ const EmployeeWallet = () => {
           </Button>
         </CardContent>
       </Card>
+      </div>
 
       {/* Withdrawal Password Dialog */}
       <Dialog open={showPasswordDialog} onOpenChange={(open) => { setShowPasswordDialog(open); if (!open) setWithdrawalPassword(""); }}>
