@@ -45,6 +45,7 @@ const EmployeeWallet = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [verifyingPassword, setVerifyingPassword] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
+  const withdrawalSectionRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
