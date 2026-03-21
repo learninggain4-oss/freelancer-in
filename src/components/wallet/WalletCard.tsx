@@ -151,6 +151,15 @@ const WalletCard = ({
               Transfer
             </button>
           )}
+          {onWithdraw && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onWithdraw(); }}
+              className="flex items-center gap-1.5 rounded-lg bg-primary-foreground/15 px-3 py-2 text-xs font-semibold text-primary-foreground backdrop-blur-sm transition-all hover:bg-primary-foreground/25 active:scale-95"
+            >
+              <ArrowDownToLine className="h-3.5 w-3.5" />
+              Withdraw
+            </button>
+          )}
           <button
             onClick={(e) => { e.stopPropagation(); navigate(`${basePath}/wallet/scan`); }}
             className="flex items-center gap-1.5 rounded-lg bg-primary-foreground/15 px-3 py-2 text-xs font-semibold text-primary-foreground backdrop-blur-sm transition-all hover:bg-primary-foreground/25 active:scale-95"
