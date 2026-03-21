@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Wallet, Clock, Copy, CreditCard, QrCode, PlusCircle, ArrowLeftRight, Shield, Star, Crown, Zap, ScanLine } from "lucide-react";
+import { Wallet, Clock, Copy, CreditCard, QrCode, PlusCircle, ArrowLeftRight, Shield, Star, Crown, Zap, ScanLine, ArrowDownToLine } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
