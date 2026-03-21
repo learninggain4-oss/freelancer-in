@@ -42,6 +42,7 @@ const WalletCard = ({
   walletActive = true,
   onAddMoney,
   onTransfer,
+  onWithdraw,
 }: WalletCardProps) => {
   const totalBalance = availableBalance + holdBalance;
   const [pressed, setPressed] = useState(false);
