@@ -23,9 +23,20 @@ const Login = () => {
   const [showTotpDialog, setShowTotpDialog] = useState(false);
   const [pendingAdminNav, setPendingAdminNav] = useState(false);
   const [pendingUserNav, setPendingUserNav] = useState<string | null>(null);
+  const [captchaA, setCaptchaA] = useState(0);
+  const [captchaB, setCaptchaB] = useState(0);
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, user, profile, loading: authLoading } = useAuth();
+
+  const regenerateCaptcha = useCallback(() => {
+    setCaptchaA(Math.floor(Math.random() * 9) + 1);
+    setCaptchaB(Math.floor(Math.random() * 9) + 1);
+    setCaptchaAnswer("");
+  }, []);
+
+  useEffect(() => { regenerateCaptcha(); }, [regenerateCaptcha]);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
