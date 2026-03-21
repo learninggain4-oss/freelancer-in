@@ -347,6 +347,7 @@ const EmployeeWallet = () => {
       )}
 
       {/* Request Withdrawal Card */}
+      <div ref={withdrawalSectionRef}>
       <Card className="border-0 shadow-sm animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
         <CardHeader className="flex-row items-center gap-2 pb-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
