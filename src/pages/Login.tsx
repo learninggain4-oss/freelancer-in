@@ -180,27 +180,43 @@ const Login = () => {
                     <Link to="/legal/privacy-policy" className="text-primary hover:underline" target="_blank">Privacy Policy</Link>
                   </label>
                 </div>
-                <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/50 p-3">
-                  <span className="text-sm font-medium text-foreground whitespace-nowrap">
-                    What is {captchaA} + {captchaB} =
-                  </span>
-                  <Input
-                    type="number"
-                    value={captchaAnswer}
-                    onChange={(e) => setCaptchaAnswer(e.target.value)}
-                    placeholder="?"
-                    className="h-9 w-20 text-center"
-                  />
-                  <button
-                    type="button"
-                    onClick={regenerateCaptcha}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="New captcha"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </button>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/50 p-3">
+                    <span className="text-sm font-medium text-foreground whitespace-nowrap">
+                      What is {captchaA} + {captchaB} =
+                    </span>
+                    <Input
+                      type="number"
+                      value={captchaAnswer}
+                      onChange={(e) => { setCaptchaAnswer(e.target.value); setCaptchaVerified(false); }}
+                      placeholder="?"
+                      className="h-9 w-20 text-center"
+                      disabled={captchaVerified}
+                    />
+                    <button
+                      type="button"
+                      onClick={regenerateCaptcha}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="New captcha"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </button>
+                  </div>
+                  {!captchaVerified ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={verifyCaptcha}
+                      disabled={!captchaAnswer}
+                    >
+                      Verify CAPTCHA
+                    </Button>
+                  ) : (
+                    <p className="text-xs text-green-600 font-medium text-center">✓ CAPTCHA verified</p>
+                  )}
                 </div>
-                <Button type="submit" className="w-full" disabled={loading || !agreedToTerms || parseInt(captchaAnswer) !== captchaA + captchaB}>
+                <Button type="submit" className="w-full" disabled={loading || !agreedToTerms || !captchaVerified}>
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Sign In
                 </Button>
