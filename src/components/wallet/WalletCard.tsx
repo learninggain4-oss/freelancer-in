@@ -29,6 +29,7 @@ interface WalletCardProps {
   walletActive?: boolean;
   onAddMoney?: () => void;
   onTransfer?: () => void;
+  onWithdraw?: () => void;
 }
 
 const WalletCard = ({
