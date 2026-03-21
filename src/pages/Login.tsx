@@ -167,7 +167,27 @@ const Login = () => {
                     <Link to="/legal/privacy-policy" className="text-primary hover:underline" target="_blank">Privacy Policy</Link>
                   </label>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading || !agreedToTerms}>
+                <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/50 p-3">
+                  <span className="text-sm font-medium text-foreground whitespace-nowrap">
+                    What is {captchaA} + {captchaB} =
+                  </span>
+                  <Input
+                    type="number"
+                    value={captchaAnswer}
+                    onChange={(e) => setCaptchaAnswer(e.target.value)}
+                    placeholder="?"
+                    className="h-9 w-20 text-center"
+                  />
+                  <button
+                    type="button"
+                    onClick={regenerateCaptcha}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="New captcha"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </button>
+                </div>
+                <Button type="submit" className="w-full" disabled={loading || !agreedToTerms || parseInt(captchaAnswer) !== captchaA + captchaB}>
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Sign In
                 </Button>
