@@ -514,6 +514,7 @@ const EmployeeWallet = () => {
           </Button>
         </CardContent>
       </Card>
+      </div>
 
       {/* Withdrawal Password Dialog */}
       <Dialog open={showPasswordDialog} onOpenChange={(open) => { setShowPasswordDialog(open); if (!open) setWithdrawalPassword(""); }}>
