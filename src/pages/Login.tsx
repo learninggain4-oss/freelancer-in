@@ -35,7 +35,18 @@ const Login = () => {
     setCaptchaA(Math.floor(Math.random() * 9) + 1);
     setCaptchaB(Math.floor(Math.random() * 9) + 1);
     setCaptchaAnswer("");
+    setCaptchaVerified(false);
   }, []);
+
+  const verifyCaptcha = () => {
+    if (parseInt(captchaAnswer) === captchaA + captchaB) {
+      setCaptchaVerified(true);
+      toast({ title: "CAPTCHA verified!" });
+    } else {
+      toast({ title: "Wrong answer", description: "Please try again.", variant: "destructive" });
+      regenerateCaptcha();
+    }
+  };
 
   useEffect(() => { regenerateCaptcha(); }, [regenerateCaptcha]);
 
