@@ -286,6 +286,7 @@ const EmployeeWallet = () => {
           holdBalance={profile?.hold_balance ?? 0}
           walletActive={(profile as any)?.wallet_active ?? true}
           onTransfer={() => setShowTransfer(true)}
+          onWithdraw={() => withdrawalSectionRef.current?.scrollIntoView({ behavior: "smooth" })}
         />
       </div>
 
