@@ -213,7 +213,7 @@ const Login = () => {
                       Verify CAPTCHA
                     </Button>
                   ) : (
-                    <p className="text-xs text-green-600 font-medium text-center">✓ CAPTCHA verified</p>
+                    <p className="text-xs text-accent font-medium text-center">✓ CAPTCHA verified</p>
                   )}
                 </div>
                 <Button type="submit" className="w-full" disabled={loading || !agreedToTerms || !captchaVerified}>
