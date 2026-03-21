@@ -117,6 +117,7 @@ const Login = () => {
       waitForProfile();
     } catch (error: any) {
       toast({ title: "Login failed", description: error.message, variant: "destructive" });
+      regenerateCaptcha();
     } finally {
       setLoading(false);
     }
