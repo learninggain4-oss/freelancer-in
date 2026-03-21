@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link, Navigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Briefcase, Loader2 } from "lucide-react";
+import { Briefcase, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,9 +23,20 @@ const Login = () => {
   const [showTotpDialog, setShowTotpDialog] = useState(false);
   const [pendingAdminNav, setPendingAdminNav] = useState(false);
   const [pendingUserNav, setPendingUserNav] = useState<string | null>(null);
+  const [captchaA, setCaptchaA] = useState(0);
+  const [captchaB, setCaptchaB] = useState(0);
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, user, profile, loading: authLoading } = useAuth();
+
+  const regenerateCaptcha = useCallback(() => {
+    setCaptchaA(Math.floor(Math.random() * 9) + 1);
+    setCaptchaB(Math.floor(Math.random() * 9) + 1);
+    setCaptchaAnswer("");
+  }, []);
+
+  useEffect(() => { regenerateCaptcha(); }, [regenerateCaptcha]);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -106,6 +117,7 @@ const Login = () => {
       waitForProfile();
     } catch (error: any) {
       toast({ title: "Login failed", description: error.message, variant: "destructive" });
+      regenerateCaptcha();
     } finally {
       setLoading(false);
     }
@@ -156,7 +168,27 @@ const Login = () => {
                     <Link to="/legal/privacy-policy" className="text-primary hover:underline" target="_blank">Privacy Policy</Link>
                   </label>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading || !agreedToTerms}>
+                <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/50 p-3">
+                  <span className="text-sm font-medium text-foreground whitespace-nowrap">
+                    What is {captchaA} + {captchaB} =
+                  </span>
+                  <Input
+                    type="number"
+                    value={captchaAnswer}
+                    onChange={(e) => setCaptchaAnswer(e.target.value)}
+                    placeholder="?"
+                    className="h-9 w-20 text-center"
+                  />
+                  <button
+                    type="button"
+                    onClick={regenerateCaptcha}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="New captcha"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </button>
+                </div>
+                <Button type="submit" className="w-full" disabled={loading || !agreedToTerms || parseInt(captchaAnswer) !== captchaA + captchaB}>
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Sign In
                 </Button>
