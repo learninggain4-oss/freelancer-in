@@ -9,7 +9,7 @@ import {
   FileText, Layers, IndianRupee, Settings, Landmark, Megaphone,
   Briefcase, LifeBuoy, Bell, HelpCircle, BarChart3, CreditCard,
   Clock, BadgeCheck, Monitor, MessageSquareQuote, Wifi,
-  SlidersHorizontal, Eye, ClipboardCheck, Star,
+  SlidersHorizontal, Eye, ClipboardCheck, Star, ArrowUpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -43,6 +43,7 @@ const navSections: { title: string; items: NavItem[] }[] = [
       { label: "Wallet Types", icon: Wallet, path: "/admin/wallet-types" },
       { label: "Payment Methods", icon: CreditCard, path: "/admin/payment-methods" },
       { label: "Banks", icon: Landmark, path: "/admin/banks" },
+      { label: "Wallet Upgrades", icon: ArrowUpCircle, path: "/admin/wallet-upgrades" },
     ],
   },
   {
