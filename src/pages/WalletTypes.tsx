@@ -28,6 +28,7 @@ const tierShine: Record<string, string> = {
 const WalletTypes = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const basePath = location.pathname.startsWith("/client") ? "/client" : "/employee";
 
   const { data: walletTypes = [], isLoading } = useQuery({
