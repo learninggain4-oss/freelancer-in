@@ -65,9 +65,61 @@ const WalletTypes = () => {
     );
   }
 
-  const handleUpgrade = (planName: string) => {
-    toast.success(`Upgrade request started for ${planName}.`);
-    navigate(`${basePath}/help-support`, { state: { upgradePlan: planName } });
+  const handleUpgrade = async (planName: string) => {
+    if (!user) {
+      toast.error("Please log in first");
+      return;
+    }
+
+    try {
+      // Get current profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, wallet_type_id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!profile) {
+        toast.error("Profile not found");
+        return;
+      }
+
+      // Get current wallet type name
+      let currentType = "Silver";
+      if (profile.wallet_type_id) {
+        const { data: wt } = await supabase
+          .from("wallet_types")
+          .select("name")
+          .eq("id", profile.wallet_type_id)
+          .single();
+        if (wt) currentType = wt.name;
+      }
+
+      // Check for existing pending request
+      const { data: existing } = await supabase
+        .from("wallet_upgrade_requests")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "pending");
+
+      if (existing && existing.length > 0) {
+        toast.error("You already have a pending upgrade request");
+        return;
+      }
+
+      const { error } = await supabase.from("wallet_upgrade_requests").insert({
+        profile_id: profile.id,
+        user_id: user.id,
+        current_wallet_type: currentType,
+        requested_wallet_type: planName,
+        status: "pending",
+      });
+
+      if (error) throw error;
+      toast.success(`Upgrade request for ${planName} submitted successfully!`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit upgrade request");
+    }
   };
 
   return (
