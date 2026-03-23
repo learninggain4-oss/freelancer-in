@@ -1,30 +1,47 @@
 
 
-## Plan: Add Normal CAPTCHA to Login Page
+## Plan: Admin Wallet Upgrade Page
 
 ### Overview
-Add a simple math-based CAPTCHA (e.g., "What is 5 + 3?") directly on the login form. This is a lightweight, self-contained solution that requires no external services or API keys.
+Create a structured wallet upgrade request system with a new database table to track upgrade requests and an admin page to manage them. Currently, upgrades go through Help & Support chat with no formal tracking.
 
-### Approach
-- Generate a random simple math question (addition of two single-digit numbers)
-- Display it above the Sign In button
-- User must type the correct answer before submitting
-- Regenerate the CAPTCHA on each page load and after failed attempts
+### Database Changes
 
-### Changes
+**New table: `wallet_upgrade_requests`**
+- `id` (uuid, PK)
+- `profile_id` (uuid, FK to profiles)
+- `user_id` (uuid, FK to auth.users)
+- `current_wallet_type` (text) — name of user's current tier
+- `requested_wallet_type` (text) — name of requested tier
+- `status` (text: pending, approved, rejected, default: pending)
+- `admin_notes` (text, nullable)
+- `reviewed_by` (uuid, nullable)
+- `reviewed_at` (timestamptz, nullable)
+- `created_at` (timestamptz, default now())
+- RLS: admins can select/update all; authenticated users can insert own and select own
 
-**1. `src/pages/Login.tsx`**
-- Add state for two random numbers (`captchaA`, `captchaB`) and user's `captchaAnswer`
-- Add a helper function `regenerateCaptcha()` that picks new random numbers and clears the answer
-- Call `regenerateCaptcha()` on mount and after failed login attempts
-- Render a CAPTCHA section between the terms checkbox and the Sign In button:
-  - Display: "What is {a} + {b} = ?" with an input field
-  - Style it with a light background box to look distinct
-- Disable the Sign In button unless the CAPTCHA answer is correct (`parseInt(captchaAnswer) === captchaA + captchaB`)
-- On form submission, validate the CAPTCHA answer first; if wrong, show a toast error and regenerate
+### Frontend Changes
+
+**1. New page: `src/pages/admin/AdminWalletUpgrades.tsx`**
+- Table listing all upgrade requests with user name, current tier, requested tier, status, date
+- Filterable by status (All / Pending / Approved / Rejected)
+- Searchable by user name
+- Actions: Approve (updates user's wallet type on profile), Reject (with optional notes)
+- Badge indicators for pending count
+
+**2. Update `src/App.tsx`**
+- Add lazy import for `AdminWalletUpgrades`
+- Add route `/admin/wallet-upgrades`
+
+**3. Update `src/components/layout/AdminLayout.tsx`**
+- Add "Wallet Upgrades" nav item under Financial section with `ArrowUpCircle` icon
+
+**4. Update `src/pages/WalletTypes.tsx`**
+- Change `handleUpgrade` to insert a row into `wallet_upgrade_requests` instead of navigating to Help & Support
+- Show toast confirming request was submitted
 
 ### Technical Details
-- Pure client-side math CAPTCHA — no backend changes needed
-- No external dependencies or API keys required
-- Random numbers between 1-9 to keep it simple
+- Migration adds the table, enables RLS, and creates policies using `has_role` for admin access
+- Admin approve action updates the profile's wallet tier and sets request status to approved
+- Since `profiles` doesn't currently have a `wallet_type_id` column, the migration will add `wallet_type_id` (uuid, FK to wallet_types, nullable) to profiles
 
