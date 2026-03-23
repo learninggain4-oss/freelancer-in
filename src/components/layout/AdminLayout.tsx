@@ -43,6 +43,7 @@ const navSections: { title: string; items: NavItem[] }[] = [
       { label: "Wallet Types", icon: Wallet, path: "/admin/wallet-types" },
       { label: "Payment Methods", icon: CreditCard, path: "/admin/payment-methods" },
       { label: "Banks", icon: Landmark, path: "/admin/banks" },
+      { label: "Wallet Upgrades", icon: ArrowUpCircle, path: "/admin/wallet-upgrades" },
     ],
   },
   {

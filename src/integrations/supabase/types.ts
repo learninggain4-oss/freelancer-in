@@ -1230,6 +1230,7 @@ export type Database = {
           user_type: Database["public"]["Enums"]["user_type"]
           wallet_active: boolean
           wallet_number: string | null
+          wallet_type_id: string | null
           whatsapp_number: string | null
           withdrawal_password_hash: string | null
           work_experience: string | null
@@ -1286,6 +1287,7 @@ export type Database = {
           user_type: Database["public"]["Enums"]["user_type"]
           wallet_active?: boolean
           wallet_number?: string | null
+          wallet_type_id?: string | null
           whatsapp_number?: string | null
           withdrawal_password_hash?: string | null
           work_experience?: string | null
@@ -1342,6 +1344,7 @@ export type Database = {
           user_type?: Database["public"]["Enums"]["user_type"]
           wallet_active?: boolean
           wallet_number?: string | null
+          wallet_type_id?: string | null
           whatsapp_number?: string | null
           withdrawal_password_hash?: string | null
           work_experience?: string | null
@@ -1352,6 +1355,13 @@ export type Database = {
             columns: ["edit_reviewed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_wallet_type_id_fkey"
+            columns: ["wallet_type_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_types"
             referencedColumns: ["id"]
           },
         ]
@@ -2434,6 +2444,53 @@ export type Database = {
           wallet_price?: string | null
         }
         Relationships: []
+      }
+      wallet_upgrade_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          current_wallet_type: string
+          id: string
+          profile_id: string
+          requested_wallet_type: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          current_wallet_type: string
+          id?: string
+          profile_id: string
+          requested_wallet_type: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          current_wallet_type?: string
+          id?: string
+          profile_id?: string
+          requested_wallet_type?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_upgrade_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       withdrawals: {
         Row: {

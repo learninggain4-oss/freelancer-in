@@ -290,6 +290,7 @@ const AppContent = () => {
               <Route path="banks" element={<AdminBanks />} />
               <Route path="reviews" element={<AdminReviews />} />
               <Route path="wallet-types" element={<AdminWalletTypes />} />
+              <Route path="wallet-upgrades" element={<AdminWalletUpgrades />} />
               <Route path="ip-blocking" element={<AdminIpBlocking />} />
               <Route path="pwa-installs" element={<AdminPwaInstalls />} />
             </Route>
