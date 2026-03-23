@@ -9,7 +9,7 @@ import {
   FileText, Layers, IndianRupee, Settings, Landmark, Megaphone,
   Briefcase, LifeBuoy, Bell, HelpCircle, BarChart3, CreditCard,
   Clock, BadgeCheck, Monitor, MessageSquareQuote, Wifi,
-  SlidersHorizontal, Eye, ClipboardCheck, Star,
+  SlidersHorizontal, Eye, ClipboardCheck, Star, ArrowUpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
