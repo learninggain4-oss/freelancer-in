@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Wallet, Crown, Shield, Zap, Star, Check, Infinity, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, Wallet, Crown, Shield, Zap, Star, Check, Infinity, Clock, CheckCircle2, XCircle, CreditCard } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 
@@ -360,9 +360,22 @@ const WalletTypes = () => {
                       <p className="text-xs text-muted-foreground mt-1 italic">Note: {req.admin_notes}</p>
                     )}
                   </div>
-                  <Badge variant="outline" className={`shrink-0 ${config.color} border-current`}>
-                    {config.label}
-                  </Badge>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {req.status === "pending" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-xs border-primary/30 text-primary hover:bg-primary/10"
+                        onClick={() => navigate(`${basePath}/wallet/upgrade-chat/${req.id}`)}
+                      >
+                        <CreditCard className="h-3.5 w-3.5" />
+                        Pay
+                      </Button>
+                    )}
+                    <Badge variant="outline" className={`${config.color} border-current`}>
+                      {config.label}
+                    </Badge>
+                  </div>
                 </Card>
               );
             })}

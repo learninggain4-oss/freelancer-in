@@ -89,6 +89,7 @@ const WithdrawalHistory = lazy(() => import("./pages/wallet/WithdrawalHistory"))
 const WalletQRPage = lazy(() => import("./pages/wallet/WalletQRPage"));
 const WalletScanPage = lazy(() => import("./pages/wallet/WalletScanPage"));
 const RequestWithdrawal = lazy(() => import("./pages/wallet/RequestWithdrawal"));
+const UpgradeChat = lazy(() => import("./pages/wallet/UpgradeChat"));
 const ProfilePersonalInfo = lazy(() => import("./pages/profile/ProfilePersonalInfo"));
 const ProfileProfessional = lazy(() => import("./pages/profile/ProfileProfessional"));
 const ProfileBankDetails = lazy(() => import("./pages/profile/ProfileBankDetails"));
@@ -202,6 +203,7 @@ const AppContent = () => {
               <Route path="notifications" element={<Notifications />} />
               <Route path="review" element={<UserReview />} />
               <Route path="wallet-types" element={<WalletTypes />} />
+              <Route path="wallet/upgrade-chat/:requestId" element={<UpgradeChat />} />
             </Route>
 
             {/* Client Routes */}
@@ -244,6 +246,7 @@ const AppContent = () => {
               <Route path="notifications" element={<Notifications />} />
               <Route path="review" element={<UserReview />} />
               <Route path="wallet-types" element={<WalletTypes />} />
+              <Route path="wallet/upgrade-chat/:requestId" element={<UpgradeChat />} />
             </Route>
 
             {/* Admin Routes */}

@@ -2240,6 +2240,41 @@ export type Database = {
         }
         Relationships: []
       }
+      upgrade_request_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_read: boolean
+          sender_id: string
+          upgrade_request_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          sender_id: string
+          upgrade_request_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          sender_id?: string
+          upgrade_request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "upgrade_request_messages_upgrade_request_id_fkey"
+            columns: ["upgrade_request_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_upgrade_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_bank_accounts: {
         Row: {
           bank_account_number: string

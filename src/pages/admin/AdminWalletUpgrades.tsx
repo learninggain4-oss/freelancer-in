@@ -1,25 +1,31 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Search, Loader2, ArrowUpCircle, CheckCircle, XCircle } from "lucide-react";
+import { Search, Loader2, ArrowUpCircle, CheckCircle, XCircle, MessageSquare, Send, ArrowLeft } from "lucide-react";
+import { useUpgradeChat } from "@/hooks/use-upgrade-chat";
+import { cn } from "@/lib/utils";
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
 
 const AdminWalletUpgrades = () => {
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
   const [rejectDialog, setRejectDialog] = useState<{ id: string; open: boolean }>({ id: "", open: false });
   const [rejectNotes, setRejectNotes] = useState("");
+  const [chatRequestId, setChatRequestId] = useState<string | null>(null);
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["admin-wallet-upgrades", statusFilter],
@@ -36,7 +42,6 @@ const AdminWalletUpgrades = () => {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Fetch profile names
       const profileIds = [...new Set((data || []).map((r: any) => r.profile_id))];
       if (profileIds.length === 0) return [];
 
@@ -59,7 +64,6 @@ const AdminWalletUpgrades = () => {
       const req = requests.find((r: any) => r.id === requestId);
       if (!req) throw new Error("Request not found");
 
-      // Find the wallet_type by name
       const { data: walletType } = await supabase
         .from("wallet_types")
         .select("id")
@@ -126,15 +130,28 @@ const AdminWalletUpgrades = () => {
   const statusBadge = (status: string) => {
     switch (status) {
       case "pending":
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-800">Pending</Badge>;
       case "approved":
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Approved</Badge>;
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800">Approved</Badge>;
       case "rejected":
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>;
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800">Rejected</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  // If chat is open, show chat panel
+  if (chatRequestId) {
+    const chatReq = requests.find((r: any) => r.id === chatRequestId);
+    return (
+      <AdminUpgradeChatPanel
+        requestId={chatRequestId}
+        request={chatReq}
+        onBack={() => setChatRequestId(null)}
+        profileId={profile?.id || ""}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -218,29 +235,40 @@ const AdminWalletUpgrades = () => {
                       </TableCell>
                       <TableCell className="text-xs max-w-[150px] truncate">{req.admin_notes || "—"}</TableCell>
                       <TableCell className="text-right">
-                        {req.status === "pending" && (
-                          <div className="flex gap-1.5 justify-end">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-green-600 border-green-200 hover:bg-green-50"
-                              onClick={() => approveMutation.mutate(req.id)}
-                              disabled={approveMutation.isPending}
-                            >
-                              <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                              Approve
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-red-600 border-red-200 hover:bg-red-50"
-                              onClick={() => setRejectDialog({ id: req.id, open: true })}
-                            >
-                              <XCircle className="h-3.5 w-3.5 mr-1" />
-                              Reject
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex gap-1.5 justify-end">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1"
+                            onClick={() => setChatRequestId(req.id)}
+                          >
+                            <MessageSquare className="h-3.5 w-3.5" />
+                            Chat
+                          </Button>
+                          {req.status === "pending" && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-green-600 border-green-200 hover:bg-green-50"
+                                onClick={() => approveMutation.mutate(req.id)}
+                                disabled={approveMutation.isPending}
+                              >
+                                <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-red-600 border-red-200 hover:bg-red-50"
+                                onClick={() => setRejectDialog({ id: req.id, open: true })}
+                              >
+                                <XCircle className="h-3.5 w-3.5 mr-1" />
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -277,6 +305,136 @@ const AdminWalletUpgrades = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+};
+
+/** Admin chat panel for a specific upgrade request */
+const AdminUpgradeChatPanel = ({
+  requestId,
+  request,
+  onBack,
+  profileId,
+}: {
+  requestId: string;
+  request: any;
+  onBack: () => void;
+  profileId: string;
+}) => {
+  const { messages, isLoading, sendMessage } = useUpgradeChat(requestId);
+  const [newMessage, setNewMessage] = useState("");
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 160) + "px";
+  }, [newMessage]);
+
+  const handleSend = async () => {
+    const content = newMessage.trim();
+    if (!content) return;
+    try {
+      await sendMessage(content);
+      setNewMessage("");
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const userName = request?.profile?.full_name?.join(" ") || "User";
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-8rem)] bg-background rounded-xl border overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b bg-muted/30">
+        <Button variant="ghost" size="icon" onClick={onBack} className="h-9 w-9 rounded-xl">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div className="flex-1">
+          <h2 className="text-sm font-bold text-foreground">{userName}</h2>
+          <span className="text-[11px] text-muted-foreground">
+            {request?.current_wallet_type} → {request?.requested_wallet_type}
+          </span>
+        </div>
+        {request?.status && (
+          <Badge variant="outline" className="capitalize">{request.status}</Badge>
+        )}
+      </div>
+
+      {/* Messages */}
+      <ScrollArea className="flex-1">
+        <div className="px-4 py-3">
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="text-center py-12">
+              <MessageSquare className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">No messages yet. Start the conversation.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {messages.map((msg) => {
+                const isMine = msg.sender_id === profileId;
+                return (
+                  <div key={msg.id} className={cn("flex", isMine ? "justify-end" : "justify-start")}>
+                    <div
+                      className={cn(
+                        "max-w-[75%] rounded-2xl px-4 py-2.5 text-sm",
+                        isMine
+                          ? "bg-primary text-primary-foreground rounded-br-md"
+                          : "bg-muted text-foreground rounded-bl-md"
+                      )}
+                    >
+                      {!isMine && (
+                        <p className="text-[10px] font-semibold text-primary mb-1">{userName}</p>
+                      )}
+                      <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                      <p className={cn("text-[10px] mt-1", isMine ? "text-primary-foreground/60" : "text-muted-foreground")}>
+                        {format(new Date(msg.created_at), "hh:mm a")}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={bottomRef} />
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+
+      {/* Input */}
+      <div className="border-t bg-background">
+        <div className="flex items-end gap-2 px-4 py-3">
+          <div className="flex-1">
+            <Textarea
+              ref={textareaRef}
+              placeholder="Type your message..."
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              rows={2}
+              className="min-h-[56px] max-h-[160px] resize-none rounded-xl border-border/60 bg-muted/30 text-sm"
+            />
+          </div>
+          <Button
+            size="icon"
+            onClick={handleSend}
+            disabled={!newMessage.trim()}
+            className="h-11 w-11 rounded-xl shrink-0"
+          >
+            <Send className="h-4.5 w-4.5" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
