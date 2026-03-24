@@ -332,6 +332,43 @@ const WalletTypes = () => {
           );
         })}
       </div>
+      {/* Upgrade Request Status */}
+      {upgradeRequests.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground">My Upgrade Requests</h2>
+          <div className="space-y-2">
+            {upgradeRequests.map((req: any) => {
+              const statusConfig: Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> = {
+                pending: { icon: Clock, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800", label: "Pending" },
+                approved: { icon: CheckCircle2, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800", label: "Approved" },
+                rejected: { icon: XCircle, color: "text-red-600 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800", label: "Rejected" },
+              };
+              const config = statusConfig[req.status] || statusConfig.pending;
+              const StatusIcon = config.icon;
+
+              return (
+                <Card key={req.id} className={`flex items-center gap-3 border p-3 ${config.bg}`}>
+                  <StatusIcon className={`h-5 w-5 shrink-0 ${config.color}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">
+                      {req.current_wallet_type} → {req.requested_wallet_type}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(req.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                    </p>
+                    {req.admin_notes && (
+                      <p className="text-xs text-muted-foreground mt-1 italic">Note: {req.admin_notes}</p>
+                    )}
+                  </div>
+                  <Badge variant="outline" className={`shrink-0 ${config.color} border-current`}>
+                    {config.label}
+                  </Badge>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
