@@ -246,6 +246,7 @@ const AppContent = () => {
               <Route path="notifications" element={<Notifications />} />
               <Route path="review" element={<UserReview />} />
               <Route path="wallet-types" element={<WalletTypes />} />
+              <Route path="wallet/upgrade-chat/:requestId" element={<UpgradeChat />} />
             </Route>
 
             {/* Admin Routes */}
