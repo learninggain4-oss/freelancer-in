@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Wallet, Crown, Shield, Zap, Star, Check, Infinity, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, Wallet, Crown, Shield, Zap, Star, Check, Infinity, Clock, CheckCircle2, XCircle, CreditCard } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 
