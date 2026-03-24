@@ -46,6 +46,22 @@ const WalletTypes = () => {
     },
   });
 
+  const { data: upgradeRequests = [] } = useQuery({
+    queryKey: ["wallet-upgrade-requests", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("wallet_upgrade_requests")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+    refetchInterval: 30000,
+  });
+
   if (isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
