@@ -63,7 +63,7 @@ const translations: Record<Lang, {
     langOptions: [
       { key: "en", label: "🇬🇧 English" },
       { key: "hi", label: "🇮🇳 हिन्दी (Hindi)" },
-      { key: "ml", label: "🇮🇳 മലయാളം (Malayalam)" },
+      { key: "ml", label: "🇮🇳 മലയാളം (Malayalam)" },
       { key: "ur", label: "🇵🇰 اردو (Urdu)" },
       { key: "ar", label: "🇸🇦 العربية (Arabic)" },
     ],
@@ -113,7 +113,7 @@ const translations: Record<Lang, {
     langOptions: [
       { key: "en", label: "🇬🇧 English" },
       { key: "hi", label: "🇮🇳 हिन्दी (Hindi)" },
-      { key: "ml", label: "🇮🇳 മലయാളം (Malayalam)" },
+      { key: "ml", label: "🇮🇳 മലയാളം (Malayalam)" },
       { key: "ur", label: "🇵🇰 اردو (Urdu)" },
       { key: "ar", label: "🇸🇦 العربية (Arabic)" },
     ],
@@ -138,7 +138,7 @@ const translations: Record<Lang, {
     langOptions: [
       { key: "en", label: "🇬🇧 English" },
       { key: "hi", label: "🇮🇳 हिन्दी (Hindi)" },
-      { key: "ml", label: "🇮🇳 മലയാളം (Malayalam)" },
+      { key: "ml", label: "🇮🇳 മലయാളം (Malayalam)" },
       { key: "ur", label: "🇵🇰 اردو (Urdu)" },
       { key: "ar", label: "🇸🇦 العربية (Arabic)" },
     ],
@@ -163,6 +163,25 @@ const translations: Record<Lang, {
 let msgIdCounter = 0;
 const genId = () => `bot-${Date.now()}-${++msgIdCounter}`;
 
+const TYPING_DURATION = 10000; // 10 seconds
+const ADMIN_OFFLINE_DISPLAY = 30000; // 30 seconds
+
+const TypingAnimation = () => (
+  <div className="flex justify-start">
+    <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-muted text-foreground rounded-bl-md">
+      <p className="text-[10px] font-semibold text-primary mb-1.5">🤖 FlexPay Bot</p>
+      <div className="flex items-center gap-1.5">
+        <div className="flex gap-1">
+          <span className="h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:0ms]" />
+          <span className="h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:200ms]" />
+          <span className="h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:400ms]" />
+        </div>
+        <span className="text-xs text-muted-foreground ml-1">Typing...</span>
+      </div>
+    </div>
+  </div>
+);
+
 const UpgradeChat = () => {
   const { requestId } = useParams<{ requestId: string }>();
   const navigate = useNavigate();
@@ -172,7 +191,9 @@ const UpgradeChat = () => {
   const [lang, setLang] = useState<Lang>("en");
   const [step, setStep] = useState<ChatStep>("language");
   const [botMessages, setBotMessages] = useState<BotMessage[]>([]);
-  
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingMessageRef = useRef<{ content: string; options?: { key: string; label: string }[]; callback?: () => void } | null>(null);
 
   // Fetch upgrade request
   const { data: request, isLoading: loadingRequest } = useQuery({
@@ -213,7 +234,6 @@ const UpgradeChat = () => {
 
   // Check admin online status
   const checkAdminOnline = useCallback(async (): Promise<boolean> => {
-    // Get admin user IDs from user_roles, then check last_seen_at
     const { data: adminRoles } = await supabase
       .from("user_roles")
       .select("user_id")
@@ -229,12 +249,12 @@ const UpgradeChat = () => {
     if (data && data.length > 0 && data[0].last_seen_at) {
       const lastSeen = new Date(data[0].last_seen_at);
       const diff = Date.now() - lastSeen.getTime();
-      return diff < 5 * 60 * 1000; // 5 minutes
+      return diff < 5 * 60 * 1000;
     }
     return false;
   }, []);
 
-  const addBotMessage = useCallback((content: string, options?: { key: string; label: string }[]) => {
+  const addBotMessageDirect = useCallback((content: string, options?: { key: string; label: string }[]) => {
     setBotMessages(prev => [...prev, {
       id: genId(),
       content,
@@ -243,6 +263,22 @@ const UpgradeChat = () => {
       timestamp: new Date(),
     }]);
   }, []);
+
+  // Show typing for TYPING_DURATION then reveal the message
+  const addBotMessageWithTyping = useCallback((content: string, options?: { key: string; label: string }[], afterReveal?: () => void) => {
+    setIsTyping(true);
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    pendingMessageRef.current = { content, options, callback: afterReveal };
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+      const pending = pendingMessageRef.current;
+      if (pending) {
+        addBotMessageDirect(pending.content, pending.options);
+        pendingMessageRef.current = null;
+        if (pending.callback) pending.callback();
+      }
+    }, TYPING_DURATION);
+  }, [addBotMessageDirect]);
 
   const addUserMessage = useCallback((content: string) => {
     setBotMessages(prev => [...prev, {
@@ -262,11 +298,18 @@ const UpgradeChat = () => {
     }]);
   }, []);
 
-  // Initialize with language selection
+  // Cleanup on unmount
   useEffect(() => {
-    if (botMessages.length === 0) {
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
+  }, []);
+
+  // Initialize with language selection (with typing)
+  useEffect(() => {
+    if (botMessages.length === 0 && !isTyping) {
       const t = translations.en;
-      addBotMessage(t.selectLanguage, t.langOptions);
+      addBotMessageWithTyping(t.selectLanguage, t.langOptions);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -274,16 +317,19 @@ const UpgradeChat = () => {
   // Scroll to bottom
   useEffect(() => {
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-  }, [botMessages, realtimeMessages]);
+  }, [botMessages, realtimeMessages, isTyping]);
 
   const resetToLanguage = useCallback(() => {
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    setIsTyping(false);
+    pendingMessageRef.current = null;
     setBotMessages([]);
     setStep("language");
     setTimeout(() => {
       const t = translations.en;
-      addBotMessage(t.selectLanguage, t.langOptions);
+      addBotMessageWithTyping(t.selectLanguage, t.langOptions);
     }, 300);
-  }, [addBotMessage]);
+  }, [addBotMessageWithTyping]);
 
   const handleOptionSelect = useCallback(async (optionKey: string) => {
     const t = translations[lang];
@@ -296,9 +342,7 @@ const UpgradeChat = () => {
         setLang(selectedLang);
         const newT = translations[selectedLang];
         setStep("confirm");
-        setTimeout(() => {
-          addBotMessage(newT.confirmChange, newT.confirmOptions);
-        }, 500);
+        addBotMessageWithTyping(newT.confirmChange, newT.confirmOptions);
         break;
       }
 
@@ -310,28 +354,25 @@ const UpgradeChat = () => {
           setTimeout(() => resetToLanguage(), 800);
         } else if (optionKey === "yes") {
           setStep("details");
-          setTimeout(() => {
-            if (!request || !requestedWallet) {
-              addBotMessage("Unable to load wallet details. Please try again.");
-              return;
-            }
-            const employeeName = profile?.full_name?.join(" ") || "Employee";
-            const price = requestedWallet.wallet_price || "N/A";
-            const features = (requestedWallet.perks as string[]) || [];
-            const msg = t.upgradeMsg(
-              employeeName,
-              request.current_wallet_type,
-              request.requested_wallet_type,
-              price,
-              features
-            );
-            addBotMessage(msg);
-
-            setTimeout(() => {
-              setStep("payment");
-              addBotMessage("", t.payOptions(price));
-            }, 800);
-          }, 500);
+          if (!request || !requestedWallet) {
+            addBotMessageWithTyping("Unable to load wallet details. Please try again.");
+            return;
+          }
+          const employeeName = profile?.full_name?.join(" ") || "Employee";
+          const price = requestedWallet.wallet_price || "N/A";
+          const features = (requestedWallet.perks as string[]) || [];
+          const msg = t.upgradeMsg(
+            employeeName,
+            request.current_wallet_type,
+            request.requested_wallet_type,
+            price,
+            features
+          );
+          addBotMessageWithTyping(msg, undefined, () => {
+            // After details message is revealed, show payment options with typing
+            setStep("payment");
+            addBotMessageWithTyping("", t.payOptions(price));
+          });
         }
         break;
       }
@@ -345,11 +386,10 @@ const UpgradeChat = () => {
           setTimeout(() => resetToLanguage(), 800);
         } else if (optionKey === "pay") {
           setStep("waiting");
-          
+
           // Send notification to admin
           try {
             const employeeName = profile?.full_name?.join(" ") || "Employee";
-            // Insert a notification for admin users
             const { data: adminProfiles } = await supabase
               .from("user_roles")
               .select("user_id")
@@ -370,11 +410,10 @@ const UpgradeChat = () => {
             console.error("Failed to send admin notification:", err);
           }
 
-          // Check admin online status
-          setTimeout(async () => {
-            const isOnline = await checkAdminOnline();
-            if (isOnline) {
-              addBotMessage(t.requestReceived);
+          // Check admin online status with typing animation
+          const isOnline = await checkAdminOnline();
+          if (isOnline) {
+            addBotMessageWithTyping(t.requestReceived, undefined, async () => {
               // Send initial message to DB for admin to see
               try {
                 const employeeName = profile?.full_name?.join(" ") || "Employee";
@@ -382,15 +421,16 @@ const UpgradeChat = () => {
               } catch (err) {
                 console.error("Failed to send chat message:", err);
               }
-              setTimeout(() => {
-                setStep("live_chat");
-                addSystemMessage("You are now connected with an admin. You can chat below.");
-              }, 1000);
-            } else {
-              addBotMessage(t.agentsBusy);
-              setTimeout(() => resetToLanguage(), 3000);
-            }
-          }, 1000);
+              setStep("live_chat");
+              addSystemMessage("You are now connected with an admin. You can chat below.");
+            });
+          } else {
+            setStep("admin_offline");
+            addBotMessageWithTyping(t.agentsBusy, undefined, () => {
+              // After message is shown, wait 30 seconds then reset
+              setTimeout(() => resetToLanguage(), ADMIN_OFFLINE_DISPLAY);
+            });
+          }
         }
         break;
       }
@@ -398,7 +438,7 @@ const UpgradeChat = () => {
       default:
         break;
     }
-  }, [lang, step, request, requestedWallet, profile, addBotMessage, addUserMessage, addSystemMessage, resetToLanguage, checkAdminOnline, sendMessage, requestId]);
+  }, [lang, step, request, requestedWallet, profile, addBotMessageWithTyping, addUserMessage, addSystemMessage, resetToLanguage, checkAdminOnline, sendMessage, requestId]);
 
   // Live chat send
   const [liveChatInput, setLiveChatInput] = useState("");
@@ -507,7 +547,7 @@ const UpgradeChat = () => {
                   </div>
                 </div>
                 {/* Option buttons */}
-                {msg.options && msg.options.length > 0 && step !== "live_chat" && (
+                {msg.options && msg.options.length > 0 && step !== "live_chat" && !isTyping && (
                   <div className="mt-2 ml-2 space-y-1.5">
                     {msg.options.map((opt) => (
                       <button
@@ -523,6 +563,9 @@ const UpgradeChat = () => {
               </div>
             );
           })}
+
+          {/* Typing indicator */}
+          {isTyping && <TypingAnimation />}
 
           {/* Real-time messages in live_chat step */}
           {step === "live_chat" && realtimeMessages.map((msg) => {
