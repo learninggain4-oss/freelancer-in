@@ -214,10 +214,17 @@ const UpgradeChat = () => {
 
   // Check admin online status
   const checkAdminOnline = useCallback(async (): Promise<boolean> => {
+    // Get admin user IDs from user_roles, then check last_seen_at
+    const { data: adminRoles } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin");
+    if (!adminRoles || adminRoles.length === 0) return false;
+    const adminUserIds = adminRoles.map((r: any) => r.user_id);
     const { data } = await supabase
       .from("profiles")
       .select("last_seen_at")
-      .eq("user_type", "admin")
+      .in("user_id", adminUserIds)
       .order("last_seen_at", { ascending: false })
       .limit(1);
     if (data && data.length > 0 && data[0].last_seen_at) {
