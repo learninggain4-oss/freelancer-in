@@ -172,7 +172,7 @@ const UpgradeChat = () => {
   const [lang, setLang] = useState<Lang>("en");
   const [step, setStep] = useState<ChatStep>("language");
   const [botMessages, setBotMessages] = useState<BotMessage[]>([]);
-  const [walletDetails, setWalletDetails] = useState<any>(null);
+  
 
   // Fetch upgrade request
   const { data: request, isLoading: loadingRequest } = useQuery({
