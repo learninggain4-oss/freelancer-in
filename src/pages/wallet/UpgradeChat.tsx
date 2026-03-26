@@ -660,36 +660,35 @@ const UpgradeChat = () => {
         </div>
       </ScrollArea>
 
-      {/* Input - only in live_chat step */}
-      {step === "live_chat" && (
-        <div className="border-t bg-gradient-to-t from-background to-background/80">
-          <div className="flex items-end gap-2 px-4 py-3">
-            <div className="flex-1">
-              <textarea
-                ref={liveChatTextareaRef}
-                placeholder="Type your message..."
-                value={liveChatInput}
-                onChange={(e) => setLiveChatInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleLiveSend();
-                  }
-                }}
-                rows={1}
-                className="flex min-h-[44px] max-h-[160px] w-full resize-none rounded-xl border border-border/60 bg-muted/30 px-3 py-2.5 text-sm leading-relaxed ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
-              />
-            </div>
-            <Button
-              size="icon"
-              onClick={handleLiveSend}
-              disabled={!liveChatInput.trim()}
-              className="h-11 w-11 rounded-xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all duration-200 disabled:shadow-none disabled:opacity-40 shrink-0"
-            >
-              <Send className="h-4.5 w-4.5" />
-            </Button>
+      {/* Input - available at ALL steps for employee manual messaging */}
+      <div className="border-t bg-gradient-to-t from-background to-background/80">
+        <div className="flex items-end gap-2 px-4 py-3">
+          <div className="flex-1">
+            <textarea
+              ref={liveChatTextareaRef}
+              placeholder="Type your message..."
+              value={liveChatInput}
+              onChange={(e) => setLiveChatInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleLiveSend();
+                }
+              }}
+              rows={1}
+              className="flex min-h-[44px] max-h-[160px] w-full resize-none rounded-xl border border-border/60 bg-muted/30 px-3 py-2.5 text-sm leading-relaxed ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
+            />
           </div>
+          <Button
+            size="icon"
+            onClick={handleLiveSend}
+            disabled={!liveChatInput.trim()}
+            className="h-11 w-11 rounded-xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all duration-200 disabled:shadow-none disabled:opacity-40 shrink-0"
+          >
+            <Send className="h-4.5 w-4.5" />
+          </Button>
         </div>
+      </div>
       )}
     </div>
   );
