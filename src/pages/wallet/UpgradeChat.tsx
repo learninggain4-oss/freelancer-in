@@ -22,6 +22,9 @@ interface BotMessage {
   timestamp: Date;
 }
 
+const BOT_PREFIX = "[BOT] ";
+const SYSTEM_PREFIX = "[SYSTEM] ";
+
 const translations: Record<Lang, {
   selectLanguage: string;
   langOptions: { key: string; label: string }[];
@@ -163,8 +166,8 @@ const translations: Record<Lang, {
 let msgIdCounter = 0;
 const genId = () => `bot-${Date.now()}-${++msgIdCounter}`;
 
-const TYPING_DURATION = 10000; // 10 seconds
-const ADMIN_OFFLINE_DISPLAY = 30000; // 30 seconds
+const TYPING_DURATION = 6000; // 6 seconds
+const ADMIN_OFFLINE_DISPLAY = 10000; // 10 seconds
 
 const TypingAnimation = () => (
   <div className="flex justify-start">
@@ -227,32 +230,55 @@ const UpgradeChat = () => {
     enabled: !!request?.requested_wallet_type,
   });
 
-  // Real-time chat for admin messages (live_chat step)
-  const { messages: realtimeMessages, isLoading: loadingMessages, sendMessage } = useUpgradeChat(
-    step === "live_chat" ? requestId : undefined
-  );
+  // ALWAYS enable real-time chat — admin can send messages at any step
+  const { messages: realtimeMessages, isLoading: loadingMessages, sendMessage } = useUpgradeChat(requestId);
 
-  // Check admin online status
+  // Check admin online status — improved with fresh query each time
   const checkAdminOnline = useCallback(async (): Promise<boolean> => {
-    const { data: adminRoles } = await supabase
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "admin");
-    if (!adminRoles || adminRoles.length === 0) return false;
-    const adminUserIds = adminRoles.map((r: any) => r.user_id);
-    const { data } = await supabase
-      .from("profiles")
-      .select("last_seen_at")
-      .in("user_id", adminUserIds)
-      .order("last_seen_at", { ascending: false })
-      .limit(1);
-    if (data && data.length > 0 && data[0].last_seen_at) {
-      const lastSeen = new Date(data[0].last_seen_at);
-      const diff = Date.now() - lastSeen.getTime();
-      return diff < 5 * 60 * 1000;
+    try {
+      const { data: adminRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+      if (!adminRoles || adminRoles.length === 0) return false;
+
+      const adminUserIds = adminRoles.map((r: any) => r.user_id);
+
+      // Check each admin's last_seen_at separately for accuracy
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("last_seen_at")
+        .in("user_id", adminUserIds);
+
+      if (!profiles || profiles.length === 0) return false;
+
+      const now = Date.now();
+      // Admin is online if ANY admin was seen within last 5 minutes
+      return profiles.some((p: any) => {
+        if (!p.last_seen_at) return false;
+        const lastSeen = new Date(p.last_seen_at).getTime();
+        return (now - lastSeen) < 5 * 60 * 1000;
+      });
+    } catch (err) {
+      console.error("Error checking admin status:", err);
+      return false;
     }
-    return false;
   }, []);
+
+  // Save bot/system message to DB so admin can see it
+  const saveBotMessageToDB = useCallback(async (content: string, isSystem = false) => {
+    if (!requestId || !profile?.id) return;
+    try {
+      const prefix = isSystem ? SYSTEM_PREFIX : BOT_PREFIX;
+      await supabase.from("upgrade_request_messages").insert({
+        upgrade_request_id: requestId,
+        sender_id: profile.id,
+        content: `${prefix}${content}`,
+      });
+    } catch (err) {
+      console.error("Failed to save bot message to DB:", err);
+    }
+  }, [requestId, profile?.id]);
 
   const addBotMessageDirect = useCallback((content: string, options?: { key: string; label: string }[]) => {
     setBotMessages(prev => [...prev, {
@@ -262,7 +288,11 @@ const UpgradeChat = () => {
       options,
       timestamp: new Date(),
     }]);
-  }, []);
+    // Persist to DB for admin visibility (don't persist option labels, just the message)
+    if (content) {
+      saveBotMessageToDB(content);
+    }
+  }, [saveBotMessageToDB]);
 
   // Show typing for TYPING_DURATION then reveal the message
   const addBotMessageWithTyping = useCallback((content: string, options?: { key: string; label: string }[], afterReveal?: () => void) => {
@@ -273,12 +303,22 @@ const UpgradeChat = () => {
       setIsTyping(false);
       const pending = pendingMessageRef.current;
       if (pending) {
-        addBotMessageDirect(pending.content, pending.options);
+        setBotMessages(prev => [...prev, {
+          id: genId(),
+          content: pending.content,
+          type: "bot",
+          options: pending.options,
+          timestamp: new Date(),
+        }]);
+        // Save to DB
+        if (pending.content) {
+          saveBotMessageToDB(pending.content);
+        }
         pendingMessageRef.current = null;
         if (pending.callback) pending.callback();
       }
     }, TYPING_DURATION);
-  }, [addBotMessageDirect]);
+  }, [saveBotMessageToDB]);
 
   const addUserMessage = useCallback((content: string) => {
     setBotMessages(prev => [...prev, {
@@ -287,7 +327,15 @@ const UpgradeChat = () => {
       type: "user",
       timestamp: new Date(),
     }]);
-  }, []);
+    // Also save user selection to DB for admin visibility
+    if (requestId && profile?.id) {
+      supabase.from("upgrade_request_messages").insert({
+        upgrade_request_id: requestId,
+        sender_id: profile.id,
+        content,
+      }).then();
+    }
+  }, [requestId, profile?.id]);
 
   const addSystemMessage = useCallback((content: string) => {
     setBotMessages(prev => [...prev, {
@@ -296,7 +344,8 @@ const UpgradeChat = () => {
       type: "system",
       timestamp: new Date(),
     }]);
-  }, []);
+    saveBotMessageToDB(content, true);
+  }, [saveBotMessageToDB]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -369,7 +418,6 @@ const UpgradeChat = () => {
             features
           );
           addBotMessageWithTyping(msg, undefined, () => {
-            // After details message is revealed, show payment options with typing
             setStep("payment");
             addBotMessageWithTyping("", t.payOptions(price));
           });
@@ -427,7 +475,7 @@ const UpgradeChat = () => {
           } else {
             setStep("admin_offline");
             addBotMessageWithTyping(t.agentsBusy, undefined, () => {
-              // After message is shown, wait 30 seconds then reset
+              // After message is shown, wait ADMIN_OFFLINE_DISPLAY seconds then reset
               setTimeout(() => resetToLanguage(), ADMIN_OFFLINE_DISPLAY);
             });
           }
@@ -439,6 +487,14 @@ const UpgradeChat = () => {
         break;
     }
   }, [lang, step, request, requestedWallet, profile, addBotMessageWithTyping, addUserMessage, addSystemMessage, resetToLanguage, checkAdminOnline, sendMessage, requestId]);
+
+  // Filter realtime messages to only show admin's manual messages (exclude bot-persisted messages from employee)
+  const adminManualMessages = realtimeMessages.filter(msg => {
+    // Show messages from admin (not from employee) that are NOT bot/system prefixed
+    if (msg.sender_id === profile?.id) return false;
+    if (msg.content.startsWith(BOT_PREFIX) || msg.content.startsWith(SYSTEM_PREFIX)) return false;
+    return true;
+  });
 
   // Live chat send
   const [liveChatInput, setLiveChatInput] = useState("");
@@ -546,8 +602,8 @@ const UpgradeChat = () => {
                     </p>
                   </div>
                 </div>
-                {/* Option buttons */}
-                {msg.options && msg.options.length > 0 && step !== "live_chat" && !isTyping && (
+                {/* Option buttons — only show on the LAST bot message with options and when not typing */}
+                {msg.options && msg.options.length > 0 && !isTyping && (
                   <div className="mt-2 ml-2 space-y-1.5">
                     {msg.options.map((opt) => (
                       <button
@@ -567,32 +623,40 @@ const UpgradeChat = () => {
           {/* Typing indicator */}
           {isTyping && <TypingAnimation />}
 
-          {/* Real-time messages in live_chat step */}
-          {step === "live_chat" && realtimeMessages.map((msg) => {
-            const isMine = msg.sender_id === profile?.id;
-            return (
-              <div key={msg.id} className={cn("flex", isMine ? "justify-end" : "justify-start")}>
-                <div
-                  className={cn(
-                    "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm",
-                    isMine
-                      ? "bg-primary text-primary-foreground rounded-br-md"
-                      : "bg-muted text-foreground rounded-bl-md"
-                  )}
-                >
-                  {!isMine && (
-                    <p className="text-[10px] font-semibold text-primary mb-1">
-                      {translations[lang].adminLabel}
-                    </p>
-                  )}
+          {/* Admin manual messages — visible at ALL steps */}
+          {adminManualMessages.map((msg) => (
+            <div key={msg.id} className="flex justify-start">
+              <div className="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm bg-muted text-foreground rounded-bl-md">
+                <p className="text-[10px] font-semibold text-primary mb-1">
+                  {translations[lang].adminLabel}
+                </p>
+                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                <p className="text-[10px] mt-1 text-muted-foreground">
+                  {format(new Date(msg.created_at), "hh:mm a")}
+                </p>
+              </div>
+            </div>
+          ))}
+
+          {/* Real-time messages from employee in live_chat step */}
+          {step === "live_chat" && realtimeMessages
+            .filter(msg => {
+              // In live chat, show employee's own messages (non-bot) and admin messages
+              if (msg.content.startsWith(BOT_PREFIX) || msg.content.startsWith(SYSTEM_PREFIX)) return false;
+              // Only show messages sent AFTER entering live_chat (the sendMessage call)
+              if (msg.sender_id === profile?.id) return true;
+              return false; // admin messages already shown above
+            })
+            .map((msg) => (
+              <div key={`live-${msg.id}`} className={cn("flex justify-end")}>
+                <div className="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm bg-primary text-primary-foreground rounded-br-md">
                   <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                  <p className={cn("text-[10px] mt-1", isMine ? "text-primary-foreground/60" : "text-muted-foreground")}>
+                  <p className="text-[10px] mt-1 text-primary-foreground/60">
                     {format(new Date(msg.created_at), "hh:mm a")}
                   </p>
                 </div>
               </div>
-            );
-          })}
+            ))}
 
           <div ref={bottomRef} />
         </div>
