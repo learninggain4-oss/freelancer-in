@@ -59,7 +59,7 @@ const translations: Record<Lang, {
     ],
     requestReceived: "✅ Your request has been received successfully.\n\nKindly wait for a few minutes while we review your request.\nOur team will get back to you soon. 🙏",
     agentsBusy: "⏳ All our agents are currently busy assisting other customers.\n\nKindly try again after some time.\nWe appreciate your understanding. 🙏",
-    adminLabel: "Admin",
+    adminLabel: "Sajeer",
   },
   hi: {
     selectLanguage: "स्वागत है! 👋\n\nकृपया वह भाषा चुनें जिससे आप परिचित हैं:",
