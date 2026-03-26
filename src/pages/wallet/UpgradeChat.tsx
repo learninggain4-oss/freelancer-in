@@ -689,7 +689,6 @@ const UpgradeChat = () => {
           </Button>
         </div>
       </div>
-      )}
     </div>
   );
 };
