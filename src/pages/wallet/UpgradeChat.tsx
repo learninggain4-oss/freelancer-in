@@ -623,12 +623,12 @@ const UpgradeChat = () => {
           {/* Typing indicator */}
           {isTyping && <TypingAnimation />}
 
-          {/* Admin manual messages — visible at ALL steps */}
+          {/* Admin manual messages — visible at ALL steps, labeled as "Sajeer" */}
           {adminManualMessages.map((msg) => (
             <div key={msg.id} className="flex justify-start">
               <div className="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm bg-muted text-foreground rounded-bl-md">
                 <p className="text-[10px] font-semibold text-primary mb-1">
-                  {translations[lang].adminLabel}
+                  Sajeer
                 </p>
                 <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                 <p className="text-[10px] mt-1 text-muted-foreground">
@@ -638,17 +638,15 @@ const UpgradeChat = () => {
             </div>
           ))}
 
-          {/* Real-time messages from employee in live_chat step */}
-          {step === "live_chat" && realtimeMessages
+          {/* Employee's own real-time messages (non-bot) — visible at ALL steps */}
+          {realtimeMessages
             .filter(msg => {
-              // In live chat, show employee's own messages (non-bot) and admin messages
               if (msg.content.startsWith(BOT_PREFIX) || msg.content.startsWith(SYSTEM_PREFIX)) return false;
-              // Only show messages sent AFTER entering live_chat (the sendMessage call)
               if (msg.sender_id === profile?.id) return true;
-              return false; // admin messages already shown above
+              return false;
             })
             .map((msg) => (
-              <div key={`live-${msg.id}`} className={cn("flex justify-end")}>
+              <div key={`rt-${msg.id}`} className="flex justify-end">
                 <div className="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm bg-primary text-primary-foreground rounded-br-md">
                   <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                   <p className="text-[10px] mt-1 text-primary-foreground/60">
