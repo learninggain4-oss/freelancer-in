@@ -59,7 +59,7 @@ const translations: Record<Lang, {
     ],
     requestReceived: "✅ Your request has been received successfully.\n\nKindly wait for a few minutes while we review your request.\nOur team will get back to you soon. 🙏",
     agentsBusy: "⏳ All our agents are currently busy assisting other customers.\n\nKindly try again after some time.\nWe appreciate your understanding. 🙏",
-    adminLabel: "Admin",
+    adminLabel: "Sajeer",
   },
   hi: {
     selectLanguage: "स्वागत है! 👋\n\nकृपया वह भाषा चुनें जिससे आप परिचित हैं:",
@@ -84,7 +84,7 @@ const translations: Record<Lang, {
     ],
     requestReceived: "✅ आपका अनुरोध सफलतापूर्वक प्राप्त हो गया है।\n\nकृपया कुछ मिनट प्रतीक्षा करें जब तक हम आपके अनुरोध की समीक्षा करते हैं।\nहमारी टीम जल्द ही आपसे संपर्क करेगी। 🙏",
     agentsBusy: "⏳ हमारे सभी एजेंट वर्तमान में अन्य ग्राहकों की सहायता में व्यस्त हैं।\n\nकृपया कुछ समय बाद पुनः प्रयास करें।\nहम आपकी समझ की सराहना करते हैं। 🙏",
-    adminLabel: "एडमिन",
+    adminLabel: "Sajeer",
   },
   ml: {
     selectLanguage: "സ്വാഗതം! 👋\n\nദയവായി നിങ്ങൾക്ക് പരിചയമുള്ള ഒരു ഭാഷ തിരഞ്ഞെടുക്കുക:",
@@ -109,7 +109,7 @@ const translations: Record<Lang, {
     ],
     requestReceived: "✅ നിങ്ങളുടെ അഭ്യർത്ഥന വിജയകരമായി ലഭിച്ചു.\n\nഞങ്ങൾ നിങ്ങളുടെ അഭ്യർത്ഥന പരിശോധിക്കുന്നതിനിടയിൽ ദയവായി കുറച്ച് മിനിറ്റ് കാത്തിരിക്കുക.\nഞങ്ങളുടെ ടീം ഉടൻ നിങ്ങളെ ബന്ധപ്പെടും. 🙏",
     agentsBusy: "⏳ ഞങ്ങളുടെ എല്ലാ ഏജന്റുമാരും ഇപ്പോൾ മറ്റ് ഉപഭോക്താക്കളെ സഹായിക്കുന്നതിൽ തിരക്കിലാണ്.\n\nദയവായി കുറച്ച് സമയത്തിന് ശേഷം വീണ്ടും ശ്രമിക്കുക.\nനിങ്ങളുടെ ധാരണയെ ഞങ്ങൾ വിലമതിക്കുന്നു. 🙏",
-    adminLabel: "അഡ്മിൻ",
+    adminLabel: "Sajeer",
   },
   ur: {
     selectLanguage: "خوش آمدید! 👋\n\nبراہ کرم وہ زبان منتخب کریں جس سے آپ واقف ہیں:",
@@ -134,7 +134,7 @@ const translations: Record<Lang, {
     ],
     requestReceived: "✅ آپ کی درخواست کامیابی سے موصول ہو گئی ہے۔\n\nبراہ کرم چند منٹ انتظار کریں جب تک ہم آپ کی درخواست کا جائزہ لیتے ہیں۔\nہماری ٹیم جلد آپ سے رابطہ کرے گی۔ 🙏",
     agentsBusy: "⏳ ہمارے تمام ایجنٹ اس وقت دوسرے صارفین کی مدد میں مصروف ہیں۔\n\nبراہ کرم کچھ وقت بعد دوبارہ کوشش کریں۔\nہم آپ کی سمجھ کی تعریف کرتے ہیں۔ 🙏",
-    adminLabel: "ایڈمن",
+    adminLabel: "Sajeer",
   },
   ar: {
     selectLanguage: "مرحباً! 👋\n\nيرجى اختيار اللغة التي تعرفها:",
@@ -159,7 +159,7 @@ const translations: Record<Lang, {
     ],
     requestReceived: "✅ تم استلام طلبك بنجاح.\n\nيرجى الانتظار بضع دقائق بينما نراجع طلبك.\nسيتواصل معك فريقنا قريباً. 🙏",
     agentsBusy: "⏳ جميع وكلائنا مشغولون حالياً بمساعدة عملاء آخرين.\n\nيرجى المحاولة مرة أخرى بعد بعض الوقت.\nنقدر تفهمك. 🙏",
-    adminLabel: "المسؤول",
+    adminLabel: "Sajeer",
   },
 };
 
@@ -623,12 +623,12 @@ const UpgradeChat = () => {
           {/* Typing indicator */}
           {isTyping && <TypingAnimation />}
 
-          {/* Admin manual messages — visible at ALL steps */}
+          {/* Admin manual messages — visible at ALL steps, labeled as "Sajeer" */}
           {adminManualMessages.map((msg) => (
             <div key={msg.id} className="flex justify-start">
               <div className="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm bg-muted text-foreground rounded-bl-md">
                 <p className="text-[10px] font-semibold text-primary mb-1">
-                  {translations[lang].adminLabel}
+                  Sajeer
                 </p>
                 <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                 <p className="text-[10px] mt-1 text-muted-foreground">
@@ -638,17 +638,15 @@ const UpgradeChat = () => {
             </div>
           ))}
 
-          {/* Real-time messages from employee in live_chat step */}
-          {step === "live_chat" && realtimeMessages
+          {/* Employee's own real-time messages (non-bot) — visible at ALL steps */}
+          {realtimeMessages
             .filter(msg => {
-              // In live chat, show employee's own messages (non-bot) and admin messages
               if (msg.content.startsWith(BOT_PREFIX) || msg.content.startsWith(SYSTEM_PREFIX)) return false;
-              // Only show messages sent AFTER entering live_chat (the sendMessage call)
               if (msg.sender_id === profile?.id) return true;
-              return false; // admin messages already shown above
+              return false;
             })
             .map((msg) => (
-              <div key={`live-${msg.id}`} className={cn("flex justify-end")}>
+              <div key={`rt-${msg.id}`} className="flex justify-end">
                 <div className="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm bg-primary text-primary-foreground rounded-br-md">
                   <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                   <p className="text-[10px] mt-1 text-primary-foreground/60">
@@ -662,37 +660,35 @@ const UpgradeChat = () => {
         </div>
       </ScrollArea>
 
-      {/* Input - only in live_chat step */}
-      {step === "live_chat" && (
-        <div className="border-t bg-gradient-to-t from-background to-background/80">
-          <div className="flex items-end gap-2 px-4 py-3">
-            <div className="flex-1">
-              <textarea
-                ref={liveChatTextareaRef}
-                placeholder="Type your message..."
-                value={liveChatInput}
-                onChange={(e) => setLiveChatInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleLiveSend();
-                  }
-                }}
-                rows={1}
-                className="flex min-h-[44px] max-h-[160px] w-full resize-none rounded-xl border border-border/60 bg-muted/30 px-3 py-2.5 text-sm leading-relaxed ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
-              />
-            </div>
-            <Button
-              size="icon"
-              onClick={handleLiveSend}
-              disabled={!liveChatInput.trim()}
-              className="h-11 w-11 rounded-xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all duration-200 disabled:shadow-none disabled:opacity-40 shrink-0"
-            >
-              <Send className="h-4.5 w-4.5" />
-            </Button>
+      {/* Input - available at ALL steps for employee manual messaging */}
+      <div className="border-t bg-gradient-to-t from-background to-background/80">
+        <div className="flex items-end gap-2 px-4 py-3">
+          <div className="flex-1">
+            <textarea
+              ref={liveChatTextareaRef}
+              placeholder="Type your message..."
+              value={liveChatInput}
+              onChange={(e) => setLiveChatInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleLiveSend();
+                }
+              }}
+              rows={1}
+              className="flex min-h-[44px] max-h-[160px] w-full resize-none rounded-xl border border-border/60 bg-muted/30 px-3 py-2.5 text-sm leading-relaxed ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
+            />
           </div>
+          <Button
+            size="icon"
+            onClick={handleLiveSend}
+            disabled={!liveChatInput.trim()}
+            className="h-11 w-11 rounded-xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all duration-200 disabled:shadow-none disabled:opacity-40 shrink-0"
+          >
+            <Send className="h-4.5 w-4.5" />
+          </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 };
