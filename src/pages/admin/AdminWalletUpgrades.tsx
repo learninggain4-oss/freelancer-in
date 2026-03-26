@@ -385,21 +385,43 @@ const AdminUpgradeChatPanel = ({
             <div className="space-y-2">
               {messages.map((msg) => {
                 const isMine = msg.sender_id === profileId;
+                const isBotMsg = msg.content.startsWith("[BOT] ");
+                const isSystemMsg = msg.content.startsWith("[SYSTEM] ");
+                const displayContent = isBotMsg
+                  ? msg.content.slice(6)
+                  : isSystemMsg
+                    ? msg.content.slice(9)
+                    : msg.content;
+
+                if (isSystemMsg) {
+                  return (
+                    <div key={msg.id} className="flex justify-center">
+                      <div className="rounded-full bg-muted px-4 py-1.5">
+                        <p className="text-[11px] text-muted-foreground text-center">{displayContent}</p>
+                      </div>
+                    </div>
+                  );
+                }
+
+                const senderLabel = isBotMsg ? "🤖 FlexPay Bot" : isMine ? "" : userName;
+
                 return (
-                  <div key={msg.id} className={cn("flex", isMine ? "justify-end" : "justify-start")}>
+                  <div key={msg.id} className={cn("flex", isMine && !isBotMsg ? "justify-end" : "justify-start")}>
                     <div
                       className={cn(
                         "max-w-[75%] rounded-2xl px-4 py-2.5 text-sm",
-                        isMine
+                        isMine && !isBotMsg
                           ? "bg-primary text-primary-foreground rounded-br-md"
-                          : "bg-muted text-foreground rounded-bl-md"
+                          : isBotMsg
+                            ? "bg-accent/10 text-foreground rounded-bl-md border border-accent/20"
+                            : "bg-muted text-foreground rounded-bl-md"
                       )}
                     >
-                      {!isMine && (
-                        <p className="text-[10px] font-semibold text-primary mb-1">{userName}</p>
+                      {senderLabel && (
+                        <p className="text-[10px] font-semibold text-primary mb-1">{senderLabel}</p>
                       )}
-                      <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                      <p className={cn("text-[10px] mt-1", isMine ? "text-primary-foreground/60" : "text-muted-foreground")}>
+                      <p className="whitespace-pre-wrap break-words">{displayContent}</p>
+                      <p className={cn("text-[10px] mt-1", isMine && !isBotMsg ? "text-primary-foreground/60" : "text-muted-foreground")}>
                         {format(new Date(msg.created_at), "hh:mm a")}
                       </p>
                     </div>
