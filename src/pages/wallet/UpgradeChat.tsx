@@ -1,18 +1,22 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Globe, Loader2 } from "lucide-react";
+import { ArrowLeft, Send, Globe, Loader2, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useUpgradeChat } from "@/hooks/use-upgrade-chat";
+import { useAdminPresence } from "@/hooks/use-admin-presence";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
+import { translations, type Lang } from "@/components/wallet/upgrade-chat/translations";
 
-type Lang = "en" | "hi" | "ml" | "ur" | "ar";
-type ChatStep = "language" | "confirm" | "details" | "payment" | "waiting" | "admin_offline" | "live_chat";
+type ChatStep =
+  | "language" | "confirm" | "details" | "payment" | "waiting"
+  | "appointment_day" | "appointment_time" | "appointment_booked"
+  | "appointment_active" | "live_chat";
 
 interface BotMessage {
   id: string;
@@ -20,159 +24,22 @@ interface BotMessage {
   type: "bot" | "user" | "system";
   options?: { key: string; label: string }[];
   timestamp: Date;
+  selectedOption?: string;
 }
 
 const BOT_PREFIX = "[BOT] ";
 const SYSTEM_PREFIX = "[SYSTEM] ";
-
-const translations: Record<Lang, {
-  selectLanguage: string;
-  langOptions: { key: string; label: string }[];
-  confirmChange: string;
-  confirmOptions: { key: string; label: string }[];
-  upgradeMsg: (name: string, currentType: string, requestedType: string, price: string, features: string[]) => string;
-  payOptions: (price: string) => { key: string; label: string }[];
-  requestReceived: string;
-  agentsBusy: string;
-  adminLabel: string;
-}> = {
-  en: {
-    selectLanguage: "Welcome! 👋\n\nPlease select a language you are familiar with:",
-    langOptions: [
-      { key: "en", label: "🇬🇧 English" },
-      { key: "hi", label: "🇮🇳 हिन्दी (Hindi)" },
-      { key: "ml", label: "🇮🇳 മലയാളം (Malayalam)" },
-      { key: "ur", label: "🇵🇰 اردو (Urdu)" },
-      { key: "ar", label: "🇸🇦 العربية (Arabic)" },
-    ],
-    confirmChange: "Do you want to change the plan for your wallet?",
-    confirmOptions: [
-      { key: "yes", label: "✅ Yes, I want to change wallet" },
-      { key: "no", label: "❌ No, I don't want to switch wallets" },
-      { key: "change_lang", label: "🌐 I want to change language" },
-    ],
-    upgradeMsg: (name, currentType, requestedType, price, features) =>
-      `📋 *Wallet Upgrade Details*\n\n👤 Employee: ${name}\n💼 Current Wallet: ${currentType}\n🎯 Selected Wallet: ${requestedType}\n💰 Wallet Price: ${price}\n\n✨ *Features:*\n${features.map(f => `  • ${f}`).join("\n")}\n\n---\n\nDear ${name},\n\nTo upgrade your wallet plan, a payment is required.\nThe wallet plan you have selected is *${requestedType}*.\nThe price of this wallet plan is *${price}*.\nTherefore, the total amount you need to pay for the upgrade is *${price}*.\n\nKindly complete the payment to proceed with the upgrade.\nThank you for your cooperation. 🙏`,
-    payOptions: (price) => [
-      { key: "pay", label: `💳 Pay (${price})` },
-      { key: "cancel", label: `❌ Cancel Pay (${price})` },
-    ],
-    requestReceived: "✅ Your request has been received successfully.\n\nKindly wait for a few minutes while we review your request.\nOur team will get back to you soon. 🙏",
-    agentsBusy: "⏳ All our agents are currently busy assisting other customers.\n\nKindly try again after some time.\nWe appreciate your understanding. 🙏",
-    adminLabel: "Sajeer",
-  },
-  hi: {
-    selectLanguage: "स्वागत है! 👋\n\nकृपया वह भाषा चुनें जिससे आप परिचित हैं:",
-    langOptions: [
-      { key: "en", label: "🇬🇧 English" },
-      { key: "hi", label: "🇮🇳 हिन्दी (Hindi)" },
-      { key: "ml", label: "🇮🇳 മലയാളം (Malayalam)" },
-      { key: "ur", label: "🇵🇰 اردو (Urdu)" },
-      { key: "ar", label: "🇸🇦 العربية (Arabic)" },
-    ],
-    confirmChange: "क्या आप अपने वॉलेट का प्लान बदलना चाहते हैं?",
-    confirmOptions: [
-      { key: "yes", label: "✅ हाँ, मैं वॉलेट बदलना चाहता/चाहती हूँ" },
-      { key: "no", label: "❌ नहीं, मैं वॉलेट नहीं बदलना चाहता/चाहती" },
-      { key: "change_lang", label: "🌐 मैं भाषा बदलना चाहता/चाहती हूँ" },
-    ],
-    upgradeMsg: (name, currentType, requestedType, price, features) =>
-      `📋 *वॉलेट अपग्रेड विवरण*\n\n👤 कर्मचारी: ${name}\n💼 वर्तमान वॉलेट: ${currentType}\n🎯 चयनित वॉलेट: ${requestedType}\n💰 वॉलेट मूल्य: ${price}\n\n✨ *विशेषताएँ:*\n${features.map(f => `  • ${f}`).join("\n")}\n\n---\n\nप्रिय ${name},\n\nआपके वॉलेट प्लान को अपग्रेड करने के लिए भुगतान आवश्यक है।\nआपने जो वॉलेट प्लान चुना है वह *${requestedType}* है।\nइस वॉलेट प्लान की कीमत *${price}* है।\nइसलिए, अपग्रेड के लिए आपको कुल *${price}* का भुगतान करना होगा।\n\nकृपया अपग्रेड के लिए भुगतान पूरा करें।\nआपके सहयोग के लिए धन्यवाद। 🙏`,
-    payOptions: (price) => [
-      { key: "pay", label: `💳 भुगतान करें (${price})` },
-      { key: "cancel", label: `❌ भुगतान रद्द करें (${price})` },
-    ],
-    requestReceived: "✅ आपका अनुरोध सफलतापूर्वक प्राप्त हो गया है।\n\nकृपया कुछ मिनट प्रतीक्षा करें जब तक हम आपके अनुरोध की समीक्षा करते हैं।\nहमारी टीम जल्द ही आपसे संपर्क करेगी। 🙏",
-    agentsBusy: "⏳ हमारे सभी एजेंट वर्तमान में अन्य ग्राहकों की सहायता में व्यस्त हैं।\n\nकृपया कुछ समय बाद पुनः प्रयास करें।\nहम आपकी समझ की सराहना करते हैं। 🙏",
-    adminLabel: "Sajeer",
-  },
-  ml: {
-    selectLanguage: "സ്വാഗതം! 👋\n\nദയവായി നിങ്ങൾക്ക് പരിചയമുള്ള ഒരു ഭാഷ തിരഞ്ഞെടുക്കുക:",
-    langOptions: [
-      { key: "en", label: "🇬🇧 English" },
-      { key: "hi", label: "🇮🇳 हिन्दी (Hindi)" },
-      { key: "ml", label: "🇮🇳 മലയാളം (Malayalam)" },
-      { key: "ur", label: "🇵🇰 اردو (Urdu)" },
-      { key: "ar", label: "🇸🇦 العربية (Arabic)" },
-    ],
-    confirmChange: "നിങ്ങളുടെ വാലറ്റിന്റെ പ്ലാൻ മാറ്റാൻ ആഗ്രഹിക്കുന്നുണ്ടോ?",
-    confirmOptions: [
-      { key: "yes", label: "✅ അതെ, ഞാൻ വാലറ്റ് മാറ്റാൻ ആഗ്രഹിക്കുന്നു" },
-      { key: "no", label: "❌ ഇല്ല, ഞാൻ വാലറ്റ് മാറ്റാൻ ആഗ്രഹിക്കുന്നില്ല" },
-      { key: "change_lang", label: "🌐 ഭാഷ മാറ്റാൻ ഞാൻ ആഗ്രഹിക്കുന്നു" },
-    ],
-    upgradeMsg: (name, currentType, requestedType, price, features) =>
-      `📋 *വാലറ്റ് അപ്‌ഗ്രേഡ് വിവരങ്ങൾ*\n\n👤 ജീവനക്കാരൻ: ${name}\n💼 നിലവിലെ വാലറ്റ്: ${currentType}\n🎯 തിരഞ്ഞെടുത്ത വാലറ്റ്: ${requestedType}\n💰 വാലറ്റ് വില: ${price}\n\n✨ *ഫീച്ചറുകൾ:*\n${features.map(f => `  • ${f}`).join("\n")}\n\n---\n\nപ്രിയ ${name},\n\nനിങ്ങളുടെ വാലറ്റ് പ്ലാൻ അപ്‌ഗ്രേഡ് ചെയ്യുന്നതിന് പേയ്‌മെന്റ് ആവശ്യമാണ്.\nനിങ്ങൾ തിരഞ്ഞെടുത്ത വാലറ്റ് പ്ലാൻ *${requestedType}* ആണ്.\nഈ വാലറ്റ് പ്ലാനിന്റെ വില *${price}* ആണ്.\nഅതിനാൽ, അപ്‌ഗ്രേഡിനായി നിങ്ങൾ അടയ്‌ക്കേണ്ട മൊത്തം തുക *${price}* ആണ്.\n\nദയവായി അപ്‌ഗ്രേഡ് തുടരാൻ പേയ്‌മെന്റ് പൂർത്തിയാക്കുക.\nനിങ്ങളുടെ സഹകരണത്തിന് നന്ദി. 🙏`,
-    payOptions: (price) => [
-      { key: "pay", label: `💳 പേയ് ചെയ്യുക (${price})` },
-      { key: "cancel", label: `❌ പേയ് റദ്ദാക്കുക (${price})` },
-    ],
-    requestReceived: "✅ നിങ്ങളുടെ അഭ്യർത്ഥന വിജയകരമായി ലഭിച്ചു.\n\nഞങ്ങൾ നിങ്ങളുടെ അഭ്യർത്ഥന പരിശോധിക്കുന്നതിനിടയിൽ ദയവായി കുറച്ച് മിനിറ്റ് കാത്തിരിക്കുക.\nഞങ്ങളുടെ ടീം ഉടൻ നിങ്ങളെ ബന്ധപ്പെടും. 🙏",
-    agentsBusy: "⏳ ഞങ്ങളുടെ എല്ലാ ഏജന്റുമാരും ഇപ്പോൾ മറ്റ് ഉപഭോക്താക്കളെ സഹായിക്കുന്നതിൽ തിരക്കിലാണ്.\n\nദയവായി കുറച്ച് സമയത്തിന് ശേഷം വീണ്ടും ശ്രമിക്കുക.\nനിങ്ങളുടെ ധാരണയെ ഞങ്ങൾ വിലമതിക്കുന്നു. 🙏",
-    adminLabel: "Sajeer",
-  },
-  ur: {
-    selectLanguage: "خوش آمدید! 👋\n\nبراہ کرم وہ زبان منتخب کریں جس سے آپ واقف ہیں:",
-    langOptions: [
-      { key: "en", label: "🇬🇧 English" },
-      { key: "hi", label: "🇮🇳 हिन्दी (Hindi)" },
-      { key: "ml", label: "🇮🇳 മലയാളം (Malayalam)" },
-      { key: "ur", label: "🇵🇰 اردو (Urdu)" },
-      { key: "ar", label: "🇸🇦 العربية (Arabic)" },
-    ],
-    confirmChange: "کیا آپ اپنے والٹ کا پلان تبدیل کرنا چاہتے ہیں؟",
-    confirmOptions: [
-      { key: "yes", label: "✅ ہاں، میں والٹ تبدیل کرنا چاہتا/چاہتی ہوں" },
-      { key: "no", label: "❌ نہیں، میں والٹ تبدیل نہیں کرنا چاہتا/چاہتی" },
-      { key: "change_lang", label: "🌐 میں زبان تبدیل کرنا چاہتا/چاہتی ہوں" },
-    ],
-    upgradeMsg: (name, currentType, requestedType, price, features) =>
-      `📋 *والٹ اپ گریڈ تفصیلات*\n\n👤 ملازم: ${name}\n💼 موجودہ والٹ: ${currentType}\n🎯 منتخب والٹ: ${requestedType}\n💰 والٹ قیمت: ${price}\n\n✨ *خصوصیات:*\n${features.map(f => `  • ${f}`).join("\n")}\n\n---\n\nعزیز ${name}،\n\nآپ کے والٹ پلان کو اپ گریڈ کرنے کے لیے ادائیگی ضروری ہے۔\nآپ نے جو والٹ پلان منتخب کیا ہے وہ *${requestedType}* ہے۔\nاس والٹ پلان کی قیمت *${price}* ہے۔\nلہذا، اپ گریڈ کے لیے آپ کو کل *${price}* ادا کرنا ہوگا۔\n\nبراہ کرم اپ گریڈ جاری رکھنے کے لیے ادائیگی مکمل کریں۔\nآپ کے تعاون کا شکریہ۔ 🙏`,
-    payOptions: (price) => [
-      { key: "pay", label: `💳 ادائیگی کریں (${price})` },
-      { key: "cancel", label: `❌ ادائیگی منسوخ کریں (${price})` },
-    ],
-    requestReceived: "✅ آپ کی درخواست کامیابی سے موصول ہو گئی ہے۔\n\nبراہ کرم چند منٹ انتظار کریں جب تک ہم آپ کی درخواست کا جائزہ لیتے ہیں۔\nہماری ٹیم جلد آپ سے رابطہ کرے گی۔ 🙏",
-    agentsBusy: "⏳ ہمارے تمام ایجنٹ اس وقت دوسرے صارفین کی مدد میں مصروف ہیں۔\n\nبراہ کرم کچھ وقت بعد دوبارہ کوشش کریں۔\nہم آپ کی سمجھ کی تعریف کرتے ہیں۔ 🙏",
-    adminLabel: "Sajeer",
-  },
-  ar: {
-    selectLanguage: "مرحباً! 👋\n\nيرجى اختيار اللغة التي تعرفها:",
-    langOptions: [
-      { key: "en", label: "🇬🇧 English" },
-      { key: "hi", label: "🇮🇳 हिन्दी (Hindi)" },
-      { key: "ml", label: "🇮🇳 മലయാളം (Malayalam)" },
-      { key: "ur", label: "🇵🇰 اردو (Urdu)" },
-      { key: "ar", label: "🇸🇦 العربية (Arabic)" },
-    ],
-    confirmChange: "هل تريد تغيير خطة محفظتك؟",
-    confirmOptions: [
-      { key: "yes", label: "✅ نعم، أريد تغيير المحفظة" },
-      { key: "no", label: "❌ لا، لا أريد تبديل المحافظ" },
-      { key: "change_lang", label: "🌐 أريد تغيير اللغة" },
-    ],
-    upgradeMsg: (name, currentType, requestedType, price, features) =>
-      `📋 *تفاصيل ترقية المحفظة*\n\n👤 الموظف: ${name}\n💼 المحفظة الحالية: ${currentType}\n🎯 المحفظة المختارة: ${requestedType}\n💰 سعر المحفظة: ${price}\n\n✨ *الميزات:*\n${features.map(f => `  • ${f}`).join("\n")}\n\n---\n\nعزيزي ${name}،\n\nلترقية خطة محفظتك، يلزم الدفع.\nخطة المحفظة التي اخترتها هي *${requestedType}*.\nسعر خطة المحفظة هذه هو *${price}*.\nلذلك، المبلغ الإجمالي الذي تحتاج لدفعه للترقية هو *${price}*.\n\nيرجى إتمام الدفع للمتابعة مع الترقية.\nشكراً لتعاونك. 🙏`,
-    payOptions: (price) => [
-      { key: "pay", label: `💳 ادفع (${price})` },
-      { key: "cancel", label: `❌ إلغاء الدفع (${price})` },
-    ],
-    requestReceived: "✅ تم استلام طلبك بنجاح.\n\nيرجى الانتظار بضع دقائق بينما نراجع طلبك.\nسيتواصل معك فريقنا قريباً. 🙏",
-    agentsBusy: "⏳ جميع وكلائنا مشغولون حالياً بمساعدة عملاء آخرين.\n\nيرجى المحاولة مرة أخرى بعد بعض الوقت.\nنقدر تفهمك. 🙏",
-    adminLabel: "Sajeer",
-  },
-};
+const TYPING_DURATION = 10000; // 10 seconds
 
 let msgIdCounter = 0;
 const genId = () => `bot-${Date.now()}-${++msgIdCounter}`;
 
-const TYPING_DURATION = 6000; // 6 seconds
-const ADMIN_OFFLINE_DISPLAY = 10000; // 10 seconds
+const formatFullTimestamp = (date: Date) => format(date, "EEEE, dd MMMM yyyy — hh:mm a");
 
-const TypingAnimation = () => (
+const TypingAnimation = ({ label }: { label?: string }) => (
   <div className="flex justify-start">
     <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-muted text-foreground rounded-bl-md">
-      <p className="text-[10px] font-semibold text-primary mb-1.5">🤖 FlexPay Bot</p>
+      <p className="text-[10px] font-semibold text-primary mb-1.5">{label || "🤖 FlexPay Bot"}</p>
       <div className="flex items-center gap-1.5">
         <div className="flex gap-1">
           <span className="h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:0ms]" />
@@ -185,87 +52,68 @@ const TypingAnimation = () => (
   </div>
 );
 
+const MessageStatus = ({ isOwn, isRead }: { isOwn: boolean; isRead?: boolean }) => {
+  if (!isOwn) return null;
+  return (
+    <span className="inline-flex items-center gap-0.5 ml-1.5">
+      {isRead ? (
+        <CheckCheck className="h-3 w-3 text-blue-400" />
+      ) : (
+        <Check className="h-3 w-3 text-primary-foreground/50" />
+      )}
+      <span className="text-[9px]">{isRead ? "Seen" : "Delivered"}</span>
+    </span>
+  );
+};
+
 const UpgradeChat = () => {
   const { requestId } = useParams<{ requestId: string }>();
   const navigate = useNavigate();
   const { profile } = useAuth();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const [lang, setLang] = useState<Lang>("en");
   const [step, setStep] = useState<ChatStep>("language");
   const [botMessages, setBotMessages] = useState<BotMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [answeredMessages, setAnsweredMessages] = useState<Set<string>>(new Set());
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingMessageRef = useRef<{ content: string; options?: { key: string; label: string }[]; callback?: () => void } | null>(null);
+
+  // Appointment state
+  const [selectedDay, setSelectedDay] = useState<{ dayName: string; date: Date } | null>(null);
+  const [appointmentTimerId, setAppointmentTimerId] = useState<ReturnType<typeof setTimeout> | null>(null);
+
+  // Admin presence
+  const { adminOnline, isAdminTyping, broadcastTyping } = useAdminPresence(requestId);
 
   // Fetch upgrade request
   const { data: request, isLoading: loadingRequest } = useQuery({
     queryKey: ["upgrade-request-detail", requestId],
     queryFn: async () => {
       if (!requestId) return null;
-      const { data, error } = await supabase
-        .from("wallet_upgrade_requests")
-        .select("*")
-        .eq("id", requestId)
-        .maybeSingle();
+      const { data, error } = await supabase.from("wallet_upgrade_requests").select("*").eq("id", requestId).maybeSingle();
       if (error) throw error;
       return data;
     },
     enabled: !!requestId,
   });
 
-  // Fetch requested wallet type details
   const { data: requestedWallet } = useQuery({
     queryKey: ["wallet-type-detail", request?.requested_wallet_type],
     queryFn: async () => {
       if (!request?.requested_wallet_type) return null;
-      const { data, error } = await supabase
-        .from("wallet_types")
-        .select("*")
-        .eq("name", request.requested_wallet_type)
-        .maybeSingle();
+      const { data, error } = await supabase.from("wallet_types").select("*").eq("name", request.requested_wallet_type).maybeSingle();
       if (error) throw error;
       return data;
     },
     enabled: !!request?.requested_wallet_type,
   });
 
-  // ALWAYS enable real-time chat — admin can send messages at any step
   const { messages: realtimeMessages, isLoading: loadingMessages, sendMessage } = useUpgradeChat(requestId);
 
-  // Check admin online status — improved with fresh query each time
-  const checkAdminOnline = useCallback(async (): Promise<boolean> => {
-    try {
-      const { data: adminRoles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "admin");
-      if (!adminRoles || adminRoles.length === 0) return false;
-
-      const adminUserIds = adminRoles.map((r: any) => r.user_id);
-
-      // Check each admin's last_seen_at separately for accuracy
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("last_seen_at")
-        .in("user_id", adminUserIds);
-
-      if (!profiles || profiles.length === 0) return false;
-
-      const now = Date.now();
-      // Admin is online if ANY admin was seen within last 5 minutes
-      return profiles.some((p: any) => {
-        if (!p.last_seen_at) return false;
-        const lastSeen = new Date(p.last_seen_at).getTime();
-        return (now - lastSeen) < 5 * 60 * 1000;
-      });
-    } catch (err) {
-      console.error("Error checking admin status:", err);
-      return false;
-    }
-  }, []);
-
-  // Save bot/system message to DB so admin can see it
+  // Save bot/system message to DB
   const saveBotMessageToDB = useCallback(async (content: string, isSystem = false) => {
     if (!requestId || !profile?.id) return;
     try {
@@ -276,25 +124,17 @@ const UpgradeChat = () => {
         content: `${prefix}${content}`,
       });
     } catch (err) {
-      console.error("Failed to save bot message to DB:", err);
+      console.error("Failed to save bot message:", err);
     }
   }, [requestId, profile?.id]);
 
   const addBotMessageDirect = useCallback((content: string, options?: { key: string; label: string }[]) => {
-    setBotMessages(prev => [...prev, {
-      id: genId(),
-      content,
-      type: "bot",
-      options,
-      timestamp: new Date(),
-    }]);
-    // Persist to DB for admin visibility (don't persist option labels, just the message)
-    if (content) {
-      saveBotMessageToDB(content);
-    }
+    const msg: BotMessage = { id: genId(), content, type: "bot", options, timestamp: new Date() };
+    setBotMessages(prev => [...prev, msg]);
+    if (content) saveBotMessageToDB(content);
+    return msg.id;
   }, [saveBotMessageToDB]);
 
-  // Show typing for TYPING_DURATION then reveal the message
   const addBotMessageWithTyping = useCallback((content: string, options?: { key: string; label: string }[], afterReveal?: () => void) => {
     setIsTyping(true);
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
@@ -303,17 +143,9 @@ const UpgradeChat = () => {
       setIsTyping(false);
       const pending = pendingMessageRef.current;
       if (pending) {
-        setBotMessages(prev => [...prev, {
-          id: genId(),
-          content: pending.content,
-          type: "bot",
-          options: pending.options,
-          timestamp: new Date(),
-        }]);
-        // Save to DB
-        if (pending.content) {
-          saveBotMessageToDB(pending.content);
-        }
+        const msg: BotMessage = { id: genId(), content: pending.content, type: "bot", options: pending.options, timestamp: new Date() };
+        setBotMessages(prev => [...prev, msg]);
+        if (pending.content) saveBotMessageToDB(pending.content);
         pendingMessageRef.current = null;
         if (pending.callback) pending.callback();
       }
@@ -321,40 +153,28 @@ const UpgradeChat = () => {
   }, [saveBotMessageToDB]);
 
   const addUserMessage = useCallback((content: string) => {
-    setBotMessages(prev => [...prev, {
-      id: genId(),
-      content,
-      type: "user",
-      timestamp: new Date(),
-    }]);
-    // Also save user selection to DB for admin visibility
+    setBotMessages(prev => [...prev, { id: genId(), content, type: "user", timestamp: new Date() }]);
     if (requestId && profile?.id) {
       supabase.from("upgrade_request_messages").insert({
-        upgrade_request_id: requestId,
-        sender_id: profile.id,
-        content,
+        upgrade_request_id: requestId, sender_id: profile.id, content,
       }).then();
     }
   }, [requestId, profile?.id]);
 
   const addSystemMessage = useCallback((content: string) => {
-    setBotMessages(prev => [...prev, {
-      id: genId(),
-      content,
-      type: "system",
-      timestamp: new Date(),
-    }]);
+    setBotMessages(prev => [...prev, { id: genId(), content, type: "system", timestamp: new Date() }]);
     saveBotMessageToDB(content, true);
   }, [saveBotMessageToDB]);
 
-  // Cleanup on unmount
+  // Cleanup
   useEffect(() => {
     return () => {
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      if (appointmentTimerId) clearTimeout(appointmentTimerId);
     };
-  }, []);
+  }, [appointmentTimerId]);
 
-  // Initialize with language selection (with typing)
+  // Initialize
   useEffect(() => {
     if (botMessages.length === 0 && !isTyping) {
       const t = translations.en;
@@ -363,24 +183,68 @@ const UpgradeChat = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Scroll to bottom
+  // Auto-scroll
   useEffect(() => {
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-  }, [botMessages, realtimeMessages, isTyping]);
+    const timer = setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [botMessages, realtimeMessages, isTyping, isAdminTyping]);
 
   const resetToLanguage = useCallback(() => {
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    if (appointmentTimerId) clearTimeout(appointmentTimerId);
     setIsTyping(false);
     pendingMessageRef.current = null;
     setBotMessages([]);
+    setAnsweredMessages(new Set());
     setStep("language");
+    setSelectedDay(null);
     setTimeout(() => {
       const t = translations.en;
       addBotMessageWithTyping(t.selectLanguage, t.langOptions);
     }, 300);
-  }, [addBotMessageWithTyping]);
+  }, [addBotMessageWithTyping, appointmentTimerId]);
 
-  const handleOptionSelect = useCallback(async (optionKey: string) => {
+  // Generate day options for next 7 days
+  const getDayOptions = useCallback(() => {
+    const t = translations[lang];
+    const options: { key: string; label: string }[] = [];
+    for (let i = 1; i <= 7; i++) {
+      const date = addDays(new Date(), i);
+      const dayName = format(date, "EEEE");
+      const dateStr = format(date, "dd MMM yyyy");
+      options.push({ key: `day_${i}`, label: `📅 ${dayName}, ${dateStr}` });
+    }
+    options.push({ key: "cancel_booking", label: t.cancelBtn });
+    return options;
+  }, [lang]);
+
+  // Generate time slot options
+  const getTimeOptions = useCallback(() => {
+    const t = translations[lang];
+    const options: { key: string; label: string }[] = [];
+    for (let hour = 9; hour < 18; hour++) {
+      const startTime = `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? "PM" : "AM"}`;
+      const endHour = hour + 1;
+      const endTime = `${endHour > 12 ? endHour - 12 : endHour}:00 ${endHour >= 12 ? "PM" : "AM"}`;
+      options.push({ key: `time_${hour}`, label: `🕐 ${startTime} - ${endTime}` });
+    }
+    options.push({ key: "cancel_booking", label: t.cancelBtn });
+    return options;
+  }, [lang]);
+
+  const markMessageAnswered = useCallback((messageId: string, optionKey: string) => {
+    setAnsweredMessages(prev => new Set(prev).add(messageId));
+    setBotMessages(prev => prev.map(msg =>
+      msg.id === messageId ? { ...msg, selectedOption: optionKey } : msg
+    ));
+  }, []);
+
+  const handleOptionSelect = useCallback(async (optionKey: string, messageId: string) => {
+    if (answeredMessages.has(messageId)) return; // prevent double-click
+    markMessageAnswered(messageId, optionKey);
+
     const t = translations[lang];
 
     switch (step) {
@@ -398,25 +262,18 @@ const UpgradeChat = () => {
       case "confirm": {
         const selectedLabel = t.confirmOptions.find(o => o.key === optionKey)?.label || optionKey;
         addUserMessage(selectedLabel);
-
         if (optionKey === "no" || optionKey === "change_lang") {
           setTimeout(() => resetToLanguage(), 800);
         } else if (optionKey === "yes") {
           setStep("details");
           if (!request || !requestedWallet) {
-            addBotMessageWithTyping("Unable to load wallet details. Please try again.");
+            addBotMessageWithTyping("Unable to load wallet details.");
             return;
           }
           const employeeName = profile?.full_name?.join(" ") || "Employee";
           const price = requestedWallet.wallet_price || "N/A";
           const features = (requestedWallet.perks as string[]) || [];
-          const msg = t.upgradeMsg(
-            employeeName,
-            request.current_wallet_type,
-            request.requested_wallet_type,
-            price,
-            features
-          );
+          const msg = t.upgradeMsg(employeeName, request.current_wallet_type, request.requested_wallet_type, price, features);
           addBotMessageWithTyping(msg, undefined, () => {
             setStep("payment");
             addBotMessageWithTyping("", t.payOptions(price));
@@ -429,76 +286,174 @@ const UpgradeChat = () => {
         const price = requestedWallet?.wallet_price || "N/A";
         const selectedLabel = t.payOptions(price).find(o => o.key === optionKey)?.label || optionKey;
         addUserMessage(selectedLabel);
-
         if (optionKey === "cancel") {
           setTimeout(() => resetToLanguage(), 800);
         } else if (optionKey === "pay") {
           setStep("waiting");
-
-          // Send notification to admin
+          // Notify admin
           try {
             const employeeName = profile?.full_name?.join(" ") || "Employee";
-            const { data: adminProfiles } = await supabase
-              .from("user_roles")
-              .select("user_id")
-              .eq("role", "admin");
-
-            if (adminProfiles && adminProfiles.length > 0) {
-              const notifications = adminProfiles.map((ap: any) => ({
-                user_id: ap.user_id,
-                title: "Wallet Upgrade Payment",
-                message: `${employeeName} wants to pay for wallet upgrade to ${request?.requested_wallet_type}.`,
-                type: "info",
-                reference_id: requestId,
-                reference_type: "wallet_upgrade",
-              }));
-              await supabase.from("notifications").insert(notifications);
+            const { data: adminProfiles } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
+            if (adminProfiles?.length) {
+              await supabase.from("notifications").insert(
+                adminProfiles.map((ap: any) => ({
+                  user_id: ap.user_id,
+                  title: "Wallet Upgrade Payment",
+                  message: `${employeeName} wants to pay for wallet upgrade to ${request?.requested_wallet_type}.`,
+                  type: "info",
+                  reference_id: requestId,
+                  reference_type: "wallet_upgrade",
+                }))
+              );
             }
-          } catch (err) {
-            console.error("Failed to send admin notification:", err);
-          }
+          } catch {}
 
-          // Check admin online status with typing animation
-          const isOnline = await checkAdminOnline();
-          if (isOnline) {
-            addBotMessageWithTyping(t.requestReceived, undefined, async () => {
-              // Send initial message to DB for admin to see
-              try {
-                const employeeName = profile?.full_name?.join(" ") || "Employee";
-                await sendMessage(`[Payment Request] ${employeeName} wants to pay for wallet upgrade to ${request?.requested_wallet_type}. Price: ${requestedWallet?.wallet_price || "N/A"}`);
-              } catch (err) {
-                console.error("Failed to send chat message:", err);
-              }
-              setStep("live_chat");
-              addSystemMessage("You are now connected with an admin. You can chat below.");
+          // Always show offline message (requirement: always use predefined offline message)
+          addBotMessageWithTyping(t.offlineMessage, undefined, () => {
+            // Then show appointment booking
+            addBotMessageWithTyping(t.appointmentIntro, getDayOptions(), () => {
+              setStep("appointment_day");
             });
-          } else {
-            setStep("admin_offline");
-            addBotMessageWithTyping(t.agentsBusy, undefined, () => {
-              // After message is shown, wait ADMIN_OFFLINE_DISPLAY seconds then reset
-              setTimeout(() => resetToLanguage(), ADMIN_OFFLINE_DISPLAY);
-            });
-          }
+          });
         }
+        break;
+      }
+
+      case "appointment_day": {
+        if (optionKey === "cancel_booking") {
+          addUserMessage(t.cancelBtn);
+          addBotMessageWithTyping(t.bookingCancelled, undefined, () => {
+            setTimeout(() => resetToLanguage(), 800);
+          });
+          return;
+        }
+        const dayIndex = parseInt(optionKey.replace("day_", ""));
+        const date = addDays(new Date(), dayIndex);
+        const dayName = format(date, "EEEE");
+        const dateStr = format(date, "dd MMM yyyy");
+        addUserMessage(`📅 ${dayName}, ${dateStr}`);
+        setSelectedDay({ dayName, date });
+        setStep("appointment_time");
+        addBotMessageWithTyping(t.selectTime, getTimeOptions());
+        break;
+      }
+
+      case "appointment_time": {
+        if (optionKey === "cancel_booking") {
+          addUserMessage(t.cancelBtn);
+          addBotMessageWithTyping(t.bookingCancelled, undefined, () => {
+            setTimeout(() => resetToLanguage(), 800);
+          });
+          return;
+        }
+        const hour = parseInt(optionKey.replace("time_", ""));
+        const startTime = `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? "PM" : "AM"}`;
+        const endHour = hour + 1;
+        const endTime = `${endHour > 12 ? endHour - 12 : endHour}:00 ${endHour >= 12 ? "PM" : "AM"}`;
+        const timeSlot = `${startTime} - ${endTime}`;
+        addUserMessage(`🕐 ${timeSlot}`);
+
+        if (!selectedDay) return;
+        const dayName = selectedDay.dayName;
+        const dateStr = format(selectedDay.date, "dd MMMM yyyy");
+
+        // Save appointment to DB
+        if (requestId && profile?.id) {
+          supabase.from("upgrade_appointments").insert({
+            upgrade_request_id: requestId,
+            profile_id: profile.id,
+            appointment_date: format(selectedDay.date, "yyyy-MM-dd"),
+            time_slot: timeSlot,
+            status: "booked",
+          }).then();
+        }
+
+        setStep("appointment_booked");
+        addBotMessageWithTyping(t.bookingConfirmed(dayName, dateStr, timeSlot), undefined, () => {
+          // Start monitoring appointment time (client-side)
+          // For demo: send reminder after 30 seconds instead of actual time
+          const timer = setTimeout(() => {
+            setStep("appointment_active");
+            addBotMessageWithTyping(t.appointmentReminder, undefined, () => {
+              // 5 minute auto-cancel timer
+              const cancelTimer = setTimeout(() => {
+                addBotMessageWithTyping(t.appointmentAutoCancel, undefined, () => {
+                  // Update appointment status
+                  if (requestId && profile?.id) {
+                    supabase.from("upgrade_appointments")
+                      .update({ status: "cancelled" })
+                      .eq("upgrade_request_id", requestId)
+                      .eq("profile_id", profile.id)
+                      .eq("status", "booked")
+                      .then();
+                  }
+                  setTimeout(() => resetToLanguage(), 2000);
+                });
+              }, 5 * 60 * 1000); // 5 minutes
+              setAppointmentTimerId(cancelTimer);
+            });
+          }, 30000); // 30s demo delay — in production match actual appointment time
+          setAppointmentTimerId(timer);
+        });
         break;
       }
 
       default:
         break;
     }
-  }, [lang, step, request, requestedWallet, profile, addBotMessageWithTyping, addUserMessage, addSystemMessage, resetToLanguage, checkAdminOnline, sendMessage, requestId]);
+  }, [lang, step, request, requestedWallet, profile, addBotMessageWithTyping, addUserMessage, resetToLanguage, getDayOptions, getTimeOptions, selectedDay, requestId, answeredMessages, markMessageAnswered, sendMessage]);
 
-  // Filter realtime messages to only show admin's manual messages (exclude bot-persisted messages from employee)
+  // Check if employee sends message during appointment_active to confirm
+  useEffect(() => {
+    if (step !== "appointment_active") return;
+    const employeeMessages = realtimeMessages.filter(msg =>
+      msg.sender_id === profile?.id &&
+      !msg.content.startsWith(BOT_PREFIX) &&
+      !msg.content.startsWith(SYSTEM_PREFIX)
+    );
+    // If there are new messages after appointment_active step started
+    if (employeeMessages.length > 0) {
+      const latestMsg = employeeMessages[employeeMessages.length - 1];
+      const msgTime = new Date(latestMsg.created_at).getTime();
+      const now = Date.now();
+      // If message was sent recently (within last 30s), confirm appointment
+      if (now - msgTime < 30000) {
+        if (appointmentTimerId) {
+          clearTimeout(appointmentTimerId);
+          setAppointmentTimerId(null);
+        }
+        const t = translations[lang];
+        addBotMessageWithTyping(t.appointmentConfirmedMsg);
+        if (requestId && profile?.id) {
+          supabase.from("upgrade_appointments")
+            .update({ status: "confirmed" })
+            .eq("upgrade_request_id", requestId)
+            .eq("profile_id", profile.id)
+            .eq("status", "booked")
+            .then();
+        }
+        setStep("live_chat");
+      }
+    }
+  }, [realtimeMessages, step, profile?.id, appointmentTimerId, lang, addBotMessageWithTyping, requestId]);
+
+  // Admin manual messages (exclude bot/system)
   const adminManualMessages = realtimeMessages.filter(msg => {
-    // Show messages from admin (not from employee) that are NOT bot/system prefixed
     if (msg.sender_id === profile?.id) return false;
     if (msg.content.startsWith(BOT_PREFIX) || msg.content.startsWith(SYSTEM_PREFIX)) return false;
     return true;
   });
 
-  // Live chat send
+  // Employee real-time messages
+  const employeeRtMessages = realtimeMessages.filter(msg => {
+    if (msg.content.startsWith(BOT_PREFIX) || msg.content.startsWith(SYSTEM_PREFIX)) return false;
+    return msg.sender_id === profile?.id;
+  });
+
+  // Live chat input
   const [liveChatInput, setLiveChatInput] = useState("");
   const liveChatTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const typingBroadcastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const el = liveChatTextareaRef.current;
@@ -507,12 +462,20 @@ const UpgradeChat = () => {
     el.style.height = Math.min(el.scrollHeight, 160) + "px";
   }, [liveChatInput]);
 
+  const handleInputChange = (val: string) => {
+    setLiveChatInput(val);
+    broadcastTyping(true);
+    if (typingBroadcastRef.current) clearTimeout(typingBroadcastRef.current);
+    typingBroadcastRef.current = setTimeout(() => broadcastTyping(false), 2000);
+  };
+
   const handleLiveSend = async () => {
     const content = liveChatInput.trim();
     if (!content) return;
     try {
       await sendMessage(content);
       setLiveChatInput("");
+      broadcastTyping(false);
       if (liveChatTextareaRef.current) liveChatTextareaRef.current.style.height = "auto";
     } catch (e: any) {
       toast.error(e.message);
@@ -544,16 +507,23 @@ const UpgradeChat = () => {
       <div className="relative overflow-hidden border-b bg-gradient-to-r from-primary/5 via-primary/10 to-accent/5">
         <div className="absolute inset-0 backdrop-blur-xl" />
         <div className="relative flex items-center gap-3 px-4 py-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="h-9 w-9 rounded-xl hover:bg-background/60"
-          >
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="h-9 w-9 rounded-xl hover:bg-background/60">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
-            <h2 className="text-sm font-bold text-foreground">Wallet Upgrade</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-bold text-foreground">Wallet Upgrade</h2>
+              {/* Admin online/offline indicator */}
+              <div className="flex items-center gap-1">
+                <span className={cn(
+                  "h-2 w-2 rounded-full",
+                  adminOnline ? "bg-green-500 animate-pulse" : "bg-muted-foreground/40"
+                )} />
+                <span className="text-[10px] text-muted-foreground">
+                  {adminOnline ? "Online" : "Offline"}
+                </span>
+              </div>
+            </div>
             <span className="text-[11px] font-medium text-primary/80">
               {request.current_wallet_type} → {request.requested_wallet_type}
             </span>
@@ -566,101 +536,114 @@ const UpgradeChat = () => {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 relative">
+      <ScrollArea className="flex-1 relative" ref={scrollAreaRef}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--primary)/0.02)_0%,transparent_70%)]" />
         <div className="relative px-4 py-3 space-y-3">
-          {/* Bot conversation */}
+          {/* Bot messages */}
           {botMessages.map((msg) => {
             if (msg.type === "system") {
               return (
                 <div key={msg.id} className="flex justify-center">
                   <div className="rounded-full bg-muted px-4 py-1.5">
                     <p className="text-[11px] text-muted-foreground text-center">{msg.content}</p>
+                    <p className="text-[9px] text-muted-foreground/60 text-center mt-0.5">{formatFullTimestamp(msg.timestamp)}</p>
                   </div>
                 </div>
               );
             }
 
             const isUser = msg.type === "user";
+            const isAnswered = answeredMessages.has(msg.id);
+
             return (
               <div key={msg.id}>
                 <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
-                  <div
-                    className={cn(
-                      "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm",
-                      isUser
-                        ? "bg-primary text-primary-foreground rounded-br-md"
-                        : "bg-muted text-foreground rounded-bl-md"
-                    )}
-                  >
-                    {!isUser && (
-                      <p className="text-[10px] font-semibold text-primary mb-1">🤖 FlexPay Bot</p>
-                    )}
-                    <p className="whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
-                    <p className={cn("text-[10px] mt-1", isUser ? "text-primary-foreground/60" : "text-muted-foreground")}>
-                      {format(msg.timestamp, "hh:mm a")}
-                    </p>
+                  <div className={cn(
+                    "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm",
+                    isUser
+                      ? "bg-primary text-primary-foreground rounded-br-md"
+                      : "bg-muted text-foreground rounded-bl-md"
+                  )}>
+                    {!isUser && <p className="text-[10px] font-semibold text-primary mb-1">🤖 FlexPay Bot</p>}
+                    {msg.content && <p className="whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>}
+                    <div className={cn("flex items-center gap-1 mt-1", isUser ? "justify-end" : "")}>
+                      <p className={cn("text-[9px]", isUser ? "text-primary-foreground/50" : "text-muted-foreground/60")}>
+                        {formatFullTimestamp(msg.timestamp)}
+                      </p>
+                      <MessageStatus isOwn={isUser} isRead={true} />
+                    </div>
                   </div>
                 </div>
-                {/* Option buttons — only show on the LAST bot message with options and when not typing */}
-                {msg.options && msg.options.length > 0 && !isTyping && (
+
+                {/* Option buttons */}
+                {msg.options && msg.options.length > 0 && (
                   <div className="mt-2 ml-2 space-y-1.5">
-                    {msg.options.map((opt) => (
-                      <button
-                        key={opt.key}
-                        onClick={() => handleOptionSelect(opt.key)}
-                        className="block w-full max-w-[85%] text-left rounded-xl border border-primary/20 bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:bg-primary/5 hover:border-primary/40 hover:shadow-sm active:scale-[0.98]"
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
+                    {msg.options.map((opt) => {
+                      const isSelected = msg.selectedOption === opt.key;
+                      const isDisabled = isAnswered;
+                      return (
+                        <button
+                          key={opt.key}
+                          onClick={() => handleOptionSelect(opt.key, msg.id)}
+                          disabled={isDisabled}
+                          className={cn(
+                            "block w-full max-w-[85%] text-left rounded-xl border px-4 py-2.5 text-sm font-medium transition-all",
+                            isSelected
+                              ? "bg-primary text-primary-foreground border-primary shadow-md"
+                              : isDisabled
+                                ? "bg-muted/50 text-muted-foreground border-border/30 opacity-60 cursor-not-allowed"
+                                : "bg-background text-foreground border-primary/20 hover:bg-primary/5 hover:border-primary/40 hover:shadow-sm active:scale-[0.98]"
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
             );
           })}
 
-          {/* Typing indicator */}
+          {/* Typing indicator for bot */}
           {isTyping && <TypingAnimation />}
 
-          {/* Admin manual messages — visible at ALL steps, labeled as "Sajeer" */}
+          {/* Admin typing indicator */}
+          {isAdminTyping && !isTyping && (
+            <TypingAnimation label="Sajeer" />
+          )}
+
+          {/* Admin manual messages */}
           {adminManualMessages.map((msg) => (
             <div key={msg.id} className="flex justify-start">
               <div className="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm bg-muted text-foreground rounded-bl-md">
-                <p className="text-[10px] font-semibold text-primary mb-1">
-                  Sajeer
-                </p>
+                <p className="text-[10px] font-semibold text-primary mb-1">Sajeer</p>
                 <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                <p className="text-[10px] mt-1 text-muted-foreground">
-                  {format(new Date(msg.created_at), "hh:mm a")}
-                </p>
+                <div className="flex items-center gap-1 mt-1">
+                  <p className="text-[9px] text-muted-foreground/60">{formatFullTimestamp(new Date(msg.created_at))}</p>
+                </div>
               </div>
             </div>
           ))}
 
-          {/* Employee's own real-time messages (non-bot) — visible at ALL steps */}
-          {realtimeMessages
-            .filter(msg => {
-              if (msg.content.startsWith(BOT_PREFIX) || msg.content.startsWith(SYSTEM_PREFIX)) return false;
-              if (msg.sender_id === profile?.id) return true;
-              return false;
-            })
-            .map((msg) => (
-              <div key={`rt-${msg.id}`} className="flex justify-end">
-                <div className="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm bg-primary text-primary-foreground rounded-br-md">
-                  <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                  <p className="text-[10px] mt-1 text-primary-foreground/60">
-                    {format(new Date(msg.created_at), "hh:mm a")}
-                  </p>
+          {/* Employee real-time messages */}
+          {employeeRtMessages.map((msg) => (
+            <div key={`rt-${msg.id}`} className="flex justify-end">
+              <div className="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm bg-primary text-primary-foreground rounded-br-md">
+                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                <div className="flex items-center gap-1 mt-1 justify-end">
+                  <p className="text-[9px] text-primary-foreground/50">{formatFullTimestamp(new Date(msg.created_at))}</p>
+                  <MessageStatus isOwn={true} isRead={msg.is_read} />
                 </div>
               </div>
-            ))}
+            </div>
+          ))}
 
           <div ref={bottomRef} />
         </div>
       </ScrollArea>
 
-      {/* Input - available at ALL steps for employee manual messaging */}
+      {/* Input */}
       <div className="border-t bg-gradient-to-t from-background to-background/80">
         <div className="flex items-end gap-2 px-4 py-3">
           <div className="flex-1">
@@ -668,7 +651,7 @@ const UpgradeChat = () => {
               ref={liveChatTextareaRef}
               placeholder="Type your message..."
               value={liveChatInput}
-              onChange={(e) => setLiveChatInput(e.target.value)}
+              onChange={(e) => handleInputChange(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();

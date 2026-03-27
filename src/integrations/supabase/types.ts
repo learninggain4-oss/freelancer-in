@@ -2240,6 +2240,54 @@ export type Database = {
         }
         Relationships: []
       }
+      upgrade_appointments: {
+        Row: {
+          appointment_date: string
+          created_at: string
+          id: string
+          profile_id: string
+          status: string
+          time_slot: string
+          updated_at: string
+          upgrade_request_id: string
+        }
+        Insert: {
+          appointment_date: string
+          created_at?: string
+          id?: string
+          profile_id: string
+          status?: string
+          time_slot: string
+          updated_at?: string
+          upgrade_request_id: string
+        }
+        Update: {
+          appointment_date?: string
+          created_at?: string
+          id?: string
+          profile_id?: string
+          status?: string
+          time_slot?: string
+          updated_at?: string
+          upgrade_request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "upgrade_appointments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "upgrade_appointments_upgrade_request_id_fkey"
+            columns: ["upgrade_request_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_upgrade_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       upgrade_request_messages: {
         Row: {
           content: string
