@@ -325,10 +325,13 @@ const AdminUpgradeChatPanel = ({
   const [newMessage, setNewMessage] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isEmployeeTyping, setIsEmployeeTyping] = useState(false);
+  const [employeeTypingName, setEmployeeTypingName] = useState("");
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, isEmployeeTyping]);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -337,12 +340,50 @@ const AdminUpgradeChatPanel = ({
     el.style.height = Math.min(el.scrollHeight, 160) + "px";
   }, [newMessage]);
 
+  // Listen for employee typing via broadcast
+  useEffect(() => {
+    const channel = supabase
+      .channel(`upgrade-typing:${requestId}`)
+      .on("broadcast", { event: "typing" }, (payload: any) => {
+        const data = payload.payload;
+        if (data?.userId === profileId) return;
+        if (data?.isTyping) {
+          setIsEmployeeTyping(true);
+          setEmployeeTypingName(data?.userName || "Employee");
+          if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = setTimeout(() => setIsEmployeeTyping(false), 3000);
+        } else {
+          setIsEmployeeTyping(false);
+        }
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
+  }, [requestId, profileId]);
+
+  // Broadcast admin typing
+  const broadcastAdminTyping = (typing: boolean) => {
+    supabase.channel(`upgrade-typing:${requestId}`).send({
+      type: "broadcast",
+      event: "typing",
+      payload: { userId: profileId, userName: "Sajeer", isTyping: typing },
+    });
+  };
+
+  const handleInputChange = (val: string) => {
+    setNewMessage(val);
+    broadcastAdminTyping(true);
+  };
+
   const handleSend = async () => {
     const content = newMessage.trim();
     if (!content) return;
     try {
       await sendMessage(content);
       setNewMessage("");
+      broadcastAdminTyping(false);
       if (textareaRef.current) textareaRef.current.style.height = "auto";
     } catch (e: any) {
       toast.error(e.message);
@@ -422,12 +463,29 @@ const AdminUpgradeChatPanel = ({
                       )}
                       <p className="whitespace-pre-wrap break-words">{displayContent}</p>
                       <p className={cn("text-[10px] mt-1", isMine && !isBotMsg ? "text-primary-foreground/60" : "text-muted-foreground")}>
-                        {format(new Date(msg.created_at), "hh:mm a")}
+                        {format(new Date(msg.created_at), "EEEE, dd MMM yyyy — hh:mm a")}
                       </p>
                     </div>
                   </div>
                 );
               })}
+
+              {/* Employee typing indicator */}
+              {isEmployeeTyping && (
+                <div className="flex justify-start">
+                  <div className="rounded-2xl px-4 py-2 bg-muted text-foreground rounded-bl-md">
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex gap-1">
+                        <span className="h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:0ms]" />
+                        <span className="h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:200ms]" />
+                        <span className="h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:400ms]" />
+                      </div>
+                      <span className="text-xs text-muted-foreground">{employeeTypingName} is typing...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div ref={bottomRef} />
             </div>
           )}
@@ -442,7 +500,7 @@ const AdminUpgradeChatPanel = ({
               ref={textareaRef}
               placeholder="Type your message..."
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              onChange={(e) => handleInputChange(e.target.value)}
               rows={2}
               className="min-h-[56px] max-h-[160px] resize-none rounded-xl border-border/60 bg-muted/30 text-sm"
             />
