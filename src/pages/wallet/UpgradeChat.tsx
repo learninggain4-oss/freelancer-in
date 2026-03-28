@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Globe, Loader2, Check, CheckCheck } from "lucide-react";
+import { ArrowLeft, Send, Globe, Loader2, Check, CheckCheck, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useUpgradeChat } from "@/hooks/use-upgrade-chat";
@@ -80,6 +80,10 @@ const UpgradeChat = () => {
   const [answeredMessages, setAnsweredMessages] = useState<Set<string>>(new Set());
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingMessageRef = useRef<{ content: string; options?: { key: string; label: string }[]; callback?: () => void } | null>(null);
+  const [hasNewMessage, setHasNewMessage] = useState(false);
+  const isInitializedRef = useRef(false);
+  // Track processed message IDs to prevent duplicates
+  const processedOptionsRef = useRef<Set<string>>(new Set());
 
   // Appointment state
   const [selectedDay, setSelectedDay] = useState<{ dayName: string; date: Date } | null>(null);
@@ -174,37 +178,37 @@ const UpgradeChat = () => {
     };
   }, [appointmentTimerId]);
 
-  // Initialize
+  // Initialize only once
   useEffect(() => {
-    if (botMessages.length === 0 && !isTyping) {
+    if (!isInitializedRef.current && botMessages.length === 0 && !isTyping) {
+      isInitializedRef.current = true;
       const t = translations.en;
       addBotMessageWithTyping(t.selectLanguage, t.langOptions);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-scroll
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 50);
-    return () => clearTimeout(timer);
-  }, [botMessages, realtimeMessages, isTyping, isAdminTyping]);
+  // NO auto-scroll — removed per requirement
 
-  const resetToLanguage = useCallback(() => {
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    if (appointmentTimerId) clearTimeout(appointmentTimerId);
-    setIsTyping(false);
-    pendingMessageRef.current = null;
-    setBotMessages([]);
-    setAnsweredMessages(new Set());
-    setStep("language");
-    setSelectedDay(null);
-    setTimeout(() => {
-      const t = translations.en;
-      addBotMessageWithTyping(t.selectLanguage, t.langOptions);
-    }, 300);
-  }, [addBotMessageWithTyping, appointmentTimerId]);
+  // Show "New Message" indicator when admin sends messages
+  const prevAdminMsgCountRef = useRef(0);
+  const adminManualMessages = realtimeMessages.filter(msg => {
+    if (msg.sender_id === profile?.id) return false;
+    if (msg.content.startsWith(BOT_PREFIX) || msg.content.startsWith(SYSTEM_PREFIX)) return false;
+    return true;
+  });
+
+  useEffect(() => {
+    if (adminManualMessages.length > prevAdminMsgCountRef.current) {
+      setHasNewMessage(true);
+    }
+    prevAdminMsgCountRef.current = adminManualMessages.length;
+  }, [adminManualMessages.length]);
+
+  const scrollToBottom = useCallback(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    setHasNewMessage(false);
+  }, []);
 
   // Generate day options for next 7 days
   const getDayOptions = useCallback(() => {
@@ -242,7 +246,12 @@ const UpgradeChat = () => {
   }, []);
 
   const handleOptionSelect = useCallback(async (optionKey: string, messageId: string) => {
-    if (answeredMessages.has(messageId)) return; // prevent double-click
+    // Prevent duplicate processing
+    if (answeredMessages.has(messageId)) return;
+    const processKey = `${messageId}:${optionKey}`;
+    if (processedOptionsRef.current.has(processKey)) return;
+    processedOptionsRef.current.add(processKey);
+
     markMessageAnswered(messageId, optionKey);
 
     const t = translations[lang];
@@ -263,7 +272,7 @@ const UpgradeChat = () => {
         const selectedLabel = t.confirmOptions.find(o => o.key === optionKey)?.label || optionKey;
         addUserMessage(selectedLabel);
         if (optionKey === "no" || optionKey === "change_lang") {
-          setTimeout(() => resetToLanguage(), 800);
+          // Do NOT auto-reset. Just stay.
         } else if (optionKey === "yes") {
           setStep("details");
           if (!request || !requestedWallet) {
@@ -287,7 +296,7 @@ const UpgradeChat = () => {
         const selectedLabel = t.payOptions(price).find(o => o.key === optionKey)?.label || optionKey;
         addUserMessage(selectedLabel);
         if (optionKey === "cancel") {
-          setTimeout(() => resetToLanguage(), 800);
+          // Do NOT auto-reset
         } else if (optionKey === "pay") {
           setStep("waiting");
           // Notify admin
@@ -308,7 +317,7 @@ const UpgradeChat = () => {
             }
           } catch {}
 
-          // Always show offline message (requirement: always use predefined offline message)
+          // Always show offline message
           addBotMessageWithTyping(t.offlineMessage, undefined, () => {
             // Then show appointment booking
             addBotMessageWithTyping(t.appointmentIntro, getDayOptions(), () => {
@@ -322,9 +331,7 @@ const UpgradeChat = () => {
       case "appointment_day": {
         if (optionKey === "cancel_booking") {
           addUserMessage(t.cancelBtn);
-          addBotMessageWithTyping(t.bookingCancelled, undefined, () => {
-            setTimeout(() => resetToLanguage(), 800);
-          });
+          addBotMessageWithTyping(t.bookingCancelled);
           return;
         }
         const dayIndex = parseInt(optionKey.replace("day_", ""));
@@ -341,9 +348,7 @@ const UpgradeChat = () => {
       case "appointment_time": {
         if (optionKey === "cancel_booking") {
           addUserMessage(t.cancelBtn);
-          addBotMessageWithTyping(t.bookingCancelled, undefined, () => {
-            setTimeout(() => resetToLanguage(), 800);
-          });
+          addBotMessageWithTyping(t.bookingCancelled);
           return;
         }
         const hour = parseInt(optionKey.replace("time_", ""));
@@ -371,14 +376,12 @@ const UpgradeChat = () => {
         setStep("appointment_booked");
         addBotMessageWithTyping(t.bookingConfirmed(dayName, dateStr, timeSlot), undefined, () => {
           // Start monitoring appointment time (client-side)
-          // For demo: send reminder after 30 seconds instead of actual time
           const timer = setTimeout(() => {
             setStep("appointment_active");
             addBotMessageWithTyping(t.appointmentReminder, undefined, () => {
               // 5 minute auto-cancel timer
               const cancelTimer = setTimeout(() => {
                 addBotMessageWithTyping(t.appointmentAutoCancel, undefined, () => {
-                  // Update appointment status
                   if (requestId && profile?.id) {
                     supabase.from("upgrade_appointments")
                       .update({ status: "cancelled" })
@@ -387,12 +390,11 @@ const UpgradeChat = () => {
                       .eq("status", "booked")
                       .then();
                   }
-                  setTimeout(() => resetToLanguage(), 2000);
                 });
               }, 5 * 60 * 1000); // 5 minutes
               setAppointmentTimerId(cancelTimer);
             });
-          }, 30000); // 30s demo delay — in production match actual appointment time
+          }, 30000); // 30s demo delay
           setAppointmentTimerId(timer);
         });
         break;
@@ -401,7 +403,7 @@ const UpgradeChat = () => {
       default:
         break;
     }
-  }, [lang, step, request, requestedWallet, profile, addBotMessageWithTyping, addUserMessage, resetToLanguage, getDayOptions, getTimeOptions, selectedDay, requestId, answeredMessages, markMessageAnswered, sendMessage]);
+  }, [lang, step, request, requestedWallet, profile, addBotMessageWithTyping, addUserMessage, getDayOptions, getTimeOptions, selectedDay, requestId, answeredMessages, markMessageAnswered]);
 
   // Check if employee sends message during appointment_active to confirm
   useEffect(() => {
@@ -411,12 +413,10 @@ const UpgradeChat = () => {
       !msg.content.startsWith(BOT_PREFIX) &&
       !msg.content.startsWith(SYSTEM_PREFIX)
     );
-    // If there are new messages after appointment_active step started
     if (employeeMessages.length > 0) {
       const latestMsg = employeeMessages[employeeMessages.length - 1];
       const msgTime = new Date(latestMsg.created_at).getTime();
       const now = Date.now();
-      // If message was sent recently (within last 30s), confirm appointment
       if (now - msgTime < 30000) {
         if (appointmentTimerId) {
           clearTimeout(appointmentTimerId);
@@ -437,18 +437,16 @@ const UpgradeChat = () => {
     }
   }, [realtimeMessages, step, profile?.id, appointmentTimerId, lang, addBotMessageWithTyping, requestId]);
 
-  // Admin manual messages (exclude bot/system)
-  const adminManualMessages = realtimeMessages.filter(msg => {
-    if (msg.sender_id === profile?.id) return false;
-    if (msg.content.startsWith(BOT_PREFIX) || msg.content.startsWith(SYSTEM_PREFIX)) return false;
-    return true;
-  });
-
-  // Employee real-time messages
+  // Employee real-time messages (for display below bot messages in sequence)
   const employeeRtMessages = realtimeMessages.filter(msg => {
     if (msg.content.startsWith(BOT_PREFIX) || msg.content.startsWith(SYSTEM_PREFIX)) return false;
     return msg.sender_id === profile?.id;
   });
+
+  // Merge admin + employee realtime messages in chronological order for display after bot messages
+  const allRealtimeMessages = realtimeMessages
+    .filter(msg => !msg.content.startsWith(BOT_PREFIX) && !msg.content.startsWith(SYSTEM_PREFIX))
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
   // Live chat input
   const [liveChatInput, setLiveChatInput] = useState("");
@@ -513,7 +511,6 @@ const UpgradeChat = () => {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-bold text-foreground">Wallet Upgrade</h2>
-              {/* Admin online/offline indicator */}
               <div className="flex items-center gap-1">
                 <span className={cn(
                   "h-2 w-2 rounded-full",
@@ -525,7 +522,7 @@ const UpgradeChat = () => {
               </div>
             </div>
             <span className="text-[11px] font-medium text-primary/80">
-              {request.current_wallet_type} → {request.requested_wallet_type}
+              {isAdminTyping ? "Flexpay is Typing..." : `${request.current_wallet_type} → ${request.requested_wallet_type}`}
             </span>
           </div>
           <div className="flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1">
@@ -610,38 +607,51 @@ const UpgradeChat = () => {
 
           {/* Admin typing indicator */}
           {isAdminTyping && !isTyping && (
-            <TypingAnimation label="Sajeer" />
+            <TypingAnimation label="Flexpay" />
           )}
 
-          {/* Admin manual messages */}
-          {adminManualMessages.map((msg) => (
-            <div key={msg.id} className="flex justify-start">
-              <div className="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm bg-muted text-foreground rounded-bl-md">
-                <p className="text-[10px] font-semibold text-primary mb-1">Sajeer</p>
-                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <p className="text-[9px] text-muted-foreground/60">{formatFullTimestamp(new Date(msg.created_at))}</p>
+          {/* Realtime messages (admin + employee) in chronological order */}
+          {allRealtimeMessages.map((msg) => {
+            const isMine = msg.sender_id === profile?.id;
+            return (
+              <div key={`rt-${msg.id}`} className={cn("flex", isMine ? "justify-end" : "justify-start")}>
+                <div className={cn(
+                  "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm",
+                  isMine
+                    ? "bg-primary text-primary-foreground rounded-br-md"
+                    : "bg-muted text-foreground rounded-bl-md"
+                )}>
+                  {!isMine && <p className="text-[10px] font-semibold text-primary mb-1">Flexpay</p>}
+                  <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                  <div className={cn("flex items-center gap-1 mt-1", isMine ? "justify-end" : "")}>
+                    <p className={cn("text-[9px]", isMine ? "text-primary-foreground/50" : "text-muted-foreground/60")}>
+                      {formatFullTimestamp(new Date(msg.created_at))}
+                    </p>
+                    {isMine && <MessageStatus isOwn={true} isRead={msg.is_read} />}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-
-          {/* Employee real-time messages */}
-          {employeeRtMessages.map((msg) => (
-            <div key={`rt-${msg.id}`} className="flex justify-end">
-              <div className="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm bg-primary text-primary-foreground rounded-br-md">
-                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                <div className="flex items-center gap-1 mt-1 justify-end">
-                  <p className="text-[9px] text-primary-foreground/50">{formatFullTimestamp(new Date(msg.created_at))}</p>
-                  <MessageStatus isOwn={true} isRead={msg.is_read} />
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
 
           <div ref={bottomRef} />
         </div>
       </ScrollArea>
+
+      {/* New Message indicator */}
+      {hasNewMessage && (
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="rounded-full shadow-lg gap-1.5 text-xs"
+            onClick={scrollToBottom}
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+            New message
+          </Button>
+        </div>
+      )}
 
       {/* Input */}
       <div className="border-t bg-gradient-to-t from-background to-background/80">
