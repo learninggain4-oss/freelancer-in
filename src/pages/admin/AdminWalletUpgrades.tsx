@@ -368,7 +368,7 @@ const AdminUpgradeChatPanel = ({
     supabase.channel(`upgrade-typing:${requestId}`).send({
       type: "broadcast",
       event: "typing",
-      payload: { userId: profileId, userName: "Sajeer", isTyping: typing },
+      payload: { userId: profileId, userName: "Flexpay", isTyping: typing },
     });
   };
 
