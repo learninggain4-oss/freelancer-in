@@ -79,6 +79,7 @@ const AdminBanks = lazy(() => import("./pages/admin/AdminBanks"));
 const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
 const AdminWalletTypes = lazy(() => import("./pages/admin/AdminWalletTypes"));
 const AdminWalletUpgrades = lazy(() => import("./pages/admin/AdminWalletUpgrades"));
+const AdminAutoResponses = lazy(() => import("./pages/admin/AdminAutoResponses"));
 const AdminIpBlocking = lazy(() => import("./pages/admin/AdminIpBlocking"));
 const AdminPwaInstalls = lazy(() => import("./pages/admin/AdminPwaInstalls"));
 const WalletTypes = lazy(() => import("./pages/WalletTypes"));
@@ -294,6 +295,7 @@ const AppContent = () => {
               <Route path="reviews" element={<AdminReviews />} />
               <Route path="wallet-types" element={<AdminWalletTypes />} />
               <Route path="wallet-upgrades" element={<AdminWalletUpgrades />} />
+              <Route path="auto-responses" element={<AdminAutoResponses />} />
               <Route path="ip-blocking" element={<AdminIpBlocking />} />
               <Route path="pwa-installs" element={<AdminPwaInstalls />} />
             </Route>

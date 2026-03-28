@@ -2288,6 +2288,54 @@ export type Database = {
           },
         ]
       }
+      upgrade_auto_responses: {
+        Row: {
+          buttons: Json | null
+          created_at: string
+          display_order: number
+          id: string
+          is_enabled: boolean
+          language: string
+          message_text: string
+          step_key: string
+          trigger_type: string
+          trigger_value: string | null
+          typing_duration_seconds: number
+          typing_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          buttons?: Json | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_enabled?: boolean
+          language?: string
+          message_text?: string
+          step_key: string
+          trigger_type?: string
+          trigger_value?: string | null
+          typing_duration_seconds?: number
+          typing_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          buttons?: Json | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_enabled?: boolean
+          language?: string
+          message_text?: string
+          step_key?: string
+          trigger_type?: string
+          trigger_value?: string | null
+          typing_duration_seconds?: number
+          typing_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       upgrade_request_messages: {
         Row: {
           content: string
