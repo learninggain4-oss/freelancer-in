@@ -109,6 +109,20 @@ const UpgradeChat = () => {
     },
   });
 
+  // Fetch time slots from DB
+  const { data: dbTimeSlots = [] } = useQuery({
+    queryKey: ["upgrade-chat-time-slots"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("upgrade_chat_time_slots")
+        .select("*")
+        .eq("is_enabled", true)
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Helper to get DB message by step key and language
   const getDbMessage = useCallback((stepKey: string, language: string) => {
     const key = `${stepKey}_${language}`;
@@ -261,19 +275,26 @@ const UpgradeChat = () => {
     return options;
   }, [lang]);
 
-  // Generate time slot options
+  // Generate time slot options from DB
   const getTimeOptions = useCallback(() => {
     const t = translations[lang];
     const options: { key: string; label: string }[] = [];
-    for (let hour = 9; hour < 18; hour++) {
-      const startTime = `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? "PM" : "AM"}`;
-      const endHour = hour + 1;
-      const endTime = `${endHour > 12 ? endHour - 12 : endHour}:00 ${endHour >= 12 ? "PM" : "AM"}`;
-      options.push({ key: `time_${hour}`, label: `🕐 ${startTime} - ${endTime}` });
+    if (dbTimeSlots.length > 0) {
+      for (const slot of dbTimeSlots) {
+        options.push({ key: `time_${slot.start_hour}`, label: slot.label });
+      }
+    } else {
+      // Fallback to hardcoded if DB is empty
+      for (let hour = 9; hour < 18; hour++) {
+        const startTime = `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? "PM" : "AM"}`;
+        const endHour = hour + 1;
+        const endTime = `${endHour > 12 ? endHour - 12 : endHour}:00 ${endHour >= 12 ? "PM" : "AM"}`;
+        options.push({ key: `time_${hour}`, label: `🕐 ${startTime} - ${endTime}` });
+      }
     }
     options.push({ key: "cancel_booking", label: t.cancelBtn });
     return options;
-  }, [lang]);
+  }, [lang, dbTimeSlots]);
 
   const markMessageAnswered = useCallback((messageId: string, optionKey: string) => {
     setAnsweredMessages(prev => new Set(prev).add(messageId));
@@ -429,10 +450,17 @@ const UpgradeChat = () => {
           return;
         }
         const hour = parseInt(optionKey.replace("time_", ""));
-        const startTime = `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? "PM" : "AM"}`;
-        const endHour = hour + 1;
-        const endTime = `${endHour > 12 ? endHour - 12 : endHour}:00 ${endHour >= 12 ? "PM" : "AM"}`;
-        const timeSlot = `${startTime} - ${endTime}`;
+        // Try to find label from DB slots, fallback to computed
+        const dbSlot = dbTimeSlots.find((s: any) => s.start_hour === hour);
+        let timeSlot: string;
+        if (dbSlot) {
+          timeSlot = dbSlot.label.replace(/^🕐\s*/, "");
+        } else {
+          const startTime = `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? "PM" : "AM"}`;
+          const endHour = hour + 1;
+          const endTime = `${endHour > 12 ? endHour - 12 : endHour}:00 ${endHour >= 12 ? "PM" : "AM"}`;
+          timeSlot = `${startTime} - ${endTime}`;
+        }
         addUserMessage(`🕐 ${timeSlot}`);
 
         if (!selectedDay) return;
