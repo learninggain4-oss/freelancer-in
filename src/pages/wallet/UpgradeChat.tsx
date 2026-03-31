@@ -119,7 +119,7 @@ const UpgradeChat = () => {
   const replaceTemplateVars = useCallback((text: string, vars: Record<string, string>) => {
     let result = text;
     for (const [key, value] of Object.entries(vars)) {
-      result = result.replaceAll(`{{${key}}}`, value);
+      result = result.split(`{{${key}}}`).join(value);
     }
     return result;
   }, []);
