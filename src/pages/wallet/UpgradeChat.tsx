@@ -296,17 +296,26 @@ const UpgradeChat = () => {
     switch (step) {
       case "language": {
         const selectedLang = optionKey as Lang;
-        const langLabel = translations.en.langOptions.find(o => o.key === optionKey)?.label || optionKey;
+        const dbLang = getDbMessage("language", "en");
+        const langLabel = dbLang?.buttons?.find((b: any) => b.key === optionKey)?.label
+          || translations.en.langOptions.find(o => o.key === optionKey)?.label || optionKey;
         addUserMessage(langLabel);
         setLang(selectedLang);
-        const newT = translations[selectedLang];
         setStep("confirm");
-        addBotMessageWithTyping(newT.confirmChange, newT.confirmOptions);
+        const dbConfirm = getDbMessage("confirm", selectedLang);
+        if (dbConfirm) {
+          addBotMessageWithTyping(dbConfirm.message_text, dbConfirm.buttons.filter((b: any) => b.is_enabled !== false));
+        } else {
+          const newT = translations[selectedLang];
+          addBotMessageWithTyping(newT.confirmChange, newT.confirmOptions);
+        }
         break;
       }
 
       case "confirm": {
-        const selectedLabel = t.confirmOptions.find(o => o.key === optionKey)?.label || optionKey;
+        const dbConfirm = getDbMessage("confirm", lang);
+        const selectedLabel = dbConfirm?.buttons?.find((b: any) => b.key === optionKey)?.label
+          || t.confirmOptions.find(o => o.key === optionKey)?.label || optionKey;
         addUserMessage(selectedLabel);
         if (optionKey === "no" || optionKey === "change_lang") {
           // Do NOT auto-reset. Just stay.
@@ -319,10 +328,31 @@ const UpgradeChat = () => {
           const employeeName = profile?.full_name?.join(" ") || "Employee";
           const price = requestedWallet.wallet_price || "N/A";
           const features = (requestedWallet.perks as string[]) || [];
-          const msg = t.upgradeMsg(employeeName, request.current_wallet_type, request.requested_wallet_type, price, features);
-          addBotMessageWithTyping(msg, undefined, () => {
+          const dbDetails = getDbMessage("details", lang);
+          let detailsMsg: string;
+          if (dbDetails) {
+            detailsMsg = replaceTemplateVars(dbDetails.message_text, {
+              employee_name: employeeName,
+              current_wallet: request.current_wallet_type,
+              requested_wallet: request.requested_wallet_type,
+              price: String(price),
+              features: features.map(f => `  • ${f}`).join("\n"),
+            });
+          } else {
+            detailsMsg = t.upgradeMsg(employeeName, request.current_wallet_type, request.requested_wallet_type, price, features);
+          }
+          addBotMessageWithTyping(detailsMsg, undefined, () => {
             setStep("payment");
-            addBotMessageWithTyping("", t.payOptions(price));
+            const dbPayment = getDbMessage("payment", lang);
+            if (dbPayment) {
+              const payBtns = dbPayment.buttons.filter((b: any) => b.is_enabled !== false).map((b: any) => ({
+                ...b,
+                label: replaceTemplateVars(b.label, { price: String(price) }),
+              }));
+              addBotMessageWithTyping(dbPayment.message_text, payBtns);
+            } else {
+              addBotMessageWithTyping("", t.payOptions(price));
+            }
           });
         }
         break;
@@ -330,7 +360,10 @@ const UpgradeChat = () => {
 
       case "payment": {
         const price = requestedWallet?.wallet_price || "N/A";
-        const selectedLabel = t.payOptions(price).find(o => o.key === optionKey)?.label || optionKey;
+        const dbPayment = getDbMessage("payment", lang);
+        const selectedLabel = dbPayment?.buttons?.find((b: any) => b.key === optionKey)?.label
+          ? replaceTemplateVars(dbPayment.buttons.find((b: any) => b.key === optionKey)!.label, { price: String(price) })
+          : t.payOptions(price).find(o => o.key === optionKey)?.label || optionKey;
         addUserMessage(selectedLabel);
         if (optionKey === "cancel") {
           // Do NOT auto-reset
@@ -354,10 +387,14 @@ const UpgradeChat = () => {
             }
           } catch {}
 
-          // Always show offline message
-          addBotMessageWithTyping(t.offlineMessage, undefined, () => {
+          // Always show offline message from DB or fallback
+          const dbOffline = getDbMessage("offline_message", lang);
+          const offlineMsg = dbOffline?.message_text || t.offlineMessage;
+          addBotMessageWithTyping(offlineMsg, undefined, () => {
             // Then show appointment booking
-            addBotMessageWithTyping(t.appointmentIntro, getDayOptions(), () => {
+            const dbApptIntro = getDbMessage("appointment_intro", lang);
+            const apptMsg = dbApptIntro?.message_text || t.appointmentIntro;
+            addBotMessageWithTyping(apptMsg, getDayOptions(), () => {
               setStep("appointment_day");
             });
           });
@@ -368,7 +405,8 @@ const UpgradeChat = () => {
       case "appointment_day": {
         if (optionKey === "cancel_booking") {
           addUserMessage(t.cancelBtn);
-          addBotMessageWithTyping(t.bookingCancelled);
+          const dbCancelled = getDbMessage("booking_cancelled", lang);
+          addBotMessageWithTyping(dbCancelled?.message_text || t.bookingCancelled);
           return;
         }
         const dayIndex = parseInt(optionKey.replace("day_", ""));
@@ -378,14 +416,16 @@ const UpgradeChat = () => {
         addUserMessage(`📅 ${dayName}, ${dateStr}`);
         setSelectedDay({ dayName, date });
         setStep("appointment_time");
-        addBotMessageWithTyping(t.selectTime, getTimeOptions());
+        const dbTime = getDbMessage("select_time", lang);
+        addBotMessageWithTyping(dbTime?.message_text || t.selectTime, getTimeOptions());
         break;
       }
 
       case "appointment_time": {
         if (optionKey === "cancel_booking") {
           addUserMessage(t.cancelBtn);
-          addBotMessageWithTyping(t.bookingCancelled);
+          const dbCancelled = getDbMessage("booking_cancelled", lang);
+          addBotMessageWithTyping(dbCancelled?.message_text || t.bookingCancelled);
           return;
         }
         const hour = parseInt(optionKey.replace("time_", ""));
@@ -411,14 +451,20 @@ const UpgradeChat = () => {
         }
 
         setStep("appointment_booked");
-        addBotMessageWithTyping(t.bookingConfirmed(dayName, dateStr, timeSlot), undefined, () => {
+        const dbBooked = getDbMessage("booking_confirmed", lang);
+        const bookedMsg = dbBooked
+          ? replaceTemplateVars(dbBooked.message_text, { day: dayName, date: dateStr, time: timeSlot })
+          : t.bookingConfirmed(dayName, dateStr, timeSlot);
+        addBotMessageWithTyping(bookedMsg, undefined, () => {
           // Start monitoring appointment time (client-side)
           const timer = setTimeout(() => {
             setStep("appointment_active");
-            addBotMessageWithTyping(t.appointmentReminder, undefined, () => {
+            const dbReminder = getDbMessage("appointment_reminder", lang);
+            addBotMessageWithTyping(dbReminder?.message_text || t.appointmentReminder, undefined, () => {
               // 5 minute auto-cancel timer
               const cancelTimer = setTimeout(() => {
-                addBotMessageWithTyping(t.appointmentAutoCancel, undefined, () => {
+                const dbAutoCancel = getDbMessage("appointment_auto_cancel", lang);
+                addBotMessageWithTyping(dbAutoCancel?.message_text || t.appointmentAutoCancel, undefined, () => {
                   if (requestId && profile?.id) {
                     supabase.from("upgrade_appointments")
                       .update({ status: "cancelled" })
