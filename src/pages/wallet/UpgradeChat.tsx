@@ -506,7 +506,8 @@ const UpgradeChat = () => {
           setAppointmentTimerId(null);
         }
         const t = translations[lang];
-        addBotMessageWithTyping(t.appointmentConfirmedMsg);
+        const dbConfirmedAppt = getDbMessage("appointment_confirmed", lang);
+        addBotMessageWithTyping(dbConfirmedAppt?.message_text || t.appointmentConfirmedMsg);
         if (requestId && profile?.id) {
           supabase.from("upgrade_appointments")
             .update({ status: "confirmed" })
