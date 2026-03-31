@@ -275,19 +275,26 @@ const UpgradeChat = () => {
     return options;
   }, [lang]);
 
-  // Generate time slot options
+  // Generate time slot options from DB
   const getTimeOptions = useCallback(() => {
     const t = translations[lang];
     const options: { key: string; label: string }[] = [];
-    for (let hour = 9; hour < 18; hour++) {
-      const startTime = `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? "PM" : "AM"}`;
-      const endHour = hour + 1;
-      const endTime = `${endHour > 12 ? endHour - 12 : endHour}:00 ${endHour >= 12 ? "PM" : "AM"}`;
-      options.push({ key: `time_${hour}`, label: `🕐 ${startTime} - ${endTime}` });
+    if (dbTimeSlots.length > 0) {
+      for (const slot of dbTimeSlots) {
+        options.push({ key: `time_${slot.start_hour}`, label: slot.label });
+      }
+    } else {
+      // Fallback to hardcoded if DB is empty
+      for (let hour = 9; hour < 18; hour++) {
+        const startTime = `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? "PM" : "AM"}`;
+        const endHour = hour + 1;
+        const endTime = `${endHour > 12 ? endHour - 12 : endHour}:00 ${endHour >= 12 ? "PM" : "AM"}`;
+        options.push({ key: `time_${hour}`, label: `🕐 ${startTime} - ${endTime}` });
+      }
     }
     options.push({ key: "cancel_booking", label: t.cancelBtn });
     return options;
-  }, [lang]);
+  }, [lang, dbTimeSlots]);
 
   const markMessageAnswered = useCallback((messageId: string, optionKey: string) => {
     setAnsweredMessages(prev => new Set(prev).add(messageId));
