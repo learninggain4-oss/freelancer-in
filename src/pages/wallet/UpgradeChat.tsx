@@ -214,8 +214,13 @@ const UpgradeChat = () => {
   useEffect(() => {
     if (!isInitializedRef.current && botMessages.length === 0 && !isTyping) {
       isInitializedRef.current = true;
-      const t = translations.en;
-      addBotMessageWithTyping(t.selectLanguage, t.langOptions);
+      const dbMsg = getDbMessage("language", "en");
+      if (dbMsg) {
+        addBotMessageWithTyping(dbMsg.message_text, dbMsg.buttons.filter((b: any) => b.is_enabled !== false));
+      } else {
+        const t = translations.en;
+        addBotMessageWithTyping(t.selectLanguage, t.langOptions);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
