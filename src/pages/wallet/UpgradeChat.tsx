@@ -92,6 +92,38 @@ const UpgradeChat = () => {
   // Admin presence
   const { adminOnline, isAdminTyping, broadcastTyping } = useAdminPresence(requestId);
 
+  // Fetch auto-responses from DB
+  const { data: autoResponses = [] } = useQuery({
+    queryKey: ["upgrade-auto-responses"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("upgrade_auto_responses")
+        .select("*")
+        .eq("is_enabled", true)
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return (data || []).map((r: any) => ({
+        ...r,
+        buttons: Array.isArray(r.buttons) ? r.buttons : [],
+      }));
+    },
+  });
+
+  // Helper to get DB message by step key and language
+  const getDbMessage = useCallback((stepKey: string, language: string) => {
+    const key = `${stepKey}_${language}`;
+    return autoResponses.find((r: any) => r.step_key === key) || null;
+  }, [autoResponses]);
+
+  // Helper to replace template placeholders
+  const replaceTemplateVars = useCallback((text: string, vars: Record<string, string>) => {
+    let result = text;
+    for (const [key, value] of Object.entries(vars)) {
+      result = result.replaceAll(`{{${key}}}`, value);
+    }
+    return result;
+  }, []);
+
   // Fetch upgrade request
   const { data: request, isLoading: loadingRequest } = useQuery({
     queryKey: ["upgrade-request-detail", requestId],
