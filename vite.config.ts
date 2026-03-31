@@ -1,20 +1,19 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
-    port: 8080,
+    host: "0.0.0.0",
+    port: 5000,
+    allowedHosts: true,
     hmr: {
       overlay: false,
     },
   },
   plugins: [
     react(),
-    mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "pwa-icon-512.png"],
@@ -29,7 +28,7 @@ export default defineConfig(({ mode }) => ({
               cacheName: "supabase-api-cache",
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 5, // 5 minutes
+                maxAgeSeconds: 60 * 5,
               },
             },
           },
