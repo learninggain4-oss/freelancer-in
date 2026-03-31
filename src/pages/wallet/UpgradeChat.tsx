@@ -109,6 +109,20 @@ const UpgradeChat = () => {
     },
   });
 
+  // Fetch time slots from DB
+  const { data: dbTimeSlots = [] } = useQuery({
+    queryKey: ["upgrade-chat-time-slots"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("upgrade_chat_time_slots")
+        .select("*")
+        .eq("is_enabled", true)
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Helper to get DB message by step key and language
   const getDbMessage = useCallback((stepKey: string, language: string) => {
     const key = `${stepKey}_${language}`;
