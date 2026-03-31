@@ -486,7 +486,7 @@ const UpgradeChat = () => {
       default:
         break;
     }
-  }, [lang, step, request, requestedWallet, profile, addBotMessageWithTyping, addUserMessage, getDayOptions, getTimeOptions, selectedDay, requestId, answeredMessages, markMessageAnswered]);
+  }, [lang, step, request, requestedWallet, profile, addBotMessageWithTyping, addUserMessage, getDayOptions, getTimeOptions, selectedDay, requestId, answeredMessages, markMessageAnswered, getDbMessage, replaceTemplateVars]);
 
   // Check if employee sends message during appointment_active to confirm
   useEffect(() => {
