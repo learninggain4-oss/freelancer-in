@@ -2336,6 +2336,45 @@ export type Database = {
         }
         Relationships: []
       }
+      upgrade_chat_time_slots: {
+        Row: {
+          created_at: string
+          display_order: number
+          end_hour: number
+          end_minute: number
+          id: string
+          is_enabled: boolean
+          label: string
+          start_hour: number
+          start_minute: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          end_hour: number
+          end_minute?: number
+          id?: string
+          is_enabled?: boolean
+          label: string
+          start_hour: number
+          start_minute?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          end_hour?: number
+          end_minute?: number
+          id?: string
+          is_enabled?: boolean
+          label?: string
+          start_hour?: number
+          start_minute?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       upgrade_request_messages: {
         Row: {
           content: string
