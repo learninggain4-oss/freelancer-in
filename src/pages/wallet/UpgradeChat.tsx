@@ -450,10 +450,17 @@ const UpgradeChat = () => {
           return;
         }
         const hour = parseInt(optionKey.replace("time_", ""));
-        const startTime = `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? "PM" : "AM"}`;
-        const endHour = hour + 1;
-        const endTime = `${endHour > 12 ? endHour - 12 : endHour}:00 ${endHour >= 12 ? "PM" : "AM"}`;
-        const timeSlot = `${startTime} - ${endTime}`;
+        // Try to find label from DB slots, fallback to computed
+        const dbSlot = dbTimeSlots.find((s: any) => s.start_hour === hour);
+        let timeSlot: string;
+        if (dbSlot) {
+          timeSlot = dbSlot.label.replace(/^🕐\s*/, "");
+        } else {
+          const startTime = `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? "PM" : "AM"}`;
+          const endHour = hour + 1;
+          const endTime = `${endHour > 12 ? endHour - 12 : endHour}:00 ${endHour >= 12 ? "PM" : "AM"}`;
+          timeSlot = `${startTime} - ${endTime}`;
+        }
         addUserMessage(`🕐 ${timeSlot}`);
 
         if (!selectedDay) return;
