@@ -16,6 +16,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { ShieldCheck, CheckCircle2, XCircle, Clock, Search, Eye, User, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 type Verification = {
   id: string;
@@ -41,6 +48,8 @@ type Verification = {
 };
 
 const AdminVerifications = () => {
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
   const { profile } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -212,56 +221,95 @@ const AdminVerifications = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 p-4 min-h-screen" style={{ backgroundColor: T.bg, color: T.text }}>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between p-6 rounded-2xl border" style={{ background: `linear-gradient(135deg, ${T.card} 0%, rgba(99,102,241,0.05) 100%)`, borderColor: T.border }}>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Aadhaar Verifications</h1>
-          <p className="text-sm text-muted-foreground">Review and manage identity verification submissions</p>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="p-2 rounded-xl bg-indigo-500/20">
+              <ShieldCheck className="h-6 w-6 text-indigo-500" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight">Aadhaar Verifications</h1>
+          </div>
+          <p style={{ color: T.sub }}>Review and manage identity verification submissions</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Switch checked={showCleared} onCheckedChange={setShowCleared} id="show-cleared-aadhaar" />
-          <Label htmlFor="show-cleared-aadhaar" className="text-xs text-muted-foreground">Show cleared</Label>
+        <div className="flex items-center gap-4 bg-black/20 p-3 rounded-xl border border-white/5">
+          <div className="flex items-center gap-2">
+            <Switch checked={showCleared} onCheckedChange={setShowCleared} id="show-cleared-aadhaar" />
+            <Label htmlFor="show-cleared-aadhaar" className="text-xs cursor-pointer" style={{ color: T.sub }}>Show cleared</Label>
+          </div>
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search by name, Aadhaar, email, or code..." className="pl-9"
-          value={search} onChange={(e) => setSearch(e.target.value)} />
+      <div className="relative group">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors group-focus-within:text-indigo-500" style={{ color: T.sub }} />
+        <Input 
+          placeholder="Search by name, Aadhaar, email, or code..." 
+          className="pl-10 h-12 border-none transition-all focus-visible:ring-1 focus-visible:ring-indigo-500/50" 
+          style={{ backgroundColor: T.input, color: T.text }}
+          value={search} 
+          onChange={(e) => setSearch(e.target.value)} 
+        />
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => { setTab(v); setSelectedIds(new Set()); }}>
-        <TabsList className="w-full grid grid-cols-5">
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="under_process">Processing</TabsTrigger>
-          <TabsTrigger value="verified">Verified</TabsTrigger>
-          <TabsTrigger value="rejected">Rejected</TabsTrigger>
-          <TabsTrigger value="all">All</TabsTrigger>
+      <Tabs value={tab} onValueChange={(v) => { setTab(v); setSelectedIds(new Set()); }} className="w-full">
+        <TabsList className="w-full grid grid-cols-5 h-12 p-1 gap-1" style={{ backgroundColor: T.nav }}>
+          {["pending", "under_process", "verified", "rejected", "all"].map((t) => (
+            <TabsTrigger 
+              key={t} 
+              value={t} 
+              className="rounded-lg capitalize transition-all data-[state=active]:shadow-lg"
+              style={{ 
+                color: tab === t ? T.text : T.sub,
+                backgroundColor: tab === t ? T.card : "transparent"
+              }}
+            >
+              {t.replace("_", " ")}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        <TabsContent value={tab} className="mt-4 space-y-3">
+        <TabsContent value={tab} className="mt-6 space-y-4">
           {/* Bulk action bar */}
           {actionableFiltered.length > 0 && (
-            <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 p-3">
-              <div className="flex items-center gap-2">
-                <Checkbox checked={allActionableSelected} onCheckedChange={toggleSelectAll} />
-                <span className="text-sm text-muted-foreground">
-                  {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
+            <div className="flex flex-wrap items-center gap-4 p-4 rounded-xl border backdrop-blur-md transition-all" style={{ backgroundColor: T.card, borderColor: T.border }}>
+              <div className="flex items-center gap-3">
+                <Checkbox 
+                  checked={allActionableSelected} 
+                  onCheckedChange={toggleSelectAll}
+                  className="border-white/20 data-[state=checked]:bg-indigo-500"
+                />
+                <span className="text-sm font-medium" style={{ color: T.sub }}>
+                  {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all pending"}
                 </span>
               </div>
               {selectedIds.size > 0 && (
                 <div className="flex flex-wrap items-center gap-2 ml-auto">
-                  <Button size="sm" disabled={bulkActionMutation.isPending}
-                    onClick={() => bulkActionMutation.mutate({ ids: Array.from(selectedIds), status: "verified" })}>
-                    <CheckCircle2 className="mr-1 h-3 w-3" /> Verify ({selectedIds.size})
+                  <Button 
+                    size="sm" 
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-lg shadow-indigo-500/20"
+                    disabled={bulkActionMutation.isPending}
+                    onClick={() => bulkActionMutation.mutate({ ids: Array.from(selectedIds), status: "verified" })}
+                  >
+                    <CheckCircle2 className="mr-2 h-4 w-4" /> Verify
                   </Button>
-                  <Button size="sm" variant="secondary" disabled={bulkActionMutation.isPending}
-                    onClick={() => bulkActionMutation.mutate({ ids: Array.from(selectedIds), status: "under_process" })}>
-                    <Clock className="mr-1 h-3 w-3" /> Under Process ({selectedIds.size})
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="border-white/10 hover:bg-white/5"
+                    style={{ backgroundColor: "rgba(255,255,255,0.03)" }}
+                    disabled={bulkActionMutation.isPending}
+                    onClick={() => bulkActionMutation.mutate({ ids: Array.from(selectedIds), status: "under_process" })}
+                  >
+                    <Clock className="mr-2 h-4 w-4" /> Process
                   </Button>
-                  <Button size="sm" variant="outline" className="text-destructive" disabled={bulkActionMutation.isPending}
-                    onClick={() => setShowBulkRejectDialog(true)}>
-                    <XCircle className="mr-1 h-3 w-3" /> Reject ({selectedIds.size})
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    disabled={bulkActionMutation.isPending}
+                    onClick={() => setShowBulkRejectDialog(true)}
+                  >
+                    <XCircle className="mr-2 h-4 w-4" /> Reject
                   </Button>
                 </div>
               )}
@@ -269,50 +317,92 @@ const AdminVerifications = () => {
           )}
 
           {isLoading ? (
-            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-lg" />)
+            <div className="grid gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-2xl opacity-20" style={{ backgroundColor: T.card }} />
+              ))}
+            </div>
           ) : filtered.length === 0 ? (
-            <Card><CardContent className="p-6 text-center text-muted-foreground">No verifications found</CardContent></Card>
+            <Card className="border-dashed py-12" style={{ backgroundColor: "transparent", borderColor: T.border }}>
+              <CardContent className="flex flex-col items-center justify-center text-center">
+                <div className="p-4 rounded-full bg-white/5 mb-4">
+                  <Search className="h-8 w-8 opacity-20" />
+                </div>
+                <p style={{ color: T.sub }}>No verifications found for this category</p>
+              </CardContent>
+            </Card>
           ) : (
-            filtered.map((v) => {
-              const isActionable = v.status === "pending" || v.status === "under_process";
-              return (
-                <Card key={v.id} className="transition-colors hover:bg-muted/30">
-                  <CardContent className="flex items-center gap-3 p-4">
-                    {isActionable && (
-                      <Checkbox
-                        checked={selectedIds.has(v.id)}
-                        onCheckedChange={() => toggleSelect(v.id)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    )}
-                    <div className="flex-1 cursor-pointer" onClick={() => openDetail(v)}>
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium text-foreground">{v.profiles?.full_name?.[0] ?? "—"}</span>
-                            <Badge variant="outline" className="text-[10px]">{v.profiles?.user_type}</Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {v.profiles?.user_code?.[0]} • Aadhaar name: {v.name_on_aadhaar}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Submitted {new Date(v.created_at).toLocaleDateString()}
-                          </p>
+            <div className="grid gap-3">
+              {filtered.map((v) => {
+                const isActionable = v.status === "pending" || v.status === "under_process";
+                return (
+                  <Card 
+                    key={v.id} 
+                    className="group transition-all hover:scale-[1.005] active:scale-[0.995] border cursor-pointer overflow-hidden" 
+                    style={{ backgroundColor: T.card, borderColor: T.border }}
+                    onClick={() => openDetail(v)}
+                  >
+                    <CardContent className="flex items-center gap-4 p-5">
+                      {isActionable && (
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selectedIds.has(v.id)}
+                            onCheckedChange={() => toggleSelect(v.id)}
+                            className="border-white/20 data-[state=checked]:bg-indigo-500"
+                          />
                         </div>
-                        <div className="flex items-center gap-2">
-                          {statusBadge(v.status)}
-                          <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="h-10 w-10 rounded-full bg-indigo-500/10 flex items-center justify-center shrink-0">
+                              <User className="h-5 w-5 text-indigo-400" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold truncate" style={{ color: T.text }}>{v.profiles?.full_name?.[0] ?? "—"}</span>
+                                <Badge 
+                                  variant="outline" 
+                                  className="text-[10px] uppercase tracking-wider font-semibold"
+                                  style={{ backgroundColor: T.badge, color: T.badgeFg, borderColor: "transparent" }}
+                                >
+                                  {v.profiles?.user_type}
+                                </Badge>
+                              </div>
+                              <p className="text-xs font-mono opacity-60 truncate" style={{ color: T.sub }}>
+                                {v.profiles?.user_code?.[0]} • {v.aadhaar_number}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            {statusBadge(v.status)}
+                            <div className="p-2 rounded-lg bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Eye className="h-4 w-4" style={{ color: T.sub }} />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 mt-2 pt-2 border-t border-white/5">
+                          <p className="text-[11px] flex items-center gap-1.5" style={{ color: T.sub }}>
+                            <Clock className="h-3 w-3" />
+                            Submitted {new Date(v.created_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                          </p>
+                          {v.verified_at && (
+                            <p className="text-[11px] flex items-center gap-1.5" style={{ color: T.sub }}>
+                              <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                              Actioned {new Date(v.verified_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                            </p>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           )}
         </TabsContent>
       </Tabs>
+
 
       {/* Bulk Reject Dialog */}
       <AlertDialog open={showBulkRejectDialog} onOpenChange={setShowBulkRejectDialog}>
@@ -334,144 +424,202 @@ const AdminVerifications = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Detail Dialog */}
       <Dialog open={!!selectedVerification} onOpenChange={(open) => { if (!open) { setSelectedVerification(null); setFrontUrl(null); setBackUrl(null); setIsEditing(false); } }}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5" /> Verification Details
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl p-0 border-none shadow-2xl" style={{ backgroundColor: T.bg }}>
+          <div className="sticky top-0 z-10 p-6 flex items-center justify-between border-b backdrop-blur-xl" style={{ backgroundColor: `${T.card}`, borderColor: T.border }}>
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+              <ShieldCheck className="h-6 w-6 text-indigo-500" />
+              Verification Details
             </DialogTitle>
-          </DialogHeader>
+          </div>
 
           {selectedVerification && (
-            <div className="space-y-4">
+            <div className="p-6 space-y-6">
               {/* Admin action buttons */}
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => { setIsEditing(!isEditing); if (!isEditing) setEditForm({ name_on_aadhaar: selectedVerification.name_on_aadhaar, aadhaar_number: selectedVerification.aadhaar_number, dob_on_aadhaar: selectedVerification.dob_on_aadhaar, address_on_aadhaar: selectedVerification.address_on_aadhaar }); }}>
-                  <Pencil className="mr-1 h-3 w-3" /> {isEditing ? "Cancel Edit" : "Edit"}
+              <div className="flex justify-end gap-3">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="rounded-lg border-white/10 hover:bg-white/5"
+                  onClick={() => { setIsEditing(!isEditing); if (!isEditing) setEditForm({ name_on_aadhaar: selectedVerification.name_on_aadhaar, aadhaar_number: selectedVerification.aadhaar_number, dob_on_aadhaar: selectedVerification.dob_on_aadhaar, address_on_aadhaar: selectedVerification.address_on_aadhaar }); }}
+                >
+                  <Pencil className="mr-2 h-4 w-4" /> {isEditing ? "Cancel" : "Edit Details"}
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="text-destructive">
-                      <Trash2 className="mr-1 h-3 w-3" /> Delete
+                    <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg">
+                      <Trash2 className="mr-2 h-4 w-4" /> Delete
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className="border-white/10" style={{ backgroundColor: T.bg }}>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Verification</AlertDialogTitle>
-                      <AlertDialogDescription>This will permanently delete this Aadhaar verification record and its uploaded images. This action cannot be undone.</AlertDialogDescription>
+                      <AlertDialogTitle style={{ color: T.text }}>Delete Verification</AlertDialogTitle>
+                      <AlertDialogDescription style={{ color: T.sub }}>This will permanently delete this Aadhaar verification record and its uploaded images. This action cannot be undone.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(selectedVerification)}>
-                        {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                      <AlertDialogCancel className="border-white/10" style={{ color: T.text }}>Cancel</AlertDialogCancel>
+                      <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate(selectedVerification)}>
+                        {deleteMutation.isPending ? "Deleting..." : "Delete Permanently"}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
 
-              {/* Profile info */}
-              <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-sm">Profile Information</CardTitle></CardHeader>
-                <CardContent className="space-y-1 text-sm">
-                  <p><span className="text-muted-foreground">Name:</span> {selectedVerification.profiles?.full_name?.[0]}</p>
-                  <p><span className="text-muted-foreground">Code:</span> {selectedVerification.profiles?.user_code?.[0]}</p>
-                  <p><span className="text-muted-foreground">Type:</span> {selectedVerification.profiles?.user_type}</p>
-                  <p><span className="text-muted-foreground">Email:</span> {selectedVerification.profiles?.email}</p>
-                  <p><span className="text-muted-foreground">Mobile:</span> {selectedVerification.profiles?.mobile_number ?? "—"}</p>
-                  <p><span className="text-muted-foreground">Profile DOB:</span> {selectedVerification.profiles?.date_of_birth ?? "—"}</p>
-                </CardContent>
-              </Card>
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Profile info */}
+                <Card className="border-none shadow-lg overflow-hidden" style={{ backgroundColor: T.card }}>
+                  <CardHeader className="pb-4 border-b border-white/5">
+                    <CardTitle className="text-sm font-semibold uppercase tracking-wider" style={{ color: T.sub }}>Profile Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6 space-y-4">
+                    {[
+                      { label: "Name", value: selectedVerification.profiles?.full_name?.[0] },
+                      { label: "User Code", value: selectedVerification.profiles?.user_code?.[0], mono: true },
+                      { label: "User Type", value: selectedVerification.profiles?.user_type, badge: true },
+                      { label: "Email", value: selectedVerification.profiles?.email },
+                      { label: "Mobile", value: selectedVerification.profiles?.mobile_number ?? "—" },
+                      { label: "Profile DOB", value: selectedVerification.profiles?.date_of_birth ?? "—" },
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex flex-col gap-1">
+                        <span className="text-[10px] font-medium uppercase opacity-40" style={{ color: T.text }}>{item.label}</span>
+                        {item.badge ? (
+                          <Badge variant="outline" className="w-fit" style={{ backgroundColor: T.badge, color: T.badgeFg, borderColor: "transparent" }}>{item.value}</Badge>
+                        ) : (
+                          <span className={`text-sm ${item.mono ? 'font-mono' : 'font-medium'}`} style={{ color: T.text }}>{item.value}</span>
+                        )}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
 
-              {/* Aadhaar info - View or Edit mode */}
-              <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-sm">Aadhaar Details</CardTitle></CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  {isEditing ? (
-                    <div className="space-y-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Name on Aadhaar</Label>
-                        <Input value={editForm.name_on_aadhaar} onChange={(e) => setEditForm(f => ({ ...f, name_on_aadhaar: e.target.value }))} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Aadhaar Number</Label>
-                        <Input value={editForm.aadhaar_number} onChange={(e) => setEditForm(f => ({ ...f, aadhaar_number: e.target.value }))} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">DOB on Aadhaar</Label>
-                        <Input type="date" value={editForm.dob_on_aadhaar} onChange={(e) => setEditForm(f => ({ ...f, dob_on_aadhaar: e.target.value }))} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Address</Label>
-                        <Textarea value={editForm.address_on_aadhaar} onChange={(e) => setEditForm(f => ({ ...f, address_on_aadhaar: e.target.value }))} className="min-h-[60px]" />
-                      </div>
-                      <Button className="w-full" disabled={editMutation.isPending} onClick={() => editMutation.mutate({ id: selectedVerification.id, data: editForm })}>
-                        {editMutation.isPending ? "Saving..." : "Save Changes"}
-                      </Button>
-                    </div>
-                  ) : (
-                    <>
-                      <p><span className="text-muted-foreground">Aadhaar Number:</span> {selectedVerification.aadhaar_number}</p>
-                      <p><span className="text-muted-foreground">Name on Aadhaar:</span> {selectedVerification.name_on_aadhaar}</p>
-                      <p><span className="text-muted-foreground">DOB on Aadhaar:</span> {selectedVerification.dob_on_aadhaar}</p>
-                      <p><span className="text-muted-foreground">Address:</span> {selectedVerification.address_on_aadhaar}</p>
-                      {selectedVerification.profiles?.full_name?.[0] && (
-                        <div className="mt-2 flex items-center gap-2">
-                          {selectedVerification.name_on_aadhaar.toLowerCase().trim() === selectedVerification.profiles.full_name[0].toLowerCase().trim()
-                            ? <><CheckCircle2 className="h-4 w-4 text-accent" /><span className="text-accent text-xs font-medium">Name matches profile</span></>
-                            : <><XCircle className="h-4 w-4 text-warning" /><span className="text-warning text-xs font-medium">Name does not match profile ({selectedVerification.profiles.full_name[0]})</span></>
-                          }
+                {/* Aadhaar info - View or Edit mode */}
+                <Card className="border-none shadow-lg overflow-hidden" style={{ backgroundColor: T.card }}>
+                  <CardHeader className="pb-4 border-b border-white/5">
+                    <CardTitle className="text-sm font-semibold uppercase tracking-wider" style={{ color: T.sub }}>Aadhaar Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    {isEditing ? (
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs" style={{ color: T.sub }}>Name on Aadhaar</Label>
+                          <Input className="border-white/10" style={{ backgroundColor: T.input, color: T.text }} value={editForm.name_on_aadhaar} onChange={(e) => setEditForm(f => ({ ...f, name_on_aadhaar: e.target.value }))} />
                         </div>
-                      )}
-                    </>
-                  )}
-                </CardContent>
-              </Card>
+                        <div className="space-y-2">
+                          <Label className="text-xs" style={{ color: T.sub }}>Aadhaar Number</Label>
+                          <Input className="border-white/10" style={{ backgroundColor: T.input, color: T.text }} value={editForm.aadhaar_number} onChange={(e) => setEditForm(f => ({ ...f, aadhaar_number: e.target.value }))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs" style={{ color: T.sub }}>DOB on Aadhaar</Label>
+                          <Input className="border-white/10" type="date" style={{ backgroundColor: T.input, color: T.text }} value={editForm.dob_on_aadhaar} onChange={(e) => setEditForm(f => ({ ...f, dob_on_aadhaar: e.target.value }))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs" style={{ color: T.sub }}>Address</Label>
+                          <Textarea className="border-white/10 min-h-[100px]" style={{ backgroundColor: T.input, color: T.text }} value={editForm.address_on_aadhaar} onChange={(e) => setEditForm(f => ({ ...f, address_on_aadhaar: e.target.value }))} />
+                        </div>
+                        <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20" disabled={editMutation.isPending} onClick={() => editMutation.mutate({ id: selectedVerification.id, data: editForm })}>
+                          {editMutation.isPending ? "Saving..." : "Save Changes"}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-5">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] font-medium uppercase opacity-40" style={{ color: T.text }}>Aadhaar Number</span>
+                          <span className="text-sm font-bold tracking-widest" style={{ color: T.text }}>{selectedVerification.aadhaar_number}</span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] font-medium uppercase opacity-40" style={{ color: T.text }}>Name on Card</span>
+                          <span className="text-sm font-medium" style={{ color: T.text }}>{selectedVerification.name_on_aadhaar}</span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] font-medium uppercase opacity-40" style={{ color: T.text }}>Date of Birth</span>
+                          <span className="text-sm font-medium" style={{ color: T.text }}>{selectedVerification.dob_on_aadhaar}</span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] font-medium uppercase opacity-40" style={{ color: T.text }}>Address</span>
+                          <span className="text-sm leading-relaxed" style={{ color: T.text }}>{selectedVerification.address_on_aadhaar}</span>
+                        </div>
+                        
+                        {selectedVerification.profiles?.full_name?.[0] && (
+                          <div className="mt-4 p-3 rounded-xl border flex items-center gap-3" style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: T.border }}>
+                            {selectedVerification.name_on_aadhaar.toLowerCase().trim() === selectedVerification.profiles.full_name[0].toLowerCase().trim()
+                              ? <><div className="p-1.5 rounded-full bg-emerald-500/20"><CheckCircle2 className="h-4 w-4 text-emerald-500" /></div><span className="text-emerald-400 text-xs font-semibold uppercase tracking-wider">Name matches profile</span></>
+                              : <><div className="p-1.5 rounded-full bg-amber-500/20"><XCircle className="h-4 w-4 text-amber-500" /></div><span className="text-amber-400 text-xs font-semibold uppercase tracking-wider">Name mismatch</span></>
+                            }
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
 
               {/* Images */}
-              <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-sm">Aadhaar Card Images</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <p className="mb-1 text-xs font-medium text-muted-foreground">Front Side</p>
-                    {frontUrl ? <img src={frontUrl} alt="Aadhaar front" className="w-full rounded-md border" /> : <Skeleton className="h-40 w-full" />}
+              <div className="grid md:grid-cols-2 gap-6">
+                {[
+                  { label: "Front Side", url: frontUrl },
+                  { label: "Back Side", url: backUrl }
+                ].map((img, i) => (
+                  <div key={i} className="space-y-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-50" style={{ color: T.text }}>{img.label}</p>
+                    <div className="relative group aspect-[1.6/1] rounded-2xl overflow-hidden border border-white/5 bg-white/5">
+                      {img.url ? (
+                        <img src={img.url} alt={`Aadhaar ${img.label}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                      ) : (
+                        <Skeleton className="h-full w-full opacity-10" />
+                      )}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                        <Button variant="secondary" size="sm" className="rounded-full shadow-xl" onClick={() => img.url && window.open(img.url, '_blank')}>
+                          <Eye className="mr-2 h-4 w-4" /> View Full
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="mb-1 text-xs font-medium text-muted-foreground">Back Side</p>
-                    {backUrl ? <img src={backUrl} alt="Aadhaar back" className="w-full rounded-md border" /> : <Skeleton className="h-40 w-full" />}
-                  </div>
-                </CardContent>
-              </Card>
+                ))}
+              </div>
 
               {/* Status & Actions */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Status:</span>
+              <div className="flex items-center gap-4 py-4 border-t border-white/5">
+                <span className="text-sm font-medium" style={{ color: T.sub }}>Current Status:</span>
                 {statusBadge(selectedVerification.status)}
               </div>
 
               {(selectedVerification.status === "pending" || selectedVerification.status === "under_process") && (
-                <div className="space-y-3 rounded-lg border p-3">
-                  <Textarea placeholder="Rejection reason (required only for rejection)" value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)} className="min-h-[60px]" />
-                  <div className="flex flex-wrap gap-2">
-                    {selectedVerification.status === "pending" && (
-                      <Button variant="secondary" className="flex-1" disabled={actionMutation.isPending}
-                        onClick={() => actionMutation.mutate({ id: selectedVerification.id, status: "under_process", profileId: selectedVerification.profile_id, nameOnAadhaar: selectedVerification.name_on_aadhaar })}>
-                        <Clock className="mr-1 h-3 w-3" /> Under Process
-                      </Button>
-                    )}
-                    <Button className="flex-1" disabled={actionMutation.isPending}
-                      onClick={() => actionMutation.mutate({ id: selectedVerification.id, status: "verified", profileId: selectedVerification.profile_id, nameOnAadhaar: selectedVerification.name_on_aadhaar })}>
-                      <CheckCircle2 className="mr-1 h-3 w-3" /> Verify
+                <div className="space-y-4 p-5 rounded-2xl border backdrop-blur-md" style={{ backgroundColor: 'rgba(99,102,241,0.03)', borderColor: 'rgba(99,102,241,0.1)' }}>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-widest opacity-60" style={{ color: T.text }}>Rejection Reason</Label>
+                    <Textarea 
+                      placeholder="Only required if you are rejecting this verification..." 
+                      className="border-white/5 min-h-[80px] focus-visible:ring-red-500/30" 
+                      style={{ backgroundColor: 'rgba(0,0,0,0.2)', color: T.text }}
+                      value={rejectReason} 
+                      onChange={(e) => setRejectReason(e.target.value)} 
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button 
+                      className="h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg shadow-emerald-500/20"
+                      disabled={actionMutation.isPending}
+                      onClick={() => actionMutation.mutate({ id: selectedVerification.id, status: "verified", profileId: selectedVerification.profile_id, nameOnAadhaar: selectedVerification.name_on_aadhaar })}
+                    >
+                      {actionMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <><CheckCircle2 className="mr-2 h-5 w-5" /> Approve Verification</>}
                     </Button>
-                    <Button variant="outline" className="flex-1 text-destructive" disabled={actionMutation.isPending || !rejectReason.trim()}
-                      onClick={() => actionMutation.mutate({ id: selectedVerification.id, status: "rejected", reason: rejectReason, profileId: selectedVerification.profile_id, nameOnAadhaar: selectedVerification.name_on_aadhaar })}>
-                      <XCircle className="mr-1 h-3 w-3" /> Reject
+                    <Button 
+                      variant="outline"
+                      className="h-12 border-red-500/30 text-red-400 hover:bg-red-500/10 rounded-xl"
+                      disabled={actionMutation.isPending || !rejectReason.trim()}
+                      onClick={() => actionMutation.mutate({ id: selectedVerification.id, status: "rejected", reason: rejectReason, profileId: selectedVerification.profile_id, nameOnAadhaar: selectedVerification.name_on_aadhaar })}
+                    >
+                      <XCircle className="mr-2 h-5 w-5" /> Reject Application
                     </Button>
                   </div>
                 </div>
               )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
 
               {selectedVerification.rejection_reason && (
                 <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">

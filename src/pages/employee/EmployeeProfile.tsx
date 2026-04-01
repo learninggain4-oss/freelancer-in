@@ -8,17 +8,27 @@ import {
   User, Briefcase, Landmark, Building2, AlertCircle,
   ShieldCheck, BadgeCheck, ChevronRight, Wallet, CreditCard,
   Mail, Phone, Calendar, GraduationCap, Copy, Check, Coins,
+  Star, Shield, Sparkles
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ProfilePhotoUpload from "@/components/profile/ProfilePhotoUpload";
 import { useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 const EmployeeProfile = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
 
   const { data: aadhaarStatus } = useQuery({
     queryKey: ["aadhaar-status", profile?.id],
@@ -124,26 +134,26 @@ const EmployeeProfile = () => {
   };
 
   const sections = [
-    { icon: User, label: "Personal Information", path: "/employee/profile/personal", color: "text-primary", desc: "Name, gender, DOB & more" },
-    { icon: Briefcase, label: "Professional", path: "/employee/profile/professional", color: "text-accent", desc: "Education & background" },
-    { icon: Landmark, label: "Bank Details", path: "/employee/profile/bank-details", color: "text-warning", desc: "Account & IFSC details" },
-    { icon: CreditCard, label: "UPI Payment Apps", path: "/employee/profile/upi-apps", color: "text-accent", desc: "Manage UPI apps" },
-    { icon: Building2, label: "Work Experience", path: "/employee/profile/work-experience", color: "text-secondary", desc: "Past roles & certificates" },
-    { icon: Briefcase, label: "Services", path: "/employee/profile/services", color: "text-primary", desc: `${servicesCount ?? 0} services listed` },
-    { icon: AlertCircle, label: "Emergency Contacts", path: "/employee/profile/emergency-contacts", color: "text-destructive", desc: "Safety contacts" },
+    { icon: User, label: "Personal Information", path: "/employee/profile/personal", color: "#6366f1", desc: "Name, gender, DOB & more" },
+    { icon: Briefcase, label: "Professional", path: "/employee/profile/professional", color: "#8b5cf6", desc: "Education & background" },
+    { icon: Landmark, label: "Bank Details", path: "/employee/profile/bank-details", color: "#fbbf24", desc: "Account & IFSC details" },
+    { icon: CreditCard, label: "UPI Payment Apps", path: "/employee/profile/upi-apps", color: "#a78bfa", desc: "Manage UPI apps" },
+    { icon: Building2, label: "Work Experience", path: "/employee/profile/work-experience", color: "#60a5fa", desc: "Past roles & certificates" },
+    { icon: Star, label: "Services", path: "/employee/profile/services", color: "#4ade80", desc: `${servicesCount ?? 0} services listed` },
+    { icon: AlertCircle, label: "Emergency Contacts", path: "/employee/profile/emergency-contacts", color: "#f87171", desc: "Safety contacts" },
     {
       icon: ShieldCheck,
       label: "Self Real Name Verification",
       path: "/employee/profile/aadhaar-verification",
-      color: "text-accent",
+      color: "#8b5cf6",
       desc: "Identity verification",
       badge: aadhaarStatus,
     },
     {
-      icon: Landmark,
+      icon: Shield,
       label: "Self Bank Verification",
       path: "/employee/profile/bank-verification",
-      color: "text-primary",
+      color: "#6366f1",
       desc: "Bank account verification",
       badge: bankVerifStatus,
     },
@@ -156,159 +166,153 @@ const EmployeeProfile = () => {
     return "secondary";
   };
 
-  const completionColor = completion >= 80 ? "text-accent" : completion >= 50 ? "text-warning" : "text-destructive";
+  const completionColor = completion >= 80 ? "#4ade80" : completion >= 50 ? "#fbbf24" : "#f87171";
 
   return (
-    <div className="space-y-5 p-4 pb-24">
+    <div style={{ background: T.bg, minHeight: "100vh", color: T.text }} className="space-y-5 p-4 pb-24">
       {/* Profile Hero Card */}
-      <Card className="overflow-hidden border-0 shadow-lg">
-        <div className="h-20 bg-gradient-to-r from-primary to-primary/70" />
-        <CardContent className="relative px-4 pb-5 pt-0">
+      <Card style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }} className="overflow-hidden border shadow-2xl">
+        <div className="h-28 bg-gradient-to-r from-[#6366f1] via-[#8b5cf6] to-[#6366f1]" />
+        <CardContent className="relative px-4 pb-6 pt-0">
           <div className="flex flex-col items-center -mt-14">
-            <div className="rounded-full border-4 border-card bg-card">
+            <div style={{ borderColor: T.bg, background: T.bg }} className="rounded-full border-[6px] shadow-xl overflow-hidden">
               <ProfilePhotoUpload />
             </div>
-            <h1 className="mt-3 flex items-center gap-2 text-xl font-bold text-foreground">
+            <h1 className="mt-4 flex items-center gap-2 text-2xl font-extrabold tracking-tight">
               {fullName}
-              {isVerified && <BadgeCheck className="h-5 w-5 text-accent" />}
+              {isVerified && <BadgeCheck className="h-6 w-6 text-[#4ade80]" />}
             </h1>
-            <div className="mt-1 flex items-center gap-2">
-              <Badge variant="outline" className="font-mono text-xs tracking-wider">
+            <div className="mt-2 flex items-center gap-2">
+              <Badge style={{ background: T.badge, color: T.badgeFg, borderColor: T.border }} variant="outline" className="font-mono text-xs tracking-wider px-3 py-1">
                 {userCode}
               </Badge>
-              <Badge variant={profile?.approval_status === "approved" ? "default" : "secondary"} className="text-[10px] capitalize">
+              <Badge style={{ 
+                background: profile?.approval_status === "approved" ? "rgba(74,222,128,.15)" : "rgba(251,191,36,.15)",
+                color: profile?.approval_status === "approved" ? "#4ade80" : "#fbbf24",
+                borderColor: profile?.approval_status === "approved" ? "rgba(74,222,128,.2)" : "rgba(251,191,36,.2)"
+              }} className="text-[10px] capitalize font-bold px-3 py-1 border">
                 {profile?.approval_status ?? "pending"}
               </Badge>
             </div>
           </div>
 
           {/* Quick Info Pills */}
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            {profile?.email && (
-              <div className="flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-                <Mail className="h-3 w-3" />
-                <span className="max-w-[140px] truncate">{profile.email}</span>
+          <div className="mt-6 flex flex-wrap justify-center gap-2.5">
+            {[
+              { icon: Mail, value: profile?.email },
+              { icon: Phone, value: profile?.mobile_number },
+              { icon: Calendar, value: profile?.date_of_birth ? format(new Date(profile.date_of_birth), "dd MMM yyyy") : null },
+              { icon: GraduationCap, value: profile?.education_level },
+            ].filter(i => i.value).map((item, idx) => (
+              <div key={idx} style={{ background: T.nav, border: `1px solid ${T.border}` }} className="flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium">
+                <item.icon className="h-3.5 w-3.5 opacity-70" />
+                <span className="max-w-[150px] truncate opacity-90">{item.value}</span>
               </div>
-            )}
-            {profile?.mobile_number && (
-              <div className="flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-                <Phone className="h-3 w-3" />
-                <span>{profile.mobile_number}</span>
-              </div>
-            )}
-            {profile?.date_of_birth && (
-              <div className="flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-                <Calendar className="h-3 w-3" />
-                <span>{format(new Date(profile.date_of_birth), "dd MMM yyyy")}</span>
-              </div>
-            )}
-            {profile?.education_level && (
-              <div className="flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-                <GraduationCap className="h-3 w-3" />
-                <span className="capitalize">{profile.education_level}</span>
-              </div>
-            )}
+            ))}
           </div>
         </CardContent>
       </Card>
 
       {/* Wallet Number Card */}
-      <Card className="border-0 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md">
-        <CardContent className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20">
-              <Wallet className="h-5 w-5" />
+      <Card style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)", borderColor: "transparent" }} className="border-0 text-white shadow-xl">
+        <CardContent className="flex items-center justify-between p-5">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md">
+              <Wallet className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-xs opacity-80">Wallet Number</p>
-              <p className="font-mono text-base font-semibold tracking-widest">{walletNumber}</p>
+              <p className="text-[10px] uppercase tracking-widest opacity-80 font-bold">Wallet ID</p>
+              <p className="font-mono text-lg font-bold tracking-[0.2em]">{walletNumber}</p>
             </div>
           </div>
           <button
             onClick={handleCopyWallet}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground/20 transition-colors hover:bg-primary-foreground/30 active:scale-95"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md transition-all hover:bg-white/30 active:scale-95"
           >
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
           </button>
         </CardContent>
       </Card>
 
       {/* Profile Completion */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="mb-1 flex items-center justify-between">
-            <span className="text-sm font-medium text-foreground">Profile Completion</span>
-            <span className={`text-lg font-bold ${completionColor}`}>{completion}%</span>
+      <Card style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }} className="border shadow-xl">
+        <CardContent className="p-5">
+          <div className="mb-2 flex items-center justify-between">
+            <span style={{ color: T.text }} className="text-sm font-bold uppercase tracking-wider opacity-80">Profile Mastery</span>
+            <span style={{ color: completionColor }} className="text-2xl font-black">{completion}%</span>
           </div>
-          <div className="mb-3 flex items-center gap-1.5">
-            <Coins className="h-3.5 w-3.5 text-warning" />
-            <span className="text-xs font-medium text-warning">
-              Reward: +{rewardCoins ?? 1000} Coins on 100% completion
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-400/20">
+              <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+            </div>
+            <span className="text-xs font-bold text-amber-400">
+              +{rewardCoins ?? 1000} Coins on 100% completion
             </span>
           </div>
-          <Progress value={completion} className="h-2.5" />
-          {completion < 100 && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              Complete all sections: Personal Info, Professional, Bank Details, Work Experience, Services, Emergency Contacts, Photo, Self Real Name & Bank Verification.
+          <div style={{ background: T.border }} className="h-3 rounded-full overflow-hidden">
+            <div 
+              style={{ width: `${completion}%`, background: `linear-gradient(to right, #6366f1, ${completionColor})` }} 
+              className="h-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(99,102,241,0.5)]" 
+            />
+          </div>
+          {completion < 100 ? (
+            <p style={{ color: T.sub }} className="mt-4 text-[11px] leading-relaxed">
+              Unlock your full potential! Complete all sections to earn rewards and gain higher visibility among clients.
             </p>
-          )}
-          {completion === 100 && (
-            <p className="mt-2 text-xs text-accent font-medium">
-              🎉 Your profile is 100% complete!
+          ) : (
+            <p className="mt-4 text-[11px] text-[#4ade80] font-bold flex items-center gap-1.5">
+              <BadgeCheck className="h-3.5 w-3.5" /> Congratulations! Your profile is elite.
             </p>
           )}
         </CardContent>
       </Card>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card className="border-0 shadow-sm">
-          <CardContent className="flex flex-col items-center p-3">
-            <span className="text-lg font-bold text-primary">{servicesCount ?? 0}</span>
-            <span className="text-[11px] text-muted-foreground">Services</span>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm">
-          <CardContent className="flex flex-col items-center p-3">
-            <span className="text-lg font-bold text-accent">
-              {isVerified ? "✓" : "—"}
-            </span>
-            <span className="text-[11px] text-muted-foreground">KYC</span>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm">
-          <CardContent className="flex flex-col items-center p-3">
-            <span className="text-lg font-bold text-warning">
-              {profile?.coin_balance ?? 0}
-            </span>
-            <span className="text-[11px] text-muted-foreground">Coins</span>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: "Services", value: servicesCount ?? 0, color: "#6366f1" },
+          { label: "KYC", value: isVerified ? "Elite" : "Basic", color: "#8b5cf6" },
+          { label: "Coins", value: profile?.coin_balance ?? 0, color: "#fbbf24" },
+        ].map((stat, i) => (
+          <Card key={i} style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }} className="border shadow-xl">
+            <CardContent className="flex flex-col items-center p-4">
+              <span style={{ color: stat.color }} className="text-xl font-black">{stat.value}</span>
+              <span style={{ color: T.sub }} className="text-[10px] font-bold uppercase tracking-widest mt-1">{stat.label}</span>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Navigation Menu */}
-      <div>
-        <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wider">Manage Profile</h2>
-        <div className="space-y-2">
-          {sections.map((section) => (
+      <div className="pt-2">
+        <h2 style={{ color: T.sub }} className="mb-4 text-xs font-black uppercase tracking-[0.2em] px-1">Control Panel</h2>
+        <div className="space-y-3">
+          {sections.map((section, idx) => (
             <button
               key={section.path}
               onClick={() => navigate(section.path)}
-              className="flex w-full items-center gap-3 rounded-xl border bg-card p-4 text-left transition-all hover:bg-muted/50 hover:shadow-sm active:scale-[0.98]"
+              style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }}
+              className="group flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition-all hover:bg-white/[0.02] hover:shadow-2xl active:scale-[0.98]"
             >
-              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted ${section.color}`}>
-                <section.icon className="h-5 w-5" />
+              <div style={{ background: `${section.color}15` }} className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-transform group-hover:scale-110">
+                <section.icon style={{ color: section.color }} className="h-6 w-6" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="block text-sm font-medium text-foreground">{section.label}</span>
-                <span className="block text-[11px] text-muted-foreground">{section.desc}</span>
+                <span style={{ color: T.text }} className="block text-sm font-bold tracking-tight">{section.label}</span>
+                <span style={{ color: T.sub }} className="block text-[11px] font-medium opacity-80">{section.desc}</span>
               </div>
-              {section.badge && (
-                <Badge variant={statusBadgeVariant(section.badge)} className="text-[10px] capitalize mr-1">
-                  {section.badge}
-                </Badge>
-              )}
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="flex items-center gap-2">
+                {section.badge && (
+                  <Badge style={{ 
+                    background: section.badge === 'verified' ? 'rgba(74,222,128,.1)' : 'rgba(251,191,36,.1)',
+                    color: section.badge === 'verified' ? '#4ade80' : '#fbbf24',
+                    borderColor: section.badge === 'verified' ? 'rgba(74,222,128,.2)' : 'rgba(251,191,36,.2)'
+                  }} className="text-[9px] capitalize px-2 py-0 border">
+                    {section.badge}
+                  </Badge>
+                )}
+                <ChevronRight style={{ color: T.sub }} className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-1" />
+              </div>
             </button>
           ))}
         </div>

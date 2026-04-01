@@ -14,10 +14,17 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Search, X, ChevronLeft, ChevronRight, LogOut, Trash2, Users, Activity, ShieldOff,
+  Search, X, ChevronLeft, ChevronRight, LogOut, Trash2, Users, Activity, ShieldOff, Command, ShieldCheck, Mail
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 const PAGE_SIZE = 15;
 
@@ -36,6 +43,8 @@ type SessionUser = {
 };
 
 const AdminSessions = () => {
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
@@ -108,137 +117,178 @@ const AdminSessions = () => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-foreground">Sessions & User Control</h2>
+      {/* Hero Header */}
+      <div 
+        className="relative overflow-hidden rounded-2xl p-8 border"
+        style={{ 
+          background: theme === 'black' 
+            ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' 
+            : 'linear-gradient(135deg, #6366f1 0%, #a5b4fc 100%)',
+          borderColor: T.border 
+        }}
+      >
+        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-white/5 blur-xl" />
+        <div className="relative z-10 flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 shadow-xl">
+            <Command className="h-7 w-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-white">Sessions & User Control</h1>
+            <p className="text-white/80 font-medium">Manage active sessions and account access</p>
+          </div>
+        </div>
+      </div>
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Auth Users</CardTitle>
-            <Users className="h-5 w-5 text-primary" />
-          </CardHeader>
-          <CardContent><p className="text-3xl font-bold">{users.length}</p></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Active (24h)</CardTitle>
-            <Activity className="h-5 w-5 text-accent" />
-          </CardHeader>
-          <CardContent><p className="text-3xl font-bold">{recentlyActive}</p></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Blocked</CardTitle>
-            <ShieldOff className="h-5 w-5 text-destructive" />
-          </CardHeader>
-          <CardContent><p className="text-3xl font-bold">{disabledCount}</p></CardContent>
-        </Card>
+        {[
+          { label: "Total Auth Users", value: users.length, icon: Users, color: "text-blue-400" },
+          { label: "Active (24h)", value: recentlyActive, icon: Activity, color: "text-emerald-400" },
+          { label: "Blocked", value: disabledCount, icon: ShieldOff, color: "text-destructive" },
+        ].map((s, idx) => (
+          <Card key={idx} style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }} className="border shadow-none">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium" style={{ color: T.sub }}>{s.label}</p>
+                <s.icon className={`h-5 w-5 ${s.color}`} />
+              </div>
+              <p className="text-3xl font-bold" style={{ color: T.text }}>{s.value}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search by name, email, or code…" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }} className="pl-9 pr-9" />
-        {searchQuery && (
-          <Button size="icon" variant="ghost" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2" onClick={() => setSearchQuery("")}>
-            <X className="h-3.5 w-3.5" />
-          </Button>
-        )}
-      </div>
+      {/* Filters & Table */}
+      <div className="space-y-4">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input 
+            placeholder="Search by name, email, or code…" 
+            value={searchQuery} 
+            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }} 
+            className="pl-9 pr-9" 
+            style={{ background: T.input, borderColor: T.border, color: T.text }}
+          />
+          {searchQuery && (
+            <Button size="icon" variant="ghost" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2" onClick={() => setSearchQuery("")}>
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Last Sign In</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">Loading…</TableCell></TableRow>
-            ) : paginated.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No users found</TableCell></TableRow>
-            ) : (
-              paginated.map((u) => (
-                <TableRow key={u.auth_user_id}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{u.full_name || "No profile"}</p>
-                      <p className="text-xs text-muted-foreground font-mono">{u.user_code || "—"}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {u.user_type ? (
-                      <Badge variant="secondary" className="capitalize">{u.user_type}</Badge>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="max-w-[160px] truncate text-sm">{u.email}</TableCell>
-                  <TableCell className="text-sm">{formatDate(u.last_sign_in_at)}</TableCell>
-                  <TableCell>
-                    {u.is_disabled ? (
-                      <Badge variant="outline" className="bg-destructive/15 text-destructive border-destructive/30">Blocked</Badge>
-                    ) : u.approval_status === "approved" ? (
-                      <Badge variant="outline" className="bg-accent/15 text-accent border-accent/30">Active</Badge>
-                    ) : u.approval_status ? (
-                      <Badge variant="outline" className="bg-warning/15 text-warning border-warning/30">{u.approval_status}</Badge>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">No profile</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      {u.profile_id && (
-                        <Button size="icon" variant="ghost" title="Edit Profile" onClick={() => navigate(`/admin/users/${u.profile_id}`)}>
-                          <Search className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        title="Force Logout"
-                        className="text-warning hover:text-warning"
-                        onClick={() => setConfirmAction({ type: "force_logout", user: u })}
-                      >
-                        <LogOut className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        title="Permanently Delete"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => setConfirmAction({ type: "permanent_delete", user: u })}
-                        disabled={!u.profile_id}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        <Card style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }} className="border shadow-none overflow-hidden">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader style={{ background: T.nav }}>
+                  <TableRow style={{ borderColor: T.border }} className="hover:bg-transparent">
+                    <TableHead style={{ color: T.sub }}>User</TableHead>
+                    <TableHead style={{ color: T.sub }}>Type</TableHead>
+                    <TableHead style={{ color: T.sub }}>Account Info</TableHead>
+                    <TableHead style={{ color: T.sub }}>Last Session</TableHead>
+                    <TableHead style={{ color: T.sub }}>Status</TableHead>
+                    <TableHead style={{ color: T.sub }} className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow style={{ borderColor: T.border }}>
+                      <TableCell colSpan={6} className="py-24 text-center" style={{ color: T.sub }}>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+                        Loading users...
+                      </TableCell>
+                    </TableRow>
+                  ) : paginated.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-24 text-center" style={{ color: T.sub }}>No users found</TableCell>
+                    </TableRow>
+                  ) : (
+                    paginated.map((u) => (
+                      <TableRow key={u.auth_user_id} style={{ borderColor: T.border }} className="hover:bg-white/5 transition-colors">
+                        <TableCell>
+                          <div>
+                            <p className="font-semibold" style={{ color: T.text }}>{u.full_name || "No profile"}</p>
+                            <p className="text-xs font-mono opacity-60" style={{ color: T.sub }}>{u.user_code || "—"}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {u.user_type ? (
+                            <Badge variant="outline" className="capitalize border-white/10" style={{ color: T.sub }}>{u.user_type}</Badge>
+                          ) : (
+                            <span className="text-xs opacity-40" style={{ color: T.sub }}>—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 max-w-[180px]">
+                            <Mail className="h-3.5 w-3.5 opacity-50" style={{ color: T.sub }} />
+                            <span className="text-sm truncate" style={{ color: T.text }}>{u.email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium" style={{ color: T.text }}>{formatDate(u.last_sign_in_at)}</span>
+                            <span className="text-[10px] opacity-50" style={{ color: T.sub }}>Sign-in Time</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {u.is_disabled ? (
+                            <Badge className="bg-destructive/15 text-destructive border-none">Blocked</Badge>
+                          ) : u.approval_status === "approved" ? (
+                            <Badge className="bg-accent/15 text-accent border-none">Active</Badge>
+                          ) : u.approval_status ? (
+                            <Badge className="bg-warning/15 text-warning border-none">{u.approval_status}</Badge>
+                          ) : (
+                            <Badge variant="outline" className="opacity-40 border-white/10" style={{ color: T.sub }}>No profile</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1.5">
+                            {u.profile_id && (
+                              <Button size="icon" variant="outline" className="h-9 w-9 rounded-xl border-white/10 bg-white/5 hover:bg-white/10" title="Edit Profile" onClick={() => navigate(`/admin/users/${u.profile_id}`)}>
+                                <Search className="h-4 w-4" style={{ color: T.sub }} />
+                              </Button>
+                            )}
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              title="Force Logout"
+                              className="h-9 w-9 rounded-xl border-white/10 bg-white/5 hover:bg-warning/10 text-warning hover:text-warning"
+                              onClick={() => setConfirmAction({ type: "force_logout", user: u })}
+                            >
+                              <LogOut className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              title="Permanently Delete"
+                              className="h-9 w-9 rounded-xl border-white/10 bg-white/5 hover:bg-destructive/10 text-destructive hover:text-destructive"
+                              onClick={() => setConfirmAction({ type: "permanent_delete", user: u })}
+                              disabled={!u.profile_id}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Pagination */}
       {filtered.length > PAGE_SIZE && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
-          </p>
-          <div className="flex items-center gap-1">
-            <Button size="icon" variant="outline" className="h-8 w-8" disabled={page <= 1} onClick={() => setCurrentPage(page - 1)}>
+        <div className="flex items-center justify-between text-sm" style={{ color: T.sub }}>
+          <p>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</p>
+          <div className="flex items-center gap-2">
+            <Button size="icon" variant="outline" className="h-9 w-9 rounded-xl border-white/10 bg-white/5 hover:bg-white/10" disabled={page <= 1} onClick={() => setCurrentPage(page - 1)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button size="icon" variant="outline" className="h-8 w-8" disabled={page >= totalPages} onClick={() => setCurrentPage(page + 1)}>
+            <Button size="icon" variant="outline" className="h-9 w-9 rounded-xl border-white/10 bg-white/5 hover:bg-white/10" disabled={page >= totalPages} onClick={() => setCurrentPage(page + 1)}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -247,23 +297,23 @@ const AdminSessions = () => {
 
       {/* Confirm Dialog */}
       <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-[#0a0a1a]/95 backdrop-blur-xl border-white/10">
           <AlertDialogHeader>
-            <AlertDialogTitle>
+            <AlertDialogTitle className="text-white">
               {confirmAction?.type === "force_logout" ? "Force Logout User?" : "Permanently Delete User?"}
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-white/60">
               {confirmAction?.type === "force_logout"
                 ? `This will sign out "${confirmAction.user.full_name || confirmAction.user.email}" from all devices and sessions immediately.`
                 : `This will permanently delete "${confirmAction?.user.full_name || confirmAction?.user.email}" and all their data. This action CANNOT be undone.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={processing}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={processing} className="bg-white/5 border-white/10 text-white hover:bg-white/10">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleAction}
               disabled={processing}
-              className={confirmAction?.type === "permanent_delete" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+              className={confirmAction?.type === "permanent_delete" ? "bg-destructive text-white hover:bg-destructive/90" : "bg-primary text-white hover:bg-primary/90"}
             >
               {processing ? "Processing…" : confirmAction?.type === "force_logout" ? "Force Logout" : "Delete Permanently"}
             </AlertDialogAction>

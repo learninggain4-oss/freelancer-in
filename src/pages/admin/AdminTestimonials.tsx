@@ -8,8 +8,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Star, Plus, Trash2, Edit, Save, X, Upload, Image } from "lucide-react";
+import { Star, Plus, Trash2, Edit, Save, X, Upload, Image, MessageSquareQuote, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { Badge } from "@/components/ui/badge";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 interface Testimonial {
   id: string;
@@ -23,11 +31,13 @@ interface Testimonial {
   created_at: string;
 }
 
-const BUCKET = "company-logos"; // reuse existing public bucket for testimonial photos
+const BUCKET = "company-logos"; 
 
 const AdminTestimonials = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
 
@@ -54,7 +64,6 @@ const AdminTestimonials = () => {
     },
   });
 
-  // Auto-refresh when testimonials table changes
   useEffect(() => {
     const channel = supabase
       .channel('admin-testimonials-changes')
@@ -64,7 +73,6 @@ const AdminTestimonials = () => {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
-
 
   const uploadPhoto = async (file: File): Promise<string> => {
     const ext = file.name.split(".").pop();
@@ -215,86 +223,133 @@ const AdminTestimonials = () => {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">What Clients Say</h1>
-          <p className="text-sm text-muted-foreground">Manage testimonials displayed on the landing page</p>
+    <div className="space-y-6 pb-20">
+      {/* Premium Hero Section */}
+      <div 
+        className="relative overflow-hidden rounded-2xl p-8 mb-8"
+        style={{ 
+          background: theme === "black" 
+            ? "linear-gradient(135deg, #1e1b4b 0%, #070714 100%)" 
+            : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+          border: `1px solid ${T.border}`
+        }}
+      >
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="rounded-full bg-white/10 p-3 backdrop-blur-md">
+              <MessageSquareQuote className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white">What Clients Say</h1>
+              <p className="text-white/70">Manage testimonials displayed on the landing page</p>
+            </div>
+          </div>
+          {!showAdd && (
+            <Button 
+              onClick={() => { resetForm(); setShowAdd(true); }} 
+              className="gap-2 bg-white text-[#6366f1] hover:bg-white/90"
+            >
+              <Plus className="h-4 w-4" /> Add Testimonial
+            </Button>
+          )}
         </div>
-        {!showAdd && (
-          <Button onClick={() => { resetForm(); setShowAdd(true); }} className="gap-2">
-            <Plus className="h-4 w-4" /> Add Testimonial
-          </Button>
-        )}
       </div>
 
       {/* Add / Edit Form */}
       {showAdd && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">{editingId ? "Edit Testimonial" : "New Testimonial"}</CardTitle>
+        <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+          <CardHeader className="border-b" style={{ borderColor: T.border }}>
+            <CardTitle className="text-lg" style={{ color: T.text }}>{editingId ? "Edit Testimonial" : "New Testimonial"}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6 pt-6">
             {/* Photo upload */}
-            <div className="space-y-2">
-              <Label>Photo</Label>
-              <div className="flex items-center gap-4">
+            <div className="space-y-3">
+              <Label style={{ color: T.text }}>Photo</Label>
+              <div className="flex items-center gap-6">
                 {photoPreview ? (
-                  <img src={photoPreview} alt="Preview" className="h-16 w-16 rounded-full object-cover border" />
+                  <div className="relative group">
+                    <img src={photoPreview} alt="Preview" className="h-20 w-20 rounded-full object-cover border-2 p-0.5" style={{ borderColor: "#6366f1" }} />
+                    <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                       <Upload className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
                 ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full border bg-muted">
-                    <Image className="h-6 w-6 text-muted-foreground" />
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-dashed p-0.5" style={{ borderColor: T.border, background: T.input }}>
+                    <Image className="h-8 w-8" style={{ color: T.sub }} />
                   </div>
                 )}
-                <Label htmlFor="photo-upload" className="cursor-pointer">
-                  <div className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted transition-colors">
-                    <Upload className="h-4 w-4" /> Upload Photo
-                  </div>
+                <div className="flex-1">
+                  <Label htmlFor="photo-upload" className="cursor-pointer inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all hover:bg-white/5" style={{ borderColor: T.border, color: T.text }}>
+                    <Upload className="h-4 w-4" /> Upload Professional Photo
+                  </Label>
                   <input id="photo-upload" type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
-                </Label>
+                  <p className="text-xs mt-2" style={{ color: T.sub }}>Recommended: Square image, min 400x400px</p>
+                </div>
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Name *</Label>
-                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="John Doe" />
+                <Label style={{ color: T.text }}>Name *</Label>
+                <Input 
+                  value={form.name} 
+                  onChange={(e) => setForm({ ...form, name: e.target.value })} 
+                  placeholder="John Doe" 
+                  style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                />
               </div>
               <div className="space-y-2">
-                <Label>Role / Title *</Label>
-                <Input value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} placeholder="CEO, Company" />
+                <Label style={{ color: T.text }}>Role / Title *</Label>
+                <Input 
+                  value={form.role} 
+                  onChange={(e) => setForm({ ...form, role: e.target.value })} 
+                  placeholder="CEO, Company" 
+                  style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Quote *</Label>
-              <Textarea value={form.quote} onChange={(e) => setForm({ ...form, quote: e.target.value })} placeholder="What the client said..." rows={3} />
+              <Label style={{ color: T.text }}>Quote *</Label>
+              <Textarea 
+                value={form.quote} 
+                onChange={(e) => setForm({ ...form, quote: e.target.value })} 
+                placeholder="What the client said about your services..." 
+                rows={4} 
+                style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                className="resize-none"
+              />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label>Rating</Label>
+            <div className="grid gap-6 sm:grid-cols-3">
+              <div className="space-y-3">
+                <Label style={{ color: T.text }}>Rating</Label>
                 <RatingPicker value={form.rating} onChange={(v) => setForm({ ...form, rating: v })} />
               </div>
               <div className="space-y-2">
-                <Label>Display Order</Label>
-                <Input type="number" value={form.display_order} onChange={(e) => setForm({ ...form, display_order: Number(e.target.value) })} />
+                <Label style={{ color: T.text }}>Display Order</Label>
+                <Input 
+                  type="number" 
+                  value={form.display_order} 
+                  onChange={(e) => setForm({ ...form, display_order: Number(e.target.value) })} 
+                  style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                />
               </div>
-              <div className="flex items-end gap-2 pb-1">
+              <div className="flex items-center gap-3 pt-6">
                 <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
-                <Label>Active</Label>
+                <Label style={{ color: T.text }}>Show on Landing Page</Label>
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 pt-2">
               <Button
                 disabled={!form.name || !form.role || !form.quote || addMutation.isPending || updateMutation.isPending}
                 onClick={() => editingId ? updateMutation.mutate(editingId) : addMutation.mutate()}
-                className="gap-2"
+                className="gap-2 bg-[#6366f1] hover:bg-[#6366f1]/90"
               >
-                <Save className="h-4 w-4" /> {editingId ? "Update" : "Save"}
+                <Save className="h-4 w-4" /> {editingId ? "Update Testimonial" : "Save Testimonial"}
               </Button>
-              <Button variant="outline" onClick={resetForm} className="gap-2">
+              <Button variant="outline" onClick={resetForm} className="gap-2" style={{ borderColor: T.border, color: T.text }}>
                 <X className="h-4 w-4" /> Cancel
               </Button>
             </div>
@@ -304,43 +359,79 @@ const AdminTestimonials = () => {
 
       {/* List */}
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading...</p>
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-[#6366f1]" />
+        </div>
       ) : testimonials.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            No testimonials yet. Add your first one!
+        <Card style={{ background: T.card, border: `1px solid ${T.border}` }}>
+          <CardContent className="py-16 text-center" style={{ color: T.sub }}>
+            No testimonials yet. Add your first one to showcase client satisfaction!
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {testimonials.map((t) => (
-            <Card key={t.id} className={cn("transition-opacity", !t.is_active && "opacity-50")}>
-              <CardContent className="p-5 space-y-3">
-                <div className="flex items-start gap-3">
-                  {t.photo_path ? (
-                    <img src={t.photo_path} alt={t.name} className="h-12 w-12 rounded-full object-cover border shrink-0" />
-                  ) : (
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-lg">
-                      {t.name.charAt(0)}
+            <Card 
+              key={t.id} 
+              style={{ 
+                background: T.card, 
+                border: `1px solid ${T.border}`,
+                backdropFilter: "blur(12px)"
+              }}
+              className={cn("group relative transition-all hover:shadow-xl hover:shadow-indigo-500/5", !t.is_active && "opacity-60 grayscale")}
+            >
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    {t.photo_path ? (
+                      <img src={t.photo_path} alt={t.name} className="h-14 w-14 rounded-full object-cover border-2 p-0.5" style={{ borderColor: "#6366f1" }} />
+                    ) : (
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full font-bold text-xl" style={{ background: "rgba(99, 102, 241, 0.15)", color: "#a5b4fc" }}>
+                        {t.name.charAt(0)}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-bold truncate" style={{ color: T.text }}>{t.name}</p>
+                      <p className="text-[10px] uppercase font-semibold tracking-wider truncate" style={{ color: T.sub }}>{t.role}</p>
+                      <div className="mt-1">
+                        <InlineRatingPicker id={t.id} value={t.rating} />
+                      </div>
                     </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="font-semibold text-foreground truncate">{t.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{t.role}</p>
-                    <InlineRatingPicker id={t.id} value={t.rating} />
                   </div>
+                  <Badge variant="outline" className="text-[10px] h-5 px-1.5" style={{ borderColor: T.border, color: T.sub }}>
+                    #{t.display_order}
+                  </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground line-clamp-3">"{t.quote}"</p>
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <Switch
-                    checked={t.is_active}
-                    onCheckedChange={(v) => toggleActive.mutate({ id: t.id, is_active: v })}
-                  />
+                <p className="text-sm italic leading-relaxed line-clamp-4" style={{ color: T.text }}>
+                  "{t.quote}"
+                </p>
+                <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: T.border }}>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={t.is_active}
+                      onCheckedChange={(v) => toggleActive.mutate({ id: t.id, is_active: v })}
+                      className="scale-75"
+                    />
+                    <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.is_active ? "#4ade80" : T.sub }}>
+                      {t.is_active ? "Live" : "Hidden"}
+                    </span>
+                  </div>
                   <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" onClick={() => startEdit(t)}>
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      onClick={() => startEdit(t)} 
+                      className="h-8 w-8 hover:bg-white/5"
+                      style={{ color: T.sub }}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate(t.id)}>
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10" 
+                      onClick={() => { if(confirm("Delete testimonial?")) deleteMutation.mutate(t.id); }}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

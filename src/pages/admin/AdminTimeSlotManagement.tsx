@@ -6,17 +6,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
   Plus, Pencil, Trash2, Loader2, Clock, AlertTriangle, Users,
-  CheckCircle2, XCircle, CalendarDays, ChevronDown, ChevronUp,
+  CheckCircle2, XCircle, CalendarDays, ChevronDown, ChevronUp, Save, X, CalendarRange, Timer
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -151,6 +158,8 @@ function isDuplicate(
 
 const AdminTimeSlotManagement = () => {
   const queryClient = useQueryClient();
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
 
   const [slotDialog, setSlotDialog] = useState<{ open: boolean; form: SlotForm | null }>({
     open: false,
@@ -388,50 +397,35 @@ const AdminTimeSlotManagement = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#6366f1]" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-primary" />
-            Weekly Appointment Schedule
-          </h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Set available time slots for each day of the week. Users can only book enabled slots on open days.
-          </p>
-        </div>
-      </div>
-
+    <div className="space-y-6">
       {/* Migration Notice */}
       {migrationNeeded && (
-        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800">
+        <Card style={{ background: "rgba(251, 191, 36, 0.05)", border: "1px solid rgba(251, 191, 36, 0.2)" }}>
           <CardContent className="pt-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+              <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
               <div className="flex-1 space-y-2">
-                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-                  Database migration required
-                </p>
-                <p className="text-xs text-amber-700 dark:text-amber-400">
+                <p className="text-sm font-bold text-amber-400">Database migration required</p>
+                <p className="text-xs" style={{ color: T.sub }}>
                   The weekly schedule feature requires new database columns and a settings table. Run the SQL below in your Supabase SQL Editor.
                 </p>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-7 text-xs border-amber-300"
+                  className="h-8 text-xs border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
                   onClick={() => setMigrationExpanded(v => !v)}
                 >
                   {migrationExpanded ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
                   {migrationExpanded ? "Hide" : "Show"} Migration SQL
                 </Button>
                 {migrationExpanded && (
-                  <pre className="mt-2 p-3 bg-amber-100 dark:bg-amber-900/40 rounded-md text-xs overflow-x-auto text-amber-900 dark:text-amber-200 border border-amber-200 dark:border-amber-700">
+                  <pre className="mt-2 p-3 rounded-lg text-[10px] overflow-x-auto border border-amber-500/20 font-mono text-amber-200/70" style={{ background: "rgba(0,0,0,0.3)" }}>
                     {MIGRATION_SQL}
                   </pre>
                 )}
@@ -443,39 +437,21 @@ const AdminTimeSlotManagement = () => {
 
       {/* Summary bar */}
       {!migrationNeeded && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            {
-              label: "Open Days",
-              value: DAYS.filter(d => !daySettingMap[d.value]?.is_closed).length,
-              icon: CheckCircle2,
-              color: "text-green-600",
-            },
-            {
-              label: "Closed Days",
-              value: DAYS.filter(d => daySettingMap[d.value]?.is_closed).length,
-              icon: XCircle,
-              color: "text-red-500",
-            },
-            {
-              label: "Total Slots",
-              value: slots.length,
-              icon: Clock,
-              color: "text-blue-600",
-            },
-            {
-              label: "Active Slots",
-              value: slots.filter(s => s.is_enabled).length,
-              icon: Users,
-              color: "text-purple-600",
-            },
+            { label: "Open Days", value: DAYS.filter(d => !daySettingMap[d.value]?.is_closed).length, icon: CheckCircle2, color: "#4ade80" },
+            { label: "Closed Days", value: DAYS.filter(d => daySettingMap[d.value]?.is_closed).length, icon: XCircle, color: "#f87171" },
+            { label: "Total Slots", value: slots.length, icon: Clock, color: "#60a5fa" },
+            { label: "Active Slots", value: slots.filter(s => s.is_enabled).length, icon: Users, color: "#a78bfa" },
           ].map(stat => (
-            <Card key={stat.label} className="p-3">
-              <div className="flex items-center gap-2">
-                <stat.icon className={cn("h-4 w-4 shrink-0", stat.color)} />
+            <Card key={stat.label} style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }} className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg" style={{ background: `${stat.color}15` }}>
+                  <stat.icon className="h-5 w-5" style={{ color: stat.color }} />
+                </div>
                 <div>
-                  <p className="text-lg font-bold leading-none">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
+                  <p className="text-xl font-bold leading-none" style={{ color: T.text }}>{stat.value}</p>
+                  <p className="text-[10px] uppercase font-bold tracking-widest mt-1" style={{ color: T.sub }}>{stat.label}</p>
                 </div>
               </div>
             </Card>
@@ -484,7 +460,7 @@ const AdminTimeSlotManagement = () => {
       )}
 
       {/* Day Cards */}
-      <div className="space-y-3">
+      <div className="grid gap-4">
         {DAYS.map(day => {
           const isClosed = daySettingMap[day.value]?.is_closed ?? false;
           const daySlots = slotsByDay[day.value] ?? [];
@@ -494,138 +470,153 @@ const AdminTimeSlotManagement = () => {
           return (
             <Card
               key={day.value}
+              style={{ 
+                background: T.card, 
+                border: `1px solid ${T.border}`,
+                backdropFilter: "blur(12px)"
+              }}
               className={cn(
-                "transition-all",
-                isClosed && "opacity-75 border-dashed",
+                "transition-all overflow-hidden",
+                isClosed && "opacity-60 border-dashed",
               )}
             >
               {/* Day Header */}
-              <CardHeader className="py-3 px-4">
-                <div className="flex items-center justify-between gap-3">
-                  <button
-                    className="flex items-center gap-3 flex-1 text-left min-w-0"
-                    onClick={() => toggleDayCollapse(day.value)}
-                  >
-                    <span className="text-lg">{day.emoji}</span>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-sm">{day.label}</span>
-                        {isClosed ? (
-                          <Badge variant="destructive" className="text-xs h-5">Closed</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-xs h-5 border-green-300 text-green-700 dark:text-green-400">
-                            Open
-                          </Badge>
-                        )}
-                        {!isClosed && daySlots.length > 0 && (
-                          <span className="text-xs text-muted-foreground">
-                            {enabledCount}/{daySlots.length} slot{daySlots.length !== 1 ? "s" : ""} active
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="ml-auto shrink-0 text-muted-foreground">
-                      {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                    </div>
-                  </button>
-
-                  {/* Closed toggle */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs text-muted-foreground hidden sm:block">
-                      {isClosed ? "Mark Open" : "Mark Closed"}
-                    </span>
-                    <Switch
-                      checked={!isClosed}
-                      onCheckedChange={v =>
-                        toggleDayClosed.mutate({ dayOfWeek: day.value, isClosed: !v })
-                      }
-                      data-testid={`toggle-day-${day.value}`}
-                      className="data-[state=checked]:bg-green-600"
-                    />
+              <div className="p-4 flex items-center justify-between gap-4">
+                <button
+                  className="flex items-center gap-4 flex-1 text-left min-w-0"
+                  onClick={() => toggleDayCollapse(day.value)}
+                >
+                  <div className="h-10 w-10 rounded-full flex items-center justify-center text-xl bg-white/5 border" style={{ borderColor: T.border }}>
+                    {day.emoji}
                   </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-base" style={{ color: T.text }}>{day.label}</span>
+                      {isClosed ? (
+                        <Badge variant="destructive" className="text-[10px] h-5 uppercase px-1.5">Closed</Badge>
+                      ) : (
+                        <Badge 
+                          variant="outline" 
+                          className="text-[10px] h-5 uppercase px-1.5"
+                          style={{ background: "rgba(74, 222, 128, 0.1)", color: "#4ade80", borderColor: "rgba(74, 222, 128, 0.3)" }}
+                        >
+                          Open
+                        </Badge>
+                      )}
+                      {!isClosed && daySlots.length > 0 && (
+                        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>
+                          {enabledCount}/{daySlots.length} Active
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="ml-auto shrink-0" style={{ color: T.sub }}>
+                    {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                  </div>
+                </button>
+
+                <div className="flex items-center gap-3 shrink-0 border-l pl-4" style={{ borderColor: T.border }}>
+                  <span className="text-[10px] font-bold uppercase tracking-widest hidden sm:block" style={{ color: T.sub }}>
+                    {isClosed ? "Open Day" : "Close Day"}
+                  </span>
+                  <Switch
+                    checked={!isClosed}
+                    onCheckedChange={v => toggleDayClosed.mutate({ dayOfWeek: day.value, isClosed: !v })}
+                    className="scale-75"
+                  />
                 </div>
-              </CardHeader>
+              </div>
 
               {/* Slots List */}
               {!isCollapsed && (
                 <>
-                  <Separator />
-                  <CardContent className="pt-3 pb-4 px-4">
+                  <Separator style={{ background: T.border }} />
+                  <CardContent className="p-4 space-y-4">
                     {isClosed ? (
-                      <div className="flex items-center justify-center py-6 text-muted-foreground gap-2">
-                        <XCircle className="h-4 w-4" />
-                        <span className="text-sm">This day is marked as closed. Toggle to open and add slots.</span>
+                      <div className="flex items-center justify-center py-8 gap-3" style={{ color: T.sub }}>
+                        <XCircle className="h-5 w-5 opacity-50" />
+                        <span className="text-sm font-medium">This day is marked as closed.</span>
                       </div>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {daySlots.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-6 gap-2 text-muted-foreground">
-                            <Clock className="h-6 w-6" />
-                            <p className="text-sm">No time slots yet</p>
+                          <div className="flex flex-col items-center justify-center py-10 gap-2 border-2 border-dashed rounded-2xl" style={{ borderColor: T.border, color: T.sub }}>
+                            <Clock className="h-8 w-8 opacity-20" />
+                            <p className="text-sm font-medium">No time slots yet</p>
+                            <Button size="sm" variant="ghost" className="text-[#6366f1] hover:bg-[#6366f1]/10 h-8" onClick={() => openAdd(day.value)}>
+                               <Plus className="h-4 w-4 mr-2" /> Add first slot
+                            </Button>
                           </div>
                         ) : (
-                          <div className="space-y-1.5">
+                          <div className="grid gap-2">
                             {daySlots.map(slot => (
                               <div
                                 key={slot.id}
                                 className={cn(
-                                  "flex items-center gap-3 rounded-lg border px-3 py-2 text-sm",
-                                  !slot.is_enabled && "opacity-50 bg-muted/30",
+                                  "flex items-center gap-4 rounded-xl border p-3 transition-all",
+                                  !slot.is_enabled ? "opacity-50" : "hover:bg-white/5",
                                 )}
-                                data-testid={`slot-row-${slot.id}`}
+                                style={{ background: theme === "black" ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", borderColor: T.border }}
                               >
-                                <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
-                                <span className="font-medium w-40 shrink-0">
-                                  {formatTime(slot.start_hour, slot.start_minute)}
-                                  <span className="text-muted-foreground"> → </span>
-                                  {formatTime(slot.end_hour, slot.end_minute)}
-                                </span>
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <Users className="h-3 w-3" />
-                                  <span>{slot.max_bookings ?? 1} max</span>
+                                <div className="h-8 w-8 rounded-full flex items-center justify-center bg-[#6366f1]/10 text-[#a5b4fc]">
+                                   <Clock className="h-4 w-4" />
                                 </div>
-                                <div className="ml-auto flex items-center gap-2">
+                                <div className="flex-1 min-w-0">
+                                   <p className="font-mono text-sm font-bold truncate" style={{ color: T.text }}>
+                                      {formatTime(slot.start_hour, slot.start_minute)}
+                                      <span style={{ color: T.sub }}> — </span>
+                                      {formatHour ? formatTime(slot.end_hour, slot.end_minute) : ""}
+                                   </p>
+                                   <div className="flex items-center gap-2 mt-0.5">
+                                      <Users className="h-3 w-3" style={{ color: T.sub }} />
+                                      <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>{slot.max_bookings ?? 1} Max Bookings</span>
+                                   </div>
+                                </div>
+                                <div className="flex items-center gap-1.5 border-l pl-3" style={{ borderColor: T.border }}>
                                   <Switch
                                     checked={slot.is_enabled}
-                                    onCheckedChange={v =>
-                                      toggleSlotMutation.mutate({ id: slot.id, enabled: v })
-                                    }
-                                    data-testid={`toggle-slot-${slot.id}`}
+                                    onCheckedChange={v => toggleSlotMutation.mutate({ id: slot.id, enabled: v })}
+                                    className="scale-75"
                                   />
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7"
+                                  <Button 
+                                    size="icon" 
+                                    variant="ghost" 
+                                    className="h-8 w-8 hover:bg-white/5" 
                                     onClick={() => openEdit(slot)}
-                                    data-testid={`edit-slot-${slot.id}`}
+                                    style={{ color: T.sub }}
                                   >
                                     <Pencil className="h-3.5 w-3.5" />
                                   </Button>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7 text-destructive"
-                                    onClick={() => setDeleteDialog({ open: true, id: slot.id })}
-                                    data-testid={`delete-slot-${slot.id}`}
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(24px)" }}>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle style={{ color: T.text }}>Delete Time Slot?</AlertDialogTitle>
+                                        <AlertDialogDescription style={{ color: T.sub }}>This will permanently remove this available time window.</AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel style={{ borderColor: T.border, color: T.text }}>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => deleteSlotMutation.mutate(slot.id)} className="bg-destructive text-white hover:bg-destructive/90">Delete</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
                                 </div>
                               </div>
                             ))}
+                            <Button 
+                              variant="ghost" 
+                              className="w-full h-10 border border-dashed rounded-xl mt-2 font-bold uppercase tracking-widest text-[10px]"
+                              style={{ borderColor: T.border, color: T.sub }}
+                              onClick={() => openAdd(day.value)}
+                            >
+                              <Plus className="h-3.5 w-3.5 mr-2" /> Add Another Window
+                            </Button>
                           </div>
                         )}
-
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="mt-2 w-full gap-1.5 border-dashed"
-                          onClick={() => openAdd(day.value)}
-                          data-testid={`add-slot-day-${day.value}`}
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          Add Slot for {day.label}
-                        </Button>
                       </div>
                     )}
                   </CardContent>
@@ -636,266 +627,98 @@ const AdminTimeSlotManagement = () => {
         })}
       </div>
 
-      {/* ── Add / Edit Slot Dialog ─────────────────────────────────────────── */}
-      <Dialog
-        open={slotDialog.open}
-        onOpenChange={o => { if (!o) setSlotDialog({ open: false, form: null }); }}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" />
-              {slotDialog.form?.id ? "Edit" : "Add"} Time Slot
+      {/* Edit/Add Dialog */}
+      <Dialog open={slotDialog.open} onOpenChange={o => !o && setSlotDialog({ open: false, form: null })}>
+        <DialogContent style={{ background: T.bg }} className="border-none shadow-2xl p-0 overflow-hidden max-w-lg">
+          <div className="p-6 border-b" style={{ borderColor: T.border, background: T.nav }}>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2" style={{ color: T.text }}>
+               <Timer className="h-5 w-5 text-[#6366f1]" />
+               {slotDialog.form?.id ? "Edit Time Slot" : `Add Slot for ${DAYS.find(d => d.value === slotDialog.form?.day_of_week)?.label}`}
             </DialogTitle>
-            <DialogDescription>
-              Configure the time slot. Overlapping or duplicate slots on the same day are not allowed.
-            </DialogDescription>
-          </DialogHeader>
+            <DialogDescription style={{ color: T.sub }}>Configure the availability window and booking limits.</DialogDescription>
+          </div>
 
-          {slotDialog.form && (
-            <div className="space-y-4">
-              {/* Day of Week */}
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label>Day of Week</Label>
+                <Label style={{ color: T.text }}>Start Hour</Label>
                 <Select
-                  value={String(slotDialog.form.day_of_week)}
-                  onValueChange={v =>
-                    setSlotDialog(prev => ({
-                      ...prev,
-                      form: { ...prev.form!, day_of_week: parseInt(v) },
-                    }))
-                  }
+                  value={String(slotDialog.form?.start_hour)}
+                  onValueChange={v => setSlotDialog(p => ({ ...p, form: { ...p.form!, start_hour: parseInt(v) } }))}
                 >
-                  <SelectTrigger data-testid="select-day">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DAYS.map(d => (
-                      <SelectItem key={d.value} value={String(d.value)}>
-                        {d.emoji} {d.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                  <SelectTrigger style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}><SelectValue /></SelectTrigger>
+                  <SelectContent>{HOURS.map(h => <SelectItem key={h.value} value={String(h.value)}>{h.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-
-              {/* Start Time */}
               <div className="space-y-2">
-                <Label>Start Time</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Select
-                    value={String(slotDialog.form.start_hour)}
-                    onValueChange={v =>
-                      setSlotDialog(prev => ({
-                        ...prev,
-                        form: { ...prev.form!, start_hour: parseInt(v) },
-                      }))
-                    }
-                  >
-                    <SelectTrigger data-testid="select-start-hour">
-                      <SelectValue placeholder="Hour" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-56">
-                      {HOURS.map(h => (
-                        <SelectItem key={h.value} value={String(h.value)}>
-                          {h.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    value={String(slotDialog.form.start_minute)}
-                    onValueChange={v =>
-                      setSlotDialog(prev => ({
-                        ...prev,
-                        form: { ...prev.form!, start_minute: parseInt(v) },
-                      }))
-                    }
-                  >
-                    <SelectTrigger data-testid="select-start-minute">
-                      <SelectValue placeholder="Min" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MINUTES.map(m => (
-                        <SelectItem key={m.value} value={String(m.value)}>
-                          :{m.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Label style={{ color: T.text }}>Start Minute</Label>
+                <Select
+                  value={String(slotDialog.form?.start_minute)}
+                  onValueChange={v => setSlotDialog(p => ({ ...p, form: { ...p.form!, start_minute: parseInt(v) } }))}
+                >
+                  <SelectTrigger style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}><SelectValue /></SelectTrigger>
+                  <SelectContent>{MINUTES.map(m => <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>)}</SelectContent>
+                </Select>
               </div>
-
-              {/* End Time */}
-              <div className="space-y-2">
-                <Label>End Time</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Select
-                    value={String(slotDialog.form.end_hour)}
-                    onValueChange={v =>
-                      setSlotDialog(prev => ({
-                        ...prev,
-                        form: { ...prev.form!, end_hour: parseInt(v) },
-                      }))
-                    }
-                  >
-                    <SelectTrigger data-testid="select-end-hour">
-                      <SelectValue placeholder="Hour" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-56">
-                      {HOURS.map(h => (
-                        <SelectItem key={h.value} value={String(h.value)}>
-                          {h.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    value={String(slotDialog.form.end_minute)}
-                    onValueChange={v =>
-                      setSlotDialog(prev => ({
-                        ...prev,
-                        form: { ...prev.form!, end_minute: parseInt(v) },
-                      }))
-                    }
-                  >
-                    <SelectTrigger data-testid="select-end-minute">
-                      <SelectValue placeholder="Min" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MINUTES.map(m => (
-                        <SelectItem key={m.value} value={String(m.value)}>
-                          :{m.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {slotDialog.form.end_hour * 60 + slotDialog.form.end_minute <=
-                  slotDialog.form.start_hour * 60 + slotDialog.form.start_minute && (
-                  <p className="text-xs text-destructive">End time must be after start time</p>
-                )}
-              </div>
-
-              {/* Max Bookings */}
-              <div className="space-y-2">
-                <Label>Max Bookings per Slot</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={slotDialog.form.max_bookings}
-                    onChange={e =>
-                      setSlotDialog(prev => ({
-                        ...prev,
-                        form: { ...prev.form!, max_bookings: Math.max(1, parseInt(e.target.value) || 1) },
-                      }))
-                    }
-                    className="w-28"
-                    data-testid="input-max-bookings"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Maximum number of users who can book this slot
-                  </p>
-                </div>
-              </div>
-
-              {/* Enabled */}
-              <div className="flex items-center gap-3 pt-1">
-                <Switch
-                  checked={slotDialog.form.is_enabled}
-                  onCheckedChange={v =>
-                    setSlotDialog(prev => ({ ...prev, form: { ...prev.form!, is_enabled: v } }))
-                  }
-                  data-testid="switch-slot-enabled"
-                />
-                <div>
-                  <Label>Enable this slot</Label>
-                  <p className="text-xs text-muted-foreground">Users can only book enabled slots</p>
-                </div>
-              </div>
-
-              {/* Overlap preview */}
-              {slotDialog.form.end_hour * 60 + slotDialog.form.end_minute >
-                slotDialog.form.start_hour * 60 + slotDialog.form.start_minute && (
-                <div className="rounded-md bg-muted/50 p-3 text-xs space-y-1">
-                  <p className="font-medium text-muted-foreground">Slot preview</p>
-                  <p>
-                    <span className="font-semibold">
-                      {DAYS.find(d => d.value === slotDialog.form!.day_of_week)?.label}
-                    </span>
-                    {" · "}
-                    {formatTime(slotDialog.form.start_hour, slotDialog.form.start_minute)}
-                    {" → "}
-                    {formatTime(slotDialog.form.end_hour, slotDialog.form.end_minute)}
-                    {" · "}
-                    <span className="inline-flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {slotDialog.form.max_bookings} max
-                    </span>
-                  </p>
-                  {hasOverlap(slots, slotDialog.form, slotDialog.form.id) && (
-                    <p className="text-destructive font-medium flex items-center gap-1">
-                      <AlertTriangle className="h-3 w-3" />
-                      Overlaps with an existing slot on this day
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
-          )}
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setSlotDialog({ open: false, form: null })}
-              data-testid="btn-cancel-slot"
-            >
-              Cancel
-            </Button>
-            <Button
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label style={{ color: T.text }}>End Hour</Label>
+                <Select
+                  value={String(slotDialog.form?.end_hour)}
+                  onValueChange={v => setSlotDialog(p => ({ ...p, form: { ...p.form!, end_hour: parseInt(v) } }))}
+                >
+                  <SelectTrigger style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}><SelectValue /></SelectTrigger>
+                  <SelectContent>{HOURS.map(h => <SelectItem key={h.value} value={String(h.value)}>{h.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label style={{ color: T.text }}>End Minute</Label>
+                <Select
+                  value={String(slotDialog.form?.end_minute)}
+                  onValueChange={v => setSlotDialog(p => ({ ...p, form: { ...p.form!, end_minute: parseInt(v) } }))}
+                >
+                  <SelectTrigger style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}><SelectValue /></SelectTrigger>
+                  <SelectContent>{MINUTES.map(m => <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6 items-end">
+              <div className="space-y-2">
+                <Label style={{ color: T.text }}>Max Bookings</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={slotDialog.form?.max_bookings}
+                  onChange={e => setSlotDialog(p => ({ ...p, form: { ...p.form!, max_bookings: parseInt(e.target.value) || 1 } }))}
+                  style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                />
+              </div>
+              <div className="flex items-center gap-3 h-10">
+                <Switch
+                  checked={slotDialog.form?.is_enabled}
+                  onCheckedChange={v => setSlotDialog(p => ({ ...p, form: { ...p.form!, is_enabled: v } }))}
+                />
+                <Label style={{ color: T.text }}>Enabled</Label>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 border-t flex justify-end gap-3" style={{ borderColor: T.border, background: T.nav }}>
+            <Button variant="outline" onClick={() => setSlotDialog({ open: false, form: null })} style={{ borderColor: T.border, color: T.text }}>Cancel</Button>
+            <Button 
+              className="bg-[#6366f1] hover:bg-[#6366f1]/90 min-w-[120px]" 
               onClick={handleSave}
               disabled={saveSlotMutation.isPending}
-              data-testid="btn-save-slot"
             >
-              {saveSlotMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1" />
-              ) : null}
-              {slotDialog.form?.id ? "Save Changes" : "Add Slot"}
+              {saveSlotMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              Save Slot
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
-
-      {/* ── Delete Confirmation ───────────────────────────────────────────── */}
-      <AlertDialog
-        open={deleteDialog.open}
-        onOpenChange={o => { if (!o) setDeleteDialog({ open: false, id: "" }); }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Time Slot</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this time slot? This cannot be undone and will prevent users from booking this slot.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel data-testid="btn-cancel-delete">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => deleteSlotMutation.mutate(deleteDialog.id)}
-              disabled={deleteSlotMutation.isPending}
-              data-testid="btn-confirm-delete"
-            >
-              {deleteSlotMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1" />
-              ) : null}
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

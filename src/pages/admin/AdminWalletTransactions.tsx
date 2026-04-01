@@ -21,28 +21,38 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, ChevronLeft, ChevronRight, ArrowLeft, Search } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, ArrowLeft, Search, History, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { cn } from "@/lib/utils";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 const PAGE_SIZE = 15;
 
 const typeBadgeVariant = (type: string) => {
   switch (type) {
     case "credit":
-      return "default" as const;
+      return "bg-green-500/20 text-green-500 border-green-500/30";
     case "debit":
-      return "destructive" as const;
+      return "bg-red-500/20 text-red-500 border-red-500/30";
     case "hold":
-      return "secondary" as const;
+      return "bg-amber-500/20 text-amber-500 border-amber-500/30";
     case "release":
-      return "outline" as const;
+      return "bg-indigo-500/20 text-indigo-500 border-indigo-500/30";
     default:
-      return "secondary" as const;
+      return "bg-slate-500/20 text-slate-500 border-slate-500/30";
   }
 };
 
 const AdminWalletTransactions = () => {
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
@@ -80,7 +90,7 @@ const AdminWalletTransactions = () => {
   if (!profile) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
       </div>
     );
   }
@@ -90,127 +100,161 @@ const AdminWalletTransactions = () => {
   const showTo = Math.min(page * PAGE_SIZE, transactions?.total || 0);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/admin/wallet")}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h2 className="text-2xl font-bold text-foreground">Transaction History</h2>
+    <div className="min-h-screen p-4 pb-20 space-y-6" style={{ background: T.bg }}>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-700 p-8 text-white shadow-2xl">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-xl">
+              <History className="h-8 w-8" />
+            </div>
+            <h2 className="text-3xl font-bold tracking-tight">Transaction History</h2>
+            <p className="mt-2 text-indigo-100">Monitor all financial movements within your administrative wallet.</p>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate("/admin/wallet")}
+            className="w-fit rounded-2xl bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-md"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Wallet
+          </Button>
+        </div>
+        <div className="absolute -right-10 -top-10 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -bottom-10 -left-10 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
       </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">All Transactions</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Filters */}
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search by description..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setPage(1);
-                }}
-                className="pl-9"
-              />
-            </div>
-            <Select
-              value={typeFilter}
-              onValueChange={(v) => {
-                setTypeFilter(v);
+      <div className="rounded-3xl border p-6 transition-all hover:shadow-xl" style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }}>
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center justify-between">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: T.sub }} />
+            <Input
+              placeholder="Search by description..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
                 setPage(1);
               }}
-            >
-              <SelectTrigger className="w-full sm:w-[160px]">
-                <SelectValue placeholder="Filter by type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="credit">Credit</SelectItem>
-                <SelectItem value="debit">Debit</SelectItem>
-                <SelectItem value="hold">Hold</SelectItem>
-                <SelectItem value="release">Release</SelectItem>
-              </SelectContent>
-            </Select>
+              className="pl-9 h-11 rounded-xl"
+              style={{ background: T.input, borderColor: T.border, color: T.text }}
+            />
           </div>
-
-          {isLoading ? (
-            <div className="flex justify-center py-10">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl border" style={{ borderColor: T.border, background: T.nav }}>
+              <Filter className="h-4 w-4" style={{ color: T.sub }} />
+              <span className="text-xs font-medium" style={{ color: T.sub }}>Filter:</span>
+              <Select
+                value={typeFilter}
+                onValueChange={(v) => {
+                  setTypeFilter(v);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[130px] h-7 border-0 bg-transparent focus:ring-0 p-0" style={{ color: T.text }}>
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(16px)" }}>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="credit">Credit</SelectItem>
+                  <SelectItem value="debit">Debit</SelectItem>
+                  <SelectItem value="hold">Hold</SelectItem>
+                  <SelectItem value="release">Release</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          ) : !transactions?.items.length ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              No transactions found.
-            </p>
-          ) : (
-            <>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
+            <p style={{ color: T.sub }}>Loading transactions...</p>
+          </div>
+        ) : !transactions?.items.length ? (
+          <div className="py-20 text-center rounded-2xl border-2 border-dashed" style={{ borderColor: T.border }}>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100/10 mb-4">
+              <History className="h-6 w-6" style={{ color: T.sub }} />
+            </div>
+            <p className="font-medium" style={{ color: T.text }}>No transactions found</p>
+            <p className="text-sm" style={{ color: T.sub }}>Try adjusting your search or filters.</p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border" style={{ borderColor: T.border }}>
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
+                  <TableRow style={{ borderColor: T.border, background: theme === "black" ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}>
+                    <TableHead style={{ color: T.sub }}>Date & Time</TableHead>
+                    <TableHead style={{ color: T.sub }}>Type</TableHead>
+                    <TableHead style={{ color: T.sub }}>Description</TableHead>
+                    <TableHead className="text-right" style={{ color: T.sub }}>Amount</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {transactions.items.map((tx) => (
-                    <TableRow key={tx.id}>
-                      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                    <TableRow key={tx.id} style={{ borderColor: T.border }} className="hover:bg-slate-500/5 transition-colors">
+                      <TableCell className="whitespace-nowrap text-xs font-medium" style={{ color: T.sub }}>
                         {format(new Date(tx.created_at), "dd MMM yyyy, hh:mm a")}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={typeBadgeVariant(tx.type)} className="capitalize">
+                        <Badge variant="outline" className={cn("backdrop-blur-md uppercase text-[10px]", typeBadgeVariant(tx.type))}>
                           {tx.type}
                         </Badge>
                       </TableCell>
-                      <TableCell className="max-w-[300px] truncate text-sm">
+                      <TableCell className="max-w-[400px] truncate text-sm" style={{ color: T.text }}>
                         {tx.description}
                       </TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-right font-bold text-lg" style={{ color: T.text }}>
                         ₹{Number(tx.amount).toLocaleString("en-IN")}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-
-              {totalPages > 1 && (
-                <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-                  <span>
-                    Showing {showFrom}–{showTo} of {transactions.total}
-                  </span>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      disabled={page <= 1}
-                      onClick={() => setPage((p) => p - 1)}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      disabled={page >= totalPages}
-                      onClick={() => setPage((p) => p + 1)}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
+            </div>
+            
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t" style={{ borderColor: T.border }}>
+                <p className="text-sm font-medium" style={{ color: T.sub }}>
+                  Showing <span style={{ color: T.text }}>{showFrom}–{showTo}</span> of <span style={{ color: T.text }}>{transactions.total}</span> records
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl h-9"
+                    disabled={page <= 1}
+                    onClick={() => { setPage((p) => p - 1); window.scrollTo(0, 0); }}
+                    style={{ borderColor: T.border, background: T.nav, color: T.text }}
+                  >
+                    <ChevronLeft className="mr-2 h-4 w-4" />
+                    Previous
+                  </Button>
+                  <div className="flex h-9 items-center justify-center rounded-xl border px-4 text-xs font-bold" style={{ borderColor: T.border, background: T.nav, color: T.text }}>
+                    {page} / {totalPages}
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl h-9"
+                    disabled={page >= totalPages}
+                    onClick={() => { setPage((p) => p + 1); window.scrollTo(0, 0); }}
+                    style={{ borderColor: T.border, background: T.nav, color: T.text }}
+                  >
+                    Next
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
                 </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
+
+export default AdminWalletTransactions;
+
 
 export default AdminWalletTransactions;

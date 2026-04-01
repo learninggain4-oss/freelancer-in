@@ -23,6 +23,13 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 type PaymentConfirmation = {
   id: string;
@@ -59,6 +66,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const AdminValidation = () => {
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -206,103 +215,131 @@ const AdminValidation = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-foreground">Validation</h2>
-        <Button size="sm" variant="outline" onClick={() => refetch()} className="gap-1">
-          <RefreshCw className="h-3.5 w-3.5" />
-          Refresh
+    <div className="space-y-6 p-4 min-h-screen" style={{ backgroundColor: T.bg, color: T.text }}>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between p-6 rounded-2xl border" style={{ background: `linear-gradient(135deg, ${T.card} 0%, rgba(99,102,241,0.05) 100%)`, borderColor: T.border }}>
+        <div>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="p-2 rounded-xl bg-indigo-500/20">
+              <ShieldCheck className="h-6 w-6 text-indigo-500" />
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight">Project Validation</h2>
+          </div>
+          <p style={{ color: T.sub }}>Monitor and validate project payment flows</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={() => refetch()} className="border-white/10 hover:bg-white/5 rounded-xl h-11 px-6 gap-2">
+          <RefreshCw className="h-4 w-4" />
+          Refresh Data
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by employee, project, or UTR..."
-            className="pl-9"
-          />
+      {/* Filters & Stats */}
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="relative flex-1 min-w-[300px] group">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors group-focus-within:text-indigo-500" style={{ color: T.sub }} />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by employee, project, or UTR..."
+              className="pl-10 h-12 border-none transition-all focus-visible:ring-1 focus-visible:ring-indigo-500/50"
+              style={{ backgroundColor: T.input, color: T.text }}
+            />
+          </div>
+          <div className="flex flex-wrap gap-2 p-1 rounded-xl bg-black/20 border border-white/5">
+            {statuses.map((s) => (
+              <Button
+                key={s}
+                size="sm"
+                variant="ghost"
+                onClick={() => setStatusFilter(s)}
+                className={`text-xs capitalize h-8 rounded-lg transition-all ${statusFilter === s ? 'bg-indigo-600 text-white shadow-lg' : 'opacity-60 hover:opacity-100'}`}
+              >
+                {s === "all" ? "All" : s.replace("_", " ")}
+              </Button>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {statuses.map((s) => (
-            <Button
-              key={s}
-              size="sm"
-              variant={statusFilter === s ? "default" : "outline"}
-              onClick={() => setStatusFilter(s)}
-              className="text-xs capitalize"
-            >
-              {s === "all" ? "All" : s.replace("_", " ")}
-            </Button>
-          ))}
-        </div>
+
+        {/* Summary Cards */}
+        <ScrollArea className="w-full whitespace-nowrap pb-4">
+          <div className="flex gap-3">
+            {statuses.filter((s) => s !== "all").map((s) => {
+              const count = confirmations.filter((c) => c.status === s).length;
+              const isActive = statusFilter === s;
+              return (
+                <Card 
+                  key={s} 
+                  className={`inline-flex flex-col items-center justify-center min-w-[120px] p-4 border transition-all cursor-pointer hover:scale-105 ${isActive ? 'ring-2 ring-indigo-500/50' : ''}`} 
+                  style={{ backgroundColor: T.card, borderColor: isActive ? 'rgba(99,102,241,0.5)' : T.border }}
+                  onClick={() => setStatusFilter(s)}
+                >
+                  <span className="text-2xl font-bold mb-1" style={{ color: isActive ? '#818cf8' : T.text }}>{count}</span>
+                  <span className="text-[10px] uppercase tracking-widest font-bold opacity-40">{s.replace("_", " ")}</span>
+                </Card>
+              );
+            })}
+          </div>
+        </ScrollArea>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-        {statuses.filter((s) => s !== "all").map((s) => {
-          const count = confirmations.filter((c) => c.status === s).length;
-          return (
-            <Card key={s} className="cursor-pointer hover:border-primary/30" onClick={() => setStatusFilter(s)}>
-              <CardContent className="flex flex-col items-center py-3">
-                <span className="text-2xl font-bold text-foreground">{count}</span>
-                <span className="text-[10px] capitalize text-muted-foreground">{s.replace("_", " ")}</span>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Table */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ShieldCheck className="h-4 w-4 text-primary" />
-            Payment Confirmations ({filtered.length})
+      {/* Main Content */}
+      <Card className="border-none shadow-2xl overflow-hidden" style={{ backgroundColor: T.card }}>
+        <CardHeader className="pb-4 border-b border-white/5 bg-white/5">
+          <CardTitle className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest" style={{ color: T.sub }}>
+            <ShieldCheck className="h-4 w-4 text-indigo-400" />
+            Validation Workflow Logs ({filtered.length})
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {filtered.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">No records found.</p>
+            <div className="py-20 text-center flex flex-col items-center">
+              <div className="p-4 rounded-full bg-white/5 mb-4">
+                <RefreshCw className="h-8 w-8 opacity-20" />
+              </div>
+              <p style={{ color: T.sub }}>No validation records match your filters.</p>
+            </div>
           ) : (
             <ScrollArea className="max-h-[600px]">
-              <div className="space-y-2">
+              <div className="divide-y divide-white/5">
                 {filtered.map((c) => (
                   <div
                     key={c.id}
-                    className="flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 transition-colors hover:bg-muted/30 cursor-pointer"
+                    className="group flex items-center gap-4 p-5 transition-all hover:bg-white/5 cursor-pointer"
                     onClick={() => setSelectedId(c.id)}
                   >
-                    <div className="flex-1 min-w-[150px]">
-                      <p className="text-sm font-medium text-foreground">
+                    <div className="h-10 w-10 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
+                      <FileText className="h-5 w-5 text-indigo-400" />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold truncate text-sm">
                         {(c.project as any)?.name || "Unknown Project"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs opacity-50 truncate" style={{ color: T.text }}>
                         {(c.employee as any)?.full_name?.[0] || "Unknown"} •{" "}
-                        {(c.employee as any)?.user_code?.[0] || ""}
+                        <span className="font-mono">{(c.employee as any)?.user_code?.[0] || ""}</span>
                       </p>
                     </div>
 
-                    <span className="text-sm font-semibold text-foreground">
-                      ₹{c.amount.toLocaleString("en-IN")}
-                    </span>
+                    <div className="text-right shrink-0">
+                      <p className="font-bold text-sm">₹{c.amount.toLocaleString("en-IN")}</p>
+                      <p className="text-[10px] opacity-40 uppercase tracking-tighter">
+                        {new Date(c.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
 
-                    <Badge className={`text-[10px] ${STATUS_COLORS[c.status] || ""}`}>
-                      {c.status.replace("_", " ")}
-                    </Badge>
-
-                    {c.payment_method && (
-                      <Badge variant="outline" className="text-[10px]">
-                        {c.payment_method}
+                    <div className="flex flex-col items-end gap-1.5 min-w-[100px]">
+                      <Badge className={`text-[9px] px-2 py-0 border-none uppercase tracking-widest font-bold ${STATUS_COLORS[c.status] || ""}`}>
+                        {c.status.replace("_", " ")}
                       </Badge>
-                    )}
-
-                    <span className="text-[10px] text-muted-foreground">
-                      {new Date(c.created_at).toLocaleDateString("en-IN")}
-                    </span>
+                      {c.payment_method && (
+                        <span className="text-[10px] opacity-50 italic">via {c.payment_method}</span>
+                      )}
+                    </div>
+                    
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ChevronRight className="h-4 w-4 opacity-20" />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -314,222 +351,243 @@ const AdminValidation = () => {
       {/* Detail Dialog */}
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelectedId(null)}>
         {selected && (
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-primary" />
-                Payment Confirmation Details
+          <DialogContent className="max-w-2xl p-0 border-none shadow-2xl overflow-hidden rounded-2xl" style={{ backgroundColor: T.bg }}>
+            <div className="p-6 border-b border-white/5 flex items-center justify-between" style={{ backgroundColor: T.card }}>
+              <DialogTitle className="flex items-center gap-3 text-xl font-bold">
+                <CreditCard className="h-6 w-6 text-indigo-500" />
+                Validation Detail
               </DialogTitle>
-            </DialogHeader>
+            </div>
 
-            <div className="space-y-4">
-              {/* Info Grid */}
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Project</span>
-                  <p className="font-medium">{(selected.project as any)?.name || "Unknown"}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Employee</span>
-                  <p className="font-medium">
-                    {(selected.employee as any)?.full_name?.[0] || "Unknown"}{" "}
-                    <span className="text-xs text-muted-foreground">
-                      ({(selected.employee as any)?.user_code?.[0]})
-                    </span>
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Amount</span>
-                  <p className="font-semibold text-primary">₹{selected.amount.toLocaleString("en-IN")}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Status</span>
-                  <Badge className={`${STATUS_COLORS[selected.status] || ""}`}>
-                    {selected.status.replace("_", " ")}
-                  </Badge>
-                </div>
-                {selected.payment_method && (
-                  <div>
-                    <span className="text-muted-foreground">Payment Method</span>
-                    <p className="font-medium">{selected.payment_method}</p>
-                  </div>
-                )}
-                {selected.phone_number && (
-                  <div>
-                    <span className="text-muted-foreground">Phone</span>
-                    <p className="font-medium">{selected.phone_number}</p>
-                  </div>
-                )}
-                {selected.otp && (
-                  <div>
-                    <span className="text-muted-foreground">OTP</span>
-                    <p className="font-mono font-bold">{selected.otp}</p>
-                  </div>
-                )}
-                {selected.utr_number && (
-                  <div>
-                    <span className="text-muted-foreground">UTR Number</span>
-                    <p className="font-mono font-medium">{selected.utr_number}</p>
-                  </div>
-                )}
-                {selected.client_payment_info && (
-                  <div className="col-span-2">
-                    <span className="text-muted-foreground">Client Payment Info</span>
-                    <p className="font-medium">{selected.client_payment_info}</p>
-                  </div>
-                )}
+            <div className="p-6 space-y-8 max-h-[80vh] overflow-y-auto">
+              {/* Top Stats */}
+              <div className="grid grid-cols-3 gap-4">
+                 <div className="p-4 rounded-2xl border border-white/5 bg-white/5 text-center">
+                    <p className="text-[10px] uppercase font-bold opacity-40 mb-1">Amount</p>
+                    <p className="text-xl font-bold text-indigo-400">₹{selected.amount.toLocaleString("en-IN")}</p>
+                 </div>
+                 <div className="p-4 rounded-2xl border border-white/5 bg-white/5 text-center">
+                    <p className="text-[10px] uppercase font-bold opacity-40 mb-1">Status</p>
+                    <Badge className={`text-[10px] border-none ${STATUS_COLORS[selected.status] || ""}`}>
+                      {selected.status.replace("_", " ")}
+                    </Badge>
+                 </div>
+                 <div className="p-4 rounded-2xl border border-white/5 bg-white/5 text-center">
+                    <p className="text-[10px] uppercase font-bold opacity-40 mb-1">Method</p>
+                    <p className="text-sm font-bold uppercase tracking-tight">{selected.payment_method || "Pending"}</p>
+                 </div>
               </div>
 
-              {/* Timestamps */}
-              <Separator />
-              <div className="space-y-1 text-xs text-muted-foreground">
-                <p>Created: {new Date(selected.created_at).toLocaleString("en-IN")}</p>
-                {selected.method_selected_at && (
-                  <p>Method Selected: {new Date(selected.method_selected_at).toLocaleString("en-IN")}</p>
-                )}
-                {selected.details_shared_at && (
-                  <p>Details Shared: {new Date(selected.details_shared_at).toLocaleString("en-IN")}</p>
-                )}
-                {selected.otp_submitted_at && (
-                  <p>OTP Submitted: {new Date(selected.otp_submitted_at).toLocaleString("en-IN")}</p>
-                )}
-              </div>
-
-              {/* File Attachments */}
-              {(selected.receipt_path || selected.qr_code_path) && (
-                <>
-                  <Separator />
-                  <div className="flex flex-wrap gap-2">
-                    {selected.qr_code_path && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-1"
-                        onClick={() => handleViewFile(selected.qr_code_path, selected.qr_code_name)}
-                      >
-                        <Image className="h-3.5 w-3.5" />
-                        View QR Code
-                      </Button>
-                    )}
-                    {selected.receipt_path && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-1"
-                        onClick={() => handleViewFile(selected.receipt_path, selected.receipt_name)}
-                      >
-                        <FileText className="h-3.5 w-3.5" />
-                        View Receipt
-                      </Button>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {/* Admin Share Payment Details */}
-              {(selected.status === "method_selected" || selected.status === "initiated") && (
-                <>
-                  <Separator />
-                  {!showShareForm ? (
-                    <Button size="sm" variant="outline" onClick={() => setShowShareForm(true)} className="gap-1 w-full">
-                      <Send className="h-3.5 w-3.5" />
-                      Share Payment Details (Admin)
-                    </Button>
-                  ) : (
-                    <div className="space-y-2 rounded-md border p-3">
-                      <p className="text-xs font-medium">Admin: Share Payment Details</p>
-                      <p className="text-[10px] text-muted-foreground">Select one or more options to share on behalf of the client</p>
-                      <div className="flex gap-1.5 flex-wrap">
-                        {(["qr", "upi", "bank"] as const).map((t) => (
-                          <label key={t} className="flex items-center gap-1 text-xs cursor-pointer">
-                            <Checkbox checked={adminShareTypes.includes(t)} onCheckedChange={() => toggleAdminShareType(t)} />
-                            {t === "qr" && <QrCode className="h-3 w-3" />}
-                            {t === "upi" && <Smartphone className="h-3 w-3" />}
-                            {t === "bank" && <Building2 className="h-3 w-3" />}
-                            {t === "qr" ? "QR Code" : t === "upi" ? "UPI ID" : "Bank Details"}
-                          </label>
-                        ))}
-                      </div>
-                      {adminShareTypes.includes("qr") && (
-                        <div>
-                          <Label className="text-xs">Upload QR Code</Label>
-                          <Input type="file" accept="image/*" onChange={(e) => setAdminQrFile(e.target.files?.[0] || null)} className="h-8 text-xs" />
-                        </div>
-                      )}
-                      {adminShareTypes.includes("upi") && (
-                        <div>
-                          <Label className="text-xs">UPI ID</Label>
-                          <Input value={adminUpiId} onChange={(e) => setAdminUpiId(e.target.value)} placeholder="example@upi" className="h-8 text-sm" />
-                        </div>
-                      )}
-                      {adminShareTypes.includes("bank") && (
-                        <div className="grid gap-2">
-                          <Input value={adminBankHolder} onChange={(e) => setAdminBankHolder(e.target.value)} placeholder="Account Holder Name" className="h-8 text-sm" />
-                          <Input value={adminBankName} onChange={(e) => setAdminBankName(e.target.value)} placeholder="Bank Name" className="h-8 text-sm" />
-                          <Input value={adminBankAccount} onChange={(e) => setAdminBankAccount(e.target.value)} placeholder="Account Number" className="h-8 text-sm" />
-                          <Input value={adminBankIfsc} onChange={(e) => setAdminBankIfsc(e.target.value)} placeholder="IFSC Code" className="h-8 text-sm" />
-                        </div>
-                      )}
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleAdminShareDetails(selected.id, selected.client_payment_info)} disabled={adminSharing || adminShareTypes.length === 0}>
-                          {adminSharing ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Send className="h-3 w-3 mr-1" />}
-                          Share Details
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setShowShareForm(false)}>Cancel</Button>
-                      </div>
+              {/* Data Grid */}
+              <div className="grid md:grid-cols-2 gap-8">
+                 <div className="space-y-6">
+                    <div className="space-y-4">
+                       <h4 className="text-[10px] font-bold uppercase tracking-widest opacity-30">Assignment Info</h4>
+                       <div className="space-y-3">
+                          <div className="flex flex-col">
+                             <span className="text-[10px] opacity-40 uppercase">Project</span>
+                             <span className="font-bold">{(selected.project as any)?.name || "Unknown"}</span>
+                          </div>
+                          <div className="flex flex-col">
+                             <span className="text-[10px] opacity-40 uppercase">Employee</span>
+                             <span className="font-bold">{(selected.employee as any)?.full_name?.[0] || "Unknown"} <span className="opacity-30 font-mono text-xs">({(selected.employee as any)?.user_code?.[0]})</span></span>
+                          </div>
+                       </div>
                     </div>
-                  )}
-                </>
-              )}
 
-              {/* Admin Actions */}
-              <Separator />
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">Force Status:</span>
-                  <Select
-                    value={selected.status}
-                    onValueChange={(val) => updateStatusMutation.mutate({ id: selected.id, status: val })}
-                  >
-                    <SelectTrigger className="h-9 flex-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["initiated", "method_selected", "details_shared", "proof_submitted", "otp_submitted", "success", "failed"].map((s) => (
-                        <SelectItem key={s} value={s} className="capitalize">
-                          {s.replace(/_/g, " ")}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <div className="space-y-4">
+                       <h4 className="text-[10px] font-bold uppercase tracking-widest opacity-30">Transaction Details</h4>
+                       <div className="space-y-3">
+                          <div className="flex justify-between">
+                             <span className="text-sm opacity-50">Phone Number</span>
+                             <span className="text-sm font-mono">{selected.phone_number || "—"}</span>
+                          </div>
+                          <div className="flex justify-between">
+                             <span className="text-sm opacity-50">UTR Number</span>
+                             <span className="text-sm font-mono text-indigo-400">{selected.utr_number || "—"}</span>
+                          </div>
+                          <div className="flex justify-between">
+                             <span className="text-sm opacity-50">OTP Verification</span>
+                             <span className="text-sm font-bold tracking-widest bg-white/5 px-2 rounded">{selected.otp || "—"}</span>
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="space-y-6">
+                    <div className="space-y-4">
+                       <h4 className="text-[10px] font-bold uppercase tracking-widest opacity-30">Workflow Timeline</h4>
+                       <div className="space-y-2 border-l-2 border-white/5 ml-1 pl-4">
+                          {[
+                            { label: "Initiated", time: selected.created_at },
+                            { label: "Method Selected", time: selected.method_selected_at },
+                            { label: "Details Shared", time: selected.details_shared_at },
+                            { label: "OTP Submitted", time: selected.otp_submitted_at },
+                          ].filter(t => t.time).map((t, i) => (
+                            <div key={i} className="relative flex flex-col mb-4">
+                               <div className="absolute -left-[21px] top-1 w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+                               <span className="text-[10px] font-bold uppercase tracking-tighter opacity-80">{t.label}</span>
+                               <span className="text-[10px] opacity-40">{new Date(t.time!).toLocaleString()}</span>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+
+                    {/* Attachments */}
+                    <div className="space-y-4">
+                       <h4 className="text-[10px] font-bold uppercase tracking-widest opacity-30">Attachments</h4>
+                       <div className="flex gap-2">
+                          {selected.qr_code_path && (
+                            <Button size="sm" variant="secondary" className="flex-1 rounded-xl gap-2" onClick={() => handleViewFile(selected.qr_code_path, selected.qr_code_name)}>
+                              <QrCode className="h-4 w-4" /> QR Code
+                            </Button>
+                          )}
+                          {selected.receipt_path && (
+                            <Button size="sm" variant="secondary" className="flex-1 rounded-xl gap-2" onClick={() => handleViewFile(selected.receipt_path, selected.receipt_name)}>
+                              <Image className="h-4 w-4" /> Receipt
+                            </Button>
+                          )}
+                       </div>
+                    </div>
+                 </div>
+              </div>
+
+              {/* Admin Interaction Section */}
+              <div className="space-y-4 pt-4 border-t border-white/5">
+                <div className="flex items-center justify-between">
+                   <h4 className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">Admin Actions</h4>
+                   <Badge variant="outline" className="text-[9px] border-white/10 uppercase">Security Overrides</Badge>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className="gap-1"
-                    disabled={selected.status === "success"}
-                    onClick={() => updateStatusMutation.mutate({ id: selected.id, status: "success" })}
-                  >
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    Mark Success
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1 border-destructive/30 text-destructive hover:bg-destructive/10"
-                    disabled={selected.status === "failed"}
-                    onClick={() => updateStatusMutation.mutate({ id: selected.id, status: "failed" })}
-                  >
-                    <XCircle className="h-3.5 w-3.5" />
-                    Mark Failed
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="destructive" className="gap-1 ml-auto">
-                        Delete Record
-                      </Button>
-                    </AlertDialogTrigger>
+
+                {/* Share Details Form */}
+                {(selected.status === "method_selected" || selected.status === "initiated") && (
+                  <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-5 space-y-4">
+                    {!showShareForm ? (
+                      <div className="text-center space-y-3 py-2">
+                        <p className="text-xs opacity-60">Clients need payment credentials. Share them manually?</p>
+                        <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2 px-8" onClick={() => setShowShareForm(true)}>
+                          <Send className="h-3.5 w-3.5" /> Start Sharing Details
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4 animate-in fade-in duration-300">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-bold uppercase tracking-widest opacity-80">Share Payment Methods</p>
+                          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setShowShareForm(false)}><X className="h-3 w-3" /></Button>
+                        </div>
+                        
+                        <div className="flex gap-4 p-3 rounded-xl bg-black/20 border border-white/5">
+                          {(["qr", "upi", "bank"] as const).map((t) => (
+                            <label key={t} className={`flex items-center gap-2 text-[10px] font-bold uppercase cursor-pointer transition-opacity ${adminShareTypes.includes(t) ? 'opacity-100' : 'opacity-30'}`}>
+                              <Checkbox checked={adminShareTypes.includes(t)} onCheckedChange={() => toggleAdminShareType(t)} className="border-white/20" />
+                              {t === "qr" && <QrCode className="h-3 w-3" />}
+                              {t === "upi" && <Smartphone className="h-3 w-3" />}
+                              {t === "bank" && <Building2 className="h-3 w-3" />}
+                              {t === "qr" ? "QR" : t === "upi" ? "UPI" : "Bank"}
+                            </label>
+                          ))}
+                        </div>
+
+                        <div className="grid gap-3">
+                          {adminShareTypes.includes("qr") && (
+                            <div className="space-y-1.5 p-3 rounded-xl bg-black/20 border border-white/5">
+                              <Label className="text-[10px] uppercase opacity-40">QR Code File</Label>
+                              <Input type="file" accept="image/*" onChange={(e) => setAdminQrFile(e.target.files?.[0] || null)} className="h-9 text-xs border-white/10 bg-transparent" />
+                            </div>
+                          )}
+                          {adminShareTypes.includes("upi") && (
+                            <div className="space-y-1.5 p-3 rounded-xl bg-black/20 border border-white/5">
+                              <Label className="text-[10px] uppercase opacity-40">UPI ID</Label>
+                              <Input value={adminUpiId} onChange={(e) => setAdminUpiId(e.target.value)} placeholder="example@upi" className="h-9 text-xs border-white/10 bg-transparent" />
+                            </div>
+                          )}
+                          {adminShareTypes.includes("bank") && (
+                            <div className="p-3 rounded-xl bg-black/20 border border-white/5 space-y-3">
+                              <Label className="text-[10px] uppercase opacity-40">Bank Details</Label>
+                              <div className="grid grid-cols-2 gap-2">
+                                <Input value={adminBankHolder} onChange={(e) => setAdminBankHolder(e.target.value)} placeholder="Holder Name" className="h-8 text-xs border-white/10 bg-transparent" />
+                                <Input value={adminBankName} onChange={(e) => setAdminBankName(e.target.value)} placeholder="Bank Name" className="h-8 text-xs border-white/10 bg-transparent" />
+                                <Input value={adminBankAccount} onChange={(e) => setAdminBankAccount(e.target.value)} placeholder="Account Number" className="h-8 text-xs border-white/10 bg-transparent" />
+                                <Input value={adminBankIfsc} onChange={(e) => setAdminBankIfsc(e.target.value)} placeholder="IFSC Code" className="h-8 text-xs border-white/10 bg-transparent" />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <Button 
+                          className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg" 
+                          onClick={() => handleAdminShareDetails(selected.id, selected.client_payment_info)} 
+                          disabled={adminSharing || adminShareTypes.length === 0}
+                        >
+                          {adminSharing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+                          Push Details to Client
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Status Overrides */}
+                <div className="grid grid-cols-[1fr,auto] gap-4 items-end">
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] uppercase opacity-40">Force Lifecycle Status</Label>
+                    <Select
+                      value={selected.status}
+                      onValueChange={(val) => updateStatusMutation.mutate({ id: selected.id, status: val })}
+                    >
+                      <SelectTrigger className="h-10 border-white/10" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="border-white/10" style={{ backgroundColor: T.bg }}>
+                        {["initiated", "method_selected", "details_shared", "proof_submitted", "otp_submitted", "success", "failed"].map((s) => (
+                          <SelectItem key={s} value={s} className="capitalize">
+                            {s.replace(/_/g, " ")}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="h-10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 rounded-xl px-4" disabled={selected.status === "success"} onClick={() => updateStatusMutation.mutate({ id: selected.id, status: "success" })}>
+                      <CheckCircle className="h-4 w-4 mr-2" /> Success
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-10 border-red-500/30 text-red-400 hover:bg-red-500/10 rounded-xl px-4" disabled={selected.status === "failed"} onClick={() => updateStatusMutation.mutate({ id: selected.id, status: "failed" })}>
+                      <XCircle className="h-4 w-4 mr-2" /> Fail
+                    </Button>
+                  </div>
+                </div>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" className="w-full h-10 border border-white/5 text-red-400/50 hover:text-red-400 hover:bg-red-500/10 rounded-xl">
+                      <Trash2 className="h-4 w-4 mr-2" /> Purge Record
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="border-white/10" style={{ backgroundColor: T.bg }}>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle style={{ color: T.text }}>Delete Log Entry?</AlertDialogTitle>
+                      <AlertDialogDescription style={{ color: T.sub }}>
+                        This will remove all proof and history for this specific payment attempt. It cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="border-white/10" style={{ color: T.text }}>Keep it</AlertDialogCancel>
+                      <AlertDialogAction className="bg-red-600 text-white" onClick={() => deleteMutation.mutate(selected.id)}>
+                        Delete Log
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          </DialogContent>
+        )}
+      </Dialog>
+    </div>
+  );
+};
+
+import { ChevronRight, Trash2, X } from "lucide-react";
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete this payment confirmation?</AlertDialogTitle>

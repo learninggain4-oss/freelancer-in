@@ -23,6 +23,13 @@ import {
   Calendar,
 } from "lucide-react";
 import { format, differenceInMinutes, subDays, isAfter, parseISO } from "date-fns";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 interface ConversationMetric {
   conversationId: string;
@@ -38,6 +45,8 @@ interface ConversationMetric {
 }
 
 const AdminSupportReporting = () => {
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
   const [dateFrom, setDateFrom] = useState(
     format(subDays(new Date(), 30), "yyyy-MM-dd")
   );
@@ -216,142 +225,147 @@ const AdminSupportReporting = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Support Reporting</h1>
-          <p className="text-sm text-muted-foreground">
-            Chat volume, response times &amp; export
-          </p>
+      <div className="relative overflow-hidden rounded-3xl bg-indigo-600 p-8 text-white shadow-2xl shadow-indigo-500/20">
+        <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-indigo-100 mb-2">
+              <BarChart3 className="h-4 w-4" />
+              <span className="text-xs font-bold uppercase tracking-wider">Support Analytics</span>
+            </div>
+            <h1 className="text-3xl font-bold">Support Reporting</h1>
+            <p className="text-indigo-100/80 text-sm mt-1">
+              Chat volume, response times &amp; performance monitoring
+            </p>
+          </div>
+          <Button 
+            onClick={exportCSV} 
+            className="gap-2 bg-white/20 hover:bg-white/30 text-white border-white/20 backdrop-blur-md rounded-xl"
+            variant="outline"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
         </div>
-        <Button onClick={exportCSV} className="gap-2">
-          <Download className="h-4 w-4" />
-          Export CSV
-        </Button>
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
       </div>
 
       {/* Date range filter */}
-      <div className="flex flex-wrap items-center gap-3">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
-        <Input
-          type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          className="w-40"
-        />
-        <span className="text-muted-foreground">to</span>
-        <Input
-          type="date"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          className="w-40"
-        />
+      <div 
+        className="flex flex-wrap items-center gap-4 p-4 rounded-2xl border backdrop-blur-xl"
+        style={{ background: T.card, borderColor: T.border }}
+      >
+        <div className="flex items-center gap-3">
+          <Calendar className="h-4 w-4" style={{ color: T.sub }} />
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="w-40 border-none h-10 rounded-xl"
+            style={{ background: T.input, color: T.text }}
+          />
+          <span style={{ color: T.sub }}>to</span>
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="w-40 border-none h-10 rounded-xl"
+            style={{ background: T.input, color: T.text }}
+          />
+        </div>
       </div>
 
       {/* Summary cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Conversations
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summary.totalConversations}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Messages
-            </CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summary.totalMessages}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Avg Response Time
-            </CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatResponseTime(summary.avgResponseTime)}
+        {[
+          { label: "Total Conversations", value: summary.totalConversations, icon: Users, color: "#6366f1" },
+          { label: "Total Messages", value: summary.totalMessages, icon: MessageSquare, color: "#8b5cf6" },
+          { label: "Avg Response Time", value: formatResponseTime(summary.avgResponseTime), icon: Clock, color: "#ec4899" },
+          { label: "Active (24h)", value: summary.activeToday, icon: TrendingUp, color: "#22c55e" },
+        ].map((stat, i) => (
+          <div 
+            key={i}
+            className="group relative overflow-hidden rounded-2xl border p-6 transition-all hover:scale-[1.02]"
+            style={{ background: T.card, borderColor: T.border }}
+          >
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2 rounded-lg" style={{ background: `${stat.color}15`, color: stat.color }}>
+                  <stat.icon className="h-5 w-5" />
+                </div>
+              </div>
+              <p className="text-sm font-medium" style={{ color: T.sub }}>{stat.label}</p>
+              <p className="text-2xl font-bold mt-1" style={{ color: T.text }}>{stat.value}</p>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Active (24h)
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summary.activeToday}</div>
-          </CardContent>
-        </Card>
+            <div className="absolute top-0 right-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full blur-2xl transition-opacity group-hover:opacity-100" style={{ background: `${stat.color}10`, opacity: 0.5 }}></div>
+          </div>
+        ))}
       </div>
 
       {/* Detail table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+      <div 
+        className="rounded-2xl border overflow-hidden"
+        style={{ background: T.card, borderColor: T.border }}
+      >
+        <div className="p-6 border-b" style={{ borderColor: T.border }}>
+          <h3 className="font-semibold flex items-center gap-2" style={{ color: T.text }}>
             <BarChart3 className="h-4 w-4" />
             Per-Conversation Breakdown
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
+          </h3>
+        </div>
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Messages</TableHead>
-                <TableHead className="text-right">Admin</TableHead>
-                <TableHead className="text-right">User</TableHead>
-                <TableHead className="text-right">Avg Response</TableHead>
-                <TableHead>Last Activity</TableHead>
+              <TableRow style={{ background: T.nav, borderColor: T.border }}>
+                <TableHead style={{ color: T.sub }}>User</TableHead>
+                <TableHead style={{ color: T.sub }}>Type</TableHead>
+                <TableHead className="text-right" style={{ color: T.sub }}>Messages</TableHead>
+                <TableHead className="text-right" style={{ color: T.sub }}>Admin</TableHead>
+                <TableHead className="text-right" style={{ color: T.sub }}>User</TableHead>
+                <TableHead className="text-right" style={{ color: T.sub }}>Avg Response</TableHead>
+                <TableHead style={{ color: T.sub }}>Last Activity</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.length === 0 && (
+              {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center py-20" style={{ color: T.sub }}>
                     No conversations in this date range
                   </TableCell>
                 </TableRow>
+              ) : (
+                filtered.map((m) => (
+                  <TableRow key={m.conversationId} style={{ borderColor: T.border }} className="hover:bg-white/5 transition-colors">
+                    <TableCell>
+                      <div className="font-semibold" style={{ color: T.text }}>{m.userName}</div>
+                      <div className="text-xs" style={{ color: T.sub }}>{m.userCode}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant="outline" 
+                        className="capitalize border-none"
+                        style={{ background: T.badge, color: T.badgeFg }}
+                      >
+                        {m.userType}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-medium" style={{ color: T.text }}>{m.totalMessages}</TableCell>
+                    <TableCell className="text-right" style={{ color: T.sub }}>{m.adminMessages}</TableCell>
+                    <TableCell className="text-right" style={{ color: T.sub }}>{m.userMessages}</TableCell>
+                    <TableCell className="text-right">
+                      <span className="font-medium" style={{ color: (m.avgResponseTimeMin || 0) > 30 ? "#f87171" : T.text }}>
+                        {formatResponseTime(m.avgResponseTimeMin)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-xs" style={{ color: T.sub }}>
+                      {format(parseISO(m.lastMessageAt), "MMM d, HH:mm")}
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
-              {filtered.map((m) => (
-                <TableRow key={m.conversationId}>
-                  <TableCell>
-                    <div className="font-medium">{m.userName}</div>
-                    <div className="text-xs text-muted-foreground">{m.userCode}</div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="capitalize">
-                      {m.userType}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">{m.totalMessages}</TableCell>
-                  <TableCell className="text-right">{m.adminMessages}</TableCell>
-                  <TableCell className="text-right">{m.userMessages}</TableCell>
-                  <TableCell className="text-right">
-                    {formatResponseTime(m.avgResponseTimeMin)}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {format(parseISO(m.lastMessageAt), "MMM d, HH:mm")}
-                  </TableCell>
-                </TableRow>
-              ))}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

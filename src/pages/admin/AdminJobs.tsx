@@ -15,6 +15,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 const statusColor: Record<string, string> = {
   open: "bg-accent/10 text-accent", in_progress: "bg-primary/10 text-primary",
@@ -23,6 +30,8 @@ const statusColor: Record<string, string> = {
 };
 
 const AdminJobs = () => {
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [viewProject, setViewProject] = useState<any>(null);
@@ -83,42 +92,66 @@ const AdminJobs = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Job Management</h1>
-        <p className="text-sm text-muted-foreground">Manage all platform jobs and projects</p>
+      {/* Hero Header */}
+      <div 
+        className="relative overflow-hidden rounded-2xl p-8 border"
+        style={{ 
+          background: theme === 'black' 
+            ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' 
+            : 'linear-gradient(135deg, #6366f1 0%, #a5b4fc 100%)',
+          borderColor: T.border 
+        }}
+      >
+        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-white/5 blur-xl" />
+        <div className="relative z-10 flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 shadow-xl">
+            <Briefcase className="h-7 w-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-white">Job Management</h1>
+            <p className="text-white/80 font-medium">Manage all platform jobs and projects</p>
+          </div>
+        </div>
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
-          { label: "Total Jobs", value: projects.length, icon: Briefcase, color: "text-primary", bg: "bg-primary/10" },
-          { label: "Open", value: openJobs, icon: CheckCircle, color: "text-accent", bg: "bg-accent/10" },
-          { label: "In Progress", value: inProgressJobs, icon: Clock, color: "text-warning", bg: "bg-warning/10" },
-          { label: "Total Budget", value: `₹${totalBudget.toLocaleString("en-IN")}`, icon: TrendingUp, color: "text-accent", bg: "bg-accent/10" },
-        ].map(s => (
-          <Card key={s.label} className="border-0 shadow-sm">
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl", s.bg)}>
-                <s.icon className={cn("h-4 w-4", s.color)} />
+          { label: "Total Jobs", value: projects.length, icon: Briefcase, color: "text-blue-400" },
+          { label: "Open", value: openJobs, icon: CheckCircle, color: "text-emerald-400" },
+          { label: "In Progress", value: inProgressJobs, icon: Clock, color: "text-amber-400" },
+          { label: "Total Budget", value: `₹${totalBudget.toLocaleString("en-IN")}`, icon: TrendingUp, color: "text-violet-400" },
+        ].map((s, idx) => (
+          <Card key={idx} style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }} className="border shadow-none">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium" style={{ color: T.sub }}>{s.label}</p>
+                <s.icon className={`h-4 w-4 ${s.color}`} />
               </div>
-              <div>
-                <p className="text-lg font-bold text-foreground">{s.value}</p>
-                <p className="text-[11px] text-muted-foreground">{s.label}</p>
-              </div>
+              <div className="text-xl font-bold" style={{ color: T.text }}>{s.value}</div>
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search jobs..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input 
+            placeholder="Search jobs..." 
+            value={search} 
+            onChange={e => setSearch(e.target.value)} 
+            className="pl-9" 
+            style={{ background: T.input, borderColor: T.border, color: T.text }}
+          />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
+          <SelectTrigger className="w-[140px]" style={{ background: T.input, borderColor: T.border, color: T.text }}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent style={{ background: theme === 'black' ? '#1a1a2e' : '#fff', borderColor: T.border }}>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="draft">Draft</SelectItem>
             <SelectItem value="open">Open</SelectItem>
@@ -127,89 +160,105 @@ const AdminJobs = () => {
             <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 px-3 rounded-lg border" style={{ borderColor: T.border, background: T.nav }}>
           <Switch checked={showCleared} onCheckedChange={setShowCleared} id="show-cleared-jobs" />
-          <Label htmlFor="show-cleared-jobs" className="text-xs text-muted-foreground">Show cleared</Label>
+          <Label htmlFor="show-cleared-jobs" className="text-xs cursor-pointer" style={{ color: T.sub }}>Show cleared</Label>
         </div>
       </div>
 
       {/* Job Cards */}
-      <div className="space-y-3">
-        {isLoading ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 w-full rounded-xl" />) : projects.length > 0 ? projects.map((p: any) => (
-          <Card key={p.id} className={cn("transition-all hover:shadow-md", p.is_cleared && "opacity-50 border-dashed")}>
-            <CardContent className="space-y-3 p-4">
+      <div className="space-y-4">
+        {isLoading ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 w-full rounded-2xl" />) : projects.length > 0 ? projects.map((p: any) => (
+          <Card key={p.id} style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }} className={cn("transition-all hover:shadow-lg border-none shadow-none", p.is_cleared && "opacity-50 grayscale")}>
+            <CardContent className="space-y-4 p-6">
               <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-sm font-bold text-muted-foreground shrink-0">
+                <div className="flex items-start gap-4">
+                  <div 
+                    className="flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-bold shrink-0 border"
+                    style={{ background: T.nav, borderColor: T.border, color: T.text }}
+                  >
                     {p.name?.[0]?.toUpperCase() || "J"}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground">{p.name}</h3>
-                    <p className="text-xs text-muted-foreground">
+                    <h3 className="text-lg font-bold" style={{ color: T.text }}>{p.name}</h3>
+                    <p className="text-xs font-mono" style={{ color: T.sub }}>
                       {p.order_id} • {p.client?.full_name?.[0] || "Client"} ({p.client?.user_code?.[0] || ""})
                       {p.category?.name ? ` • ${p.category.name}` : ""}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  {p.is_cleared && <Badge variant="outline" className="text-[10px] border-destructive/30 text-destructive">Cleared</Badge>}
-                  <Badge className={cn("text-xs", statusColor[p.status])}>{p.status?.replace("_", " ")}</Badge>
-                  {p.admin_approved && <Badge variant="outline" className="text-[10px] border-accent text-accent">✓ Approved</Badge>}
+                <div className="flex items-center gap-2">
+                  {p.is_cleared && <Badge variant="outline" className="text-[10px] border-destructive/30 text-destructive bg-destructive/5">Cleared</Badge>}
+                  <Badge className={cn("text-xs border-none", statusColor[p.status])}>{p.status?.replace("_", " ")}</Badge>
+                  {p.admin_approved && <Badge variant="outline" className="text-[10px] border-accent/30 text-accent bg-accent/5">✓ Approved</Badge>}
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-lg bg-muted/50 px-3 py-2">
-                  <p className="text-[10px] text-muted-foreground">Budget</p>
-                  <p className="text-sm font-semibold text-foreground">₹{Number(p.amount).toLocaleString("en-IN")}</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-xl px-4 py-3 border" style={{ background: T.nav, borderColor: T.border }}>
+                  <p className="text-[10px] uppercase tracking-wider font-bold mb-1" style={{ color: T.sub }}>Budget</p>
+                  <p className="text-lg font-bold" style={{ color: T.text }}>₹{Number(p.amount).toLocaleString("en-IN")}</p>
                 </div>
-                <div className="rounded-lg bg-muted/50 px-3 py-2">
-                  <p className="text-[10px] text-muted-foreground">Val. Fees</p>
-                  <p className="text-sm font-semibold text-foreground">₹{Number(p.validation_fees).toLocaleString("en-IN")}</p>
+                <div className="rounded-xl px-4 py-3 border" style={{ background: T.nav, borderColor: T.border }}>
+                  <p className="text-[10px] uppercase tracking-wider font-bold mb-1" style={{ color: T.sub }}>Val. Fees</p>
+                  <p className="text-lg font-bold" style={{ color: T.text }}>₹{Number(p.validation_fees).toLocaleString("en-IN")}</p>
                 </div>
-                <div className="rounded-lg bg-muted/50 px-3 py-2">
-                  <p className="text-[10px] text-muted-foreground">Deadline</p>
-                  <p className="text-sm font-semibold text-foreground">{p.end_date || "None"}</p>
+                <div className="rounded-xl px-4 py-3 border" style={{ background: T.nav, borderColor: T.border }}>
+                  <p className="text-[10px] uppercase tracking-wider font-bold mb-1" style={{ color: T.sub }}>Deadline</p>
+                  <p className="text-sm font-bold flex items-center gap-1.5" style={{ color: T.text }}>
+                    <Calendar className="h-3.5 w-3.5 text-accent" />
+                    {p.end_date || "None"}
+                  </p>
                 </div>
               </div>
 
               {p.assigned_employee && (
-                <p className="text-xs text-muted-foreground">Assigned: <span className="font-medium text-foreground">{p.assigned_employee.full_name?.[0]}</span></p>
+                <div className="flex items-center gap-2 text-xs py-2 px-3 rounded-lg w-fit" style={{ background: T.nav, color: T.sub }}>
+                  <Users className="h-3.5 w-3.5" />
+                  Assigned: <span className="font-bold" style={{ color: T.text }}>{p.assigned_employee.full_name?.[0]}</span>
+                </div>
               )}
 
-              <div className="flex gap-1.5 flex-wrap pt-1">
-                <Button size="sm" variant="outline" onClick={() => setViewProject(p)} className="h-8"><Eye className="mr-1 h-3 w-3" /> View</Button>
-                <Button size="sm" variant="outline" onClick={() => startEdit(p)} className="h-8">
-                  {expandedEdit === p.id ? <ChevronUp className="mr-1 h-3 w-3" /> : <Pencil className="mr-1 h-3 w-3" />}
-                  {expandedEdit === p.id ? "Close" : "Edit"}
+              <div className="flex gap-2 flex-wrap pt-2 border-t" style={{ borderColor: T.border }}>
+                <Button size="sm" variant="outline" onClick={() => setViewProject(p)} className="h-9 rounded-xl border-white/10 hover:bg-white/5"><Eye className="mr-2 h-4 w-4" /> View Details</Button>
+                <Button size="sm" variant="outline" onClick={() => startEdit(p)} className="h-9 rounded-xl border-white/10 hover:bg-white/5">
+                  {expandedEdit === p.id ? <ChevronUp className="mr-2 h-4 w-4" /> : <Pencil className="mr-2 h-4 w-4" />}
+                  {expandedEdit === p.id ? "Close Edit" : "Edit Job"}
                 </Button>
                 {!p.admin_approved ? (
-                  <Button size="sm" onClick={() => approveMutation.mutate({ id: p.id, approved: true })} className="h-8"><CheckCircle className="mr-1 h-3 w-3" /> Approve</Button>
+                  <Button size="sm" onClick={() => approveMutation.mutate({ id: p.id, approved: true })} className="h-9 rounded-xl bg-accent hover:bg-accent/90"><CheckCircle className="mr-2 h-4 w-4" /> Approve</Button>
                 ) : (
-                  <Button size="sm" variant="secondary" onClick={() => approveMutation.mutate({ id: p.id, approved: false })} className="h-8"><XCircle className="mr-1 h-3 w-3" /> Revoke</Button>
+                  <Button size="sm" variant="secondary" onClick={() => approveMutation.mutate({ id: p.id, approved: false })} className="h-9 rounded-xl"><XCircle className="mr-2 h-4 w-4" /> Revoke</Button>
                 )}
                 {p.is_cleared ? (
-                  <Button size="sm" variant="outline" onClick={() => restoreMutation.mutate(p.id)} className="h-8">Restore</Button>
+                  <Button size="sm" variant="outline" onClick={() => restoreMutation.mutate(p.id)} className="h-9 rounded-xl">Restore</Button>
                 ) : (
                   <AlertDialog>
-                    <AlertDialogTrigger asChild><Button size="sm" variant="outline" className="text-destructive h-8"><EyeOff className="mr-1 h-3 w-3" /> Clear</Button></AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader><AlertDialogTitle>Clear "{p.name}"?</AlertDialogTitle><AlertDialogDescription>Soft-delete. Can be restored.</AlertDialogDescription></AlertDialogHeader>
-                      <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => clearMutation.mutate(p.id)}>Clear</AlertDialogAction></AlertDialogFooter>
+                    <AlertDialogTrigger asChild><Button size="sm" variant="outline" className="text-destructive h-9 rounded-xl hover:bg-destructive/5 hover:text-destructive border-destructive/20"><EyeOff className="mr-2 h-4 w-4" /> Clear</Button></AlertDialogTrigger>
+                    <AlertDialogContent className="bg-[#0a0a1a] border-white/10">
+                      <AlertDialogHeader><AlertDialogTitle className="text-white">Clear "{p.name}"?</AlertDialogTitle><AlertDialogDescription>This will move the job to the cleared list (soft-delete). It can be restored later.</AlertDialogDescription></AlertDialogHeader>
+                      <AlertDialogFooter><AlertDialogCancel className="bg-white/5 border-white/10 text-white hover:bg-white/10">Cancel</AlertDialogCancel><AlertDialogAction onClick={() => clearMutation.mutate(p.id)} className="bg-destructive hover:bg-destructive/90 text-white">Clear Job</AlertDialogAction></AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
                 )}
               </div>
 
               {expandedEdit === p.id && (
-                <div className="mt-2 space-y-3 rounded-xl border bg-muted/20 p-4">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1"><Label className="text-xs">Name</Label><Input value={editForm.name} onChange={e => setEditForm((f: any) => ({ ...f, name: e.target.value }))} /></div>
-                    <div className="space-y-1"><Label className="text-xs">Budget (₹)</Label><Input type="number" value={editForm.amount} onChange={e => setEditForm((f: any) => ({ ...f, amount: e.target.value }))} /></div>
-                    <div className="space-y-1"><Label className="text-xs">Status</Label>
+                <div className="mt-4 space-y-4 rounded-2xl border bg-white/5 p-6 animate-in fade-in slide-in-from-top-2" style={{ borderColor: T.border }}>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold" style={{ color: T.sub }}>Name</Label>
+                      <Input value={editForm.name} onChange={e => setEditForm((f: any) => ({ ...f, name: e.target.value }))} style={{ background: T.input, borderColor: T.border, color: T.text }} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold" style={{ color: T.sub }}>Budget (₹)</Label>
+                      <Input type="number" value={editForm.amount} onChange={e => setEditForm((f: any) => ({ ...f, amount: e.target.value }))} style={{ background: T.input, borderColor: T.border, color: T.text }} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold" style={{ color: T.sub }}>Status</Label>
                       <Select value={editForm.status} onValueChange={v => setEditForm((f: any) => ({ ...f, status: v }))}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
+                        <SelectTrigger style={{ background: T.input, borderColor: T.border, color: T.text }}><SelectValue /></SelectTrigger>
+                        <SelectContent style={{ background: theme === 'black' ? '#1a1a2e' : '#fff', borderColor: T.border }}>
                           <SelectItem value="draft">Draft</SelectItem><SelectItem value="open">Open</SelectItem>
                           <SelectItem value="in_progress">In Progress</SelectItem><SelectItem value="completed">Completed</SelectItem>
                           <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -217,27 +266,41 @@ const AdminJobs = () => {
                       </Select>
                     </div>
                   </div>
-                  <div className="space-y-1"><Label className="text-xs">Requirements</Label><Textarea value={editForm.requirements} onChange={e => setEditForm((f: any) => ({ ...f, requirements: e.target.value }))} rows={2} /></div>
-                  <div className="space-y-1"><Label className="text-xs">Remarks</Label><Textarea value={editForm.remarks || ""} onChange={e => setEditForm((f: any) => ({ ...f, remarks: e.target.value }))} rows={2} /></div>
-                  <Button className="w-full" onClick={() => updateMutation.mutate(editForm)} disabled={updateMutation.isPending}><Save className="mr-1 h-3 w-3" /> {updateMutation.isPending ? "Saving..." : "Save"}</Button>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold" style={{ color: T.sub }}>Requirements</Label>
+                    <Textarea value={editForm.requirements} onChange={e => setEditForm((f: any) => ({ ...f, requirements: e.target.value }))} rows={4} style={{ background: T.input, borderColor: T.border, color: T.text }} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold" style={{ color: T.sub }}>Remarks</Label>
+                    <Textarea value={editForm.remarks || ""} onChange={e => setEditForm((f: any) => ({ ...f, remarks: e.target.value }))} rows={2} style={{ background: T.input, borderColor: T.border, color: T.text }} />
+                  </div>
+                  <Button className="w-full bg-primary hover:bg-primary/90 h-11 rounded-xl font-bold" onClick={() => updateMutation.mutate(editForm)} disabled={updateMutation.isPending}>
+                    {updateMutation.isPending ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" /> : <Save className="mr-2 h-4 w-4" />}
+                    {updateMutation.isPending ? "Updating..." : "Update Job Details"}
+                  </Button>
                 </div>
               )}
             </CardContent>
           </Card>
         )) : (
-          <div className="flex flex-col items-center justify-center py-16">
-            <Briefcase className="h-12 w-12 text-muted-foreground/30 mb-3" />
-            <p className="text-sm text-muted-foreground">No jobs found</p>
+          <div className="flex flex-col items-center justify-center py-24 rounded-3xl border border-dashed" style={{ borderColor: T.border }}>
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/5 mb-6">
+              <Briefcase className="h-10 w-10 text-muted-foreground/30" />
+            </div>
+            <p className="text-lg font-medium" style={{ color: T.sub }}>No jobs found</p>
+            <p className="text-sm" style={{ color: T.sub }}>Try adjusting your search or filters</p>
           </div>
         )}
       </div>
 
       <Dialog open={!!viewProject} onOpenChange={() => setViewProject(null)}>
-        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{viewProject?.name}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto bg-[#0a0a1a]/95 backdrop-blur-xl border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">{viewProject?.name}</DialogTitle>
+          </DialogHeader>
           {viewProject && (
-            <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-6 pt-4">
+              <div className="grid grid-cols-2 gap-4">
                 {[
                   { label: "Order ID", value: viewProject.order_id },
                   { label: "Status", value: <Badge className={statusColor[viewProject.status]}>{viewProject.status}</Badge> },
@@ -246,16 +309,34 @@ const AdminJobs = () => {
                   { label: "Category", value: viewProject.category?.name || "N/A" },
                   { label: "Approved", value: viewProject.admin_approved ? "Yes" : "No" },
                 ].map(item => (
-                  <div key={item.label} className="rounded-lg bg-muted/50 p-2.5">
-                    <p className="text-[10px] text-muted-foreground">{item.label}</p>
-                    <div className="text-sm font-medium text-foreground mt-0.5">{item.value}</div>
+                  <div key={item.label} className="rounded-2xl bg-white/5 p-4 border border-white/5">
+                    <p className="text-[10px] uppercase tracking-wider font-bold mb-1 opacity-50">{item.label}</p>
+                    <div className="text-sm font-semibold">{item.value}</div>
                   </div>
                 ))}
               </div>
-              {viewProject.summary && <div><span className="font-medium">Summary:</span><p className="text-muted-foreground">{viewProject.summary}</p></div>}
-              <div><span className="font-medium">Requirements:</span><p className="text-muted-foreground whitespace-pre-wrap">{viewProject.requirements}</p></div>
-              {viewProject.responsibility && <div><span className="font-medium">Responsibility:</span><p className="text-muted-foreground">{viewProject.responsibility}</p></div>}
-              {viewProject.remarks && <div><span className="font-medium">Remarks:</span><p className="text-muted-foreground">{viewProject.remarks}</p></div>}
+              {viewProject.summary && (
+                <div className="space-y-1.5">
+                  <p className="text-xs font-bold uppercase tracking-wider opacity-50">Summary</p>
+                  <p className="text-sm leading-relaxed">{viewProject.summary}</p>
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <p className="text-xs font-bold uppercase tracking-wider opacity-50">Requirements</p>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap rounded-2xl bg-white/5 p-4 border border-white/5">{viewProject.requirements}</p>
+              </div>
+              {viewProject.responsibility && (
+                <div className="space-y-1.5">
+                  <p className="text-xs font-bold uppercase tracking-wider opacity-50">Responsibility</p>
+                  <p className="text-sm leading-relaxed">{viewProject.responsibility}</p>
+                </div>
+              )}
+              {viewProject.remarks && (
+                <div className="space-y-1.5">
+                  <p className="text-xs font-bold uppercase tracking-wider opacity-50">Admin Remarks</p>
+                  <p className="text-sm leading-relaxed text-accent italic">"{viewProject.remarks}"</p>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>

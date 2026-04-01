@@ -12,16 +12,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 const statusConfig: Record<string, { color: string; bg: string; border: string; icon: any; label: string }> = {
-  pending: { color: "text-warning", bg: "bg-warning/10", border: "border-warning/20", icon: Clock, label: "Pending" },
-  approved: { color: "text-accent", bg: "bg-accent/10", border: "border-accent/20", icon: CheckCircle2, label: "Approved" },
-  rejected: { color: "text-destructive", bg: "bg-destructive/10", border: "border-destructive/20", icon: XCircle, label: "Rejected" },
+  pending: { color: "#fbbf24", bg: "rgba(251,191,36,0.15)", border: "rgba(251,191,36,0.3)", icon: Clock, label: "Awaiting" },
+  approved: { color: "#4ade80", bg: "rgba(74,222,128,0.15)", border: "rgba(74,222,128,0.3)", icon: CheckCircle2, label: "Secured" },
+  rejected: { color: "#f87171", bg: "rgba(248,113,113,0.15)", border: "rgba(248,113,113,0.3)", icon: XCircle, label: "Closed" },
 };
 
 const EmployeeRequests = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["employee-requests", profile?.id],
@@ -45,40 +54,40 @@ const EmployeeRequests = () => {
   };
 
   return (
-    <div className="space-y-5 pb-24">
+    <div style={{ background: T.bg, minHeight: "100vh", color: T.text }} className="space-y-6 p-4 pb-24">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-5 text-primary-foreground">
-        <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary-foreground/10 blur-2xl" />
-        <div className="absolute -bottom-4 -left-4 h-20 w-20 rounded-full bg-primary-foreground/5 blur-xl" />
+      <div style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" }} className="relative overflow-hidden rounded-3xl p-6 text-white shadow-2xl">
+        <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-white/5 blur-3xl" />
         <div className="relative z-10">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)}
-              className="h-9 w-9 text-primary-foreground hover:bg-primary-foreground/20 rounded-xl">
-              <ArrowLeft className="h-5 w-5" />
+              className="h-10 w-10 text-white hover:bg-white/20 rounded-2xl backdrop-blur-md">
+              <ArrowLeft className="h-6 w-6" />
             </Button>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-foreground/20 backdrop-blur-sm">
-              <ClipboardList className="h-5 w-5" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md shadow-xl">
+              <ClipboardList className="h-7 w-7" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight">My Requests</h1>
-              <p className="text-xs text-primary-foreground/70">{requests.length} total applications</p>
+              <h1 className="text-2xl font-black tracking-tight uppercase">My Requests</h1>
+              <p className="text-xs font-bold opacity-80 uppercase tracking-widest">{requests.length} Application nodes</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Status Summary */}
-      <div className="grid grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-3 gap-3">
         {(["pending", "approved", "rejected"] as const).map((status) => {
           const cfg = statusConfig[status];
           return (
-            <Card key={status} className={cn("border", cfg.border, "overflow-hidden")}>
-              <CardContent className="flex flex-col items-center p-3 gap-1">
-                <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", cfg.bg)}>
-                  <cfg.icon className={cn("h-4 w-4", cfg.color)} />
+            <Card key={status} style={{ background: T.card, borderColor: cfg.border, backdropFilter: "blur(12px)" }} className="border-2 shadow-xl overflow-hidden">
+              <CardContent className="flex flex-col items-center p-4 gap-2">
+                <div style={{ background: cfg.bg }} className="flex h-10 w-10 items-center justify-center rounded-xl">
+                  <cfg.icon style={{ color: cfg.color }} className="h-5 w-5" />
                 </div>
-                <span className="text-lg font-bold text-foreground leading-none">{counts[status]}</span>
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{cfg.label}</span>
+                <span style={{ color: T.text }} className="text-xl font-black leading-none">{counts[status]}</span>
+                <span style={{ color: T.sub }} className="text-[10px] font-black uppercase tracking-[0.2em]">{cfg.label}</span>
               </CardContent>
             </Card>
           );
@@ -86,46 +95,49 @@ const EmployeeRequests = () => {
       </div>
 
       {/* Request Cards */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+            <Skeleton key={i} style={{ background: T.card }} className="h-32 w-full rounded-3xl opacity-50" />
           ))
         ) : requests.length > 0 ? (
           requests.map((r: any) => {
             const cfg = statusConfig[r.status] || statusConfig.pending;
             const StatusIcon = cfg.icon;
             return (
-              <Card key={r.id} className={cn("overflow-hidden border-0 shadow-md transition-all hover:shadow-lg")}>
-                <div className={cn("h-0.5", cfg.bg.replace("/10", ""))} />
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", cfg.bg)}>
-                        <StatusIcon className={cn("h-5 w-5", cfg.color)} />
+              <Card key={r.id} style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }} className="overflow-hidden border shadow-xl hover:shadow-2xl transition-all relative">
+                <div style={{ background: cfg.color }} className="absolute top-0 left-0 w-1.5 h-full opacity-60" />
+                <CardContent className="p-5 pl-7">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                      <div style={{ background: cfg.bg }} className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl">
+                        <StatusIcon style={{ color: cfg.color }} className="h-6 w-6" />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="font-semibold text-foreground truncate">{r.project?.name ?? "Project"}</h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Applied {format(new Date(r.applied_at), "dd MMM yyyy")}
-                        </p>
-                        {r.project?.amount && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Budget: ₹{Number(r.project.amount).toLocaleString("en-IN")}
+                        <h3 style={{ color: T.text }} className="font-bold text-lg leading-tight truncate">{r.project?.name ?? "Mission Code X"}</h3>
+                        <div className="flex flex-col gap-1 mt-1">
+                          <p style={{ color: T.sub }} className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
+                            <Clock className="h-3 w-3 opacity-70" /> {format(new Date(r.applied_at), "dd MMM yyyy")}
                           </p>
-                        )}
+                          {r.project?.amount && (
+                            <p style={{ color: "#4ade80" }} className="text-xs font-black">
+                              STAKE: ₹{Number(r.project.amount).toLocaleString("en-IN")}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2 shrink-0">
-                      <Badge className={cn(cfg.bg, cfg.color, "border-0 font-semibold text-xs")}>
+                    <div className="flex flex-col items-end gap-3 shrink-0">
+                      <Badge style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.color + "40" }} className="border font-black text-[10px] uppercase tracking-widest px-3 py-1">
                         {cfg.label}
                       </Badge>
                       {r.status === "approved" && (
-                        <Button size="sm" variant="outline"
-                          className="h-8 text-xs gap-1.5 border-accent/30 text-accent hover:bg-accent/10"
+                        <Button size="sm" 
+                          style={{ background: "rgba(99,102,241,0.1)", color: "#a5b4fc", borderColor: "rgba(99,102,241,0.2)" }}
+                          className="h-9 text-[10px] font-black uppercase tracking-widest gap-2 rounded-xl border hover:bg-white/[0.05]"
                           onClick={() => navigate(`/employee/projects/chat/${r.project_id}`)}>
-                          <MessageSquare className="h-3 w-3" /> Chat
-                          <ChevronRight className="h-3 w-3" />
+                          <MessageSquare className="h-3.5 w-3.5" /> Terminal
+                          <ChevronRight className="h-3.5 w-3.5" />
                         </Button>
                       )}
                     </div>
@@ -135,16 +147,16 @@ const EmployeeRequests = () => {
             );
           })
         ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/60 mb-4">
-              <Inbox className="h-8 w-8 text-muted-foreground/50" />
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div style={{ background: T.card, borderColor: T.border }} className="flex h-24 w-24 items-center justify-center rounded-[2.5rem] border shadow-2xl mb-6">
+              <Inbox style={{ color: T.sub }} className="h-10 w-10 opacity-30" />
             </div>
-            <p className="text-sm font-medium text-muted-foreground">No applications yet</p>
-            <p className="text-xs text-muted-foreground/70 mt-1 max-w-[200px]">
-              Browse available jobs and apply to get started
+            <p style={{ color: T.text }} className="text-lg font-black uppercase tracking-widest">No Active Nodes</p>
+            <p style={{ color: T.sub }} className="text-xs font-bold mt-2 max-w-[280px] leading-relaxed opacity-70 uppercase tracking-tighter">
+              You haven't initiated any requests. Explore the job catalog to begin operations.
             </p>
-            <Button variant="outline" size="sm" className="mt-4 gap-1.5" onClick={() => navigate("/employee/projects")}>
-              <Send className="h-3.5 w-3.5" /> Browse Jobs
+            <Button style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" }} className="mt-8 gap-3 h-12 rounded-2xl font-black uppercase tracking-[0.15em] px-8 shadow-xl shadow-indigo-500/20 text-white" onClick={() => navigate("/employee/projects")}>
+              <Send className="h-5 w-5" /> Explore Catalog
             </Button>
           </div>
         )}

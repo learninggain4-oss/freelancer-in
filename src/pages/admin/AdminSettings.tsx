@@ -9,8 +9,16 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Clock, Landmark, Gift, CreditCard, Search, X, Coins, CheckCircle, Briefcase, Calendar, Star, Users, Receipt } from "lucide-react";
+import { Loader2, Save, Clock, Landmark, Gift, CreditCard, Search, X, Coins, CheckCircle, Briefcase, Calendar, Star, Users, Receipt, Settings } from "lucide-react";
 import TotpSetupCard from "@/components/admin/TotpSetupCard";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { Badge } from "@/components/ui/badge";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 type ClientPaymentRow = {
   id: string;
@@ -22,6 +30,8 @@ type ClientPaymentRow = {
 
 const AdminSettings = () => {
   const { toast } = useToast();
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
   const [countdownHours, setCountdownHours] = useState("");
   const [maxBankAttempts, setMaxBankAttempts] = useState("");
   const [signupBonus, setSignupBonus] = useState("");
@@ -53,17 +63,12 @@ const AdminSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
 
-
-
   // Client payment sharing per-client state
   const [clients, setClients] = useState<ClientPaymentRow[]>([]);
   const [clientSearch, setClientSearch] = useState("");
   const [selectedClientIds, setSelectedClientIds] = useState<Set<string>>(new Set());
   const [clientsLoading, setClientsLoading] = useState(false);
   const [updatingClients, setUpdatingClients] = useState(false);
-
-
-
 
   const fetchClients = useCallback(async () => {
     setClientsLoading(true);
@@ -257,628 +262,660 @@ const AdminSettings = () => {
     );
   });
 
-  if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" style={{ color: "#6366f1" }} /></div>;
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-foreground">App Settings</h2>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Clock className="h-4 w-4 text-primary" />
-            Approval Countdown Timer
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Set the countdown time (in hours) shown on the verification pending page.
-          </p>
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <Label>Countdown Hours</Label>
-              <Input type="number" min="1" max="72" value={countdownHours} onChange={(e) => setCountdownHours(e.target.value)} />
-            </div>
-            <Button onClick={() => handleSaveSetting("approval_countdown_hours", countdownHours, "Countdown", 1, 72)} disabled={saving === "approval_countdown_hours"} className="gap-1">
-              {saving === "approval_countdown_hours" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save
-            </Button>
+    <div className="space-y-6 pb-20">
+      {/* Premium Hero Section */}
+      <div 
+        className="relative overflow-hidden rounded-2xl p-8 mb-8"
+        style={{ 
+          background: theme === "black" 
+            ? "linear-gradient(135deg, #1a1a2e 0%, #070714 100%)" 
+            : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+          border: `1px solid ${T.border}`
+        }}
+      >
+        <div className="relative z-10 flex items-center gap-4">
+          <div className="rounded-full bg-white/10 p-3 backdrop-blur-md">
+            <Settings className="h-8 w-8 text-white" />
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Landmark className="h-4 w-4 text-primary" />
-            Bank Verification Attempts
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Maximum number of times a user can resubmit bank verification after rejection.
-          </p>
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <Label>Max Attempts</Label>
-              <Input type="number" min="1" max="99" value={maxBankAttempts} onChange={(e) => setMaxBankAttempts(e.target.value)} />
-            </div>
-            <Button onClick={() => handleSaveSetting("max_bank_verification_attempts", maxBankAttempts, "Max attempts", 1, 99)} disabled={saving === "max_bank_verification_attempts"} className="gap-1">
-              {saving === "max_bank_verification_attempts" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save
-            </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-white">App Settings</h1>
+            <p className="text-white/70">Configure global application behavior and business rules</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        {/* Decorative elements */}
+        <div className="absolute top-[-20%] right-[-10%] h-64 w-64 rounded-full bg-white/5 blur-3xl" />
+        <div className="absolute bottom-[-20%] left-[-10%] h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl" />
+      </div>
 
-      {/* Withdrawal Order ID Format */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Receipt className="h-4 w-4 text-primary" />
-            Withdrawal Order ID Format
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Configure the format of the auto-generated Order ID for withdrawal requests.
-          </p>
-
-          {/* Prefix */}
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <Label>Prefix (optional)</Label>
-              <Input placeholder="e.g. WD, ORD" value={orderIdPrefix} onChange={(e) => setOrderIdPrefix(e.target.value.toUpperCase())} maxLength={10} />
-            </div>
-            <Button onClick={async () => {
-              setSaving("withdrawal_order_id_prefix");
-              try {
-                await supabase.from("app_settings").upsert({ key: "withdrawal_order_id_prefix", value: orderIdPrefix }, { onConflict: "key" });
-                toast({ title: "Saved", description: `Prefix set to "${orderIdPrefix || "(none)"}"` });
-              } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
-              finally { setSaving(null); }
-            }} disabled={saving === "withdrawal_order_id_prefix"} className="gap-1">
-              {saving === "withdrawal_order_id_prefix" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save
-            </Button>
-          </div>
-
-          {/* Include Year / Month / Date toggles */}
-          <div className="space-y-3">
-            <Label className="text-xs font-medium text-muted-foreground">Include in Order ID</Label>
-            {[
-              { label: "Include Year (YY)", key: "withdrawal_order_id_include_year", checked: orderIdIncludeYear, set: setOrderIdIncludeYear },
-              { label: "Include Month (MM)", key: "withdrawal_order_id_include_month", checked: orderIdIncludeMonth, set: setOrderIdIncludeMonth },
-              { label: "Include Date (DD)", key: "withdrawal_order_id_include_date", checked: orderIdIncludeDate, set: setOrderIdIncludeDate },
-            ].map((item) => (
-              <div key={item.key} className="flex items-center justify-between rounded-lg border p-3">
-                <Label htmlFor={item.key} className="text-sm">{item.label}</Label>
-                <Switch id={item.key} checked={item.checked} onCheckedChange={async (checked) => {
-                  item.set(checked);
-                  setSaving(item.key);
-                  try {
-                    await supabase.from("app_settings").upsert({ key: item.key, value: String(checked) }, { onConflict: "key" });
-                    toast({ title: "Saved", description: `${item.label} ${checked ? "enabled" : "disabled"}` });
-                  } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
-                  finally { setSaving(null); }
-                }} />
+      <div className="grid gap-6">
+        <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+          <CardHeader className="pb-3 border-b" style={{ borderColor: T.border }}>
+            <CardTitle className="flex items-center gap-2 text-lg" style={{ color: T.text }}>
+              <Clock className="h-5 w-5 text-[#6366f1]" />
+              Approval Countdown Timer
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-4">
+            <p className="text-sm" style={{ color: T.sub }}>
+              Set the countdown time (in hours) shown on the verification pending page.
+            </p>
+            <div className="flex items-end gap-3">
+              <div className="flex-1 space-y-2">
+                <Label style={{ color: T.text }}>Countdown Hours</Label>
+                <Input 
+                  type="number" 
+                  min="1" 
+                  max="72" 
+                  value={countdownHours} 
+                  onChange={(e) => setCountdownHours(e.target.value)}
+                  style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                />
               </div>
-            ))}
-          </div>
-
-          {/* Random digits length */}
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <Label>Random Digits Length</Label>
-              <Input type="number" min="5" max="30" value={orderIdLength} onChange={(e) => setOrderIdLength(e.target.value)} />
+              <Button 
+                onClick={() => handleSaveSetting("approval_countdown_hours", countdownHours, "Countdown", 1, 72)} 
+                disabled={saving === "approval_countdown_hours"} 
+                className="gap-2 bg-[#6366f1] hover:bg-[#6366f1]/90 text-white"
+              >
+                {saving === "approval_countdown_hours" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save
+              </Button>
             </div>
-            <Button onClick={() => handleSaveSetting("withdrawal_order_id_length", orderIdLength, "Order ID length", 5, 30)} disabled={saving === "withdrawal_order_id_length"} className="gap-1">
-              {saving === "withdrawal_order_id_length" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save
-            </Button>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Preview */}
-          <div className="rounded-lg bg-muted/50 p-3">
-            <p className="text-xs text-muted-foreground mb-1">Preview format:</p>
-            <p className="text-sm font-mono font-medium text-foreground">
-              {orderIdPrefix ? `${orderIdPrefix}` : ""}
-              {orderIdIncludeDate ? "DD" : ""}
-              {orderIdIncludeMonth ? "MM" : ""}
-              {orderIdIncludeYear ? "YY" : ""}
-              {`${"X".repeat(Math.min(Number(orderIdLength) || 5, 10))}...`}
+        <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+          <CardHeader className="pb-3 border-b" style={{ borderColor: T.border }}>
+            <CardTitle className="flex items-center gap-2 text-lg" style={{ color: T.text }}>
+              <Landmark className="h-5 w-5 text-[#6366f1]" />
+              Bank Verification Attempts
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-4">
+            <p className="text-sm" style={{ color: T.sub }}>
+              Maximum number of times a user can resubmit bank verification after rejection.
             </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Referral Bonus Settings */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Gift className="h-4 w-4 text-primary" />
-            Referral Bonus Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Configure the bonus amounts awarded when a referred user signs up or completes a job.
-          </p>
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <Label>Signup Bonus (₹)</Label>
-              <Input type="number" min="0" max="99999" value={signupBonus} onChange={(e) => setSignupBonus(e.target.value)} />
+            <div className="flex items-end gap-3">
+              <div className="flex-1 space-y-2">
+                <Label style={{ color: T.text }}>Max Attempts</Label>
+                <Input 
+                  type="number" 
+                  min="1" 
+                  max="99" 
+                  value={maxBankAttempts} 
+                  onChange={(e) => setMaxBankAttempts(e.target.value)}
+                  style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                />
+              </div>
+              <Button 
+                onClick={() => handleSaveSetting("max_bank_verification_attempts", maxBankAttempts, "Max attempts", 1, 99)} 
+                disabled={saving === "max_bank_verification_attempts"} 
+                className="gap-2 bg-[#6366f1] hover:bg-[#6366f1]/90 text-white"
+              >
+                {saving === "max_bank_verification_attempts" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save
+              </Button>
             </div>
-            <Button onClick={() => handleSaveSetting("referral_signup_bonus", signupBonus, "Signup bonus", 0, 99999)} disabled={saving === "referral_signup_bonus"} className="gap-1">
-              {saving === "referral_signup_bonus" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save
-            </Button>
-          </div>
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <Label>Job Completion Bonus (₹)</Label>
-              <Input type="number" min="0" max="99999" value={jobBonus} onChange={(e) => setJobBonus(e.target.value)} />
-            </div>
-            <Button onClick={() => handleSaveSetting("referral_job_bonus", jobBonus, "Job bonus", 0, 99999)} disabled={saving === "referral_job_bonus"} className="gap-1">
-              {saving === "referral_job_bonus" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Referral Terms & Conditions */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Gift className="h-4 w-4 text-primary" />
-            Referral Terms & Conditions
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Edit the referral program terms shown to users on their account settings page.
-          </p>
-          <Textarea
-            rows={8}
-            value={referralTerms}
-            onChange={(e) => setReferralTerms(e.target.value)}
-            placeholder="Enter referral terms and conditions..."
-          />
-          <Button onClick={() => handleSaveText("referral_terms_conditions", referralTerms, "Referral T&C")} disabled={saving === "referral_terms_conditions"} className="gap-1">
-            {saving === "referral_terms_conditions" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Save Terms
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Client Payment Details Sharing */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CreditCard className="h-4 w-4 text-primary" />
-            Client Payment Details Sharing
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Global toggle */}
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Global toggle: When disabled, no client can share payment details regardless of individual settings.
-            </p>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <Label htmlFor="client-sharing-toggle" className="text-sm font-medium">
-                Allow clients to share payment details (Global)
-              </Label>
-              <Switch
-                id="client-sharing-toggle"
-                checked={clientPaymentSharing}
-                disabled={saving === "client_payment_sharing"}
-                onCheckedChange={async (checked) => {
-                  setClientPaymentSharing(checked);
-                  setSaving("client_payment_sharing");
-                  try {
-                    const { error } = await supabase
-                      .from("app_settings")
-                      .upsert({ key: "client_payment_sharing_enabled", value: String(checked) }, { onConflict: "key" });
-                    if (error) throw error;
-                    toast({ title: "Settings saved", description: `Global payment sharing ${checked ? "enabled" : "disabled"}` });
-                  } catch (e: any) {
-                    setClientPaymentSharing(!checked);
-                    toast({ title: "Error", description: e.message, variant: "destructive" });
-                  } finally {
-                    setSaving(null);
-                  }
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Per-client controls */}
-          <div className="space-y-3 rounded-lg border p-3">
-            <h4 className="text-sm font-semibold">Per-Client Payment Sharing</h4>
-            <p className="text-xs text-muted-foreground">
-              Select clients and enable/disable payment sharing individually. Both the global toggle and the individual setting must be enabled for a client to share.
+        <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+          <CardHeader className="pb-3 border-b" style={{ borderColor: T.border }}>
+            <CardTitle className="flex items-center gap-2 text-lg" style={{ color: T.text }}>
+              <Receipt className="h-5 w-5 text-[#6366f1]" />
+              Withdrawal Order ID Format
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6 pt-4">
+            <p className="text-sm" style={{ color: T.sub }}>
+              Configure the format of the auto-generated Order ID for withdrawal requests.
             </p>
 
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, code, or email…"
-                value={clientSearch}
-                onChange={(e) => setClientSearch(e.target.value)}
-                className="pl-9 pr-9"
-              />
-              {clientSearch && (
-                <Button size="icon" variant="ghost" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2" onClick={() => setClientSearch("")}>
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              )}
+            <div className="flex items-end gap-3">
+              <div className="flex-1 space-y-2">
+                <Label style={{ color: T.text }}>Prefix (optional)</Label>
+                <Input 
+                  placeholder="e.g. WD, ORD" 
+                  value={orderIdPrefix} 
+                  onChange={(e) => setOrderIdPrefix(e.target.value.toUpperCase())} 
+                  maxLength={10} 
+                  style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                />
+              </div>
+              <Button onClick={async () => {
+                setSaving("withdrawal_order_id_prefix");
+                try {
+                  await supabase.from("app_settings").upsert({ key: "withdrawal_order_id_prefix", value: orderIdPrefix }, { onConflict: "key" });
+                  toast({ title: "Saved", description: `Prefix set to "${orderIdPrefix || "(none)"}"` });
+                } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
+                finally { setSaving(null); }
+              }} disabled={saving === "withdrawal_order_id_prefix"} className="gap-2 bg-[#6366f1] hover:bg-[#6366f1]/90 text-white">
+                {saving === "withdrawal_order_id_prefix" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save
+              </Button>
             </div>
 
-            {/* Bulk actions */}
-            {selectedClientIds.size > 0 && (
-              <div className="flex items-center gap-2 rounded-md bg-muted/50 px-3 py-2 text-sm">
-                <span className="font-medium">{selectedClientIds.size} selected</span>
-                <div className="ml-auto flex gap-2">
-                  <Button size="sm" variant="outline" disabled={updatingClients} onClick={() => handleBulkToggle(true)} className="h-7 text-xs">
-                    {updatingClients ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null}
+            <div className="space-y-3">
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: T.sub }}>Include in Order ID</Label>
+              {[
+                { label: "Include Year (YY)", key: "withdrawal_order_id_include_year", checked: orderIdIncludeYear, set: setOrderIdIncludeYear },
+                { label: "Include Month (MM)", key: "withdrawal_order_id_include_month", checked: orderIdIncludeMonth, set: setOrderIdIncludeMonth },
+                { label: "Include Date (DD)", key: "withdrawal_order_id_include_date", checked: orderIdIncludeDate, set: setOrderIdIncludeDate },
+              ].map((item) => (
+                <div key={item.key} className="flex items-center justify-between rounded-xl p-4 transition-all" style={{ background: T.input, border: `1px solid ${T.border}` }}>
+                  <Label htmlFor={item.key} className="text-sm font-medium" style={{ color: T.text }}>{item.label}</Label>
+                  <Switch id={item.key} checked={item.checked} onCheckedChange={async (checked) => {
+                    item.set(checked);
+                    setSaving(item.key);
+                    try {
+                      await supabase.from("app_settings").upsert({ key: item.key, value: String(checked) }, { onConflict: "key" });
+                      toast({ title: "Saved", description: `${item.label} ${checked ? "enabled" : "disabled"}` });
+                    } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
+                    finally { setSaving(null); }
+                  }} />
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-end gap-3">
+              <div className="flex-1 space-y-2">
+                <Label style={{ color: T.text }}>Random Digits Length</Label>
+                <Input 
+                  type="number" 
+                  min="5" 
+                  max="30" 
+                  value={orderIdLength} 
+                  onChange={(e) => setOrderIdLength(e.target.value)} 
+                  style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                />
+              </div>
+              <Button 
+                onClick={() => handleSaveSetting("withdrawal_order_id_length", orderIdLength, "Order ID length", 5, 30)} 
+                disabled={saving === "withdrawal_order_id_length"} 
+                className="gap-2 bg-[#6366f1] hover:bg-[#6366f1]/90 text-white"
+              >
+                {saving === "withdrawal_order_id_length" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save
+              </Button>
+            </div>
+
+            <div className="rounded-xl p-4" style={{ background: theme === "black" ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", border: `1px dashed ${T.border}` }}>
+              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: T.sub }}>Preview format</p>
+              <p className="text-xl font-mono font-bold tracking-tight" style={{ color: "#6366f1" }}>
+                {orderIdPrefix ? `${orderIdPrefix}` : ""}
+                {orderIdIncludeDate ? "DD" : ""}
+                {orderIdIncludeMonth ? "MM" : ""}
+                {orderIdIncludeYear ? "YY" : ""}
+                {`${"X".repeat(Math.min(Number(orderIdLength) || 5, 8))}...`}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+          <CardHeader className="pb-3 border-b" style={{ borderColor: T.border }}>
+            <CardTitle className="flex items-center gap-2 text-lg" style={{ color: T.text }}>
+              <Gift className="h-5 w-5 text-[#6366f1]" />
+              Referral Bonus Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6 pt-4">
+            <p className="text-sm" style={{ color: T.sub }}>
+              Configure the bonus amounts awarded when a referred user signs up or completes a job.
+            </p>
+            <div className="flex items-end gap-3">
+              <div className="flex-1 space-y-2">
+                <Label style={{ color: T.text }}>Signup Bonus (₹)</Label>
+                <Input 
+                  type="number" 
+                  min="0" 
+                  max="99999" 
+                  value={signupBonus} 
+                  onChange={(e) => setSignupBonus(e.target.value)} 
+                  style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                />
+              </div>
+              <Button 
+                onClick={() => handleSaveSetting("referral_signup_bonus", signupBonus, "Signup bonus", 0, 99999)} 
+                disabled={saving === "referral_signup_bonus"} 
+                className="gap-2 bg-[#6366f1] hover:bg-[#6366f1]/90 text-white"
+              >
+                {saving === "referral_signup_bonus" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save
+              </Button>
+            </div>
+            <div className="flex items-end gap-3">
+              <div className="flex-1 space-y-2">
+                <Label style={{ color: T.text }}>Job Completion Bonus (₹)</Label>
+                <Input 
+                  type="number" 
+                  min="0" 
+                  max="99999" 
+                  value={jobBonus} 
+                  onChange={(e) => setJobBonus(e.target.value)} 
+                  style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                />
+              </div>
+              <Button 
+                onClick={() => handleSaveSetting("referral_job_bonus", jobBonus, "Job bonus", 0, 99999)} 
+                disabled={saving === "referral_job_bonus"} 
+                className="gap-2 bg-[#6366f1] hover:bg-[#6366f1]/90 text-white"
+              >
+                {saving === "referral_job_bonus" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+          <CardHeader className="pb-3 border-b" style={{ borderColor: T.border }}>
+            <CardTitle className="flex items-center gap-2 text-lg" style={{ color: T.text }}>
+              <Receipt className="h-5 w-5 text-[#6366f1]" />
+              Referral Terms & Conditions
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-4">
+            <p className="text-sm" style={{ color: T.sub }}>
+              Edit the referral program terms shown to users on their account settings page.
+            </p>
+            <Textarea
+              rows={8}
+              value={referralTerms}
+              onChange={(e) => setReferralTerms(e.target.value)}
+              placeholder="Enter referral terms and conditions..."
+              style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+              className="resize-none"
+            />
+            <Button 
+              onClick={() => handleSaveText("referral_terms_conditions", referralTerms, "Referral T&C")} 
+              disabled={saving === "referral_terms_conditions"} 
+              className="gap-2 bg-[#6366f1] hover:bg-[#6366f1]/90 text-white w-full sm:w-auto"
+            >
+              {saving === "referral_terms_conditions" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save Terms
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Client Payment Details Sharing */}
+        <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+          <CardHeader className="pb-3 border-b" style={{ borderColor: T.border }}>
+            <CardTitle className="flex items-center gap-2 text-lg" style={{ color: T.text }}>
+              <CreditCard className="h-5 w-5 text-[#6366f1]" />
+              Client Payment Details Sharing
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6 pt-4">
+            {/* Global toggle */}
+            <div className="space-y-4">
+              <p className="text-sm" style={{ color: T.sub }}>
+                Global toggle: When disabled, no client can share payment details regardless of individual settings.
+              </p>
+              <div className="flex items-center justify-between rounded-xl p-4 transition-all" style={{ background: T.input, border: `1px solid ${T.border}` }}>
+                <Label htmlFor="client-sharing-toggle" className="text-sm font-semibold" style={{ color: T.text }}>
+                  Allow clients to share payment details (Global)
+                </Label>
+                <Switch
+                  id="client-sharing-toggle"
+                  checked={clientPaymentSharing}
+                  disabled={saving === "client_payment_sharing"}
+                  onCheckedChange={async (checked) => {
+                    setClientPaymentSharing(checked);
+                    setSaving("client_payment_sharing");
+                    try {
+                      const { error } = await supabase
+                        .from("app_settings")
+                        .upsert({ key: "client_payment_sharing_enabled", value: String(checked) }, { onConflict: "key" });
+                      if (error) throw error;
+                      toast({ title: "Settings saved", description: `Global payment sharing ${checked ? "enabled" : "disabled"}` });
+                    } catch (e: any) {
+                      setClientPaymentSharing(!checked);
+                      toast({ title: "Error", description: e.message, variant: "destructive" });
+                    } finally {
+                      setSaving(null);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Per-client controls */}
+            <div className="space-y-4 rounded-xl p-4" style={{ background: theme === "black" ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", border: `1px solid ${T.border}` }}>
+              <h4 className="text-sm font-bold uppercase tracking-wider" style={{ color: T.text }}>Per-Client Payment Sharing</h4>
+              <p className="text-xs" style={{ color: T.sub }}>
+                Enable or disable sharing for specific clients. Global setting must be ON for these to take effect.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: T.sub }} />
+                  <Input
+                    placeholder="Search clients..."
+                    value={clientSearch}
+                    onChange={(e) => setClientSearch(e.target.value)}
+                    className="pl-9 h-10 rounded-lg"
+                    style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleBulkToggle(true)}
+                    disabled={selectedClientIds.size === 0 || updatingClients}
+                    className="flex-1 h-10 border-[#4ade80] text-[#4ade80] hover:bg-[#4ade80]/10"
+                  >
                     Enable Selected
                   </Button>
-                  <Button size="sm" variant="outline" disabled={updatingClients} onClick={() => handleBulkToggle(false)} className="h-7 text-xs">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleBulkToggle(false)}
+                    disabled={selectedClientIds.size === 0 || updatingClients}
+                    className="flex-1 h-10 border-[#f87171] text-[#f87171] hover:bg-[#f87171]/10"
+                  >
                     Disable Selected
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setSelectedClientIds(new Set())} className="h-7 text-xs">
-                    Clear
+                </div>
+              </div>
+
+              <div className="rounded-lg border overflow-hidden" style={{ borderColor: T.border }}>
+                <div className="max-h-[400px] overflow-y-auto">
+                  {clientsLoading ? (
+                    <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-[#6366f1]" /></div>
+                  ) : filteredClients.length === 0 ? (
+                    <div className="py-8 text-center text-sm" style={{ color: T.sub }}>No clients found</div>
+                  ) : (
+                    <table className="w-full text-left text-sm border-collapse">
+                      <thead style={{ background: T.nav, color: T.sub }}>
+                        <tr>
+                          <th className="p-3 w-10">
+                            <Checkbox
+                              checked={filteredClients.length > 0 && filteredClients.every(c => selectedClientIds.has(c.id))}
+                              onCheckedChange={toggleSelectAll}
+                            />
+                          </th>
+                          <th className="p-3 font-semibold uppercase tracking-wider text-[10px]">Client</th>
+                          <th className="p-3 font-semibold uppercase tracking-wider text-[10px]">Status</th>
+                          <th className="p-3 font-semibold uppercase tracking-wider text-[10px] text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody style={{ color: T.text }}>
+                        {filteredClients.map((c) => (
+                          <tr key={c.id} className="border-t transition-colors hover:bg-white/5" style={{ borderColor: T.border }}>
+                            <td className="p-3">
+                              <Checkbox
+                                checked={selectedClientIds.has(c.id)}
+                                onCheckedChange={() => toggleClientSelection(c.id)}
+                              />
+                            </td>
+                            <td className="p-3">
+                              <div className="font-medium">{c.full_name?.[0] || "No Name"}</div>
+                              <div className="text-[10px]" style={{ color: T.sub }}>{c.user_code?.[0]}</div>
+                            </td>
+                            <td className="p-3">
+                              <Badge 
+                                variant={c.payment_sharing_enabled ? "default" : "secondary"}
+                                style={{ 
+                                  background: c.payment_sharing_enabled ? "rgba(74, 222, 128, 0.15)" : "rgba(148, 163, 184, 0.15)",
+                                  color: c.payment_sharing_enabled ? "#4ade80" : T.sub,
+                                  border: `1px solid ${c.payment_sharing_enabled ? "rgba(74, 222, 128, 0.3)" : "rgba(148, 163, 184, 0.3)"}`
+                                }}
+                              >
+                                {c.payment_sharing_enabled ? "Sharing ON" : "Sharing OFF"}
+                              </Badge>
+                            </td>
+                            <td className="p-3 text-right">
+                              <Switch
+                                checked={c.payment_sharing_enabled}
+                                onCheckedChange={() => handleSingleToggle(c)}
+                                className="scale-75"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* TOTP Management */}
+        <div className="grid gap-6 sm:grid-cols-2">
+          <TotpSetupCard />
+          <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+            <CardHeader className="pb-3 border-b" style={{ borderColor: T.border }}>
+              <CardTitle className="flex items-center gap-2 text-lg" style={{ color: T.text }}>
+                <Coins className="h-5 w-5 text-[#6366f1]" />
+                Coin Conversion Rate
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-4">
+              <p className="text-sm" style={{ color: T.sub }}>
+                Define how much 1 coin is worth in ₹ and minimum conversion amount.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-end gap-3">
+                  <div className="flex-1 space-y-2">
+                    <Label style={{ color: T.text }}>1 Coin = (₹)</Label>
+                    <Input 
+                      type="number" 
+                      step="0.01" 
+                      value={coinRate} 
+                      onChange={(e) => setCoinRate(e.target.value)} 
+                      style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                    />
+                  </div>
+                  <Button onClick={() => handleSaveSetting("coin_conversion_rate", coinRate, "Coin rate", 0.01, 100)} disabled={saving === "coin_conversion_rate"} className="gap-2 bg-[#6366f1] hover:bg-[#6366f1]/90 text-white">
+                    <Save className="h-4 w-4" /> Save
+                  </Button>
+                </div>
+                <div className="flex items-end gap-3">
+                  <div className="flex-1 space-y-2">
+                    <Label style={{ color: T.text }}>Min Conversion Amount (Coins)</Label>
+                    <Input 
+                      type="number" 
+                      value={minCoinConversion} 
+                      onChange={(e) => setMinCoinConversion(e.target.value)} 
+                      style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                    />
+                  </div>
+                  <Button onClick={() => handleSaveSetting("min_coin_conversion", minCoinConversion, "Min conversion", 1, 10000)} disabled={saving === "min_coin_conversion"} className="gap-2 bg-[#6366f1] hover:bg-[#6366f1]/90 text-white">
+                    <Save className="h-4 w-4" /> Save
                   </Button>
                 </div>
               </div>
-            )}
+            </CardContent>
+          </Card>
+        </div>
 
-            {/* Client list */}
-            <div className="max-h-72 space-y-1 overflow-y-auto">
-              {clientsLoading ? (
-                <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-              ) : filteredClients.length === 0 ? (
-                <p className="py-4 text-center text-sm text-muted-foreground">No clients found</p>
-              ) : (
-                <>
-                  {/* Select all header */}
-                  <div className="flex items-center gap-3 border-b pb-2">
-                    <Checkbox
-                      checked={filteredClients.length > 0 && filteredClients.every((c) => selectedClientIds.has(c.id))}
-                      onCheckedChange={toggleSelectAll}
-                    />
-                    <span className="text-xs font-medium text-muted-foreground">Select All ({filteredClients.length})</span>
+        {/* Coin Rewards */}
+        <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+          <CardHeader className="pb-3 border-b" style={{ borderColor: T.border }}>
+            <CardTitle className="flex items-center gap-2 text-lg" style={{ color: T.text }}>
+              <Star className="h-5 w-5 text-[#fbbf24]" />
+              Coin Rewards Management
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6 pt-4">
+            <p className="text-sm" style={{ color: T.sub }}>
+              Set coin rewards for various user activities across the platform.
+            </p>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                { label: "Profile Completion", key: "coin_reward_complete_profile", val: rewardCompleteProfile, set: setRewardCompleteProfile, icon: Users },
+                { label: "Project Completion", key: "coin_reward_complete_project", val: rewardCompleteProject, set: setRewardCompleteProject, icon: Briefcase },
+                { label: "Daily Attendance", key: "coin_reward_daily_attendance", val: rewardDailyAttendance, set: setRewardDailyAttendance, icon: Calendar },
+                { label: "5-Star Review", key: "coin_reward_5star_review", val: reward5StarReview, set: setReward5StarReview, icon: Star },
+                { label: "Referral (10 users)", key: "coin_reward_referral_10", val: rewardReferral10, set: setRewardReferral10, icon: Gift },
+              ].map((reward) => (
+                <div key={reward.key} className="space-y-3 rounded-xl p-4 transition-all" style={{ background: T.input, border: `1px solid ${T.border}` }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <reward.icon className="h-4 w-4 text-[#6366f1]" />
+                    <Label className="text-sm font-semibold" style={{ color: T.text }}>{reward.label}</Label>
                   </div>
-                  {filteredClients.map((client) => (
-                    <div key={client.id} className="flex items-center gap-3 rounded-md px-1 py-1.5 hover:bg-muted/40">
-                      <Checkbox
-                        checked={selectedClientIds.has(client.id)}
-                        onCheckedChange={() => toggleClientSelection(client.id)}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{client.full_name?.[0] || "—"}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {client.user_code?.[0] || "—"} · {client.email}
-                        </p>
-                      </div>
-                      <Switch
-                        checked={client.payment_sharing_enabled}
-                        onCheckedChange={() => handleSingleToggle(client)}
-                      />
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      type="number" 
+                      value={reward.val} 
+                      onChange={(e) => reward.set(e.target.value)} 
+                      style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text }}
+                      className="h-9"
+                    />
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleSaveSetting(reward.key, reward.val, reward.label, 0, 1000)} 
+                      disabled={saving === reward.key}
+                      className="h-9 bg-[#6366f1] hover:bg-[#6366f1]/90"
+                    >
+                      {saving === reward.key ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* User Code Settings */}
+        <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+          <CardHeader className="pb-3 border-b" style={{ borderColor: T.border }}>
+            <CardTitle className="flex items-center gap-2 text-lg" style={{ color: T.text }}>
+              <Users className="h-5 w-5 text-[#6366f1]" />
+              User Code Generation
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-8 pt-4">
+            <div className="grid gap-8 md:grid-cols-2">
+              {/* Employee Code */}
+              <div className="space-y-4">
+                <h4 className="font-bold flex items-center gap-2" style={{ color: T.text }}>
+                  <div className="h-1.5 w-1.5 rounded-full bg-[#6366f1]" />
+                  Employee Code Settings
+                </h4>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label style={{ color: T.text }}>Prefix</Label>
+                    <Input value={empPrefix} onChange={(e) => setEmpPrefix(e.target.value.toUpperCase())} style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label style={{ color: T.text }}>Digits</Label>
+                    <Input type="number" value={empDigits} onChange={(e) => setEmpDigits(e.target.value)} style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }} />
+                  </div>
+                </div>
+                <div className="grid gap-3">
+                  {[
+                    { label: "Include Year", checked: empIncludeYear, set: setEmpIncludeYear },
+                    { label: "Include Month", checked: empIncludeMonth, set: setEmpIncludeMonth },
+                  ].map(item => (
+                    <div key={item.label} className="flex items-center justify-between rounded-lg p-3" style={{ background: T.input, border: `1px solid ${T.border}` }}>
+                      <Label className="text-xs" style={{ color: T.text }}>{item.label}</Label>
+                      <Switch checked={item.checked} onCheckedChange={item.set} />
                     </div>
                   ))}
-                </>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* User Code Configuration */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Clock className="h-4 w-4 text-primary" />
-            User Code Configuration
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Configure the prefix, digits, separator, and date components for auto-generated user codes. Changes apply to new registrations only.
-          </p>
-          <div className="grid gap-6 sm:grid-cols-2">
-            {/* Employee Code */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-semibold">Employee Code</h4>
-              <div className="flex items-end gap-2">
-                <div className="flex-1">
-                  <Label>Prefix</Label>
-                  <Input value={empPrefix} onChange={(e) => setEmpPrefix(e.target.value.toUpperCase())} placeholder="EMP" maxLength={10} />
                 </div>
-                <div className="w-24">
-                  <Label>Digits</Label>
-                  <Input type="number" min="3" max="10" value={empDigits} onChange={(e) => setEmpDigits(e.target.value)} />
+                <div className="space-y-2">
+                  <Label style={{ color: T.text }}>Separator</Label>
+                  <Select value={empSeparator} onValueChange={setEmpSeparator}>
+                    <SelectTrigger style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="-">Hyphen (-)</SelectItem>
+                      <SelectItem value="_">Underscore (_)</SelectItem>
+                      <SelectItem value="/">Slash (/)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+                <Button 
+                  className="w-full bg-[#6366f1] hover:bg-[#6366f1]/90"
+                  onClick={async () => {
+                    setSaving("emp_code");
+                    try {
+                      await Promise.all([
+                        supabase.from("app_settings").upsert({ key: "employee_code_prefix", value: empPrefix }, { onConflict: "key" }),
+                        supabase.from("app_settings").upsert({ key: "employee_code_digits", value: empDigits }, { onConflict: "key" }),
+                        supabase.from("app_settings").upsert({ key: "employee_code_include_year", value: String(empIncludeYear) }, { onConflict: "key" }),
+                        supabase.from("app_settings").upsert({ key: "employee_code_include_month", value: String(empIncludeMonth) }, { onConflict: "key" }),
+                        supabase.from("app_settings").upsert({ key: "employee_code_separator", value: empSeparator }, { onConflict: "key" }),
+                      ]);
+                      toast({ title: "Employee settings saved" });
+                    } finally { setSaving(null); }
+                  }}
+                  disabled={saving === "emp_code"}
+                >
+                  Save Employee Config
+                </Button>
               </div>
-              <div>
-                <Label>Separator</Label>
-                <Select value={empSeparator} onValueChange={setEmpSeparator}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="-">Hyphen (-)</SelectItem>
-                    <SelectItem value="/">Slash (/)</SelectItem>
-                    <SelectItem value=".">Dot (.)</SelectItem>
-                    <SelectItem value="none">None</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border p-2.5">
-                <Label htmlFor="emp-year" className="text-sm">Include Year</Label>
-                <Switch id="emp-year" checked={empIncludeYear} onCheckedChange={(checked) => { setEmpIncludeYear(checked); if (!checked) setEmpIncludeMonth(false); }} />
-              </div>
-              {empIncludeYear && (
-                <div className="flex items-center justify-between rounded-lg border p-2.5">
-                  <Label htmlFor="emp-month" className="text-sm">Include Month</Label>
-                  <Switch id="emp-month" checked={empIncludeMonth} onCheckedChange={setEmpIncludeMonth} />
+
+              {/* Client Code */}
+              <div className="space-y-4">
+                <h4 className="font-bold flex items-center gap-2" style={{ color: T.text }}>
+                  <div className="h-1.5 w-1.5 rounded-full bg-[#a78bfa]" />
+                  Client Code Settings
+                </h4>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label style={{ color: T.text }}>Prefix</Label>
+                    <Input value={cltPrefix} onChange={(e) => setCltPrefix(e.target.value.toUpperCase())} style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label style={{ color: T.text }}>Digits</Label>
+                    <Input type="number" value={cltDigits} onChange={(e) => setCltDigits(e.target.value)} style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }} />
+                  </div>
                 </div>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Preview: <span className="font-mono font-bold">{(() => {
-                  const p = empPrefix || "EMP";
-                  const s = empSeparator === "none" ? "" : empSeparator;
-                  const d = Number(empDigits) || 5;
-                  const num = "0".repeat(d - 1) + "1";
-                  const year = new Date().getFullYear().toString();
-                  const month = String(new Date().getMonth() + 1).padStart(2, "0");
-                  let code = p;
-                  if (empIncludeYear) {
-                    code += s + year;
-                    if (empIncludeMonth) code += s + month;
-                  }
-                  code += (empIncludeYear ? s : "") + num;
-                  return code;
-                })()}</span>
-              </p>
-              <Button
-                size="sm"
-                onClick={async () => {
-                  if (!empPrefix.trim()) { toast({ title: "Invalid", description: "Prefix cannot be empty", variant: "destructive" }); return; }
-                  const d = Number(empDigits);
-                  if (isNaN(d) || d < 3 || d > 10) { toast({ title: "Invalid", description: "Digits must be 3-10", variant: "destructive" }); return; }
-                  setSaving("emp_code");
-                  try {
-                    await Promise.all([
-                      supabase.from("app_settings").upsert({ key: "employee_code_prefix", value: empPrefix.trim() }, { onConflict: "key" }),
-                      supabase.from("app_settings").upsert({ key: "employee_code_digits", value: String(d) }, { onConflict: "key" }),
-                      supabase.from("app_settings").upsert({ key: "employee_code_separator", value: empSeparator === "none" ? "" : empSeparator }, { onConflict: "key" }),
-                      supabase.from("app_settings").upsert({ key: "employee_code_include_year", value: String(empIncludeYear) }, { onConflict: "key" }),
-                      supabase.from("app_settings").upsert({ key: "employee_code_include_month", value: String(empIncludeMonth) }, { onConflict: "key" }),
-                    ]);
-                    toast({ title: "Saved", description: "Employee code settings updated" });
-                  } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
-                  finally { setSaving(null); }
-                }}
-                disabled={saving === "emp_code"}
-                className="gap-1"
-              >
-                {saving === "emp_code" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Save Employee Code
-              </Button>
-            </div>
-
-            {/* Client Code */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-semibold">Client Code</h4>
-              <div className="flex items-end gap-2">
-                <div className="flex-1">
-                  <Label>Prefix</Label>
-                  <Input value={cltPrefix} onChange={(e) => setCltPrefix(e.target.value.toUpperCase())} placeholder="CLT" maxLength={10} />
+                <div className="grid gap-3">
+                  {[
+                    { label: "Include Year", checked: cltIncludeYear, set: setCltIncludeYear },
+                    { label: "Include Month", checked: cltIncludeMonth, set: setCltIncludeMonth },
+                  ].map(item => (
+                    <div key={item.label} className="flex items-center justify-between rounded-lg p-3" style={{ background: T.input, border: `1px solid ${T.border}` }}>
+                      <Label className="text-xs" style={{ color: T.text }}>{item.label}</Label>
+                      <Switch checked={item.checked} onCheckedChange={item.set} />
+                    </div>
+                  ))}
                 </div>
-                <div className="w-24">
-                  <Label>Digits</Label>
-                  <Input type="number" min="3" max="10" value={cltDigits} onChange={(e) => setCltDigits(e.target.value)} />
+                <div className="space-y-2">
+                  <Label style={{ color: T.text }}>Separator</Label>
+                  <Select value={cltSeparator} onValueChange={setCltSeparator}>
+                    <SelectTrigger style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="-">Hyphen (-)</SelectItem>
+                      <SelectItem value="_">Underscore (_)</SelectItem>
+                      <SelectItem value="/">Slash (/)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+                <Button 
+                  className="w-full bg-[#a78bfa] hover:bg-[#a78bfa]/90"
+                  onClick={async () => {
+                    setSaving("clt_code");
+                    try {
+                      await Promise.all([
+                        supabase.from("app_settings").upsert({ key: "client_code_prefix", value: cltPrefix }, { onConflict: "key" }),
+                        supabase.from("app_settings").upsert({ key: "client_code_digits", value: cltDigits }, { onConflict: "key" }),
+                        supabase.from("app_settings").upsert({ key: "client_code_include_year", value: String(cltIncludeYear) }, { onConflict: "key" }),
+                        supabase.from("app_settings").upsert({ key: "client_code_include_month", value: String(cltIncludeMonth) }, { onConflict: "key" }),
+                        supabase.from("app_settings").upsert({ key: "client_code_separator", value: cltSeparator }, { onConflict: "key" }),
+                      ]);
+                      toast({ title: "Client settings saved" });
+                    } finally { setSaving(null); }
+                  }}
+                  disabled={saving === "clt_code"}
+                >
+                  Save Client Config
+                </Button>
               </div>
-              <div>
-                <Label>Separator</Label>
-                <Select value={cltSeparator} onValueChange={setCltSeparator}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="-">Hyphen (-)</SelectItem>
-                    <SelectItem value="/">Slash (/)</SelectItem>
-                    <SelectItem value=".">Dot (.)</SelectItem>
-                    <SelectItem value="none">None</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border p-2.5">
-                <Label htmlFor="clt-year" className="text-sm">Include Year</Label>
-                <Switch id="clt-year" checked={cltIncludeYear} onCheckedChange={(checked) => { setCltIncludeYear(checked); if (!checked) setCltIncludeMonth(false); }} />
-              </div>
-              {cltIncludeYear && (
-                <div className="flex items-center justify-between rounded-lg border p-2.5">
-                  <Label htmlFor="clt-month" className="text-sm">Include Month</Label>
-                  <Switch id="clt-month" checked={cltIncludeMonth} onCheckedChange={setCltIncludeMonth} />
-                </div>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Preview: <span className="font-mono font-bold">{(() => {
-                  const p = cltPrefix || "CLT";
-                  const s = cltSeparator === "none" ? "" : cltSeparator;
-                  const d = Number(cltDigits) || 5;
-                  const num = "0".repeat(d - 1) + "1";
-                  const year = new Date().getFullYear().toString();
-                  const month = String(new Date().getMonth() + 1).padStart(2, "0");
-                  let code = p;
-                  if (cltIncludeYear) {
-                    code += s + year;
-                    if (cltIncludeMonth) code += s + month;
-                  }
-                  code += (cltIncludeYear ? s : "") + num;
-                  return code;
-                })()}</span>
-              </p>
-              <Button
-                size="sm"
-                onClick={async () => {
-                  if (!cltPrefix.trim()) { toast({ title: "Invalid", description: "Prefix cannot be empty", variant: "destructive" }); return; }
-                  const d = Number(cltDigits);
-                  if (isNaN(d) || d < 3 || d > 10) { toast({ title: "Invalid", description: "Digits must be 3-10", variant: "destructive" }); return; }
-                  setSaving("clt_code");
-                  try {
-                    await Promise.all([
-                      supabase.from("app_settings").upsert({ key: "client_code_prefix", value: cltPrefix.trim() }, { onConflict: "key" }),
-                      supabase.from("app_settings").upsert({ key: "client_code_digits", value: String(d) }, { onConflict: "key" }),
-                      supabase.from("app_settings").upsert({ key: "client_code_separator", value: cltSeparator === "none" ? "" : cltSeparator }, { onConflict: "key" }),
-                      supabase.from("app_settings").upsert({ key: "client_code_include_year", value: String(cltIncludeYear) }, { onConflict: "key" }),
-                      supabase.from("app_settings").upsert({ key: "client_code_include_month", value: String(cltIncludeMonth) }, { onConflict: "key" }),
-                    ]);
-                    toast({ title: "Saved", description: "Client code settings updated" });
-                  } catch (e: any) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
-                  finally { setSaving(null); }
-                }}
-                disabled={saving === "clt_code"}
-                className="gap-1"
-              >
-                {saving === "clt_code" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Save Client Code
-              </Button>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Coin Rewards Configuration */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Coins className="h-4 w-4 text-primary" />
-            Coin Rewards Configuration
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Configure how many coins employees earn for each activity.
-          </p>
-          
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <Label className="flex items-center gap-2">
-                <CheckCircle className="h-3.5 w-3.5 text-accent" />
-                Complete Your Profile
-              </Label>
-              <Input type="number" min="0" max="999999" value={rewardCompleteProfile} onChange={(e) => setRewardCompleteProfile(e.target.value)} />
-            </div>
-            <Button onClick={() => handleSaveSetting("coin_reward_complete_profile", rewardCompleteProfile, "Complete Profile reward", 0, 999999)} disabled={saving === "coin_reward_complete_profile"} className="gap-1">
-              {saving === "coin_reward_complete_profile" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save
-            </Button>
-          </div>
-
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <Label className="flex items-center gap-2">
-                <Briefcase className="h-3.5 w-3.5 text-accent" />
-                Complete a Project
-              </Label>
-              <Input type="number" min="0" max="999999" value={rewardCompleteProject} onChange={(e) => setRewardCompleteProject(e.target.value)} />
-            </div>
-            <Button onClick={() => handleSaveSetting("coin_reward_complete_project", rewardCompleteProject, "Complete Project reward", 0, 999999)} disabled={saving === "coin_reward_complete_project"} className="gap-1">
-              {saving === "coin_reward_complete_project" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save
-            </Button>
-          </div>
-
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <Label className="flex items-center gap-2">
-                <Calendar className="h-3.5 w-3.5 text-accent" />
-                Daily Attendance Present
-              </Label>
-              <Input type="number" min="0" max="999999" value={rewardDailyAttendance} onChange={(e) => setRewardDailyAttendance(e.target.value)} />
-            </div>
-            <Button onClick={() => handleSaveSetting("coin_reward_daily_attendance", rewardDailyAttendance, "Daily Attendance reward", 0, 999999)} disabled={saving === "coin_reward_daily_attendance"} className="gap-1">
-              {saving === "coin_reward_daily_attendance" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save
-            </Button>
-          </div>
-
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <Label className="flex items-center gap-2">
-                <Star className="h-3.5 w-3.5 text-accent" />
-                Receive a 5-Star Review
-              </Label>
-              <Input type="number" min="0" max="999999" value={reward5StarReview} onChange={(e) => setReward5StarReview(e.target.value)} />
-            </div>
-            <Button onClick={() => handleSaveSetting("coin_reward_5star_review", reward5StarReview, "5-Star Review reward", 0, 999999)} disabled={saving === "coin_reward_5star_review"} className="gap-1">
-              {saving === "coin_reward_5star_review" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save
-            </Button>
-          </div>
-
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <Label className="flex items-center gap-2">
-                <Users className="h-3.5 w-3.5 text-accent" />
-                Refer 10 Friends
-              </Label>
-              <Input type="number" min="0" max="999999" value={rewardReferral10} onChange={(e) => setRewardReferral10(e.target.value)} />
-            </div>
-            <Button onClick={() => handleSaveSetting("coin_reward_referral_10", rewardReferral10, "Referral 10 reward", 0, 999999)} disabled={saving === "coin_reward_referral_10"} className="gap-1">
-              {saving === "coin_reward_referral_10" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Coin Conversion Rate */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Coins className="h-4 w-4 text-primary" />
-            Coin Conversion Rate
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Set how many coins equal ₹1. For example, 100 means 100 Coins = ₹1.
-          </p>
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <Label>Coins per ₹1</Label>
-              <Input type="number" min="1" max="100000" value={coinRate} onChange={(e) => setCoinRate(e.target.value)} />
-            </div>
-            <Button onClick={() => handleSaveSetting("coin_conversion_rate", coinRate, "Coin rate", 1, 100000)} disabled={saving === "coin_conversion_rate"} className="gap-1">
-              {saving === "coin_conversion_rate" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save
-            </Button>
-          </div>
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <Label>Minimum Coins for Conversion</Label>
-              <Input type="number" min="1" max="1000000" value={minCoinConversion} onChange={(e) => setMinCoinConversion(e.target.value)} />
-            </div>
-            <Button onClick={() => handleSaveSetting("min_coin_conversion", minCoinConversion, "Min coin conversion", 1, 1000000)} disabled={saving === "min_coin_conversion"} className="gap-1">
-              {saving === "min_coin_conversion" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-
-
-
-      <TotpSetupCard />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

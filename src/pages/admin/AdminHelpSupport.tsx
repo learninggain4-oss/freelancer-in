@@ -16,6 +16,13 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import SupportMessageBubble from "@/components/chat/SupportMessageBubble";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 const BUILT_IN_CATEGORIES = [
   {
@@ -290,6 +297,8 @@ const CustomTemplatesManager = ({ profileId }: { profileId: string }) => {
 
 const AdminHelpSupport = () => {
   const { profile } = useAuth();
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
   const { data: conversations = [], isLoading: loadingConvs } = useAllConversations();
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
   const { messages, isLoading: loadingMessages, sendMessage, toggleReaction } = useSupportChat(selectedConvId ?? undefined);
@@ -456,15 +465,18 @@ const AdminHelpSupport = () => {
     const userType = (selectedConv as any).user?.user_type || "";
 
     return (
-      <div className="flex h-[calc(100vh-10rem)] flex-col">
+      <div className="flex flex-col h-[calc(100vh-8rem)] -mt-2">
         {/* Header */}
-        <div className="flex items-center gap-3 border-b pb-3 mb-2">
-          <Button variant="ghost" size="icon" onClick={() => { setSelectedConvId(null); setPreviewTemplate(null); }}>
+        <div 
+          className="flex items-center gap-3 p-4 border-b transition-all"
+          style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)", borderTopLeftRadius: "12px", borderTopRightRadius: "12px" }}
+        >
+          <Button variant="ghost" size="icon" onClick={() => { setSelectedConvId(null); setPreviewTemplate(null); }} style={{ color: T.text }}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
-            <h2 className="text-sm font-semibold text-foreground">{userName}</h2>
-            <p className="text-xs text-muted-foreground capitalize">
+            <h2 className="text-sm font-semibold" style={{ color: T.text }}>{userName}</h2>
+            <p className="text-xs capitalize" style={{ color: T.sub }}>
               {userType} • {getUserCode(selectedConv)}
             </p>
           </div>
@@ -472,6 +484,7 @@ const AdminHelpSupport = () => {
             variant="ghost"
             size="icon"
             className="h-8 w-8"
+            style={{ color: T.text }}
             onClick={() => { setSearchOpen(!searchOpen); setSearchQuery(""); }}
           >
             {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
@@ -480,16 +493,17 @@ const AdminHelpSupport = () => {
 
         {/* Search bar */}
         {searchOpen && (
-          <div className="border-b pb-2 mb-2">
+          <div className="p-3 border-b animate-in slide-in-from-top duration-200" style={{ background: T.card, borderColor: T.border }}>
             <Input
               placeholder="Search messages..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 text-sm"
+              className="h-9 text-sm border-none"
+              style={{ background: T.input, color: T.text }}
               autoFocus
             />
             {searchQuery && (
-              <p className="text-[10px] text-muted-foreground mt-1">
+              <p className="text-[10px] mt-1" style={{ color: T.sub }}>
                 {filteredMessages.length} result{filteredMessages.length !== 1 ? "s" : ""}
               </p>
             )}
@@ -497,19 +511,22 @@ const AdminHelpSupport = () => {
         )}
 
         {/* Messages */}
-        <ScrollArea className="flex-1 px-2 py-2">
+        <ScrollArea className="flex-1 p-4" style={{ background: theme === "black" ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.2)" }}>
           {loadingMessages ? (
-            <div className="space-y-2">
+            <div className="space-y-4">
               {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-3/4" />
+                <Skeleton key={i} className="h-16 w-3/4 rounded-2xl" style={{ background: T.border }} />
               ))}
             </div>
           ) : filteredMessages.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              {searchQuery ? "No messages match your search." : "No messages yet. Start the conversation!"}
-            </p>
+            <div className="flex flex-col items-center justify-center h-full py-12">
+              <MessageCircle className="h-12 w-12 mb-4 opacity-20" style={{ color: T.text }} />
+              <p className="text-sm" style={{ color: T.sub }}>
+                {searchQuery ? "No messages match your search." : "No messages yet. Start the conversation!"}
+              </p>
+            </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-4 pb-4">
               {filteredMessages.map((msg) => {
                 const isAdmin = msg.sender_id === profile?.id;
                 return (
@@ -530,17 +547,17 @@ const AdminHelpSupport = () => {
 
         {/* Template preview banner */}
         {previewTemplate && (
-          <div className="border-t bg-accent/10 px-3 py-2 flex items-start gap-2">
-            <Eye className="h-4 w-4 text-accent-foreground mt-0.5 shrink-0" />
+          <div className="px-4 py-2 flex items-start gap-3 border-t animate-in slide-in-from-bottom duration-200" style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }}>
+            <Eye className="h-4 w-4 mt-0.5 shrink-0" style={{ color: T.badgeFg }} />
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-medium text-muted-foreground mb-0.5">Preview — press Enter to send</p>
-              <p className="text-xs text-foreground">{previewTemplate}</p>
+              <p className="text-[10px] font-medium mb-0.5" style={{ color: T.sub }}>Preview — press Enter to send</p>
+              <p className="text-xs" style={{ color: T.text }}>{previewTemplate}</p>
             </div>
-            <div className="flex gap-1 shrink-0">
-              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setPreviewTemplate(null)}>
+            <div className="flex gap-2 shrink-0">
+              <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setPreviewTemplate(null)} style={{ color: T.sub }}>
                 Cancel
               </Button>
-              <Button size="sm" className="h-7 text-xs" onClick={handleConfirmPreview}>
+              <Button size="sm" className="h-8 text-xs bg-indigo-600 hover:bg-indigo-700 text-white" onClick={handleConfirmPreview}>
                 <Send className="h-3 w-3 mr-1" /> Send
               </Button>
             </div>
@@ -549,251 +566,269 @@ const AdminHelpSupport = () => {
 
         {/* Quick replies template library */}
         {quickRepliesOpen && (
-          <div className="border-t bg-muted/30 max-h-72 overflow-hidden flex flex-col">
-            <div className="flex items-center gap-1.5 px-3 pt-2 pb-1">
-              <Zap className="h-3 w-3 text-muted-foreground" />
-              <span className="text-[10px] font-medium text-muted-foreground">Quick Replies</span>
-              <Button
-                variant={showAnalytics ? "secondary" : "ghost"}
-                size="sm"
-                className="h-5 px-1.5 text-[10px]"
-                onClick={() => { setShowAnalytics(!showAnalytics); setShowAddForm(false); setShowManage(false); }}
-                title="Analytics"
-              >
-                <BarChart3 className="h-3 w-3" />
-              </Button>
-              <Button
-                variant={showAddForm ? "secondary" : "ghost"}
-                size="sm"
-                className="h-5 px-1.5 text-[10px]"
-                onClick={() => { setShowAddForm(!showAddForm); setShowAnalytics(false); setShowManage(false); }}
-                title="Add custom template"
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
-              <Button
-                variant={showManage ? "secondary" : "ghost"}
-                size="sm"
-                className="h-5 px-1.5 text-[10px]"
-                onClick={() => { setShowManage(!showManage); setShowAnalytics(false); setShowAddForm(false); }}
-                title="Manage custom templates"
-              >
-                <Settings2 className="h-3 w-3" />
-              </Button>
-              <Input
-                placeholder="Search templates..."
-                value={templateSearch}
-                onChange={(e) => { setTemplateSearch(e.target.value); setActiveCategory(null); }}
-                className="ml-auto h-6 w-36 text-[11px] px-2"
-              />
+          <div className="flex flex-col max-h-80 border-t overflow-hidden animate-in slide-in-from-bottom duration-300" style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(16px)" }}>
+            <div className="flex items-center gap-2 px-4 pt-3 pb-2">
+              <Zap className="h-4 w-4" style={{ color: T.badgeFg }} />
+              <span className="text-xs font-semibold" style={{ color: T.text }}>Quick Replies</span>
+              <div className="flex items-center gap-1 ml-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-full"
+                  style={{ background: showAnalytics ? T.badge : "transparent", color: showAnalytics ? T.badgeFg : T.sub }}
+                  onClick={() => { setShowAnalytics(!showAnalytics); setShowAddForm(false); setShowManage(false); }}
+                >
+                  <BarChart3 className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-full"
+                  style={{ background: showAddForm ? T.badge : "transparent", color: showAddForm ? T.badgeFg : T.sub }}
+                  onClick={() => { setShowAddForm(!showAddForm); setShowAnalytics(false); setShowManage(false); }}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-full"
+                  style={{ background: showManage ? T.badge : "transparent", color: showManage ? T.badgeFg : T.sub }}
+                  onClick={() => { setShowManage(!showManage); setShowAnalytics(false); setShowAddForm(false); }}
+                >
+                  <Settings2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <div className="ml-auto relative w-40">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3" style={{ color: T.sub }} />
+                <Input
+                  placeholder="Search..."
+                  value={templateSearch}
+                  onChange={(e) => { setTemplateSearch(e.target.value); setActiveCategory(null); }}
+                  className="h-7 text-[11px] pl-7 border-none"
+                  style={{ background: T.input, color: T.text }}
+                />
+              </div>
             </div>
 
-            {/* Shortcut hints */}
-            <div className="px-3 pb-1">
-              <p className="text-[9px] text-muted-foreground truncate">
-                Shortcuts: {allCategories.filter((c) => c.shortcut).map((c) => c.shortcut).join(" • ")}
-              </p>
-            </div>
-
-            {/* Add custom template form */}
-            {showAddForm && profile?.id ? (
-              <ScrollArea className="flex-1 px-3 pb-2">
-                <CustomTemplateForm onClose={() => setShowAddForm(false)} profileId={profile.id} />
-              </ScrollArea>
-            ) : showManage && profile?.id ? (
-              <ScrollArea className="flex-1 px-3 pb-2">
-                <p className="text-[10px] font-medium text-muted-foreground mb-1.5">Manage Custom Templates</p>
-                <CustomTemplatesManager profileId={profile.id} />
-              </ScrollArea>
-            ) : showAnalytics ? (
-              <ScrollArea className="flex-1 px-3 pb-2">
-                <p className="text-[10px] font-medium text-muted-foreground mb-1.5">Most Used Templates</p>
-                {topTemplates.length === 0 ? (
-                  <p className="text-[10px] text-muted-foreground py-2">No template usage data yet.</p>
-                ) : (
-                  <div className="space-y-1">
-                    {topTemplates.map(([text, count], i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleTemplateSelect(text)}
-                        className="flex w-full items-center gap-2 rounded-md border bg-background px-2 py-1.5 text-left transition-colors hover:bg-primary/5"
-                      >
-                        <span className="text-xs text-foreground flex-1 truncate">{text}</span>
-                        <Badge variant="secondary" className="text-[9px] shrink-0">
-                          <Hash className="h-2.5 w-2.5 mr-0.5" />{count}
-                        </Badge>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            ) : templateSearch ? (
-              <ScrollArea className="flex-1 px-3 pb-2">
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {allCategories.flatMap((cat) =>
-                    cat.templates
-                      .filter((t) => t.toLowerCase().includes(templateSearch.toLowerCase()))
-                      .map((t) => ({ text: t, label: cat.label }))
-                  ).map((item, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleTemplateSelect(item.text)}
-                      className="rounded-full border bg-background px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-primary/10 hover:border-primary/30 flex items-center gap-1.5"
-                    >
-                      <span>{item.text.length > 55 ? item.text.slice(0, 55) + "…" : item.text}</span>
-                      {usageCounts[item.text] > 0 && (
-                        <Badge variant="outline" className="text-[8px] h-4 px-1">{usageCounts[item.text]}</Badge>
-                      )}
-                    </button>
-                  ))}
+            <ScrollArea className="flex-1 px-4 pb-4">
+              {showAddForm && profile?.id ? (
+                <div className="py-2">
+                  <CustomTemplateForm onClose={() => setShowAddForm(false)} profileId={profile.id} />
                 </div>
-              </ScrollArea>
-            ) : (
-              <ScrollArea className="flex-1 px-3 pb-2">
-                <div className="space-y-1.5 pt-1">
-                  {allCategories.map((cat) => (
-                    <div key={cat.label}>
-                      <button
-                        onClick={() => setActiveCategory(activeCategory === cat.label ? null : cat.label)}
-                        className={cn(
-                          "flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors",
-                          activeCategory === cat.label
-                            ? "bg-primary/10 text-primary"
-                            : "text-foreground hover:bg-muted"
-                        )}
-                      >
-                        <span>{cat.label}</span>
-                        {cat.isCustom && (
-                          <Badge variant="outline" className="text-[8px] h-3.5 px-1">Custom</Badge>
-                        )}
-                        {cat.shortcut && (
-                          <code className="ml-1 text-[9px] text-muted-foreground font-mono">{cat.shortcut}</code>
-                        )}
-                        <ChevronRight className={cn("ml-auto h-3 w-3 transition-transform", activeCategory === cat.label && "rotate-90")} />
-                      </button>
-                      {activeCategory === cat.label && (
-                        <div className="flex flex-wrap gap-1.5 pl-2 pt-1 pb-1">
-                          {cat.templates.map((reply, ri) => (
-                            <button
-                              key={ri}
-                              onClick={() => handleTemplateSelect(reply)}
-                              className="rounded-full border bg-background px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-primary/10 hover:border-primary/30 flex items-center gap-1.5"
-                            >
-                              <span>{reply}</span>
-                              {usageCounts[reply] > 0 && (
-                                <Badge variant="outline" className="text-[8px] h-4 px-1">{usageCounts[reply]}</Badge>
-                              )}
-                            </button>
-                          ))}
-                        </div>
+              ) : showManage && profile?.id ? (
+                <div className="py-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: T.sub }}>Manage Custom Templates</p>
+                  <CustomTemplatesManager profileId={profile.id} />
+                </div>
+              ) : showAnalytics ? (
+                <div className="py-2 space-y-4">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: T.sub }}>Usage Analytics</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="p-3 rounded-xl border" style={{ background: T.input, borderColor: T.border }}>
+                        <p className="text-[10px]" style={{ color: T.sub }}>Total Used</p>
+                        <p className="text-lg font-bold" style={{ color: T.text }}>{Object.values(usageCounts).reduce((a, b) => a + b, 0)}</p>
+                      </div>
+                      <div className="p-3 rounded-xl border" style={{ background: T.input, borderColor: T.border }}>
+                        <p className="text-[10px]" style={{ color: T.sub }}>Templates</p>
+                        <p className="text-lg font-bold" style={{ color: T.text }}>{allCategories.reduce((acc, cat) => acc + cat.templates.length, 0)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: T.sub }}>Top Templates</p>
+                    <div className="space-y-1">
+                      {topTemplates.length === 0 ? (
+                        <p className="text-xs italic" style={{ color: T.sub }}>No data yet</p>
+                      ) : (
+                        topTemplates.map(([text, count]) => (
+                          <div key={text} className="flex items-center justify-between p-2 rounded-lg" style={{ background: T.input }}>
+                            <span className="text-xs truncate flex-1 mr-2" style={{ color: T.text }}>{text}</span>
+                            <Badge variant="secondary" className="h-5 text-[10px]" style={{ background: T.badge, color: T.badgeFg }}>{count}</Badge>
+                          </div>
+                        ))
                       )}
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </ScrollArea>
-            )}
+              ) : (
+                <div className="py-2">
+                  {/* Categories Row */}
+                  {!templateSearch && (
+                    <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide">
+                      {allCategories.map((cat) => (
+                        <Button
+                          key={cat.label}
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-3 text-[11px] rounded-full whitespace-nowrap shrink-0 border transition-all"
+                          style={{ 
+                            background: activeCategory === cat.label ? T.badge : "transparent", 
+                            color: activeCategory === cat.label ? T.badgeFg : T.text,
+                            borderColor: activeCategory === cat.label ? T.badgeFg : T.border
+                          }}
+                          onClick={() => setActiveCategory(activeCategory === cat.label ? null : cat.label)}
+                        >
+                          {cat.label}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Templates Grid */}
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {allCategories
+                      .filter(cat => !activeCategory || cat.label === activeCategory)
+                      .flatMap(cat => cat.templates.map(t => ({ text: t, category: cat.label })))
+                      .filter(t => !templateSearch || t.text.toLowerCase().includes(templateSearch.toLowerCase()))
+                      .map((t, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleTemplateSelect(t.text)}
+                          className="text-left p-3 rounded-xl border text-xs transition-all hover:scale-[1.02] active:scale-[0.98]"
+                          style={{ 
+                            background: previewTemplate === t.text ? T.badge : T.input, 
+                            borderColor: previewTemplate === t.text ? T.badgeFg : T.border,
+                            color: previewTemplate === t.text ? T.badgeFg : T.text
+                          }}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[9px] font-bold uppercase tracking-widest opacity-60">{t.category}</span>
+                            {usageCounts[t.text] > 0 && (
+                              <span className="text-[9px] font-mono opacity-60">{usageCounts[t.text]} uses</span>
+                            )}
+                          </div>
+                          <p className="line-clamp-2 leading-relaxed">{t.text}</p>
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </ScrollArea>
           </div>
         )}
 
-        {/* Input */}
-        <div className="flex items-center gap-2 border-t pt-3">
-          <Button
-            variant={quickRepliesOpen ? "secondary" : "ghost"}
-            size="icon"
-            className="h-9 w-9 shrink-0"
-            onClick={() => { setQuickRepliesOpen(!quickRepliesOpen); setShowAnalytics(false); setShowAddForm(false); setShowManage(false); }}
-            title="Quick replies"
-          >
-            <Zap className="h-4 w-4" />
-          </Button>
-          <Input
-            ref={inputRef}
-            placeholder="Type a message or /shortcut..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={handleInputKeyDown}
-            className="flex-1"
-          />
-          <Button size="icon" onClick={() => previewTemplate ? handleConfirmPreview() : handleSend()} disabled={!newMessage.trim() && !previewTemplate}>
-            <Send className="h-4 w-4" />
-          </Button>
+        {/* Input area */}
+        <div 
+          className="p-4 border-t transition-all" 
+          style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)", borderBottomLeftRadius: "12px", borderBottomRightRadius: "12px" }}
+        >
+          <div className="flex items-end gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 shrink-0 rounded-xl"
+              style={{ background: quickRepliesOpen ? T.badge : T.input, color: quickRepliesOpen ? T.badgeFg : T.sub }}
+              onClick={() => {
+                setQuickRepliesOpen(!quickRepliesOpen);
+                if (!quickRepliesOpen) {
+                  setShowAddForm(false);
+                  setShowAnalytics(false);
+                  setShowManage(false);
+                }
+              }}
+            >
+              <Zap className="h-5 w-5" />
+            </Button>
+            <div className="flex-1 relative">
+              <Textarea
+                ref={inputRef as any}
+                placeholder='Type a message or use "/" for quick replies...'
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={handleInputKeyDown}
+                className="min-h-[44px] max-h-32 py-3 px-4 rounded-2xl resize-none border-none focus-visible:ring-1 focus-visible:ring-indigo-500/30"
+                style={{ background: T.input, color: T.text }}
+                rows={1}
+              />
+            </div>
+            <Button
+              size="icon"
+              className="h-10 w-10 shrink-0 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20"
+              onClick={() => handleSend()}
+              disabled={!newMessage.trim() && !previewTemplate}
+            >
+              <Send className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Conversation list
+  // Conversation list view
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <HelpCircle className="h-5 w-5 text-primary" />
-        <h1 className="text-xl font-bold text-foreground">Help & Support</h1>
-      </div>
-
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search users by name, code, or email..."
-          value={convSearch}
-          onChange={(e) => setConvSearch(e.target.value)}
-          className="pl-9"
-        />
-      </div>
-
-      {filteredConversations.length === 0 ? (
-        <div className="py-12 text-center">
-          <MessageCircle className="mx-auto mb-2 h-10 w-10 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">
-            {convSearch ? "No users match your search." : "No support conversations yet."}
-          </p>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: T.text }}>Help & Support</h1>
+          <p className="text-sm" style={{ color: T.sub }}>Manage customer support conversations</p>
         </div>
-      ) : (
-        <div className="space-y-2">
-          {filteredConversations.map((conv: any) => {
-            const name = getUserDisplayName(conv);
-            const code = getUserCode(conv);
-            const userType = conv.user?.user_type || "";
-            const lastMsg = conv.last_message;
-            const unread = conv.unread_count || 0;
+        <div className="flex items-center gap-3">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: T.sub }} />
+            <Input
+              placeholder="Search conversations..."
+              value={convSearch}
+              onChange={(e) => setConvSearch(e.target.value)}
+              className="h-10 pl-10 border-none rounded-xl"
+              style={{ background: T.card, color: T.text, border: `1px solid ${T.border}` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-3">
+        {filteredConversations.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 rounded-2xl border border-dashed" style={{ borderColor: T.border, background: T.card }}>
+            <MessageCircle className="h-12 w-12 mb-4 opacity-20" style={{ color: T.text }} />
+            <p className="text-sm" style={{ color: T.sub }}>No conversations found</p>
+          </div>
+        ) : (
+          filteredConversations.map((conv: any) => {
+            const userName = getUserDisplayName(conv);
+            const userCode = getUserCode(conv);
+            const userType = (conv as any).user?.user_type || "";
+            const isSelected = selectedConvId === conv.id;
 
             return (
-              <button
+              <div
                 key={conv.id}
                 onClick={() => setSelectedConvId(conv.id)}
-                className="flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-muted"
+                className="group flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99] border"
+                style={{ 
+                  background: isSelected ? T.badge : T.card, 
+                  borderColor: isSelected ? T.badgeFg : T.border,
+                  backdropFilter: "blur(12px)"
+                }}
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
-                  {name.charAt(0).toUpperCase()}
+                <div 
+                  className="flex h-12 w-12 items-center justify-center rounded-xl text-lg font-bold"
+                  style={{ background: T.input, color: T.badgeFg, border: `1px solid ${T.border}` }}
+                >
+                  {userName.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground truncate">{name}</span>
-                    <Badge variant="outline" className="text-[10px] capitalize">{userType}</Badge>
-                    {code && (
-                      <span className="text-[10px] text-muted-foreground">{code}</span>
-                    )}
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-semibold truncate" style={{ color: T.text }}>{userName}</h3>
+                    <span className="text-[10px]" style={{ color: T.sub }}>
+                      {formatDistanceToNow(new Date(conv.created_at), { addSuffix: true })}
+                    </span>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">
-                    {lastMsg?.content || "No messages yet"}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="h-5 text-[10px] capitalize" style={{ background: T.nav, color: T.sub, borderColor: T.border }}>
+                      {userType}
+                    </Badge>
+                    <span className="text-xs" style={{ color: T.sub }}>{userCode}</span>
+                  </div>
                 </div>
-                <div className="flex flex-col items-end gap-1">
-                  {lastMsg && (
-                    <span className="text-[10px] text-muted-foreground">
-                      {formatDistanceToNow(new Date(lastMsg.created_at), { addSuffix: true })}
-                    </span>
-                  )}
-                  {unread > 0 && (
-                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
-                      {unread}
-                    </span>
-                  )}
-                </div>
-              </button>
+                <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" style={{ color: T.sub }} />
+              </div>
             );
-          })}
-        </div>
-      )}
+          })
+        )}
+      </div>
     </div>
   );
 };

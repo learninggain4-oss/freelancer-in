@@ -14,6 +14,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import PhotoCaptureDialog from "@/components/attendance/PhotoCaptureDialog";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 interface AttendanceRecord {
   id: string;
@@ -27,6 +34,8 @@ interface AttendanceRecord {
 }
 
 const ClientAttendance = () => {
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
   const { profile } = useAuth();
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
   const [monthRecords, setMonthRecords] = useState<AttendanceRecord[]>([]);
@@ -117,74 +126,74 @@ const ClientAttendance = () => {
   };
 
   return (
-    <div className="space-y-5 pb-24">
+    <div className="space-y-6 pb-24 min-h-screen p-4" style={{ backgroundColor: T.bg, color: T.text }}>
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-5 text-primary-foreground">
-        <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary-foreground/10 blur-2xl" />
-        <div className="absolute -bottom-4 -left-4 h-20 w-20 rounded-full bg-primary-foreground/5 blur-xl" />
-        <div className="relative z-10 flex items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-foreground/20 backdrop-blur-sm">
-            <ClipboardCheck className="h-5 w-5" />
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 p-6 shadow-2xl">
+        <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute -bottom-4 -left-4 h-20 w-20 rounded-full bg-white/5 blur-xl" />
+        <div className="relative z-10 flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-xl border border-white/10">
+            <ClipboardCheck className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold tracking-tight">Attendance</h1>
-            <p className="text-xs text-primary-foreground/70">{format(today, "EEEE, dd MMMM yyyy")}</p>
+            <h1 className="text-xl font-black tracking-tight text-white uppercase">Attendance</h1>
+            <p className="text-xs font-bold text-white/70 tracking-widest">{format(today, "EEEE, dd MMMM yyyy")}</p>
           </div>
         </div>
       </div>
 
       {/* Today's Card */}
-      <Card className="overflow-hidden border-0 shadow-lg">
-        <div className="h-1 bg-gradient-to-r from-primary via-accent to-primary" />
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Timer className="h-4 w-4 text-primary" /> Today's Status
+      <Card className="overflow-hidden border-0 shadow-2xl" style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+        <div className="h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500" />
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-base font-black uppercase tracking-widest" style={{ color: T.text }}>
+            <Timer className="h-5 w-5 text-indigo-400" /> Today's Status
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           {!todayRecord ? (
             <Button onClick={() => setShowCheckInDialog(true)} disabled={loading}
-              className="w-full gap-2 h-12 text-base bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent/70 shadow-md shadow-accent/20">
-              <LogIn className="h-5 w-5" /> Check In Now
+              className="w-full gap-3 h-14 text-base font-black uppercase tracking-widest bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-xl shadow-indigo-600/20 rounded-2xl active:scale-[0.98] transition-all">
+              <LogIn className="h-6 w-6" /> Check In Now
             </Button>
           ) : !todayRecord.check_out_at ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 rounded-xl bg-accent/10 p-3 border border-accent/20">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/20">
-                  <CheckCircle2 className="h-5 w-5 text-accent" />
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 rounded-2xl p-4 shadow-sm border border-emerald-500/20 bg-emerald-500/5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                  <CheckCircle2 className="h-6 w-6 text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">Checked In</p>
-                  <p className="text-xs text-muted-foreground">{format(new Date(todayRecord.check_in_at), "hh:mm a")}</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-emerald-400">Checked In</p>
+                  <p className="text-xl font-black" style={{ color: T.text }}>{format(new Date(todayRecord.check_in_at), "hh:mm a")}</p>
                 </div>
               </div>
               <Button onClick={() => setShowCheckOutDialog(true)} disabled={loading} variant="secondary"
-                className="w-full gap-2 h-12 text-base border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 hover:bg-primary/5">
-                <LogOut className="h-5 w-5" /> Check Out
+                className="w-full gap-3 h-14 text-base font-black uppercase tracking-widest rounded-2xl border-2 border-dashed border-indigo-500/30 hover:bg-indigo-500/5 hover:border-indigo-500/50 transition-all active:scale-[0.98]" style={{ color: T.text, background: 'transparent' }}>
+                <LogOut className="h-6 w-6" /> Check Out
               </Button>
             </div>
           ) : (
-            <div className="space-y-2">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center gap-2.5 rounded-xl bg-accent/10 p-3 border border-accent/20">
-                  <LogIn className="h-4 w-4 text-accent" />
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-3 rounded-2xl p-4 shadow-sm" style={{ background: T.input, border: `1px solid ${T.border}` }}>
+                  <LogIn className="h-5 w-5 text-indigo-400" />
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">In</p>
-                    <p className="text-sm font-semibold text-foreground">{format(new Date(todayRecord.check_in_at), "hh:mm a")}</p>
+                    <p className="text-[10px] uppercase font-black tracking-widest opacity-40">Check-In</p>
+                    <p className="text-base font-black" style={{ color: T.text }}>{format(new Date(todayRecord.check_in_at), "hh:mm a")}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2.5 rounded-xl bg-primary/10 p-3 border border-primary/20">
-                  <LogOut className="h-4 w-4 text-primary" />
+                <div className="flex items-center gap-3 rounded-2xl p-4 shadow-sm" style={{ background: T.input, border: `1px solid ${T.border}` }}>
+                  <LogOut className="h-5 w-5 text-purple-400" />
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Out</p>
-                    <p className="text-sm font-semibold text-foreground">{format(new Date(todayRecord.check_out_at), "hh:mm a")}</p>
+                    <p className="text-[10px] uppercase font-black tracking-widest opacity-40">Check-Out</p>
+                    <p className="text-base font-black" style={{ color: T.text }}>{format(new Date(todayRecord.check_out_at), "hh:mm a")}</p>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center justify-between rounded-xl bg-accent/5 p-3 border border-accent/10">
-                <Badge variant="secondary" className="bg-accent/15 text-accent border-0 font-semibold">✅ Complete</Badge>
+              <div className="flex items-center justify-between rounded-2xl p-4 shadow-sm" style={{ background: 'rgba(74, 222, 128, 0.05)', border: '1px solid rgba(74, 222, 128, 0.1)' }}>
+                <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 font-black uppercase tracking-widest text-[10px] rounded-lg shadow-sm">✅ Complete</Badge>
                 {formatDuration(todayRecord.check_in_at, todayRecord.check_out_at) && (
-                  <span className="text-xs font-medium text-muted-foreground">Duration: {formatDuration(todayRecord.check_in_at, todayRecord.check_out_at)}</span>
+                  <span className="text-xs font-black tracking-tight" style={{ color: T.sub }}>Duration: {formatDuration(todayRecord.check_in_at, todayRecord.check_out_at)}</span>
                 )}
               </div>
             </div>
@@ -193,63 +202,109 @@ const ClientAttendance = () => {
       </Card>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-2 gap-4">
         {[
-          { icon: CalendarDays, value: totalPresent, label: "Present", color: "text-accent", bg: "bg-accent/10", border: "border-accent/20" },
-          { icon: Clock, value: totalHalfDay, label: "Half Day", color: "text-warning", bg: "bg-warning/10", border: "border-warning/20" },
-          { icon: Flame, value: streak, label: "Streak", color: "text-destructive", bg: "bg-destructive/10", border: "border-destructive/20" },
-          { icon: TrendingUp, value: `${attendanceRate}%`, label: "Rate", color: "text-primary", bg: "bg-primary/10", border: "border-primary/20" },
+          { icon: CalendarDays, value: totalPresent, label: "Present", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+          { icon: Clock, value: totalHalfDay, label: "Half Day", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
+          { icon: Flame, value: streak, label: "Streak", color: "text-rose-400", bg: "bg-rose-500/10", border: "border-rose-500/20" },
+          { icon: TrendingUp, value: `${attendanceRate}%`, label: "Rate", color: "text-indigo-400", bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
         ].map((stat) => (
-          <Card key={stat.label} className={cn("border", stat.border, "overflow-hidden")}>
-            <CardContent className="flex flex-col items-center p-3 gap-1">
-              <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", stat.bg)}>
-                <stat.icon className={cn("h-4 w-4", stat.color)} />
+          <Card key={stat.label} className={cn("border shadow-xl rounded-3xl overflow-hidden", stat.border)} style={{ background: T.card, backdropFilter: "blur(12px)" }}>
+            <CardContent className="flex flex-col items-center p-5 gap-2">
+              <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl shadow-inner", stat.bg)}>
+                <stat.icon className={cn("h-6 w-6", stat.color)} />
               </div>
-              <span className="text-lg font-bold text-foreground leading-none">{stat.value}</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{stat.label}</span>
+              <div className="text-center">
+                <span className="text-2xl font-black block tracking-tighter" style={{ color: T.text }}>{stat.value}</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">{stat.label}</span>
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* Calendar */}
-      <Card className="overflow-hidden border-0 shadow-lg">
-        <CardHeader className="pb-2 bg-gradient-to-r from-muted/50 to-transparent">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CalendarDays className="h-4 w-4 text-primary" /> Monthly Overview
+      <Card className="overflow-hidden border-0 shadow-2xl rounded-3xl" style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+        <CardHeader className="pb-2 bg-white/5 border-b border-white/5">
+          <CardTitle className="flex items-center gap-2 text-base font-black uppercase tracking-widest" style={{ color: T.text }}>
+            <CalendarDays className="h-5 w-5 text-indigo-400" /> Monthly Overview
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} month={currentMonth}
-            onMonthChange={setCurrentMonth} modifiers={modifiers} modifiersClassNames={modifiersClassNames}
-            className={cn("p-3 pointer-events-auto w-full")} disabled={(date) => date > today} />
-          <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5"><div className="h-3 w-3 rounded-full bg-accent/30 border-2 border-accent" /> Present</div>
-            <div className="flex items-center gap-1.5"><div className="h-3 w-3 rounded-full bg-warning/30 border-2 border-warning" /> Half Day</div>
+        <CardContent className="pt-6">
+          <div className="rounded-2xl p-1 shadow-inner" style={{ background: T.input, border: `1px solid ${T.border}` }}>
+            <Calendar 
+              mode="single" 
+              selected={selectedDate} 
+              onSelect={setSelectedDate} 
+              month={currentMonth}
+              onMonthChange={setCurrentMonth} 
+              modifiers={modifiers} 
+              modifiersClassNames={modifiersClassNames}
+              className={cn("p-4 pointer-events-auto w-full font-bold")} 
+              disabled={(date) => date > today} 
+            />
           </div>
+          
+          <div className="flex items-center gap-6 mt-6 justify-center">
+            <div className="flex items-center gap-2.5">
+              <div className="h-4 w-4 rounded-lg bg-emerald-500/30 border-2 border-emerald-500 shadow-sm" />
+              <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Present</span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <div className="h-4 w-4 rounded-lg bg-amber-500/30 border-2 border-amber-500 shadow-sm" />
+              <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Half Day</span>
+            </div>
+          </div>
+
           {selectedDate && (
-            <div className="mt-3 rounded-xl bg-gradient-to-br from-muted/60 to-muted/30 p-4 text-sm border border-border/50 animate-fade-in">
-              <p className="font-semibold text-foreground">{format(selectedDate, "dd MMM yyyy")}</p>
+            <div className="mt-6 rounded-3xl p-5 shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${T.border}` }}>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-base font-black tracking-tight" style={{ color: T.text }}>{format(selectedDate, "dd MMM yyyy")}</p>
+                <div className="h-px flex-1 mx-4 bg-white/10" />
+              </div>
               {selectedRecord ? (
-                <div className="text-muted-foreground mt-2 space-y-1.5">
-                  <div className="flex items-center gap-2"><LogIn className="h-3.5 w-3.5 text-accent" /><span>In: {format(new Date(selectedRecord.check_in_at), "hh:mm a")}</span></div>
-                  {selectedRecord.check_out_at && (
-                    <div className="flex items-center gap-2"><LogOut className="h-3.5 w-3.5 text-primary" /><span>Out: {format(new Date(selectedRecord.check_out_at), "hh:mm a")}</span></div>
-                  )}
-                  <div className="flex items-center gap-2 pt-1">
-                    <Badge variant="outline" className={cn("text-xs", selectedRecord.check_out_at ? "border-accent/30 text-accent bg-accent/5" : "border-warning/30 text-warning bg-warning/5")}>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-white/5 border border-white/5">
+                      <LogIn className="h-4 w-4 text-emerald-400" />
+                      <div>
+                        <p className="text-[8px] uppercase font-black tracking-widest opacity-30">In</p>
+                        <p className="text-xs font-bold" style={{ color: T.text }}>{format(new Date(selectedRecord.check_in_at), "hh:mm a")}</p>
+                      </div>
+                    </div>
+                    {selectedRecord.check_out_at && (
+                      <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-white/5 border border-white/5">
+                        <LogOut className="h-4 w-4 text-indigo-400" />
+                        <div>
+                          <p className="text-[8px] uppercase font-black tracking-widest opacity-30">Out</p>
+                          <p className="text-xs font-bold" style={{ color: T.text }}>{format(new Date(selectedRecord.check_out_at), "hh:mm a")}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between pt-1">
+                    <Badge className={cn("text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border", selectedRecord.check_out_at ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10" : "border-amber-500/30 text-amber-400 bg-amber-500/10")}>
                       {selectedRecord.check_out_at ? "✅ Present" : "⏳ Half Day"}
                     </Badge>
                     {selectedRecord.check_out_at && formatDuration(selectedRecord.check_in_at, selectedRecord.check_out_at) && (
-                      <span className="text-xs text-muted-foreground">• {formatDuration(selectedRecord.check_in_at, selectedRecord.check_out_at)}</span>
+                      <span className="text-[10px] font-black uppercase tracking-tighter opacity-40">• {formatDuration(selectedRecord.check_in_at, selectedRecord.check_out_at)}</span>
                     )}
                   </div>
                 </div>
-              ) : (<p className="text-muted-foreground mt-1">No attendance recorded</p>)}
+              ) : (
+                <div className="py-4 text-center">
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-20">No record for this day</p>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <PhotoCaptureDialog open={showCheckInDialog} onOpenChange={setShowCheckInDialog} onCaptured={handleCheckInPhoto} title="Check In Photo" description="Take a photo to verify your check-in." />
+      <PhotoCaptureDialog open={showCheckOutDialog} onOpenChange={setShowCheckOutDialog} onCaptured={handleCheckOutPhoto} title="Check Out Photo" description="Take a photo to verify your check-out." />
+    </div>
+  );
 
       <PhotoCaptureDialog open={showCheckInDialog} onOpenChange={setShowCheckInDialog} onCaptured={handleCheckInPhoto} title="Check In Photo" description="Take a photo to verify your check-in." />
       <PhotoCaptureDialog open={showCheckOutDialog} onOpenChange={setShowCheckOutDialog} onCaptured={handleCheckOutPhoto} title="Check Out Photo" description="Take a photo to verify your check-out." />

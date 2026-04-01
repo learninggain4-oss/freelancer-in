@@ -19,9 +19,16 @@ import { format } from "date-fns";
 import {
   Plus, Pencil, Trash2, Copy, Eye, Search, ArrowUp, ArrowDown,
   Loader2, MessageSquare, Download, Upload, ToggleLeft, ToggleRight,
-  Clock, Zap, Filter,
+  Clock, Zap, Filter, Save, X, Settings2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 interface AutoResponseButton {
   key: string;
@@ -59,14 +66,10 @@ const defaultForm: Omit<AutoResponse, "id" | "created_at" | "updated_at"> = {
   language: "en",
 };
 
-const formatHour = (h: number, m: number) => {
-  const ampm = h >= 12 ? "PM" : "AM";
-  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-  return `${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
-};
-
 const AdminAutoResponses = () => {
   const queryClient = useQueryClient();
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "enabled" | "disabled">("all");
   const [editDialog, setEditDialog] = useState<{ open: boolean; data: any | null }>({ open: false, data: null });
@@ -249,119 +252,178 @@ const AdminAutoResponses = () => {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Auto Response Management</h1>
-          <p className="text-sm text-muted-foreground">Manage wallet upgrade chat auto responses & time slots</p>
+    <div className="space-y-6 pb-20">
+      {/* Premium Hero Section */}
+      <div 
+        className="relative overflow-hidden rounded-2xl p-8 mb-8"
+        style={{ 
+          background: theme === "black" 
+            ? "linear-gradient(135deg, #1e1b4b 0%, #070714 100%)" 
+            : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+          border: `1px solid ${T.border}`
+        }}
+      >
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="rounded-full bg-white/10 p-3 backdrop-blur-md">
+              <Zap className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white">Automation Hub</h1>
+              <p className="text-white/70">Manage wallet upgrade auto-responses and operational time slots</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={handleExport} className="h-10 border-white/20 bg-white/10 text-white hover:bg-white/20 gap-2">
+              <Download className="h-4 w-4" /> Export
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleImport} className="h-10 border-white/20 bg-white/10 text-white hover:bg-white/20 gap-2">
+              <Upload className="h-4 w-4" /> Import
+            </Button>
+            <Button size="sm" onClick={() => openEdit()} className="h-10 gap-2 bg-white text-[#6366f1] hover:bg-white/90">
+              <Plus className="h-4 w-4" /> Add Logic
+            </Button>
+          </div>
         </div>
       </div>
 
       <Tabs defaultValue="responses" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="responses" className="gap-1.5">
-            <MessageSquare className="h-4 w-4" /> Auto Responses
+        <TabsList className="grid w-full grid-cols-2 p-1 rounded-xl" style={{ background: T.nav }}>
+          <TabsTrigger value="responses" className="gap-2 rounded-lg py-2 data-[state=active]:bg-[#6366f1] data-[state=active]:text-white">
+            <MessageSquare className="h-4 w-4" /> Logic Steps
           </TabsTrigger>
-          <TabsTrigger value="timeslots" className="gap-1.5">
-            <Clock className="h-4 w-4" /> Time Slot Management
+          <TabsTrigger value="timeslots" className="gap-2 rounded-lg py-2 data-[state=active]:bg-[#6366f1] data-[state=active]:text-white">
+            <Clock className="h-4 w-4" /> Time Slots
           </TabsTrigger>
         </TabsList>
 
-        {/* ===== AUTO RESPONSES TAB ===== */}
-        <TabsContent value="responses" className="space-y-4">
-          <div className="flex gap-2 justify-end">
-            <Button size="sm" variant="outline" onClick={handleExport} className="gap-1.5">
-              <Download className="h-4 w-4" /> Backup
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleImport} className="gap-1.5">
-              <Upload className="h-4 w-4" /> Restore
-            </Button>
-            <Button size="sm" onClick={() => openEdit()} className="gap-1.5">
-              <Plus className="h-4 w-4" /> Add Response
-            </Button>
-          </div>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex flex-col sm:flex-row gap-3">
+        <TabsContent value="responses" className="space-y-6 pt-6">
+          <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+            <CardHeader className="pb-3 border-b" style={{ borderColor: T.border }}>
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Search by key or message..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: T.sub }} />
+                  <Input 
+                    placeholder="Search logic steps..." 
+                    value={search} 
+                    onChange={e => setSearch(e.target.value)} 
+                    className="pl-9 h-11"
+                    style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                  />
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 p-1 rounded-lg" style={{ background: T.input }}>
                   {(["all", "enabled", "disabled"] as const).map(s => (
-                    <Button key={s} size="sm" variant={statusFilter === s ? "default" : "outline"} onClick={() => setStatusFilter(s)} className="capitalize">
+                    <Button 
+                      key={s} 
+                      size="sm" 
+                      variant="ghost"
+                      onClick={() => setStatusFilter(s)} 
+                      className={cn(
+                        "capitalize h-9 rounded-md transition-all px-4",
+                        statusFilter === s ? "bg-[#6366f1] text-white" : ""
+                      )}
+                      style={statusFilter === s ? {} : { color: T.sub }}
+                    >
                       {s}
                     </Button>
                   ))}
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {isLoading ? (
                 <div className="flex justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <Loader2 className="h-8 w-8 animate-spin text-[#6366f1]" />
                 </div>
               ) : filtered.length === 0 ? (
-                <div className="text-center py-12">
-                  <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground">No auto responses found</p>
+                <div className="text-center py-20" style={{ color: T.sub }}>
+                  <MessageSquare className="mx-auto h-16 w-16 mb-4 opacity-20" />
+                  <p className="text-lg font-medium">No automation steps found</p>
+                  <p className="text-sm">Try changing your search or adding a new step</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-10">#</TableHead>
-                        <TableHead>Step Key</TableHead>
-                        <TableHead>Message</TableHead>
-                        <TableHead>Buttons</TableHead>
-                        <TableHead>Trigger</TableHead>
-                        <TableHead>Typing</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Lang</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                      <TableRow style={{ background: T.nav, borderColor: T.border }}>
+                        <TableHead className="w-12 text-center text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>#</TableHead>
+                        <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>Logic Step / Key</TableHead>
+                        <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>Response Message</TableHead>
+                        <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>Options</TableHead>
+                        <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>Trigger</TableHead>
+                        <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>Typing</TableHead>
+                        <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>Status</TableHead>
+                        <TableHead className="text-right text-[10px] font-bold uppercase tracking-widest px-6" style={{ color: T.sub }}>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filtered.map((r, index) => (
-                        <TableRow key={r.id}>
-                          <TableCell className="text-xs text-muted-foreground">{r.display_order}</TableCell>
-                          <TableCell className="font-mono text-xs">{r.step_key}</TableCell>
-                          <TableCell className="max-w-[200px] truncate text-xs">{r.message_text || "—"}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="text-xs">{r.buttons.length} btn</Badge>
+                        <TableRow key={r.id} className="transition-colors hover:bg-white/5" style={{ borderColor: T.border }}>
+                          <TableCell className="text-center">
+                            <Badge variant="outline" className="font-mono text-[10px] h-5 px-1.5" style={{ borderColor: T.border, color: T.sub }}>{r.display_order}</Badge>
                           </TableCell>
-                          <TableCell className="text-xs">{r.trigger_type}</TableCell>
-                          <TableCell className="text-xs">
-                            {r.typing_enabled ? `${r.typing_duration_seconds}s` : "Off"}
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <span className="font-mono font-bold text-xs" style={{ color: T.text }}>{r.step_key}</span>
+                              <Badge 
+                                variant="outline" 
+                                className="w-fit text-[9px] uppercase font-bold px-1 h-4"
+                                style={{ background: "rgba(167, 139, 250, 0.1)", color: "#a78bfa", borderColor: "rgba(167, 139, 250, 0.3)" }}
+                              >
+                                {r.language}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell className="max-w-[200px]">
+                            <p className="truncate text-xs leading-relaxed" style={{ color: T.sub }}>{r.message_text || "—"}</p>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              className="text-[10px] h-5"
+                              style={{ background: "rgba(99, 102, 241, 0.1)", color: "#a5b4fc", border: "1px solid rgba(99, 102, 241, 0.3)" }}
+                            >
+                              {r.buttons.length} Buttons
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                             <div className="flex flex-col gap-1">
+                               <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>{r.trigger_type}</span>
+                               {r.trigger_value && <span className="text-[9px] opacity-50 font-mono truncate max-w-[80px]" style={{ color: T.text }}>{r.trigger_value}</span>}
+                             </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-[10px] font-bold" style={{ color: r.typing_enabled ? "#4ade80" : T.sub }}>
+                              {r.typing_enabled ? `${r.typing_duration_seconds}s` : "Off"}
+                            </span>
                           </TableCell>
                           <TableCell>
                             <Switch
                               checked={r.is_enabled}
                               onCheckedChange={(v) => toggleMutation.mutate({ id: r.id, enabled: v })}
+                              className="scale-75"
                             />
                           </TableCell>
-                          <TableCell className="text-xs uppercase">{r.language}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-1 justify-end flex-wrap">
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveItem(index, "up")} disabled={index === 0}>
-                                <ArrowUp className="h-3.5 w-3.5" />
+                          <TableCell className="text-right px-6">
+                            <div className="flex gap-1 justify-end">
+                              <div className="flex flex-col gap-1 mr-2">
+                                <Button size="icon" variant="ghost" className="h-6 w-6 rounded-md hover:bg-white/5" onClick={() => moveItem(index, "up")} disabled={index === 0}>
+                                  <ArrowUp className="h-3 w-3" />
+                                </Button>
+                                <Button size="icon" variant="ghost" className="h-6 w-6 rounded-md hover:bg-white/5" onClick={() => moveItem(index, "down")} disabled={index === filtered.length - 1}>
+                                  <ArrowDown className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              <Button size="icon" variant="ghost" className="h-9 w-9 hover:bg-white/5" onClick={() => setPreviewDialog({ open: true, data: r })}>
+                                <Eye className="h-4 w-4" style={{ color: T.sub }} />
                               </Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveItem(index, "down")} disabled={index === filtered.length - 1}>
-                                <ArrowDown className="h-3.5 w-3.5" />
+                              <Button size="icon" variant="ghost" className="h-9 w-9 hover:bg-white/5" onClick={() => openEdit(r)}>
+                                <Pencil className="h-4 w-4" style={{ color: T.sub }} />
                               </Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setPreviewDialog({ open: true, data: r })}>
-                                <Eye className="h-3.5 w-3.5" />
+                              <Button size="icon" variant="ghost" className="h-9 w-9 hover:bg-white/5" onClick={() => duplicateItem(r)}>
+                                <Copy className="h-4 w-4" style={{ color: T.sub }} />
                               </Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(r)}>
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => duplicateItem(r)}>
-                                <Copy className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setDeleteDialog({ open: true, id: r.id })}>
-                                <Trash2 className="h-3.5 w-3.5" />
+                              <Button size="icon" variant="ghost" className="h-9 w-9 text-destructive hover:bg-destructive/10" onClick={() => setDeleteDialog({ open: true, id: r.id })}>
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           </TableCell>
@@ -375,230 +437,267 @@ const AdminAutoResponses = () => {
           </Card>
         </TabsContent>
 
-        {/* ===== TIME SLOT MANAGEMENT TAB ===== */}
-        <TabsContent value="timeslots">
+        <TabsContent value="timeslots" className="pt-6">
           <AdminTimeSlotManagement />
         </TabsContent>
       </Tabs>
 
-      {/* Edit Auto Response Dialog */}
+      {/* Edit Dialog - Styled for Glassmorphism */}
       <Dialog open={editDialog.open} onOpenChange={(o) => { if (!o) setEditDialog({ open: false, data: null }); }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editDialog.data?.id ? "Edit" : "Add"} Auto Response</DialogTitle>
-          </DialogHeader>
-          {editDialog.data && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Step Key *</Label>
-                  <Input
-                    value={editDialog.data.step_key}
-                    onChange={e => setEditDialog(prev => ({ ...prev, data: { ...prev.data, step_key: e.target.value } }))}
-                    placeholder="e.g. language_select"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Language</Label>
-                  <Select
-                    value={editDialog.data.language}
-                    onValueChange={v => setEditDialog(prev => ({ ...prev, data: { ...prev.data, language: v } }))}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="hi">Hindi</SelectItem>
-                      <SelectItem value="ml">Malayalam</SelectItem>
-                      <SelectItem value="ur">Urdu</SelectItem>
-                      <SelectItem value="ar">Arabic</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Message Text</Label>
-                <Textarea
-                  value={editDialog.data.message_text}
-                  onChange={e => setEditDialog(prev => ({ ...prev, data: { ...prev.data, message_text: e.target.value } }))}
-                  placeholder="Enter the message content..."
-                  rows={4}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Trigger Type</Label>
-                  <Select
-                    value={editDialog.data.trigger_type}
-                    onValueChange={v => setEditDialog(prev => ({ ...prev, data: { ...prev.data, trigger_type: v } }))}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="first_message">First Message</SelectItem>
-                      <SelectItem value="button_click">Button Click</SelectItem>
-                      <SelectItem value="time_based">Time Based</SelectItem>
-                      <SelectItem value="keyword">Keyword</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Trigger Value</Label>
-                  <Input
-                    value={editDialog.data.trigger_value || ""}
-                    onChange={e => setEditDialog(prev => ({ ...prev, data: { ...prev.data, trigger_value: e.target.value } }))}
-                    placeholder="e.g. keyword or step name"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Display Order</Label>
-                  <Input
-                    type="number"
-                    value={editDialog.data.display_order}
-                    onChange={e => setEditDialog(prev => ({ ...prev, data: { ...prev.data, display_order: parseInt(e.target.value) || 0 } }))}
-                  />
-                </div>
-                <div className="flex items-center gap-2 pt-6">
-                  <Switch
-                    checked={editDialog.data.typing_enabled}
-                    onCheckedChange={v => setEditDialog(prev => ({ ...prev, data: { ...prev.data, typing_enabled: v } }))}
-                  />
-                  <Label>Typing Animation</Label>
-                </div>
-                <div className="space-y-2">
-                  <Label>Typing Duration (s)</Label>
-                  <Input
-                    type="number"
-                    value={editDialog.data.typing_duration_seconds}
-                    onChange={e => setEditDialog(prev => ({ ...prev, data: { ...prev.data, typing_duration_seconds: parseInt(e.target.value) || 10 } }))}
-                    min={1}
-                    max={60}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={editDialog.data.is_enabled}
-                  onCheckedChange={v => setEditDialog(prev => ({ ...prev, data: { ...prev.data, is_enabled: v } }))}
-                />
-                <Label>Enabled</Label>
-              </div>
-
-              {/* Buttons Management */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base font-semibold">Buttons / Options</Label>
-                  <Button size="sm" variant="outline" onClick={addButton} className="gap-1">
-                    <Plus className="h-3.5 w-3.5" /> Add Button
-                  </Button>
-                </div>
-                {editButtons.map((btn, i) => (
-                  <div key={i} className="flex gap-2 items-center border rounded-lg p-2">
+        <DialogContent 
+          className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col p-0 border-none shadow-2xl"
+          style={{ background: T.bg }}
+        >
+          <div className="p-6 border-b" style={{ borderColor: T.border, background: T.nav }}>
+             <DialogTitle className="text-xl font-bold flex items-center gap-2" style={{ color: T.text }}>
+                <Settings2 className="h-5 w-5 text-[#6366f1]" />
+                {editDialog.data?.id ? "Edit Automation Logic" : "New Automation Step"}
+             </DialogTitle>
+             <DialogDescription style={{ color: T.sub }}>Configure how the chat-bot responds to user interactions.</DialogDescription>
+          </div>
+          
+          <ScrollArea className="flex-1 p-6">
+            {editDialog.data && (
+              <div className="space-y-8 pb-10">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label style={{ color: T.text }}>Logic Step Key *</Label>
                     <Input
-                      placeholder="Key"
-                      value={btn.key}
-                      onChange={e => updateButton(i, "key", e.target.value)}
-                      className="w-28"
+                      value={editDialog.data.step_key}
+                      onChange={e => setEditDialog(prev => ({ ...prev, data: { ...prev.data, step_key: e.target.value } }))}
+                      placeholder="e.g. language_select"
+                      style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label style={{ color: T.text }}>Response Language</Label>
+                    <Select
+                      value={editDialog.data.language}
+                      onValueChange={v => setEditDialog(prev => ({ ...prev, data: { ...prev.data, language: v } }))}
+                    >
+                      <SelectTrigger style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="hi">Hindi</SelectItem>
+                        <SelectItem value="ml">Malayalam</SelectItem>
+                        <SelectItem value="ur">Urdu</SelectItem>
+                        <SelectItem value="ar">Arabic</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label style={{ color: T.text }}>Message Content</Label>
+                  <Textarea
+                    value={editDialog.data.message_text}
+                    onChange={e => setEditDialog(prev => ({ ...prev, data: { ...prev.data, message_text: e.target.value } }))}
+                    placeholder="Enter the chat message text..."
+                    rows={4}
+                    style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label style={{ color: T.text }}>Trigger Mechanism</Label>
+                    <Select
+                      value={editDialog.data.trigger_type}
+                      onValueChange={v => setEditDialog(prev => ({ ...prev, data: { ...prev.data, trigger_type: v } }))}
+                    >
+                      <SelectTrigger style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="first_message">Entrypoint (First Message)</SelectItem>
+                        <SelectItem value="button_click">Button Interaction</SelectItem>
+                        <SelectItem value="time_based">Time Delay</SelectItem>
+                        <SelectItem value="keyword">Keyword Detection</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label style={{ color: T.text }}>Trigger Identifier</Label>
                     <Input
-                      placeholder="Label"
-                      value={btn.label}
-                      onChange={e => updateButton(i, "label", e.target.value)}
-                      className="flex-1"
+                      value={editDialog.data.trigger_value || ""}
+                      onChange={e => setEditDialog(prev => ({ ...prev, data: { ...prev.data, trigger_value: e.target.value } }))}
+                      placeholder="e.g. step_name or keyword"
+                      style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
                     />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-6 items-end">
+                  <div className="space-y-2">
+                    <Label style={{ color: T.text }}>Sequence Order</Label>
                     <Input
-                      placeholder="Next step"
-                      value={btn.next_step || ""}
-                      onChange={e => updateButton(i, "next_step", e.target.value)}
-                      className="w-32"
+                      type="number"
+                      value={editDialog.data.display_order}
+                      onChange={e => setEditDialog(prev => ({ ...prev, data: { ...prev.data, display_order: parseInt(e.target.value) || 0 } }))}
+                      style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
                     />
-                    <Switch
-                      checked={btn.is_enabled !== false}
-                      onCheckedChange={v => updateButton(i, "is_enabled", v)}
+                  </div>
+                  <div className="space-y-2">
+                    <Label style={{ color: T.text }}>Typing Delay (s)</Label>
+                    <Input
+                      type="number"
+                      value={editDialog.data.typing_duration_seconds}
+                      onChange={e => setEditDialog(prev => ({ ...prev, data: { ...prev.data, typing_duration_seconds: parseInt(e.target.value) || 10 } }))}
+                      min={1}
+                      max={60}
+                      style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
                     />
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive shrink-0" onClick={() => removeButton(i)}>
-                      <Trash2 className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={editDialog.data.typing_enabled}
+                        onCheckedChange={v => setEditDialog(prev => ({ ...prev, data: { ...prev.data, typing_enabled: v } }))}
+                      />
+                      <Label style={{ color: T.text }}>Typing Status</Label>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={editDialog.data.is_enabled}
+                        onCheckedChange={v => setEditDialog(prev => ({ ...prev, data: { ...prev.data, is_enabled: v } }))}
+                      />
+                      <Label style={{ color: T.text }}>Step Active</Label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t" style={{ borderColor: T.border }}>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-lg font-bold" style={{ color: T.text }}>Reply Options (Buttons)</Label>
+                    <Button size="sm" variant="outline" onClick={addButton} className="gap-2 h-9 border-[#6366f1] text-[#6366f1] hover:bg-[#6366f1]/10">
+                      <Plus className="h-4 w-4" /> Add Button
                     </Button>
                   </div>
-                ))}
+                  
+                  {editButtons.length === 0 ? (
+                    <div className="text-center py-6 rounded-xl border-2 border-dashed" style={{ borderColor: T.border, color: T.sub }}>
+                      No interactive buttons defined for this step.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {editButtons.map((btn, i) => (
+                        <div key={i} className="flex gap-3 items-center rounded-xl p-3" style={{ background: T.nav, border: `1px solid ${T.border}` }}>
+                          <div className="space-y-1 flex-1">
+                            <Label className="text-[10px] uppercase font-bold tracking-widest px-1" style={{ color: T.sub }}>Label</Label>
+                            <Input
+                              placeholder="Button Text"
+                              value={btn.label}
+                              onChange={e => updateButton(i, "label", e.target.value)}
+                              className="h-9"
+                              style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text }}
+                            />
+                          </div>
+                          <div className="space-y-1 w-32">
+                            <Label className="text-[10px] uppercase font-bold tracking-widest px-1" style={{ color: T.sub }}>Internal Key</Label>
+                            <Input
+                              placeholder="key"
+                              value={btn.key}
+                              onChange={e => updateButton(i, "key", e.target.value)}
+                              className="h-9 font-mono text-xs"
+                              style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text }}
+                            />
+                          </div>
+                          <div className="space-y-1 w-40">
+                            <Label className="text-[10px] uppercase font-bold tracking-widest px-1" style={{ color: T.sub }}>Next Step</Label>
+                            <Input
+                              placeholder="target_key"
+                              value={btn.next_step || ""}
+                              onChange={e => updateButton(i, "next_step", e.target.value)}
+                              className="h-9 font-mono text-xs"
+                              style={{ background: T.card, border: `1px solid ${T.border}`, color: T.text }}
+                            />
+                          </div>
+                          <div className="flex flex-col items-center gap-1 pt-4">
+                            <Switch
+                              checked={btn.is_enabled !== false}
+                              onCheckedChange={v => updateButton(i, "is_enabled", v)}
+                              className="scale-75"
+                            />
+                          </div>
+                          <Button size="icon" variant="ghost" className="h-9 w-9 text-destructive shrink-0 mt-4 hover:bg-destructive/10" onClick={() => removeButton(i)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialog({ open: false, data: null })}>Cancel</Button>
+            )}
+          </ScrollArea>
+          
+          <div className="p-6 border-t flex justify-end gap-3" style={{ borderColor: T.border, background: T.nav }}>
+            <Button variant="outline" onClick={() => setEditDialog({ open: false, data: null })} style={{ borderColor: T.border, color: T.text }}>Cancel</Button>
             <Button
+              className="bg-[#6366f1] hover:bg-[#6366f1]/90 min-w-[120px]"
               onClick={() => saveMutation.mutate({ ...editDialog.data, buttons: editButtons })}
               disabled={saveMutation.isPending || !editDialog.data?.step_key}
             >
-              {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-              Save
+              {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              Save Configuration
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Auto Response Confirmation */}
-      <Dialog open={deleteDialog.open} onOpenChange={(o) => { if (!o) setDeleteDialog({ open: false, id: "" }); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Auto Response</DialogTitle>
-            <DialogDescription>Are you sure you want to delete this message? This action cannot be undone.</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialog({ open: false, id: "" })}>Cancel</Button>
-            <Button variant="destructive" onClick={() => deleteMutation.mutate(deleteDialog.id)} disabled={deleteMutation.isPending}>
-              {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-              Delete
-            </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Preview Dialog */}
       <Dialog open={previewDialog.open} onOpenChange={(o) => { if (!o) setPreviewDialog({ open: false, data: null }); }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Message Preview</DialogTitle>
-          </DialogHeader>
-          {previewDialog.data && (
-            <div className="space-y-3 bg-muted/30 rounded-xl p-4">
-              <div className="flex justify-start">
-                <div className="max-w-[85%] rounded-2xl px-4 py-2.5 text-sm bg-muted text-foreground rounded-bl-md">
-                  <p className="text-[10px] font-semibold text-primary mb-1">🤖 FlexPay Bot</p>
-                  <p className="whitespace-pre-wrap break-words leading-relaxed">{previewDialog.data.message_text}</p>
-                  <p className="text-[9px] text-muted-foreground/60 mt-1">{formatFullTimestamp(new Date())}</p>
-                </div>
+        <DialogContent className="max-w-md border-none p-0 overflow-hidden shadow-2xl" style={{ background: T.bg }}>
+           <div className="p-4 border-b flex items-center gap-2" style={{ borderColor: T.border, background: T.nav }}>
+              <div className="h-3 w-3 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-sm font-bold uppercase tracking-widest" style={{ color: T.text }}>Chat Preview</span>
+           </div>
+           <div className="p-6 space-y-6">
+              <div className="space-y-1">
+                 <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: T.sub }}>Assistant Message:</p>
+                 <div className="rounded-2xl rounded-tl-none p-4 max-w-[85%] border" style={{ background: "rgba(99, 102, 241, 0.1)", borderColor: "rgba(99, 102, 241, 0.2)", color: T.text }}>
+                    {previewDialog.data?.message_text || "..."}
+                 </div>
               </div>
-              {previewDialog.data.buttons?.length > 0 && (
-                <div className="ml-2 space-y-1.5">
-                  {previewDialog.data.buttons.map((btn: any, i: number) => (
-                    <div
-                      key={i}
-                      className={cn(
-                        "block w-full max-w-[85%] text-left rounded-xl border px-4 py-2.5 text-sm font-medium",
-                        btn.is_enabled !== false
-                          ? "bg-background text-foreground border-primary/20"
-                          : "bg-muted/50 text-muted-foreground border-border/30 opacity-60"
-                      )}
-                    >
-                      {btn.label || btn.key}
+              {previewDialog.data?.buttons && previewDialog.data.buttons.length > 0 && (
+                 <div className="space-y-2">
+                    <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: T.sub }}>Interactive Options:</p>
+                    <div className="flex flex-wrap gap-2">
+                       {previewDialog.data.buttons.map((btn: any) => (
+                          <Button key={btn.key} variant="outline" className="rounded-full h-9 px-4 text-xs font-semibold pointer-events-none" style={{ background: T.input, borderColor: T.border, color: "#a5b4fc" }}>
+                             {btn.label}
+                          </Button>
+                       ))}
                     </div>
-                  ))}
-                </div>
+                 </div>
               )}
-            </div>
-          )}
+           </div>
+           <div className="p-4 flex justify-end border-t" style={{ borderColor: T.border }}>
+              <Button onClick={() => setPreviewDialog({ open: false, data: null })} size="sm" className="bg-[#6366f1]">Close Preview</Button>
+           </div>
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation */}
+      <Dialog open={deleteDialog.open} onOpenChange={(o) => { if (!o) setDeleteDialog({ open: false, id: "" }); }}>
+        <DialogContent style={{ background: T.card, border: `1px solid ${T.border}` }}>
+          <DialogHeader>
+            <DialogTitle style={{ color: T.text }}>Delete Automation Step?</DialogTitle>
+            <DialogDescription style={{ color: T.sub }}>This will permanently remove this logic step and its associated buttons. This action cannot be undone.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeleteDialog({ open: false, id: "" })} style={{ borderColor: T.border, color: T.text }}>Cancel</Button>
+            <Button 
+              className="bg-destructive text-white hover:bg-destructive/90" 
+              onClick={() => deleteMutation.mutate(deleteDialog.id)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              Delete Permanently
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
-
-const formatFullTimestamp = (date: Date) => format(date, "EEEE, dd MMMM yyyy — hh:mm a");
 
 export default AdminAutoResponses;

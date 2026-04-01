@@ -11,11 +11,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { IndianRupee, CheckCircle, XCircle, Loader2, MessageSquare, Pencil, ChevronDown, ChevronUp, Save, EyeOff } from "lucide-react";
+import { IndianRupee, CheckCircle, XCircle, Loader2, MessageSquare, Pencil, ChevronDown, ChevronUp, Save, EyeOff, ShieldAlert, History } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 const AdminRecoveryRequests = () => {
   const { profile } = useAuth();
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [loading, setLoading] = useState<string | null>(null);
@@ -135,165 +144,271 @@ const AdminRecoveryRequests = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Recovery Requests</h1>
-          <p className="text-sm text-muted-foreground">Manage employee requests to recover held balances from rejected projects.</p>
+      <div className="relative overflow-hidden rounded-3xl bg-amber-500 p-8 text-white shadow-2xl shadow-amber-500/20">
+        <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-amber-100 mb-2">
+              <ShieldAlert className="h-4 w-4" />
+              <span className="text-xs font-bold uppercase tracking-wider">Risk Management</span>
+            </div>
+            <h1 className="text-3xl font-bold">Recovery Requests</h1>
+            <p className="text-amber-100/80 text-sm mt-1">
+              Manage employee requests to recover held balances from rejected projects.
+            </p>
+          </div>
+          <div 
+            className="flex items-center gap-3 px-4 py-2 bg-white/20 backdrop-blur-md rounded-2xl border border-white/20"
+          >
+            <Switch 
+              checked={showCleared} 
+              onCheckedChange={setShowCleared} 
+              id="show-cleared-recovery" 
+              className="data-[state=checked]:bg-white/40"
+            />
+            <Label htmlFor="show-cleared-recovery" className="text-xs font-medium cursor-pointer">
+              Show cleared
+            </Label>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Switch checked={showCleared} onCheckedChange={setShowCleared} id="show-cleared-recovery" />
-          <Label htmlFor="show-cleared-recovery" className="text-xs text-muted-foreground">Show cleared</Label>
-        </div>
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="h-10 w-10 animate-spin text-amber-500 mb-4" />
+          <p style={{ color: T.sub }}>Loading recovery requests...</p>
+        </div>
       ) : requests.length === 0 ? (
-        <Card><CardContent className="py-12 text-center text-muted-foreground">No recovery requests found.</CardContent></Card>
+        <div 
+          className="flex flex-col items-center justify-center py-20 rounded-3xl border border-dashed"
+          style={{ background: T.card, borderColor: T.border }}
+        >
+          <History className="h-12 w-12 mb-4 opacity-20" style={{ color: T.text }} />
+          <p className="text-sm font-medium" style={{ color: T.sub }}>No recovery requests found</p>
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid gap-6">
           {requests.map((req: any) => (
-            <Card key={req.id} className={req.is_cleared ? "opacity-60 border-dashed" : ""}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+            <div 
+              key={req.id} 
+              className="group relative overflow-hidden rounded-3xl border transition-all hover:scale-[1.01]"
+              style={{ 
+                background: T.card, 
+                borderColor: req.is_cleared ? T.border : (req.status === "pending" ? "rgba(245, 158, 11, 0.3)" : T.border),
+                opacity: req.is_cleared ? 0.6 : 1,
+                backdropFilter: "blur(12px)"
+              }}
+            >
+              <div className="p-6">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
                   <div>
-                    <CardTitle className="text-base">{req.project?.name || "Unknown Project"}</CardTitle>
-                    <CardDescription>Employee: {req.employee?.full_name?.[0] || "Unknown"} ({req.employee?.user_code?.[0]})</CardDescription>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-lg font-bold" style={{ color: T.text }}>
+                        {req.project?.name || "Unknown Project"}
+                      </h3>
+                      {req.is_cleared && (
+                        <Badge variant="outline" className="text-[10px] uppercase tracking-tighter" style={{ borderColor: "#f87171", color: "#f87171" }}>
+                          Cleared
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm" style={{ color: T.sub }}>
+                      Employee: <span className="font-semibold" style={{ color: T.text }}>{req.employee?.full_name?.[0] || "Unknown"}</span> ({req.employee?.user_code?.[0]})
+                    </p>
                   </div>
-                  <div className="flex items-center gap-1">
-                    {req.is_cleared && <Badge variant="outline" className="text-xs border-destructive/30 text-destructive">Cleared</Badge>}
+                  <div className="flex items-center gap-2">
                     {statusBadge(req.status)}
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-wrap gap-4 rounded-lg bg-muted/50 p-3 text-sm">
-                  <div className="flex items-center gap-1">
-                    <IndianRupee className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground">Held Amount:</span>
-                    <span className="font-semibold text-destructive">₹{Number(req.held_amount).toLocaleString("en-IN")}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-muted-foreground">Employee Hold Balance:</span>
-                    <span className="font-semibold text-foreground">₹{Number(req.employee?.hold_balance || 0).toLocaleString("en-IN")}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-muted-foreground">Validation Fees:</span>
-                    <span className="font-semibold">₹{Number(req.project?.validation_fees || 0).toLocaleString("en-IN")}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-muted-foreground">Budget:</span>
-                    <span className="font-semibold">₹{Number(req.project?.amount || 0).toLocaleString("en-IN")}</span>
-                  </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  {[
+                    { label: "Held Amount", value: req.held_amount, icon: IndianRupee, color: "#f87171", isCurrency: true },
+                    { label: "Hold Balance", value: req.employee?.hold_balance || 0, icon: History, color: "#6366f1", isCurrency: true },
+                    { label: "Validation Fees", value: req.project?.validation_fees || 0, icon: ShieldAlert, color: "#fbbf24", isCurrency: true },
+                    { label: "Project Budget", value: req.project?.amount || 0, icon: IndianRupee, color: "#22c55e", isCurrency: true },
+                  ].map((stat, i) => (
+                    <div key={i} className="p-3 rounded-2xl border" style={{ background: T.input, borderColor: T.border }}>
+                      <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: T.sub }}>{stat.label}</p>
+                      <div className="flex items-center gap-1">
+                        {stat.isCurrency && <span className="text-xs font-semibold" style={{ color: stat.color }}>₹</span>}
+                        <span className="text-sm font-bold" style={{ color: T.text }}>
+                          {Number(stat.value).toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
-                <div className="text-xs text-muted-foreground">Requested: {new Date(req.created_at).toLocaleString("en-IN")}</div>
-
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={() => startEdit(req)} className="gap-1">
-                    {expandedEdit === req.id ? <ChevronUp className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
-                    {expandedEdit === req.id ? "Close" : "Edit"}
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => openSupportChat(req)} className="gap-1">
-                    <MessageSquare className="h-3.5 w-3.5" /> Open Chat
-                  </Button>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => startEdit(req)} 
+                      className="rounded-xl h-10 px-4"
+                      style={{ background: expandedEdit === req.id ? T.badge : T.input, color: expandedEdit === req.id ? T.badgeFg : T.text }}
+                    >
+                      {expandedEdit === req.id ? <ChevronUp className="mr-2 h-4 w-4" /> : <Pencil className="mr-2 h-4 w-4" />}
+                      {expandedEdit === req.id ? "Close Editor" : "Edit Request"}
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => openSupportChat(req)} 
+                      className="rounded-xl h-10 px-4 border"
+                      style={{ background: T.input, borderColor: T.border, color: T.text }}
+                    >
+                      <MessageSquare className="mr-2 h-4 w-4" style={{ color: "#6366f1" }} /> 
+                      Open Chat
+                    </Button>
+                    
+                    {req.is_cleared ? (
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => restoreMutation.mutate(req.id)}
+                        className="rounded-xl h-10 px-4"
+                        style={{ background: "rgba(34, 197, 94, 0.1)", color: "#22c55e" }}
+                      >
+                        Restore Request
+                      </Button>
+                    ) : (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="rounded-xl h-10 px-4 text-destructive"
+                            style={{ background: "rgba(248, 113, 113, 0.1)" }}
+                          >
+                            <EyeOff className="mr-2 h-4 w-4" /> Clear
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent style={{ background: T.card, borderColor: T.border, color: T.text }}>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Clear this recovery request?</AlertDialogTitle>
+                            <AlertDialogDescription style={{ color: T.sub }}>This will soft-delete the request. It can be restored later.</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel className="rounded-xl" style={{ background: T.input, borderColor: T.border, color: T.text }}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => clearMutation.mutate(req.id)} className="rounded-xl bg-destructive text-white hover:bg-destructive/90">Clear</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
 
                   {req.status === "pending" && !req.is_cleared && (
-                    <>
-                      <Textarea placeholder="Admin notes (optional)" value={adminNotes[req.id] || ""}
-                        onChange={(e) => setAdminNotes((prev) => ({ ...prev, [req.id]: e.target.value }))}
-                        className="w-full text-sm" rows={2} />
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="sm" disabled={loading === req.id} className="gap-1">
-                            {loading === req.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle className="h-3.5 w-3.5" />}
-                            Release Balance
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Release Held Balance?</AlertDialogTitle>
-                            <AlertDialogDescription>This will transfer ₹{Number(req.held_amount).toLocaleString("en-IN")} from hold to available balance.</AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleRelease(req.id, req.project_id, req.employee_id)}>Confirm Release</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="outline" disabled={loading === req.id} className="gap-1 border-destructive/30 text-destructive hover:bg-destructive/10">
-                            <XCircle className="h-3.5 w-3.5" /> Close Request
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Close Recovery Request?</AlertDialogTitle>
-                            <AlertDialogDescription>This will close the request. Current balances will remain unchanged.</AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleReject(req.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Confirm Close</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </>
+                    <div className="space-y-4 pt-4 border-t animate-in fade-in duration-500" style={{ borderColor: T.border }}>
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.sub }}>Decision Notes</Label>
+                        <Textarea 
+                          placeholder="Admin notes for the employee..." 
+                          value={adminNotes[req.id] || ""}
+                          onChange={(e) => setAdminNotes((prev) => ({ ...prev, [req.id]: e.target.value }))}
+                          className="rounded-2xl border-none min-h-[80px]" 
+                          style={{ background: T.input, color: T.text }}
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-3">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="lg" disabled={loading === req.id} className="rounded-2xl px-6 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/20">
+                              {loading === req.id ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <CheckCircle className="mr-2 h-5 w-5" />}
+                              Release Balance
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent style={{ background: T.card, borderColor: T.border, color: T.text }}>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Release Held Balance?</AlertDialogTitle>
+                              <AlertDialogDescription style={{ color: T.sub }}>
+                                This will transfer ₹{Number(req.held_amount).toLocaleString("en-IN")} from hold to available balance.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="rounded-xl" style={{ background: T.input, borderColor: T.border, color: T.text }}>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleRelease(req.id, req.project_id, req.employee_id)} className="rounded-xl bg-emerald-600 text-white">Confirm Release</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="lg" variant="ghost" disabled={loading === req.id} className="rounded-2xl px-6 border text-destructive hover:bg-destructive/10" style={{ borderColor: "rgba(248, 113, 113, 0.3)" }}>
+                              <XCircle className="mr-2 h-5 w-5" /> Reject Request
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent style={{ background: T.card, borderColor: T.border, color: T.text }}>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Reject Recovery Request?</AlertDialogTitle>
+                              <AlertDialogDescription style={{ color: T.sub }}>This will close the request. Current balances will remain unchanged.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="rounded-xl" style={{ background: T.input, borderColor: T.border, color: T.text }}>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleReject(req.id)} className="rounded-xl bg-destructive text-white">Confirm Reject</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
                   )}
 
-                  {req.is_cleared ? (
-                    <Button size="sm" variant="outline" onClick={() => restoreMutation.mutate(req.id)}>Restore</Button>
-                  ) : (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="outline" className="gap-1 text-destructive">
-                          <EyeOff className="h-3.5 w-3.5" /> Clear
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Clear this recovery request?</AlertDialogTitle>
-                          <AlertDialogDescription>This will soft-delete the request. It can be restored later.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => clearMutation.mutate(req.id)}>Clear</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                  {expandedEdit === req.id && (
+                    <div className="mt-4 p-6 rounded-3xl border animate-in slide-in-from-top duration-300" style={{ background: T.nav, borderColor: T.border }}>
+                      <div className="grid gap-4 sm:grid-cols-2 mb-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.sub }}>Held Amount (₹)</Label>
+                          <Input 
+                            type="number" 
+                            value={editForm.held_amount} 
+                            onChange={(e) => setEditForm((f: any) => ({ ...f, held_amount: e.target.value }))} 
+                            className="rounded-xl border-none h-11"
+                            style={{ background: T.input, color: T.text }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.sub }}>Internal Status</Label>
+                          <Input 
+                            value={editForm.status} 
+                            onChange={(e) => setEditForm((f: any) => ({ ...f, status: e.target.value }))} 
+                            placeholder="pending / resolved / rejected" 
+                            className="rounded-xl border-none h-11"
+                            style={{ background: T.input, color: T.text }}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2 mb-4">
+                        <Label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.sub }}>Internal Notes</Label>
+                        <Textarea 
+                          value={editForm.admin_notes} 
+                          onChange={(e) => setEditForm((f: any) => ({ ...f, admin_notes: e.target.value }))} 
+                          rows={2} 
+                          className="rounded-2xl border-none"
+                          style={{ background: T.input, color: T.text }}
+                        />
+                      </div>
+                      <Button className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20" onClick={() => editMutation.mutate({ id: req.id, data: editForm })} disabled={editMutation.isPending}>
+                        <Save className="mr-2 h-4 w-4" /> {editMutation.isPending ? "Saving..." : "Apply Manual Changes"}
+                      </Button>
+                    </div>
                   )}
+
+                  {req.status !== "pending" && req.admin_notes && (
+                    <div className="rounded-2xl p-4 text-xs italic" style={{ background: T.input, color: T.sub }}>
+                      <span className="font-bold uppercase tracking-widest text-[10px] block mb-1" style={{ color: T.sub }}>Admin Resolution:</span>
+                      {req.admin_notes}
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between text-[10px] font-medium uppercase tracking-widest pt-2" style={{ color: T.sub }}>
+                    <span>Requested: {new Date(req.created_at).toLocaleString("en-IN")}</span>
+                    {req.resolved_at && <span>Resolved: {new Date(req.resolved_at).toLocaleString("en-IN")}</span>}
+                  </div>
                 </div>
-
-                {/* Expandable Edit Row */}
-                {expandedEdit === req.id && (
-                  <div className="mt-3 space-y-3 rounded-lg border bg-muted/30 p-4">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Held Amount (₹)</Label>
-                        <Input type="number" value={editForm.held_amount} onChange={(e) => setEditForm((f: any) => ({ ...f, held_amount: e.target.value }))} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Status</Label>
-                        <Input value={editForm.status} onChange={(e) => setEditForm((f: any) => ({ ...f, status: e.target.value }))} placeholder="pending / resolved / rejected" />
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Admin Notes</Label>
-                      <Textarea value={editForm.admin_notes} onChange={(e) => setEditForm((f: any) => ({ ...f, admin_notes: e.target.value }))} rows={2} />
-                    </div>
-                    <Button className="w-full" onClick={() => editMutation.mutate({ id: req.id, data: editForm })} disabled={editMutation.isPending}>
-                      <Save className="mr-1 h-3 w-3" /> {editMutation.isPending ? "Saving..." : "Save Changes"}
-                    </Button>
-                  </div>
-                )}
-
-                {req.status !== "pending" && req.admin_notes && (
-                  <div className="rounded-md bg-muted/30 p-2 text-xs text-muted-foreground">
-                    <span className="font-medium">Admin Notes:</span> {req.admin_notes}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              </div>
+              <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-transparent via-amber-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </div>
           ))}
         </div>
       )}

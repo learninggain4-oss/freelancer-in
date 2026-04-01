@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Megaphone, Plus, Trash2, Loader2, Clock, CalendarClock, Pencil } from "lucide-react";
+import { Megaphone, Plus, Trash2, Loader2, Clock, CalendarClock, Pencil, Send } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import AnnouncementForm from "@/components/admin/AnnouncementForm";
 import {
@@ -18,6 +18,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 const audienceLabel: Record<string, string> = {
   everyone: "Everyone",
@@ -32,6 +39,8 @@ const audienceColor: Record<string, string> = {
 };
 
 const AdminAnnouncements = () => {
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<any>(null);
@@ -110,150 +119,185 @@ const AdminAnnouncements = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Announcements</h1>
-          <p className="text-sm text-muted-foreground">Send popup messages to employees, clients, or everyone</p>
+      <div className="relative overflow-hidden rounded-3xl bg-indigo-600 p-8 text-white shadow-2xl shadow-indigo-500/20">
+        <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-indigo-100 mb-2">
+              <Megaphone className="h-4 w-4" />
+              <span className="text-xs font-bold uppercase tracking-wider">Public Relations</span>
+            </div>
+            <h1 className="text-3xl font-bold">Announcements</h1>
+            <p className="text-indigo-100/80 text-sm mt-1">
+              Send popup messages to employees, clients, or everyone globally.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            {announcements.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" className="gap-2 bg-white/10 hover:bg-white/20 text-white border-white/10 backdrop-blur-md rounded-2xl h-12 px-6">
+                    <Trash2 className="h-4 w-4" />
+                    Clear All
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent style={{ background: T.card, borderColor: T.border, color: T.text }}>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete all announcements?</AlertDialogTitle>
+                    <AlertDialogDescription style={{ color: T.sub }}>This will permanently remove all {announcements.length} announcement(s). This action cannot be undone.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="rounded-xl" style={{ background: T.input, borderColor: T.border, color: T.text }}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => clearAllMutation.mutate()} className="rounded-xl bg-destructive text-white">Delete All</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            <Button onClick={handleNewAnnouncement} className="gap-2 bg-white text-indigo-600 hover:bg-indigo-50 rounded-2xl h-12 px-6 font-bold shadow-xl shadow-white/10">
+              <Plus className="h-4 w-4" />
+              New Announcement
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          {announcements.length > 0 && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" className="gap-2 text-destructive hover:text-destructive">
-                  <Trash2 className="h-4 w-4" />
-                  Clear All
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete all announcements?</AlertDialogTitle>
-                  <AlertDialogDescription>This will permanently remove all {announcements.length} announcement(s). This action cannot be undone.</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => clearAllMutation.mutate()}>Delete All</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-          <Button onClick={handleNewAnnouncement} className="gap-2">
-            <Plus className="h-4 w-4" />
-            New Announcement
-          </Button>
-        </div>
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
       </div>
 
       {showForm && (
-        <AnnouncementForm
-          editingAnnouncement={editingAnnouncement}
-          onClose={handleCloseForm}
-        />
+        <div className="animate-in slide-in-from-top duration-500">
+          <AnnouncementForm
+            editingAnnouncement={editingAnnouncement}
+            onClose={handleCloseForm}
+          />
+        </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">All Announcements</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div 
+        className="rounded-3xl border overflow-hidden"
+        style={{ background: T.card, borderColor: T.border }}
+      >
+        <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: T.border }}>
+          <h2 className="text-lg font-bold flex items-center gap-2" style={{ color: T.text }}>
+            <Send className="h-5 w-5 opacity-50" />
+            Active Broadcasts
+          </h2>
+        </div>
+        <div className="p-6">
           {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="h-10 w-10 animate-spin text-indigo-500 mb-4" />
+              <p style={{ color: T.sub }}>Fetching announcements...</p>
             </div>
           ) : announcements.length === 0 ? (
-            <div className="flex flex-col items-center py-8 text-center">
-              <Megaphone className="h-10 w-10 text-muted-foreground" />
-              <p className="mt-3 text-sm text-muted-foreground">No announcements yet</p>
+            <div className="flex flex-col items-center py-20 text-center">
+              <div className="h-16 w-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                <Megaphone className="h-8 w-8 opacity-20" style={{ color: T.text }} />
+              </div>
+              <p className="text-sm font-medium" style={{ color: T.sub }}>No announcements yet</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid gap-4">
               {announcements.map((a: any) => (
                 <div
                   key={a.id}
-                  className="flex items-start justify-between gap-4 rounded-lg border p-4"
+                  className="group relative flex items-start justify-between gap-4 rounded-3xl border p-5 transition-all hover:scale-[1.01]"
+                  style={{ background: T.input, borderColor: T.border }}
                 >
-                  <div className="min-w-0 flex-1 space-y-1">
+                  <div className="min-w-0 flex-1 space-y-3">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium text-foreground">{a.title}</p>
-                      <Badge className={audienceColor[a.target_audience] ?? ""}>
+                      <h3 className="font-bold text-lg leading-tight" style={{ color: T.text }}>{a.title}</h3>
+                      <Badge className={`rounded-full border-none px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider ${audienceColor[a.target_audience] ?? ""}`}>
                         {audienceLabel[a.target_audience] ?? a.target_audience}
                       </Badge>
                       {a.target_user_ids && a.target_user_ids.length > 0 && (
-                        <Badge variant="outline" className="text-muted-foreground">
-                          {a.target_user_ids.length} user(s)
+                        <Badge variant="outline" className="rounded-full h-5 text-[10px]" style={{ color: T.sub, borderColor: T.border }}>
+                          {a.target_user_ids.length} targeted user(s)
                         </Badge>
                       )}
                       {!a.is_active && (
-                        <Badge variant="outline" className="text-muted-foreground">Inactive</Badge>
+                        <Badge variant="outline" className="rounded-full h-5 text-[10px]" style={{ color: T.sub, borderColor: T.border }}>Inactive</Badge>
                       )}
                       {a.is_active && a.scheduled_at && new Date(a.scheduled_at) > new Date() && (
-                        <Badge className="bg-blue-500/10 text-blue-600 border-blue-200">Scheduled</Badge>
+                        <Badge className="rounded-full h-5 text-[10px] bg-blue-500/10 text-blue-500 border-none font-bold uppercase">Scheduled</Badge>
                       )}
                       {a.is_active && a.expires_at && new Date(a.expires_at) < new Date() && (
-                        <Badge className="bg-destructive/10 text-destructive border-destructive/20">Expired</Badge>
+                        <Badge className="rounded-full h-5 text-[10px] bg-destructive/10 text-destructive border-none font-bold uppercase">Expired</Badge>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{a.message}</p>
-                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground/70">
-                      <span>
-                        Created: {new Date(a.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: T.sub }}>{a.message}</p>
+                    
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>
+                      <span className="flex items-center gap-1.5">
+                        <CalendarClock className="h-3 w-3" />
+                        Created: {new Date(a.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                       </span>
                       {a.scheduled_at && (
-                        <span className="flex items-center gap-1">
-                          <CalendarClock className="h-3 w-3" />
-                          Scheduled: {new Date(a.scheduled_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        <span className="flex items-center gap-1.5" style={{ color: "#6366f1" }}>
+                          <Clock className="h-3 w-3" />
+                          Start: {new Date(a.scheduled_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                         </span>
                       )}
                       {a.expires_at && (
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-1.5" style={{ color: "#f87171" }}>
                           <Clock className="h-3 w-3" />
-                          Expires: {new Date(a.expires_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                          Ends: {new Date(a.expires_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                         </span>
                       )}
                     </div>
                   </div>
-                  <div className="flex shrink-0 gap-1">
+                  
+                  <div className="flex shrink-0 gap-2">
                     <Button
                       variant="ghost"
                       size="icon"
+                      className="h-10 w-10 rounded-xl"
+                      style={{ background: T.card, color: T.text, border: `1px solid ${T.border}` }}
                       onClick={() => handleEdit(a)}
-                      title="Edit announcement"
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
+                    
                     {a.is_active && (
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
+                        className="h-10 px-4 rounded-xl border font-bold text-xs"
+                        style={{ background: T.card, borderColor: T.border, color: T.text }}
                         onClick={() => deactivateMutation.mutate(a.id)}
                         disabled={deactivateMutation.isPending}
                       >
                         Deactivate
                       </Button>
                     )}
+                    
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-10 w-10 rounded-xl text-destructive hover:bg-destructive/10 border"
+                          style={{ borderColor: "rgba(248, 113, 113, 0.2)", background: "rgba(248, 113, 113, 0.05)" }}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
+                      <AlertDialogContent style={{ background: T.card, borderColor: T.border, color: T.text }}>
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete announcement?</AlertDialogTitle>
-                          <AlertDialogDescription>This will permanently remove this announcement.</AlertDialogDescription>
+                          <AlertDialogDescription style={{ color: T.sub }}>This will permanently remove this broadcast from history.</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteMutation.mutate(a.id)}>Delete</AlertDialogAction>
+                          <AlertDialogCancel className="rounded-xl" style={{ background: T.input, borderColor: T.border, color: T.text }}>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteMutation.mutate(a.id)} className="rounded-xl bg-destructive text-white">Delete</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
                   </div>
+                  <div className="absolute top-0 right-0 h-16 w-16 bg-gradient-to-br from-indigo-500/5 to-transparent rounded-bl-3xl"></div>
                 </div>
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

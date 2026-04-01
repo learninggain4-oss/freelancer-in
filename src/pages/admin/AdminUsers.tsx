@@ -16,14 +16,23 @@ import {
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { CheckCircle, XCircle, Eye, Search, X, ChevronLeft, ChevronRight, Pencil, ShieldOff, ShieldCheck, Trash2, UserPlus } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Search, X, ChevronLeft, ChevronRight, Pencil, ShieldOff, ShieldCheck, Trash2, UserPlus, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import UserDetailDialog, { type FullProfile } from "@/components/admin/UserDetailDialog";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 const PAGE_SIZE = 15;
 
 const AdminUsers = () => {
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
   const navigate = useNavigate();
   const [profiles, setProfiles] = useState<FullProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -168,45 +177,78 @@ const AdminUsers = () => {
 
     return (
       <div className="space-y-3">
-        <div className="overflow-x-auto rounded-lg border">
+        <div 
+          className="overflow-x-auto rounded-xl border backdrop-blur-md"
+          style={{ background: T.card, borderColor: T.border }}
+        >
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Code</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow style={{ borderColor: T.border }}>
+                <TableHead style={{ color: T.sub }}>Name</TableHead>
+                <TableHead style={{ color: T.sub }}>Code</TableHead>
+                <TableHead style={{ color: T.sub }}>Type</TableHead>
+                <TableHead style={{ color: T.sub }}>Email</TableHead>
+                <TableHead style={{ color: T.sub }}>Status</TableHead>
+                <TableHead className="text-right" style={{ color: T.sub }}>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginated.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No users found</TableCell>
+                <TableRow style={{ borderColor: T.border }}>
+                  <TableCell colSpan={6} className="py-8 text-center" style={{ color: T.sub }}>No users found</TableCell>
                 </TableRow>
               ) : (
                 paginated.map((u) => (
-                  <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.full_name?.[0] || "—"}</TableCell>
-                    <TableCell className="font-mono text-xs">{u.user_code?.[0] || "—"}</TableCell>
-                    <TableCell><Badge variant="secondary" className="capitalize">{u.user_type}</Badge></TableCell>
-                    <TableCell className="max-w-[160px] truncate text-sm">{u.email}</TableCell>
+                  <TableRow key={u.id} style={{ borderColor: T.border }}>
+                    <TableCell className="font-medium" style={{ color: T.text }}>{u.full_name?.[0] || "—"}</TableCell>
+                    <TableCell className="font-mono text-xs" style={{ color: T.sub }}>{u.user_code?.[0] || "—"}</TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant="secondary" 
+                        className="capitalize"
+                        style={{ background: T.nav, color: T.text }}
+                      >
+                        {u.user_type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="max-w-[160px] truncate text-sm" style={{ color: T.sub }}>{u.email}</TableCell>
                     <TableCell>{statusBadge(u.approval_status)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => navigate(`/admin/users/${u.id}`)}>
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          onClick={() => navigate(`/admin/users/${u.id}`)}
+                          style={{ color: T.sub }}
+                          className="hover:bg-white/10"
+                        >
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" onClick={() => { setSelectedUser(u); setActionType("view"); }}>
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          onClick={() => { setSelectedUser(u); setActionType("view"); }}
+                          style={{ color: T.sub }}
+                          className="hover:bg-white/10"
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
                         {u.approval_status === "pending" && (
                           <>
-                            <Button size="icon" variant="ghost" className="text-accent hover:text-accent" onClick={() => { setSelectedUser(u); setActionType("approve"); }}>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="text-accent hover:text-accent hover:bg-white/10" 
+                              onClick={() => { setSelectedUser(u); setActionType("approve"); }}
+                            >
                               <CheckCircle className="h-4 w-4" />
                             </Button>
-                            <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => { setSelectedUser(u); setActionType("reject"); }}>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="text-destructive hover:text-destructive hover:bg-white/10" 
+                              onClick={() => { setSelectedUser(u); setActionType("reject"); }}
+                            >
                               <XCircle className="h-4 w-4" />
                             </Button>
                           </>
@@ -215,7 +257,7 @@ const AdminUsers = () => {
                           size="icon"
                           variant="ghost"
                           title={(u as any).is_disabled ? "Unblock" : "Block"}
-                          className={(u as any).is_disabled ? "text-accent hover:text-accent" : "text-warning hover:text-warning"}
+                          className={(u as any).is_disabled ? "text-accent hover:text-accent hover:bg-white/10" : "text-warning hover:text-warning hover:bg-white/10"}
                           onClick={() => setConfirmAction({ type: (u as any).is_disabled ? "unblock" : "block", user: u })}
                         >
                           {(u as any).is_disabled ? <ShieldCheck className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
@@ -224,7 +266,7 @@ const AdminUsers = () => {
                           size="icon"
                           variant="ghost"
                           title="Delete Permanently"
-                          className="text-destructive hover:text-destructive"
+                          className="text-destructive hover:text-destructive hover:bg-white/10"
                           onClick={() => setConfirmAction({ type: "delete", user: u })}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -241,11 +283,18 @@ const AdminUsers = () => {
         {/* Pagination */}
         {users.length > PAGE_SIZE && (
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm" style={{ color: T.sub }}>
               Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, users.length)} of {users.length}
             </p>
             <div className="flex items-center gap-1">
-              <Button size="icon" variant="outline" className="h-8 w-8" disabled={page <= 1} onClick={() => setCurrentPage(page - 1)}>
+              <Button 
+                size="icon" 
+                variant="outline" 
+                className="h-8 w-8" 
+                disabled={page <= 1} 
+                onClick={() => setCurrentPage(page - 1)}
+                style={{ borderColor: T.border, background: T.nav, color: T.text }}
+              >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               {Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -257,14 +306,28 @@ const AdminUsers = () => {
                 }, [])
                 .map((p, i) =>
                   p === "ellipsis" ? (
-                    <span key={`e${i}`} className="px-1 text-sm text-muted-foreground">…</span>
+                    <span key={`e${i}`} className="px-1 text-sm" style={{ color: T.sub }}>…</span>
                   ) : (
-                    <Button key={p} size="icon" variant={p === page ? "default" : "outline"} className="h-8 w-8 text-xs" onClick={() => setCurrentPage(p)}>
+                    <Button 
+                      key={p} 
+                      size="icon" 
+                      variant={p === page ? "default" : "outline"} 
+                      className="h-8 w-8 text-xs" 
+                      onClick={() => setCurrentPage(p)}
+                      style={p === page ? { background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)", border: "none" } : { borderColor: T.border, background: T.nav, color: T.text }}
+                    >
                       {p}
                     </Button>
                   )
                 )}
-              <Button size="icon" variant="outline" className="h-8 w-8" disabled={page >= totalPages} onClick={() => setCurrentPage(page + 1)}>
+              <Button 
+                size="icon" 
+                variant="outline" 
+                className="h-8 w-8" 
+                disabled={page >= totalPages} 
+                onClick={() => setCurrentPage(page + 1)}
+                style={{ borderColor: T.border, background: T.nav, color: T.text }}
+              >
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -276,23 +339,43 @@ const AdminUsers = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-foreground">User Management</h2>
-        <Button onClick={() => setInviteOpen(true)} className="gap-2">
-          <UserPlus className="h-4 w-4" />
-          Invite User
-        </Button>
+      <div 
+        className="relative overflow-hidden rounded-3xl p-8 mb-8"
+        style={{ background: `linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)` }}
+      >
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
+              <Users className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold text-white tracking-tight">User Management</h2>
+              <p className="text-indigo-100 opacity-80">Manage and oversee all platform users</p>
+            </div>
+          </div>
+          <Button 
+            onClick={() => setInviteOpen(true)} 
+            className="gap-2 bg-white text-indigo-600 hover:bg-indigo-50 border-none rounded-xl h-12 px-6 font-semibold transition-all shadow-lg"
+          >
+            <UserPlus className="h-5 w-5" />
+            Invite User
+          </Button>
+        </div>
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl" />
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center p-4 rounded-2xl border backdrop-blur-md"
+           style={{ background: T.card, borderColor: T.border }}>
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: T.sub }} />
           <Input
             placeholder="Search by name, email, or code…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-9"
+            className="pl-9 pr-9 border-none h-11 rounded-xl"
+            style={{ background: T.input, color: T.text }}
           />
           {searchQuery && (
             <Button
@@ -301,15 +384,18 @@ const AdminUsers = () => {
               className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
               onClick={() => setSearchQuery("")}
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-3.5 w-3.5" style={{ color: T.sub }} />
             </Button>
           )}
         </div>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-full sm:w-[160px]">
+          <SelectTrigger 
+            className="w-full sm:w-[160px] border-none h-11 rounded-xl"
+            style={{ background: T.input, color: T.text }}
+          >
             <SelectValue placeholder="User type" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent style={{ background: T.card, borderColor: T.border }}>
             <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="employee">Employee</SelectItem>
             <SelectItem value="client">Client</SelectItem>
@@ -317,12 +403,39 @@ const AdminUsers = () => {
         </Select>
       </div>
 
-      <Tabs defaultValue="pending">
-        <TabsList>
-          <TabsTrigger value="pending">Pending ({filterByStatus("pending").length})</TabsTrigger>
-          <TabsTrigger value="approved">Approved</TabsTrigger>
-          <TabsTrigger value="rejected">Rejected</TabsTrigger>
-          <TabsTrigger value="all">All</TabsTrigger>
+      <Tabs defaultValue="pending" className="w-full">
+        <TabsList 
+          className="p-1 rounded-xl mb-4"
+          style={{ background: T.nav }}
+        >
+          <TabsTrigger 
+            value="pending" 
+            className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white"
+            style={{ color: T.sub }}
+          >
+            Pending ({filterByStatus("pending").length})
+          </TabsTrigger>
+          <TabsTrigger 
+            value="approved"
+            className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white"
+            style={{ color: T.sub }}
+          >
+            Approved
+          </TabsTrigger>
+          <TabsTrigger 
+            value="rejected"
+            className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white"
+            style={{ color: T.sub }}
+          >
+            Rejected
+          </TabsTrigger>
+          <TabsTrigger 
+            value="all"
+            className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white"
+            style={{ color: T.sub }}
+          >
+            All
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="pending"><UserTable users={filterByStatus("pending")} /></TabsContent>
         <TabsContent value="approved"><UserTable users={filterByStatus("approved")} /></TabsContent>

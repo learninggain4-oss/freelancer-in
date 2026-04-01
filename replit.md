@@ -40,6 +40,17 @@ A freelancer marketplace app ("Freelancer-in") connecting freelancers (employees
 ## Dependencies Removed During Migration
 - `lovable-tagger` — Lovable-specific dev tool, removed during Replit migration
 
+## UI Design System (Premium Dark Glassmorphism)
+All 50+ pages across Employee, Client, and Admin dashboards have been redesigned with:
+- **Theme switcher**: Black / White / White & Black (stored in `localStorage` via `useDashboardTheme` hook)
+- **ThemeToggle component**: `src/components/layout/ThemeToggle.tsx` — dropdown with Malayalam labels (കറുത്ത / വെളുത്ത / വ & ക)
+- **TH token system**: Each page defines a `TH` object with `black/white/wb` keys containing `bg, card, border, text, sub, input, badge, badgeFg`
+- **Glass card pattern**: `background: rgba(255,255,255,.05)`, `border: 1px solid rgba(255,255,255,.08)`, `backdropFilter: blur(12px)` (black theme)
+- **Design constants**: `A1="#6366f1"`, `A2="#8b5cf6"`, `BG="#070714"` — gradient accents throughout
+- **Every page** has: premium hero section with gradient + icon, glass stat cards, theme-aware inline styles
+- **AdminLayout** injects CSS that overrides all admin pages' base colors via `.admin-main` class
+- **AppLayout** injects CSS for employee/client pages via `.app-main-dark` class
+
 ## Notes
 - The PWA Service Worker caches Supabase API calls
 - OneSignal push notifications are domain-locked to `freelancer-india.lovable.app` — will only work after configuring a custom domain or updating OneSignal settings

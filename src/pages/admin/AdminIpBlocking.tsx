@@ -9,15 +9,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   Shield, ShieldBan, ShieldCheck, Search, Plus, Trash2,
-  Globe, Clock, User, Loader2, AlertTriangle,
+  Globe, Clock, User, Loader2, AlertTriangle, UserCheck
 } from "lucide-react";
 import { format } from "date-fns";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { cn } from "@/lib/utils";
+
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
 const AdminIpBlocking = () => {
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
   const [newIp, setNewIp] = useState("");
   const [reason, setReason] = useState("");
   const [search, setSearch] = useState("");
@@ -78,172 +88,190 @@ const AdminIpBlocking = () => {
   return (
     <div className="space-y-6">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-destructive/90 via-destructive/70 to-destructive/50 p-6 text-destructive-foreground">
+      <div 
+        className="relative overflow-hidden rounded-2xl p-8 border"
+        style={{ 
+          background: theme === 'black' 
+            ? 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)' 
+            : 'linear-gradient(135deg, #ef4444 0%, #fca5a5 100%)',
+          borderColor: T.border 
+        }}
+      >
         <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-white/5 blur-xl" />
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-            <ShieldBan className="h-6 w-6" />
+        <div className="relative z-10 flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 shadow-xl">
+            <ShieldBan className="h-7 w-7 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight">IP Blocking</h1>
-            <p className="text-sm opacity-80">{blockedIps.length} IPs currently blocked</p>
+            <h1 className="text-2xl font-bold tracking-tight text-white">Security Firewall</h1>
+            <p className="text-white/80 font-medium">Manage IP restrictions and platform protection</p>
           </div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card className="border-0 shadow-sm">
-          <CardContent className="flex flex-col items-center p-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10 mb-2">
-              <ShieldBan className="h-5 w-5 text-destructive" />
-            </div>
-            <p className="text-2xl font-bold text-foreground">{blockedIps.length}</p>
-            <p className="text-[10px] text-muted-foreground">Blocked</p>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm">
-          <CardContent className="flex flex-col items-center p-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/10 mb-2">
-              <AlertTriangle className="h-5 w-5 text-warning" />
-            </div>
-            <p className="text-2xl font-bold text-foreground">
-              {blockedIps.filter((ip: any) => {
-                const d = new Date(ip.blocked_at);
-                const now = new Date();
-                return now.getTime() - d.getTime() < 24 * 60 * 60 * 1000;
-              }).length}
-            </p>
-            <p className="text-[10px] text-muted-foreground">Last 24h</p>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm">
-          <CardContent className="flex flex-col items-center p-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 mb-2">
-              <ShieldCheck className="h-5 w-5 text-accent" />
-            </div>
-            <p className="text-2xl font-bold text-foreground">Active</p>
-            <p className="text-[10px] text-muted-foreground">Protection</p>
-          </CardContent>
-        </Card>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: "Blocked IPs", value: blockedIps.length, icon: ShieldBan, color: "text-destructive" },
+          { 
+            label: "Last 24h", 
+            value: blockedIps.filter((ip: any) => {
+              const d = new Date(ip.blocked_at);
+              const now = new Date();
+              return now.getTime() - d.getTime() < 24 * 60 * 60 * 1000;
+            }).length, 
+            icon: AlertTriangle, 
+            color: "text-amber-400" 
+          },
+          { label: "Protection", value: "Active", icon: ShieldCheck, color: "text-emerald-400" },
+        ].map((s, idx) => (
+          <Card key={idx} style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }} className="border shadow-none">
+            <CardContent className="pt-6 flex flex-col items-center">
+              <div className="rounded-2xl bg-white/5 p-3 mb-3 border border-white/5">
+                <s.icon className={`h-6 w-6 ${s.color}`} />
+              </div>
+              <p className="text-sm font-medium" style={{ color: T.sub }}>{s.label}</p>
+              <p className="text-2xl font-bold" style={{ color: T.text }}>{s.value}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Block New IP */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="flex-row items-center gap-2 pb-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10">
-            <Plus className="h-4 w-4 text-destructive" />
-          </div>
-          <CardTitle className="text-sm font-semibold">Block New IP</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-2">
+      <div className="grid gap-6 lg:grid-cols-12">
+        {/* Block New IP Form */}
+        <div className="lg:col-span-5 space-y-6">
+          <Card style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }} className="border shadow-none overflow-hidden">
+            <CardHeader className="border-b" style={{ borderColor: T.border }}>
+              <CardTitle className="text-sm font-bold flex items-center gap-2" style={{ color: T.text }}>
+                <Plus className="h-4 w-4 text-destructive" />
+                Block New Address
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold" style={{ color: T.sub }}>IP Address</Label>
+                <Input
+                  placeholder="e.g. 192.168.1.1"
+                  value={newIp}
+                  onChange={(e) => setNewIp(e.target.value)}
+                  style={{ background: T.input, borderColor: T.border, color: T.text }}
+                  className="rounded-xl h-11"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold" style={{ color: T.sub }}>Reason for blocking</Label>
+                <Textarea
+                  placeholder="Enter reason (optional)"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  rows={3}
+                  style={{ background: T.input, borderColor: T.border, color: T.text }}
+                  className="rounded-xl resize-none"
+                />
+              </div>
+              <Button
+                onClick={() => blockMutation.mutate()}
+                disabled={blockMutation.isPending || !newIp.trim()}
+                className="w-full bg-destructive hover:bg-destructive/90 h-11 rounded-xl font-bold"
+              >
+                {blockMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldBan className="mr-2 h-4 w-4" />}
+                Restrict IP Access
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Blocked IPs List */}
+        <div className="lg:col-span-7 space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Enter IP address (e.g. 192.168.1.1)"
-              value={newIp}
-              onChange={(e) => setNewIp(e.target.value)}
-              className="flex-1"
+              placeholder="Search blocked IPs or reasons..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-11"
+              style={{ background: T.input, borderColor: T.border, color: T.text }}
             />
           </div>
-          <Textarea
-            placeholder="Reason for blocking (optional)"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            rows={2}
-          />
-          <Button
-            onClick={() => blockMutation.mutate()}
-            disabled={blockMutation.isPending || !newIp.trim()}
-            className="w-full bg-destructive hover:bg-destructive/90"
-          >
-            {blockMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldBan className="mr-2 h-4 w-4" />}
-            Block IP Address
-          </Button>
-        </CardContent>
-      </Card>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search blocked IPs..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* Blocked IPs List */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="flex-row items-center gap-2 pb-3">
-          <Shield className="h-4 w-4 text-primary" />
-          <CardTitle className="text-sm font-semibold">Blocked IPs</CardTitle>
-          <Badge variant="secondary" className="ml-auto text-[10px]">{filtered.length}</Badge>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center py-8 text-center">
-              <ShieldCheck className="h-12 w-12 text-accent/50 mb-3" />
-              <p className="text-sm font-medium text-muted-foreground">No blocked IPs</p>
-              <p className="text-xs text-muted-foreground">All clear!</p>
-            </div>
-          ) : (
-            filtered.map((ip: any) => (
-              <div key={ip.id} className="flex items-start gap-3 rounded-xl border p-3 hover:bg-muted/30 transition-colors">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10">
-                  <Globe className="h-5 w-5 text-destructive" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-foreground font-mono">{ip.ip_address}</p>
-                  {ip.reason && <p className="text-xs text-muted-foreground mt-0.5">{ip.reason}</p>}
-                  <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {format(new Date(ip.blocked_at), "dd MMM yyyy, hh:mm a")}
-                    </span>
-                    {ip.blocker?.full_name && (
-                      <span className="flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        {Array.isArray(ip.blocker.full_name) ? ip.blocker.full_name.join(" ") : ip.blocker.full_name}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0 text-accent border-accent/30 hover:bg-accent/10"
-                  onClick={() => setUnblockTarget(ip)}
-                >
-                  <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Unblock
-                </Button>
+          <Card style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }} className="border shadow-none overflow-hidden">
+            <CardHeader className="flex-row items-center justify-between pb-3 border-b" style={{ borderColor: T.border }}>
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-primary" />
+                <CardTitle className="text-sm font-bold" style={{ color: T.text }}>Active Blocks</CardTitle>
               </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+              <Badge variant="outline" className="border-white/10" style={{ color: T.sub }}>{filtered.length} Restricted</Badge>
+            </CardHeader>
+            <CardContent className="p-4 space-y-3">
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-24" style={{ color: T.sub }}>
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                  Loading database...
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="flex flex-col items-center py-24 text-center" style={{ color: T.sub }}>
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/5 mb-6">
+                    <ShieldCheck className="h-8 w-8 text-emerald-500 opacity-20" />
+                  </div>
+                  <p className="text-lg font-medium">All Clear!</p>
+                  <p className="text-sm">No IP addresses are currently restricted</p>
+                </div>
+              ) : (
+                filtered.map((ip: any) => (
+                  <div key={ip.id} style={{ background: T.nav, borderColor: T.border }} className="flex items-start gap-4 rounded-2xl border p-4 hover:bg-white/5 transition-colors">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-destructive/10 border border-destructive/10">
+                      <Globe className="h-6 w-6 text-destructive" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold font-mono tracking-tight" style={{ color: T.text }}>{ip.ip_address}</p>
+                      {ip.reason && <p className="text-xs mt-1 leading-relaxed italic opacity-80" style={{ color: T.sub }}>"{ip.reason}"</p>}
+                      <div className="flex items-center gap-4 mt-2 text-[11px] font-medium" style={{ color: T.sub }}>
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5 opacity-50" />
+                          {format(new Date(ip.blocked_at), "dd MMM, hh:mm a")}
+                        </span>
+                        {ip.blocker?.full_name && (
+                          <span className="flex items-center gap-1.5">
+                            <UserCheck className="h-3.5 w-3.5 opacity-50" />
+                            By: {Array.isArray(ip.blocker.full_name) ? ip.blocker.full_name.join(" ") : ip.blocker.full_name}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0 h-9 rounded-xl border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 font-bold"
+                      onClick={() => setUnblockTarget(ip)}
+                    >
+                      <ShieldCheck className="h-4 w-4 mr-1.5" /> Unblock
+                    </Button>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Unblock Confirm */}
       <AlertDialog open={!!unblockTarget} onOpenChange={(o) => !o && setUnblockTarget(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-[#0a0a1a]/95 backdrop-blur-xl border-white/10">
           <AlertDialogHeader>
-            <AlertDialogTitle>Unblock IP Address?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will allow <span className="font-mono font-bold">{unblockTarget?.ip_address}</span> to access the website again.
+            <AlertDialogTitle className="text-white">Lift IP Restriction?</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/60">
+              This will restore access for <span className="font-mono font-bold text-emerald-400">{unblockTarget?.ip_address}</span>. The visitor will be able to access the platform immediately.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="bg-white/5 border-white/10 text-white hover:bg-white/10 rounded-xl">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => unblockTarget && unblockMutation.mutate(unblockTarget.ip_address)}
               disabled={unblockMutation.isPending}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold"
             >
-              {unblockMutation.isPending ? "Unblocking..." : "Unblock"}
+              {unblockMutation.isPending ? "Unblocking..." : "Confirm Unblock"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
