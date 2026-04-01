@@ -403,14 +403,14 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => (
             <Link to="/register/employee">
               <button className="group flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-base font-semibold text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)", boxShadow: "0 0 30px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
                 <Briefcase className="h-5 w-5" />
-                Join as Employee
+                Join as Freelancer
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </Link>
             <Link to="/register/client">
               <button className="flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-base font-semibold text-white/80 hover:text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)" }}>
                 <Users className="h-5 w-5" />
-                Post a Project
+                Join as Employer
               </button>
             </Link>
           </div>
@@ -730,12 +730,12 @@ const CTASection = () => (
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/register/employee">
               <button className="group flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-base font-semibold text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", boxShadow: "0 0 30px rgba(99,102,241,0.4)" }}>
-                <Briefcase className="h-4.5 w-4.5" /> Join as Employee <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                <Briefcase className="h-4.5 w-4.5" /> Join as Freelancer <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </Link>
             <Link to="/register/client">
               <button className="flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-base font-semibold text-white/80 hover:text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)" }}>
-                <Users className="h-4.5 w-4.5" /> Hire Freelancers
+                <Users className="h-4.5 w-4.5" /> Join as Employer
               </button>
             </Link>
           </div>
