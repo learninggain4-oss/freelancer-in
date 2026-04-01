@@ -8,7 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AppLayout from "@/components/layout/AppLayout";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import { Loader2 } from "lucide-react";
+import LoadingScreen from "@/components/LoadingScreen";
 
 // Lazy loaded pages
 const Index = lazy(() => import("./pages/Index"));
@@ -135,11 +135,7 @@ const GlobalChatNotifier = () => {
   return null;
 };
 
-const PageLoader = () => (
-  <div className="flex min-h-screen items-center justify-center bg-background">
-    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-  </div>
-);
+const PageLoader = () => <LoadingScreen />;
 
 /** Show landing page in browser, login in installed PWA */
 const SmartRoot = () => {
