@@ -276,11 +276,14 @@ const UpgradeChat = () => {
   }, [lang]);
 
   // Generate time slot options from DB filtered by selected day
-  const getTimeOptions = useCallback(() => {
+  // Accepts an optional `forDate` so it can be called immediately after day selection
+  // without waiting for the async `selectedDay` state update.
+  const getTimeOptions = useCallback((forDate?: Date) => {
     const t = translations[lang];
     const options: { key: string; label: string }[] = [];
-    // Get day_of_week from selectedDay (0=Sunday, 6=Saturday)
-    const dayOfWeek = selectedDay ? selectedDay.date.getDay() : null;
+    // Prefer the explicitly passed date, fall back to state
+    const dateToUse = forDate ?? selectedDay?.date ?? null;
+    const dayOfWeek = dateToUse !== null ? dateToUse.getDay() : null;
     if (dbTimeSlots.length > 0 && dayOfWeek !== null) {
       const filteredSlots = dbTimeSlots.filter((slot: any) => slot.day_of_week === dayOfWeek);
       for (const slot of filteredSlots) {
@@ -443,7 +446,9 @@ const UpgradeChat = () => {
         setSelectedDay({ dayName, date });
         setStep("appointment_time");
         const dbTime = getDbMessage("select_time", lang);
-        addBotMessageWithTyping(dbTime?.message_text || t.selectTime, getTimeOptions());
+        // Pass `date` directly so we get the correct day's slots immediately
+        // (setSelectedDay is async and selectedDay won't update until next render)
+        addBotMessageWithTyping(dbTime?.message_text || t.selectTime, getTimeOptions(date));
         break;
       }
 
@@ -455,8 +460,11 @@ const UpgradeChat = () => {
           return;
         }
         const hour = parseInt(optionKey.replace("time_", ""));
-        // Try to find label from DB slots, fallback to computed
-        const dbSlot = dbTimeSlots.find((s: any) => s.start_hour === hour);
+        // Try to find label from DB slots, matching both hour and day_of_week
+        const selectedDayOfWeek = selectedDay?.date.getDay() ?? -1;
+        const dbSlot = dbTimeSlots.find(
+          (s: any) => s.start_hour === hour && s.day_of_week === selectedDayOfWeek
+        ) ?? dbTimeSlots.find((s: any) => s.start_hour === hour);
         let timeSlot: string;
         if (dbSlot) {
           timeSlot = dbSlot.label.replace(/^🕐\s*/, "");
