@@ -275,14 +275,19 @@ const UpgradeChat = () => {
     return options;
   }, [lang]);
 
-  // Generate time slot options from DB
+  // Generate time slot options from DB filtered by selected day
   const getTimeOptions = useCallback(() => {
     const t = translations[lang];
     const options: { key: string; label: string }[] = [];
-    if (dbTimeSlots.length > 0) {
-      for (const slot of dbTimeSlots) {
+    // Get day_of_week from selectedDay (0=Sunday, 6=Saturday)
+    const dayOfWeek = selectedDay ? selectedDay.date.getDay() : null;
+    if (dbTimeSlots.length > 0 && dayOfWeek !== null) {
+      const filteredSlots = dbTimeSlots.filter((slot: any) => slot.day_of_week === dayOfWeek);
+      for (const slot of filteredSlots) {
         options.push({ key: `time_${slot.start_hour}`, label: slot.label });
       }
+    } else if (dbTimeSlots.length > 0 && dayOfWeek === null) {
+      // No day selected yet, show nothing
     } else {
       // Fallback to hardcoded if DB is empty
       for (let hour = 9; hour < 18; hour++) {
@@ -294,7 +299,7 @@ const UpgradeChat = () => {
     }
     options.push({ key: "cancel_booking", label: t.cancelBtn });
     return options;
-  }, [lang, dbTimeSlots]);
+  }, [lang, dbTimeSlots, selectedDay]);
 
   const markMessageAnswered = useCallback((messageId: string, optionKey: string) => {
     setAnsweredMessages(prev => new Set(prev).add(messageId));
