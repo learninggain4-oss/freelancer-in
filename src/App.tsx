@@ -94,6 +94,16 @@ const AdminDataPrivacy = lazy(() => import("./pages/admin/AdminDataPrivacy"));
 const AdminAlertSystem = lazy(() => import("./pages/admin/AdminAlertSystem"));
 const AdminVersionControl = lazy(() => import("./pages/admin/AdminVersionControl"));
 const AdminSessionSecurity = lazy(() => import("./pages/admin/AdminSessionSecurity"));
+const AdminDataMigration = lazy(() => import("./pages/admin/AdminDataMigration"));
+const AdminJobQueue = lazy(() => import("./pages/admin/AdminJobQueue"));
+const AdminTransactionControl = lazy(() => import("./pages/admin/AdminTransactionControl"));
+const AdminResourceMonitor = lazy(() => import("./pages/admin/AdminResourceMonitor"));
+const AdminServiceResilience = lazy(() => import("./pages/admin/AdminServiceResilience"));
+const AdminDataRetention = lazy(() => import("./pages/admin/AdminDataRetention"));
+const AdminBulkOperations = lazy(() => import("./pages/admin/AdminBulkOperations"));
+const AdminReportGenerator = lazy(() => import("./pages/admin/AdminReportGenerator"));
+const AdminSecretsManager = lazy(() => import("./pages/admin/AdminSecretsManager"));
+const AdminKnowledgeBase = lazy(() => import("./pages/admin/AdminKnowledgeBase"));
 const AdminCacheManager = lazy(() => import("./pages/admin/AdminCacheManager"));
 const AdminApiManager = lazy(() => import("./pages/admin/AdminApiManager"));
 const AdminSessionManager = lazy(() => import("./pages/admin/AdminSessionManager"));
@@ -331,6 +341,16 @@ const AppContent = () => {
               <Route path="alert-system" element={<AdminAlertSystem />} />
               <Route path="version-control" element={<AdminVersionControl />} />
               <Route path="session-security" element={<AdminSessionSecurity />} />
+              <Route path="data-migration" element={<AdminDataMigration />} />
+              <Route path="job-queue" element={<AdminJobQueue />} />
+              <Route path="transaction-control" element={<AdminTransactionControl />} />
+              <Route path="resource-monitor" element={<AdminResourceMonitor />} />
+              <Route path="service-resilience" element={<AdminServiceResilience />} />
+              <Route path="data-retention" element={<AdminDataRetention />} />
+              <Route path="bulk-operations" element={<AdminBulkOperations />} />
+              <Route path="report-generator" element={<AdminReportGenerator />} />
+              <Route path="secrets-manager" element={<AdminSecretsManager />} />
+              <Route path="knowledge-base" element={<AdminKnowledgeBase />} />
               <Route path="config-management" element={<AdminConfigManagement />} />
               <Route path="maintenance-center" element={<AdminMaintenanceCenter />} />
               <Route path="rate-limiting" element={<AdminRateLimiting />} />

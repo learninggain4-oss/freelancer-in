@@ -27,6 +27,14 @@ A freelancer marketplace app ("Freelancer-in") connecting freelancers (employees
 - `check-ip-block`, `coin-operations`, `manage-ip-block`, `send-onesignal`
 - `track-visitor`, `user-totp`, `verify-captcha`, `wallet-operations`, `withdrawal-password`
 
+## Admin Panel Modules (50+ pages)
+Premium dark navy 3D glassmorphism design. Theme switcher (Black / White / White & Black).
+- **Batch 1-20**: Users, Finance, Jobs, KYC, Security, Moderation, Config, Analytics, Infrastructure, etc.
+- **Batch 21-30**: AuditLogs, CacheManager, ApiManager, SessionManager, NotificationCenter, FileManager, HighAvailability, etc.
+- **Batch 31-40** (latest): DataMigration, JobQueue, TransactionControl, ResourceMonitor, ServiceResilience, DataRetention, BulkOperations, ReportGenerator, SecretsManager, KnowledgeBase
+- Nav sections: Reliability (31-35) + Operations (36-40) added to AdminLayout sidebar
+- All routes registered in App.tsx with lazy loading
+
 ## Key Features
 - Employee/Client/Admin role-based access
 - Supabase Auth (email/password)

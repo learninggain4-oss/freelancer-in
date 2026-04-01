@@ -14,7 +14,7 @@ import {
   Database, Server, Archive, KeyRound,
   GitPullRequest, GitBranch, Lock,
   Settings2, Wrench, Gauge, CalendarClock, UserCog, Download, Globe,
-  Zap, FileUp,
+  Zap, FileUp, Cpu, Activity, BookOpen,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ThemeToggle from "./ThemeToggle";
@@ -264,6 +264,20 @@ const navSections = [
     { label: "Notification Center", icon: Bell,   path: "/admin/notification-center" },
     { label: "File Manager",        icon: FileUp, path: "/admin/file-manager" },
     { label: "High Availability",   icon: Server, path: "/admin/high-availability" },
+  ]},
+  { title: "Reliability", items: [
+    { label: "Data Migration",       icon: Database,     path: "/admin/data-migration" },
+    { label: "Job Queue",            icon: Cpu,          path: "/admin/job-queue" },
+    { label: "Transaction Control",  icon: IndianRupee,  path: "/admin/transaction-control" },
+    { label: "Resource Monitor",     icon: Activity,     path: "/admin/resource-monitor" },
+    { label: "Service Resilience",   icon: Globe,        path: "/admin/service-resilience" },
+  ]},
+  { title: "Operations", items: [
+    { label: "Data Retention",       icon: Archive,      path: "/admin/data-retention" },
+    { label: "Bulk Operations",      icon: Layers,       path: "/admin/bulk-operations" },
+    { label: "Report Generator",     icon: BarChart3,    path: "/admin/report-generator" },
+    { label: "Secrets Manager",      icon: KeyRound,     path: "/admin/secrets-manager" },
+    { label: "Knowledge Base",       icon: BookOpen,     path: "/admin/knowledge-base" },
   ]},
   { title: "Content & Config", items: [
     { label: "Hero Slideshow", icon: SlidersHorizontal,  path: "/admin/hero-slides" },
