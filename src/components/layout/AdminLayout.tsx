@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,10 +10,13 @@ import {
   Briefcase, LifeBuoy, Bell, HelpCircle, BarChart3, CreditCard,
   Clock, BadgeCheck, Monitor, MessageSquareQuote, Wifi,
   SlidersHorizontal, Eye, ClipboardCheck, Star, ArrowUpCircle,
+  Shield, ClipboardList, Crown, AlertTriangle,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ThemeToggle from "./ThemeToggle";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+
+const SESSION_TIMEOUT_KEY = "admin_session_timeout_min";
 
 const A1 = "#6366f1";
 const A2 = "#8b5cf6";
@@ -217,8 +220,11 @@ const navSections = [
     { label: "Announcements",   icon: Megaphone,  path: "/admin/announcements" },
   ]},
   { title: "Security & Monitoring", items: [
-    { label: "IP Blocking", icon: ShieldCheck, path: "/admin/ip-blocking" },
-    { label: "App Installs", icon: Monitor,    path: "/admin/pwa-installs" },
+    { label: "Safety Center",  icon: Shield,        path: "/admin/safety-center" },
+    { label: "Audit Logs",     icon: ClipboardList, path: "/admin/audit-logs" },
+    { label: "RBAC & Roles",   icon: Crown,         path: "/admin/rbac" },
+    { label: "IP Blocking",    icon: ShieldCheck,   path: "/admin/ip-blocking" },
+    { label: "App Installs",   icon: Monitor,       path: "/admin/pwa-installs" },
   ]},
   { title: "Content & Config", items: [
     { label: "Hero Slideshow", icon: SlidersHorizontal,  path: "/admin/hero-slides" },
@@ -236,16 +242,45 @@ const allNavItems = navSections.flatMap(s => s.items);
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sessionWarning, setSessionWarning] = useState(false);
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, setTheme } = useDashboardTheme();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warnRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const tok = T[theme];
   const css = buildCss(tok);
 
   const currentNav = allNavItems.find(item => location.pathname === item.path);
   const isSubPage = location.pathname !== "/admin/dashboard";
+
+  const resetSessionTimer = useCallback(() => {
+    const minutes = parseInt(localStorage.getItem(SESSION_TIMEOUT_KEY) || "30");
+    const ms = minutes * 60 * 1000;
+    const warnMs = Math.max(ms - 2 * 60 * 1000, ms - ms * 0.1);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (warnRef.current) clearTimeout(warnRef.current);
+    setSessionWarning(false);
+    warnRef.current = setTimeout(() => setSessionWarning(true), warnMs);
+    timeoutRef.current = setTimeout(async () => {
+      await signOut();
+      navigate("/login");
+    }, ms);
+  }, [signOut, navigate]);
+
+  useEffect(() => {
+    resetSessionTimer();
+    const events = ["mousedown", "mousemove", "keydown", "scroll", "touchstart", "click"];
+    const handler = () => { setSessionWarning(false); resetSessionTimer(); };
+    events.forEach(e => window.addEventListener(e, handler, { passive: true }));
+    return () => {
+      events.forEach(e => window.removeEventListener(e, handler));
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (warnRef.current) clearTimeout(warnRef.current);
+    };
+  }, [resetSessionTimer]);
 
   const { data: pendingRecoveryCount = 0 } = useQuery({
     queryKey: ["admin-recovery-pending-count"],
@@ -368,6 +403,17 @@ const AdminLayout = () => {
             </div>
           </div>
         </header>
+
+        {/* Session warning banner */}
+        {sessionWarning && (
+          <div style={{ background: "rgba(251,191,36,.15)", borderBottom: "1px solid rgba(251,191,36,.3)", padding: "8px 20px", display: "flex", alignItems: "center", gap: 9 }}>
+            <AlertTriangle size={14} color="#fbbf24" />
+            <span style={{ fontSize: 12, color: "#fbbf24", fontWeight: 600 }}>Session expiring soon due to inactivity — move mouse or press a key to stay logged in</span>
+            <button onClick={resetSessionTimer} style={{ marginLeft: "auto", padding: "3px 10px", borderRadius: 7, background: "rgba(251,191,36,.2)", border: "1px solid rgba(251,191,36,.3)", color: "#fbbf24", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+              Stay Logged In
+            </button>
+          </div>
+        )}
 
         {/* Content */}
         <main className="admin-main flex-1" style={{ background: tok.mainBg, padding: 24 }}>

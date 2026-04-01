@@ -82,6 +82,9 @@ const AdminWalletUpgrades = lazy(() => import("./pages/admin/AdminWalletUpgrades
 const AdminAutoResponses = lazy(() => import("./pages/admin/AdminAutoResponses"));
 const AdminIpBlocking = lazy(() => import("./pages/admin/AdminIpBlocking"));
 const AdminPwaInstalls = lazy(() => import("./pages/admin/AdminPwaInstalls"));
+const AdminSafetyCenter = lazy(() => import("./pages/admin/AdminSafetyCenter"));
+const AdminAuditLogs = lazy(() => import("./pages/admin/AdminAuditLogs"));
+const AdminRBAC = lazy(() => import("./pages/admin/AdminRBAC"));
 const WalletTypes = lazy(() => import("./pages/WalletTypes"));
 const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));
@@ -298,6 +301,9 @@ const AppContent = () => {
               <Route path="auto-responses" element={<AdminAutoResponses />} />
               <Route path="ip-blocking" element={<AdminIpBlocking />} />
               <Route path="pwa-installs" element={<AdminPwaInstalls />} />
+              <Route path="safety-center" element={<AdminSafetyCenter />} />
+              <Route path="audit-logs" element={<AdminAuditLogs />} />
+              <Route path="rbac" element={<AdminRBAC />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
