@@ -349,10 +349,8 @@ const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip }: any
       scrolled ? "py-2" : "py-3"
     )} style={{ background: scrolled ? "rgba(10,10,26,0.85)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}>
-            <Briefcase className="h-4.5 w-4.5 text-white" />
-          </div>
+        <div className="flex items-center gap-2">
+          <img src="/logo.png" alt="Freelancer Logo" className="h-10 w-10 object-contain" />
           <span className="text-lg font-bold text-white">Freelancer<span className="gradient-text">.</span></span>
         </div>
         <div className="flex items-center gap-2.5">
@@ -790,10 +788,8 @@ const Footer = () => (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
         {/* Brand */}
         <div className="col-span-2 md:col-span-1">
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
-              <Briefcase className="h-4.5 w-4.5 text-white" />
-            </div>
+          <div className="flex items-center gap-2 mb-4">
+            <img src="/logo.png" alt="Freelancer Logo" className="h-10 w-10 object-contain" />
             <span className="text-lg font-bold text-white">Freelancer<span className="gradient-text">.</span></span>
           </div>
           <p className="text-sm text-white/40 leading-relaxed mb-5 max-w-xs">The all-in-one platform connecting skilled freelancers with clients across India.</p>
