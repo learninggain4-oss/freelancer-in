@@ -17,6 +17,21 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
+/* ─────────────────────── Themes ─────────────────────── */
+const THEMES = [
+  { id: "midnight", label: "Midnight", dot: "#6366f1",
+    bg: "#070714", bgRgb: "7,7,20",    a1: "#6366f1", a2: "#8b5cf6", a1rgb: "99,102,241",  a2rgb: "139,92,246" },
+  { id: "crimson",  label: "Crimson",  dot: "#f43f5e",
+    bg: "#0f0407", bgRgb: "15,4,7",    a1: "#f43f5e", a2: "#fb7185", a1rgb: "244,63,94",   a2rgb: "251,113,133" },
+  { id: "ocean",    label: "Ocean",    dot: "#0ea5e9",
+    bg: "#020b12", bgRgb: "2,11,18",   a1: "#0ea5e9", a2: "#06b6d4", a1rgb: "14,165,233",  a2rgb: "6,182,212"  },
+  { id: "forest",   label: "Forest",   dot: "#22c55e",
+    bg: "#030f06", bgRgb: "3,15,6",    a1: "#22c55e", a2: "#16a34a", a1rgb: "34,197,94",   a2rgb: "22,163,74"  },
+  { id: "amber",    label: "Amber",    dot: "#f59e0b",
+    bg: "#0c0800", bgRgb: "12,8,0",    a1: "#f59e0b", a2: "#f97316", a1rgb: "245,158,11",  a2rgb: "249,115,22" },
+] as const;
+type ThemeId = typeof THEMES[number]["id"];
+
 /* ─────────────────────── Global animation styles ─────────────────────── */
 const GlobalStyles = () => (
   <style>{`
@@ -80,7 +95,7 @@ const GlobalStyles = () => (
       animation: gradient-shift 5s ease infinite;
     }
     .gradient-text {
-      background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399, #a78bfa);
+      background: linear-gradient(135deg, var(--t-a1), var(--t-a2), var(--t-a1));
       background-size: 300% 300%;
       animation: gradient-shift 4s ease infinite;
       -webkit-background-clip: text;
@@ -104,14 +119,14 @@ const GlobalStyles = () => (
     }
     .card-3d:hover {
       transform: perspective(900px) rotateX(-6deg) rotateY(3deg) translateY(-10px) scale(1.02);
-      box-shadow: 0 30px 60px -10px rgba(0,0,0,0.5), 0 0 40px rgba(139,92,246,0.2);
+      box-shadow: 0 30px 60px -10px rgba(0,0,0,0.5), 0 0 40px rgba(var(--t-a2-rgb),0.2);
     }
     .feature-card-3d {
       transition: transform 0.4s cubic-bezier(.17,.67,.34,1.2), box-shadow 0.4s ease;
     }
     .feature-card-3d:hover {
       transform: perspective(800px) rotateX(-8deg) rotateY(4deg) translateY(-12px);
-      box-shadow: 0 25px 50px -10px rgba(0,0,0,0.4), 0 0 30px rgba(99,102,241,0.25);
+      box-shadow: 0 25px 50px -10px rgba(0,0,0,0.4), 0 0 30px rgba(var(--t-a1-rgb),0.25);
     }
     .step-3d {
       transition: transform 0.35s cubic-bezier(.17,.67,.34,1.2), box-shadow 0.35s ease;
@@ -263,7 +278,7 @@ const AnimatedCounter = ({ value, prefix = "", suffix = "" }: { value: string; p
 const HeroDashboard = () => (
   <div className="relative w-full max-w-lg mx-auto select-none hero-dashboard" style={{ perspective: "1200px" }}>
     {/* Main dashboard card */}
-    <div className="glass rounded-2xl p-5 shadow-2xl" style={{ boxShadow: "0 40px 80px -20px rgba(0,0,0,0.6), 0 0 60px rgba(99,102,241,0.15)" }}>
+    <div className="glass rounded-2xl p-5 shadow-2xl" style={{ boxShadow: "0 40px 80px -20px rgba(0,0,0,0.6), 0 0 60px rgba(var(--t-a1-rgb),0.15)" }}>
       {/* Top bar */}
       <div className="flex items-center gap-2 mb-4">
         <div className="flex gap-1.5">
@@ -286,7 +301,7 @@ const HeroDashboard = () => (
       <div className="glass rounded-xl p-3 mb-4">
         <div className="flex items-end gap-1.5 h-16">
           {[40,65,45,80,60,90,75,95,70,85].map((h,i) => (
-            <div key={i} className="flex-1 rounded-sm" style={{ height:`${h}%`, background: `linear-gradient(to top, #6366f1, #8b5cf6)`, opacity: 0.7 + i * 0.03 }} />
+            <div key={i} className="flex-1 rounded-sm" style={{ height:`${h}%`, background: `linear-gradient(to top, var(--t-a1), var(--t-a2))`, opacity: 0.7 + i * 0.03 }} />
           ))}
         </div>
         <div className="text-xs text-white/40 mt-1">Monthly Earnings ↑ 24%</div>
@@ -337,8 +352,8 @@ const HeroDashboard = () => (
 /* ─────────────────────── Orb decorations ─────────────────────── */
 const Orbs = () => (
   <>
-    <div className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(139,92,246,0.35) 0%, transparent 70%)", filter: "blur(40px)" }} />
-    <div className="pointer-events-none absolute top-1/3 -right-32 h-80 w-80 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.3) 0%, transparent 70%)", filter: "blur(40px)", animationDelay: "1.5s" }} />
+    <div className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(var(--t-a2-rgb),0.35) 0%, transparent 70%)", filter: "blur(40px)" }} />
+    <div className="pointer-events-none absolute top-1/3 -right-32 h-80 w-80 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.3) 0%, transparent 70%)", filter: "blur(40px)", animationDelay: "1.5s" }} />
     <div className="pointer-events-none absolute -bottom-20 left-1/4 h-72 w-72 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(52,211,153,0.2) 0%, transparent 70%)", filter: "blur(40px)", animationDelay: "3s" }} />
   </>
 );
@@ -369,9 +384,9 @@ const RegisterModal = ({ open, onClose }: { open: boolean; onClose: () => void }
         {/* Options */}
         <div className="grid grid-cols-1 gap-4">
           {/* Freelancer option */}
-          <Link to="/register/employee" onClick={onClose} className="group relative flex items-center gap-4 rounded-2xl p-5 text-left transition-all duration-300 hover:scale-[1.02]" style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.25)" }}>
-            <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1))" }} />
-            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", boxShadow: "0 8px 20px rgba(99,102,241,0.35)" }}>
+          <Link to="/register/employee" onClick={onClose} className="group relative flex items-center gap-4 rounded-2xl p-5 text-left transition-all duration-300 hover:scale-[1.02]" style={{ background: "rgba(var(--t-a1-rgb),0.1)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
+            <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.15), rgba(var(--t-a2-rgb),0.1))" }} />
+            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))", boxShadow: "0 8px 20px rgba(var(--t-a1-rgb),0.35)" }}>
               <Briefcase className="h-6 w-6 text-white" />
             </div>
             <div className="relative flex-1">
@@ -409,8 +424,45 @@ const RegisterModal = ({ open, onClose }: { open: boolean; onClose: () => void }
   );
 };
 
+/* ─────────────────────── Theme Picker ─────────────────────── */
+const ThemePicker = ({ active, onChange }: { active: ThemeId; onChange: (id: ThemeId) => void }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        title="Change theme"
+        className="hidden sm:flex items-center justify-center h-8 w-8 rounded-full transition-all hover:scale-110"
+        style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
+      >
+        <Palette className="h-3.5 w-3.5 text-white/70" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-10 z-50 rounded-2xl p-3 shadow-2xl" style={{ background: "rgba(15,15,35,0.97)", border: "1px solid rgba(255,255,255,0.12)", backdropFilter: "blur(20px)", minWidth: 160 }}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30 px-1 mb-2">Theme</p>
+            {THEMES.map(t => (
+              <button
+                key={t.id}
+                onClick={() => { onChange(t.id); setOpen(false); }}
+                className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-sm text-left transition-all hover:bg-white/5"
+              >
+                <span className="h-5 w-5 rounded-full shrink-0 ring-2 ring-offset-1 ring-offset-transparent transition-all"
+                  style={{ background: `linear-gradient(135deg,${t.dot},${t.a2})`, ringColor: active === t.id ? t.dot : "transparent", outline: active === t.id ? `2px solid ${t.dot}` : "2px solid transparent" }} />
+                <span className={cn("font-medium", active === t.id ? "text-white" : "text-white/50")}>{t.label}</span>
+                {active === t.id && <CheckCircle className="ml-auto h-3.5 w-3.5" style={{ color: t.dot }} />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 /* ─────────────────────── Navbar ─────────────────────── */
-const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip }: any) => {
+const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip, activeTheme, onThemeChange }: any) => {
   const [scrolled, setScrolled] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
 
@@ -426,7 +478,7 @@ const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip }: any
       <header className={cn(
         "sticky top-0 z-50 transition-all duration-300",
         scrolled ? "py-2" : "py-3"
-      )} style={{ background: scrolled ? "rgba(10,10,26,0.85)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
+      )} style={{ background: scrolled ? "rgba(var(--t-bg-rgb),0.85)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="Freelancer Logo" className="h-10 w-10 object-contain" />
@@ -438,11 +490,12 @@ const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip }: any
                 <Download className="h-3.5 w-3.5" /> Install
               </button>
             )}
+            <ThemePicker active={activeTheme} onChange={onThemeChange} />
             <button onClick={() => setShowRegisterModal(true)} className="hidden sm:inline-flex text-sm text-white/70 hover:text-white transition-colors px-3 py-1.5 rounded-xl hover:bg-white/5">
               Register
             </button>
             <Link to="/login">
-              <button className="relative inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)", boxShadow: "0 0 20px rgba(99,102,241,0.4)" }}>
+              <button className="relative inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 20px rgba(var(--t-a1-rgb),0.4)" }}>
                 Login <ArrowRight className="h-3.5 w-3.5" />
               </button>
             </Link>
@@ -464,7 +517,7 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => (
       <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         {/* Left: Text — use CSS animations so above-fold content is visible immediately */}
         <div className="text-center lg:text-left" style={{ animation: "slide-up 0.7s ease both" }}>
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-white/80" style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)" }}>
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-white/80" style={{ background: "rgba(var(--t-a1-rgb),0.15)", border: "1px solid rgba(var(--t-a1-rgb),0.3)" }}>
             <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 pulse-glow" />
             Trusted by 500+ professionals across India
           </div>
@@ -481,7 +534,7 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => (
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-10" style={{ animation: "slide-up 0.7s ease 0.3s both" }}>
             <Link to="/register/employee">
-              <button className="group flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-base font-semibold text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)", boxShadow: "0 0 30px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
+              <button className="group flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-base font-semibold text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
                 <Briefcase className="h-5 w-5" />
                 Join as Freelancer
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -515,7 +568,7 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => (
     </div>
 
     {/* Bottom gradient fade */}
-    <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent, #070714)" }} />
+    <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent, var(--t-bg))" }} />
   </section>
 );
 
@@ -526,8 +579,8 @@ const TrustBar = () => (
       <p className="text-xs font-semibold uppercase tracking-widest text-white/30">Trusted by professionals from</p>
     </Reveal>
     <div className="relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20" style={{ background: "linear-gradient(to right, #070714, transparent)" }} />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20" style={{ background: "linear-gradient(to left, #070714, transparent)" }} />
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20" style={{ background: "linear-gradient(to right, var(--t-bg), transparent)" }} />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20" style={{ background: "linear-gradient(to left, var(--t-bg), transparent)" }} />
       <div className="flex marquee-track" style={{ width: "max-content" }}>
         {[...trustedCompanies, ...trustedCompanies, ...trustedCompanies].map((name, i) => (
           <div key={i} className="flex shrink-0 items-center gap-2 mx-4 rounded-xl px-5 py-2.5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -543,10 +596,10 @@ const TrustBar = () => (
 /* ─────────────────────── Features Section ─────────────────────── */
 const FeaturesSection = () => (
   <section id="features" className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
-    <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)" }} />
+    <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full" style={{ background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.08) 0%, transparent 70%)" }} />
     <div className="mx-auto max-w-7xl">
       <Reveal className="text-center mb-14">
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.25)" }}>
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
           <Zap className="h-3.5 w-3.5" /> Platform Features
         </div>
         <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">Everything you <span className="gradient-text">need</span></h2>
@@ -578,7 +631,7 @@ const FeaturesSection = () => (
 /* ─────────────────────── How It Works ─────────────────────── */
 const HowItWorksSection = () => (
   <section id="how-it-works" className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
-    <div className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 0%, rgba(99,102,241,0.04) 50%, transparent 100%)" }} />
+    <div className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 0%, rgba(var(--t-a1-rgb),0.04) 50%, transparent 100%)" }} />
     <div className="mx-auto max-w-7xl">
       <Reveal className="text-center mb-14">
         <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
@@ -590,7 +643,7 @@ const HowItWorksSection = () => (
 
       {/* Connecting line (desktop) */}
       <div className="relative">
-        <div className="hidden lg:block absolute top-16 left-[12.5%] right-[12.5%] h-px" style={{ background: "linear-gradient(to right, transparent, rgba(99,102,241,0.4), rgba(139,92,246,0.4), rgba(52,211,153,0.4), transparent)" }} />
+        <div className="hidden lg:block absolute top-16 left-[12.5%] right-[12.5%] h-px" style={{ background: "linear-gradient(to right, transparent, rgba(var(--t-a1-rgb),0.4), rgba(var(--t-a2-rgb),0.4), rgba(52,211,153,0.4), transparent)" }} />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {steps.map((s, i) => (
             <Reveal key={s.step} delay={i * 120}>
@@ -602,7 +655,7 @@ const HowItWorksSection = () => (
                     <s.icon className="h-6 w-6 text-white" />
                   </div>
                   {/* Number badge */}
-                  <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full text-xs font-black text-white" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
+                  <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full text-xs font-black text-white" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>
                     {i + 1}
                   </div>
                 </div>
@@ -656,7 +709,7 @@ const ServicesSection = () => {
             {allCategories.slice(8).map((cat, i) => (
               <Reveal key={cat.label} delay={i * 40}>
                 <div className="group flex items-center gap-3 rounded-xl p-3.5 cursor-pointer transition-all hover:-translate-y-1" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ background: "rgba(99,102,241,0.15)" }}>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ background: "rgba(var(--t-a1-rgb),0.15)" }}>
                     <cat.icon className="h-4 w-4 text-indigo-400" />
                   </div>
                   <div className="min-w-0">
@@ -674,7 +727,7 @@ const ServicesSection = () => {
             {showAll ? <><ChevronUp className="h-4 w-4" /> Show Less</> : <><ChevronDown className="h-4 w-4" /> View More</>}
           </button>
           <Link to="/categories">
-            <button className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", boxShadow: "0 0 20px rgba(99,102,241,0.3)" }}>
+            <button className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))", boxShadow: "0 0 20px rgba(var(--t-a1-rgb),0.3)" }}>
               All Categories <ArrowRight className="h-4 w-4" />
             </button>
           </Link>
@@ -687,10 +740,10 @@ const ServicesSection = () => {
 /* ─────────────────────── Stats Section ─────────────────────── */
 const StatsSection = () => (
   <section className="relative py-20 md:py-24 px-4 sm:px-6 overflow-hidden">
-    <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.08) 50%, rgba(52,211,153,0.05) 100%)", borderTop: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)" }} />
+    <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.08) 0%, rgba(var(--t-a2-rgb),0.08) 50%, rgba(52,211,153,0.05) 100%)", borderTop: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)" }} />
     {/* Spinning ring decorations */}
-    <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-96 w-96 rounded-full spin-slow" style={{ border: "1px solid rgba(99,102,241,0.12)" }} />
-    <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full spin-reverse" style={{ border: "1px solid rgba(139,92,246,0.1)" }} />
+    <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-96 w-96 rounded-full spin-slow" style={{ border: "1px solid rgba(var(--t-a1-rgb),0.12)" }} />
+    <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full spin-reverse" style={{ border: "1px solid rgba(var(--t-a2-rgb),0.1)" }} />
 
     <div className="mx-auto max-w-7xl relative z-10">
       <Reveal className="text-center mb-14">
@@ -701,14 +754,14 @@ const StatsSection = () => (
         {stats.map((s, i) => (
           <Reveal key={s.label} delay={i * 100}>
             <div className="card-3d group relative rounded-2xl p-6 text-center overflow-hidden cursor-default" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1))" }} />
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.1), rgba(var(--t-a2-rgb),0.1))" }} />
               <div className="relative z-10">
                 <div className="text-4xl sm:text-5xl font-black mb-2" style={{ background: "linear-gradient(135deg, #a78bfa, #60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                   <AnimatedCounter value={s.value} prefix={s.prefix} suffix={s.suffix} />
                 </div>
                 <p className="text-sm text-white/50 font-medium">{s.label}</p>
               </div>
-              <div className="absolute -bottom-6 -right-6 h-24 w-24 rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }} />
+              <div className="absolute -bottom-6 -right-6 h-24 w-24 rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }} />
             </div>
           </Reveal>
         ))}
@@ -733,7 +786,7 @@ const TestimonialsSection = ({ testimonials }: { testimonials: any[] }) => {
 
   return (
     <section id="testimonials" className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
-      <div className="pointer-events-none absolute bottom-0 left-0 h-[400px] w-[400px]" style={{ background: "radial-gradient(circle at bottom left, rgba(139,92,246,0.08) 0%, transparent 60%)" }} />
+      <div className="pointer-events-none absolute bottom-0 left-0 h-[400px] w-[400px]" style={{ background: "radial-gradient(circle at bottom left, rgba(var(--t-a2-rgb),0.08) 0%, transparent 60%)" }} />
       <div className="mx-auto max-w-7xl">
         <Reveal className="text-center mb-14">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-amber-300" style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)" }}>
@@ -755,7 +808,7 @@ const TestimonialsSection = ({ testimonials }: { testimonials: any[] }) => {
                       {t.photo_path ? (
                         <img src={t.photo_path} alt={t.name} className="h-10 w-10 rounded-full object-cover ring-2 ring-indigo-500/30" />
                       ) : (
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>
                           {t.name.charAt(0)}
                         </div>
                       )}
@@ -791,11 +844,11 @@ const TestimonialsSection = ({ testimonials }: { testimonials: any[] }) => {
 const CTASection = () => (
   <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
     <Reveal>
-      <div className="mx-auto max-w-5xl relative rounded-3xl overflow-hidden p-10 md:p-16 text-center" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.15) 50%, rgba(52,211,153,0.1) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}>
+      <div className="mx-auto max-w-5xl relative rounded-3xl overflow-hidden p-10 md:p-16 text-center" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.15) 0%, rgba(var(--t-a2-rgb),0.15) 50%, rgba(52,211,153,0.1) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}>
         {/* Background decoration */}
-        <div className="absolute -top-20 -right-20 h-60 w-60 rounded-full spin-slow" style={{ border: "1px solid rgba(99,102,241,0.15)" }} />
-        <div className="absolute -bottom-20 -left-20 h-60 w-60 rounded-full spin-reverse" style={{ border: "1px solid rgba(139,92,246,0.1)" }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)" }} />
+        <div className="absolute -top-20 -right-20 h-60 w-60 rounded-full spin-slow" style={{ border: "1px solid rgba(var(--t-a1-rgb),0.15)" }} />
+        <div className="absolute -bottom-20 -left-20 h-60 w-60 rounded-full spin-reverse" style={{ border: "1px solid rgba(var(--t-a2-rgb),0.1)" }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.1) 0%, transparent 70%)" }} />
 
         <div className="relative z-10">
           <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">Ready to <span className="gradient-text">get started?</span></h2>
@@ -809,7 +862,7 @@ const CTASection = () => (
           </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/register/employee">
-              <button className="group flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-base font-semibold text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", boxShadow: "0 0 30px rgba(99,102,241,0.4)" }}>
+              <button className="group flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-base font-semibold text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4)" }}>
                 <Briefcase className="h-4.5 w-4.5" /> Join as Freelancer <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </Link>
@@ -842,10 +895,10 @@ const FAQSection = () => {
         <div className="space-y-3">
           {faqs.map((faq, i) => (
             <Reveal key={i} delay={i * 60}>
-              <div className="rounded-2xl overflow-hidden transition-all duration-300" style={{ background: open === i ? "rgba(99,102,241,0.08)" : "rgba(255,255,255,0.03)", border: open === i ? "1px solid rgba(99,102,241,0.25)" : "1px solid rgba(255,255,255,0.07)" }}>
+              <div className="rounded-2xl overflow-hidden transition-all duration-300" style={{ background: open === i ? "rgba(var(--t-a1-rgb),0.08)" : "rgba(255,255,255,0.03)", border: open === i ? "1px solid rgba(var(--t-a1-rgb),0.25)" : "1px solid rgba(255,255,255,0.07)" }}>
                 <button onClick={() => setOpen(open === i ? null : i)} className="flex w-full items-center justify-between px-6 py-4 text-left gap-4">
                   <span className="text-sm sm:text-base font-semibold text-white/90">{faq.q}</span>
-                  <div className="shrink-0 flex h-7 w-7 items-center justify-center rounded-lg transition-all" style={{ background: open === i ? "rgba(99,102,241,0.3)" : "rgba(255,255,255,0.06)" }}>
+                  <div className="shrink-0 flex h-7 w-7 items-center justify-center rounded-lg transition-all" style={{ background: open === i ? "rgba(var(--t-a1-rgb),0.3)" : "rgba(255,255,255,0.06)" }}>
                     {open === i ? <Minus className="h-3.5 w-3.5 text-indigo-400" /> : <Plus className="h-3.5 w-3.5 text-white/50" />}
                   </div>
                 </button>
@@ -938,6 +991,13 @@ const Index = () => {
   const [showIOSTip, setShowIOSTip] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [themeId, setThemeId] = useState<ThemeId>(() => (localStorage.getItem("fi-theme") as ThemeId) || "midnight");
+  const theme = THEMES.find(t => t.id === themeId) ?? THEMES[0];
+
+  const handleThemeChange = (id: ThemeId) => {
+    setThemeId(id);
+    localStorage.setItem("fi-theme", id);
+  };
 
   const { data: testimonials = [] } = useQuery({
     queryKey: ["landing-testimonials"],
@@ -980,15 +1040,24 @@ const Index = () => {
     }
   }
 
+  const cssVars = {
+    "--t-bg":     theme.bg,
+    "--t-bg-rgb": theme.bgRgb,
+    "--t-a1":     theme.a1,
+    "--t-a2":     theme.a2,
+    "--t-a1-rgb": theme.a1rgb,
+    "--t-a2-rgb": theme.a2rgb,
+  } as React.CSSProperties;
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#070714", color: "white" }}>
+    <div className="min-h-screen flex flex-col" style={{ ...cssVars, background: "var(--t-bg)", color: "white" }}>
       <GlobalStyles />
 
-      <Navbar deferredPrompt={deferredPrompt} isInstalled={isInstalled} isIOS={isIOS} onInstall={handleInstall} onIOSTip={() => setShowIOSTip(v => !v)} />
+      <Navbar deferredPrompt={deferredPrompt} isInstalled={isInstalled} isIOS={isIOS} onInstall={handleInstall} onIOSTip={() => setShowIOSTip(v => !v)} activeTheme={themeId} onThemeChange={handleThemeChange} />
 
       {/* iOS tip */}
       {showIOSTip && isIOS && (
-        <div className="px-4 py-3" style={{ background: "rgba(99,102,241,0.1)", borderBottom: "1px solid rgba(99,102,241,0.2)" }}>
+        <div className="px-4 py-3" style={{ background: "rgba(var(--t-a1-rgb),0.1)", borderBottom: "1px solid rgba(var(--t-a1-rgb),0.2)" }}>
           <div className="mx-auto flex max-w-6xl items-start gap-3 text-sm">
             <Smartphone className="mt-0.5 h-4 w-4 shrink-0 text-indigo-400" />
             <div className="space-y-1">
@@ -1018,16 +1087,16 @@ const Index = () => {
       {/* Install Banner */}
       {showBanner && !isInstalled && !bannerDismissed && (
         <div className="fixed inset-x-0 bottom-0 z-50 p-4 pb-safe sm:hidden">
-          <div className="rounded-2xl p-4 shadow-2xl" style={{ background: "rgba(10,10,26,0.95)", border: "1px solid rgba(99,102,241,0.3)", backdropFilter: "blur(20px)" }}>
+          <div className="rounded-2xl p-4 shadow-2xl" style={{ background: "rgba(var(--t-bg-rgb),0.95)", border: "1px solid rgba(var(--t-a1-rgb),0.3)", backdropFilter: "blur(20px)" }}>
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>
                 <Download className="h-5 w-5 text-white" />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-white">Install Freelancer</p>
                 <p className="mt-0.5 text-xs text-white/50">{isIOS ? "Add to your home screen for the best experience" : "Install for quick access & offline support"}</p>
                 <div className="mt-3 flex gap-2">
-                  <button className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white flex items-center gap-1" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }} onClick={() => { if (deferredPrompt) handleInstall(); else if (isIOS) { setShowIOSTip(true); setShowBanner(false); } }}>
+                  <button className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white flex items-center gap-1" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }} onClick={() => { if (deferredPrompt) handleInstall(); else if (isIOS) { setShowIOSTip(true); setShowBanner(false); } }}>
                     <Download className="h-3.5 w-3.5" /> {isIOS ? "How to Install" : "Install Now"}
                   </button>
                   <button className="rounded-lg px-3 py-1.5 text-xs text-white/40 hover:text-white" onClick={() => { setShowBanner(false); setBannerDismissed(true); }}>Not now</button>
