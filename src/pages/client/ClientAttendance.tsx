@@ -305,11 +305,6 @@ const ClientAttendance = () => {
       <PhotoCaptureDialog open={showCheckOutDialog} onOpenChange={setShowCheckOutDialog} onCaptured={handleCheckOutPhoto} title="Check Out Photo" description="Take a photo to verify your check-out." />
     </div>
   );
-
-      <PhotoCaptureDialog open={showCheckInDialog} onOpenChange={setShowCheckInDialog} onCaptured={handleCheckInPhoto} title="Check In Photo" description="Take a photo to verify your check-in." />
-      <PhotoCaptureDialog open={showCheckOutDialog} onOpenChange={setShowCheckOutDialog} onCaptured={handleCheckOutPhoto} title="Check Out Photo" description="Take a photo to verify your check-out." />
-    </div>
-  );
 };
 
 export default ClientAttendance;

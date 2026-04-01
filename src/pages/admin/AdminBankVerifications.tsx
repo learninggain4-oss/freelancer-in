@@ -611,18 +611,6 @@ const AdminBankVerifications = () => {
           )}
         </DialogContent>
       </Dialog>
-
-
-              {selected.rejection_reason && selected.status === "rejected" && (
-                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                  <p className="font-medium">Rejection Reason:</p>
-                  <p className="text-xs">{selected.rejection_reason}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

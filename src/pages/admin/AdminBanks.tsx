@@ -473,6 +473,4 @@ function IfscPanel({
   );
 }
 
-import { Fragment } from "react";
-
 export default AdminBanks;

@@ -339,6 +339,3 @@ const AdminWallet = () => {
 };
 
 export default AdminWallet;
-
-
-export default AdminWallet;

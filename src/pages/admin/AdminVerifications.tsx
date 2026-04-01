@@ -619,18 +619,6 @@ const AdminVerifications = () => {
           )}
         </DialogContent>
       </Dialog>
-
-
-              {selectedVerification.rejection_reason && (
-                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                  <p className="font-medium">Rejection Reason:</p>
-                  <p className="text-xs">{selectedVerification.rejection_reason}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

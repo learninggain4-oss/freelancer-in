@@ -414,6 +414,3 @@ const AdminWalletTypes = () => {
 };
 
 export default AdminWalletTypes;
-
-
-export default AdminWalletTypes;

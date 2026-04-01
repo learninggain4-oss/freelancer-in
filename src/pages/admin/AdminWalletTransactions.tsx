@@ -255,6 +255,3 @@ const AdminWalletTransactions = () => {
 };
 
 export default AdminWalletTransactions;
-
-
-export default AdminWalletTransactions;

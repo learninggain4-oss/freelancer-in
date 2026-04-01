@@ -369,6 +369,3 @@ const AdminWithdrawals = () => {
 };
 
 export default AdminWithdrawals;
-
-
-export default AdminWithdrawals;

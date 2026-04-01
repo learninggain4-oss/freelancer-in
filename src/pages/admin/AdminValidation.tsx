@@ -587,33 +587,4 @@ const AdminValidation = () => {
   );
 };
 
-import { ChevronRight, Trash2, X } from "lucide-react";
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete this payment confirmation?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently remove this record. This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => deleteMutation.mutate(selected.id)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        )}
-      </Dialog>
-    </div>
-  );
-};
-
 export default AdminValidation;

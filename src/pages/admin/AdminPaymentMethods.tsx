@@ -459,8 +459,4 @@ const AdminPaymentMethods = () => {
   );
 };
 
-import { RefreshCw } from "lucide-react";
-
-};
-
 export default AdminPaymentMethods;
