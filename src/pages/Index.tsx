@@ -461,6 +461,28 @@ const ThemePicker = ({ active, onChange }: { active: ThemeId; onChange: (id: The
   );
 };
 
+/* ─────────────────────── Live Clock ─────────────────────── */
+const LiveClock = () => {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const dateStr = now.toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short", year: "numeric" });
+  const timeStr = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
+
+  return (
+    <div className="hidden md:flex items-center gap-2 rounded-xl px-3 py-1.5 select-none" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <Clock className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--t-a1)" }} />
+      <div className="flex flex-col leading-none">
+        <span className="text-[10px] font-medium text-white/40 tracking-wide">{dateStr}</span>
+        <span className="text-xs font-mono font-semibold tabular-nums" style={{ color: "var(--t-a1)" }}>{timeStr}</span>
+      </div>
+    </div>
+  );
+};
+
 /* ─────────────────────── Navbar ─────────────────────── */
 const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip, activeTheme, onThemeChange }: any) => {
   const [scrolled, setScrolled] = useState(false);
@@ -480,9 +502,10 @@ const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip, activ
         scrolled ? "py-2" : "py-3"
       )} style={{ background: scrolled ? "rgba(var(--t-bg-rgb),0.85)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <img src="/logo.png" alt="Freelancer Logo" className="h-10 w-10 object-contain" />
             <span className="text-lg font-bold text-white">Freelancer<span className="gradient-text">.</span></span>
+            <LiveClock />
           </div>
           <div className="flex items-center gap-2.5">
             {!isInstalled && (deferredPrompt || isIOS) && (
