@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ published: data?.length ?? 0, jobs: data }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error("Auto-publish error:", err);
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
