@@ -2336,39 +2336,69 @@ export type Database = {
         }
         Relationships: []
       }
+      upgrade_chat_day_settings: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          id: string
+          is_closed: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          id?: string
+          is_closed?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          id?: string
+          is_closed?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       upgrade_chat_time_slots: {
         Row: {
           created_at: string
+          day_of_week: number
           display_order: number
           end_hour: number
           end_minute: number
           id: string
           is_enabled: boolean
           label: string
+          max_bookings: number
           start_hour: number
           start_minute: number
           updated_at: string
         }
         Insert: {
           created_at?: string
+          day_of_week?: number
           display_order?: number
           end_hour: number
           end_minute?: number
           id?: string
           is_enabled?: boolean
           label: string
+          max_bookings?: number
           start_hour: number
           start_minute?: number
           updated_at?: string
         }
         Update: {
           created_at?: string
+          day_of_week?: number
           display_order?: number
           end_hour?: number
           end_minute?: number
           id?: string
           is_enabled?: boolean
           label?: string
+          max_bookings?: number
           start_hour?: number
           start_minute?: number
           updated_at?: string
