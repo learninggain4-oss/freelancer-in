@@ -7,82 +7,80 @@ import {
   Briefcase, ArrowLeft, ArrowRight, Loader2, Plus, Trash2,
   User, Phone, Building2, Heart, Wrench, CheckCircle2, Shield,
   GraduationCap, Calendar, Mail, Lock, Share2, Upload, FileText,
-  Sparkles,
+  Sparkles, Check,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  registrationProfileSchema,
-  type RegistrationFormData,
-  type WorkExperienceEntry,
-  type EmergencyContactEntry,
-  type ServiceEntry,
-  validateWorkExperience,
-  validateEmergencyContact,
-  validateService,
+  registrationProfileSchema, type RegistrationFormData,
+  type WorkExperienceEntry, type EmergencyContactEntry, type ServiceEntry,
+  validateWorkExperience, validateEmergencyContact, validateService,
 } from "@/lib/validations/registration";
+import { AUTH_CSS, A1, A2 } from "@/components/layout/AuthPageShell";
 
-interface RegistrationFormProps {
-  userType: "employee" | "client";
-}
+/* ─── Page-level CSS for dark theme overrides ─── */
+const REG_CSS = `
+${AUTH_CSS}
+.reg-input { background:rgba(255,255,255,.06) !important; border:1px solid rgba(255,255,255,.1) !important; color:white !important; border-radius:10px !important; }
+.reg-input::placeholder { color:rgba(255,255,255,.25) !important; }
+.reg-input:focus { border-color:#6366f1 !important; outline:none !important; }
+.reg-select [data-radix-select-trigger] { background:rgba(255,255,255,.06) !important; border:1px solid rgba(255,255,255,.1) !important; color:white !important; border-radius:10px !important; }
+.reg-textarea { background:rgba(255,255,255,.06) !important; border:1px solid rgba(255,255,255,.1) !important; color:white !important; border-radius:10px !important; resize:vertical; }
+.reg-textarea::placeholder { color:rgba(255,255,255,.25) !important; }
+.reg-section-badge { background:rgba(99,102,241,.12); border:1px solid rgba(99,102,241,.25); border-radius:10px; padding:8px 14px; display:flex; align-items:center; gap:8px; margin-bottom:16px; }
+.reg-info-box { background:rgba(99,102,241,.08); border:1px solid rgba(99,102,241,.15); border-radius:10px; padding:12px 14px; }
+.reg-card { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:18px; margin-bottom:14px; }
+.reg-add-btn { width:100%; padding:10px; border-radius:10px; border:1px dashed rgba(99,102,241,.35); background:rgba(99,102,241,.06); color:#6366f1; font-weight:600; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all .2s; }
+.reg-add-btn:hover { background:rgba(99,102,241,.14); border-color:rgba(99,102,241,.6); }
+.step-dot-active { background:linear-gradient(135deg,#6366f1,#8b5cf6); box-shadow:0 0 16px rgba(99,102,241,.5); }
+.step-dot-done { background:rgba(34,197,94,.25); border:2px solid rgba(34,197,94,.5) !important; }
+.step-dot-pending { background:rgba(255,255,255,.04); }
+`;
+
+interface RegistrationFormProps { userType: "employee" | "client"; }
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: currentYear - 1969 }, (_, i) => String(currentYear - i));
 
 const companyTypes = [
-  { value: "private", label: "Private" },
-  { value: "public", label: "Public" },
-  { value: "government", label: "Government" },
-  { value: "ngo", label: "NGO" },
-  { value: "startup", label: "Startup" },
-  { value: "freelance", label: "Freelance" },
+  { value: "private", label: "Private" }, { value: "public", label: "Public" },
+  { value: "government", label: "Government" }, { value: "ngo", label: "NGO" },
+  { value: "startup", label: "Startup" }, { value: "freelance", label: "Freelance" },
   { value: "other", label: "Other" },
 ];
-
 const relationships = [
-  { value: "parent", label: "Parent" },
-  { value: "spouse", label: "Spouse" },
-  { value: "sibling", label: "Sibling" },
-  { value: "friend", label: "Friend" },
+  { value: "parent", label: "Parent" }, { value: "spouse", label: "Spouse" },
+  { value: "sibling", label: "Sibling" }, { value: "friend", label: "Friend" },
   { value: "other", label: "Other" },
 ];
 
-const emptyWorkExp = (): WorkExperienceEntry => ({
-  company_name: "", company_type: "", work_description: "", start_year: "", end_year: "", is_current: false, certificate_file: null,
-});
-
-const emptyContact = (): EmergencyContactEntry => ({
-  contact_name: "", contact_phone: "", relationship: "",
-});
-
-const emptyService = (): ServiceEntry => ({
-  category_id: "", service_title: "", hourly_rate: "", minimum_budget: "", skill_ids: [],
-});
+const emptyWorkExp = (): WorkExperienceEntry => ({ company_name: "", company_type: "", work_description: "", start_year: "", end_year: "", is_current: false, certificate_file: null });
+const emptyContact = (): EmergencyContactEntry => ({ contact_name: "", contact_phone: "", relationship: "" });
+const emptyService = (): ServiceEntry => ({ category_id: "", service_title: "", hourly_rate: "", minimum_budget: "", skill_ids: [] });
 
 const stepConfig = [
-  { label: "Personal Info", icon: User, description: "Tell us about yourself" },
-  { label: "Contact Details", icon: Phone, description: "How can we reach you?" },
-  { label: "Work Experience", icon: Building2, description: "Your professional journey" },
-  { label: "Emergency Contact", icon: Heart, description: "Who should we contact?" },
-  { label: "Services", icon: Wrench, description: "What do you offer?" },
+  { label: "Personal Info",    icon: User,      description: "Tell us about yourself",    color: A1 },
+  { label: "Contact Details",  icon: Phone,     description: "How can we reach you?",      color: "#0ea5e9" },
+  { label: "Work Experience",  icon: Building2, description: "Your professional journey",  color: "#22c55e" },
+  { label: "Emergency Contact",icon: Heart,     description: "Who should we contact?",     color: "#f43f5e" },
+  { label: "Services",         icon: Wrench,    description: "What do you offer?",         color: "#f59e0b" },
 ];
+
+/* Shared input style prop */
+const inp: React.CSSProperties = { background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", color: "white", borderRadius: 10 };
 
 const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const isEmployee = userType === "employee";
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [workExperiences, setWorkExperiences] = useState<WorkExperienceEntry[]>([]);
@@ -95,723 +93,584 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationProfileSchema),
-    defaultValues: {
-      full_name: "", gender: undefined, date_of_birth: "", marital_status: undefined,
-      education_level: "", mobile_number: "", whatsapp_number: "", email: "", password: "",
-      education_background: "",
-    },
+    defaultValues: { full_name: "", gender: undefined, date_of_birth: "", marital_status: undefined, education_level: "", mobile_number: "", whatsapp_number: "", email: "", password: "", education_background: "" },
     mode: "onTouched",
   });
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ["service-categories"],
-    queryFn: async () => {
-      const { data } = await supabase.from("service_categories").select("*").order("name");
-      return data || [];
-    },
-  });
+  const { data: categories = [] } = useQuery({ queryKey: ["service-categories"], queryFn: async () => { const { data } = await supabase.from("service_categories").select("*").order("name"); return data || []; } });
+  const { data: allSkills = [] } = useQuery({ queryKey: ["service-skills"], queryFn: async () => { const { data } = await supabase.from("service_skills").select("*").order("name"); return data || []; } });
 
-  const { data: allSkills = [] } = useQuery({
-    queryKey: ["service-skills"],
-    queryFn: async () => {
-      const { data } = await supabase.from("service_skills").select("*").order("name");
-      return data || [];
-    },
-  });
-
-  const getStepType = (s: number) => {
-    if (s === 0) return "personal";
-    if (s === 1) return "contact";
-    if (s === 2) return "work";
-    if (s === 3) return "emergency";
-    if (s === 4) return "services";
-    return "personal";
-  };
+  const getStepType = (s: number) => ["personal","contact","work","emergency","services"][s] || "personal";
 
   const formFieldsForStep = (s: number): string[] => {
-    const type = getStepType(s);
-    if (type === "personal") return ["full_name", "gender", "date_of_birth", "marital_status", "education_level"];
-    if (type === "contact") return ["mobile_number", "whatsapp_number", "email", "password"];
+    if (s === 0) return ["full_name","gender","date_of_birth","marital_status","education_level"];
+    if (s === 1) return ["mobile_number","whatsapp_number","email","password"];
     return [];
   };
 
   const validateCurrentStep = async (): Promise<boolean> => {
-    const type = getStepType(step);
-    setArrayErrors([]);
+    const type = getStepType(step); setArrayErrors([]);
     const fields = formFieldsForStep(step);
-    if (fields.length > 0) {
-      const valid = await form.trigger(fields as any);
-      if (!valid) return false;
-    }
+    if (fields.length > 0) { const valid = await form.trigger(fields as any); if (!valid) return false; }
     if (type === "contact") {
       const values = form.getValues();
       try {
-        const { data: dupes, error } = await supabase.rpc("check_registration_duplicates", {
-          p_email: values.email, p_full_name: values.full_name.toUpperCase(),
-          p_mobile: values.mobile_number, p_whatsapp: values.whatsapp_number,
-        });
+        const { data: dupes, error } = await supabase.rpc("check_registration_duplicates", { p_email: values.email, p_full_name: values.full_name.toUpperCase(), p_mobile: values.mobile_number, p_whatsapp: values.whatsapp_number });
         if (error) throw error;
         if (dupes && typeof dupes === "object" && Object.keys(dupes).length > 0) {
-          const msgs = Object.values(dupes as Record<string, string>);
-          msgs.forEach((m) => toast({ title: "Duplicate found", description: m, variant: "destructive" }));
+          Object.values(dupes as Record<string, string>).forEach(m => toast({ title: "Duplicate found", description: m, variant: "destructive" }));
           return false;
         }
-      } catch (err: any) {
-        toast({ title: "Validation error", description: err.message, variant: "destructive" });
-        return false;
-      }
+      } catch (err: any) { toast({ title: "Validation error", description: err.message, variant: "destructive" }); return false; }
     }
     if (type === "work") {
       const errors: string[] = [];
-      workExperiences.forEach((w, i) => {
-        const err = validateWorkExperience(w);
-        if (err) errors.push(`Experience ${i + 1}: ${err}`);
-      });
-      if (errors.length > 0) { setArrayErrors(errors); return false; }
+      workExperiences.forEach((w, i) => { const e = validateWorkExperience(w); if (e) errors.push(`Experience ${i+1}: ${e}`); });
+      if (errors.length) { setArrayErrors(errors); return false; }
     }
     if (type === "emergency") {
-      if (emergencyContacts.length === 0) { setArrayErrors(["At least one emergency contact is required"]); return false; }
+      if (!emergencyContacts.length) { setArrayErrors(["At least one emergency contact is required"]); return false; }
       const errors: string[] = [];
-      emergencyContacts.forEach((c, i) => {
-        const err = validateEmergencyContact(c);
-        if (err) errors.push(`Contact ${i + 1}: ${err}`);
-      });
-      if (errors.length > 0) { setArrayErrors(errors); return false; }
+      emergencyContacts.forEach((c, i) => { const e = validateEmergencyContact(c); if (e) errors.push(`Contact ${i+1}: ${e}`); });
+      if (errors.length) { setArrayErrors(errors); return false; }
     }
-    if (type === "services") {
-      if (categories.length > 0 && services.length > 0) {
-        const errors: string[] = [];
-        services.forEach((s, i) => {
-          const err = validateService(s);
-          if (err) errors.push(`Service ${i + 1}: ${err}`);
-        });
-        if (errors.length > 0) { setArrayErrors(errors); return false; }
-      }
+    if (type === "services" && categories.length > 0 && services.length > 0) {
+      const errors: string[] = [];
+      services.forEach((s, i) => { const e = validateService(s); if (e) errors.push(`Service ${i+1}: ${e}`); });
+      if (errors.length) { setArrayErrors(errors); return false; }
     }
     return true;
   };
 
   const handleNext = async () => {
     const valid = await validateCurrentStep();
-    if (valid) {
-      setCompletedSteps((prev) => new Set([...prev, step]));
-      setStep((s) => Math.min(s + 1, stepConfig.length - 1));
-    }
+    if (valid) { setCompletedSteps(p => new Set([...p, step])); setStep(s => Math.min(s+1, stepConfig.length-1)); }
   };
-
-  const handleBack = () => { setStep((s) => Math.max(s - 1, 0)); setArrayErrors([]); };
+  const handleBack = () => { setStep(s => Math.max(s-1, 0)); setArrayErrors([]); };
 
   const onSubmit = async (data: RegistrationFormData) => {
-    const lastStepValid = await validateCurrentStep();
-    if (!lastStepValid) return;
+    const lastValid = await validateCurrentStep(); if (!lastValid) return;
     setSubmitting(true);
     try {
       let geoData: any = {};
-      try {
-        const geoRes = await fetch("https://ipapi.co/json/");
-        if (geoRes.ok) {
-          const g = await geoRes.json();
-          geoData = { ip: g.ip, city: g.city, region: g.region, country: g.country_name, lat: g.latitude, lon: g.longitude };
-        }
-      } catch { /* non-critical */ }
-
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email, password: data.password,
-        options: { emailRedirectTo: window.location.origin },
-      });
+      try { const r = await fetch("https://ipapi.co/json/"); if (r.ok) { const g = await r.json(); geoData = { ip: g.ip, city: g.city, region: g.region, country: g.country_name, lat: g.latitude, lon: g.longitude }; } } catch {}
+      const { data: authData, error: authError } = await supabase.auth.signUp({ email: data.email, password: data.password, options: { emailRedirectTo: window.location.origin } });
       if (authError) throw authError;
       if (!authData.user) throw new Error("Registration failed");
-
       const userId = authData.user.id;
-      const { error: profileError } = await supabase.from("profiles").insert([{
-        user_id: userId, user_type: userType, full_name: [data.full_name.toUpperCase()],
-        user_code: [], email: data.email, gender: data.gender, date_of_birth: data.date_of_birth,
-        marital_status: data.marital_status, education_level: data.education_level,
-        mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number,
-        education_background: data.education_background || null, referred_by: referralCode.trim() || null,
-      } as any]);
+      const { error: profileError } = await supabase.from("profiles").insert([{ user_id: userId, user_type: userType, full_name: [data.full_name.toUpperCase()], user_code: [], email: data.email, gender: data.gender, date_of_birth: data.date_of_birth, marital_status: data.marital_status, education_level: data.education_level, mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number, education_background: data.education_background || null, referred_by: referralCode.trim() || null } as any]);
       if (profileError) throw profileError;
-
       const profileId = userId;
-      await supabase.from("registration_metadata" as any).insert([{
-        profile_id: profileId, ip_address: geoData.ip || null, city: geoData.city || null,
-        region: geoData.region || null, country: geoData.country || null,
-        latitude: geoData.lat || null, longitude: geoData.lon || null,
-      }] as any);
-
+      await supabase.from("registration_metadata" as any).insert([{ profile_id: profileId, ip_address: geoData.ip||null, city: geoData.city||null, region: geoData.region||null, country: geoData.country||null, latitude: geoData.lat||null, longitude: geoData.lon||null }] as any);
       for (const w of workExperiences) {
-        let certPath: string | null = null;
-        let certName: string | null = null;
-        if (w.certificate_file) {
-          const ext = w.certificate_file.name.split(".").pop();
-          const path = `${profileId}/${crypto.randomUUID()}.${ext}`;
-          const { error: uploadError } = await supabase.storage.from("work-certificates").upload(path, w.certificate_file);
-          if (!uploadError) { certPath = path; certName = w.certificate_file.name; }
-        }
-        await supabase.from("work_experiences").insert({
-          profile_id: profileId, company_name: w.company_name, company_type: w.company_type,
-          work_description: w.work_description || null, start_year: Number(w.start_year),
-          end_year: w.is_current ? null : Number(w.end_year), is_current: w.is_current,
-          certificate_path: certPath, certificate_name: certName,
-        });
+        let certPath: string | null = null, certName: string | null = null;
+        if (w.certificate_file) { const ext = w.certificate_file.name.split(".").pop(); const path = `${profileId}/${crypto.randomUUID()}.${ext}`; const { error: ue } = await supabase.storage.from("work-certificates").upload(path, w.certificate_file); if (!ue) { certPath = path; certName = w.certificate_file.name; } }
+        await supabase.from("work_experiences").insert({ profile_id: profileId, company_name: w.company_name, company_type: w.company_type, work_description: w.work_description||null, start_year: Number(w.start_year), end_year: w.is_current ? null : Number(w.end_year), is_current: w.is_current, certificate_path: certPath, certificate_name: certName });
       }
-
-      for (const c of emergencyContacts) {
-        await supabase.from("employee_emergency_contacts").insert({
-          profile_id: profileId, contact_name: c.contact_name,
-          contact_phone: c.contact_phone, relationship: c.relationship,
-        });
-      }
-
+      for (const c of emergencyContacts) await supabase.from("employee_emergency_contacts").insert({ profile_id: profileId, contact_name: c.contact_name, contact_phone: c.contact_phone, relationship: c.relationship });
       for (const s of services) {
         if (!s.category_id || !s.service_title) continue;
-        const { data: svcData } = await supabase.from("employee_services").insert({
-          profile_id: profileId, category_id: s.category_id, service_title: s.service_title,
-          hourly_rate: Number(s.hourly_rate) || 0, minimum_budget: Number(s.minimum_budget) || 0,
-        }).select("id").single();
-        if (svcData && s.skill_ids.length > 0) {
-          const skillInserts = s.skill_ids.map((skillId) => ({ employee_service_id: svcData.id, skill_id: skillId }));
-          await supabase.from("employee_skill_selections").insert(skillInserts);
-        }
+        const { data: svcData } = await supabase.from("employee_services").insert({ profile_id: profileId, category_id: s.category_id, service_title: s.service_title, hourly_rate: Number(s.hourly_rate)||0, minimum_budget: Number(s.minimum_budget)||0 }).select("id").single();
+        if (svcData && s.skill_ids.length > 0) await supabase.from("employee_skill_selections").insert(s.skill_ids.map(skillId => ({ employee_service_id: svcData.id, skill_id: skillId })));
       }
-
       toast({ title: "Registration successful!", description: "Your account is pending admin approval." });
       navigate("/verification-pending");
     } catch (error: any) {
       toast({ title: "Registration failed", description: error.message, variant: "destructive" });
-    } finally {
-      setSubmitting(false);
-    }
+    } finally { setSubmitting(false); }
   };
 
-  const updateWorkExp = (index: number, field: keyof WorkExperienceEntry, value: any) => {
-    setWorkExperiences((prev) => prev.map((w, i) => i === index ? { ...w, [field]: value } : w));
-  };
-  const updateContact = (index: number, field: keyof EmergencyContactEntry, value: string) => {
-    setEmergencyContacts((prev) => prev.map((c, i) => i === index ? { ...c, [field]: value } : c));
-  };
-  const updateService = (index: number, field: keyof ServiceEntry, value: any) => {
-    setServices((prev) => prev.map((s, i) => i === index ? { ...s, [field]: value } : s));
-  };
+  const updateWorkExp = (i: number, f: keyof WorkExperienceEntry, v: any) => setWorkExperiences(p => p.map((w, j) => j === i ? { ...w, [f]: v } : w));
+  const updateContact = (i: number, f: keyof EmergencyContactEntry, v: string) => setEmergencyContacts(p => p.map((c, j) => j === i ? { ...c, [f]: v } : c));
+  const updateService = (i: number, f: keyof ServiceEntry, v: any) => setServices(p => p.map((s, j) => j === i ? { ...s, [f]: v } : s));
 
   const stepType = getStepType(step);
   const progressPercent = ((step + 1) / stepConfig.length) * 100;
   const StepIcon = stepConfig[step].icon;
+  const stepColor = stepConfig[step].color;
 
   return (
-    <div className="flex min-h-screen flex-col bg-muted/30">
-      {/* Hero Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-primary/70 px-4 pb-8 pt-6">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/20" />
-          <div className="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-white/10" />
-        </div>
-        <div className="relative mx-auto max-w-lg">
-          {/* Back Button */}
-          <Link to="/" className="inline-flex">
-            <Button variant="ghost" size="icon" className="mb-3 h-9 w-9 text-primary-foreground/80 hover:bg-white/10 hover:text-primary-foreground">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
+    <div style={{ background: "#070714", color: "white", minHeight: "100vh", fontFamily: "Inter,system-ui,sans-serif", overflowX: "hidden" }}>
+      <style>{REG_CSS}</style>
 
-          <div className="flex items-start gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
-              <Briefcase className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <div className="flex-1">
-              <h1 className="text-xl font-bold text-primary-foreground">
-                {isEmployee ? "Employee" : "Client"} Registration
-              </h1>
-              <p className="mt-0.5 text-sm text-primary-foreground/70">
-                Join our freelancing platform today
-              </p>
-            </div>
-          </div>
-
-          {/* Step Indicator */}
-          <div className="mt-5 flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-              <StepIcon className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-primary-foreground">{stepConfig[step].label}</span>
-                <span className="text-xs font-medium text-primary-foreground/60">Step {step + 1}/{stepConfig.length}</span>
-              </div>
-              <p className="text-xs text-primary-foreground/60">{stepConfig[step].description}</p>
-            </div>
-          </div>
-
-          {/* Step Progress Dots */}
-          <div className="mt-4 flex items-center gap-2">
-            {stepConfig.map((_, i) => (
-              <div key={i} className="flex flex-1 flex-col items-center gap-1">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all duration-300 ${
-                  i < step
-                    ? "border-white/40 bg-white/30"
-                    : i === step
-                      ? "border-white bg-white/20 ring-2 ring-white/30 ring-offset-1 ring-offset-transparent"
-                      : "border-white/20 bg-white/5"
-                }`}>
-                  {completedSteps.has(i) ? (
-                    <CheckCircle2 className="h-4 w-4 text-primary-foreground" />
-                  ) : (
-                    <span className={`text-xs font-bold ${i <= step ? "text-primary-foreground" : "text-primary-foreground/40"}`}>
-                      {i + 1}
-                    </span>
-                  )}
-                </div>
-                <span className={`text-[10px] font-medium leading-tight text-center ${i <= step ? "text-primary-foreground/80" : "text-primary-foreground/30"}`}>
-                  {stepConfig[i].label.split(" ")[0]}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Progress Bar */}
-          <div className="mt-3">
-            <Progress value={progressPercent} className="h-1.5 bg-white/20 [&>div]:bg-white/80" />
-          </div>
-        </div>
+      {/* Ambient orbs */}
+      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }}>
+        <div style={{ position: "absolute", top: "-10%", left: "-10%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.15) 0%,transparent 70%)", animation: "orbGlow 6s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", bottom: 0, right: "-5%", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,.12) 0%,transparent 70%)", animation: "orbGlow 8s ease-in-out infinite 2s" }} />
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px)", backgroundSize: "60px 60px" }} />
       </div>
 
-      {/* Form Content */}
-      <div className="mx-auto w-full max-w-lg px-4 -mt-2">
+      {/* Navbar */}
+      <nav style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 24px", borderBottom: "1px solid rgba(255,255,255,.06)", backdropFilter: "blur(20px)", background: "rgba(7,7,20,.85)" }}>
+        <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+          <div style={{ width: 32, height: 32, borderRadius: 9, background: `linear-gradient(135deg,${A1},${A2})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 16px rgba(99,102,241,.5)" }}>
+            <Briefcase size={16} color="white" />
+          </div>
+          <span style={{ fontWeight: 800, fontSize: 16, color: "white" }}>Freelancer<span style={{ color: A1 }}>.</span>in</span>
+        </Link>
+        <Link to="/login" style={{ color: "rgba(255,255,255,.5)", fontSize: 13, textDecoration: "none", fontWeight: 600, padding: "7px 18px", borderRadius: 9, border: "1px solid rgba(255,255,255,.1)", background: "rgba(255,255,255,.04)" }}
+          onMouseEnter={e => (e.currentTarget.style.color = "white")}
+          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,.5)")}>
+          Sign In
+        </Link>
+      </nav>
+
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 580, margin: "0 auto", padding: "32px 20px 80px" }}>
+
+        {/* Hero header */}
+        <div style={{ textAlign: "center", marginBottom: 32, animation: "fadeInUp .5s ease both" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 14px", borderRadius: 20, background: `${stepColor}18`, border: `1px solid ${stepColor}35`, marginBottom: 16 }}>
+            <StepIcon size={13} color={stepColor} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: stepColor, letterSpacing: 1.5, textTransform: "uppercase" }}>
+              {isEmployee ? "Freelancer" : "Employer"} Registration
+            </span>
+          </div>
+          <h1 style={{ fontSize: 28, fontWeight: 900, color: "white", marginBottom: 6, letterSpacing: "-0.5px" }}>
+            {stepConfig[step].label}
+          </h1>
+          <p style={{ color: "rgba(255,255,255,.45)", fontSize: 14 }}>{stepConfig[step].description}</p>
+        </div>
+
+        {/* Step progress */}
+        <div style={{ marginBottom: 28, animation: "fadeInUp .5s ease both .05s" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            {stepConfig.map((sc, i) => {
+              const Icon = sc.icon;
+              const isDone = completedSteps.has(i);
+              const isActive = i === step;
+              return (
+                <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, flex: 1 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid ${isActive ? stepColor : isDone ? "#22c55e" : "rgba(255,255,255,.1)"}`, background: isActive ? `${stepColor}22` : isDone ? "rgba(34,197,94,.12)" : "rgba(255,255,255,.03)", boxShadow: isActive ? `0 0 16px ${stepColor}44` : "none", transition: "all .3s" }}>
+                    {isDone ? <Check size={14} color="#22c55e" /> : <Icon size={14} color={isActive ? stepColor : "rgba(255,255,255,.3)"} />}
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 500, color: isActive ? stepColor : isDone ? "#22c55e" : "rgba(255,255,255,.3)", textAlign: "center", lineHeight: 1.2 }}>
+                    {sc.label.split(" ")[0]}
+                  </span>
+                  {i < stepConfig.length - 1 && (
+                    <div style={{ position: "absolute", height: 2, background: isDone ? "rgba(34,197,94,.4)" : "rgba(255,255,255,.08)" }} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {/* Progress bar */}
+          <div style={{ height: 4, borderRadius: 4, background: "rgba(255,255,255,.07)", overflow: "hidden" }}>
+            <div style={{ height: "100%", borderRadius: 4, background: `linear-gradient(90deg,${A1},${A2})`, width: `${progressPercent}%`, transition: "width .4s ease", boxShadow: `0 0 10px ${A1}66` }} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,.3)" }}>Step {step + 1} of {stepConfig.length}</span>
+            <span style={{ fontSize: 11, color: A1, fontWeight: 600 }}>{Math.round(progressPercent)}% complete</span>
+          </div>
+        </div>
+
         {/* Error messages */}
         {arrayErrors.length > 0 && (
-          <div className="mb-4 rounded-xl border border-destructive/20 bg-destructive/5 p-3 shadow-sm">
+          <div style={{ marginBottom: 16, padding: "12px 16px", borderRadius: 12, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.2)" }}>
             {arrayErrors.map((e, i) => (
-              <p key={i} className="flex items-center gap-2 text-sm text-destructive">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" />
-                {e}
+              <p key={i} style={{ color: "#ef4444", fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444", flexShrink: 0 }} />{e}
               </p>
             ))}
           </div>
         )}
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <Card className="border-0 shadow-lg">
-              <CardContent className="space-y-5 p-5">
+        {/* Main form glass card */}
+        <div style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 20, padding: "28px 24px", backdropFilter: "blur(20px)", boxShadow: "0 24px 60px rgba(0,0,0,.35)", animation: "fadeInUp .5s ease both .1s" }}>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
 
-                {/* STEP: Personal Info */}
-                {stepType === "personal" && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-2">
-                      <User className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium text-primary">Personal Information</span>
-                    </div>
-
-                    <FormField control={form.control} name="full_name" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-1.5 text-sm">
-                          <User className="h-3.5 w-3.5 text-muted-foreground" /> Full Name <span className="text-destructive">*</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter your full name"
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                            className="uppercase border-muted bg-muted/30 focus:bg-background"
-                          />
-                        </FormControl>
-                        <FormDescription className="text-xs">Name will be stored in uppercase</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <FormField control={form.control} name="gender" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm">Gender <span className="text-destructive">*</span></FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl><SelectTrigger className="border-muted bg-muted/30 focus:bg-background"><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
-                            <SelectContent>
-                              <SelectItem value="male">Male</SelectItem>
-                              <SelectItem value="female">Female</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-
-                      <FormField control={form.control} name="date_of_birth" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-1 text-sm">
-                            <Calendar className="h-3.5 w-3.5 text-muted-foreground" /> DOB <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl><Input type="date" {...field} className="border-muted bg-muted/30 focus:bg-background" /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <FormField control={form.control} name="marital_status" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm">Marital Status <span className="text-destructive">*</span></FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl><SelectTrigger className="border-muted bg-muted/30 focus:bg-background"><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
-                            <SelectContent>
-                              <SelectItem value="single">Single</SelectItem>
-                              <SelectItem value="married">Married</SelectItem>
-                              <SelectItem value="divorced">Divorced</SelectItem>
-                              <SelectItem value="widowed">Widowed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-
-                      <FormField control={form.control} name="education_level" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-1 text-sm">
-                            <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" /> Education <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl><SelectTrigger className="border-muted bg-muted/30 focus:bg-background"><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
-                            <SelectContent>
-                              <SelectItem value="high_school">High School</SelectItem>
-                              <SelectItem value="diploma">Diploma</SelectItem>
-                              <SelectItem value="bachelors">Bachelor's</SelectItem>
-                              <SelectItem value="masters">Master's</SelectItem>
-                              <SelectItem value="phd">PhD</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                    </div>
+              {/* ── STEP 0: Personal Info ── */}
+              {stepType === "personal" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                  <div className="reg-section-badge">
+                    <User size={15} color={A1} />
+                    <span style={{ color: A1, fontSize: 13, fontWeight: 600 }}>Personal Information</span>
                   </div>
-                )}
 
-                {/* STEP: Contact Details */}
-                {stepType === "contact" && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-2">
-                      <Phone className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium text-primary">Contact Details</span>
-                    </div>
+                  <FormField control={form.control} name="full_name" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600 }}>
+                        Full Name <span style={{ color: "#ef4444" }}>*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your full name" {...field} onChange={e => field.onChange(e.target.value.toUpperCase())} className="reg-input" style={inp} />
+                      </FormControl>
+                      <FormDescription style={{ color: "rgba(255,255,255,.3)", fontSize: 11 }}>Name will be stored in uppercase</FormDescription>
+                      <FormMessage className="text-red-400 text-xs" />
+                    </FormItem>
+                  )} />
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <FormField control={form.control} name="mobile_number" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-1 text-sm">
-                            <Phone className="h-3.5 w-3.5 text-muted-foreground" /> Mobile <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl><Input placeholder="10-digit" maxLength={10} {...field} className="border-muted bg-muted/30 focus:bg-background" /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="whatsapp_number" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm">WhatsApp <span className="text-destructive">*</span></FormLabel>
-                          <FormControl><Input placeholder="10-digit" maxLength={10} {...field} className="border-muted bg-muted/30 focus:bg-background" /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                    </div>
-
-                    <FormField control={form.control} name="email" render={({ field }) => (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                    <FormField control={form.control} name="gender" render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="flex items-center gap-1 text-sm">
-                          <Mail className="h-3.5 w-3.5 text-muted-foreground" /> Email <span className="text-destructive">*</span>
-                        </FormLabel>
-                        <FormControl><Input type="email" placeholder="you@example.com" {...field} className="border-muted bg-muted/30 focus:bg-background" /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-
-                    <FormField control={form.control} name="password" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-1 text-sm">
-                          <Lock className="h-3.5 w-3.5 text-muted-foreground" /> Password <span className="text-destructive">*</span>
-                        </FormLabel>
-                        <FormControl><Input type="password" placeholder="Min 8 characters" {...field} className="border-muted bg-muted/30 focus:bg-background" /></FormControl>
-                        <FormDescription className="text-xs flex items-center gap-1">
-                          <Shield className="h-3 w-3" /> Minimum 8 characters for security
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-
-                    <div className="space-y-2 rounded-lg border border-dashed border-muted-foreground/20 bg-muted/20 p-3">
-                      <Label className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Share2 className="h-3.5 w-3.5" /> Referral Code (optional)
-                      </Label>
-                      <Input
-                        placeholder="Enter referral code"
-                        value={referralCode}
-                        onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                        className="uppercase border-muted bg-background"
-                      />
-                      <p className="text-xs text-muted-foreground">Got a referral code from a friend? Enter it to earn bonus coins!</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* STEP: Work Experience */}
-                {stepType === "work" && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-2">
-                      <Building2 className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium text-primary">Professional Background</span>
-                    </div>
-
-                    <div className="rounded-lg border border-primary/10 bg-primary/5 p-3">
-                      <p className="flex items-start gap-2 text-xs text-muted-foreground">
-                        <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                        This step is optional — you can skip it if you have no prior experience. Add details to strengthen your profile!
-                      </p>
-                    </div>
-
-                    <FormField control={form.control} name="education_background" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-1 text-sm">
-                          <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" /> Education Background
-                        </FormLabel>
-                        <FormControl><Textarea placeholder="Institutions, degrees, certifications..." rows={2} {...field} className="border-muted bg-muted/30 focus:bg-background" /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-
-                    {workExperiences.map((w, i) => (
-                      <div key={i} className="space-y-3 rounded-xl border bg-card p-4 shadow-sm">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-                              <Building2 className="h-3.5 w-3.5 text-primary" />
-                            </div>
-                            <Label className="text-sm font-semibold">Experience {i + 1}</Label>
-                          </div>
-                          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setWorkExperiences((prev) => prev.filter((_, j) => j !== i))}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <Input placeholder="Company Name *" value={w.company_name} onChange={(e) => updateWorkExp(i, "company_name", e.target.value)} className="border-muted bg-muted/30" />
-                        <Select value={w.company_type} onValueChange={(v) => updateWorkExp(i, "company_type", v)}>
-                          <SelectTrigger className="border-muted bg-muted/30"><SelectValue placeholder="Company Type *" /></SelectTrigger>
+                        <FormLabel style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600 }}>Gender <span style={{ color: "#ef4444" }}>*</span></FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger style={inp}><SelectValue placeholder="Select" /></SelectTrigger>
+                          </FormControl>
                           <SelectContent>
-                            {companyTypes.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                            <SelectItem value="male">Male</SelectItem>
+                            <SelectItem value="female">Female</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
                           </SelectContent>
                         </Select>
-                        <Textarea placeholder="Work description (optional)" rows={2} value={w.work_description} onChange={(e) => updateWorkExp(i, "work_description", e.target.value)} className="border-muted bg-muted/30" />
-                        <div className="grid grid-cols-2 gap-2">
-                          <Select value={w.start_year} onValueChange={(v) => updateWorkExp(i, "start_year", v)}>
-                            <SelectTrigger className="border-muted bg-muted/30"><SelectValue placeholder="Start Year *" /></SelectTrigger>
-                            <SelectContent>{years.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
+                        <FormMessage className="text-red-400 text-xs" />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="date_of_birth" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600 }}>Date of Birth <span style={{ color: "#ef4444" }}>*</span></FormLabel>
+                        <FormControl><Input type="date" {...field} className="reg-input" style={inp} /></FormControl>
+                        <FormMessage className="text-red-400 text-xs" />
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                    <FormField control={form.control} name="marital_status" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600 }}>Marital Status <span style={{ color: "#ef4444" }}>*</span></FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl><SelectTrigger style={inp}><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            <SelectItem value="single">Single</SelectItem>
+                            <SelectItem value="married">Married</SelectItem>
+                            <SelectItem value="divorced">Divorced</SelectItem>
+                            <SelectItem value="widowed">Widowed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage className="text-red-400 text-xs" />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="education_level" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600 }}>Education <span style={{ color: "#ef4444" }}>*</span></FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl><SelectTrigger style={inp}><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            <SelectItem value="high_school">High School</SelectItem>
+                            <SelectItem value="diploma">Diploma</SelectItem>
+                            <SelectItem value="bachelors">Bachelor's</SelectItem>
+                            <SelectItem value="masters">Master's</SelectItem>
+                            <SelectItem value="phd">PhD</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage className="text-red-400 text-xs" />
+                      </FormItem>
+                    )} />
+                  </div>
+                </div>
+              )}
+
+              {/* ── STEP 1: Contact Details ── */}
+              {stepType === "contact" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                  <div className="reg-section-badge">
+                    <Phone size={15} color="#0ea5e9" />
+                    <span style={{ color: "#0ea5e9", fontSize: 13, fontWeight: 600 }}>Contact Details</span>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                    <FormField control={form.control} name="mobile_number" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600 }}>Mobile <span style={{ color: "#ef4444" }}>*</span></FormLabel>
+                        <FormControl><Input placeholder="10-digit" maxLength={10} {...field} className="reg-input" style={inp} /></FormControl>
+                        <FormMessage className="text-red-400 text-xs" />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="whatsapp_number" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600 }}>WhatsApp <span style={{ color: "#ef4444" }}>*</span></FormLabel>
+                        <FormControl><Input placeholder="10-digit" maxLength={10} {...field} className="reg-input" style={inp} /></FormControl>
+                        <FormMessage className="text-red-400 text-xs" />
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  <FormField control={form.control} name="email" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600 }}>Email <span style={{ color: "#ef4444" }}>*</span></FormLabel>
+                      <FormControl>
+                        <div style={{ position: "relative" }}>
+                          <Mail size={14} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,.3)" }} />
+                          <Input type="email" placeholder="you@example.com" {...field} className="reg-input" style={{ ...inp, paddingLeft: 38 }} />
+                        </div>
+                      </FormControl>
+                      <FormMessage className="text-red-400 text-xs" />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="password" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600 }}>Password <span style={{ color: "#ef4444" }}>*</span></FormLabel>
+                      <FormControl>
+                        <div style={{ position: "relative" }}>
+                          <Lock size={14} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,.3)" }} />
+                          <Input type="password" placeholder="Min 8 characters" {...field} className="reg-input" style={{ ...inp, paddingLeft: 38 }} />
+                        </div>
+                      </FormControl>
+                      <FormDescription style={{ color: "rgba(255,255,255,.3)", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
+                        <Shield size={11} /> Minimum 8 characters
+                      </FormDescription>
+                      <FormMessage className="text-red-400 text-xs" />
+                    </FormItem>
+                  )} />
+
+                  <div style={{ padding: "14px", borderRadius: 12, border: "1px dashed rgba(99,102,241,.3)", background: "rgba(99,102,241,.06)" }}>
+                    <Label style={{ color: "rgba(255,255,255,.5)", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                      <Share2 size={12} /> Referral Code (optional)
+                    </Label>
+                    <Input placeholder="Enter referral code" value={referralCode} onChange={e => setReferralCode(e.target.value.toUpperCase())} className="reg-input" style={{ ...inp, textTransform: "uppercase" }} />
+                    <p style={{ color: "rgba(255,255,255,.3)", fontSize: 11, marginTop: 6 }}>Got a referral code? Enter it to earn bonus coins!</p>
+                  </div>
+                </div>
+              )}
+
+              {/* ── STEP 2: Work Experience ── */}
+              {stepType === "work" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div className="reg-section-badge">
+                    <Building2 size={15} color="#22c55e" />
+                    <span style={{ color: "#22c55e", fontSize: 13, fontWeight: 600 }}>Professional Background</span>
+                  </div>
+                  <div className="reg-info-box" style={{ display: "flex", gap: 8 }}>
+                    <Sparkles size={14} color={A1} style={{ flexShrink: 0, marginTop: 2 }} />
+                    <p style={{ color: "rgba(255,255,255,.45)", fontSize: 12, lineHeight: 1.6 }}>
+                      This step is optional — skip if you have no prior experience. Details strengthen your profile!
+                    </p>
+                  </div>
+
+                  <FormField control={form.control} name="education_background" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600 }}>Education Background</FormLabel>
+                      <FormControl><Textarea placeholder="Institutions, degrees, certifications…" rows={2} {...field} className="reg-input" style={{ ...inp, padding: "10px 12px", minHeight: 72, resize: "vertical" }} /></FormControl>
+                      <FormMessage className="text-red-400 text-xs" />
+                    </FormItem>
+                  )} />
+
+                  {workExperiences.map((w, i) => (
+                    <div key={i} className="reg-card">
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(34,197,94,.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <Building2 size={13} color="#22c55e" />
+                          </div>
+                          <span style={{ color: "white", fontWeight: 600, fontSize: 13 }}>Experience {i + 1}</span>
+                        </div>
+                        <button type="button" onClick={() => setWorkExperiences(p => p.filter((_,j) => j!==i))} style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.2)", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        <Input placeholder="Company Name *" value={w.company_name} onChange={e => updateWorkExp(i, "company_name", e.target.value)} className="reg-input" style={inp} />
+                        <Select value={w.company_type} onValueChange={v => updateWorkExp(i, "company_type", v)}>
+                          <SelectTrigger style={inp}><SelectValue placeholder="Company Type *" /></SelectTrigger>
+                          <SelectContent>{companyTypes.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                        </Select>
+                        <Textarea placeholder="Work description (optional)" rows={2} value={w.work_description} onChange={e => updateWorkExp(i, "work_description", e.target.value)} className="reg-input" style={{ ...inp, padding: "10px 12px", minHeight: 64, resize: "vertical" }} />
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                          <Select value={w.start_year} onValueChange={v => updateWorkExp(i, "start_year", v)}>
+                            <SelectTrigger style={inp}><SelectValue placeholder="Start Year *" /></SelectTrigger>
+                            <SelectContent>{years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
                           </Select>
                           {!w.is_current && (
-                            <Select value={w.end_year} onValueChange={(v) => updateWorkExp(i, "end_year", v)}>
-                              <SelectTrigger className="border-muted bg-muted/30"><SelectValue placeholder="End Year *" /></SelectTrigger>
-                              <SelectContent>{years.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
+                            <Select value={w.end_year} onValueChange={v => updateWorkExp(i, "end_year", v)}>
+                              <SelectTrigger style={inp}><SelectValue placeholder="End Year *" /></SelectTrigger>
+                              <SelectContent>{years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
                             </Select>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox checked={w.is_current} onCheckedChange={(c) => updateWorkExp(i, "is_current", !!c)} id={`current-${i}`} />
-                          <Label htmlFor={`current-${i}`} className="text-sm">Currently working here</Label>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <Checkbox checked={w.is_current} onCheckedChange={c => updateWorkExp(i, "is_current", !!c)} id={`current-${i}`} />
+                          <label htmlFor={`current-${i}`} style={{ color: "rgba(255,255,255,.6)", fontSize: 12, cursor: "pointer" }}>Currently working here</label>
                         </div>
-                        <div className="rounded-lg border border-dashed border-muted-foreground/20 p-3">
-                          <Label className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                            <Upload className="h-3.5 w-3.5" /> Certificate (optional)
-                          </Label>
-                          <Input type="file" accept=".pdf,.jpg,.jpeg,.png" className="mt-1.5 border-0 p-0 text-sm" onChange={(e) => updateWorkExp(i, "certificate_file", e.target.files?.[0] || null)} />
+                        <div style={{ padding: "12px", borderRadius: 10, border: "1px dashed rgba(255,255,255,.1)", background: "rgba(255,255,255,.03)" }}>
+                          <label style={{ color: "rgba(255,255,255,.4)", fontSize: 12, display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                            <Upload size={12} /> Certificate (optional)
+                          </label>
+                          <Input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ color: "rgba(255,255,255,.6)", fontSize: 12, border: "none", background: "none", padding: 0 }} onChange={e => updateWorkExp(i, "certificate_file", e.target.files?.[0] || null)} />
                         </div>
                       </div>
-                    ))}
+                    </div>
+                  ))}
+                  <button type="button" className="reg-add-btn" onClick={() => setWorkExperiences(p => [...p, emptyWorkExp()])}>
+                    <Plus size={14} /> Add Work Experience
+                  </button>
+                </div>
+              )}
 
-                    <Button type="button" variant="outline" size="sm" className="w-full gap-1.5 border-dashed" onClick={() => setWorkExperiences((prev) => [...prev, emptyWorkExp()])}>
-                      <Plus className="h-4 w-4" /> Add Work Experience
-                    </Button>
+              {/* ── STEP 3: Emergency Contact ── */}
+              {stepType === "emergency" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div className="reg-section-badge">
+                    <Heart size={15} color="#f43f5e" />
+                    <span style={{ color: "#f43f5e", fontSize: 13, fontWeight: 600 }}>Emergency Contacts</span>
                   </div>
-                )}
+                  <div style={{ ...inp, padding: "12px 14px", borderRadius: 10, display: "flex", gap: 8, background: "rgba(245,158,11,.08)", border: "1px solid rgba(245,158,11,.18)" }}>
+                    <Shield size={14} color="#f59e0b" style={{ flexShrink: 0, marginTop: 1 }} />
+                    <p style={{ color: "rgba(255,255,255,.45)", fontSize: 12, lineHeight: 1.6 }}>
+                      Add at least one emergency contact. This info is kept private and used only in critical situations.
+                    </p>
+                  </div>
 
-                {/* STEP: Emergency Contact */}
-                {stepType === "emergency" && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-2">
-                      <Heart className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium text-primary">Emergency Contacts</span>
-                    </div>
-
-                    <div className="rounded-lg border border-warning/20 bg-warning/5 p-3">
-                      <p className="flex items-start gap-2 text-xs text-muted-foreground">
-                        <Shield className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
-                        Add at least one emergency contact. This information will be kept private and only used in critical situations.
-                      </p>
-                    </div>
-
-                    {emergencyContacts.map((c, i) => (
-                      <div key={i} className="space-y-3 rounded-xl border bg-card p-4 shadow-sm">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/10">
-                              <Heart className="h-3.5 w-3.5 text-accent" />
-                            </div>
-                            <Label className="text-sm font-semibold">Contact {i + 1}</Label>
+                  {emergencyContacts.map((c, i) => (
+                    <div key={i} className="reg-card">
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(244,63,94,.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <Heart size={13} color="#f43f5e" />
                           </div>
-                          {emergencyContacts.length > 1 && (
-                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setEmergencyContacts((prev) => prev.filter((_, j) => j !== i))}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
+                          <span style={{ color: "white", fontWeight: 600, fontSize: 13 }}>Contact {i + 1}</span>
                         </div>
-                        <Input placeholder="Contact Name *" value={c.contact_name} onChange={(e) => updateContact(i, "contact_name", e.target.value)} className="border-muted bg-muted/30" />
-                        <Input placeholder="10-digit Phone Number *" maxLength={10} value={c.contact_phone} onChange={(e) => updateContact(i, "contact_phone", e.target.value)} className="border-muted bg-muted/30" />
-                        <Select value={c.relationship} onValueChange={(v) => updateContact(i, "relationship", v)}>
-                          <SelectTrigger className="border-muted bg-muted/30"><SelectValue placeholder="Relationship *" /></SelectTrigger>
-                          <SelectContent>
-                            {relationships.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
-                          </SelectContent>
+                        {emergencyContacts.length > 1 && (
+                          <button type="button" onClick={() => setEmergencyContacts(p => p.filter((_,j) => j!==i))} style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.2)", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        <Input placeholder="Contact Name *" value={c.contact_name} onChange={e => updateContact(i, "contact_name", e.target.value)} className="reg-input" style={inp} />
+                        <Input placeholder="10-digit Phone Number *" maxLength={10} value={c.contact_phone} onChange={e => updateContact(i, "contact_phone", e.target.value)} className="reg-input" style={inp} />
+                        <Select value={c.relationship} onValueChange={v => updateContact(i, "relationship", v)}>
+                          <SelectTrigger style={inp}><SelectValue placeholder="Relationship *" /></SelectTrigger>
+                          <SelectContent>{relationships.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
-                    ))}
-
-                    <Button type="button" variant="outline" size="sm" className="w-full gap-1.5 border-dashed" onClick={() => setEmergencyContacts((prev) => [...prev, emptyContact()])}>
-                      <Plus className="h-4 w-4" /> Add Another Contact
-                    </Button>
-                  </div>
-                )}
-
-                {/* STEP: Services */}
-                {stepType === "services" && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-2">
-                      <Wrench className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium text-primary">Your Services</span>
                     </div>
+                  ))}
+                  <button type="button" className="reg-add-btn" style={{ borderColor: "rgba(244,63,94,.35)", color: "#f43f5e" }} onClick={() => setEmergencyContacts(p => [...p, emptyContact()])}>
+                    <Plus size={14} /> Add Another Contact
+                  </button>
+                </div>
+              )}
 
-                    {categories.length === 0 ? (
-                      <div className="rounded-lg border border-dashed border-muted-foreground/20 bg-muted/20 p-6 text-center">
-                        <Wrench className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
-                        <p className="text-sm text-muted-foreground">No service categories configured yet. You can update your services later from your profile.</p>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-xs text-muted-foreground">Add the services you offer. Select a category, set your rates, and pick your skills.</p>
+              {/* ── STEP 4: Services ── */}
+              {stepType === "services" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div className="reg-section-badge">
+                    <Wrench size={15} color="#f59e0b" />
+                    <span style={{ color: "#f59e0b", fontSize: 13, fontWeight: 600 }}>Your Services</span>
+                  </div>
 
-                        {services.map((s, i) => {
-                          const categorySkills = allSkills.filter((sk) => sk.category_id === s.category_id);
-                          return (
-                            <div key={i} className="space-y-3 rounded-xl border bg-card p-4 shadow-sm">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-                                    <Wrench className="h-3.5 w-3.5 text-primary" />
-                                  </div>
-                                  <Label className="text-sm font-semibold">Service {i + 1}</Label>
+                  {categories.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "40px 20px", borderRadius: 14, border: "1px dashed rgba(255,255,255,.1)", background: "rgba(255,255,255,.02)" }}>
+                      <Wrench size={32} color="rgba(255,255,255,.2)" style={{ margin: "0 auto 12px" }} />
+                      <p style={{ color: "rgba(255,255,255,.35)", fontSize: 13 }}>No service categories configured yet. You can update your services later from your profile.</p>
+                    </div>
+                  ) : (
+                    <>
+                      <p style={{ color: "rgba(255,255,255,.4)", fontSize: 12 }}>Add the services you offer. Select a category, set your rates, and pick your skills.</p>
+                      {services.map((s, i) => {
+                        const categorySkills = allSkills.filter((sk: any) => sk.category_id === s.category_id);
+                        return (
+                          <div key={i} className="reg-card">
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(245,158,11,.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                  <Wrench size={13} color="#f59e0b" />
                                 </div>
-                                {services.length > 1 && (
-                                  <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setServices((prev) => prev.filter((_, j) => j !== i))}>
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                )}
+                                <span style={{ color: "white", fontWeight: 600, fontSize: 13 }}>Service {i + 1}</span>
                               </div>
-                              <Select value={s.category_id} onValueChange={(v) => updateService(i, "category_id", v)}>
-                                <SelectTrigger className="border-muted bg-muted/30"><SelectValue placeholder="Select Category *" /></SelectTrigger>
-                                <SelectContent>
-                                  {categories.map((cat) => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
-                                </SelectContent>
+                              {services.length > 1 && (
+                                <button type="button" onClick={() => setServices(p => p.filter((_,j) => j!==i))} style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.2)", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                  <Trash2 size={13} />
+                                </button>
+                              )}
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                              <Select value={s.category_id} onValueChange={v => updateService(i, "category_id", v)}>
+                                <SelectTrigger style={inp}><SelectValue placeholder="Select Category *" /></SelectTrigger>
+                                <SelectContent>{categories.map((cat: any) => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}</SelectContent>
                               </Select>
                               <div>
-                                <Input placeholder="Service Title *" value={s.service_title} onChange={(e) => updateService(i, "service_title", e.target.value)} className="border-muted bg-muted/30" />
-                                <p className="mt-1 text-xs text-muted-foreground">e.g., Full Stack Development, Graphic Design</p>
+                                <Input placeholder="Service Title *" value={s.service_title} onChange={e => updateService(i, "service_title", e.target.value)} className="reg-input" style={inp} />
+                                <p style={{ color: "rgba(255,255,255,.3)", fontSize: 11, marginTop: 4 }}>e.g., Full Stack Development, Graphic Design</p>
                               </div>
                               {categorySkills.length > 0 && (
                                 <div>
-                                  <Label className="text-xs text-muted-foreground">Skills</Label>
-                                  <div className="mt-1.5 flex flex-wrap gap-1.5">
-                                    {categorySkills.map((sk) => {
+                                  <Label style={{ color: "rgba(255,255,255,.4)", fontSize: 12 }}>Skills</Label>
+                                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                                    {categorySkills.map((sk: any) => {
                                       const selected = s.skill_ids.includes(sk.id);
                                       return (
-                                        <Badge
-                                          key={sk.id}
-                                          variant={selected ? "default" : "outline"}
-                                          className={`cursor-pointer transition-all ${selected ? "shadow-sm" : "hover:border-primary/40"}`}
-                                          onClick={() => {
-                                            const newIds = selected ? s.skill_ids.filter((id) => id !== sk.id) : [...s.skill_ids, sk.id];
-                                            updateService(i, "skill_ids", newIds);
-                                          }}
-                                        >
+                                        <span key={sk.id} onClick={() => { const newIds = selected ? s.skill_ids.filter(id => id!==sk.id) : [...s.skill_ids, sk.id]; updateService(i, "skill_ids", newIds); }}
+                                          style={{ padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all .2s", background: selected ? `rgba(99,102,241,.25)` : "rgba(255,255,255,.05)", border: `1px solid ${selected ? "rgba(99,102,241,.5)" : "rgba(255,255,255,.1)"}`, color: selected ? A1 : "rgba(255,255,255,.5)" }}>
                                           {sk.name}
-                                        </Badge>
+                                        </span>
                                       );
                                     })}
                                   </div>
                                 </div>
                               )}
-                              <div className="grid grid-cols-2 gap-2">
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                                 <div>
-                                  <Label className="text-xs text-muted-foreground">Hourly Rate (₹) *</Label>
-                                  <Input type="number" min="0" placeholder="0" value={s.hourly_rate} onChange={(e) => updateService(i, "hourly_rate", e.target.value)} className="border-muted bg-muted/30" />
+                                  <label style={{ color: "rgba(255,255,255,.4)", fontSize: 12, display: "block", marginBottom: 5 }}>Hourly Rate (₹) *</label>
+                                  <Input type="number" min="0" placeholder="0" value={s.hourly_rate} onChange={e => updateService(i, "hourly_rate", e.target.value)} className="reg-input" style={inp} />
                                 </div>
                                 <div>
-                                  <Label className="text-xs text-muted-foreground">Min Budget (₹) *</Label>
-                                  <Input type="number" min="0" placeholder="0" value={s.minimum_budget} onChange={(e) => updateService(i, "minimum_budget", e.target.value)} className="border-muted bg-muted/30" />
+                                  <label style={{ color: "rgba(255,255,255,.4)", fontSize: 12, display: "block", marginBottom: 5 }}>Min Budget (₹) *</label>
+                                  <Input type="number" min="0" placeholder="0" value={s.minimum_budget} onChange={e => updateService(i, "minimum_budget", e.target.value)} className="reg-input" style={inp} />
                                 </div>
                               </div>
                             </div>
-                          );
-                        })}
-
-                        <Button type="button" variant="outline" size="sm" className="w-full gap-1.5 border-dashed" onClick={() => setServices((prev) => [...prev, emptyService()])}>
-                          <Plus className="h-4 w-4" /> Add Another Service
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                )}
-
-              </CardContent>
-            </Card>
-
-            {/* Navigation Buttons */}
-            <div className="mt-4 space-y-3 pb-8">
-              {step === stepConfig.length - 1 && (
-                <div className="flex items-start space-x-2 rounded-lg border bg-card p-3 shadow-sm">
-                  <Checkbox
-                    id="reg-terms"
-                    checked={agreedToTerms}
-                    onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
-                    className="mt-0.5"
-                  />
-                  <label htmlFor="reg-terms" className="text-xs leading-relaxed text-muted-foreground">
-                    I agree to the{" "}
-                    <Link to="/legal/terms-of-service" className="font-medium text-primary hover:underline" target="_blank">Terms of Service</Link>
-                    {" "}and{" "}
-                    <Link to="/legal/privacy-policy" className="font-medium text-primary hover:underline" target="_blank">Privacy Policy</Link>
-                  </label>
+                          </div>
+                        );
+                      })}
+                      <button type="button" className="reg-add-btn" style={{ borderColor: "rgba(245,158,11,.35)", color: "#f59e0b" }} onClick={() => setServices(p => [...p, emptyService()])}>
+                        <Plus size={14} /> Add Another Service
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
 
-              <div className="flex gap-3">
-                {step > 0 && (
-                  <Button type="button" variant="outline" onClick={handleBack} className="flex-1 gap-1.5 shadow-sm">
-                    <ArrowLeft className="h-4 w-4" /> Back
-                  </Button>
-                )}
-                {step < stepConfig.length - 1 ? (
-                  <Button type="button" onClick={handleNext} className="flex-1 gap-1.5 shadow-sm">
-                    Next <ArrowRight className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button type="submit" disabled={submitting || !agreedToTerms} className="flex-1 gap-1.5 shadow-sm">
-                    {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                    Submit Registration
-                  </Button>
-                )}
-              </div>
+            </form>
+          </Form>
+        </div>
 
-              <p className="text-center text-xs text-muted-foreground">
-                Already have an account?{" "}
-                <Link to="/login" className="font-medium text-primary hover:underline">Login here</Link>
-              </p>
+        {/* Navigation */}
+        <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 12, animation: "fadeInUp .5s ease both .15s" }}>
+          {/* Terms (last step) */}
+          {step === stepConfig.length - 1 && (
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)" }}>
+              <Checkbox id="reg-terms" checked={agreedToTerms} onCheckedChange={c => setAgreedToTerms(c === true)} style={{ marginTop: 2 }} />
+              <label htmlFor="reg-terms" style={{ fontSize: 12, color: "rgba(255,255,255,.5)", lineHeight: 1.5, cursor: "pointer" }}>
+                I agree to the{" "}
+                <Link to="/legal/terms-of-service" target="_blank" style={{ color: A1 }}>Terms of Service</Link>{" "}and{" "}
+                <Link to="/legal/privacy-policy" target="_blank" style={{ color: A1 }}>Privacy Policy</Link>
+              </label>
             </div>
-          </form>
-        </Form>
+          )}
+
+          {/* Nav buttons */}
+          <div style={{ display: "flex", gap: 12 }}>
+            {step > 0 && (
+              <button type="button" onClick={handleBack} style={{ flex: 1, padding: "13px", borderRadius: 14, border: "1px solid rgba(255,255,255,.1)", background: "rgba(255,255,255,.04)", color: "rgba(255,255,255,.7)", fontWeight: 600, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <ArrowLeft size={15} /> Back
+              </button>
+            )}
+            {step < stepConfig.length - 1 ? (
+              <button type="button" onClick={handleNext} style={{ flex: 1, padding: "13px", borderRadius: 14, background: `linear-gradient(135deg,${A1},${A2})`, color: "white", fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 8px 24px rgba(99,102,241,.35)" }}>
+                Next <ArrowRight size={15} />
+              </button>
+            ) : (
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} style={{ flex: 1 }}>
+                  <button type="submit" disabled={submitting || !agreedToTerms} style={{ width: "100%", padding: "13px", borderRadius: 14, background: submitting || !agreedToTerms ? "rgba(99,102,241,.3)" : `linear-gradient(135deg,${A1},${A2})`, color: "white", fontWeight: 700, fontSize: 14, border: "none", cursor: submitting || !agreedToTerms ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: submitting || !agreedToTerms ? "none" : "0 8px 24px rgba(99,102,241,.35)" }}>
+                    {submitting ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle2 size={16} />}
+                    {submitting ? "Submitting…" : "Submit Registration"}
+                  </button>
+                </form>
+              </Form>
+            )}
+          </div>
+
+          <p style={{ textAlign: "center", fontSize: 12, color: "rgba(255,255,255,.35)" }}>
+            Already have an account?{" "}
+            <Link to="/login" style={{ color: A1, fontWeight: 700, textDecoration: "none" }}>Login here</Link>
+          </p>
+        </div>
       </div>
     </div>
   );
