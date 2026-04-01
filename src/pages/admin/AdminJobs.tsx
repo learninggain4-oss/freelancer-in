@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Search, IndianRupee, Calendar, CheckCircle, XCircle, Pencil, Eye, EyeOff, ChevronDown, ChevronUp, Save, Briefcase, Clock, TrendingUp } from "lucide-react";
+import { Search, IndianRupee, Calendar, CheckCircle, XCircle, Pencil, Eye, EyeOff, ChevronDown, ChevronUp, Save, Briefcase, Clock, TrendingUp, Users } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";

@@ -48,7 +48,7 @@ function load<T>(key:string,seed:()=>T[]): T[] {
 }
 
 const sevColor = { info:"#94a3b8", warning:"#fbbf24", critical:"#f87171" };
-const catColor: Record<string,string> = { "User Mgmt":"#4ade80","Finance":"#fb923c","Config":"#a5b4fc","Security":"#f87171","Data":"#fbbf24","Maintenance":"#6366f1","Config":"#a5b4fc" };
+const catColor: Record<string,string> = { "User Mgmt":"#4ade80","Finance":"#fb923c","Config":"#a5b4fc","Security":"#f87171","Data":"#fbbf24","Maintenance":"#6366f1" };
 
 export default function AdminAuditLogs() {
   const { theme } = useDashboardTheme();
