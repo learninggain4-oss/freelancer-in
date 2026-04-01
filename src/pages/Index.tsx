@@ -56,6 +56,15 @@ const GlobalStyles = () => (
       50%  { transform: perspective(800px) rotateY(8deg) rotateX(2deg); }
       100% { transform: perspective(800px) rotateY(0deg) rotateX(5deg); }
     }
+    @keyframes modal-in {
+      from { opacity:0; transform:scale(0.9) translateY(20px); }
+      to   { opacity:1; transform:scale(1) translateY(0); }
+    }
+    @keyframes overlay-in {
+      from { opacity:0; } to { opacity:1; }
+    }
+    .modal-enter { animation: modal-in 0.3s cubic-bezier(.17,.67,.34,1.2) both; }
+    .overlay-enter { animation: overlay-in 0.25s ease both; }
     .float-1 { animation: float  6s ease-in-out infinite; }
     .float-2 { animation: float2 7s ease-in-out infinite 1s; }
     .float-3 { animation: float3 8s ease-in-out infinite 2s; }
@@ -334,9 +343,77 @@ const Orbs = () => (
   </>
 );
 
+/* ─────────────────────── Register Role Modal ─────────────────────── */
+const RegisterModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4" onClick={onClose}>
+      {/* Overlay */}
+      <div className="overlay-enter absolute inset-0" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }} />
+
+      {/* Modal card */}
+      <div className="modal-enter relative w-full max-w-md rounded-3xl p-8 shadow-2xl" style={{ background: "linear-gradient(145deg, rgba(15,15,35,0.98), rgba(20,20,50,0.98))", border: "1px solid rgba(255,255,255,0.12)" }} onClick={(e) => e.stopPropagation()}>
+        {/* Close */}
+        <button onClick={onClose} className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full text-white/40 hover:text-white transition-colors hover:bg-white/10">
+          ✕
+        </button>
+
+        {/* Header */}
+        <div className="text-center mb-8">
+          <img src="/logo.png" alt="Logo" className="h-14 w-14 object-contain mx-auto mb-4" />
+          <h2 className="text-2xl font-black text-white mb-1">Join Freelancer<span className="gradient-text">.</span></h2>
+          <p className="text-sm text-white/50">How would you like to get started?</p>
+        </div>
+
+        {/* Options */}
+        <div className="grid grid-cols-1 gap-4">
+          {/* Freelancer option */}
+          <Link to="/register/employee" onClick={onClose} className="group relative flex items-center gap-4 rounded-2xl p-5 text-left transition-all duration-300 hover:scale-[1.02]" style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.25)" }}>
+            <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1))" }} />
+            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", boxShadow: "0 8px 20px rgba(99,102,241,0.35)" }}>
+              <Briefcase className="h-6 w-6 text-white" />
+            </div>
+            <div className="relative flex-1">
+              <div className="flex items-center justify-between">
+                <p className="text-base font-bold text-white">Join as Freelancer</p>
+                <ArrowRight className="h-4 w-4 text-white/40 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
+              </div>
+              <p className="text-sm text-white/50 mt-0.5">Find projects, get hired & earn money</p>
+            </div>
+          </Link>
+
+          {/* Employer option */}
+          <Link to="/register/client" onClick={onClose} className="group relative flex items-center gap-4 rounded-2xl p-5 text-left transition-all duration-300 hover:scale-[1.02]" style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)" }}>
+            <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: "linear-gradient(135deg, rgba(52,211,153,0.12), rgba(16,185,129,0.08))" }} />
+            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg,#10b981,#059669)", boxShadow: "0 8px 20px rgba(16,185,129,0.3)" }}>
+              <Users className="h-6 w-6 text-white" />
+            </div>
+            <div className="relative flex-1">
+              <div className="flex items-center justify-between">
+                <p className="text-base font-bold text-white">Join as Employer</p>
+                <ArrowRight className="h-4 w-4 text-white/40 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
+              </div>
+              <p className="text-sm text-white/50 mt-0.5">Post projects & hire skilled freelancers</p>
+            </div>
+          </Link>
+        </div>
+
+        {/* Login link */}
+        <p className="text-center text-sm text-white/40 mt-6">
+          Already have an account?{" "}
+          <Link to="/login" onClick={onClose} className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">Log in</Link>
+        </p>
+      </div>
+    </div>
+  );
+};
+
 /* ─────────────────────── Navbar ─────────────────────── */
 const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip }: any) => {
   const [scrolled, setScrolled] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", h, { passive: true });
@@ -344,32 +421,35 @@ const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip }: any
   }, []);
 
   return (
-    <header className={cn(
-      "sticky top-0 z-50 transition-all duration-300",
-      scrolled ? "py-2" : "py-3"
-    )} style={{ background: scrolled ? "rgba(10,10,26,0.85)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6">
-        <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="Freelancer Logo" className="h-10 w-10 object-contain" />
-          <span className="text-lg font-bold text-white">Freelancer<span className="gradient-text">.</span></span>
-        </div>
-        <div className="flex items-center gap-2.5">
-          {!isInstalled && (deferredPrompt || isIOS) && (
-            <button onClick={() => deferredPrompt ? onInstall() : onIOSTip()} className="hidden sm:flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors">
-              <Download className="h-3.5 w-3.5" /> Install
+    <>
+      <RegisterModal open={showRegisterModal} onClose={() => setShowRegisterModal(false)} />
+      <header className={cn(
+        "sticky top-0 z-50 transition-all duration-300",
+        scrolled ? "py-2" : "py-3"
+      )} style={{ background: scrolled ? "rgba(10,10,26,0.85)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="Freelancer Logo" className="h-10 w-10 object-contain" />
+            <span className="text-lg font-bold text-white">Freelancer<span className="gradient-text">.</span></span>
+          </div>
+          <div className="flex items-center gap-2.5">
+            {!isInstalled && (deferredPrompt || isIOS) && (
+              <button onClick={() => deferredPrompt ? onInstall() : onIOSTip()} className="hidden sm:flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors">
+                <Download className="h-3.5 w-3.5" /> Install
+              </button>
+            )}
+            <button onClick={() => setShowRegisterModal(true)} className="hidden sm:inline-flex text-sm text-white/70 hover:text-white transition-colors px-3 py-1.5 rounded-xl hover:bg-white/5">
+              Register
             </button>
-          )}
-          <Link to="/register/employee">
-            <button className="hidden sm:inline-flex text-sm text-white/70 hover:text-white transition-colors px-3 py-1.5">Register</button>
-          </Link>
-          <Link to="/login">
-            <button className="relative inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)", boxShadow: "0 0 20px rgba(99,102,241,0.4)" }}>
-              Login <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-          </Link>
+            <Link to="/login">
+              <button className="relative inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)", boxShadow: "0 0 20px rgba(99,102,241,0.4)" }}>
+                Login <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </Link>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   );
 };
 
