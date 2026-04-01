@@ -1,6 +1,7 @@
 import { Home, Briefcase, Wallet, CircleHelp, Menu, ClipboardCheck, FileText, MessagesSquare, Crown } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
+
+const A1 = "#6366f1";
 
 interface BottomTabBarProps {
   userType: "employee" | "client";
@@ -13,57 +14,56 @@ const BottomTabBar = ({ userType, onMenuClick }: BottomTabBarProps) => {
 
   const tabs = userType === "employee"
     ? [
-        { label: "Dashboard", icon: Home, path: `${base}/dashboard` },
-        { label: "Jobs", icon: Briefcase, path: `${base}/projects` },
-        { label: "Attendance", icon: ClipboardCheck, path: `${base}/attendance` },
-        { label: "Requests", icon: FileText, path: `${base}/requests` },
-        { label: "Wallet", icon: Wallet, path: `${base}/wallet` },
-        { label: "Wallet Types", icon: Crown, path: `${base}/wallet-types` },
-        { label: "Messages", icon: MessagesSquare, path: `${base}/help-support` },
+        { label: "Home",       icon: Home,          path: `${base}/dashboard` },
+        { label: "Jobs",       icon: Briefcase,     path: `${base}/projects` },
+        { label: "Attend",     icon: ClipboardCheck,path: `${base}/attendance` },
+        { label: "Requests",   icon: FileText,      path: `${base}/requests` },
+        { label: "Wallet",     icon: Wallet,        path: `${base}/wallet` },
+        { label: "Chat",       icon: MessagesSquare,path: `${base}/help-support` },
       ]
     : [
-        { label: "Dashboard", icon: Home, path: `${base}/dashboard` },
-        { label: "Attendance", icon: ClipboardCheck, path: `${base}/attendance` },
-        { label: "Jobs", icon: Briefcase, path: `${base}/projects` },
-        { label: "Wallet", icon: Wallet, path: `${base}/wallet` },
-        { label: "Wallet Types", icon: Crown, path: `${base}/wallet-types` },
-        { label: "Help", icon: CircleHelp, path: `${base}/help-support` },
+        { label: "Home",       icon: Home,          path: `${base}/dashboard` },
+        { label: "Attend",     icon: ClipboardCheck,path: `${base}/attendance` },
+        { label: "Jobs",       icon: Briefcase,     path: `${base}/projects` },
+        { label: "Wallet",     icon: Wallet,        path: `${base}/wallet` },
+        { label: "Help",       icon: CircleHelp,    path: `${base}/help-support` },
       ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-card/95 backdrop-blur-md pb-safe">
-      <div className="mx-auto flex h-16 max-w-lg items-center justify-around">
-        {tabs.map((tab) => {
+    <nav style={{
+      position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 40,
+      background: "rgba(7,7,20,.95)",
+      borderTop: "1px solid rgba(255,255,255,.07)",
+      backdropFilter: "blur(24px)",
+      boxShadow: "0 -8px 32px rgba(0,0,0,.4)",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", height: 64, maxWidth: 600, margin: "0 auto", padding: "0 4px" }}>
+        {tabs.map(tab => {
           const isActive = location.pathname.startsWith(tab.path);
           return (
-            <NavLink
-              key={tab.path}
-              to={tab.path}
-              className={cn(
-                "nav-link flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-all duration-200",
-                isActive
-                  ? "text-primary scale-105"
-                  : "text-muted-foreground active:text-foreground"
-              )}
-            >
-              <div className={cn(
-                "flex items-center justify-center rounded-full p-1 transition-all duration-200",
-                isActive && "bg-primary/10"
-              )}>
-                <tab.icon className={cn("h-5 w-5", isActive && "stroke-[2.5]")} />
+            <NavLink key={tab.path} to={tab.path}
+              style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "6px 4px", textDecoration: "none", transition: "all .15s" }}>
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 36, height: 28, borderRadius: 8,
+                background: isActive ? "rgba(99,102,241,.2)" : "transparent",
+                transition: "all .2s",
+              }}>
+                <tab.icon size={18} style={{ color: isActive ? "#a5b4fc" : "rgba(255,255,255,.35)", strokeWidth: isActive ? 2.5 : 1.8 }} />
               </div>
-              <span>{tab.label}</span>
+              <span style={{ fontSize: 9.5, fontWeight: isActive ? 700 : 500, color: isActive ? "#a5b4fc" : "rgba(255,255,255,.3)", lineHeight: 1 }}>
+                {tab.label}
+              </span>
             </NavLink>
           );
         })}
-        <button
-          onClick={onMenuClick}
-          className="nav-link flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground transition-all duration-200 active:text-foreground"
-        >
-          <div className="flex items-center justify-center rounded-full p-1">
-            <Menu className="h-5 w-5" />
+        {/* Menu button */}
+        <button onClick={onMenuClick}
+          style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "6px 4px", background: "none", border: "none", cursor: "pointer" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 28, borderRadius: 8, background: "transparent" }}>
+            <Menu size={18} style={{ color: "rgba(255,255,255,.35)", strokeWidth: 1.8 }} />
           </div>
-          <span>Menu</span>
+          <span style={{ fontSize: 9.5, fontWeight: 500, color: "rgba(255,255,255,.3)", lineHeight: 1 }}>Menu</span>
         </button>
       </div>
     </nav>

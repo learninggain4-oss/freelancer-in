@@ -1,29 +1,12 @@
 import { useEffect, useCallback, useMemo } from "react";
 import WalletCard from "@/components/wallet/WalletCard";
 import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
-import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
-  Wallet,
-  Briefcase,
-  ArrowDownToLine,
-  TrendingUp,
-  Clock,
-  IndianRupee,
-  ChevronRight,
-  FileText,
-  Loader2,
-  Sparkles,
-  Activity,
-  ArrowUpRight,
-  ArrowDownRight,
-  CalendarDays,
-  CircleDollarSign,
-  Star,
+  Wallet, Briefcase, ArrowDownToLine, TrendingUp, Clock,
+  IndianRupee, ChevronRight, FileText, Loader2, Sparkles,
+  Activity, ArrowUpRight, ArrowDownRight, CalendarDays,
+  CircleDollarSign, Star,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,6 +14,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
+
+const A1 = "#6366f1";
+const A2 = "#8b5cf6";
 
 const EmployeeDashboard = () => {
   const { profile, refreshProfile } = useAuth();
@@ -46,14 +32,11 @@ const EmployeeDashboard = () => {
     ]);
   }, [profile?.id, queryClient, refreshProfile]);
 
-  const { containerRef, pullDistance, refreshing } = usePullToRefresh({
-    onRefresh: handleRefresh,
-  });
+  const { containerRef, pullDistance, refreshing } = usePullToRefresh({ onRefresh: handleRefresh });
 
   useEffect(() => {
     if (!profile?.id) return;
-    const channel = supabase
-      .channel("emp-dashboard-realtime")
+    const channel = supabase.channel("emp-dashboard-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "transactions", filter: `profile_id=eq.${profile.id}` }, () => {
         queryClient.invalidateQueries({ queryKey: ["employee-transactions", profile.id] });
         queryClient.invalidateQueries({ queryKey: ["employee-earnings-chart", profile.id] });
@@ -70,12 +53,7 @@ const EmployeeDashboard = () => {
     queryKey: ["employee-transactions", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .eq("profile_id", profile.id)
-        .order("created_at", { ascending: false })
-        .limit(5);
+      const { data, error } = await supabase.from("transactions").select("*").eq("profile_id", profile.id).order("created_at", { ascending: false }).limit(5);
       if (error) throw error;
       return data;
     },
@@ -86,26 +64,12 @@ const EmployeeDashboard = () => {
     queryKey: ["employee-earnings-chart", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("amount, created_at")
-        .eq("profile_id", profile.id)
-        .eq("type", "credit")
-        .gte("created_at", sevenDaysAgo.toISOString())
-        .order("created_at", { ascending: true });
+      const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+      const { data, error } = await supabase.from("transactions").select("amount, created_at").eq("profile_id", profile.id).eq("type", "credit").gte("created_at", sevenDaysAgo.toISOString()).order("created_at", { ascending: true });
       if (error) throw error;
       const dayMap: Record<string, number> = {};
-      for (let i = 0; i < 7; i++) {
-        const d = new Date();
-        d.setDate(d.getDate() - 6 + i);
-        dayMap[d.toLocaleDateString("en-IN", { weekday: "short" })] = 0;
-      }
-      (data ?? []).forEach((tx: any) => {
-        const label = new Date(tx.created_at).toLocaleDateString("en-IN", { weekday: "short" });
-        if (label in dayMap) dayMap[label] += Number(tx.amount);
-      });
+      for (let i = 0; i < 7; i++) { const d = new Date(); d.setDate(d.getDate() - 6 + i); dayMap[d.toLocaleDateString("en-IN", { weekday: "short" })] = 0; }
+      (data ?? []).forEach((tx: any) => { const label = new Date(tx.created_at).toLocaleDateString("en-IN", { weekday: "short" }); if (label in dayMap) dayMap[label] += Number(tx.amount); });
       return Object.entries(dayMap).map(([day, amount]) => ({ day, amount }));
     },
     enabled: !!profile?.id,
@@ -115,60 +79,49 @@ const EmployeeDashboard = () => {
     queryKey: ["employee-active-projects", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return 0;
-      const { count, error } = await supabase
-        .from("project_applications")
-        .select("id", { count: "exact", head: true })
-        .eq("employee_id", profile.id)
-        .eq("status", "approved");
+      const { count, error } = await supabase.from("project_applications").select("id", { count: "exact", head: true }).eq("employee_id", profile.id).eq("status", "approved");
       if (error) throw error;
       return count ?? 0;
     },
     enabled: !!profile?.id,
   });
 
-  const totalEarnings = useMemo(() => chartData.reduce((sum, d) => sum + d.amount, 0), [chartData]);
-  const greeting = useMemo(() => {
-    const h = new Date().getHours();
-    if (h < 12) return "Good Morning";
-    if (h < 17) return "Good Afternoon";
-    return "Good Evening";
-  }, []);
+  const totalEarnings = useMemo(() => chartData.reduce((s, d) => s + d.amount, 0), [chartData]);
+  const greeting = useMemo(() => { const h = new Date().getHours(); return h < 12 ? "Good Morning" : h < 17 ? "Good Afternoon" : "Good Evening"; }, []);
   const firstName = Array.isArray(profile?.full_name) ? profile.full_name[0] : (profile?.full_name ?? "there");
 
   const quickActions = [
-    { icon: Briefcase, label: "Jobs", to: "/employee/projects", gradient: "from-primary/10 to-primary/5", iconColor: "text-primary" },
-    { icon: ArrowDownToLine, label: "Withdraw", to: "/employee/wallet", gradient: "from-accent/10 to-accent/5", iconColor: "text-accent" },
-    { icon: FileText, label: "Submissions", to: "/employee/projects", gradient: "from-warning/10 to-warning/5", iconColor: "text-warning" },
-    { icon: Star, label: "Wallet Types", to: "/employee/wallet-types", gradient: "from-secondary/10 to-secondary/5", iconColor: "text-secondary" },
+    { icon: Briefcase,     label: "Jobs",       to: "/employee/projects",     grad: "rgba(99,102,241,.18)",  color: "#a5b4fc" },
+    { icon: ArrowDownToLine,label:"Withdraw",   to: "/employee/wallet",       grad: "rgba(34,197,94,.15)",   color: "#4ade80" },
+    { icon: FileText,      label: "Tasks",      to: "/employee/projects",     grad: "rgba(245,158,11,.15)",  color: "#fbbf24" },
+    { icon: Star,          label: "Upgrades",   to: "/employee/wallet-types", grad: "rgba(139,92,246,.18)",  color: "#c4b5fd" },
   ];
 
+  const glassCard: React.CSSProperties = { background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 16, backdropFilter: "blur(12px)" };
+
   return (
-    <div ref={containerRef} className="relative h-full overflow-y-auto">
-      {/* Pull-to-refresh */}
-      <div
-        className="flex items-center justify-center overflow-hidden transition-all duration-200 ease-out"
-        style={{ height: pullDistance > 0 ? `${pullDistance}px` : 0 }}
-      >
-        <div className={`flex items-center gap-2 text-sm text-muted-foreground ${refreshing ? "animate-pulse" : ""}`}>
-          <Loader2 className={`h-5 w-5 text-primary ${refreshing ? "animate-spin" : ""}`} style={{
-            transform: refreshing ? undefined : `rotate(${pullDistance * 3}deg)`,
-          }} />
+    <div ref={containerRef} style={{ position: "relative", height: "100%", overflowY: "auto" }}>
+      {/* Pull-to-refresh indicator */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", transition: "all .2s ease-out", height: pullDistance > 0 ? pullDistance : 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "rgba(255,255,255,.4)" }}>
+          <Loader2 size={18} style={{ color: A1, animation: refreshing ? "spin 1s linear infinite" : "none", transform: refreshing ? undefined : `rotate(${pullDistance * 3}deg)` }} />
           <span>{refreshing ? "Refreshing…" : pullDistance >= 80 ? "Release to refresh" : "Pull to refresh"}</span>
         </div>
       </div>
 
-      <div className="space-y-5 p-4 pb-8">
-        {/* Greeting Header */}
-        <div className="animate-fade-in-up">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-warning" />
-            <p className="text-sm font-medium text-muted-foreground">{greeting}</p>
+      <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: 18, paddingBottom: 32 }}>
+
+        {/* Greeting */}
+        <div style={{ animation: "fadeInUp .4s ease both" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <Sparkles size={16} style={{ color: "#fbbf24" }} />
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,.45)", fontWeight: 500 }}>{greeting}</p>
           </div>
-          <h2 className="mt-1 text-2xl font-bold tracking-tight text-foreground">{firstName} 👋</h2>
+          <h2 style={{ marginTop: 4, fontSize: 24, fontWeight: 900, color: "white", letterSpacing: "-0.5px" }}>{firstName} 👋</h2>
         </div>
 
         {/* Wallet Card */}
-        <div className="animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
+        <div style={{ animation: "fadeInUp .4s ease both .05s" }}>
           <WalletCard
             name={Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Employee"}
             userCode={Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—"}
@@ -179,186 +132,121 @@ const EmployeeDashboard = () => {
           />
         </div>
 
-        {/* Wallet Type */}
-        <div className="animate-fade-in-up" style={{ animationDelay: "0.07s" }}>
+        {/* Wallet Type Badge */}
+        <div style={{ animation: "fadeInUp .4s ease both .07s" }}>
           <WalletTypeBadge balance={profile?.available_balance ?? 0} />
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-4 gap-2.5 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-          {quickActions.map((action) => (
-            <button
-              key={action.label}
-              onClick={() => navigate(action.to)}
-              className="group flex flex-col items-center gap-2 rounded-2xl bg-card p-3.5 shadow-sm ring-1 ring-border/50 transition-all hover:shadow-md hover:ring-border active:scale-95"
-            >
-              <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${action.gradient} transition-transform group-hover:scale-110`}>
-                <action.icon className={`h-5 w-5 ${action.iconColor}`} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, animation: "fadeInUp .4s ease both .1s" }}>
+          {quickActions.map(action => (
+            <button key={action.label} onClick={() => navigate(action.to)}
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", borderRadius: 16, ...glassCard, cursor: "pointer", border: "1px solid rgba(255,255,255,.08)", transition: "all .2s" }}
+              onMouseEnter={e => { (e.currentTarget).style.transform = "translateY(-3px)"; (e.currentTarget).style.boxShadow = "0 8px 24px rgba(0,0,0,.3)"; }}
+              onMouseLeave={e => { (e.currentTarget).style.transform = "none"; (e.currentTarget).style.boxShadow = "none"; }}>
+              <div style={{ width: 42, height: 42, borderRadius: 13, background: action.grad, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <action.icon size={18} style={{ color: action.color }} />
               </div>
-              <span className="text-[11px] font-semibold text-muted-foreground">{action.label}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.5)", lineHeight: 1.1, textAlign: "center" }}>{action.label}</span>
             </button>
           ))}
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-2.5 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
-          <Card className="border-0 shadow-sm overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
-            <CardContent className="relative flex flex-col items-center p-4 text-center">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 mb-2">
-                <Briefcase className="h-5 w-5 text-primary" />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, animation: "fadeInUp .4s ease both .15s" }}>
+          {[
+            { icon: Briefcase,      label: "Active Jobs",    value: activeCount,                                               color: "#a5b4fc", bg: "rgba(99,102,241,.14)" },
+            { icon: Activity,       label: "Transactions",   value: transactions.length,                                       color: "#4ade80", bg: "rgba(34,197,94,.12)" },
+            { icon: CircleDollarSign,label: "7-Day Earned",  value: `₹${totalEarnings.toLocaleString("en-IN")}`,              color: "#fbbf24", bg: "rgba(245,158,11,.12)", small: true },
+          ].map(s => (
+            <div key={s.label} style={{ ...glassCard, padding: "16px 12px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textAlign: "center", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at top right,${s.bg} 0%,transparent 70%)` }} />
+              <div style={{ width: 38, height: 38, borderRadius: 12, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+                <s.icon size={17} style={{ color: s.color }} />
               </div>
-              <p className="text-2xl font-bold text-foreground animate-count-up">{activeCount}</p>
-              <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Active Jobs</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent" />
-            <CardContent className="relative flex flex-col items-center p-4 text-center">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 mb-2">
-                <Activity className="h-5 w-5 text-accent" />
-              </div>
-              <p className="text-2xl font-bold text-foreground animate-count-up">{transactions.length}</p>
-              <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Transactions</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-warning/5 to-transparent" />
-            <CardContent className="relative flex flex-col items-center p-4 text-center">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/10 mb-2">
-                <CircleDollarSign className="h-5 w-5 text-warning" />
-              </div>
-              <p className="text-lg font-bold text-foreground animate-count-up">₹{totalEarnings.toLocaleString("en-IN")}</p>
-              <p className="text-[10px] font-medium text-muted-foreground mt-0.5">7-Day Earnings</p>
-            </CardContent>
-          </Card>
+              <p style={{ fontWeight: 900, color: "white", fontSize: s.small ? 15 : 22, position: "relative" }}>{s.value}</p>
+              <p style={{ fontSize: 10, color: "rgba(255,255,255,.4)", fontWeight: 600, position: "relative" }}>{s.label}</p>
+            </div>
+          ))}
         </div>
 
         {/* Earnings Chart */}
-        <Card className="border-0 shadow-sm animate-fade-in-up overflow-hidden" style={{ animationDelay: "0.2s" }}>
-          <CardHeader className="flex-row items-center justify-between pb-1">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-                <TrendingUp className="h-3.5 w-3.5 text-primary" />
+        <div style={{ ...glassCard, padding: "18px 16px", animation: "fadeInUp .4s ease both .2s" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 9, background: "rgba(99,102,241,.14)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <TrendingUp size={13} color="#a5b4fc" />
               </div>
-              <CardTitle className="text-sm font-semibold text-foreground">Earnings Overview</CardTitle>
+              <span style={{ fontWeight: 700, fontSize: 13, color: "rgba(255,255,255,.85)" }}>Earnings Overview</span>
             </div>
-            <Badge variant="secondary" className="text-[10px] font-medium bg-muted">Last 7 Days</Badge>
-          </CardHeader>
-          <CardContent className="pb-3">
-            <div className="h-36">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="earningsGradientAdv" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.25} />
-                      <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity={0.08} />
-                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis
-                    dataKey="day"
-                    tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "12px",
-                      fontSize: "12px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                      padding: "8px 12px",
-                    }}
-                    formatter={(value: number) => [`₹${value.toLocaleString("en-IN")}`, "Earned"]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="amount"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={2.5}
-                    fill="url(#earningsGradientAdv)"
-                    dot={{ r: 3, fill: "hsl(var(--primary))", strokeWidth: 0 }}
-                    activeDot={{ r: 5, fill: "hsl(var(--primary))", stroke: "hsl(var(--card))", strokeWidth: 2 }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+            <span style={{ fontSize: 10, color: "rgba(255,255,255,.35)", padding: "3px 8px", borderRadius: 6, background: "rgba(255,255,255,.06)" }}>Last 7 Days</span>
+          </div>
+          <div style={{ height: 140 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="empEarningsGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={A1} stopOpacity={0.4} />
+                    <stop offset="100%" stopColor={A1} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="day" tick={{ fontSize: 10, fill: "rgba(255,255,255,.3)" }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ background: "rgba(13,13,36,.95)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 12, fontSize: 12, color: "white" }}
+                  formatter={(v: number) => [`₹${v.toLocaleString("en-IN")}`, "Earned"]} />
+                <Area type="monotone" dataKey="amount" stroke={A1} strokeWidth={2.5} fill="url(#empEarningsGrad)"
+                  dot={{ r: 3, fill: A1, strokeWidth: 0 }} activeDot={{ r: 5, fill: A1, stroke: "#070714", strokeWidth: 2 }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
         {/* Recent Transactions */}
-        <Card className="border-0 shadow-sm animate-fade-in-up" style={{ animationDelay: "0.25s" }}>
-          <CardHeader className="flex-row items-center justify-between pb-2">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/10">
-                <CalendarDays className="h-3.5 w-3.5 text-accent" />
+        <div style={{ ...glassCard, padding: "18px 16px", animation: "fadeInUp .4s ease both .25s" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 9, background: "rgba(34,197,94,.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <CalendarDays size={13} color="#4ade80" />
               </div>
-              <CardTitle className="text-sm font-semibold text-foreground">Recent Transactions</CardTitle>
+              <span style={{ fontWeight: 700, fontSize: 13, color: "rgba(255,255,255,.85)" }}>Recent Transactions</span>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-auto p-0 text-xs text-primary hover:text-primary/80"
-              onClick={() => navigate("/employee/wallet")}
-            >
-              View All <ChevronRight className="ml-0.5 h-3 w-3" />
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-0.5 pb-3">
+            <button onClick={() => navigate("/employee/wallet")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 3, color: "#a5b4fc", fontSize: 12, fontWeight: 600 }}>
+              View All <ChevronRight size={13} />
+            </button>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)
             ) : transactions.length > 0 ? (
-              transactions.map((tx: any, i: number) => (
-                <div
-                  key={tx.id}
-                  className="flex items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-muted/50"
-                  style={{ animationDelay: `${0.3 + i * 0.05}s` }}
-                >
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                    tx.type === "credit"
-                      ? "bg-accent/10"
-                      : "bg-destructive/10"
-                  }`}>
-                    {tx.type === "credit" ? (
-                      <ArrowDownRight className="h-4.5 w-4.5 text-accent" />
-                    ) : (
-                      <ArrowUpRight className="h-4.5 w-4.5 text-destructive" />
-                    )}
+              transactions.map((tx: any) => (
+                <div key={tx.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 10px", borderRadius: 12, transition: "background .15s" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,.04)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                  <div style={{ width: 38, height: 38, borderRadius: 12, background: tx.type === "credit" ? "rgba(34,197,94,.12)" : "rgba(239,68,68,.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    {tx.type === "credit"
+                      ? <ArrowDownRight size={16} style={{ color: "#4ade80" }} />
+                      : <ArrowUpRight   size={16} style={{ color: "#f87171" }} />}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">{tx.description}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {new Date(tx.created_at).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </p>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,.8)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx.description}</p>
+                    <p style={{ fontSize: 11, color: "rgba(255,255,255,.35)" }}>{new Date(tx.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
                   </div>
-                  <div className="text-right">
-                    <span className={`text-sm font-bold tabular-nums ${
-                      tx.type === "credit" ? "text-accent" : "text-destructive"
-                    }`}>
-                      {tx.type === "credit" ? "+" : "−"}₹{Number(tx.amount).toLocaleString("en-IN")}
-                    </span>
-                  </div>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: tx.type === "credit" ? "#4ade80" : "#f87171" }}>
+                    {tx.type === "credit" ? "+" : "−"}₹{Number(tx.amount).toLocaleString("en-IN")}
+                  </span>
                 </div>
               ))
             ) : (
-              <div className="flex flex-col items-center py-10 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
-                  <IndianRupee className="h-6 w-6 text-muted-foreground" />
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 0", textAlign: "center" }}>
+                <div style={{ width: 52, height: 52, borderRadius: 16, background: "rgba(255,255,255,.05)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                  <IndianRupee size={22} style={{ color: "rgba(255,255,255,.2)" }} />
                 </div>
-                <p className="mt-3 text-sm font-semibold text-foreground">No transactions yet</p>
-                <p className="mt-1 text-xs text-muted-foreground">Your earnings will appear here</p>
+                <p style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,.5)" }}>No transactions yet</p>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,.25)", marginTop: 4 }}>Your earnings will appear here</p>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

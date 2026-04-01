@@ -1,16 +1,13 @@
 import {
   Settings, User, Bell, FileText, Shield, LogOut, Gift, Smartphone,
-  Coins, Star, Wallet, ChevronRight, Sparkles,
+  Coins, Star, Wallet, ChevronRight, Sparkles, Briefcase,
 } from "lucide-react";
-import {
-  Sheet, SheetContent, SheetHeader, SheetTitle,
-} from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
+
+const A1 = "#6366f1";
+const A2 = "#8b5cf6";
 
 interface SideDrawerProps {
   open: boolean;
@@ -22,95 +19,95 @@ const SideDrawer = ({ open, onOpenChange }: SideDrawerProps) => {
   const navigate = useNavigate();
 
   const basePath = profile?.user_type === "client" ? "/client" : "/employee";
-  const initials = profile?.full_name?.[0]?.slice(0, 2)?.toUpperCase() || "U";
+  const initials = (profile?.full_name?.[0] || "U").slice(0, 2).toUpperCase();
+  const userType = profile?.user_type || "user";
+  const userCode = Array.isArray(profile?.user_code) ? profile.user_code[0] : profile?.user_code || "";
 
   const menuSections = [
     {
       title: "Account",
       items: [
-        { label: "Profile", icon: User, path: `${basePath}/profile`, color: "text-primary" },
-        { label: "Account Settings", icon: Settings, path: `${basePath}/settings`, color: "text-muted-foreground" },
-        { label: "Notification Settings", icon: Bell, path: `${basePath}/notification-settings`, color: "text-muted-foreground" },
+        { label: "My Profile", icon: User, path: `${basePath}/profile`, color: A1 },
+        { label: "Account Settings", icon: Settings, path: `${basePath}/settings`, color: "rgba(255,255,255,.5)" },
+        { label: "Notification Settings", icon: Bell, path: `${basePath}/notification-settings`, color: "#f59e0b" },
       ],
     },
     {
       title: "Rewards & More",
       items: [
-        { label: "Write a Review", icon: Star, path: `${basePath}/review`, color: "text-warning" },
-        { label: "Get Free", icon: Gift, path: `${basePath}/get-free`, color: "text-accent" },
-        { label: "Get Coins", icon: Coins, path: `${basePath}/get-coins`, color: "text-warning" },
-        { label: "Wallet Types", icon: Wallet, path: `${basePath}/wallet-types`, color: "text-primary" },
+        { label: "Write a Review", icon: Star, path: `${basePath}/review`, color: "#f59e0b" },
+        { label: "Get Free", icon: Gift, path: `${basePath}/get-free`, color: "#4ade80" },
+        { label: "Get Coins", icon: Coins, path: `${basePath}/get-coins`, color: "#f59e0b" },
+        { label: "Wallet Types", icon: Wallet, path: `${basePath}/wallet-types`, color: A1 },
       ],
     },
     {
       title: "App & Legal",
       items: [
-        { label: "Install App", icon: Smartphone, path: `${basePath}/app`, color: "text-muted-foreground" },
-        { label: "Terms of Service", icon: FileText, path: "/legal/terms-of-service", color: "text-muted-foreground" },
-        { label: "Privacy Policy", icon: Shield, path: "/legal/privacy-policy", color: "text-muted-foreground" },
+        { label: "Install App", icon: Smartphone, path: `${basePath}/app`, color: "rgba(255,255,255,.4)" },
+        { label: "Terms of Service", icon: FileText, path: "/legal/terms-of-service", color: "rgba(255,255,255,.4)" },
+        { label: "Privacy Policy", icon: Shield, path: "/legal/privacy-policy", color: "rgba(255,255,255,.4)" },
       ],
     },
   ];
 
-  const handleLogout = async () => {
-    onOpenChange(false);
-    await signOut();
-    navigate("/login");
-  };
+  const handleLogout = async () => { onOpenChange(false); await signOut(); navigate("/login"); };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-80 bg-card p-0 flex flex-col">
+      <SheetContent side="right" style={{ width: 300, padding: 0, display: "flex", flexDirection: "column", background: "#0d0d24", border: "1px solid rgba(255,255,255,.07)" }}>
+
         {/* Profile Header */}
-        <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/70" />
-          <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-primary-foreground/10 blur-2xl" />
-          <div className="relative z-10 p-5 pt-6">
-            <SheetHeader className="space-y-0">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-12 w-12 border-2 border-primary-foreground/30 shadow-lg">
-                  <AvatarFallback className="bg-primary-foreground/20 text-primary-foreground font-bold text-sm">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <SheetTitle className="text-left text-base font-bold text-primary-foreground truncate">
-                    {profile?.full_name?.[0] || "User"}
-                  </SheetTitle>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <Badge variant="secondary" className="bg-primary-foreground/20 text-primary-foreground/90 border-0 text-[10px] px-1.5 py-0 h-4">
-                      {profile?.user_code?.[0] || ""}
-                    </Badge>
-                    <Badge variant="secondary" className="bg-primary-foreground/15 text-primary-foreground/80 border-0 text-[10px] px-1.5 py-0 h-4 capitalize">
-                      {profile?.user_type || "user"}
-                    </Badge>
-                  </div>
+        <div style={{ position: "relative", overflow: "hidden", padding: "24px 20px 20px" }}>
+          {/* Background gradient */}
+          <div style={{ position: "absolute", inset: 0, background: `linear-gradient(135deg,rgba(99,102,241,.25) 0%,rgba(139,92,246,.15) 100%)`, zIndex: 0 }} />
+          <div style={{ position: "absolute", top: -20, right: -20, width: 100, height: 100, borderRadius: "50%", background: "rgba(99,102,241,.15)", filter: "blur(20px)", zIndex: 0 }} />
+
+          <SheetHeader style={{ position: "relative", zIndex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {/* Avatar */}
+              <div style={{ width: 52, height: 52, borderRadius: 16, background: `linear-gradient(135deg,${A1},${A2})`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 18, color: "white", border: "2px solid rgba(255,255,255,.2)", boxShadow: "0 8px 24px rgba(99,102,241,.4)", flexShrink: 0 }}>
+                {initials}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <SheetTitle style={{ color: "white", fontWeight: 800, fontSize: 15, margin: 0 }}>
+                  {profile?.full_name?.[0] || "User"}
+                </SheetTitle>
+                <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
+                  {userCode && (
+                    <span style={{ padding: "2px 8px", borderRadius: 6, background: "rgba(255,255,255,.1)", border: "1px solid rgba(255,255,255,.15)", color: "rgba(255,255,255,.7)", fontSize: 10, fontWeight: 700 }}>
+                      {userCode}
+                    </span>
+                  )}
+                  <span style={{ padding: "2px 8px", borderRadius: 6, background: "rgba(99,102,241,.2)", border: "1px solid rgba(99,102,241,.3)", color: "#a5b4fc", fontSize: 10, fontWeight: 700, textTransform: "capitalize" }}>
+                    {userType}
+                  </span>
                 </div>
               </div>
-            </SheetHeader>
-          </div>
+            </div>
+          </SheetHeader>
         </div>
 
-        {/* Menu Sections */}
-        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
+        {/* Menu */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "12px 12px" }}>
           {menuSections.map((section, idx) => (
-            <div key={section.title}>
-              {idx > 0 && <Separator className="my-2" />}
-              <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/70 px-3 py-1.5">
+            <div key={section.title} style={{ marginTop: idx > 0 ? 20 : 0 }}>
+              {idx > 0 && <div style={{ height: 1, background: "rgba(255,255,255,.05)", marginBottom: 14 }} />}
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(255,255,255,.25)", padding: "0 8px 8px" }}>
                 {section.title}
               </p>
-              <nav className="space-y-0.5">
-                {section.items.map((item) => (
-                  <button
-                    key={item.label}
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-foreground transition-all hover:bg-muted/80 active:scale-[0.98] group"
+              <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {section.items.map(item => (
+                  <button key={item.label}
                     onClick={() => { onOpenChange(false); navigate(item.path); }}
-                  >
-                    <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg bg-muted/60 transition-colors group-hover:bg-muted", item.color)}>
-                      <item.icon className="h-4 w-4" />
+                    style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 10px", borderRadius: 12, background: "none", border: "none", cursor: "pointer", width: "100%", textAlign: "left", transition: "all .15s" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,.05)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <item.icon size={16} style={{ color: item.color }} />
                     </div>
-                    <span className="flex-1 text-left font-medium">{item.label}</span>
-                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+                    <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,.75)" }}>{item.label}</span>
+                    <ChevronRight size={13} style={{ color: "rgba(255,255,255,.2)" }} />
                   </button>
                 ))}
               </nav>
@@ -119,15 +116,15 @@ const SideDrawer = ({ open, onOpenChange }: SideDrawerProps) => {
         </div>
 
         {/* Logout */}
-        <div className="p-3 border-t border-border/50">
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-destructive transition-all hover:bg-destructive/10 active:scale-[0.98] group"
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10 group-hover:bg-destructive/15">
-              <LogOut className="h-4 w-4" />
+        <div style={{ padding: 12, borderTop: "1px solid rgba(255,255,255,.06)" }}>
+          <button onClick={handleLogout}
+            style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 12px", borderRadius: 12, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.15)", color: "#f87171", cursor: "pointer", fontSize: 13, fontWeight: 600, transition: "all .15s" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(239,68,68,.15)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "rgba(239,68,68,.08)")}>
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(239,68,68,.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <LogOut size={15} color="#f87171" />
             </div>
-            <span className="font-medium">Logout</span>
+            Logout
           </button>
         </div>
       </SheetContent>

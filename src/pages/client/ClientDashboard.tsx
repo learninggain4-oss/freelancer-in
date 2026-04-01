@@ -1,26 +1,11 @@
 import { useEffect, useCallback, useMemo } from "react";
 import WalletCard from "@/components/wallet/WalletCard";
 import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
-import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
-  Wallet,
-  Briefcase,
-  Plus,
-  Users,
-  IndianRupee,
-  ChevronRight,
-  TrendingUp,
-  ArrowDownToLine,
-  Loader2,
-  Sparkles,
-  Activity,
-  FolderOpen,
-  Star,
-  CalendarDays,
+  Wallet, Briefcase, Plus, Users, IndianRupee, ChevronRight,
+  TrendingUp, ArrowDownToLine, Loader2, Sparkles, Activity,
+  FolderOpen, Star, CalendarDays,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -28,10 +13,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 
-const statusColor: Record<string, string> = {
-  pending: "bg-warning/10 text-warning border-warning/20",
-  approved: "bg-accent/10 text-accent border-accent/20",
-  rejected: "bg-destructive/10 text-destructive border-destructive/20",
+const A1 = "#6366f1";
+const A2 = "#8b5cf6";
+
+const statusStyle: Record<string, { bg: string; color: string; border: string }> = {
+  pending:  { bg: "rgba(245,158,11,.12)", color: "#fbbf24", border: "rgba(245,158,11,.25)" },
+  approved: { bg: "rgba(34,197,94,.12)",  color: "#4ade80", border: "rgba(34,197,94,.25)" },
+  rejected: { bg: "rgba(239,68,68,.1)",   color: "#f87171", border: "rgba(239,68,68,.2)" },
 };
 
 const ClientDashboard = () => {
@@ -47,14 +35,11 @@ const ClientDashboard = () => {
     ]);
   }, [profile?.id, queryClient, refreshProfile]);
 
-  const { containerRef, pullDistance, refreshing } = usePullToRefresh({
-    onRefresh: handleRefresh,
-  });
+  const { containerRef, pullDistance, refreshing } = usePullToRefresh({ onRefresh: handleRefresh });
 
   useEffect(() => {
     if (!profile?.id) return;
-    const channel = supabase
-      .channel("client-dashboard-realtime")
+    const channel = supabase.channel("client-dashboard-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "projects", filter: `client_id=eq.${profile.id}` }, () => {
         queryClient.invalidateQueries({ queryKey: ["client-active-projects", profile.id] });
       })
@@ -69,11 +54,7 @@ const ClientDashboard = () => {
     queryKey: ["client-active-projects", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return 0;
-      const { count, error } = await supabase
-        .from("projects")
-        .select("*", { count: "exact", head: true })
-        .eq("client_id", profile.id)
-        .in("status", ["open", "in_progress"]);
+      const { count, error } = await supabase.from("projects").select("*", { count: "exact", head: true }).eq("client_id", profile.id).in("status", ["open", "in_progress"]);
       if (error) throw error;
       return count ?? 0;
     },
@@ -84,59 +65,48 @@ const ClientDashboard = () => {
     queryKey: ["client-recent-requests", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
-      const { data, error } = await supabase
-        .from("project_applications")
-        .select("*, employee:employee_id(full_name), project:project_id(name, client_id)")
-        .order("applied_at", { ascending: false })
-        .limit(5);
+      const { data, error } = await supabase.from("project_applications").select("*, employee:employee_id(full_name), project:project_id(name, client_id)").order("applied_at", { ascending: false }).limit(5);
       if (error) throw error;
       return (data ?? []).filter((r: any) => r.project?.client_id === profile.id);
     },
     enabled: !!profile?.id,
   });
 
-  const greeting = useMemo(() => {
-    const h = new Date().getHours();
-    if (h < 12) return "Good Morning";
-    if (h < 17) return "Good Afternoon";
-    return "Good Evening";
-  }, []);
+  const greeting = useMemo(() => { const h = new Date().getHours(); return h < 12 ? "Good Morning" : h < 17 ? "Good Afternoon" : "Good Evening"; }, []);
   const firstName = Array.isArray(profile?.full_name) ? profile.full_name[0] : (profile?.full_name ?? "there");
 
   const quickActions = [
-    { icon: Plus, label: "New Job", to: "/client/projects/create", gradient: "from-primary/10 to-primary/5", iconColor: "text-primary" },
-    { icon: Wallet, label: "Add Money", to: "/client/wallet", gradient: "from-accent/10 to-accent/5", iconColor: "text-accent" },
-    { icon: ArrowDownToLine, label: "Withdrawals", to: "/client/withdrawals", gradient: "from-warning/10 to-warning/5", iconColor: "text-warning" },
-    { icon: Star, label: "Wallet Types", to: "/client/wallet-types", gradient: "from-secondary/10 to-secondary/5", iconColor: "text-secondary" },
+    { icon: Plus,          label: "New Job",     to: "/client/projects/create", grad: "rgba(99,102,241,.18)",  color: "#a5b4fc" },
+    { icon: Wallet,        label: "Add Money",   to: "/client/wallet",          grad: "rgba(34,197,94,.15)",   color: "#4ade80" },
+    { icon: ArrowDownToLine,label:"Withdraw",    to: "/client/withdrawals",     grad: "rgba(245,158,11,.15)",  color: "#fbbf24" },
+    { icon: Star,          label: "Upgrades",    to: "/client/wallet-types",    grad: "rgba(139,92,246,.18)",  color: "#c4b5fd" },
   ];
 
+  const glassCard: React.CSSProperties = { background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 16, backdropFilter: "blur(12px)" };
+
   return (
-    <div ref={containerRef} className="relative h-full overflow-y-auto">
-      {/* Pull-to-refresh */}
-      <div
-        className="flex items-center justify-center overflow-hidden transition-all duration-200 ease-out"
-        style={{ height: pullDistance > 0 ? `${pullDistance}px` : 0 }}
-      >
-        <div className={`flex items-center gap-2 text-sm text-muted-foreground ${refreshing ? "animate-pulse" : ""}`}>
-          <Loader2 className={`h-5 w-5 text-primary ${refreshing ? "animate-spin" : ""}`} style={{
-            transform: refreshing ? undefined : `rotate(${pullDistance * 3}deg)`,
-          }} />
+    <div ref={containerRef} style={{ position: "relative", height: "100%", overflowY: "auto" }}>
+      {/* Pull-to-refresh indicator */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", transition: "all .2s ease-out", height: pullDistance > 0 ? pullDistance : 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "rgba(255,255,255,.4)" }}>
+          <Loader2 size={18} style={{ color: A1, animation: refreshing ? "spin 1s linear infinite" : "none", transform: refreshing ? undefined : `rotate(${pullDistance * 3}deg)` }} />
           <span>{refreshing ? "Refreshing…" : pullDistance >= 80 ? "Release to refresh" : "Pull to refresh"}</span>
         </div>
       </div>
 
-      <div className="space-y-5 p-4 pb-8">
-        {/* Greeting Header */}
-        <div className="animate-fade-in-up">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-warning" />
-            <p className="text-sm font-medium text-muted-foreground">{greeting}</p>
+      <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: 18, paddingBottom: 32 }}>
+
+        {/* Greeting */}
+        <div style={{ animation: "fadeInUp .4s ease both" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <Sparkles size={16} style={{ color: "#fbbf24" }} />
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,.45)", fontWeight: 500 }}>{greeting}</p>
           </div>
-          <h2 className="mt-1 text-2xl font-bold tracking-tight text-foreground">{firstName} 👋</h2>
+          <h2 style={{ marginTop: 4, fontSize: 24, fontWeight: 900, color: "white", letterSpacing: "-0.5px" }}>{firstName} 👋</h2>
         </div>
 
         {/* Wallet Card */}
-        <div className="animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
+        <div style={{ animation: "fadeInUp .4s ease both .05s" }}>
           <WalletCard
             name={Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Client"}
             userCode={Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—"}
@@ -147,108 +117,97 @@ const ClientDashboard = () => {
           />
         </div>
 
-        {/* Wallet Type */}
-        <div className="animate-fade-in-up" style={{ animationDelay: "0.07s" }}>
+        {/* Wallet Type Badge */}
+        <div style={{ animation: "fadeInUp .4s ease both .07s" }}>
           <WalletTypeBadge balance={profile?.available_balance ?? 0} />
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-4 gap-2.5 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-          {quickActions.map((action) => (
-            <button
-              key={action.label}
-              onClick={() => navigate(action.to)}
-              className="group flex flex-col items-center gap-2 rounded-2xl bg-card p-3.5 shadow-sm ring-1 ring-border/50 transition-all hover:shadow-md hover:ring-border active:scale-95"
-            >
-              <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${action.gradient} transition-transform group-hover:scale-110`}>
-                <action.icon className={`h-5 w-5 ${action.iconColor}`} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, animation: "fadeInUp .4s ease both .1s" }}>
+          {quickActions.map(action => (
+            <button key={action.label} onClick={() => navigate(action.to)}
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "14px 8px", borderRadius: 16, ...glassCard, cursor: "pointer", border: "1px solid rgba(255,255,255,.08)", transition: "all .2s" }}
+              onMouseEnter={e => { (e.currentTarget).style.transform = "translateY(-3px)"; (e.currentTarget).style.boxShadow = "0 8px 24px rgba(0,0,0,.3)"; }}
+              onMouseLeave={e => { (e.currentTarget).style.transform = "none"; (e.currentTarget).style.boxShadow = "none"; }}>
+              <div style={{ width: 42, height: 42, borderRadius: 13, background: action.grad, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <action.icon size={18} style={{ color: action.color }} />
               </div>
-              <span className="text-[11px] font-semibold text-muted-foreground">{action.label}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.5)", lineHeight: 1.1, textAlign: "center" }}>{action.label}</span>
             </button>
           ))}
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-3 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
-          <Card className="border-0 shadow-sm overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
-            <CardContent className="relative flex items-center gap-3 p-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                <FolderOpen className="h-5.5 w-5.5 text-primary" />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, animation: "fadeInUp .4s ease both .15s" }}>
+          {[
+            { icon: FolderOpen, label: "Active Jobs",  value: activeCount,           color: "#a5b4fc", bg: "rgba(99,102,241,.14)" },
+            { icon: Activity,   label: "Requests",     value: recentRequests.length, color: "#4ade80", bg: "rgba(34,197,94,.12)" },
+          ].map(s => (
+            <div key={s.label} style={{ ...glassCard, padding: "18px 16px", display: "flex", alignItems: "center", gap: 14, position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at top right,${s.bg} 0%,transparent 65%)` }} />
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
+                <s.icon size={22} style={{ color: s.color }} />
               </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground animate-count-up">{activeCount}</p>
-                <p className="text-xs font-medium text-muted-foreground">Active Jobs</p>
+              <div style={{ position: "relative" }}>
+                <p style={{ fontSize: 26, fontWeight: 900, color: "white", letterSpacing: "-1px" }}>{s.value}</p>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,.4)", fontWeight: 500 }}>{s.label}</p>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent" />
-            <CardContent className="relative flex items-center gap-3 p-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10">
-                <Activity className="h-5.5 w-5.5 text-accent" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground animate-count-up">{recentRequests.length}</p>
-                <p className="text-xs font-medium text-muted-foreground">Requests</p>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          ))}
         </div>
 
         {/* Employee Requests */}
-        <Card className="border-0 shadow-sm animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-          <CardHeader className="flex-row items-center justify-between pb-2">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-                <Users className="h-3.5 w-3.5 text-primary" />
+        <div style={{ ...glassCard, padding: "18px 16px", animation: "fadeInUp .4s ease both .2s" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 9, background: "rgba(99,102,241,.14)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Users size={13} color="#a5b4fc" />
               </div>
-              <CardTitle className="text-sm font-semibold text-foreground">Employee Requests</CardTitle>
+              <span style={{ fontWeight: 700, fontSize: 13, color: "rgba(255,255,255,.85)" }}>Employee Requests</span>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-auto p-0 text-xs text-primary hover:text-primary/80"
-              onClick={() => navigate("/client/projects")}
-            >
-              View All <ChevronRight className="ml-0.5 h-3 w-3" />
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-0.5 pb-3">
+            <button onClick={() => navigate("/client/projects")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 3, color: "#a5b4fc", fontSize: 12, fontWeight: 600 }}>
+              View All <ChevronRight size={13} />
+            </button>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)
             ) : recentRequests.length > 0 ? (
-              recentRequests.map((r: any, i: number) => (
-                <div
-                  key={r.id}
-                  className="flex items-center justify-between rounded-xl px-3 py-3 transition-colors hover:bg-muted/50"
-                >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted">
-                      <Users className="h-4 w-4 text-muted-foreground" />
+              recentRequests.map((r: any) => {
+                const st = statusStyle[r.status] || statusStyle.pending;
+                return (
+                  <div key={r.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 10px", borderRadius: 12, transition: "background .15s" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,.04)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+                      <div style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(255,255,255,.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Users size={16} style={{ color: "rgba(255,255,255,.4)" }} />
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,.8)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {Array.isArray(r.employee?.full_name) ? r.employee.full_name.join(" ") : r.employee?.full_name ?? "Employee"}
+                        </p>
+                        <p style={{ fontSize: 11, color: "rgba(255,255,255,.35)" }}>{r.project?.name ?? "Job"}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {Array.isArray(r.employee?.full_name) ? r.employee.full_name.join(" ") : r.employee?.full_name ?? "Employee"}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">{r.project?.name ?? "Job"}</p>
-                    </div>
+                    <span style={{ padding: "3px 10px", borderRadius: 8, background: st.bg, border: `1px solid ${st.border}`, color: st.color, fontSize: 10, fontWeight: 700, textTransform: "capitalize", flexShrink: 0 }}>
+                      {r.status}
+                    </span>
                   </div>
-                  <Badge variant="outline" className={`text-[10px] font-semibold border ${statusColor[r.status]}`}>{r.status}</Badge>
-                </div>
-              ))
+                );
+              })
             ) : (
-              <div className="flex flex-col items-center py-10 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
-                  <Users className="h-6 w-6 text-muted-foreground" />
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 0", textAlign: "center" }}>
+                <div style={{ width: 52, height: 52, borderRadius: 16, background: "rgba(255,255,255,.05)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                  <Users size={22} style={{ color: "rgba(255,255,255,.2)" }} />
                 </div>
-                <p className="mt-3 text-sm font-semibold text-foreground">No requests yet</p>
-                <p className="mt-1 text-xs text-muted-foreground">Employee applications will appear here</p>
+                <p style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,.5)" }}>No requests yet</p>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,.25)", marginTop: 4 }}>Employee applications will appear here</p>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
