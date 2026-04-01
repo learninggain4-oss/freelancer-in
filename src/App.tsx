@@ -94,6 +94,12 @@ const AdminDataPrivacy = lazy(() => import("./pages/admin/AdminDataPrivacy"));
 const AdminAlertSystem = lazy(() => import("./pages/admin/AdminAlertSystem"));
 const AdminVersionControl = lazy(() => import("./pages/admin/AdminVersionControl"));
 const AdminSessionSecurity = lazy(() => import("./pages/admin/AdminSessionSecurity"));
+const AdminCacheManager = lazy(() => import("./pages/admin/AdminCacheManager"));
+const AdminApiManager = lazy(() => import("./pages/admin/AdminApiManager"));
+const AdminSessionManager = lazy(() => import("./pages/admin/AdminSessionManager"));
+const AdminNotificationCenter = lazy(() => import("./pages/admin/AdminNotificationCenter"));
+const AdminFileManager = lazy(() => import("./pages/admin/AdminFileManager"));
+const AdminHighAvailability = lazy(() => import("./pages/admin/AdminHighAvailability"));
 const AdminConfigManagement = lazy(() => import("./pages/admin/AdminConfigManagement"));
 const AdminMaintenanceCenter = lazy(() => import("./pages/admin/AdminMaintenanceCenter"));
 const AdminRateLimiting = lazy(() => import("./pages/admin/AdminRateLimiting"));
@@ -332,6 +338,12 @@ const AppContent = () => {
               <Route path="permission-validator" element={<AdminPermissionValidator />} />
               <Route path="export-control" element={<AdminExportControl />} />
               <Route path="vendor-manager" element={<AdminVendorManager />} />
+              <Route path="cache-manager" element={<AdminCacheManager />} />
+              <Route path="api-manager" element={<AdminApiManager />} />
+              <Route path="session-manager" element={<AdminSessionManager />} />
+              <Route path="notification-center" element={<AdminNotificationCenter />} />
+              <Route path="file-manager" element={<AdminFileManager />} />
+              <Route path="high-availability" element={<AdminHighAvailability />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
