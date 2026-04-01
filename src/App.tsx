@@ -94,6 +94,13 @@ const AdminDataPrivacy = lazy(() => import("./pages/admin/AdminDataPrivacy"));
 const AdminAlertSystem = lazy(() => import("./pages/admin/AdminAlertSystem"));
 const AdminVersionControl = lazy(() => import("./pages/admin/AdminVersionControl"));
 const AdminSessionSecurity = lazy(() => import("./pages/admin/AdminSessionSecurity"));
+const AdminConfigManagement = lazy(() => import("./pages/admin/AdminConfigManagement"));
+const AdminMaintenanceCenter = lazy(() => import("./pages/admin/AdminMaintenanceCenter"));
+const AdminRateLimiting = lazy(() => import("./pages/admin/AdminRateLimiting"));
+const AdminScheduler = lazy(() => import("./pages/admin/AdminScheduler"));
+const AdminPermissionValidator = lazy(() => import("./pages/admin/AdminPermissionValidator"));
+const AdminExportControl = lazy(() => import("./pages/admin/AdminExportControl"));
+const AdminVendorManager = lazy(() => import("./pages/admin/AdminVendorManager"));
 const WalletTypes = lazy(() => import("./pages/WalletTypes"));
 const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));
@@ -318,6 +325,13 @@ const AppContent = () => {
               <Route path="alert-system" element={<AdminAlertSystem />} />
               <Route path="version-control" element={<AdminVersionControl />} />
               <Route path="session-security" element={<AdminSessionSecurity />} />
+              <Route path="config-management" element={<AdminConfigManagement />} />
+              <Route path="maintenance-center" element={<AdminMaintenanceCenter />} />
+              <Route path="rate-limiting" element={<AdminRateLimiting />} />
+              <Route path="scheduler" element={<AdminScheduler />} />
+              <Route path="permission-validator" element={<AdminPermissionValidator />} />
+              <Route path="export-control" element={<AdminExportControl />} />
+              <Route path="vendor-manager" element={<AdminVendorManager />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

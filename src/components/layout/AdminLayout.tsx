@@ -13,6 +13,7 @@ import {
   Shield, ClipboardList, Crown, AlertTriangle,
   Database, Server, Archive, KeyRound,
   GitPullRequest, GitBranch, Lock,
+  Settings2, Wrench, Gauge, CalendarClock, UserCog, Download, Globe,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ThemeToggle from "./ThemeToggle";
@@ -240,6 +241,17 @@ const navSections = [
     { label: "Alert System",     icon: Bell,           path: "/admin/alert-system" },
     { label: "Version Control",  icon: GitBranch,      path: "/admin/version-control" },
     { label: "Session Security", icon: Lock,           path: "/admin/session-security" },
+  ]},
+  { title: "System Stability", items: [
+    { label: "Config Management",  icon: Settings2,    path: "/admin/config-management" },
+    { label: "Maintenance Center", icon: Wrench,       path: "/admin/maintenance-center" },
+    { label: "Rate Limiting",      icon: Gauge,        path: "/admin/rate-limiting" },
+    { label: "Scheduler",          icon: CalendarClock,path: "/admin/scheduler" },
+    { label: "Vendor Manager",     icon: Globe,        path: "/admin/vendor-manager" },
+  ]},
+  { title: "Advanced Security", items: [
+    { label: "Permission Validator", icon: UserCog,  path: "/admin/permission-validator" },
+    { label: "Export Control",       icon: Download, path: "/admin/export-control" },
   ]},
   { title: "Content & Config", items: [
     { label: "Hero Slideshow", icon: SlidersHorizontal,  path: "/admin/hero-slides" },
