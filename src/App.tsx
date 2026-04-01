@@ -89,6 +89,11 @@ const AdminDatabaseManager = lazy(() => import("./pages/admin/AdminDatabaseManag
 const AdminEnvVars = lazy(() => import("./pages/admin/AdminEnvVars"));
 const AdminServerMonitor = lazy(() => import("./pages/admin/AdminServerMonitor"));
 const AdminBackups = lazy(() => import("./pages/admin/AdminBackups"));
+const AdminApprovalCenter = lazy(() => import("./pages/admin/AdminApprovalCenter"));
+const AdminDataPrivacy = lazy(() => import("./pages/admin/AdminDataPrivacy"));
+const AdminAlertSystem = lazy(() => import("./pages/admin/AdminAlertSystem"));
+const AdminVersionControl = lazy(() => import("./pages/admin/AdminVersionControl"));
+const AdminSessionSecurity = lazy(() => import("./pages/admin/AdminSessionSecurity"));
 const WalletTypes = lazy(() => import("./pages/WalletTypes"));
 const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));
@@ -312,6 +317,11 @@ const AppContent = () => {
               <Route path="env-vars" element={<AdminEnvVars />} />
               <Route path="server-monitor" element={<AdminServerMonitor />} />
               <Route path="backups" element={<AdminBackups />} />
+              <Route path="approval-center" element={<AdminApprovalCenter />} />
+              <Route path="data-privacy" element={<AdminDataPrivacy />} />
+              <Route path="alert-system" element={<AdminAlertSystem />} />
+              <Route path="version-control" element={<AdminVersionControl />} />
+              <Route path="session-security" element={<AdminSessionSecurity />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

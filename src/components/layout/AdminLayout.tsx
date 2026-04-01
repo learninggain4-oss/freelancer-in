@@ -12,6 +12,7 @@ import {
   SlidersHorizontal, Eye, ClipboardCheck, Star, ArrowUpCircle,
   Shield, ClipboardList, Crown, AlertTriangle,
   Database, Server, Archive, KeyRound,
+  GitPullRequest, GitBranch, Lock,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ThemeToggle from "./ThemeToggle";
@@ -232,6 +233,13 @@ const navSections = [
     { label: "Env Variables",    icon: KeyRound,  path: "/admin/env-vars" },
     { label: "Server Monitor",   icon: Server,    path: "/admin/server-monitor" },
     { label: "Backup & Restore", icon: Archive,   path: "/admin/backups" },
+  ]},
+  { title: "Risk Prevention", items: [
+    { label: "Approval Center",  icon: GitPullRequest, path: "/admin/approval-center" },
+    { label: "Data Privacy",     icon: Shield,         path: "/admin/data-privacy" },
+    { label: "Alert System",     icon: Bell,           path: "/admin/alert-system" },
+    { label: "Version Control",  icon: GitBranch,      path: "/admin/version-control" },
+    { label: "Session Security", icon: Lock,           path: "/admin/session-security" },
   ]},
   { title: "Content & Config", items: [
     { label: "Hero Slideshow", icon: SlidersHorizontal,  path: "/admin/hero-slides" },
