@@ -15,8 +15,8 @@ function generateSecret(): string {
 
 function hmacSha1(key: Uint8Array, data: Uint8Array): Promise<Uint8Array> {
   return crypto.subtle
-    .importKey("raw", key, { name: "HMAC", hash: "SHA-1" }, false, ["sign"])
-    .then((k) => crypto.subtle.sign("HMAC", k, data))
+    .importKey("raw", key.buffer as ArrayBuffer, { name: "HMAC", hash: "SHA-1" }, false, ["sign"])
+    .then((k) => crypto.subtle.sign("HMAC", k, data.buffer as ArrayBuffer))
     .then((sig) => new Uint8Array(sig));
 }
 
