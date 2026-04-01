@@ -51,6 +51,22 @@ All 50+ pages across Employee, Client, and Admin dashboards have been redesigned
 - **AdminLayout** injects CSS that overrides all admin pages' base colors via `.admin-main` class
 - **AppLayout** injects CSS for employee/client pages via `.app-main-dark` class
 
+## Admin Security & Infrastructure System
+All pages are locked behind AdminRoute (requires authenticated admin session).
+
+### Security & Monitoring (`/admin/safety-center`, `/admin/audit-logs`, `/admin/rbac`)
+- **AdminSafetyCenter**: System status, maintenance mode toggle, session timeout config, security controls overview, emergency controls, recent security alerts
+- **AdminAuditLogs**: Full audit log with category/status filters, CSV export, log clear with type-to-confirm
+- **AdminRBAC**: Role definitions (Super Admin/Admin/Operator/Viewer), permission matrix table, role assignment per admin user
+- **Session Timeout**: AdminLayout tracks user activity, shows warning banner 2 min before auto-logout, configurable 15/30/60/120 min (stored at `"admin_session_timeout_min"`)
+- Storage keys: `"admin_audit_logs_v2"`, `"admin_rbac_overrides"`, `"admin_maintenance_mode"`
+
+### Infrastructure (`/admin/database-manager`, `/admin/env-vars`, `/admin/server-monitor`, `/admin/backups`)
+- **AdminDatabaseManager**: Add/edit/delete/switch database connections (Supabase/PostgreSQL/MySQL), test connection via live fetch, connection history, masked API keys — stored at `"admin_db_connections_v2"`
+- **AdminEnvVars**: Full env var CRUD with masking, show/hide, copy, enable/disable toggle, export JSON, version history — stored at `"admin_env_vars_v2"`. `SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` etc are "PROTECTED" (no edit/delete)
+- **AdminServerMonitor**: Real-time JS heap, DB latency (live Supabase query), API latency, active users, service health checks for all Supabase services, system info panel, cache clear control, app reload, admin terminal (limited client-side commands + help)
+- **AdminBackups**: Export full/config/audit backups from Supabase as downloaded JSON, backup schedule config (daily/weekly/monthly stored at `"admin_backup_schedule"`), backup history list, restore-file validation — stored at `"admin_backups_v2"`
+
 ## Notes
 - The PWA Service Worker caches Supabase API calls
 - OneSignal push notifications are domain-locked to `freelancer-india.lovable.app` — will only work after configuring a custom domain or updating OneSignal settings

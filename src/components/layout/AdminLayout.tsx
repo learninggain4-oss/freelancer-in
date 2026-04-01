@@ -11,6 +11,7 @@ import {
   Clock, BadgeCheck, Monitor, MessageSquareQuote, Wifi,
   SlidersHorizontal, Eye, ClipboardCheck, Star, ArrowUpCircle,
   Shield, ClipboardList, Crown, AlertTriangle,
+  Database, Server, Archive, KeyRound,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ThemeToggle from "./ThemeToggle";
@@ -225,6 +226,12 @@ const navSections = [
     { label: "RBAC & Roles",   icon: Crown,         path: "/admin/rbac" },
     { label: "IP Blocking",    icon: ShieldCheck,   path: "/admin/ip-blocking" },
     { label: "App Installs",   icon: Monitor,       path: "/admin/pwa-installs" },
+  ]},
+  { title: "Infrastructure", items: [
+    { label: "Database Manager", icon: Database, path: "/admin/database-manager" },
+    { label: "Env Variables",    icon: KeyRound,  path: "/admin/env-vars" },
+    { label: "Server Monitor",   icon: Server,    path: "/admin/server-monitor" },
+    { label: "Backup & Restore", icon: Archive,   path: "/admin/backups" },
   ]},
   { title: "Content & Config", items: [
     { label: "Hero Slideshow", icon: SlidersHorizontal,  path: "/admin/hero-slides" },

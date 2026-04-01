@@ -85,6 +85,10 @@ const AdminPwaInstalls = lazy(() => import("./pages/admin/AdminPwaInstalls"));
 const AdminSafetyCenter = lazy(() => import("./pages/admin/AdminSafetyCenter"));
 const AdminAuditLogs = lazy(() => import("./pages/admin/AdminAuditLogs"));
 const AdminRBAC = lazy(() => import("./pages/admin/AdminRBAC"));
+const AdminDatabaseManager = lazy(() => import("./pages/admin/AdminDatabaseManager"));
+const AdminEnvVars = lazy(() => import("./pages/admin/AdminEnvVars"));
+const AdminServerMonitor = lazy(() => import("./pages/admin/AdminServerMonitor"));
+const AdminBackups = lazy(() => import("./pages/admin/AdminBackups"));
 const WalletTypes = lazy(() => import("./pages/WalletTypes"));
 const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));
@@ -304,6 +308,10 @@ const AppContent = () => {
               <Route path="safety-center" element={<AdminSafetyCenter />} />
               <Route path="audit-logs" element={<AdminAuditLogs />} />
               <Route path="rbac" element={<AdminRBAC />} />
+              <Route path="database-manager" element={<AdminDatabaseManager />} />
+              <Route path="env-vars" element={<AdminEnvVars />} />
+              <Route path="server-monitor" element={<AdminServerMonitor />} />
+              <Route path="backups" element={<AdminBackups />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
