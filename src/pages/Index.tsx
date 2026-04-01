@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, createContext, useContext } from "react";
+import { translations, RTL_LANGS, LANG_LABELS, type LangCode, type Translations } from "@/i18n/translations";
 import {
   Briefcase, Shield, MessageCircle, CreditCard, Users, ArrowRight, Star,
   CheckCircle, Download, Smartphone, Share, Building2, Quote, Code, Palette,
@@ -31,6 +32,48 @@ const THEMES = [
     bg: "#0c0800", bgRgb: "12,8,0",    a1: "#f59e0b", a2: "#f97316", a1rgb: "245,158,11",  a2rgb: "249,115,22" },
 ] as const;
 type ThemeId = typeof THEMES[number]["id"];
+
+/* ─────────────────────── Language Context ─────────────────────── */
+const LangContext = createContext<{ lang: LangCode; setLang: (l: LangCode) => void; t: Translations }>({
+  lang: "en", setLang: () => {}, t: translations["en"],
+});
+const useLang = () => useContext(LangContext);
+
+const LanguageSwitcher = () => {
+  const { lang, setLang } = useLang();
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        title="Change language"
+        className="hidden sm:flex items-center gap-1.5 h-8 px-2.5 rounded-full transition-all hover:scale-105 text-xs font-semibold text-white/70 hover:text-white"
+        style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
+      >
+        <Globe className="h-3.5 w-3.5" />
+        <span>{LANG_LABELS[lang].split(" ")[0]}</span>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-10 z-50 rounded-2xl shadow-2xl overflow-hidden" style={{ background: "rgba(15,15,35,0.97)", border: "1px solid rgba(255,255,255,0.12)", backdropFilter: "blur(20px)", minWidth: 170 }}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30 px-3 pt-3 pb-1">Language</p>
+            {(Object.entries(LANG_LABELS) as [LangCode, string][]).map(([code, label]) => (
+              <button
+                key={code}
+                onClick={() => { setLang(code); setOpen(false); }}
+                className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-sm text-left transition-all hover:bg-white/5"
+              >
+                <span className={cn("font-medium", lang === code ? "text-white" : "text-white/50")}>{label}</span>
+                {lang === code && <CheckCircle className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--t-a1)" }} />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
 /* ─────────────────────── Global animation styles ─────────────────────── */
 const GlobalStyles = () => (
@@ -360,30 +403,20 @@ const Orbs = () => (
 
 /* ─────────────────────── Register Role Modal ─────────────────────── */
 const RegisterModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+  const { t } = useLang();
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4" onClick={onClose}>
-      {/* Overlay */}
       <div className="overlay-enter absolute inset-0" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }} />
-
-      {/* Modal card */}
       <div className="modal-enter relative w-full max-w-md rounded-3xl p-8 shadow-2xl" style={{ background: "linear-gradient(145deg, rgba(15,15,35,0.98), rgba(20,20,50,0.98))", border: "1px solid rgba(255,255,255,0.12)" }} onClick={(e) => e.stopPropagation()}>
-        {/* Close */}
-        <button onClick={onClose} className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full text-white/40 hover:text-white transition-colors hover:bg-white/10">
-          ✕
-        </button>
-
-        {/* Header */}
+        <button onClick={onClose} className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full text-white/40 hover:text-white transition-colors hover:bg-white/10">✕</button>
         <div className="text-center mb-8">
           <img src="/logo.png" alt="Logo" className="h-14 w-14 object-contain mx-auto mb-4" />
           <h2 className="text-2xl font-black text-white mb-1">Join Freelancer<span className="gradient-text">.</span></h2>
-          <p className="text-sm text-white/50">How would you like to get started?</p>
+          <p className="text-sm text-white/50">{t.registerModal.sub}</p>
         </div>
-
-        {/* Options */}
         <div className="grid grid-cols-1 gap-4">
-          {/* Freelancer option */}
           <Link to="/register/employee" onClick={onClose} className="group relative flex items-center gap-4 rounded-2xl p-5 text-left transition-all duration-300 hover:scale-[1.02]" style={{ background: "rgba(var(--t-a1-rgb),0.1)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
             <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.15), rgba(var(--t-a2-rgb),0.1))" }} />
             <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))", boxShadow: "0 8px 20px rgba(var(--t-a1-rgb),0.35)" }}>
@@ -391,14 +424,12 @@ const RegisterModal = ({ open, onClose }: { open: boolean; onClose: () => void }
             </div>
             <div className="relative flex-1">
               <div className="flex items-center justify-between">
-                <p className="text-base font-bold text-white">Join as Freelancer</p>
+                <p className="text-base font-bold text-white">{t.registerModal.freelancer}</p>
                 <ArrowRight className="h-4 w-4 text-white/40 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
               </div>
-              <p className="text-sm text-white/50 mt-0.5">Find projects, get hired & earn money</p>
+              <p className="text-sm text-white/50 mt-0.5">{t.registerModal.freelancerDesc}</p>
             </div>
           </Link>
-
-          {/* Employer option */}
           <Link to="/register/client" onClick={onClose} className="group relative flex items-center gap-4 rounded-2xl p-5 text-left transition-all duration-300 hover:scale-[1.02]" style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)" }}>
             <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: "linear-gradient(135deg, rgba(52,211,153,0.12), rgba(16,185,129,0.08))" }} />
             <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg,#10b981,#059669)", boxShadow: "0 8px 20px rgba(16,185,129,0.3)" }}>
@@ -406,18 +437,16 @@ const RegisterModal = ({ open, onClose }: { open: boolean; onClose: () => void }
             </div>
             <div className="relative flex-1">
               <div className="flex items-center justify-between">
-                <p className="text-base font-bold text-white">Join as Employer</p>
+                <p className="text-base font-bold text-white">{t.registerModal.employer}</p>
                 <ArrowRight className="h-4 w-4 text-white/40 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
               </div>
-              <p className="text-sm text-white/50 mt-0.5">Post projects & hire skilled freelancers</p>
+              <p className="text-sm text-white/50 mt-0.5">{t.registerModal.employerDesc}</p>
             </div>
           </Link>
         </div>
-
-        {/* Login link */}
         <p className="text-center text-sm text-white/40 mt-6">
-          Already have an account?{" "}
-          <Link to="/login" onClick={onClose} className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">Log in</Link>
+          {t.registerModal.haveAccount}{" "}
+          <Link to="/login" onClick={onClose} className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">{t.registerModal.loginLink}</Link>
         </p>
       </div>
     </div>
@@ -487,6 +516,7 @@ const LiveClock = () => {
 const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip, activeTheme, onThemeChange }: any) => {
   const [scrolled, setScrolled] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const { t } = useLang();
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 20);
@@ -510,16 +540,17 @@ const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip, activ
           <div className="flex items-center gap-2.5">
             {!isInstalled && (deferredPrompt || isIOS) && (
               <button onClick={() => deferredPrompt ? onInstall() : onIOSTip()} className="hidden sm:flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors">
-                <Download className="h-3.5 w-3.5" /> Install
+                <Download className="h-3.5 w-3.5" /> {t.nav.install}
               </button>
             )}
+            <LanguageSwitcher />
             <ThemePicker active={activeTheme} onChange={onThemeChange} />
             <button onClick={() => setShowRegisterModal(true)} className="hidden sm:inline-flex text-sm text-white/70 hover:text-white transition-colors px-3 py-1.5 rounded-xl hover:bg-white/5">
-              Register
+              {t.nav.register}
             </button>
             <Link to="/login">
               <button className="relative inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 20px rgba(var(--t-a1-rgb),0.4)" }}>
-                Login <ArrowRight className="h-3.5 w-3.5" />
+                {t.nav.login} <ArrowRight className="h-3.5 w-3.5" />
               </button>
             </Link>
           </div>
@@ -530,43 +561,42 @@ const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip, activ
 };
 
 /* ─────────────────────── Hero Section ─────────────────────── */
-const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => (
+const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
+  const { t } = useLang();
+  return (
   <section className="relative overflow-hidden py-20 md:py-28 lg:py-36 px-4 sm:px-6">
     <Orbs />
-    {/* Animated grid */}
     <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
 
     <div className="mx-auto max-w-7xl">
       <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-        {/* Left: Text — use CSS animations so above-fold content is visible immediately */}
         <div className="text-center lg:text-left" style={{ animation: "slide-up 0.7s ease both" }}>
           <div className="mb-5 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-white/80" style={{ background: "rgba(var(--t-a1-rgb),0.15)", border: "1px solid rgba(var(--t-a1-rgb),0.3)" }}>
             <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 pulse-glow" />
-            Trusted by 500+ professionals across India
+            {t.hero.trustBadge}
           </div>
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight text-white mb-6" style={{ animation: "slide-up 0.7s ease 0.1s both" }}>
-            Connect.{" "}
+            {t.hero.line1}{" "}
             <br />
-            Collaborate.{" "}
+            {t.hero.line2}{" "}
             <br />
-            <span className="gradient-text">Get Paid.</span>
+            <span className="gradient-text">{t.hero.line3}</span>
           </h1>
           <p className="text-base sm:text-lg text-white/60 leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0" style={{ animation: "slide-up 0.7s ease 0.2s both" }}>
-            The all-in-one platform connecting skilled freelancers with clients in India.
-            Manage projects, chat in real-time, and receive payments securely.
+            {t.hero.subtitle}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-10" style={{ animation: "slide-up 0.7s ease 0.3s both" }}>
             <Link to="/register/employee">
               <button className="group flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-base font-semibold text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
                 <Briefcase className="h-5 w-5" />
-                Join as Freelancer
+                {t.hero.joinFreelancer}
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </Link>
             <Link to="/register/client">
               <button className="flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-base font-semibold text-white/80 hover:text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)" }}>
                 <Users className="h-5 w-5" />
-                Join as Employer
+                {t.hero.joinEmployer}
               </button>
             </Link>
           </div>
@@ -590,10 +620,10 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => (
       </div>
     </div>
 
-    {/* Bottom gradient fade */}
     <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent, var(--t-bg))" }} />
   </section>
-);
+  );
+};
 
 /* ─────────────────────── Trusted Companies ─────────────────────── */
 const TrustBar = () => (
@@ -617,82 +647,98 @@ const TrustBar = () => (
 );
 
 /* ─────────────────────── Features Section ─────────────────────── */
-const FeaturesSection = () => (
-  <section id="features" className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
-    <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full" style={{ background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.08) 0%, transparent 70%)" }} />
-    <div className="mx-auto max-w-7xl">
-      <Reveal className="text-center mb-14">
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
-          <Zap className="h-3.5 w-3.5" /> Platform Features
-        </div>
-        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">Everything you <span className="gradient-text">need</span></h2>
-        <p className="text-white/50 max-w-md mx-auto">A complete ecosystem designed for modern freelancers and clients in India.</p>
-      </Reveal>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {features.map((f, i) => (
-          <Reveal key={f.title} delay={i * 80}>
-            <div className="feature-card-3d group relative h-full rounded-2xl p-5 cursor-pointer overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              {/* Hover gradient glow */}
-              <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${f.color} rounded-2xl`} style={{ opacity: 0 }} />
-              <div className="relative z-10">
-                <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${f.color} float-${(i % 3) + 1}`} style={{ boxShadow: "0 8px 20px rgba(0,0,0,0.3)" }}>
-                  <f.icon className="h-5.5 w-5.5 text-white" />
-                </div>
-                <h3 className="text-base font-bold text-white mb-2">{f.title}</h3>
-                <p className="text-sm text-white/50 leading-relaxed">{f.description}</p>
-              </div>
-              {/* Corner accent */}
-              <div className={`absolute -bottom-6 -right-6 h-20 w-20 rounded-full bg-gradient-to-br ${f.color} opacity-10 group-hover:opacity-20 transition-opacity blur-xl`} />
-            </div>
-          </Reveal>
-        ))}
-      </div>
-    </div>
-  </section>
-);
-
-/* ─────────────────────── How It Works ─────────────────────── */
-const HowItWorksSection = () => (
-  <section id="how-it-works" className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
-    <div className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 0%, rgba(var(--t-a1-rgb),0.04) 50%, transparent 100%)" }} />
-    <div className="mx-auto max-w-7xl">
-      <Reveal className="text-center mb-14">
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
-          <CheckCircle className="h-3.5 w-3.5" /> Simple Process
-        </div>
-        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">How it <span className="gradient-text">works</span></h2>
-        <p className="text-white/50 max-w-md mx-auto">Start earning or hiring in just four simple steps.</p>
-      </Reveal>
-
-      {/* Connecting line (desktop) */}
-      <div className="relative">
-        <div className="hidden lg:block absolute top-16 left-[12.5%] right-[12.5%] h-px" style={{ background: "linear-gradient(to right, transparent, rgba(var(--t-a1-rgb),0.4), rgba(var(--t-a2-rgb),0.4), rgba(52,211,153,0.4), transparent)" }} />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {steps.map((s, i) => (
-            <Reveal key={s.step} delay={i * 120}>
-              <div className="step-3d group relative rounded-2xl p-6 text-center cursor-pointer" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                {/* Step number bubble */}
-                <div className="relative mx-auto mb-5 flex h-14 w-14 items-center justify-center">
-                  <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${s.color} opacity-20 group-hover:opacity-40 transition-opacity blur-lg`} />
-                  <div className={`relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${s.color} shadow-lg`} style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.3)" }}>
-                    <s.icon className="h-6 w-6 text-white" />
+const featureMeta = [
+  { icon: Shield,        color: "from-violet-500 to-purple-600" },
+  { icon: Briefcase,     color: "from-blue-500 to-cyan-600" },
+  { icon: CreditCard,    color: "from-emerald-500 to-teal-600" },
+  { icon: MessageCircle, color: "from-rose-500 to-pink-600" },
+  { icon: Zap,           color: "from-amber-500 to-orange-600" },
+  { icon: Lock,          color: "from-indigo-500 to-violet-600" },
+  { icon: Clock,         color: "from-cyan-500 to-blue-600" },
+  { icon: TrendingUp,    color: "from-fuchsia-500 to-purple-600" },
+];
+const FeaturesSection = () => {
+  const { t } = useLang();
+  return (
+    <section id="features" className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full" style={{ background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.08) 0%, transparent 70%)" }} />
+      <div className="mx-auto max-w-7xl">
+        <Reveal className="text-center mb-14">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
+            <Zap className="h-3.5 w-3.5" /> Platform Features
+          </div>
+          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4 gradient-text">{t.features.heading}</h2>
+          <p className="text-white/50 max-w-md mx-auto">{t.features.subheading}</p>
+        </Reveal>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {featureMeta.map((f, i) => (
+            <Reveal key={i} delay={i * 80}>
+              <div className="feature-card-3d group relative h-full rounded-2xl p-5 cursor-pointer overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${f.color} rounded-2xl`} style={{ opacity: 0 }} />
+                <div className="relative z-10">
+                  <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${f.color} float-${(i % 3) + 1}`} style={{ boxShadow: "0 8px 20px rgba(0,0,0,0.3)" }}>
+                    <f.icon className="h-5 w-5 text-white" />
                   </div>
-                  {/* Number badge */}
-                  <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full text-xs font-black text-white" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>
-                    {i + 1}
-                  </div>
+                  <h3 className="text-base font-bold text-white mb-2">{t.features.items[i]?.title}</h3>
+                  <p className="text-sm text-white/50 leading-relaxed">{t.features.items[i]?.desc}</p>
                 </div>
-                <div className="text-5xl font-black mb-1" style={{ color: "rgba(255,255,255,0.05)" }}>{s.step}</div>
-                <h3 className="text-base font-bold text-white mb-2 -mt-4">{s.title}</h3>
-                <p className="text-sm text-white/50 leading-relaxed">{s.description}</p>
+                <div className={`absolute -bottom-6 -right-6 h-20 w-20 rounded-full bg-gradient-to-br ${f.color} opacity-10 group-hover:opacity-20 transition-opacity blur-xl`} />
               </div>
             </Reveal>
           ))}
         </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
+
+/* ─────────────────────── How It Works ─────────────────────── */
+const stepMeta = [
+  { step: "01", icon: Users,         color: "from-violet-600 to-purple-700" },
+  { step: "02", icon: Search,        color: "from-blue-600 to-cyan-700" },
+  { step: "03", icon: MessageCircle, color: "from-emerald-600 to-teal-700" },
+  { step: "04", icon: CreditCard,    color: "from-rose-600 to-pink-700" },
+];
+const HowItWorksSection = () => {
+  const { t } = useLang();
+  return (
+    <section id="how-it-works" className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 0%, rgba(var(--t-a1-rgb),0.04) 50%, transparent 100%)" }} />
+      <div className="mx-auto max-w-7xl">
+        <Reveal className="text-center mb-14">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
+            <CheckCircle className="h-3.5 w-3.5" /> Simple Process
+          </div>
+          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">{t.howItWorks.heading}</h2>
+          <p className="text-white/50 max-w-md mx-auto">{t.howItWorks.sub}</p>
+        </Reveal>
+        <div className="relative">
+          <div className="hidden lg:block absolute top-16 left-[12.5%] right-[12.5%] h-px" style={{ background: "linear-gradient(to right, transparent, rgba(var(--t-a1-rgb),0.4), rgba(var(--t-a2-rgb),0.4), rgba(52,211,153,0.4), transparent)" }} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {stepMeta.map((s, i) => (
+              <Reveal key={s.step} delay={i * 120}>
+                <div className="step-3d group relative rounded-2xl p-6 text-center cursor-pointer" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div className="relative mx-auto mb-5 flex h-14 w-14 items-center justify-center">
+                    <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${s.color} opacity-20 group-hover:opacity-40 transition-opacity blur-lg`} />
+                    <div className={`relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${s.color} shadow-lg`} style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.3)" }}>
+                      <s.icon className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full text-xs font-black text-white" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>
+                      {i + 1}
+                    </div>
+                  </div>
+                  <div className="text-5xl font-black mb-1" style={{ color: "rgba(255,255,255,0.05)" }}>{s.step}</div>
+                  <h3 className="text-base font-bold text-white mb-2 -mt-4">{t.howItWorks.steps[i]?.title}</h3>
+                  <p className="text-sm text-white/50 leading-relaxed">{t.howItWorks.steps[i]?.desc}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
 
 /* ─────────────────────── Services / Categories Section ─────────────────────── */
 const ServicesSection = () => {
@@ -761,37 +807,44 @@ const ServicesSection = () => {
 };
 
 /* ─────────────────────── Stats Section ─────────────────────── */
-const StatsSection = () => (
-  <section className="relative py-20 md:py-24 px-4 sm:px-6 overflow-hidden">
-    <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.08) 0%, rgba(var(--t-a2-rgb),0.08) 50%, rgba(52,211,153,0.05) 100%)", borderTop: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)" }} />
-    {/* Spinning ring decorations */}
-    <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-96 w-96 rounded-full spin-slow" style={{ border: "1px solid rgba(var(--t-a1-rgb),0.12)" }} />
-    <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full spin-reverse" style={{ border: "1px solid rgba(var(--t-a2-rgb),0.1)" }} />
-
-    <div className="mx-auto max-w-7xl relative z-10">
-      <Reveal className="text-center mb-14">
-        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">Numbers that <span className="gradient-text">speak</span></h2>
-        <p className="text-white/50">The platform is growing fast — here's the proof.</p>
-      </Reveal>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-        {stats.map((s, i) => (
-          <Reveal key={s.label} delay={i * 100}>
-            <div className="card-3d group relative rounded-2xl p-6 text-center overflow-hidden cursor-default" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.1), rgba(var(--t-a2-rgb),0.1))" }} />
-              <div className="relative z-10">
-                <div className="text-4xl sm:text-5xl font-black mb-2" style={{ background: "linear-gradient(135deg, #a78bfa, #60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                  <AnimatedCounter value={s.value} prefix={s.prefix} suffix={s.suffix} />
+const StatsSection = () => {
+  const { t } = useLang();
+  const statItems = [
+    { value: "500",  suffix: "+",   label: t.stats.labels.freelancers, prefix: "" },
+    { value: "10",   suffix: "L+",  label: t.stats.labels.projects,    prefix: "₹" },
+    { value: "99",   suffix: "%",   label: t.stats.labels.clients,     prefix: "" },
+    { value: "2700", suffix: "+",   label: t.stats.labels.paid,        prefix: "" },
+  ];
+  return (
+    <section className="relative py-20 md:py-24 px-4 sm:px-6 overflow-hidden">
+      <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.08) 0%, rgba(var(--t-a2-rgb),0.08) 50%, rgba(52,211,153,0.05) 100%)", borderTop: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)" }} />
+      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-96 w-96 rounded-full spin-slow" style={{ border: "1px solid rgba(var(--t-a1-rgb),0.12)" }} />
+      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full spin-reverse" style={{ border: "1px solid rgba(var(--t-a2-rgb),0.1)" }} />
+      <div className="mx-auto max-w-7xl relative z-10">
+        <Reveal className="text-center mb-14">
+          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">{t.stats.heading}</h2>
+          <p className="text-white/50">{t.stats.sub}</p>
+        </Reveal>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          {statItems.map((s, i) => (
+            <Reveal key={i} delay={i * 100}>
+              <div className="card-3d group relative rounded-2xl p-6 text-center overflow-hidden cursor-default" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.1), rgba(var(--t-a2-rgb),0.1))" }} />
+                <div className="relative z-10">
+                  <div className="text-4xl sm:text-5xl font-black mb-2" style={{ background: "linear-gradient(135deg, #a78bfa, #60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    <AnimatedCounter value={s.value} prefix={s.prefix} suffix={s.suffix} />
+                  </div>
+                  <p className="text-sm text-white/50 font-medium">{s.label}</p>
                 </div>
-                <p className="text-sm text-white/50 font-medium">{s.label}</p>
+                <div className="absolute -bottom-6 -right-6 h-24 w-24 rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }} />
               </div>
-              <div className="absolute -bottom-6 -right-6 h-24 w-24 rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }} />
-            </div>
-          </Reveal>
-        ))}
+            </Reveal>
+          ))}
+        </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 /* ─────────────────────── Testimonials ─────────────────────── */
 const TestimonialsSection = ({ testimonials }: { testimonials: any[] }) => {
@@ -864,46 +917,41 @@ const TestimonialsSection = ({ testimonials }: { testimonials: any[] }) => {
 };
 
 /* ─────────────────────── CTA Section ─────────────────────── */
-const CTASection = () => (
-  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
-    <Reveal>
-      <div className="mx-auto max-w-5xl relative rounded-3xl overflow-hidden p-10 md:p-16 text-center" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.15) 0%, rgba(var(--t-a2-rgb),0.15) 50%, rgba(52,211,153,0.1) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}>
-        {/* Background decoration */}
-        <div className="absolute -top-20 -right-20 h-60 w-60 rounded-full spin-slow" style={{ border: "1px solid rgba(var(--t-a1-rgb),0.15)" }} />
-        <div className="absolute -bottom-20 -left-20 h-60 w-60 rounded-full spin-reverse" style={{ border: "1px solid rgba(var(--t-a2-rgb),0.1)" }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.1) 0%, transparent 70%)" }} />
-
-        <div className="relative z-10">
-          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">Ready to <span className="gradient-text">get started?</span></h2>
-          <p className="text-white/60 mb-6 max-w-md mx-auto">Create your free account and start working on projects today. No hidden fees.</p>
-          <div className="flex flex-wrap justify-center gap-4 mb-8">
-            {["No hidden fees", "Instant setup", "Secure payments", "24/7 support"].map((item) => (
-              <span key={item} className="inline-flex items-center gap-1.5 text-sm text-white/60">
-                <CheckCircle className="h-4 w-4 text-emerald-400" /> {item}
-              </span>
-            ))}
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/register/employee">
-              <button className="group flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-base font-semibold text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4)" }}>
-                <Briefcase className="h-4.5 w-4.5" /> Join as Freelancer <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </Link>
-            <Link to="/register/client">
-              <button className="flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-base font-semibold text-white/80 hover:text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)" }}>
-                <Users className="h-4.5 w-4.5" /> Join as Employer
-              </button>
-            </Link>
+const CTASection = () => {
+  const { t } = useLang();
+  return (
+    <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+      <Reveal>
+        <div className="mx-auto max-w-5xl relative rounded-3xl overflow-hidden p-10 md:p-16 text-center" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.15) 0%, rgba(var(--t-a2-rgb),0.15) 50%, rgba(52,211,153,0.1) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}>
+          <div className="absolute -top-20 -right-20 h-60 w-60 rounded-full spin-slow" style={{ border: "1px solid rgba(var(--t-a1-rgb),0.15)" }} />
+          <div className="absolute -bottom-20 -left-20 h-60 w-60 rounded-full spin-reverse" style={{ border: "1px solid rgba(var(--t-a2-rgb),0.1)" }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.1) 0%, transparent 70%)" }} />
+          <div className="relative z-10">
+            <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">{t.cta.heading}</h2>
+            <p className="text-white/60 mb-6 max-w-md mx-auto">{t.cta.sub}</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/register/employee">
+                <button className="group flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-base font-semibold text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4)" }}>
+                  <Briefcase className="h-4 w-4" /> {t.cta.joinFreelancer} <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </Link>
+              <Link to="/register/client">
+                <button className="flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-base font-semibold text-white/80 hover:text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)" }}>
+                  <Users className="h-4 w-4" /> {t.cta.joinEmployer}
+                </button>
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
-    </Reveal>
-  </section>
-);
+      </Reveal>
+    </section>
+  );
+};
 
 /* ─────────────────────── FAQ Section ─────────────────────── */
 const FAQSection = () => {
   const [open, setOpen] = useState<number | null>(null);
+  const { t } = useLang();
   return (
     <section id="faq" className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
       <div className="pointer-events-none absolute top-0 right-0 h-[400px] w-[400px]" style={{ background: "radial-gradient(circle at top right, rgba(52,211,153,0.05) 0%, transparent 60%)" }} />
@@ -912,11 +960,11 @@ const FAQSection = () => {
           <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
             <MessageCircle className="h-3.5 w-3.5" /> FAQ
           </div>
-          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">Frequently asked <span className="gradient-text">questions</span></h2>
-          <p className="text-white/50">Everything you need to know about getting started.</p>
+          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">{t.faq.heading}</h2>
+          <p className="text-white/50">{t.faq.sub}</p>
         </Reveal>
         <div className="space-y-3">
-          {faqs.map((faq, i) => (
+          {t.faq.items.map((faq, i) => (
             <Reveal key={i} delay={i * 60}>
               <div className="rounded-2xl overflow-hidden transition-all duration-300" style={{ background: open === i ? "rgba(var(--t-a1-rgb),0.08)" : "rgba(255,255,255,0.03)", border: open === i ? "1px solid rgba(var(--t-a1-rgb),0.25)" : "1px solid rgba(255,255,255,0.07)" }}>
                 <button onClick={() => setOpen(open === i ? null : i)} className="flex w-full items-center justify-between px-6 py-4 text-left gap-4">
@@ -938,72 +986,66 @@ const FAQSection = () => {
 };
 
 /* ─────────────────────── Footer ─────────────────────── */
-const Footer = () => (
-  <footer className="relative py-16 px-4 sm:px-6 overflow-hidden" style={{ borderTop: "1px solid rgba(255,255,255,0.07)", background: "rgba(0,0,0,0.3)" }}>
-    <div className="mx-auto max-w-7xl">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
-        {/* Brand */}
-        <div className="col-span-2 md:col-span-1">
-          <div className="flex items-center gap-2 mb-4">
-            <img src="/logo.png" alt="Freelancer Logo" className="h-10 w-10 object-contain" />
-            <span className="text-lg font-bold text-white">Freelancer<span className="gradient-text">.</span></span>
+const Footer = () => {
+  const { t } = useLang();
+  return (
+    <footer className="relative py-16 px-4 sm:px-6 overflow-hidden" style={{ borderTop: "1px solid rgba(255,255,255,0.07)", background: "rgba(0,0,0,0.3)" }}>
+      <div className="mx-auto max-w-7xl">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
+          <div className="col-span-2 md:col-span-1">
+            <div className="flex items-center gap-2 mb-4">
+              <img src="/logo.png" alt="Freelancer Logo" className="h-10 w-10 object-contain" />
+              <span className="text-lg font-bold text-white">Freelancer<span className="gradient-text">.</span></span>
+            </div>
+            <p className="text-sm text-white/40 leading-relaxed mb-5 max-w-xs">{t.footer.tagline}</p>
+            <div className="flex gap-3">
+              {[Twitter, Linkedin, Instagram, Github].map((Icon, i) => (
+                <div key={i} className="flex h-8 w-8 items-center justify-center rounded-lg cursor-pointer hover:scale-110 transition-transform" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <Icon className="h-3.5 w-3.5 text-white/50" />
+                </div>
+              ))}
+            </div>
           </div>
-          <p className="text-sm text-white/40 leading-relaxed mb-5 max-w-xs">The all-in-one platform connecting skilled freelancers with clients across India.</p>
-          <div className="flex gap-3">
-            {[Twitter, Linkedin, Instagram, Github].map((Icon, i) => (
-              <div key={i} className="flex h-8 w-8 items-center justify-center rounded-lg cursor-pointer hover:scale-110 transition-transform" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <Icon className="h-3.5 w-3.5 text-white/50" />
-              </div>
-            ))}
+          <div>
+            <h4 className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-4">{t.footer.platform}</h4>
+            <ul className="space-y-2.5">
+              {[t.footer.links.findWork, t.footer.links.howItWorks, t.footer.links.pricing].map((item) => (
+                <li key={item}><a href="#" className="text-sm text-white/50 hover:text-white transition-colors">{item}</a></li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-4">{t.footer.company}</h4>
+            <ul className="space-y-2.5">
+              {[[t.footer.links.about, "#"],[t.footer.links.blog, "#"],[t.footer.links.careers, "#"],[t.footer.links.contact, "#"]].map(([name, href]) => (
+                <li key={name}><a href={href} className="text-sm text-white/50 hover:text-white transition-colors">{name}</a></li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-4">Contact</h4>
+            <ul className="space-y-3">
+              {[[Mail,"support@freelancer.in"],[Phone,"+91 90000 00000"],[MapPin,"India"]].map(([Icon,text],i) => (
+                <li key={i} className="flex items-center gap-2.5 text-sm text-white/50">
+                  {/* @ts-ignore */}
+                  <Icon className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+                  {text}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-
-        {/* Platform */}
-        <div>
-          <h4 className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-4">Platform</h4>
-          <ul className="space-y-2.5">
-            {["How It Works","Features","Categories","Pricing","Mobile App"].map((item) => (
-              <li key={item}><a href="#" className="text-sm text-white/50 hover:text-white transition-colors">{item}</a></li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Company */}
-        <div>
-          <h4 className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-4">Company</h4>
-          <ul className="space-y-2.5">
-            {[["Privacy Policy","/legal/privacy-policy"],["Terms of Service","/legal/terms-of-service"],["Help & Support","/help-support"],["Login","/login"],["Register","/register/employee"]].map(([name, href]) => (
-              <li key={name}><Link to={href} className="text-sm text-white/50 hover:text-white transition-colors">{name}</Link></li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Contact */}
-        <div>
-          <h4 className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-4">Contact</h4>
-          <ul className="space-y-3">
-            {[[Mail,"support@freelancer.in"],[Phone,"+91 90000 00000"],[MapPin,"India"]].map(([Icon,text],i) => (
-              <li key={i} className="flex items-center gap-2.5 text-sm text-white/50">
-                {/* @ts-ignore */}
-                <Icon className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
-                {text}
-              </li>
-            ))}
-          </ul>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <p className="text-xs text-white/30">{t.footer.copyright}</p>
+          <div className="flex gap-6">
+            <Link to="/legal/privacy-policy" className="text-xs text-white/30 hover:text-white/60 transition-colors">{t.footer.links.privacy}</Link>
+            <Link to="/legal/terms-of-service" className="text-xs text-white/30 hover:text-white/60 transition-colors">{t.footer.links.terms}</Link>
+          </div>
         </div>
       </div>
-
-      {/* Bottom bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-        <p className="text-xs text-white/30">© 2026 Freelancer. All rights reserved.</p>
-        <div className="flex gap-6">
-          <Link to="/legal/privacy-policy" className="text-xs text-white/30 hover:text-white/60 transition-colors">Privacy</Link>
-          <Link to="/legal/terms-of-service" className="text-xs text-white/30 hover:text-white/60 transition-colors">Terms</Link>
-        </div>
-      </div>
-    </div>
-  </footer>
-);
+    </footer>
+  );
+};
 
 /* ─────────────────────── Main Page ─────────────────────── */
 const Index = () => {
@@ -1015,7 +1057,13 @@ const Index = () => {
   const [showBanner, setShowBanner] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [themeId, setThemeId] = useState<ThemeId>(() => (localStorage.getItem("fi-theme") as ThemeId) || "midnight");
+  const [lang, setLangState] = useState<LangCode>(() => (localStorage.getItem("fi-lang") as LangCode) || "en");
   const theme = THEMES.find(t => t.id === themeId) ?? THEMES[0];
+
+  const handleLangChange = (l: LangCode) => {
+    setLangState(l);
+    localStorage.setItem("fi-lang", l);
+  };
 
   const handleThemeChange = (id: ThemeId) => {
     setThemeId(id);
@@ -1072,8 +1120,11 @@ const Index = () => {
     "--t-a2-rgb": theme.a2rgb,
   } as React.CSSProperties;
 
+  const isRTL = RTL_LANGS.includes(lang);
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ ...cssVars, background: "var(--t-bg)", color: "white" }}>
+    <LangContext.Provider value={{ lang, setLang: handleLangChange, t: translations[lang] }}>
+    <div className="min-h-screen flex flex-col" dir={isRTL ? "rtl" : "ltr"} style={{ ...cssVars, background: "var(--t-bg)", color: "white" }}>
       <GlobalStyles />
 
       <Navbar deferredPrompt={deferredPrompt} isInstalled={isInstalled} isIOS={isIOS} onInstall={handleInstall} onIOSTip={() => setShowIOSTip(v => !v)} activeTheme={themeId} onThemeChange={handleThemeChange} />
@@ -1131,6 +1182,7 @@ const Index = () => {
         </div>
       )}
     </div>
+    </LangContext.Provider>
   );
 };
 
