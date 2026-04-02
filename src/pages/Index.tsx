@@ -582,6 +582,23 @@ const GlobalStyles = () => (
     .badge-pulse { animation: badge-glow 2.8s ease-in-out infinite; }
     /* ── Wave 7: Magnetic wrapper spring ── */
     .magnetic-wrap { transition: transform 0.35s cubic-bezier(.17,.67,.34,1.4); display:inline-block; }
+    /* ── Hero Video Background ── */
+    .hero-video-bg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: center;
+      z-index: 0; opacity: 0.28; pointer-events: none;
+      filter: saturate(0.8) brightness(0.55);
+    }
+    .hero-video-overlay {
+      position: absolute; inset: 0; z-index: 1; pointer-events: none;
+      background: linear-gradient(
+        180deg,
+        rgba(15,15,26,0.55) 0%,
+        rgba(15,15,26,0.20) 40%,
+        rgba(15,15,26,0.20) 60%,
+        rgba(15,15,26,0.80) 100%
+      );
+    }
     /* ── Spinning accent border ── */
     .accent-spin-border { position:relative; border-radius:18px; padding:1.5px; }
     .accent-spin-border::before {
@@ -1795,6 +1812,18 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
   const { t } = useLang();
   return (
   <section className="relative overflow-hidden py-20 md:py-28 lg:py-36 px-4 sm:px-6">
+    {/* Background Video */}
+    <video
+      className="hero-video-bg"
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload="auto"
+    >
+      <source src="/hero-bg.mp4" type="video/mp4" />
+    </video>
+    <div className="hero-video-overlay" />
     <Orbs />
     <ParticleField />
     <ConstellationCanvas />
@@ -1802,9 +1831,9 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
     <FloatingSkillTags />
 
     {/* Grid lines */}
-    <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
+    <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)", backgroundSize: "60px 60px", zIndex: 2 }} />
 
-    <div className="mx-auto max-w-7xl">
+    <div className="mx-auto max-w-7xl" style={{ position: "relative", zIndex: 3 }}>
       <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         <div className="text-center lg:text-left" style={{ animation: "slide-up 0.7s ease both", transform: `translateY(${parallaxUp}px)`, willChange: "transform" }}>
 
