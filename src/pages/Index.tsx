@@ -273,6 +273,70 @@ const GlobalStyles = () => (
       border: 2px solid rgba(var(--t-a1-rgb), 0.6);
       animation: glow-ping 1.8s ease-out infinite;
     }
+    /* feature card shimmer on hover */
+    .card-shimmer { position: relative; overflow: hidden; }
+    .card-shimmer::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -80%;
+      width: 60%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+      transform: skewX(-15deg);
+      transition: none;
+    }
+    .card-shimmer:hover::before {
+      animation: shimmer-scan 0.8s ease both;
+    }
+    /* ripple */
+    .ripple-container { position: relative; overflow: hidden; }
+    @keyframes ripple-expand {
+      to { transform: scale(4); opacity: 0; }
+    }
+    .ripple-wave {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      transform: scale(0);
+      animation: ripple-expand 0.6s linear;
+      pointer-events: none;
+    }
+    /* toast in/out for floating notifications */
+    @keyframes toast-in {
+      from { opacity:0; transform: translateX(60px) scale(0.9); }
+      to   { opacity:1; transform: translateX(0)   scale(1); }
+    }
+    @keyframes toast-out {
+      from { opacity:1; transform: translateX(0)   scale(1); }
+      to   { opacity:0; transform: translateX(60px) scale(0.9); }
+    }
+    /* live job feed tags */
+    @keyframes marquee-right { 0% { transform:translateX(0); } 100% { transform:translateX(-50%); } }
+    .marquee-right { animation: marquee-right 22s linear infinite; }
+    /* counter glow */
+    @keyframes counter-pop {
+      0%   { transform:scale(1); }
+      40%  { transform:scale(1.15); }
+      100% { transform:scale(1); }
+    }
+    .counter-pop { animation: counter-pop 0.4s cubic-bezier(.17,.67,.34,1.4) both; }
+    /* progress bar fill */
+    @keyframes bar-fill { from { width:0%; } to { width:var(--bar-w,80%); } }
+    /* spotlight follow */
+    .spotlight-card { position: relative; overflow: hidden; }
+    .spotlight-card::after {
+      content: '';
+      position: absolute;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+      left: var(--mx, -200px);
+      top:  var(--my, -200px);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      transition: left 0.1s, top 0.1s;
+    }
+    /* magnetic float */
+    .magnetic-btn { transition: transform 0.2s cubic-bezier(.17,.67,.34,1.4); }
     ::-webkit-scrollbar { width:6px; }
     ::-webkit-scrollbar-track { background:#0f0f1a; }
     ::-webkit-scrollbar-thumb { background:#4f46e5; border-radius:3px; }
@@ -508,6 +572,175 @@ const HeroDashboard = () => (
     </div>
   </div>
 );
+
+/* ─────────────────────── Scroll Progress Bar ─────────────────────── */
+const ScrollProgressBar = () => {
+  const [pct, setPct] = useState(0);
+  useEffect(() => {
+    const update = () => {
+      const el = document.documentElement;
+      setPct((el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100);
+    };
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
+  return (
+    <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 3, zIndex: 9999, background: "rgba(255,255,255,0.05)" }}>
+      <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg, var(--t-a1), var(--t-a2), #4ade80)", transition: "width .1s linear", boxShadow: "0 0 10px var(--t-a1)" }} />
+    </div>
+  );
+};
+
+/* ─────────────────────── Floating Activity Notifications ─────────────────────── */
+const NOTIF_ITEMS = [
+  { icon: "💰", text: "Priya S. received ₹18,500", sub: "UI Design Project", color: "#4ade80" },
+  { icon: "🚀", text: "New job posted: React Dev", sub: "₹45,000 · Remote", color: "#a5b4fc" },
+  { icon: "⭐", text: "Ravi Kumar rated 5 stars", sub: "\"Excellent work!\"", color: "#fbbf24" },
+  { icon: "✅", text: "Contract signed successfully", sub: "Backend API · ₹32,000", color: "#34d399" },
+  { icon: "👤", text: "Arjun M. joined the platform", sub: "Full-Stack Developer", color: "#c4b5fd" },
+];
+const FloatingNotifications = () => {
+  const [visible, setVisible] = useState(0);
+  const [show, setShow] = useState(true);
+  useEffect(() => {
+    const cycle = () => {
+      setShow(false);
+      setTimeout(() => { setVisible(v => (v + 1) % NOTIF_ITEMS.length); setShow(true); }, 400);
+    };
+    const id = setInterval(cycle, 3200);
+    return () => clearInterval(id);
+  }, []);
+  const n = NOTIF_ITEMS[visible];
+  return (
+    <div style={{ position: "absolute", bottom: 32, right: 0, zIndex: 10, pointerEvents: "none" }}>
+      <div style={{ animation: show ? "toast-in 0.4s cubic-bezier(.17,.67,.34,1.2) both" : "toast-out 0.4s ease both", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 14, background: "rgba(15,15,35,0.92)", border: `1px solid ${n.color}35`, backdropFilter: "blur(20px)", boxShadow: `0 8px 32px rgba(0,0,0,0.4), 0 0 20px ${n.color}18`, minWidth: 220 }}>
+        <div style={{ fontSize: 22, lineHeight: 1 }}>{n.icon}</div>
+        <div>
+          <p style={{ fontSize: 12, fontWeight: 700, color: n.color, margin: 0, lineHeight: 1.2 }}>{n.text}</p>
+          <p style={{ fontSize: 10.5, color: "rgba(255,255,255,0.45)", margin: "2px 0 0" }}>{n.sub}</p>
+        </div>
+        <div style={{ width: 6, height: 6, borderRadius: "50%", background: n.color, flexShrink: 0, boxShadow: `0 0 6px ${n.color}` }} />
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────────────── Avatar Stack ─────────────────────── */
+const AVATAR_COLORS = ["#6366f1","#8b5cf6","#ec4899","#f59e0b","#10b981","#3b82f6"];
+const AVATAR_INITIALS = ["RK","PS","AM","DV","NK","SP"];
+const AvatarStack = () => (
+  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+    <div style={{ display: "flex" }}>
+      {AVATAR_COLORS.map((c, i) => (
+        <div key={i} style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg,${c},${AVATAR_COLORS[(i+1)%6]})`, border: "2px solid rgba(7,7,20,0.9)", marginLeft: i === 0 ? 0 : -10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9.5, fontWeight: 800, color: "white", zIndex: 6 - i, position: "relative" }}>
+          {AVATAR_INITIALS[i]}
+        </div>
+      ))}
+    </div>
+    <div>
+      <p style={{ fontSize: 11.5, fontWeight: 700, color: "rgba(255,255,255,0.8)", margin: 0 }}>500+ Freelancers Active</p>
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        {[1,2,3,4,5].map(s => <span key={s} style={{ fontSize: 9, color: "#fbbf24" }}>★</span>)}
+        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>4.9 avg rating</span>
+      </div>
+    </div>
+  </div>
+);
+
+/* ─────────────────────── Live Job Feed Strip ─────────────────────── */
+const JOB_PILLS = [
+  { label: "React Developer",      pay: "₹40K",  color: "#a5b4fc" },
+  { label: "Logo Design",          pay: "₹8K",   color: "#f9a8d4" },
+  { label: "Python Backend",       pay: "₹55K",  color: "#6ee7b7" },
+  { label: "Video Editing",        pay: "₹12K",  color: "#fde68a" },
+  { label: "SEO Specialist",       pay: "₹18K",  color: "#c4b5fd" },
+  { label: "UI/UX Designer",       pay: "₹35K",  color: "#67e8f9" },
+  { label: "Content Writer",       pay: "₹10K",  color: "#fca5a5" },
+  { label: "Mobile App Dev",       pay: "₹65K",  color: "#86efac" },
+  { label: "Data Analyst",         pay: "₹45K",  color: "#fdba74" },
+  { label: "WordPress Developer",  pay: "₹22K",  color: "#a5b4fc" },
+];
+const LiveJobFeed = () => (
+  <section style={{ position: "relative", overflow: "hidden", padding: "16px 0", borderTop: "1px solid rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.015)" }}>
+    <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 80, background: "linear-gradient(to right, var(--t-bg), transparent)", zIndex: 2 }} />
+    <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 80, background: "linear-gradient(to left, var(--t-bg), transparent)", zIndex: 2 }} />
+    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, paddingLeft: 24 }}>
+      <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 6px #4ade80" }} />
+      <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Live Jobs</span>
+    </div>
+    <div className="flex marquee-right" style={{ width: "max-content", gap: 12 }}>
+      {[...JOB_PILLS, ...JOB_PILLS].map((p, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 14px", borderRadius: 100, background: `${p.color}12`, border: `1px solid ${p.color}30`, flexShrink: 0 }}>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: p.color }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.75)", whiteSpace: "nowrap" }}>{p.label}</span>
+          <span style={{ fontSize: 11, fontWeight: 800, color: p.color }}>{p.pay}</span>
+        </div>
+      ))}
+    </div>
+  </section>
+);
+
+/* ─────────────────────── Mouse 3D Tilt Wrapper ─────────────────────── */
+const MouseTiltCard = ({ children, className = "", intensity = 12 }: { children: React.ReactNode; className?: string; intensity?: number }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [hovered, setHovered] = useState(false);
+  const onMove = (e: React.MouseEvent) => {
+    const el = ref.current; if (!el) return;
+    const { left, top, width, height } = el.getBoundingClientRect();
+    const x = ((e.clientX - left) / width - 0.5) * intensity;
+    const y = -((e.clientY - top) / height - 0.5) * intensity;
+    setTilt({ x, y });
+  };
+  return (
+    <div ref={ref} className={className}
+      onMouseMove={onMove}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setTilt({ x: 0, y: 0 }); }}
+      style={{ transform: hovered ? `perspective(1000px) rotateX(${tilt.y}deg) rotateY(${tilt.x}deg) scale(1.02)` : "perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)", transition: hovered ? "transform 0.1s linear" : "transform 0.5s cubic-bezier(.17,.67,.34,1.2)" }}>
+      {children}
+    </div>
+  );
+};
+
+/* ─────────────────────── Ripple Button ─────────────────────── */
+const RippleBtn = ({ children, onClick, className = "", style = {} }: { children: React.ReactNode; onClick?: () => void; className?: string; style?: React.CSSProperties }) => {
+  const ref = useRef<HTMLButtonElement>(null);
+  const createRipple = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const btn = ref.current; if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height) * 0.7;
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top  - size / 2;
+    const wave = document.createElement("span");
+    wave.className = "ripple-wave";
+    Object.assign(wave.style, { width: `${size}px`, height: `${size}px`, left: `${x}px`, top: `${y}px` });
+    btn.appendChild(wave);
+    setTimeout(() => wave.remove(), 700);
+    onClick?.();
+  };
+  return (
+    <button ref={ref} className={`ripple-container ${className}`} style={style} onClick={createRipple}>
+      {children}
+    </button>
+  );
+};
+
+/* ─────────────────────── Spotlight Card ─────────────────────── */
+const SpotlightCard = ({ children, className = "", style = {} }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const onMove = (e: React.MouseEvent) => {
+    const el = ref.current; if (!el) return;
+    const rect = el.getBoundingClientRect();
+    el.style.setProperty("--mx", `${e.clientX - rect.left}px`);
+    el.style.setProperty("--my", `${e.clientY - rect.top}px`);
+  };
+  return (
+    <div ref={ref} className={`spotlight-card ${className}`} style={style} onMouseMove={onMove}>
+      {children}
+    </div>
+  );
+};
 
 /* ─────────────────────── Typewriter Text ─────────────────────── */
 const TYPEWRITER_WORDS = ["Freelancers", "Designers", "Developers", "Marketers", "Creators"];
@@ -825,6 +1058,11 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
             </Link>
           </div>
 
+          {/* Avatar stack social proof */}
+          <div className="mb-6" style={{ animation: "slide-up 0.7s ease 0.35s both" }}>
+            <AvatarStack />
+          </div>
+
           {/* Mini stats — wave stagger */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-lg mx-auto lg:mx-0">
             {heroStats.map((s, i) => (
@@ -838,9 +1076,12 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
           </div>
         </div>
 
-        {/* Right: 3D Dashboard */}
-        <div className="lg:flex lg:justify-end" style={{ animation: "slide-up 0.9s ease 0.2s both" }}>
-          <HeroDashboard />
+        {/* Right: 3D Dashboard with mouse-tilt + floating notifications */}
+        <div className="lg:flex lg:justify-end relative" style={{ animation: "slide-up 0.9s ease 0.2s both" }}>
+          <MouseTiltCard className="w-full max-w-lg">
+            <HeroDashboard />
+          </MouseTiltCard>
+          <FloatingNotifications />
         </div>
       </div>
     </div>
@@ -897,8 +1138,8 @@ const FeaturesSection = () => {
         </Reveal>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {featureMeta.map((f, i) => (
-            <Reveal key={i} delay={i * 80}>
-              <div className="feature-card-3d group relative h-full rounded-2xl p-5 cursor-pointer overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <Reveal key={i} delay={i * 80} direction={i % 2 === 0 ? "up" : i % 4 < 2 ? "left" : "right"}>
+              <SpotlightCard className="feature-card-3d card-shimmer group relative h-full rounded-2xl p-5 cursor-pointer" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${f.color} rounded-2xl`} style={{ opacity: 0 }} />
                 <div className="relative z-10">
                   <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${f.color} float-${(i % 3) + 1}`} style={{ boxShadow: "0 8px 20px rgba(0,0,0,0.3)" }}>
@@ -908,7 +1149,7 @@ const FeaturesSection = () => {
                   <p className="text-sm text-white/50 leading-relaxed">{t.features.items[i]?.desc}</p>
                 </div>
                 <div className={`absolute -bottom-6 -right-6 h-20 w-20 rounded-full bg-gradient-to-br ${f.color} opacity-10 group-hover:opacity-20 transition-opacity blur-xl`} />
-              </div>
+              </SpotlightCard>
             </Reveal>
           ))}
         </div>
@@ -942,7 +1183,7 @@ const HowItWorksSection = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {stepMeta.map((s, i) => (
               <Reveal key={s.step} delay={i * 120}>
-                <div className="step-3d group relative rounded-2xl p-6 text-center cursor-pointer" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <SpotlightCard className="step-3d card-shimmer group relative rounded-2xl p-6 text-center cursor-pointer" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   <div className="relative mx-auto mb-5 flex h-14 w-14 items-center justify-center">
                     <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${s.color} opacity-20 group-hover:opacity-40 transition-opacity blur-lg`} />
                     <div className={`relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${s.color} shadow-lg`} style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.3)" }}>
@@ -955,7 +1196,7 @@ const HowItWorksSection = () => {
                   <div className="text-5xl font-black mb-1" style={{ color: "rgba(255,255,255,0.05)" }}>{s.step}</div>
                   <h3 className="text-base font-bold text-white mb-2 -mt-4">{t.howItWorks.steps[i]?.title}</h3>
                   <p className="text-sm text-white/50 leading-relaxed">{t.howItWorks.steps[i]?.desc}</p>
-                </div>
+                </SpotlightCard>
               </Reveal>
             ))}
           </div>
@@ -1156,14 +1397,14 @@ const CTASection = () => {
             <p className="text-white/60 mb-6 max-w-md mx-auto">{t.cta.sub}</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/register/employee">
-                <button className="group flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-base font-semibold text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4)" }}>
+                <RippleBtn className="group shimmer-btn magnetic-btn flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-base font-semibold text-white w-full sm:w-auto" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4)" }}>
                   <Briefcase className="h-4 w-4" /> {t.cta.joinFreelancer} <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </button>
+                </RippleBtn>
               </Link>
               <Link to="/register/client">
-                <button className="flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-base font-semibold text-white/80 hover:text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)" }}>
+                <RippleBtn className="magnetic-btn flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-base font-semibold text-white/80 hover:text-white w-full sm:w-auto" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)" }}>
                   <Users className="h-4 w-4" /> {t.cta.joinEmployer}
-                </button>
+                </RippleBtn>
               </Link>
             </div>
           </div>
@@ -1351,6 +1592,7 @@ const Index = () => {
     <LangContext.Provider value={{ lang, setLang: handleLangChange, t: translations[lang] }}>
     <div className="min-h-screen flex flex-col" dir={isRTL ? "rtl" : "ltr"} style={{ ...cssVars, background: "var(--t-bg)", color: "white" }}>
       <GlobalStyles />
+      <ScrollProgressBar />
 
       <Navbar deferredPrompt={deferredPrompt} isInstalled={isInstalled} isIOS={isIOS} onInstall={handleInstall} onIOSTip={() => setShowIOSTip(v => !v)} activeTheme={themeId} onThemeChange={handleThemeChange} />
 
@@ -1372,6 +1614,7 @@ const Index = () => {
       <main>
         <HeroSection stats={stats} />
         <TrustBar />
+        <LiveJobFeed />
         <FeaturesSection />
         <HowItWorksSection />
         <ServicesSection />
