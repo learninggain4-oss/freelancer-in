@@ -130,6 +130,20 @@ const AdminDataSync = lazy(() => import("./pages/admin/AdminDataSync"));
 const AdminSecurityPatch = lazy(() => import("./pages/admin/AdminSecurityPatch"));
 const AdminTokenManagement = lazy(() => import("./pages/admin/AdminTokenManagement"));
 const AdminDisasterRecovery = lazy(() => import("./pages/admin/AdminDisasterRecovery"));
+const AdminFraudDashboard = lazy(() => import("./pages/admin/AdminFraudDashboard"));
+const AdminUserRiskScore = lazy(() => import("./pages/admin/AdminUserRiskScore"));
+const AdminSuspiciousUsers = lazy(() => import("./pages/admin/AdminSuspiciousUsers"));
+const AdminPaymentFraud = lazy(() => import("./pages/admin/AdminPaymentFraud"));
+const AdminIPDeviceMonitor = lazy(() => import("./pages/admin/AdminIPDeviceMonitor"));
+const AdminFraudAlerts = lazy(() => import("./pages/admin/AdminFraudAlerts"));
+const AdminAccountRestrictions = lazy(() => import("./pages/admin/AdminAccountRestrictions"));
+const AdminFraudRules = lazy(() => import("./pages/admin/AdminFraudRules"));
+const AdminFraudCases = lazy(() => import("./pages/admin/AdminFraudCases"));
+const AdminFraudAuditLog = lazy(() => import("./pages/admin/AdminFraudAuditLog"));
+const AdminFraudNotifications = lazy(() => import("./pages/admin/AdminFraudNotifications"));
+const AdminFraudAutomation = lazy(() => import("./pages/admin/AdminFraudAutomation"));
+const AdminFraudReports = lazy(() => import("./pages/admin/AdminFraudReports"));
+const AdminFraudSecuritySettings = lazy(() => import("./pages/admin/AdminFraudSecuritySettings"));
 const AdminConfigManagement = lazy(() => import("./pages/admin/AdminConfigManagement"));
 const AdminMaintenanceCenter = lazy(() => import("./pages/admin/AdminMaintenanceCenter"));
 const AdminRateLimiting = lazy(() => import("./pages/admin/AdminRateLimiting"));
@@ -404,6 +418,20 @@ const AppContent = () => {
               <Route path="security-patch" element={<AdminSecurityPatch />} />
               <Route path="token-management" element={<AdminTokenManagement />} />
               <Route path="disaster-recovery" element={<AdminDisasterRecovery />} />
+              <Route path="fraud-dashboard" element={<AdminFraudDashboard />} />
+              <Route path="user-risk-score" element={<AdminUserRiskScore />} />
+              <Route path="suspicious-users" element={<AdminSuspiciousUsers />} />
+              <Route path="payment-fraud" element={<AdminPaymentFraud />} />
+              <Route path="ip-device-monitor" element={<AdminIPDeviceMonitor />} />
+              <Route path="fraud-alerts" element={<AdminFraudAlerts />} />
+              <Route path="account-restrictions" element={<AdminAccountRestrictions />} />
+              <Route path="fraud-rules" element={<AdminFraudRules />} />
+              <Route path="fraud-cases" element={<AdminFraudCases />} />
+              <Route path="fraud-audit-log" element={<AdminFraudAuditLog />} />
+              <Route path="fraud-notifications" element={<AdminFraudNotifications />} />
+              <Route path="fraud-automation" element={<AdminFraudAutomation />} />
+              <Route path="fraud-reports" element={<AdminFraudReports />} />
+              <Route path="fraud-security" element={<AdminFraudSecuritySettings />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

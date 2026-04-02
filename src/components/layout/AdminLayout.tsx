@@ -15,6 +15,7 @@ import {
   GitPullRequest, GitBranch, Lock,
   Settings2, Wrench, Gauge, CalendarClock, UserCog, Download, Globe,
   Zap, FileUp, Cpu, Activity, BookOpen,
+  ShieldAlert, UserX, Ban, Folder, BarChart2, TrendingUp,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ThemeToggle from "./ThemeToggle";
@@ -316,6 +317,22 @@ const navSections = [
     { label: "Referrals",      icon: UserPlus,           path: "/admin/referrals" },
     { label: "Site Visitors",  icon: Eye,                path: "/admin/visitors" },
     { label: "Settings",       icon: Settings,           path: "/admin/settings" },
+  ]},
+  { title: "Fraud Detection", items: [
+    { label: "Fraud Dashboard",       icon: ShieldAlert,    path: "/admin/fraud-dashboard" },
+    { label: "User Risk Scores",      icon: TrendingUp,     path: "/admin/user-risk-score" },
+    { label: "Suspicious Users",      icon: UserX,          path: "/admin/suspicious-users" },
+    { label: "Payment Fraud",         icon: CreditCard,     path: "/admin/payment-fraud" },
+    { label: "IP & Device Monitor",   icon: Monitor,        path: "/admin/ip-device-monitor" },
+    { label: "Fraud Alerts",          icon: Bell,           path: "/admin/fraud-alerts" },
+    { label: "Account Restrictions",  icon: Ban,            path: "/admin/account-restrictions" },
+    { label: "Fraud Rules",           icon: Shield,         path: "/admin/fraud-rules" },
+    { label: "Fraud Cases",           icon: Folder,         path: "/admin/fraud-cases" },
+    { label: "Fraud Audit Log",       icon: ClipboardList,  path: "/admin/fraud-audit-log" },
+    { label: "Notifications",         icon: Bell,           path: "/admin/fraud-notifications" },
+    { label: "Automation",            icon: Zap,            path: "/admin/fraud-automation" },
+    { label: "Fraud Reports",         icon: BarChart2,      path: "/admin/fraud-reports" },
+    { label: "Security Settings",     icon: Settings,       path: "/admin/fraud-security" },
   ]},
 ];
 
