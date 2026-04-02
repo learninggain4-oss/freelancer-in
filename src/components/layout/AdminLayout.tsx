@@ -520,7 +520,7 @@ const AdminLayout = () => {
 
   const sidebarW  = sidebarMini ? 64 : 240;
   const userEmail = profile?.email || user?.email || "admin@example.com";
-  const userName  = profile?.full_name || userEmail.split("@")[0] || "Admin";
+  const userName  = (Array.isArray(profile?.full_name) ? profile.full_name[0] : profile?.full_name) || userEmail.split("@")[0] || "Admin";
   const userInitial = userName.charAt(0).toUpperCase();
   const currentLang = LANGS.find(l => l.code === lang) || LANGS[0];
 

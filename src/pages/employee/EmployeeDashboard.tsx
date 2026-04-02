@@ -168,7 +168,7 @@ const EmployeeDashboard = () => {
     queryKey: ["employee-completed-projects", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return 0;
-      const { count, error } = await supabase.from("project_applications").select("id", { count: "exact", head: true }).eq("employee_id", profile.id).eq("status", "completed");
+      const { count, error } = await supabase.from("project_applications").select("id", { count: "exact", head: true }).eq("employee_id", profile.id).eq("status", "approved");
       if (error) throw error;
       return count ?? 0;
     },

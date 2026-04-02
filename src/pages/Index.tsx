@@ -1045,7 +1045,7 @@ const SplitTextReveal = ({ text, className = "", delay = 0, tag = "span" }: {
   }, []);
   const Tag = tag as keyof JSX.IntrinsicElements;
   return (
-    <Tag ref={ref as React.RefObject<HTMLElement & HTMLHeadingElement & HTMLParagraphElement>} className={className} style={{ perspective: 600 }}>
+    <Tag ref={ref as any} className={className} style={{ perspective: 600 }}>
       {text.split("").map((ch, i) => (
         <span key={i} style={{ display: "inline-block", opacity: vis ? 1 : 0, transform: vis ? "translateY(0) rotateX(0)" : "translateY(28px) rotateX(-45deg)", transition: `opacity .5s ease ${delay + i * 28}ms, transform .5s cubic-bezier(.17,.67,.34,1.2) ${delay + i * 28}ms` }}>
           {ch === " " ? "\u00A0" : ch}
