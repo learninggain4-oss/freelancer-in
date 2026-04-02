@@ -143,7 +143,7 @@ const AdminRecoveryChat = () => {
       if (!token) throw new Error("Not authenticated");
 
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/wallet-operations`,
+        `/functions/v1/wallet-operations`,
         {
           method: "POST",
           headers: {
@@ -185,7 +185,7 @@ const AdminRecoveryChat = () => {
       if (!token) throw new Error("Not authenticated");
 
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/wallet-operations`,
+        `/functions/v1/wallet-operations`,
         {
           method: "POST",
           headers: {
