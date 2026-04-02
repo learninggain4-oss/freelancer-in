@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Activity, AlertTriangle, RefreshCw, Cpu, HardDrive, Wifi, BarChart3, Clock } from "lucide-react";
+import { Activity, AlertTriangle, RefreshCw, Cpu, HardDrive, Wifi, BarChart3, Clock, CheckCircle2 } from "lucide-react";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
