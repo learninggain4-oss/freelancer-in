@@ -55,7 +55,7 @@ export default function AdminSafetyCenter() {
   const [dbStatus, setDbStatus] = useState<"checking" | "online" | "offline">("checking");
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; type: string }>({ open: false, type: "" });
 
-  const adminName = (profile as { full_name?: string; email?: string } | null)?.full_name || (profile as { full_name?: string; email?: string } | null)?.email || "Admin";
+  const adminName = (profile as unknown as { full_name?: string[]; email?: string } | null)?.full_name?.[0] || (profile as unknown as { email?: string } | null)?.email || "Admin";
 
   const auditLogs = getLogs();
   const configHistory = getConfigHistory();

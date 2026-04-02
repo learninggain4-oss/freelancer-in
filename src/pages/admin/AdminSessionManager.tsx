@@ -78,7 +78,7 @@ export default function AdminSessionManager() {
   };
 
   const savePol = (id:string) => {
-    const updated = policies.map(p=>p.id===id?{...p,value:p.type==="number"?Number(editVal):editVal}:p);
+    const updated = policies.map(p=>p.id===id?{...p,value:p.type==="number"?Number(editVal):Boolean(editVal)}:p);
     localStorage.setItem("admin_session_policy_v1",JSON.stringify(updated));
     setPolicies(updated);
     toast({ title:"Session policy updated" });

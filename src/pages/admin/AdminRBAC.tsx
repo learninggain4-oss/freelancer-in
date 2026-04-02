@@ -182,14 +182,15 @@ export default function AdminRBAC() {
                 </tr>
               </thead>
               <tbody>
-                {admins.map((admin: { id: string; full_name?: string; email?: string }) => {
+                {admins.map((admin) => {
                   const currentRole = getEffectiveRole(admin.id);
                   const roleCfg = ROLES.find(r => r.key === currentRole) || ROLES[1];
                   const RoleIcon = roleCfg.icon;
+                  const displayName = Array.isArray(admin.full_name) ? admin.full_name[0] : admin.full_name || "—";
                   return (
                     <tr key={admin.id} style={{ borderBottom: `1px solid ${T.border}` }}>
                       <td style={{ padding: "12px 20px" }}>
-                        <p style={{ fontWeight: 600, fontSize: 13, color: T.text, margin: 0 }}>{admin.full_name || "—"}</p>
+                        <p style={{ fontWeight: 600, fontSize: 13, color: T.text, margin: 0 }}>{displayName}</p>
                         <p style={{ fontSize: 11, color: T.sub, margin: 0 }}>{admin.email || admin.id.slice(0, 12) + "…"}</p>
                       </td>
                       <td style={{ padding: "12px 20px" }}>

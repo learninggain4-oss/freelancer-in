@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ArrowLeft, Save, User, Mail, Phone, Calendar, GraduationCap, Briefcase,
+  ArrowLeft, Save, User, Mail, Phone, Calendar, GraduationCap, Briefcase, Loader2,
   AlertCircle, ShieldCheck, ShieldOff, RotateCcw, BadgeCheck, Wallet, MapPin, Globe,
   Heart, CreditCard, Landmark, Users, History, Check, X, ShieldAlert
 } from "lucide-react";

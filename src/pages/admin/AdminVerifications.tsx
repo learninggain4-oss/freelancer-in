@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { ShieldCheck, CheckCircle2, XCircle, Clock, Search, Eye, User, Pencil, Trash2 } from "lucide-react";
+import { ShieldCheck, CheckCircle2, XCircle, Clock, Search, Eye, User, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 
