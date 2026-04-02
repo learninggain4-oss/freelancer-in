@@ -202,7 +202,7 @@ export default function AdminRBAC() {
                       <td style={{ padding: "12px 20px" }}>
                         <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                           {ROLES.map(r => (
-                            <button key={r.key} onClick={() => requestRoleChange(admin.id, admin.full_name || "Admin", r.key)}
+                            <button key={r.key} onClick={() => requestRoleChange(admin.id, displayName, r.key)}
                               disabled={currentRole === r.key}
                               style={{ padding: "4px 10px", borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: currentRole === r.key ? "default" : "pointer", border: `1px solid ${currentRole === r.key ? r.color + "44" : T.border}`, background: currentRole === r.key ? r.bg : T.input, color: currentRole === r.key ? r.color : T.sub, opacity: currentRole === r.key ? 1 : 0.7, transition: "all .15s" }}>
                               {r.label}
