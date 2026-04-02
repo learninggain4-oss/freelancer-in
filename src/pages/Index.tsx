@@ -2226,9 +2226,10 @@ const Index = () => {
       <main>
         <HeroSection stats={stats} />
         <TrustBar />
-        <LiveJobFeed />
         <NeonDivider />
         <FeaturesSection />
+        <NeonDivider />
+        <LiveJobFeed />
         <NeonDivider />
         <HowItWorksSection />
         <NeonDivider />
