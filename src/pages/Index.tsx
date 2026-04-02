@@ -3158,11 +3158,12 @@ const ReferralBannerSection = () => (
               <Gift className="h-3.5 w-3.5" /> Referral Program
             </div>
             <h2 className="text-3xl sm:text-4xl font-black text-white mb-3 leading-tight">
-              Refer a Friend,<br /><span className="text-amber-400">Earn ₹500</span>
+              Refer a Friend,<br /><span className="text-amber-400">Earn ₹100</span>
             </h2>
-            <p className="text-white/55 text-sm leading-relaxed mb-6 max-w-md">
-              For every friend you refer who completes their first project, you earn ₹500 instantly — no limits on how many you can refer.
+            <p className="text-white/55 text-sm leading-relaxed mb-4 max-w-md">
+              For every friend you refer who completes their first project, you earn ₹100 instantly — no limits on how many you can refer.
             </p>
+            <p className="text-white/30 text-xs mb-6">* Referral Terms &amp; Conditions apply.</p>
             <div className="flex flex-wrap gap-4">
               <Link to="/register/employee">
                 <button className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg, #fbbf24, #f97316)", boxShadow: "0 0 24px rgba(251,191,36,0.35)" }}>
@@ -3175,7 +3176,7 @@ const ReferralBannerSection = () => (
             {[
               { step: "1", icon: Share2, label: "Share your referral link with friends" },
               { step: "2", icon: Users, label: "They register & complete first project" },
-              { step: "3", icon: Wallet, label: "₹500 credited to your wallet instantly" },
+              { step: "3", icon: Wallet, label: "₹100 credited to your wallet instantly" },
             ].map(s => (
               <div key={s.step} className="rounded-2xl p-4 text-center" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}>
                 <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-white" style={{ background: "linear-gradient(135deg, rgba(251,191,36,0.3), rgba(var(--t-a1-rgb),0.3))" }}>
