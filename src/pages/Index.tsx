@@ -1445,9 +1445,7 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
         {/* Right: 3D Dashboard — rainbow border + mouse-tilt + floating notifications */}
         <div className="lg:flex lg:justify-end relative" style={{ animation: "slide-up 0.9s ease 0.2s both" }}>
           <MouseTiltCard className="w-full max-w-lg">
-            <RotatingBorderCard>
-              <HeroDashboard />
-            </RotatingBorderCard>
+            <HeroDashboard />
           </MouseTiltCard>
           <FloatingNotifications />
         </div>
