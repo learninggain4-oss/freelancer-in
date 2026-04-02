@@ -3,6 +3,7 @@ import { ShieldCheck, AlertTriangle, CheckCircle2, Activity, Eye, Lock } from "l
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
@@ -76,7 +77,7 @@ export default function AdminXssProtection(){
             <div style={{flex:1}}>
               <p style={{fontWeight:600,fontSize:12,color:T.text,margin:"0 0 1px"}}>{e.type} — field: <code style={{fontSize:11}}>{e.field}</code></p>
               <p style={{fontSize:11,color:T.sub,margin:"0 0 1px",fontFamily:"monospace",wordBreak:"break-all"}}>{e.payload.slice(0,60)}{e.payload.length>60?"…":""}</p>
-              <p style={{fontSize:11,color:T.sub,margin:0}}>IP: {e.ip} · {format(new Date(e.at),"MMM d, HH:mm")}</p>
+              <p style={{fontSize:11,color:T.sub,margin:0}}>IP: {e.ip} · {safeFmt(e.at, "MMM d, HH:mm")}</p>
             </div>
             <span style={{fontSize:10,fontWeight:700,color:e.blocked?"#f87171":"#fbbf24",textTransform:"uppercase",flexShrink:0}}>{e.blocked?"BLOCKED":"FLAGGED"}</span>
           </div>

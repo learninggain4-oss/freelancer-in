@@ -4,6 +4,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={
@@ -84,7 +85,7 @@ export default function AdminNotificationDelivery(){
                     <span style={{fontSize:12,color:T.sub}}>Sent: <strong style={{color:"#4ade80"}}>{c.sent24h.toLocaleString()}</strong></span>
                     <span style={{fontSize:12,color:T.sub}}>Failed: <strong style={{color:c.failed24h>0?"#f87171":"#4ade80"}}>{c.failed24h}</strong></span>
                     <span style={{fontSize:12,color:T.sub}}>Queued: <strong style={{color:c.queued>0?"#fbbf24":T.text}}>{c.queued}</strong></span>
-                    <span style={{fontSize:12,color:T.sub}}>Last: {formatDistanceToNow(new Date(c.lastDelivery))} ago</span>
+                    <span style={{fontSize:12,color:T.sub}}>Last: {safeDist(c.lastDelivery)} ago</span>
                   </div>
                   {c.backupProvider&&<p style={{fontSize:11,color:"#4ade80",margin:0}}>✓ Backup: {c.backupProvider}</p>}
                 </div>

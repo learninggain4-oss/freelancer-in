@@ -15,6 +15,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import { safeDist } from "@/lib/admin-date";
 import SupportMessageBubble from "@/components/chat/SupportMessageBubble";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 
@@ -813,7 +814,7 @@ const AdminHelpSupport = () => {
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="font-semibold truncate" style={{ color: T.text }}>{userName}</h3>
                     <span className="text-[10px]" style={{ color: T.sub }}>
-                      {formatDistanceToNow(new Date(conv.created_at), { addSuffix: true })}
+                      {safeDist(conv.created_at, "—", { addSuffix: true })}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">

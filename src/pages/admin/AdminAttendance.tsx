@@ -31,6 +31,7 @@ import { Search, Users, CheckCircle, Clock, UserCheck, Timer, Camera, Download, 
 import { formatDuration } from "@/utils/attendance-helpers";
 import { toast } from "sonner";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const TH = {
   black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
@@ -281,11 +282,11 @@ const AdminAttendance = () => {
                           </Badge>
                         </TableCell>
                         <TableCell style={{ color: T.text }}>
-                          {format(new Date(record.date), "MMM d, yyyy")}
+                          {safeFmt(record.date, "MMM d, yyyy")}
                         </TableCell>
                         <TableCell style={{ color: T.text }}>
                           <div className="flex flex-col">
-                            <span className="font-medium">{format(new Date(record.check_in_at), "h:mm a")}</span>
+                            <span className="font-medium">{safeFmt(record.check_in_at, "h:mm a")}</span>
                             <span className="text-[10px]" style={{ color: T.sub }}>Checked In</span>
                           </div>
                         </TableCell>
@@ -326,7 +327,7 @@ const AdminAttendance = () => {
                         <TableCell style={{ color: T.text }}>
                           {record.check_out_at ? (
                             <div className="flex flex-col">
-                              <span className="font-medium">{format(new Date(record.check_out_at), "h:mm a")}</span>
+                              <span className="font-medium">{safeFmt(record.check_out_at, "h:mm a")}</span>
                               <span className="text-[10px]" style={{ color: T.sub }}>Checked Out</span>
                             </div>
                           ) : "-"}

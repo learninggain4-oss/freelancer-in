@@ -4,6 +4,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={
@@ -101,7 +102,7 @@ export default function AdminLockoutRecovery(){
                       <span style={{fontSize:10,fontWeight:700,color:"#f87171",background:"rgba(248,113,113,.1)",padding:"2px 7px",borderRadius:5}}>LOCKED</span>
                     </div>
                     <p style={{fontSize:12,color:"#f87171",margin:"0 0 2px"}}>{a.lockReason}</p>
-                    <p style={{fontSize:11,color:T.sub,margin:0}}>Failed attempts: {a.failedAttempts} · Locked {formatDistanceToNow(new Date(a.lockedAt))} ago</p>
+                    <p style={{fontSize:11,color:T.sub,margin:0}}>Failed attempts: {a.failedAttempts} · Locked {safeDist(a.lockedAt)} ago</p>
                   </div>
                 </div>
                 <div style={{display:"flex",gap:8}}>
@@ -122,7 +123,7 @@ export default function AdminLockoutRecovery(){
               {l.success?<CheckCircle2 size={14} color="#4ade80" style={{flexShrink:0}}/>:<AlertTriangle size={14} color="#f87171" style={{flexShrink:0}}/>}
               <div style={{flex:1}}>
                 <p style={{fontWeight:600,fontSize:12,color:T.text,margin:"0 0 2px"}}>{l.admin} — {l.action}</p>
-                <p style={{fontSize:11,color:T.sub,margin:0}}>IP: {l.ip} · {format(new Date(l.at),"MMM d, HH:mm")}</p>
+                <p style={{fontSize:11,color:T.sub,margin:0}}>IP: {l.ip} · {safeFmt(l.at, "MMM d, HH:mm")}</p>
               </div>
             </div>
           ))}

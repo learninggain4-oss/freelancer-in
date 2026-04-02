@@ -5,6 +5,7 @@ import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -118,7 +119,7 @@ export default function AdminBulkOperations() {
                     <span style={{ fontSize:10,fontWeight:700,color:statusColor[op.status],background:`${statusColor[op.status]}15`,padding:"2px 7px",borderRadius:5,textTransform:"capitalize" }}>{op.status.replace("_"," ")}</span>
                   </div>
                   <p style={{ fontSize:12,color:T.sub,margin:"0 0 3px" }}>{op.description}</p>
-                  <p style={{ fontSize:12,color:T.sub,margin:0 }}>{op.count.toLocaleString()} {op.target} affected{op.executedBy?` · By: ${op.executedBy}`:""}{op.completedAt?` · ${formatDistanceToNow(new Date(op.completedAt))} ago`:""}</p>
+                  <p style={{ fontSize:12,color:T.sub,margin:0 }}>{op.count.toLocaleString()} {op.target} affected{op.executedBy?` · By: ${op.executedBy}`:""}{op.completedAt?` · ${safeDist(op.completedAt)} ago`:""}</p>
                   {op.errorMsg&&<p style={{ fontSize:12,color:"#f87171",margin:"3px 0 0" }}>{op.errorMsg}</p>}
                 </div>
                 <div style={{ display:"flex",flexDirection:"column",gap:6,flexShrink:0 }}>
@@ -139,7 +140,7 @@ export default function AdminBulkOperations() {
               <div style={{ width:9,height:9,borderRadius:"50%",background:statusColor[op.status],flexShrink:0 }}/>
               <div style={{ flex:1 }}>
                 <p style={{ fontWeight:700,fontSize:13,color:T.text,margin:"0 0 2px" }}>{op.name}</p>
-                <p style={{ fontSize:11,color:T.sub,margin:0 }}>{op.count.toLocaleString()} {op.target} · By {op.executedBy||"Unknown"}{op.completedAt?` · ${format(new Date(op.completedAt),"MMM d, HH:mm")}`:""}</p>
+                <p style={{ fontSize:11,color:T.sub,margin:0 }}>{op.count.toLocaleString()} {op.target} · By {op.executedBy||"Unknown"}{op.completedAt?` · ${safeFmt(op.completedAt, "MMM d, HH:mm")}`:""}</p>
               </div>
               <span style={{ fontSize:11,fontWeight:700,color:statusColor[op.status],textTransform:"capitalize" }}>{op.status.replace("_"," ")}</span>
             </div>

@@ -5,6 +5,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -117,7 +118,7 @@ export default function AdminKnowledgeBase() {
                       <span style={{ fontSize:10,color:T.sub,background:T.input,padding:"2px 7px",borderRadius:5 }}>{g.category}</span>
                       {g.essential&&<span style={{ fontSize:10,fontWeight:700,color:"#f87171",background:"rgba(248,113,113,.1)",padding:"2px 7px",borderRadius:5 }}>ESSENTIAL</span>}
                     </div>
-                    <p style={{ fontSize:11,color:T.sub,margin:0 }}>Roles: {g.role.join(", ")} · Updated {formatDistanceToNow(new Date(g.lastUpdated))} ago by {g.updatedBy}</p>
+                    <p style={{ fontSize:11,color:T.sub,margin:0 }}>Roles: {g.role.join(", ")} · Updated {safeDist(g.lastUpdated)} ago by {g.updatedBy}</p>
                   </div>
                   <span style={{ color:T.sub,fontSize:14 }}>{expanded===g.id?"▲":"▼"}</span>
                 </button>
@@ -152,7 +153,7 @@ export default function AdminKnowledgeBase() {
                 <div style={{ display:"flex",gap:5,flexWrap:"wrap",marginBottom:4 }}>
                   {b.coveredAreas.map(a=><span key={a} style={{ fontSize:10,color:T.badgeFg,background:T.badge,padding:"2px 8px",borderRadius:5 }}>{a}</span>)}
                 </div>
-                <p style={{ fontSize:11,color:T.sub,margin:0 }}>Last active: {formatDistanceToNow(new Date(b.lastActive))} ago</p>
+                <p style={{ fontSize:11,color:T.sub,margin:0 }}>Last active: {safeDist(b.lastActive)} ago</p>
               </div>
             </div>
           ))}
@@ -174,7 +175,7 @@ export default function AdminKnowledgeBase() {
                 <span style={{ fontSize:13,color:c.completed?T.sub:T.text,fontWeight:c.completed?400:600,textDecoration:c.completed?"line-through":"none" }}>{c.task}</span>
                 <div style={{ display:"flex",gap:8,marginTop:2 }}>
                   <span style={{ fontSize:10,color:T.sub,background:T.input,padding:"1px 6px",borderRadius:4 }}>{c.category}</span>
-                  {c.completedAt&&c.completedBy&&<span style={{ fontSize:10,color:T.sub }}>by {c.completedBy} · {format(new Date(c.completedAt),"HH:mm")}</span>}
+                  {c.completedAt&&c.completedBy&&<span style={{ fontSize:10,color:T.sub }}>by {c.completedBy} · {safeFmt(c.completedAt, "HH:mm")}</span>}
                 </div>
               </div>
             </div>

@@ -3,6 +3,7 @@ import { Monitor, AlertTriangle, CheckCircle2, RefreshCw, Activity, LogOut } fro
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
@@ -84,7 +85,7 @@ export default function AdminSessionStorage(){
             <Monitor size={13} color={T.sub}/>
             <div style={{flex:1}}>
               <p style={{fontWeight:600,fontSize:12,color:T.text,margin:"0 0 1px"}}>{s.user} · {s.device}</p>
-              <p style={{fontSize:11,color:T.sub,margin:0}}>Active {formatDistanceToNow(new Date(s.lastActivity))} ago · {s.sizekb} KB</p>
+              <p style={{fontSize:11,color:T.sub,margin:0}}>Active {safeDist(s.lastActivity)} ago · {s.sizekb} KB</p>
             </div>
             <button onClick={()=>terminate(s.id)} disabled={terminating===s.id} style={{display:"flex",alignItems:"center",gap:4,padding:"5px 10px",borderRadius:7,background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.2)",color:"#f87171",fontSize:11,cursor:"pointer",flexShrink:0}}>
               <LogOut size={10}/>{terminating===s.id?"…":"Terminate"}

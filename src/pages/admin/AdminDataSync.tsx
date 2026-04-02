@@ -4,6 +4,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={
@@ -79,7 +80,7 @@ export default function AdminDataSync(){
                 <span style={{fontSize:12,color:T.sub}}>{j.source} → {j.target}</span>
                 <span style={{fontSize:12,color:T.sub}}>Every {j.intervalMins}m</span>
                 <span style={{fontSize:12,color:T.sub}}>{j.rowsSync.toLocaleString()} rows</span>
-                <span style={{fontSize:12,color:T.sub}}>Last: {formatDistanceToNow(new Date(j.lastSyncAt))} ago</span>
+                <span style={{fontSize:12,color:T.sub}}>Last: {safeDist(j.lastSyncAt)} ago</span>
               </div>
             </div>
             {j.status!=="synced"&&<button onClick={()=>forceSync(j)} disabled={syncing===j.id||j.status==="syncing"} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,background:`${A1}15`,border:`1px solid ${A1}33`,color:T.badgeFg,fontSize:11,fontWeight:600,cursor:"pointer",flexShrink:0}}>

@@ -3,6 +3,7 @@ import { Globe, AlertTriangle, CheckCircle2, RefreshCw, Activity, Shield } from 
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format, differenceInDays } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
@@ -67,7 +68,7 @@ export default function AdminDnsDomain(){
                     <span style={{fontSize:10,color:T.sub}}>{d.registrar}</span>
                     <span style={{fontSize:10,fontWeight:700,color:dColor[d.status],textTransform:"capitalize"}}>{d.status}</span>
                   </div>
-                  <span style={{fontSize:12,color:T.sub}}>Expires: <strong style={{color:daysLeft<60?"#fbbf24":"#4ade80"}}>{daysLeft}d</strong> · {format(new Date(d.expiresAt),"MMM d, yyyy")}</span>
+                  <span style={{fontSize:12,color:T.sub}}>Expires: <strong style={{color:daysLeft<60?"#fbbf24":"#4ade80"}}>{daysLeft}d</strong> · {safeFmt(d.expiresAt, "MMM d, yyyy")}</span>
                 </div>
                 <button onClick={e=>{e.stopPropagation();check(d.id);}} disabled={checking===d.id} style={{padding:"6px 12px",borderRadius:8,background:`${A1}15`,border:`1px solid ${A1}33`,color:T.badgeFg,fontSize:11,fontWeight:600,cursor:"pointer",flexShrink:0}}>
                   {checking===d.id?"Checking…":"Validate DNS"}

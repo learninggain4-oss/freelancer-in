@@ -6,6 +6,7 @@ import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -128,7 +129,7 @@ export default function AdminDataRetention() {
                       {p.autoDelete?<ToggleRight size={22} color="#4ade80"/>:<ToggleLeft size={22} color="#94a3b8"/>}
                     </button>
                   </div>
-                  <p style={{ fontSize:11,color:T.sub,margin:0 }}>Legal basis: {p.legalBasis}{p.lastCleaned?` · Last cleaned: ${format(new Date(p.lastCleaned),"MMM d, yyyy")}`:""}</p>
+                  <p style={{ fontSize:11,color:T.sub,margin:0 }}>Legal basis: {p.legalBasis}{p.lastCleaned?` · Last cleaned: ${safeFmt(p.lastCleaned, "MMM d, yyyy")}`:""}</p>
                 </div>
                 {p.pendingDeletion>0&&(
                   <button onClick={()=>setConfirmClean(p)} disabled={cleaning===p.id} style={{ display:"flex",alignItems:"center",gap:5,padding:"7px 13px",borderRadius:9,background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.2)",color:"#f87171",fontSize:11,fontWeight:600,cursor:"pointer",flexShrink:0 }}>

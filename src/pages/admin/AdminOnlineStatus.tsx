@@ -11,6 +11,7 @@ import { Search, Wifi, WifiOff, Users, ChevronLeft, ChevronRight, Activity, Glob
 import { format, formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const TH = {
   black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
@@ -196,12 +197,12 @@ const AdminOnlineStatus = () => {
                             <div className="flex flex-col whitespace-nowrap">
                               <span className="text-sm font-medium" style={{ color: T.text }}>
                                 {u.last_seen_at
-                                  ? formatDistanceToNow(new Date(u.last_seen_at), { addSuffix: true })
+                                  ? safeDist(u.last_seen_at, "—", { addSuffix: true })
                                   : "Never"}
                               </span>
                               {u.last_seen_at && (
                                 <span className="text-[10px] opacity-50" style={{ color: T.sub }}>
-                                  {format(new Date(u.last_seen_at), "HH:mm, dd MMM")}
+                                  {safeFmt(u.last_seen_at, "HH:mm, dd MMM")}
                                 </span>
                               )}
                             </div>

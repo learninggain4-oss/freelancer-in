@@ -3,6 +3,7 @@ import { Lock, AlertTriangle, CheckCircle2, Eye, EyeOff, Shield, FileText } from
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
@@ -90,7 +91,7 @@ export default function AdminFilePermissions(){
             {l.allowed?<CheckCircle2 size={13} color="#4ade80"/>:<AlertTriangle size={13} color="#f87171"/>}
             <div style={{flex:1}}>
               <p style={{fontWeight:600,fontSize:12,color:T.text,margin:"0 0 1px"}}>{l.user} — {l.action} — {l.file}</p>
-              <p style={{fontSize:11,color:T.sub,margin:0}}>IP: {l.ip} · {format(new Date(l.at),"MMM d, HH:mm")}</p>
+              <p style={{fontSize:11,color:T.sub,margin:0}}>IP: {l.ip} · {safeFmt(l.at, "MMM d, HH:mm")}</p>
             </div>
             <span style={{fontSize:10,fontWeight:700,color:l.allowed?"#4ade80":"#f87171"}}>{l.allowed?"ALLOWED":"DENIED"}</span>
           </div>

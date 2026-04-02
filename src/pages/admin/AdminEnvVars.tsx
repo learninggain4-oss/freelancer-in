@@ -6,6 +6,7 @@ import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -238,8 +239,8 @@ export default function AdminEnvVars() {
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}>
-                <span style={{ fontSize: 10, color: T.sub }}>Added {format(new Date(v.createdAt), "MMM d, yyyy")}</span>
-                {v.updatedAt !== v.createdAt && <span style={{ fontSize: 10, color: T.sub }}>Updated {format(new Date(v.updatedAt), "MMM d, HH:mm")}</span>}
+                <span style={{ fontSize: 10, color: T.sub }}>Added {safeFmt(v.createdAt, "MMM d, yyyy")}</span>
+                {v.updatedAt !== v.createdAt && <span style={{ fontSize: 10, color: T.sub }}>Updated {safeFmt(v.updatedAt, "MMM d, HH:mm")}</span>}
                 {v.history.length > 0 && <span style={{ fontSize: 10, color: T.badgeFg }}>{v.history.length} revision{v.history.length !== 1 ? "s" : ""}</span>}
               </div>
             </div>

@@ -5,6 +5,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -138,7 +139,7 @@ export default function AdminJobQueue() {
                     <span style={{ fontSize:10,fontWeight:700,color:prioColor[j.priority],background:`${prioColor[j.priority]}15`,padding:"2px 7px",borderRadius:5 }}>{j.priority} priority</span>
                     <span style={{ fontSize:10,fontWeight:700,color:statusColor[j.status],background:`${statusColor[j.status]}15`,padding:"2px 7px",borderRadius:5,textTransform:"capitalize" }}>{j.status}</span>
                   </div>
-                  <p style={{ fontSize:12,color:T.sub,margin:"0 0 2px" }}>Attempts: {j.attempts}/{j.maxAttempts} · Scheduled: {format(new Date(j.scheduledAt),"MMM d, HH:mm")}</p>
+                  <p style={{ fontSize:12,color:T.sub,margin:"0 0 2px" }}>Attempts: {j.attempts}/{j.maxAttempts} · Scheduled: {safeFmt(j.scheduledAt, "MMM d, HH:mm")}</p>
                   {j.error&&<p style={{ fontSize:12,color:"#f87171",margin:0 }}>{j.error}</p>}
                   {j.durationMs&&<p style={{ fontSize:11,color:T.sub,margin:0 }}>Duration: {(j.durationMs/1000).toFixed(1)}s</p>}
                 </div>

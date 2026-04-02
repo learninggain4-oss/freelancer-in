@@ -6,6 +6,7 @@ import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { safeFmt } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -235,8 +236,8 @@ export default function AdminBackups() {
                   <p style={{ fontSize: 11, color: T.sub, margin: 0 }}>{b.tables.join(", ")} • {b.size}</p>
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <p style={{ fontSize: 12, color: T.sub, margin: 0 }}>{format(new Date(b.timestamp), "MMM d, yyyy")}</p>
-                  <p style={{ fontSize: 10, color: T.sub, margin: "2px 0 0", opacity: .7 }}>{format(new Date(b.timestamp), "HH:mm")}</p>
+                  <p style={{ fontSize: 12, color: T.sub, margin: 0 }}>{safeFmt(b.timestamp, "MMM d, yyyy")}</p>
+                  <p style={{ fontSize: 10, color: T.sub, margin: "2px 0 0", opacity: .7 }}>{safeFmt(b.timestamp, "HH:mm")}</p>
                 </div>
                 <button onClick={() => setConfirmDelete(b)} style={{ display: "flex", alignItems: "center", padding: "6px 8px", borderRadius: 8, background: "rgba(248,113,113,.06)", border: "1px solid rgba(248,113,113,.15)", color: "#f87171", cursor: "pointer", flexShrink: 0 }}>
                   <Trash2 size={13} />

@@ -5,6 +5,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={
@@ -111,7 +112,7 @@ export default function AdminChangeApproval(){
                     <span style={{fontSize:12,color:T.sub}}>→</span>
                     <span style={{fontSize:12,background:"rgba(74,222,128,.1)",color:"#4ade80",padding:"3px 10px",borderRadius:6,fontFamily:"monospace"}}>{c.newValue}</span>
                   </div>
-                  <p style={{fontSize:12,color:T.sub,margin:0}}>Requested by {c.requestedBy} · {formatDistanceToNow(new Date(c.createdAt))} ago</p>
+                  <p style={{fontSize:12,color:T.sub,margin:0}}>Requested by {c.requestedBy} · {safeDist(c.createdAt)} ago</p>
                 </div>
               </div>
               <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>

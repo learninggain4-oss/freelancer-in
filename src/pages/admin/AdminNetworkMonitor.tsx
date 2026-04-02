@@ -4,6 +4,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={
@@ -99,7 +100,7 @@ export default function AdminNetworkMonitor(){
               <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
                 <span style={{fontSize:12,color:T.sub}}>Latency: <strong style={{color:e.latencyMs>1000?"#f87171":e.latencyMs>500?"#fbbf24":"#4ade80"}}>{e.latencyMs}ms</strong></span>
                 {e.retryCount>0&&<span style={{fontSize:12,color:"#fb923c"}}>{e.retryCount} retries</span>}
-                <span style={{fontSize:12,color:T.sub}}>{format(new Date(e.lastCheck),"HH:mm:ss")}</span>
+                <span style={{fontSize:12,color:T.sub}}>{safeFmt(e.lastCheck, "HH:mm:ss")}</span>
               </div>
             </div>
             <div style={{display:"flex",gap:6,flexShrink:0}}>

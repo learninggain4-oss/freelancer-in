@@ -4,6 +4,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -120,10 +121,10 @@ export default function AdminSecretsManager() {
                     </button>
                   </div>
                   <div style={{ display:"flex",gap:12,flexWrap:"wrap" }}>
-                    <span style={{ fontSize:12,color:T.sub }}>Rotated: {formatDistanceToNow(new Date(s.lastRotated))} ago</span>
+                    <span style={{ fontSize:12,color:T.sub }}>Rotated: {safeDist(s.lastRotated)} ago</span>
                     {s.expiresIn&&<span style={{ fontSize:12,color:T.sub }}>Expires in: <strong style={{ color:s.expiresIn<30?"#f87171":"#4ade80" }}>{s.expiresIn} days</strong></span>}
                     <span style={{ fontSize:12,color:T.sub }}>Accesses: {s.accessCount.toLocaleString()}</span>
-                    <span style={{ fontSize:12,color:T.sub }}>Last: {formatDistanceToNow(new Date(s.lastAccessed))} ago</span>
+                    <span style={{ fontSize:12,color:T.sub }}>Last: {safeDist(s.lastAccessed)} ago</span>
                   </div>
                 </div>
                 <button onClick={()=>rotate(s)} disabled={rotating===s.id} style={{ display:"flex",alignItems:"center",gap:5,padding:"7px 13px",borderRadius:9,background:s.status!=="active"?`linear-gradient(135deg,${A1},${A2})`:`${A1}15`,border:s.status!=="active"?"none":`1px solid ${A1}33`,color:s.status!=="active"?"#fff":T.badgeFg,fontSize:11,fontWeight:600,cursor:"pointer",flexShrink:0 }}>
@@ -146,7 +147,7 @@ export default function AdminSecretsManager() {
                   <span style={{ fontSize:11,color:T.sub }}>{l.action}</span>
                   {l.suspicious&&<span style={{ fontSize:10,fontWeight:700,color:"#f87171",background:"rgba(248,113,113,.1)",padding:"2px 6px",borderRadius:4 }}>SUSPICIOUS</span>}
                 </div>
-                <p style={{ fontSize:11,color:T.sub,margin:0 }}>By {l.actor} · IP: {l.ip} · {format(new Date(l.timestamp),"MMM d, HH:mm")}</p>
+                <p style={{ fontSize:11,color:T.sub,margin:0 }}>By {l.actor} · IP: {l.ip} · {safeFmt(l.timestamp, "MMM d, HH:mm")}</p>
               </div>
             </div>
           ))}

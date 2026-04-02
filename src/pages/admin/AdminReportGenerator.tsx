@@ -5,6 +5,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -129,7 +130,7 @@ export default function AdminReportGenerator() {
                     {r.rowCount&&<span style={{ fontSize:12,color:T.sub }}>Rows: <strong style={{ color:T.text }}>{r.rowCount.toLocaleString()}</strong></span>}
                     {r.sizeMB&&<span style={{ fontSize:12,color:T.sub }}>Size: <strong style={{ color:T.text }}>{r.sizeMB} MB</strong></span>}
                     <span style={{ fontSize:12,color:T.sub }}>By: {r.requestedBy}</span>
-                    {r.completedAt&&<span style={{ fontSize:12,color:T.sub }}>{formatDistanceToNow(new Date(r.completedAt))} ago</span>}
+                    {r.completedAt&&<span style={{ fontSize:12,color:T.sub }}>{safeDist(r.completedAt)} ago</span>}
                   </div>
                   {r.error&&<p style={{ fontSize:12,color:"#f87171",margin:"3px 0 0" }}>{r.error}</p>}
                 </div>

@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -274,7 +275,7 @@ export default function AdminServerMonitor() {
         <div ref={termRef} style={{ background: "#050510", minHeight: 200, maxHeight: 300, overflowY: "auto", padding: "12px 16px", fontFamily: "monospace", fontSize: 12 }}>
           {cmdHistory.map((line, i) => (
             <div key={i} style={{ color: line.level === "error" ? "#f87171" : line.level === "warn" ? "#fbbf24" : "#4ade80", marginBottom: 2, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-              <span style={{ color: "rgba(255,255,255,.25)", marginRight: 8 }}>{format(new Date(line.ts), "HH:mm:ss")}</span>{line.msg}
+              <span style={{ color: "rgba(255,255,255,.25)", marginRight: 8 }}>{safeFmt(line.ts, "HH:mm:ss")}</span>{line.msg}
             </div>
           ))}
         </div>

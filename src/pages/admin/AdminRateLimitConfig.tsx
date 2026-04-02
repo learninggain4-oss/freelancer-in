@@ -3,6 +3,7 @@ import { Shield, AlertTriangle, CheckCircle2, RefreshCw, Activity, Zap } from "l
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
@@ -93,7 +94,7 @@ export default function AdminRateLimitConfig(){
             <AlertTriangle size={13} color="#f87171" style={{flexShrink:0}}/>
             <div style={{flex:1}}>
               <p style={{fontWeight:600,fontSize:12,color:T.text,margin:"0 0 1px"}}>IP {v.ip} — {v.endpoint}</p>
-              <p style={{fontSize:11,color:T.sub,margin:0}}>{v.attempts} attempts · Blocked: {format(new Date(v.blockedAt),"MMM d, HH:mm")}</p>
+              <p style={{fontSize:11,color:T.sub,margin:0}}>{v.attempts} attempts · Blocked: {safeFmt(v.blockedAt, "MMM d, HH:mm")}</p>
             </div>
           </div>
         ))}

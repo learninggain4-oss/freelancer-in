@@ -5,6 +5,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -130,8 +131,8 @@ export default function AdminApiManager() {
                     </button>
                   </div>
                   <div style={{ display:"flex",gap:12,flexWrap:"wrap",marginBottom:6 }}>
-                    <span style={{ fontSize:12,color:T.sub }}>Last rotated: {formatDistanceToNow(new Date(k.lastRotated))} ago</span>
-                    <span style={{ fontSize:12,color:T.sub }}>Expires: {format(new Date(k.expiresAt),"MMM d, yyyy")}</span>
+                    <span style={{ fontSize:12,color:T.sub }}>Last rotated: {safeDist(k.lastRotated)} ago</span>
+                    <span style={{ fontSize:12,color:T.sub }}>Expires: {safeFmt(k.expiresAt, "MMM d, yyyy")}</span>
                     <span style={{ fontSize:12,color:k.requestsToday/k.requestLimit>0.8?"#f87171":T.sub }}>Today: {k.requestsToday}/{k.requestLimit}</span>
                   </div>
                   <div style={{ display:"flex",gap:5,flexWrap:"wrap" }}>
@@ -162,7 +163,7 @@ export default function AdminApiManager() {
               <span style={{ fontSize:10,fontFamily:"monospace",fontWeight:700,color:l.method==="POST"?A1:T.sub,background:T.input,padding:"2px 7px",borderRadius:5,flexShrink:0 }}>{l.method}</span>
               <div style={{ flex:1 }}>
                 <p style={{ fontSize:12,fontFamily:"monospace",color:T.text,margin:"0 0 2px" }}>{l.endpoint}</p>
-                <p style={{ fontSize:11,color:T.sub,margin:0 }}>IP: {l.ip} · {l.latencyMs}ms · Key: {l.apiKey} · {format(new Date(l.timestamp),"HH:mm:ss")}</p>
+                <p style={{ fontSize:11,color:T.sub,margin:0 }}>IP: {l.ip} · {l.latencyMs}ms · Key: {l.apiKey} · {safeFmt(l.timestamp, "HH:mm:ss")}</p>
               </div>
               <span style={{ fontSize:12,fontWeight:700,color:l.status<300?"#4ade80":l.status<400?"#fbbf24":"#f87171",background:l.status<300?"rgba(74,222,128,.1)":l.status<400?"rgba(251,191,36,.1)":"rgba(248,113,113,.1)",padding:"3px 9px",borderRadius:7,flexShrink:0 }}>{l.status}</span>
             </div>

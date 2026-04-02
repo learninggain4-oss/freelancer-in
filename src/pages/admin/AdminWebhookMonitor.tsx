@@ -3,6 +3,7 @@ import { Zap, AlertTriangle, CheckCircle2, RefreshCw, Activity, Shield } from "l
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
@@ -71,7 +72,7 @@ export default function AdminWebhookMonitor(){
                 <span style={{fontSize:12,color:T.sub}}>Sent: {w.deliveries24h}</span>
                 <span style={{fontSize:12,color:T.sub}}>Failed: <strong style={{color:w.failures24h>0?"#f87171":"#4ade80"}}>{w.failures24h}</strong></span>
                 {w.avgResponseMs>0&&<span style={{fontSize:12,color:T.sub}}>Avg: {w.avgResponseMs}ms</span>}
-                <span style={{fontSize:12,color:T.sub}}>Last: {formatDistanceToNow(new Date(w.lastDelivery))} ago</span>
+                <span style={{fontSize:12,color:T.sub}}>Last: {safeDist(w.lastDelivery)} ago</span>
               </div>
             </div>
             <div style={{display:"flex",gap:6,flexShrink:0}}>

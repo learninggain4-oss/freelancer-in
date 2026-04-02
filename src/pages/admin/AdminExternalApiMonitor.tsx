@@ -3,6 +3,7 @@ import { Wifi, AlertTriangle, CheckCircle2, RefreshCw, Activity, Zap } from "luc
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
@@ -73,7 +74,7 @@ export default function AdminExternalApiMonitor(){
                   <span style={{fontSize:12,color:T.sub}}>Usage: {pct}%</span>
                   {s.latencyMs>0&&<span style={{fontSize:12,color:T.sub}}>Latency: <strong style={{color:s.latencyMs>200?"#fbbf24":"#4ade80"}}>{s.latencyMs}ms</strong></span>}
                   {s.errors24h>0&&<span style={{fontSize:12,color:"#f87171"}}>{s.errors24h} errors today</span>}
-                  <span style={{fontSize:12,color:T.sub}}>Checked: {formatDistanceToNow(new Date(s.lastCheck))} ago</span>
+                  <span style={{fontSize:12,color:T.sub}}>Checked: {safeDist(s.lastCheck)} ago</span>
                 </div>
                 <div style={{height:4,borderRadius:4,background:"rgba(255,255,255,.07)"}}>
                   <div style={{height:"100%",borderRadius:4,background:pct>90?"#f87171":pct>70?"#fbbf24":"#4ade80",width:`${Math.min(100,pct)}%`}}/>

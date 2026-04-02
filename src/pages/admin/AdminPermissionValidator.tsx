@@ -6,6 +6,7 @@ import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -214,7 +215,7 @@ export default function AdminPermissionValidator() {
               <div style={{ width:8, height:8, borderRadius:"50%", background:a.rolledBack?"#f87171":"#4ade80", flexShrink:0 }}/>
               <div style={{ flex:1 }}>
                 <p style={{ fontSize:13, color:T.text, fontWeight:600, margin:"0 0 2px" }}>{a.change}</p>
-                <p style={{ fontSize:11, color:T.sub, margin:0 }}>Role: <span style={{ color:ROLES.find(r=>r.name===a.role)?.color }}>{a.role}</span> · by {a.admin} · {format(new Date(a.timestamp),"MMM d, HH:mm")}</p>
+                <p style={{ fontSize:11, color:T.sub, margin:0 }}>Role: <span style={{ color:ROLES.find(r=>r.name===a.role)?.color }}>{a.role}</span> · by {a.admin} · {safeFmt(a.timestamp, "MMM d, HH:mm")}</p>
               </div>
               {a.rolledBack&&<span style={{ fontSize:10, color:"#f87171", background:"rgba(248,113,113,.1)", padding:"2px 8px", borderRadius:5, fontWeight:700 }}>ROLLED BACK</span>}
             </div>

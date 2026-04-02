@@ -6,6 +6,7 @@ import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -196,8 +197,8 @@ export default function AdminSessionSecurity() {
                     <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 12, color: T.sub, display: "flex", alignItems: "center", gap: 4 }}><Globe size={11} /> {ses.ip}</span>
                       <span style={{ fontSize: 12, color: T.sub, display: "flex", alignItems: "center", gap: 4 }}><MapPin size={11} /> {ses.location}</span>
-                      <span style={{ fontSize: 12, color: T.sub, display: "flex", alignItems: "center", gap: 4 }}><Clock size={11} /> Active {formatDistanceToNow(new Date(ses.lastActive))} ago</span>
-                      <span style={{ fontSize: 12, color: T.sub, display: "flex", alignItems: "center", gap: 4 }}><Key size={11} /> Login: {format(new Date(ses.loginAt), "MMM d, HH:mm")}</span>
+                      <span style={{ fontSize: 12, color: T.sub, display: "flex", alignItems: "center", gap: 4 }}><Clock size={11} /> Active {safeDist(ses.lastActive)} ago</span>
+                      <span style={{ fontSize: 12, color: T.sub, display: "flex", alignItems: "center", gap: 4 }}><Key size={11} /> Login: {safeFmt(ses.loginAt, "MMM d, HH:mm")}</span>
                     </div>
                   </div>
                   {!ses.isCurrent && !ses.isBlocked && (
@@ -220,7 +221,7 @@ export default function AdminSessionSecurity() {
               <AlertTriangle size={18} color={ev.resolved ? "#94a3b8" : "#f87171"} style={{ flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 13, fontWeight: 700, color: T.text, margin: "0 0 3px" }}>{ev.type}</p>
-                <p style={{ fontSize: 12, color: T.sub, margin: 0 }}>IP: {ev.ip} · {ev.device} · {format(new Date(ev.timestamp), "MMM d, HH:mm")}</p>
+                <p style={{ fontSize: 12, color: T.sub, margin: 0 }}>IP: {ev.ip} · {ev.device} · {safeFmt(ev.timestamp, "MMM d, HH:mm")}</p>
               </div>
               {ev.resolved ? (
                 <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 600 }}>✓ Resolved</span>

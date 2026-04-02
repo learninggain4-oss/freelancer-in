@@ -4,6 +4,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={
@@ -78,7 +79,7 @@ export default function AdminMonitoringRedundancy(){
               </div>
               <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
                 <span style={{fontSize:12,color:T.sub}}>Uptime: <strong style={{color:s.uptimePct>99?"#4ade80":s.uptimePct>95?"#fbbf24":"#f87171"}}>{s.uptimePct}%</strong></span>
-                <span style={{fontSize:12,color:T.sub}}>Last check: {formatDistanceToNow(new Date(s.lastCheck))} ago</span>
+                <span style={{fontSize:12,color:T.sub}}>Last check: {safeDist(s.lastCheck)} ago</span>
               </div>
             </div>
             {(s.status==="failed"||s.status==="standby"||s.status==="recovering")&&<button onClick={()=>activateFailover(s)} disabled={activating===s.id} style={{padding:"6px 12px",borderRadius:8,background:`${A1}15`,border:`1px solid ${A1}33`,color:T.badgeFg,fontSize:11,fontWeight:600,cursor:"pointer",flexShrink:0}}>

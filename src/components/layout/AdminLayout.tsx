@@ -416,7 +416,7 @@ const AdminLayout = () => {
         <ScrollArea className="flex-1">
           <nav style={{ padding: "10px 8px", display: "flex", flexDirection: "column", gap: 1 }}>
             {navSections.map((section, idx) => (
-              <div key={section.title} style={{ marginTop: idx > 0 ? 16 : 0 }}>
+              <div key={`${section.title}-${idx}`} style={{ marginTop: idx > 0 ? 16 : 0 }}>
                 <p className="admin-nav-section-title">{section.title}</p>
                 {section.items.map(item => (
                   <NavLink key={item.path} to={item.path} onClick={() => setSidebarOpen(false)}

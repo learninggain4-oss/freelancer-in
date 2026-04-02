@@ -5,6 +5,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -142,7 +143,7 @@ export default function AdminNotificationCenter() {
                   <span style={{ fontSize:12,color:T.sub }}>{j.recipients.toLocaleString()} recipients</span>
                   <span style={{ fontSize:12,color:T.sub }}>Attempts: {j.attempts}/{j.maxAttempts}</span>
                   {j.failReason&&<span style={{ fontSize:12,color:"#f87171" }}>{j.failReason}</span>}
-                  {j.cooldownUntil&&<span style={{ fontSize:12,color:"#fbbf24" }}>Cooldown until: {format(new Date(j.cooldownUntil),"HH:mm:ss")}</span>}
+                  {j.cooldownUntil&&<span style={{ fontSize:12,color:"#fbbf24" }}>Cooldown until: {safeFmt(j.cooldownUntil, "HH:mm:ss")}</span>}
                 </div>
               </div>
               <div style={{ display:"flex",gap:6,flexShrink:0 }}>
@@ -169,7 +170,7 @@ export default function AdminNotificationCenter() {
                   <span style={{ fontWeight:700,fontSize:13,color:T.text }}>{l.title}</span>
                   <span style={{ fontSize:10,color:T.sub,background:T.input,padding:"2px 7px",borderRadius:5 }}>{l.type}</span>
                 </div>
-                <p style={{ fontSize:11,color:T.sub,margin:0 }}>By {l.triggeredBy} · {format(new Date(l.timestamp),"MMM d, HH:mm")} · {l.recipients.toLocaleString()} recipients</p>
+                <p style={{ fontSize:11,color:T.sub,margin:0 }}>By {l.triggeredBy} · {safeFmt(l.timestamp, "MMM d, HH:mm")} · {l.recipients.toLocaleString()} recipients</p>
               </div>
               <div style={{ textAlign:"right",flexShrink:0 }}>
                 <p style={{ fontSize:12,fontWeight:700,color:"#4ade80",margin:"0 0 1px" }}>{l.delivered.toLocaleString()} delivered</p>

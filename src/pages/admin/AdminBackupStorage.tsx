@@ -3,6 +3,7 @@ import { Database, AlertTriangle, CheckCircle2, RefreshCw, HardDrive, Shield } f
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
@@ -86,7 +87,7 @@ export default function AdminBackupStorage(){
                   <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
                     <span style={{fontSize:12,color:T.sub}}>Retention:</span>
                     <input type="number" defaultValue={b.retentionDays} onBlur={e=>updateRetention(b.id,+e.target.value)} style={{width:60,background:T.input,border:`1px solid ${T.border}`,color:T.text,borderRadius:6,padding:"3px 8px",fontSize:12}}/>
-                    <span style={{fontSize:12,color:T.sub}}>days · Last: {formatDistanceToNow(new Date(b.lastBackup))} ago</span>
+                    <span style={{fontSize:12,color:T.sub}}>days · Last: {safeDist(b.lastBackup)} ago</span>
                     <button onClick={()=>toggleAutoPause(b.id)} style={{padding:"3px 10px",borderRadius:6,background:b.autoPause?`${A1}15`:"rgba(148,163,184,.1)",border:`1px solid ${b.autoPause?A1:T.border}`,color:b.autoPause?T.badgeFg:T.sub,fontSize:11,cursor:"pointer"}}>Auto-pause</button>
                   </div>
                 </div>

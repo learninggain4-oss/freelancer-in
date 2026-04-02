@@ -14,6 +14,7 @@ import { Search, Loader2, ArrowUpCircle, CheckCircle, XCircle, MessageSquare, Se
 import { useUpgradeChat } from "@/hooks/use-upgrade-chat";
 import { cn } from "@/lib/utils";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const TH = {
   black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
@@ -201,7 +202,7 @@ const AdminWalletUpgrades = () => {
 
                   {/* Meta */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                    <span style={{ color: tok.sub, fontSize: 11 }}>{format(new Date(req.created_at), "dd MMM yyyy")}</span>
+                    <span style={{ color: tok.sub, fontSize: 11 }}>{safeFmt(req.created_at, "dd MMM yyyy")}</span>
                     {req.admin_notes && <span style={{ color: tok.sub, fontSize: 11, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{req.admin_notes}</span>}
                   </div>
 
@@ -383,7 +384,7 @@ const AdminUpgradeChatPanel = ({
                       {senderLabel && <p style={{ fontSize: 10, fontWeight: 700, color: "#a5b4fc", marginBottom: 4 }}>{senderLabel}</p>}
                       <p style={{ color: isMine && !isBotMsg ? "#fff" : tok.text, fontSize: 13, whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0 }}>{displayContent}</p>
                       <p style={{ fontSize: 10, color: isMine && !isBotMsg ? "rgba(255,255,255,.6)" : tok.sub, marginTop: 4 }}>
-                        {format(new Date(msg.created_at), "dd MMM yyyy — hh:mm a")}
+                        {safeFmt(msg.created_at, "dd MMM yyyy — hh:mm a")}
                       </p>
                     </div>
                   </div>

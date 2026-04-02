@@ -5,6 +5,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -186,7 +187,7 @@ export default function AdminRateLimiting() {
               <AlertTriangle size={18} color={a.status==="active"?"#f87171":"#94a3b8"} style={{ flexShrink:0 }}/>
               <div style={{ flex:1 }}>
                 <p style={{ fontSize:13, fontWeight:700, color:T.text, margin:"0 0 3px" }}>{a.type}</p>
-                <p style={{ fontSize:12, color:T.sub, margin:0 }}>IP: {a.ip} · {a.adminEmail} · {a.occurrences}x · {formatDistanceToNow(new Date(a.timestamp))} ago</p>
+                <p style={{ fontSize:12, color:T.sub, margin:0 }}>IP: {a.ip} · {a.adminEmail} · {a.occurrences}x · {safeDist(a.timestamp)} ago</p>
               </div>
               {a.status==="active"?(
                 <button onClick={()=>resolveAlert(a.id)} style={{ padding:"6px 13px", borderRadius:8, background:"rgba(74,222,128,.08)", border:"1px solid rgba(74,222,128,.2)", color:"#4ade80", fontSize:12, fontWeight:600, cursor:"pointer" }}>Resolve</button>
@@ -207,7 +208,7 @@ export default function AdminRateLimiting() {
                   <span style={{ fontSize:10, fontWeight:700, color:(statusColor as Record<string,string>)[j.status], background:`${(statusColor as Record<string,string>)[j.status]}15`, padding:"2px 7px", borderRadius:5, textTransform:"capitalize" }}>{j.status}</span>
                 </div>
                 {j.error&&<p style={{ fontSize:12, color:"#f87171", margin:"0 0 3px", fontFamily:"monospace" }}>{j.error}</p>}
-                <p style={{ fontSize:11, color:T.sub, margin:0 }}>Attempts: {j.attempts}/{j.maxAttempts} · Last: {format(new Date(j.lastAttempt),"MMM d, HH:mm")}{j.nextRetry?` · Next retry: ${format(new Date(j.nextRetry),"HH:mm")}`:""}</p>
+                <p style={{ fontSize:11, color:T.sub, margin:0 }}>Attempts: {j.attempts}/{j.maxAttempts} · Last: {safeFmt(j.lastAttempt, "MMM d, HH:mm")}{j.nextRetry?` · Next retry: ${safeFmt(j.nextRetry, "HH:mm")}`:""}</p>
               </div>
               {(j.status==="failed"||j.status==="retrying")&&(
                 <button onClick={()=>retryJob(j.id)} disabled={retrying===j.id} style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 13px", borderRadius:8, background:"rgba(99,102,241,.1)", border:`1px solid rgba(99,102,241,.2)`, color:T.badgeFg, fontSize:12, fontWeight:600, cursor:"pointer", opacity:retrying===j.id?.7:1 }}>
@@ -231,7 +232,7 @@ export default function AdminRateLimiting() {
               </div>
               <div style={{ flex:1 }}>
                 <p style={{ fontSize:13, fontWeight:700, color:T.text, margin:"0 0 3px" }}>{q.operation}</p>
-                <p style={{ fontSize:12, color:T.sub, margin:0 }}>By {q.requestedBy} · {q.size.toLocaleString()} items · Queued {formatDistanceToNow(new Date(q.queuedAt))} ago</p>
+                <p style={{ fontSize:12, color:T.sub, margin:0 }}>By {q.requestedBy} · {q.size.toLocaleString()} items · Queued {safeDist(q.queuedAt)} ago</p>
               </div>
               <span style={{ fontSize:11, fontWeight:700, color:(statusColor as Record<string,string>)[q.status], background:`${(statusColor as Record<string,string>)[q.status]}15`, padding:"3px 9px", borderRadius:6, textTransform:"capitalize" }}>{q.status}</span>
             </div>

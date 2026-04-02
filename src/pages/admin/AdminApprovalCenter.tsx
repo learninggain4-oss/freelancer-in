@@ -6,6 +6,7 @@ import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -207,10 +208,10 @@ export default function AdminApprovalCenter() {
                       <span style={{ fontSize: 10, fontWeight: 700, color: catColor[req.category] || T.badgeFg, background: T.input, padding: "2px 7px", borderRadius: 5 }}>{req.category}</span>
                       <span style={{ fontSize: 10, fontWeight: 700, color: statusColor[req.status], background: `${statusColor[req.status]}15`, padding: "2px 8px", borderRadius: 5, textTransform: "capitalize" }}>{req.status}</span>
                     </div>
-                    <p style={{ fontSize: 12, color: T.sub, margin: "0 0 4px" }}><strong style={{ color: T.text }}>{req.requestedBy}</strong> · {req.target} · {format(new Date(req.requestedAt), "MMM d, HH:mm")}</p>
+                    <p style={{ fontSize: 12, color: T.sub, margin: "0 0 4px" }}><strong style={{ color: T.text }}>{req.requestedBy}</strong> · {req.target} · {safeFmt(req.requestedAt, "MMM d, HH:mm")}</p>
                     <p style={{ fontSize: 12, color: T.sub, margin: 0 }}>Reason: {req.reason}</p>
                     {req.notes && <p style={{ fontSize: 11, color: "#fbbf24", margin: "4px 0 0" }}>Note: {req.notes}</p>}
-                    {req.resolvedBy && <p style={{ fontSize: 11, color: T.sub, margin: "4px 0 0" }}>Resolved by {req.resolvedBy} at {format(new Date(req.resolvedAt!), "MMM d, HH:mm")}</p>}
+                    {req.resolvedBy && <p style={{ fontSize: 11, color: T.sub, margin: "4px 0 0" }}>Resolved by {req.resolvedBy} at {safeFmt(req.resolvedAt!, "MMM d, HH:mm")}</p>}
                   </div>
                 </div>
                 {req.status === "pending" && (
@@ -265,7 +266,7 @@ export default function AdminApprovalCenter() {
                     <span style={{ fontSize: 10, fontWeight: 700, color: acc.role === "super_admin" ? T.badgeFg : "#fbbf24", background: acc.role === "super_admin" ? `${A1}18` : "rgba(251,191,36,.1)", padding: "2px 7px", borderRadius: 5, textTransform: "uppercase" }}>{acc.role === "super_admin" ? "Super Admin" : "Emergency"}</span>
                     <span style={{ fontSize: 10, fontWeight: 700, color: acc.isActive ? "#4ade80" : "#f87171", background: acc.isActive ? "rgba(74,222,128,.1)" : "rgba(248,113,113,.1)", padding: "2px 7px", borderRadius: 5 }}>{acc.isActive ? "ACTIVE" : "INACTIVE"}</span>
                   </div>
-                  <p style={{ fontSize: 12, color: T.sub, margin: 0 }}>{acc.email} · Added {format(new Date(acc.createdAt), "MMM d, yyyy")}{acc.lastUsed ? ` · Last used ${format(new Date(acc.lastUsed), "MMM d")}` : ""}</p>
+                  <p style={{ fontSize: 12, color: T.sub, margin: 0 }}>{acc.email} · Added {safeFmt(acc.createdAt, "MMM d, yyyy")}{acc.lastUsed ? ` · Last used ${safeFmt(acc.lastUsed, "MMM d")}` : ""}</p>
                 </div>
                 <button onClick={() => setConfirmToggle(acc)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 13px", borderRadius: 9, background: acc.isActive ? "rgba(248,113,113,.08)" : "rgba(74,222,128,.08)", border: `1px solid ${acc.isActive ? "rgba(248,113,113,.2)" : "rgba(74,222,128,.2)"}`, color: acc.isActive ? "#f87171" : "#4ade80", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                   {acc.isActive ? <><Lock size={12} /> Deactivate</> : <><Unlock size={12} /> Activate</>}

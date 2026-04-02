@@ -5,6 +5,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -166,7 +167,7 @@ export default function AdminAlertSystem() {
                   </div>
                   <p style={{ fontSize: 12, color: T.sub, margin: 0 }}>{al.message}</p>
                 </div>
-                <span style={{ fontSize: 11, color: T.sub, flexShrink: 0, textAlign: "right" }}>{format(new Date(al.timestamp), "MMM d\nHH:mm")}</span>
+                <span style={{ fontSize: 11, color: T.sub, flexShrink: 0, textAlign: "right" }}>{safeFmt(al.timestamp, "MMM d\nHH:mm")}</span>
               </div>
             ))}
           </div>
@@ -237,7 +238,7 @@ export default function AdminAlertSystem() {
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
                   <p style={{ fontWeight: 700, fontSize: 12, color: statusColor[s.status], margin: 0, textTransform: "uppercase" }}>{s.status}</p>
                   {s.latency && <p style={{ fontSize: 11, color: T.sub, margin: "2px 0 0" }}>{s.latency}ms</p>}
-                  {s.lastChecked && <p style={{ fontSize: 10, color: T.sub, margin: "1px 0 0", opacity: .7 }}>{format(new Date(s.lastChecked), "HH:mm:ss")}</p>}
+                  {s.lastChecked && <p style={{ fontSize: 10, color: T.sub, margin: "1px 0 0", opacity: .7 }}>{safeFmt(s.lastChecked, "HH:mm:ss")}</p>}
                 </div>
               </div>
             ))}

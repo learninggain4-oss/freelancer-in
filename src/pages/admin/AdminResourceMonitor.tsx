@@ -4,6 +4,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -145,7 +146,7 @@ export default function AdminResourceMonitor() {
           </div>
           {history.map((s,i)=>(
             <div key={i} style={{ display:"grid",gridTemplateColumns:"1fr 80px 80px 80px 80px",padding:"10px 18px",borderBottom:i<history.length-1?`1px solid ${T.border}`:"none",alignItems:"center" }}>
-              <span style={{ fontSize:12,color:T.sub }}>{format(new Date(s.timestamp),"HH:mm:ss")}</span>
+              <span style={{ fontSize:12,color:T.sub }}>{safeFmt(s.timestamp, "HH:mm:ss")}</span>
               <span style={{ fontSize:12,fontWeight:700,color:s.cpuPct>80?"#f87171":s.cpuPct>60?"#fbbf24":"#4ade80" }}>{s.cpuPct}%</span>
               <span style={{ fontSize:12,fontWeight:700,color:s.memPct>85?"#f87171":s.memPct>70?"#fbbf24":"#4ade80" }}>{s.memPct}%</span>
               <span style={{ fontSize:12,color:T.text }}>{s.dbConnections}</span>
@@ -166,7 +167,7 @@ export default function AdminResourceMonitor() {
                   {!a.resolved&&<span style={{ fontSize:10,fontWeight:700,color:"#f87171",background:"rgba(248,113,113,.1)",padding:"2px 7px",borderRadius:5 }}>ACTIVE</span>}
                   {a.resolved&&<span style={{ fontSize:10,color:"#4ade80" }}>resolved</span>}
                 </div>
-                <p style={{ fontSize:12,color:T.sub,margin:0 }}>Value: <strong style={{ color:"#f87171" }}>{a.value}</strong> · Threshold: {a.threshold} · {format(new Date(a.at),"MMM d, HH:mm")}</p>
+                <p style={{ fontSize:12,color:T.sub,margin:0 }}>Value: <strong style={{ color:"#f87171" }}>{a.value}</strong> · Threshold: {a.threshold} · {safeFmt(a.at, "MMM d, HH:mm")}</p>
               </div>
             </div>
           ))}

@@ -5,6 +5,7 @@ import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -204,7 +205,7 @@ export default function AdminMaintenanceCenter() {
               {l.status==="success"?<CheckCircle2 size={16} color="#4ade80"/>:<AlertTriangle size={16} color="#f87171"/>}
               <div style={{ flex:1 }}>
                 <p style={{ fontSize:13, fontWeight:600, color:T.text, margin:"0 0 2px" }}>{l.action}</p>
-                <p style={{ fontSize:11, color:T.sub, margin:0 }}>{l.performedBy} · {format(new Date(l.timestamp),"MMM d, yyyy HH:mm")}</p>
+                <p style={{ fontSize:11, color:T.sub, margin:0 }}>{l.performedBy} · {safeFmt(l.timestamp, "MMM d, yyyy HH:mm")}</p>
               </div>
               <div style={{ textAlign:"right", flexShrink:0 }}>
                 <p style={{ fontSize:12, fontWeight:700, color:T.text, margin:"0 0 1px" }}>{l.itemsRemoved} items</p>

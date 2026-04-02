@@ -3,6 +3,7 @@ import { Server, AlertTriangle, CheckCircle2, RefreshCw, Activity, Zap } from "l
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
@@ -61,7 +62,7 @@ export default function AdminDeploymentMonitor(){
                 <span style={{fontSize:10,fontWeight:700,color:sColor[d.status],textTransform:"capitalize"}}>{d.status.replace(/-/g," ")}</span>
                 {d.status==="success"&&<span style={{fontSize:10,color:"#4ade80"}}>Health: {d.healthScore}%</span>}
               </div>
-              <p style={{fontSize:12,color:T.sub,margin:0}}>By {d.deployedBy} · {formatDistanceToNow(new Date(d.deployedAt))} ago</p>
+              <p style={{fontSize:12,color:T.sub,margin:0}}>By {d.deployedBy} · {safeDist(d.deployedAt)} ago</p>
             </div>
             {d.rollbackAvailable&&d.status!=="rolling-back"&&<button onClick={()=>rollback(d)} disabled={rollingBack===d.id} style={{padding:"6px 12px",borderRadius:8,background:"rgba(251,191,36,.08)",border:"1px solid rgba(251,191,36,.2)",color:"#fbbf24",fontSize:11,fontWeight:600,cursor:"pointer",flexShrink:0}}>
               {rollingBack===d.id?"Rolling back…":"Rollback"}

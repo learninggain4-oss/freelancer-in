@@ -4,6 +4,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={
@@ -79,7 +80,7 @@ export default function AdminConfigRollback(){
                   {v.isActive&&<span style={{fontSize:10,fontWeight:700,color:"#4ade80",background:"rgba(74,222,128,.1)",padding:"2px 7px",borderRadius:5}}>ACTIVE</span>}
                   {v.tested&&<span style={{fontSize:10,color:"#4ade80"}}>✓ tested</span>}
                 </div>
-                <p style={{fontSize:11,color:T.sub,margin:"0 0 4px"}}>By {v.createdBy} · {formatDistanceToNow(new Date(v.createdAt))} ago</p>
+                <p style={{fontSize:11,color:T.sub,margin:"0 0 4px"}}>By {v.createdBy} · {safeDist(v.createdAt)} ago</p>
                 {v.changes.map((c,ci)=><p key={ci} style={{fontSize:11,fontFamily:"monospace",color:T.badgeFg,margin:"1px 0"}}>{c}</p>)}
               </div>
               {!v.isActive&&<div style={{display:"flex",gap:6,flexShrink:0}}>

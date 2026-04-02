@@ -5,6 +5,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -134,7 +135,7 @@ export default function AdminServiceResilience() {
                   )}
                 </div>
                 {s.hasFallback&&<p style={{ fontSize:11,color:"#4ade80",margin:"0 0 4px" }}>✓ Fallback: {s.fallbackService}</p>}
-                {s.lastChecked&&<p style={{ fontSize:11,color:T.sub,margin:0 }}>Last checked: {formatDistanceToNow(new Date(s.lastChecked))} ago</p>}
+                {s.lastChecked&&<p style={{ fontSize:11,color:T.sub,margin:0 }}>Last checked: {safeDist(s.lastChecked)} ago</p>}
               </div>
               <div style={{ display:"flex",flexDirection:"column",gap:6,flexShrink:0,alignItems:"flex-end" }}>
                 <button onClick={()=>checkService(s.id)} disabled={checking===s.id} style={{ display:"flex",alignItems:"center",gap:5,padding:"7px 13px",borderRadius:9,background:`${A1}15`,border:`1px solid ${A1}33`,color:T.badgeFg,fontSize:11,fontWeight:600,cursor:"pointer" }}>

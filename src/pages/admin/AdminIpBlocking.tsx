@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { cn } from "@/lib/utils";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const TH = {
   black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
@@ -229,7 +230,7 @@ const AdminIpBlocking = () => {
                       <div className="flex items-center gap-4 mt-2 text-[11px] font-medium" style={{ color: T.sub }}>
                         <span className="flex items-center gap-1.5">
                           <Clock className="h-3.5 w-3.5 opacity-50" />
-                          {format(new Date(ip.blocked_at), "dd MMM, hh:mm a")}
+                          {safeFmt(ip.blocked_at, "dd MMM, hh:mm a")}
                         </span>
                         {ip.blocker?.full_name && (
                           <span className="flex items-center gap-1.5">

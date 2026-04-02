@@ -4,6 +4,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={
@@ -111,7 +112,7 @@ export default function AdminDisasterRecovery(){
                 <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
                   <span style={{fontSize:12,color:T.sub}}>RTO: <strong style={{color:T.text}}>{p.rto}</strong></span>
                   <span style={{fontSize:12,color:T.sub}}>RPO: <strong style={{color:T.text}}>{p.rpo||"0"}</strong></span>
-                  <span style={{fontSize:12,color:T.sub}}>Last test: {formatDistanceToNow(new Date(p.lastTested))} ago</span>
+                  <span style={{fontSize:12,color:T.sub}}>Last test: {safeDist(p.lastTested)} ago</span>
                 </div>
               </div>
             </div>
@@ -137,7 +138,7 @@ export default function AdminDisasterRecovery(){
             {l.success?<CheckCircle2 size={14} color="#4ade80" style={{flexShrink:0}}/>:<AlertTriangle size={14} color="#f87171" style={{flexShrink:0}}/>}
             <div style={{flex:1}}>
               <p style={{fontWeight:600,fontSize:12,color:T.text,margin:"0 0 2px"}}>{l.event}</p>
-              <p style={{fontSize:11,color:T.sub,margin:0}}>Trigger: {l.trigger} · Duration: {l.durationMins}m · {format(new Date(l.at),"MMM d, HH:mm")}</p>
+              <p style={{fontSize:11,color:T.sub,margin:0}}>Trigger: {l.trigger} · Duration: {l.durationMins}m · {safeFmt(l.at, "MMM d, HH:mm")}</p>
             </div>
           </div>
         ))}

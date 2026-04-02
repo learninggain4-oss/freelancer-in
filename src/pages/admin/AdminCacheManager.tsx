@@ -5,6 +5,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -182,7 +183,7 @@ export default function AdminCacheManager() {
                     <span style={{ fontSize:10,fontWeight:700,color:q.avgMs>1000?"#f87171":q.avgMs>500?"#fbbf24":"#4ade80",background:`rgba(0,0,0,.1)`,padding:"2px 7px",borderRadius:5 }}>{q.avgMs}ms avg</span>
                   </div>
                   <p style={{ fontSize:12,color:T.text,margin:"0 0 4px",fontFamily:"monospace",lineHeight:1.5 }}>{q.query}</p>
-                  <p style={{ fontSize:11,color:T.sub,margin:0 }}>{q.executions.toLocaleString()} executions · Last: {format(new Date(q.lastRun),"MMM d, HH:mm")}</p>
+                  <p style={{ fontSize:11,color:T.sub,margin:0 }}>{q.executions.toLocaleString()} executions · Last: {safeFmt(q.lastRun, "MMM d, HH:mm")}</p>
                 </div>
               </div>
               {!q.indexed&&<div style={{ background:"rgba(251,191,36,.05)",border:"1px solid rgba(251,191,36,.1)",borderRadius:8,padding:"7px 12px",fontSize:11,color:"#fbbf24" }}>Recommendation: Add an index on <code style={{ fontFamily:"monospace" }}>{q.table}.{q.query.match(/WHERE\s+(\w+)/i)?.[1]||"id"}</code></div>}

@@ -6,6 +6,7 @@ import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -154,7 +155,7 @@ export default function AdminConfigManagement() {
                     </div>
                     <p style={{ fontSize:12, color:T.sub, margin:"0 0 4px" }}>{t.description}</p>
                     {t.dependencies&&t.dependencies.length>0&&<p style={{ fontSize:11, color:T.sub, margin:0 }}>Depends on: {t.dependencies.map(d=><span key={d} style={{ fontFamily:"monospace", color:"#fbbf24" }}>{d} </span>)}</p>}
-                    <p style={{ fontSize:11, color:T.sub, margin:"3px 0 0", opacity:.7 }}>Last changed: {format(new Date(t.lastChanged),"MMM d, yyyy")}{t.changedBy?` by ${t.changedBy}`:""}</p>
+                    <p style={{ fontSize:11, color:T.sub, margin:"3px 0 0", opacity:.7 }}>Last changed: {safeFmt(t.lastChanged, "MMM d, yyyy")}{t.changedBy?` by ${t.changedBy}`:""}</p>
                   </div>
                   <div style={{ display:"flex", alignItems:"center", gap:7 }}>
                     <span style={{ fontSize:11, fontWeight:700, color:t.enabled?"#4ade80":"#94a3b8" }}>{t.enabled?"ON":"OFF"}</span>
@@ -185,7 +186,7 @@ export default function AdminConfigManagement() {
                     {c.sensitive&&<span style={{ fontSize:10, color:"#f87171", background:"rgba(248,113,113,.1)", padding:"2px 7px", borderRadius:5 }}>SENSITIVE</span>}
                     {c.hasDrift?<span style={{ fontSize:10, fontWeight:700, color:"#f87171", background:"rgba(248,113,113,.1)", padding:"2px 7px", borderRadius:5 }}>⚠ DRIFT DETECTED</span>:<span style={{ fontSize:10, fontWeight:700, color:"#4ade80", background:"rgba(74,222,128,.1)", padding:"2px 7px", borderRadius:5 }}>✓ IN SYNC</span>}
                   </div>
-                  <p style={{ fontSize:11, color:T.sub, margin:0 }}>Last sync: {format(new Date(c.lastSync),"MMM d, HH:mm")}</p>
+                  <p style={{ fontSize:11, color:T.sub, margin:0 }}>Last sync: {safeFmt(c.lastSync, "MMM d, HH:mm")}</p>
                 </div>
                 <button onClick={()=>setExpanded(expanded===c.id?null:c.id)} style={{ padding:"5px 10px", borderRadius:8, background:T.input, border:`1px solid ${T.border}`, color:T.sub, fontSize:11, cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
                   {expanded===c.id?<ChevronUp size={12}/>:<ChevronDown size={12}/>}Compare
@@ -221,7 +222,7 @@ export default function AdminConfigManagement() {
                   <span style={{ fontSize:12, color:T.sub }}><span style={{ color:"#f87171" }}>{a.oldValue}</span> → <span style={{ color:"#4ade80" }}>{a.newValue}</span></span>
                   {a.approved?<span style={{ fontSize:10, color:"#4ade80" }}>✓ Approved</span>:<span style={{ fontSize:10, color:"#fbbf24" }}>⏳ Pending</span>}
                 </div>
-                <p style={{ fontSize:11, color:T.sub, margin:0 }}>{a.changedBy} · {format(new Date(a.timestamp),"MMM d, HH:mm")}</p>
+                <p style={{ fontSize:11, color:T.sub, margin:0 }}>{a.changedBy} · {safeFmt(a.timestamp, "MMM d, HH:mm")}</p>
               </div>
             </div>
           ))}

@@ -11,6 +11,7 @@ import { Loader2, Search, Globe, Monitor, Smartphone, Tablet, Users, UserCheck, 
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const TH = {
   black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
@@ -268,7 +269,7 @@ const AdminVisitors = () => {
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col whitespace-nowrap">
-                              <span className="text-sm font-medium" style={{ color: T.text }}>{format(new Date(visitor.visited_at), "dd MMM, HH:mm")}</span>
+                              <span className="text-sm font-medium" style={{ color: T.text }}>{safeFmt(visitor.visited_at, "dd MMM, HH:mm")}</span>
                               <span className="text-[10px] opacity-50" style={{ color: T.sub }}>Visited</span>
                             </div>
                           </TableCell>
@@ -351,8 +352,8 @@ const AdminVisitors = () => {
                           <TableCell><span className="text-sm" style={{ color: T.sub }}>{b.reason || "No reason specified"}</span></TableCell>
                           <TableCell>
                             <div className="flex flex-col">
-                              <span className="text-sm font-medium" style={{ color: T.text }}>{format(new Date(b.blocked_at), "dd MMM yyyy")}</span>
-                              <span className="text-[10px] opacity-50" style={{ color: T.sub }}>{format(new Date(b.blocked_at), "HH:mm")}</span>
+                              <span className="text-sm font-medium" style={{ color: T.text }}>{safeFmt(b.blocked_at, "dd MMM yyyy")}</span>
+                              <span className="text-[10px] opacity-50" style={{ color: T.sub }}>{safeFmt(b.blocked_at, "HH:mm")}</span>
                             </div>
                           </TableCell>
                           <TableCell className="text-right">

@@ -4,6 +4,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={
@@ -93,7 +94,7 @@ export default function AdminTokenManagement(){
                   <span style={{fontSize:12,color:T.sub}}>Active: <strong style={{color:T.text}}>{t.totalActive.toLocaleString()}</strong></span>
                   {t.expiringSoon>0&&<span style={{fontSize:12,color:"#fbbf24"}}>{t.expiringSoon} expiring soon</span>}
                   {t.expired>0&&<span style={{fontSize:12,color:"#f87171"}}>{t.expired} expired</span>}
-                  <span style={{fontSize:12,color:T.sub}}>Rotated: {formatDistanceToNow(new Date(t.lastRotated))} ago</span>
+                  <span style={{fontSize:12,color:T.sub}}>Rotated: {safeDist(t.lastRotated)} ago</span>
                 </div>
               </div>
             </div>

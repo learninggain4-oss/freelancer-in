@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1";
 const A2 = "#8b5cf6";
@@ -343,7 +344,7 @@ export default function AdminSafetyCenter() {
                     <p style={{ fontSize: 12, fontWeight: 600, color: T.text, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{entry.key}: {entry.change}</p>
                     <p style={{ fontSize: 10, color: T.sub, margin: 0 }}>by {entry.by}</p>
                   </div>
-                  <span style={{ fontSize: 10, color: T.sub, flexShrink: 0 }}>{format(new Date(entry.timestamp), "MMM d, HH:mm")}</span>
+                  <span style={{ fontSize: 10, color: T.sub, flexShrink: 0 }}>{safeFmt(entry.timestamp, "MMM d, HH:mm")}</span>
                 </div>
               ))}
             </div>
@@ -374,7 +375,7 @@ export default function AdminSafetyCenter() {
                 <p style={{ fontSize: 12, fontWeight: 700, color: T.text, margin: 0 }}>{entry.action}</p>
                 <p style={{ fontSize: 11, color: T.sub, margin: 0 }}>{entry.details}</p>
               </div>
-              <span style={{ fontSize: 11, color: T.sub, flexShrink: 0 }}>{format(new Date(entry.timestamp), "MMM d, HH:mm")}</span>
+              <span style={{ fontSize: 11, color: T.sub, flexShrink: 0 }}>{safeFmt(entry.timestamp, "MMM d, HH:mm")}</span>
             </div>
           ))}
         </div>

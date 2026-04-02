@@ -5,6 +5,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -141,7 +142,7 @@ export default function AdminFileManager() {
                     <span style={{ fontWeight:700,fontSize:13,color:T.text }}>{f.filename}</span>
                     <span style={{ fontSize:10,fontWeight:700,color:statusColor[f.status],background:`${statusColor[f.status]}15`,padding:"2px 7px",borderRadius:5 }}>{statusLabel[f.status]}</span>
                   </div>
-                  <p style={{ fontSize:12,color:T.sub,margin:"0 0 3px" }}>{f.uploader} · {f.size} · {f.type} · {formatDistanceToNow(new Date(f.uploadedAt))} ago</p>
+                  <p style={{ fontSize:12,color:T.sub,margin:"0 0 3px" }}>{f.uploader} · {f.size} · {f.type} · {safeDist(f.uploadedAt)} ago</p>
                   {f.reason&&<p style={{ fontSize:12,color:"#f87171",margin:0 }}>{f.reason}</p>}
                 </div>
                 <div style={{ display:"flex",gap:6,flexShrink:0 }}>

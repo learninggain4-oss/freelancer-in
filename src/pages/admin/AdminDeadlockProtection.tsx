@@ -4,6 +4,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={
@@ -105,7 +106,7 @@ export default function AdminDeadlockProtection(){
               <AlertTriangle size={14} color="#f87171" style={{flexShrink:0}}/>
               <div style={{flex:1}}>
                 <p style={{fontWeight:700,fontSize:12,color:T.text,margin:"0 0 2px"}}>Deadlock — {e.tables.join(" ↔ ")}</p>
-                <p style={{fontSize:11,color:T.sub,margin:0}}>Resolved by: {e.resolvedBy}{e.auto?" (auto)":""} · Duration: {(e.durationMs/1000).toFixed(1)}s · {format(new Date(e.at),"MMM d, HH:mm")}</p>
+                <p style={{fontSize:11,color:T.sub,margin:0}}>Resolved by: {e.resolvedBy}{e.auto?" (auto)":""} · Duration: {(e.durationMs/1000).toFixed(1)}s · {safeFmt(e.at, "MMM d, HH:mm")}</p>
               </div>
             </div>
           ))}

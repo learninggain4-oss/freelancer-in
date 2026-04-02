@@ -7,6 +7,9 @@ import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
 
+const safeFmt=(raw:string|undefined,fmt:string,fb="—")=>{try{if(!raw)return fb;const d=new Date(raw);return isNaN(d.getTime())?fb:format(d,fmt);}catch{return fb;}};
+const safeDist=(raw:string|undefined,fb="—")=>{try{if(!raw)return fb;const d=new Date(raw);return isNaN(d.getTime())?fb:formatDistanceToNow(d);}catch{return fb;}};
+
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
   black: { bg:"#070714",card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badge:"rgba(99,102,241,.2)",badgeFg:"#a5b4fc" },
@@ -154,7 +157,7 @@ export default function AdminScheduler() {
                     <span style={{ fontFamily:"monospace", fontSize:10, color:T.badgeFg, background:T.badge, padding:"2px 7px", borderRadius:5 }}>{j.schedule}</span>
                   </div>
                   <p style={{ fontSize:12, color:T.sub, margin:"0 0 4px" }}>{j.description}</p>
-                  <p style={{ fontSize:11, color:T.sub, margin:0 }}>{parseCron(j.schedule)}{j.lastRun?` · Last: ${formatDistanceToNow(new Date(j.lastRun))} ago`:""}  · Next: {format(new Date(j.nextRun),"MMM d, HH:mm")}{j.duration?` · ${j.duration}`:""}</p>
+                  <p style={{ fontSize:11, color:T.sub, margin:0 }}>{parseCron(j.schedule)}{j.lastRun?` · Last: ${safeDist(j.lastRun)} ago`:""}  · Next: {safeFmt(j.nextRun,"MMM d, HH:mm")}{j.duration?` · ${j.duration}`:""}</p>
                 </div>
                 <div style={{ display:"flex", gap:8, alignItems:"center", flexShrink:0 }}>
                   <button onClick={()=>runNow(j.id)} disabled={!!runningJob||!j.enabled} style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:8, background:`${A1}15`, border:`1px solid ${A1}33`, color:T.badgeFg, fontSize:11, fontWeight:600, cursor:"pointer", opacity:runningJob===j.id?.6:1 }}>
@@ -193,7 +196,7 @@ export default function AdminScheduler() {
           <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:"20px 22px" }}>
             <h3 style={{ color:T.text, fontWeight:700, fontSize:15, margin:"0 0 14px" }}>NTP Synchronization Status</h3>
             <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
-              {[{l:"NTP Status",v:tz.ntpSynced?"Synchronized":"Out of Sync",c:tz.ntpSynced?"#4ade80":"#f87171"},{l:"Last Sync",v:formatDistanceToNow(new Date(tz.lastSync))+" ago",c:T.text},{l:"Server Time",v:format(serverTime,"HH:mm:ss"),c:T.badgeFg},{l:"Local Offset",v:"+05:30 IST",c:T.text}].map(s=>(
+              {[{l:"NTP Status",v:tz.ntpSynced?"Synchronized":"Out of Sync",c:tz.ntpSynced?"#4ade80":"#f87171"},{l:"Last Sync",v:safeDist(tz.lastSync)+" ago",c:T.text},{l:"Server Time",v:format(serverTime,"HH:mm:ss"),c:T.badgeFg},{l:"Local Offset",v:"+05:30 IST",c:T.text}].map(s=>(
                 <div key={s.l} style={{ background:T.input, borderRadius:10, padding:"12px 16px", flex:"1 1 auto", minWidth:120 }}>
                   <p style={{ fontSize:10, color:T.sub, margin:"0 0 4px", textTransform:"uppercase" }}>{s.l}</p>
                   <p style={{ fontSize:14, fontWeight:700, color:s.c, margin:0 }}>{s.v}</p>
@@ -219,7 +222,7 @@ export default function AdminScheduler() {
               <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
                 {l.status==="success"?<CheckCircle2 size={15} color="#4ade80"/>:<AlertTriangle size={15} color="#f87171"/>}
                 <span style={{ fontWeight:700, fontSize:13, color:T.text }}>{l.jobName}</span>
-                <span style={{ fontSize:11, color:T.sub }}>{format(new Date(l.startedAt),"MMM d, HH:mm:ss")}</span>
+                <span style={{ fontSize:11, color:T.sub }}>{safeFmt(l.startedAt,"MMM d, HH:mm:ss")}</span>
                 <span style={{ fontSize:11, color:T.sub }}>· {l.duration}</span>
               </div>
               <div style={{ background:T.input, borderRadius:8, padding:"8px 12px", fontFamily:"monospace", fontSize:11, color:l.status==="success"?"#4ade80":"#f87171" }}>{l.output}</div>

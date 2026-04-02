@@ -6,6 +6,7 @@ import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -141,7 +142,7 @@ export default function AdminSessionManager() {
                   {s.deviceCount>1&&<span style={{ fontSize:10,color:"#fbbf24",background:"rgba(251,191,36,.1)",padding:"2px 7px",borderRadius:5 }}>multi-device ({s.deviceCount})</span>}
                 </div>
                 <p style={{ fontSize:12,color:T.sub,margin:"0 0 2px" }}>{s.device} · IP: {s.ip} · {s.location}</p>
-                <p style={{ fontSize:11,color:T.sub,margin:0 }}>Started {formatDistanceToNow(new Date(s.startedAt))} ago · Last active {formatDistanceToNow(new Date(s.lastActive))} ago</p>
+                <p style={{ fontSize:11,color:T.sub,margin:0 }}>Started {safeDist(s.startedAt)} ago · Last active {safeDist(s.lastActive)} ago</p>
               </div>
               <button onClick={()=>setConfirmLogout(s)} disabled={terminating===s.id} style={{ display:"flex",alignItems:"center",gap:5,padding:"7px 13px",borderRadius:9,background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.2)",color:"#f87171",fontSize:12,fontWeight:600,cursor:"pointer",flexShrink:0 }}>
                 <LogOut size={12}/>{terminating===s.id?"…":"Force Logout"}

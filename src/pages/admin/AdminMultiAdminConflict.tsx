@@ -3,6 +3,7 @@ import { Users, AlertTriangle, CheckCircle2, RefreshCw, Lock, Activity } from "l
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
@@ -66,7 +67,7 @@ export default function AdminMultiAdminConflict(){
             <Lock size={14} color="#fbbf24" style={{flexShrink:0}}/>
             <div style={{flex:1}}>
               <p style={{fontWeight:700,fontSize:12,color:T.text,margin:"0 0 2px"}}>{l.section} — locked by {l.lockedBy}</p>
-              <p style={{fontSize:11,color:T.sub,margin:0}}>Locked {formatDistanceToNow(new Date(l.lockedAt))} ago · Expires {formatDistanceToNow(new Date(l.expiresAt))}</p>
+              <p style={{fontSize:11,color:T.sub,margin:0}}>Locked {safeDist(l.lockedAt)} ago · Expires {safeDist(l.expiresAt)}</p>
             </div>
             <button onClick={()=>releaseLock(l.id)} disabled={releasing===l.id} style={{padding:"5px 12px",borderRadius:7,background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.2)",color:"#f87171",fontSize:11,fontWeight:600,cursor:"pointer"}}>
               {releasing===l.id?"…":"Release"}
@@ -81,7 +82,7 @@ export default function AdminMultiAdminConflict(){
             <div style={{width:6,height:6,borderRadius:"50%",background:e.conflict?"#f87171":"#4ade80",flexShrink:0}}/>
             <div style={{flex:1}}>
               <p style={{fontWeight:600,fontSize:12,color:T.text,margin:"0 0 1px"}}>{e.admin} — {e.section}</p>
-              <p style={{fontSize:11,color:T.sub,margin:0}}>{e.change} · {format(new Date(e.at),"MMM d, HH:mm")}</p>
+              <p style={{fontSize:11,color:T.sub,margin:0}}>{e.change} · {safeFmt(e.at, "MMM d, HH:mm")}</p>
             </div>
             <div style={{display:"flex",gap:6,flexShrink:0,alignItems:"center"}}>
               {e.conflict&&<span style={{fontSize:10,color:"#f87171",fontWeight:700}}>CONFLICT</span>}

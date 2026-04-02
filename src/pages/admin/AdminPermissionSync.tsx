@@ -4,6 +4,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={
@@ -93,7 +94,7 @@ export default function AdminPermissionSync(){
               </div>
               <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
                 <span style={{fontSize:12,color:T.sub}}>Cache age: <strong style={{color:rc.cacheAge>600?"#f87171":rc.cacheAge>120?"#fbbf24":"#4ade80"}}>{rc.cacheAge} min</strong></span>
-                <span style={{fontSize:12,color:T.sub}}>Last sync: {formatDistanceToNow(new Date(rc.lastSync))} ago</span>
+                <span style={{fontSize:12,color:T.sub}}>Last sync: {safeDist(rc.lastSync)} ago</span>
               </div>
             </div>
             <button onClick={()=>syncRole(rc)} disabled={syncing===rc.id||rc.syncStatus==="syncing"} style={{display:"flex",alignItems:"center",gap:5,padding:"7px 13px",borderRadius:9,background:`${A1}15`,border:`1px solid ${A1}33`,color:T.badgeFg,fontSize:11,fontWeight:600,cursor:"pointer",flexShrink:0}}>

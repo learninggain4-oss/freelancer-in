@@ -4,6 +4,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={
@@ -89,8 +90,8 @@ export default function AdminBackupVerification(){
               </div>
               <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
                 <span style={{fontSize:12,color:T.sub}}>Size: {b.sizeMB} MB</span>
-                <span style={{fontSize:12,color:T.sub}}>Created: {formatDistanceToNow(new Date(b.createdAt))} ago</span>
-                {b.verifiedAt&&<span style={{fontSize:12,color:T.sub}}>Verified: {format(new Date(b.verifiedAt),"MMM d, HH:mm")}</span>}
+                <span style={{fontSize:12,color:T.sub}}>Created: {safeDist(b.createdAt)} ago</span>
+                {b.verifiedAt&&<span style={{fontSize:12,color:T.sub}}>Verified: {safeFmt(b.verifiedAt, "MMM d, HH:mm")}</span>}
               </div>
             </div>
             <div style={{display:"flex",gap:6,flexShrink:0}}>

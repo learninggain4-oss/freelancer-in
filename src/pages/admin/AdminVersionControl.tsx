@@ -5,6 +5,7 @@ import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -161,7 +162,7 @@ export default function AdminVersionControl() {
                     <span style={{ fontSize: 10, fontWeight: 700, color: typeColor[dep.type], background: `${typeColor[dep.type]}15`, padding: "2px 7px", borderRadius: 5, textTransform: "uppercase" }}>{dep.type}</span>
                     <span style={{ fontSize: 10, fontWeight: 700, color: statusColor[dep.status], background: `${statusColor[dep.status]}15`, padding: "2px 7px", borderRadius: 5, textTransform: "capitalize" }}>{dep.status}</span>
                   </div>
-                  <p style={{ fontSize: 12, color: T.sub, margin: "0 0 6px" }}>{dep.deployedBy} · {format(new Date(dep.deployedAt), "MMM d, yyyy HH:mm")}</p>
+                  <p style={{ fontSize: 12, color: T.sub, margin: "0 0 6px" }}>{dep.deployedBy} · {safeFmt(dep.deployedAt, "MMM d, yyyy HH:mm")}</p>
                   {expanded === dep.id && (
                     <ul style={{ margin: "6px 0 0", padding: "0 0 0 16px" }}>
                       {dep.changes.map((c, i) => <li key={i} style={{ fontSize: 12, color: T.sub, marginBottom: 2 }}>{c}</li>)}
@@ -197,7 +198,7 @@ export default function AdminVersionControl() {
               <span style={{ fontSize: 10, fontWeight: 700, color: catColor[c.category], background: `${catColor[c.category]}15`, padding: "3px 8px", borderRadius: 6, flexShrink: 0, marginTop: 1 }}>{c.category}</span>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 13, fontWeight: 600, color: T.text, margin: "0 0 2px" }}>{c.description}</p>
-                <p style={{ fontSize: 11, color: T.sub, margin: 0 }}>{c.version} · {c.author} · {format(new Date(c.timestamp), "MMM d, HH:mm")}</p>
+                <p style={{ fontSize: 11, color: T.sub, margin: 0 }}>{c.version} · {c.author} · {safeFmt(c.timestamp, "MMM d, HH:mm")}</p>
               </div>
             </div>
           ))}

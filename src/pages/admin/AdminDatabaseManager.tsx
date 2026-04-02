@@ -7,6 +7,7 @@ import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -197,7 +198,7 @@ export default function AdminDatabaseManager() {
                     <span style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{h.action}: </span>
                     <span style={{ fontSize: 12, color: T.sub }}>{h.details}</span>
                   </div>
-                  <span style={{ fontSize: 10, color: T.sub, flexShrink: 0 }}>{format(new Date(h.timestamp), "MMM d, HH:mm")}</span>
+                  <span style={{ fontSize: 10, color: T.sub, flexShrink: 0 }}>{safeFmt(h.timestamp, "MMM d, HH:mm")}</span>
                 </div>
               ))}
             </div>
@@ -281,7 +282,7 @@ export default function AdminDatabaseManager() {
                       {conn.testStatus === "pending" ? <Loader2 size={11} color={statusColor} className="animate-spin" /> : conn.testStatus === "ok" ? <CheckCircle2 size={11} color={statusColor} /> : <XCircle size={11} color={statusColor} />}
                       <span style={{ fontSize: 11, fontWeight: 700, color: statusColor }}>{conn.testStatus === "ok" ? "Healthy" : conn.testStatus === "fail" ? "Failed" : "Unknown"}</span>
                     </div>
-                    {conn.lastTested && <span style={{ fontSize: 10, color: T.sub }}>Tested {format(new Date(conn.lastTested), "MMM d, HH:mm")}</span>}
+                    {conn.lastTested && <span style={{ fontSize: 10, color: T.sub }}>Tested {safeFmt(conn.lastTested, "MMM d, HH:mm")}</span>}
                     <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 8, background: T.input }}>
                       <span style={{ fontSize: 11, color: T.sub, fontFamily: "monospace" }}>{showKeys[conn.id] ? (conn.anonKey === "••••••••••••••••••••••••" ? conn.anonKey : conn.anonKey) : maskedKey}</span>
                       <button onClick={() => setShowKeys(k => ({ ...k, [conn.id]: !k[conn.id] }))} style={{ background: "none", border: "none", cursor: "pointer", color: T.sub, fontSize: 10, padding: 0 }}>{showKeys[conn.id] ? "hide" : "show"}</button>

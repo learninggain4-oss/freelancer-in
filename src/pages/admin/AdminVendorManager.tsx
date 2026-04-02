@@ -5,6 +5,7 @@ import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -182,7 +183,7 @@ export default function AdminVendorManager() {
                   <div style={{ display:"flex", gap:10, marginTop:8 }}>
                     <span style={{ fontSize:11, color:T.sub }}>Migration: <span style={{ fontWeight:700, color:(complexColor as Record<string,string>)[p.migrationComplexity], textTransform:"capitalize" }}>{p.migrationComplexity} complexity</span></span>
                     {p.exportable&&<span style={{ fontSize:11, color:"#4ade80" }}>✓ Exportable</span>}
-                    {p.lastChecked&&<span style={{ fontSize:11, color:T.sub }}>Checked {formatDistanceToNow(new Date(p.lastChecked))} ago</span>}
+                    {p.lastChecked&&<span style={{ fontSize:11, color:T.sub }}>Checked {safeDist(p.lastChecked)} ago</span>}
                   </div>
                 </div>
                 <button onClick={()=>setConfirmFailover(p)} style={{ display:"flex", alignItems:"center", gap:5, padding:"7px 14px", borderRadius:9, background:p.isFailedOver?"rgba(74,222,128,.08)":"rgba(251,191,36,.08)", border:`1px solid ${p.isFailedOver?"rgba(74,222,128,.2)":"rgba(251,191,36,.2)"}`, color:p.isFailedOver?"#4ade80":"#fbbf24", fontSize:12, fontWeight:600, cursor:"pointer", flexShrink:0, marginTop:4 }}>
@@ -236,7 +237,7 @@ export default function AdminVendorManager() {
                   {o.resolved?<span style={{ fontSize:10, color:"#4ade80" }}>✓ Resolved</span>:<span style={{ fontSize:10, color:"#f87171", fontWeight:700 }}>● ONGOING</span>}
                 </div>
                 <p style={{ fontSize:12, color:T.sub, margin:"0 0 3px" }}>{o.impact}</p>
-                <p style={{ fontSize:11, color:T.sub, margin:0 }}>Started: {format(new Date(o.started),"MMM d, HH:mm")}{o.resolved?` · Resolved: ${format(new Date(o.resolved),"HH:mm")} (${Math.round((new Date(o.resolved).getTime()-new Date(o.started).getTime())/60000)}min)`:""}</p>
+                <p style={{ fontSize:11, color:T.sub, margin:0 }}>Started: {safeFmt(o.started, "MMM d, HH:mm")}{o.resolved?` · Resolved: ${safeFmt(o.resolved, "HH:mm")} (${Math.round((new Date(o.resolved).getTime()-new Date(o.started).getTime())/60000)}min)`:""}</p>
               </div>
             </div>
           ))}

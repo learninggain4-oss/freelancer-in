@@ -21,6 +21,7 @@ const seedServers=():NTPServer[]=>[
 ];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+function safeFmt(raw:string|undefined,fmt:string,fallback="—"):string{try{if(!raw)return fallback;const d=new Date(raw);if(isNaN(d.getTime()))return fallback;return format(d,fmt);}catch{return fallback;}}
 
 export default function AdminTimeSyncSystem(){
   const{theme}=useDashboardTheme();const T=TH[theme];
@@ -91,7 +92,7 @@ export default function AdminTimeSyncSystem(){
               <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
                 <span style={{fontSize:12,color:T.sub}}>Offset: <strong style={{color:Math.abs(s.offsetMs)>100?"#fbbf24":"#4ade80"}}>{s.offsetMs}ms</strong></span>
                 <span style={{fontSize:12,color:T.sub}}>Latency: {s.latencyMs}ms</span>
-                <span style={{fontSize:12,color:T.sub}}>Synced: {format(new Date(s.lastSync),"HH:mm:ss")}</span>
+                <span style={{fontSize:12,color:T.sub}}>Synced: {safeFmt(s.lastSync,"HH:mm:ss")}</span>
               </div>
             </div>
             <button onClick={()=>syncServer(s)} disabled={syncing===s.id} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:8,background:`${A1}15`,border:`1px solid ${A1}33`,color:T.badgeFg,fontSize:11,fontWeight:600,cursor:"pointer",flexShrink:0}}>

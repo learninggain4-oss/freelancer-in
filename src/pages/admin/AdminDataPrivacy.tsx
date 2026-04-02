@@ -6,6 +6,7 @@ import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -179,7 +180,7 @@ export default function AdminDataPrivacy() {
                     <span style={{ fontWeight: 700, fontSize: 14, color: T.text }}>{pol.dataType}</span>
                     {pol.autoDelete && <span style={{ fontSize: 10, fontWeight: 700, color: "#f87171", background: "rgba(248,113,113,.1)", padding: "2px 7px", borderRadius: 5 }}>AUTO-DELETE</span>}
                   </div>
-                  <p style={{ fontSize: 12, color: T.sub, margin: 0 }}>Retained for <strong style={{ color: T.text }}>{pol.retentionDays} days</strong> · Last reviewed {format(new Date(pol.lastReview), "MMM d, yyyy")}</p>
+                  <p style={{ fontSize: 12, color: T.sub, margin: 0 }}>Retained for <strong style={{ color: T.text }}>{pol.retentionDays} days</strong> · Last reviewed {safeFmt(pol.lastReview, "MMM d, yyyy")}</p>
                 </div>
                 {editRetId === pol.id ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -215,7 +216,7 @@ export default function AdminDataPrivacy() {
                 <span style={{ fontSize: 12, color: T.sub }}> on {log.table}</span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: log.action === "Export" ? "#f87171" : "#fbbf24", background: log.action === "Export" ? "rgba(248,113,113,.1)" : "rgba(251,191,36,.1)", padding: "1px 7px", borderRadius: 5, marginLeft: 7 }}>{log.action}</span>
               </div>
-              <span style={{ fontSize: 11, color: T.sub, flexShrink: 0 }}>{format(new Date(log.timestamp), "MMM d, HH:mm")}</span>
+              <span style={{ fontSize: 11, color: T.sub, flexShrink: 0 }}>{safeFmt(log.timestamp, "MMM d, HH:mm")}</span>
             </div>
           ))}
         </div>
@@ -232,7 +233,7 @@ export default function AdminDataPrivacy() {
                     <span style={{ fontWeight: 700, fontSize: 14, color: T.text }}>{exp.description}</span>
                     <span style={{ fontSize: 10, fontWeight: 700, color: exp.status === "pending" ? "#fbbf24" : exp.status === "approved" ? "#4ade80" : "#f87171", background: exp.status === "pending" ? "rgba(251,191,36,.1)" : exp.status === "approved" ? "rgba(74,222,128,.1)" : "rgba(248,113,113,.1)", padding: "2px 8px", borderRadius: 5, textTransform: "capitalize" }}>{exp.status}</span>
                   </div>
-                  <p style={{ fontSize: 12, color: T.sub, margin: "0 0 4px" }}>Requested by <strong style={{ color: T.text }}>{exp.admin}</strong> · {format(new Date(exp.requestedAt), "MMM d, HH:mm")}</p>
+                  <p style={{ fontSize: 12, color: T.sub, margin: "0 0 4px" }}>Requested by <strong style={{ color: T.text }}>{exp.admin}</strong> · {safeFmt(exp.requestedAt, "MMM d, HH:mm")}</p>
                   <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                     {exp.tables.map(t => <span key={t} style={{ fontSize: 10, color: T.badgeFg, background: T.badge, padding: "2px 8px", borderRadius: 5, fontFamily: "monospace" }}>{t}</span>)}
                   </div>

@@ -4,6 +4,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const A1="#6366f1",A2="#8b5cf6";
 const TH={
@@ -79,7 +80,7 @@ export default function AdminApiValidation(){
               <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:a.mismatchDetail?4:0}}>
                 <span style={{fontSize:12,color:T.sub}}>Avg: <strong style={{color:a.avgResponseMs>500?"#f87171":a.avgResponseMs>200?"#fbbf24":"#4ade80"}}>{a.avgResponseMs}ms</strong></span>
                 <span style={{fontSize:12,color:T.sub}}>Error rate: <strong style={{color:a.errorRate>2?"#f87171":a.errorRate>0.5?"#fbbf24":"#4ade80"}}>{a.errorRate}%</strong></span>
-                <span style={{fontSize:12,color:T.sub}}>Validated: {formatDistanceToNow(new Date(a.lastValidated))} ago</span>
+                <span style={{fontSize:12,color:T.sub}}>Validated: {safeDist(a.lastValidated)} ago</span>
               </div>
               {a.mismatchDetail&&<p style={{fontSize:11,color:"#fbbf24",margin:0}}>{a.mismatchDetail}</p>}
             </div>
