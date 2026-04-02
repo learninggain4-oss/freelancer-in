@@ -420,6 +420,59 @@ const GlobalStyles = () => (
       100%{ transform:scale(1); filter:none; }
     }
     .stat-pop-anim { animation: stat-pop 0.5s cubic-bezier(.17,.67,.34,1.4) both; }
+
+    /* ── Wave 5: Traveling beam along connector ── */
+    @keyframes beam-travel {
+      0%   { left: -80px; opacity: 0; }
+      6%   { opacity: 1; }
+      92%  { opacity: 1; }
+      100% { left: calc(100% + 80px); opacity: 0; }
+    }
+    /* ── Wave 5: LIVE badge dot pulse ── */
+    @keyframes live-badge-pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(74,222,128,0.7); }
+      60%     { box-shadow: 0 0 0 6px rgba(74,222,128,0); }
+    }
+    .live-badge-dot { animation: live-badge-pulse 1.6s ease-in-out infinite; }
+    /* ── Wave 5: Star pop sequential ── */
+    @keyframes star-pop {
+      0%   { transform: scale(0) rotate(-30deg); opacity:0; }
+      60%  { transform: scale(1.4) rotate(8deg);  opacity:1; }
+      100% { transform: scale(1)   rotate(0deg);  opacity:1; }
+    }
+    /* ── Wave 5: Glitch layers ── */
+    @keyframes glitch-clip-1 {
+      0%,89%,100% { clip-path: inset(0 0 100% 0); transform: none; }
+      90%  { clip-path: inset(28% 0 55% 0); transform: translate(-4px, 0); }
+      92%  { clip-path: inset(60% 0 20% 0); transform: translate(4px, 0); }
+      94%  { clip-path: inset(10% 0 75% 0); transform: translate(-2px, 0); }
+      96%  { clip-path: inset(45% 0 40% 0); transform: translate(2px, 0); }
+      98%  { clip-path: inset(80% 0 5% 0);  transform: none; }
+    }
+    @keyframes glitch-clip-2 {
+      0%,91%,100% { clip-path: inset(0 0 100% 0); transform: none; }
+      92%  { clip-path: inset(50% 0 30% 0); transform: translate(4px, 0); }
+      94%  { clip-path: inset(15% 0 65% 0); transform: translate(-3px, 0); }
+      96%  { clip-path: inset(75% 0 10% 0); transform: translate(3px, 0); }
+      98%  { clip-path: inset(35% 0 50% 0); transform: none; }
+    }
+    /* ── Wave 5: Service icon spin on hover ── */
+    .service-icon-wrap { transition: transform 0.5s cubic-bezier(0.68,-0.55,0.265,1.55); }
+    .service-3d:hover .service-icon-wrap { transform: rotate(360deg) scale(1.15); }
+    /* ── Wave 5: CTA ticker ── */
+    @keyframes ticker-in {
+      from { transform: translateY(10px); opacity:0; }
+      to   { transform: translateY(0);    opacity:1; }
+    }
+    /* ── Wave 5: FAQ line sweep ── */
+    @keyframes faq-sweep {
+      from { transform: translateX(-100%) skewX(-10deg); opacity:0.6; }
+      to   { transform: translateX(250%)  skewX(-10deg); opacity:0; }
+    }
+    /* ── Wave 5: Footer social icon glow ── */
+    .social-icon { transition: all 0.25s ease; }
+    .social-icon:hover { transform: scale(1.2) translateY(-2px); box-shadow: 0 0 16px rgba(var(--t-a1-rgb),0.5) !important; border-color: rgba(var(--t-a1-rgb),0.5) !important; }
+    .social-icon:hover svg { color: var(--t-a1) !important; }
     ::-webkit-scrollbar { width:6px; }
     ::-webkit-scrollbar-track { background:#0f0f1a; }
     ::-webkit-scrollbar-thumb { background:#4f46e5; border-radius:3px; }
@@ -654,6 +707,84 @@ const HeroDashboard = () => (
       </div>
     </div>
   </div>
+);
+
+/* ─────────────────────── Wave 5: Traveling Beam ─────────────────────── */
+const TravelingBeam = () => (
+  <div className="absolute top-16 left-[12.5%] right-[12.5%] h-px pointer-events-none hidden lg:block" style={{ zIndex: 5 }}>
+    <div style={{
+      position: "absolute", top: "-3px", height: "7px", width: "70px", borderRadius: "99px",
+      background: "linear-gradient(90deg, transparent, rgba(var(--t-a1-rgb),1), rgba(var(--t-a2-rgb),1), transparent)",
+      boxShadow: "0 0 18px 4px rgba(var(--t-a1-rgb),0.7)",
+      animation: "beam-travel 3.8s ease-in-out infinite",
+    }} />
+  </div>
+);
+
+/* ─────────────────────── Wave 5: Live Stat Badge ─────────────────────── */
+const LiveBadge = () => (
+  <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider" style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.25)" }}>
+    <span className="live-badge-dot inline-block h-1.5 w-1.5 rounded-full" style={{ background: "#4ade80" }} />
+    <span style={{ color: "#4ade80" }}>Live</span>
+  </div>
+);
+
+/* ─────────────────────── Wave 5: Animated Rating Stars ─────────────────────── */
+const AnimatedStars = ({ rating }: { rating: number }) => {
+  const [hoverKey, setHoverKey] = useState(0);
+  return (
+    <div className="flex gap-0.5" onMouseEnter={() => setHoverKey(k => k + 1)}>
+      {[1, 2, 3, 4, 5].map((s) => (
+        <Star
+          key={`${hoverKey}-${s}`}
+          className={cn("h-3 w-3", s <= rating ? "fill-amber-400 text-amber-400" : "text-white/20")}
+          style={hoverKey > 0 && s <= rating ? { animation: `star-pop 0.35s cubic-bezier(.17,.67,.34,1.4) ${(s - 1) * 80}ms both` } : {}}
+        />
+      ))}
+    </div>
+  );
+};
+
+/* ─────────────────────── Wave 5: Glitch Heading ─────────────────────── */
+const GlitchText = ({ text, className = "" }: { text: string; className?: string }) => (
+  <span className={`relative inline-block ${className}`}>
+    <span className="relative z-10">{text}</span>
+    <span aria-hidden className="absolute inset-0 z-20 text-indigo-400" style={{ animation: "glitch-clip-1 9s step-end infinite" }}>{text}</span>
+    <span aria-hidden className="absolute inset-0 z-20 text-pink-400" style={{ animation: "glitch-clip-2 9s step-end infinite 0.15s" }}>{text}</span>
+  </span>
+);
+
+/* ─────────────────────── Wave 5: CTA Urgency Counter ─────────────────────── */
+const CTAUrgencyCounter = () => {
+  const [count, setCount] = useState(134);
+  const [anim, setAnim] = useState(false);
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (Math.random() > 0.55) {
+        setCount(c => c + 1);
+        setAnim(true);
+        setTimeout(() => setAnim(false), 400);
+      }
+    }, 2800);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div className="inline-flex items-center gap-2.5 rounded-full px-5 py-2 mb-7 text-sm font-semibold" style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.22)" }}>
+      <span className="live-badge-dot inline-block h-2 w-2 rounded-full" style={{ background: "#4ade80" }} />
+      <span style={{ color: "#4ade80" }}>
+        <span className="font-black" style={{ animation: anim ? "ticker-in 0.3s ease both" : "none" }}>{count}</span> people joined today
+      </span>
+    </div>
+  );
+};
+
+/* ─────────────────────── Wave 5: FAQ Sweep ─────────────────────── */
+const FAQSweep = ({ active }: { active: boolean }) => (
+  active ? (
+    <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+      <div style={{ position: "absolute", top: 0, left: 0, width: "50%", height: "100%", background: "linear-gradient(90deg, transparent, rgba(var(--t-a1-rgb),0.12), transparent)", animation: "faq-sweep 0.7s ease both" }} />
+    </div>
+  ) : null
 );
 
 /* ─────────────────────── Rotating Rainbow Border Card ─────────────────────── */
@@ -1547,6 +1678,7 @@ const HowItWorksSection = () => {
         </Reveal>
         <div className="relative">
           <div className="hidden lg:block absolute top-16 left-[12.5%] right-[12.5%] h-px" style={{ background: "linear-gradient(to right, transparent, rgba(var(--t-a1-rgb),0.4), rgba(var(--t-a2-rgb),0.4), rgba(52,211,153,0.4), transparent)" }} />
+          <TravelingBeam />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {stepMeta.map((s, i) => (
               <Reveal key={s.step} delay={i * 120}>
@@ -1594,7 +1726,7 @@ const ServicesSection = () => {
           {services.map((s, i) => (
             <Reveal key={s.label} delay={i * 70}>
               <div className={`service-3d group relative rounded-2xl p-5 cursor-pointer overflow-hidden bg-gradient-to-br ${s.gradient}`} style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div className={`mb-3 flex h-11 w-11 items-center justify-center rounded-xl float-${(i % 5) + 1}`} style={{ background: "rgba(255,255,255,0.08)" }}>
+                <div className={`service-icon-wrap mb-3 flex h-11 w-11 items-center justify-center rounded-xl float-${(i % 5) + 1}`} style={{ background: "rgba(255,255,255,0.08)" }}>
                   <s.icon className={`h-5 w-5 ${s.iconColor}`} />
                 </div>
                 <div className="text-sm font-bold text-white mb-0.5">{s.label}</div>
@@ -1662,6 +1794,7 @@ const StatsSection = () => {
           {statItems.map((s, i) => (
             <Reveal key={i} delay={i * 100}>
               <div className="card-3d group relative rounded-2xl p-6 text-center overflow-hidden cursor-default" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <LiveBadge />
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.1), rgba(var(--t-a2-rgb),0.1))" }} />
                 <div className="relative z-10">
                   <div className="text-4xl sm:text-5xl font-black mb-2" style={{ background: "linear-gradient(135deg, #a78bfa, #60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
@@ -1725,11 +1858,7 @@ const TestimonialsSection = ({ testimonials }: { testimonials: any[] }) => {
                         <p className="text-sm font-bold text-white truncate">{t.name}</p>
                         <p className="text-xs text-white/40 truncate">{t.role}</p>
                       </div>
-                      <div className="flex gap-0.5">
-                        {[1,2,3,4,5].map((s) => (
-                          <Star key={s} className={cn("h-3 w-3", s <= t.rating ? "fill-amber-400 text-amber-400" : "text-white/20")} />
-                        ))}
-                      </div>
+                      <AnimatedStars rating={t.rating} />
                     </div>
                   </div>
                 </CarouselItem>
@@ -1760,7 +1889,10 @@ const CTASection = () => {
           <div className="absolute -bottom-20 -left-20 h-60 w-60 rounded-full spin-reverse" style={{ border: "1px solid rgba(var(--t-a2-rgb),0.1)" }} />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.1) 0%, transparent 70%)" }} />
           <div className="relative z-10">
-            <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">{t.cta.heading}</h2>
+            <CTAUrgencyCounter />
+            <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+              <GlitchText text={t.cta.heading} />
+            </h2>
             <p className="text-white/60 mb-6 max-w-md mx-auto">{t.cta.sub}</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/register/employee">
@@ -1799,7 +1931,8 @@ const FAQSection = () => {
         <div className="space-y-3">
           {t.faq.items.map((faq, i) => (
             <Reveal key={i} delay={i * 60}>
-              <div className="rounded-2xl overflow-hidden transition-all duration-300" style={{ background: open === i ? "rgba(var(--t-a1-rgb),0.08)" : "rgba(255,255,255,0.03)", border: open === i ? "1px solid rgba(var(--t-a1-rgb),0.25)" : "1px solid rgba(255,255,255,0.07)" }}>
+              <div className="relative rounded-2xl overflow-hidden transition-all duration-300" style={{ background: open === i ? "rgba(var(--t-a1-rgb),0.08)" : "rgba(255,255,255,0.03)", border: open === i ? "1px solid rgba(var(--t-a1-rgb),0.25)" : "1px solid rgba(255,255,255,0.07)" }}>
+                <FAQSweep active={open === i} />
                 <button onClick={() => setOpen(open === i ? null : i)} className="flex w-full items-center justify-between px-6 py-4 text-left gap-4">
                   <span className="text-sm sm:text-base font-semibold text-white/90">{faq.q}</span>
                   <div className="shrink-0 flex h-7 w-7 items-center justify-center rounded-lg transition-all" style={{ background: open === i ? "rgba(var(--t-a1-rgb),0.3)" : "rgba(255,255,255,0.06)" }}>
@@ -1833,7 +1966,7 @@ const Footer = () => {
             <p className="text-sm text-white/40 leading-relaxed mb-5 max-w-xs">{t.footer.tagline}</p>
             <div className="flex gap-3">
               {[Twitter, Linkedin, Instagram, Github].map((Icon, i) => (
-                <div key={i} className="flex h-8 w-8 items-center justify-center rounded-lg cursor-pointer hover:scale-110 transition-transform" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div key={i} className="social-icon flex h-8 w-8 items-center justify-center rounded-lg cursor-pointer" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   <Icon className="h-3.5 w-3.5 text-white/50" />
                 </div>
               ))}
