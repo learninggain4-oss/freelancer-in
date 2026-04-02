@@ -1037,21 +1037,20 @@ const SplitTextReveal = ({ text, className = "", delay = 0, tag = "span" }: {
   text: string; className?: string; delay?: number; tag?: "h1"|"h2"|"span"|"p";
 }) => {
   const [vis, setVis] = useState(false);
-  const ref = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current; if (!el) return;
     const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVis(true); obs.disconnect(); } }, { threshold: 0.3 });
     obs.observe(el); return () => obs.disconnect();
   }, []);
-  const Tag = tag as keyof JSX.IntrinsicElements;
   return (
-    <Tag ref={ref as any} className={className} style={{ perspective: 600 }}>
+    <div ref={ref} className={className} style={{ perspective: 600, display: tag === "span" ? "inline" : "block" }}>
       {text.split("").map((ch, i) => (
         <span key={i} style={{ display: "inline-block", opacity: vis ? 1 : 0, transform: vis ? "translateY(0) rotateX(0)" : "translateY(28px) rotateX(-45deg)", transition: `opacity .5s ease ${delay + i * 28}ms, transform .5s cubic-bezier(.17,.67,.34,1.2) ${delay + i * 28}ms` }}>
           {ch === " " ? "\u00A0" : ch}
         </span>
       ))}
-    </Tag>
+    </div>
   );
 };
 
