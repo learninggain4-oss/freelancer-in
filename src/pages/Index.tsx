@@ -968,21 +968,6 @@ const WordReveal = ({ text, className = "", delay = 0 }: { text: string; classNa
 };
 
 /* ─────────────────────── Wave 7: Floating Emoji ─────────────────────── */
-const EMOJIS_LIST = ["⭐","💯","🙌","🔥","💪","✨","👏","🎯","💎","🚀","❤️","🎉"];
-const fireEmoji = (e: React.MouseEvent<HTMLDivElement>) => {
-  const r = e.currentTarget.getBoundingClientRect();
-  const count = 5 + Math.floor(Math.random() * 4);
-  for (let i = 0; i < count; i++) {
-    const el = document.createElement("div");
-    const x = r.left + 20 + Math.random() * (r.width - 40);
-    const y = r.top + r.height * 0.4;
-    const size = 16 + Math.random() * 16;
-    el.style.cssText = `position:fixed;left:${x}px;top:${y}px;font-size:${size}px;pointer-events:none;z-index:9999;user-select:none;animation:emoji-float ${1.3 + Math.random() * 0.7}s ease ${Math.random() * 0.25}s forwards;`;
-    el.textContent = EMOJIS_LIST[Math.floor(Math.random() * EMOJIS_LIST.length)];
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 2200);
-  }
-};
 
 /* ─────────────────────── Wave 7: Magnetic Wrapper ─────────────────────── */
 const MagneticWrapper = ({ children, strength = 0.4 }: { children: React.ReactNode; strength?: number }) => {
@@ -1922,7 +1907,7 @@ const FeaturesSection = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {featureMeta.map((f, i) => (
             <Reveal key={i} delay={i * 80} direction={i % 2 === 0 ? "up" : i % 4 < 2 ? "left" : "right"}>
-              <SpotlightCard className="feature-card-3d card-shimmer neon-card group relative h-full rounded-2xl p-5 cursor-pointer" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", animationDelay: `${i * 0.7}s` }} onMouseEnter={fireEmoji}>
+              <SpotlightCard className="feature-card-3d card-shimmer neon-card group relative h-full rounded-2xl p-5 cursor-pointer" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", animationDelay: `${i * 0.7}s` }}>
                 <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${f.color} rounded-2xl`} style={{ opacity: 0 }} />
                 <div className="relative z-10">
                   <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${f.color} float-${(i % 3) + 1}`} style={{ boxShadow: "0 8px 20px rgba(0,0,0,0.3)" }}>
@@ -2136,7 +2121,7 @@ const TestimonialsSection = ({ testimonials }: { testimonials: any[] }) => {
               {testimonials.map((t) => (
                 <CarouselItem key={t.id} className="pl-4 sm:basis-1/2 lg:basis-1/3">
                   <MouseTiltCard intensity={8} className="h-full">
-                  <div className="card-3d group h-full rounded-2xl p-5 cursor-pointer overflow-hidden" onMouseEnter={fireEmoji} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div className="card-3d group h-full rounded-2xl p-5 cursor-pointer overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                     <Quote className="mb-3 h-8 w-8 text-indigo-400/30 group-hover:text-indigo-400/60 transition-colors" style={{ animation: "quote-bob 3.5s ease-in-out infinite" }} />
                     <p className="text-sm text-white/60 leading-relaxed italic mb-4 flex-1">"{t.quote}"</p>
                     <div className="flex items-center gap-3 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
