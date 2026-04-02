@@ -193,7 +193,7 @@ export default function AdminAlertSystem() {
                     <span style={{ fontSize: 10, color: T.sub, background: T.input, padding: "2px 7px", borderRadius: 5, textTransform: "uppercase" }}>{ch.type}</span>
                     {ch.testStatus && <span style={{ fontSize: 10, fontWeight: 700, color: ch.testStatus === "ok" ? "#4ade80" : "#f87171" }}>{ch.testStatus === "ok" ? "✓ Verified" : "✗ Failed"}</span>}
                   </div>
-                  <p style={{ fontSize: 12, color: T.sub, margin: 0, fontFamily: "monospace", fontSize: 11 }}>{ch.endpoint}</p>
+                  <p style={{ fontSize: 11, color: T.sub, margin: 0, fontFamily: "monospace" }}>{ch.endpoint}</p>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 11, fontWeight: 600, color: ch.enabled ? "#4ade80" : T.sub }}>{ch.enabled ? "ON" : "OFF"}</span>

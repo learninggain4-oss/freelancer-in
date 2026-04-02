@@ -43,7 +43,7 @@ export function useAdminAudit() {
       const entry: AuditEntry = {
         id: crypto.randomUUID(),
         timestamp: new Date().toISOString(),
-        user: (profile as { email?: string; full_name?: string } | null)?.email || (profile as { email?: string; full_name?: string } | null)?.full_name || "Admin",
+        user: (profile as unknown as { email?: string; full_name?: string[] } | null)?.email || (profile as unknown as { full_name?: string[] } | null)?.full_name?.[0] || "Admin",
         action,
         details,
         category,

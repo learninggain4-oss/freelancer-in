@@ -44,7 +44,7 @@ export default function AdminConfigRollback(){
     await new Promise(r=>setTimeout(r,1500));
     const upd=versions.map(x=>({...x,isActive:x.id===v.id}));
     localStorage.setItem("admin_config_rollback_v1",JSON.stringify(upd));setVersions(upd);setRolling(null);
-    logAction("Config Rollback",`Restored to ${v.version} — ${v.label}`,"Config","warning");
+    logAction("Config Rollback",`Restored to ${v.version} — ${v.label}`,"System","warning");
     toast({title:`Config restored to ${v.version} — ${v.label}`});
   };
 

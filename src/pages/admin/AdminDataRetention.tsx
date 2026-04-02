@@ -60,7 +60,7 @@ export default function AdminDataRetention() {
     setPolicies(updated);
     toast({ title:"Retention policy updated" });
     setEditId(null);
-    logAction("Retention Policy Changed",`${policies.find(p=>p.id===id)?.dataType} → ${editDays} days`,"Compliance","warning");
+    logAction("Retention Policy Changed",`${policies.find(p=>p.id===id)?.dataType} → ${editDays} days`,"Security","warning");
   };
 
   const toggleAuto = (id:string) => {

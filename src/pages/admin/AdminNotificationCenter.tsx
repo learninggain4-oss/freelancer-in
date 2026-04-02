@@ -81,7 +81,7 @@ export default function AdminNotificationCenter() {
   };
 
   const saveSetting = (id:string) => {
-    const updated = settings.map(s=>s.id===id?{...s,value:s.type==="number"?Number(editVal):editVal}:s);
+    const updated = settings.map(s=>s.id===id?{...s,value:s.type==="number"?Number(editVal):Boolean(editVal)}:s);
     localStorage.setItem("admin_notif_settings_v1",JSON.stringify(updated));
     setSettings(updated);
     toast({ title:"Setting updated" });

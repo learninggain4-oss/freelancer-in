@@ -203,7 +203,7 @@ export default function LoadingScreen() {
               background: p.color,
               boxShadow: `0 0 ${p.size * 2}px ${p.color}`,
               "--px": `${p.x}px`, "--py": `${p.y}px`,
-              animation: `fi-particle ${p.dur}s ${p.d}s ease-out infinite`,
+              animation: `fi-particle ${p.dur}s ${p.delay}s ease-out infinite`,
               opacity: 0,
             } as React.CSSProperties} />
           ))}

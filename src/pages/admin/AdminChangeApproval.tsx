@@ -59,7 +59,7 @@ export default function AdminChangeApproval(){
     const upd=changes.map(x=>x.id===id?{...x,status:"rolled_back" as const}:x);
     localStorage.setItem("admin_change_approval_v1",JSON.stringify(upd));setChanges(upd);setRolling(null);
     const c=changes.find(x=>x.id===id)!;
-    logAction("Change Rolled Back",`${c.field} restored to ${c.oldValue}`,"Config","warning");
+    logAction("Change Rolled Back",`${c.field} restored to ${c.oldValue}`,"System","warning");
     toast({title:`${c.field} rolled back to ${c.oldValue}`});
   };
 

@@ -20,7 +20,7 @@ const RECOVERY_KEY  = "admin_recovery_accounts_v1";
 
 interface ApprovalRequest {
   id: string; action: string; requestedBy: string; target: string;
-  category: "Financial" | "Security" | "User Management" | "System" | "Data";
+  category: "Financial" | "Security" | "User Management" | "System" | "Content" | "Authentication" | "General";
   risk: "critical" | "high" | "medium";
   status: "pending" | "approved" | "rejected";
   reason: string; notes?: string;

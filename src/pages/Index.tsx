@@ -478,7 +478,7 @@ const ThemePicker = ({ active, onChange }: { active: ThemeId; onChange: (id: The
                 className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-sm text-left transition-all hover:bg-white/5"
               >
                 <span className="h-5 w-5 rounded-full shrink-0 ring-2 ring-offset-1 ring-offset-transparent transition-all"
-                  style={{ background: `linear-gradient(135deg,${t.dot},${t.a2})`, ringColor: active === t.id ? t.dot : "transparent", outline: active === t.id ? `2px solid ${t.dot}` : "2px solid transparent" }} />
+                  style={{ background: `linear-gradient(135deg,${t.dot},${t.a2})`, outline: active === t.id ? `2px solid ${t.dot}` : "2px solid transparent" }} />
                 <span className={cn("font-medium", active === t.id ? "text-white" : "text-white/50")}>{t.label}</span>
                 {active === t.id && <CheckCircle className="ml-auto h-3.5 w-3.5" style={{ color: t.dot }} />}
               </button>
