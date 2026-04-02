@@ -1211,6 +1211,21 @@ const CursorTrail = () => {
   return null;
 };
 
+/* ─────────────────────── Global Ambient Glow Cursor ─────────────────────── */
+const GlowCursor = () => {
+  const [pos, setPos] = useState({ x: -9999, y: -9999 });
+  useEffect(() => {
+    const move = (e: MouseEvent) => setPos({ x: e.clientX, y: e.clientY });
+    window.addEventListener("mousemove", move, { passive: true });
+    return () => window.removeEventListener("mousemove", move);
+  }, []);
+  return (
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" style={{ mixBlendMode: "screen" }}>
+      <div style={{ position: "absolute", left: pos.x - 280, top: pos.y - 280, width: 560, height: 560, borderRadius: "50%", background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.07) 0%, rgba(var(--t-a2-rgb),0.04) 40%, transparent 70%)", transition: "left 0.12s ease, top 0.12s ease", filter: "blur(8px)" }} />
+    </div>
+  );
+};
+
 /* ─────────────────────── Constellation Canvas ─────────────────────── */
 const ConstellationCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -1481,7 +1496,7 @@ const RippleBtn = ({ children, onClick, className = "", style = {} }: { children
 };
 
 /* ─────────────────────── Spotlight Card ─────────────────────── */
-const SpotlightCard = ({ children, className = "", style = {} }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) => {
+const SpotlightCard = ({ children, className = "", style = {}, onMouseEnter }: { children: React.ReactNode; className?: string; style?: React.CSSProperties; onMouseEnter?: (e: React.MouseEvent<HTMLDivElement>) => void }) => {
   const ref = useRef<HTMLDivElement>(null);
   const onMove = (e: React.MouseEvent) => {
     const el = ref.current; if (!el) return;
@@ -1490,7 +1505,7 @@ const SpotlightCard = ({ children, className = "", style = {} }: { children: Rea
     el.style.setProperty("--my", `${e.clientY - rect.top}px`);
   };
   return (
-    <div ref={ref} className={`spotlight-card ${className}`} style={style} onMouseMove={onMove}>
+    <div ref={ref} className={`spotlight-card ${className}`} style={style} onMouseMove={onMove} onMouseEnter={onMouseEnter}>
       {children}
     </div>
   );
@@ -1907,7 +1922,7 @@ const FeaturesSection = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {featureMeta.map((f, i) => (
             <Reveal key={i} delay={i * 80} direction={i % 2 === 0 ? "up" : i % 4 < 2 ? "left" : "right"}>
-              <SpotlightCard className="feature-card-3d card-shimmer neon-card group relative h-full rounded-2xl p-5 cursor-pointer" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", animationDelay: `${i * 0.7}s` }}>
+              <SpotlightCard className="feature-card-3d card-shimmer neon-card group relative h-full rounded-2xl p-5 cursor-pointer" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", animationDelay: `${i * 0.7}s` }} onMouseEnter={fireEmoji}>
                 <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${f.color} rounded-2xl`} style={{ opacity: 0 }} />
                 <div className="relative z-10">
                   <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${f.color} float-${(i % 3) + 1}`} style={{ boxShadow: "0 8px 20px rgba(0,0,0,0.3)" }}>
@@ -1998,14 +2013,16 @@ const ServicesSection = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {services.map((s, i) => (
             <Reveal key={s.label} delay={i * 70}>
-              <div className={`service-3d group relative rounded-2xl p-5 cursor-pointer overflow-hidden bg-gradient-to-br ${s.gradient}`} style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div className={`service-icon-wrap mb-3 flex h-11 w-11 items-center justify-center rounded-xl float-${(i % 5) + 1}`} style={{ background: "rgba(255,255,255,0.08)" }}>
-                  <s.icon className={`h-5 w-5 ${s.iconColor}`} />
+              <MouseTiltCard intensity={10}>
+                <div className={`service-3d group relative rounded-2xl p-5 cursor-pointer overflow-hidden bg-gradient-to-br ${s.gradient}`} style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div className={`service-icon-wrap mb-3 flex h-11 w-11 items-center justify-center rounded-xl float-${(i % 5) + 1}`} style={{ background: "rgba(255,255,255,0.08)" }}>
+                    <s.icon className={`h-5 w-5 ${s.iconColor}`} />
+                  </div>
+                  <div className="text-sm font-bold text-white mb-0.5">{s.label}</div>
+                  <div className="text-xs text-white/40">{s.count} services</div>
+                  <div className="absolute -bottom-4 -right-4 h-16 w-16 rounded-full opacity-20 blur-xl" style={{ background: s.iconColor.replace("text-", "bg-") }} />
                 </div>
-                <div className="text-sm font-bold text-white mb-0.5">{s.label}</div>
-                <div className="text-xs text-white/40">{s.count} services</div>
-                <div className="absolute -bottom-4 -right-4 h-16 w-16 rounded-full opacity-20 blur-xl" style={{ background: s.iconColor.replace("text-", "bg-") }} />
-              </div>
+              </MouseTiltCard>
             </Reveal>
           ))}
         </div>
@@ -2118,6 +2135,7 @@ const TestimonialsSection = ({ testimonials }: { testimonials: any[] }) => {
             <CarouselContent className="-ml-4">
               {testimonials.map((t) => (
                 <CarouselItem key={t.id} className="pl-4 sm:basis-1/2 lg:basis-1/3">
+                  <MouseTiltCard intensity={8} className="h-full">
                   <div className="card-3d group h-full rounded-2xl p-5 cursor-pointer overflow-hidden" onMouseEnter={fireEmoji} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                     <Quote className="mb-3 h-8 w-8 text-indigo-400/30 group-hover:text-indigo-400/60 transition-colors" style={{ animation: "quote-bob 3.5s ease-in-out infinite" }} />
                     <p className="text-sm text-white/60 leading-relaxed italic mb-4 flex-1">"{t.quote}"</p>
@@ -2136,6 +2154,7 @@ const TestimonialsSection = ({ testimonials }: { testimonials: any[] }) => {
                       <AnimatedStars rating={t.rating} />
                     </div>
                   </div>
+                  </MouseTiltCard>
                 </CarouselItem>
               ))}
             </CarouselContent>
@@ -2374,6 +2393,7 @@ const Index = () => {
       <AuroraBackground />
       <ScrollProgressBar />
       <CursorTrail />
+      <GlowCursor />
 
       <Navbar deferredPrompt={deferredPrompt} isInstalled={isInstalled} isIOS={isIOS} onInstall={handleInstall} onIOSTip={() => setShowIOSTip(v => !v)} activeTheme={themeId} onThemeChange={handleThemeChange} />
 
