@@ -1744,6 +1744,7 @@ const LiveClock = () => {
 const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip, activeTheme, onThemeChange }: any) => {
   const [scrolled, setScrolled] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t } = useLang();
 
   useEffect(() => {
@@ -1755,25 +1756,68 @@ const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip, activ
   return (
     <>
       <RegisterModal open={showRegisterModal} onClose={() => setShowRegisterModal(false)} />
+
+      {/* Mobile Drawer */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-[150]" onClick={() => setMobileMenuOpen(false)}>
+          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} />
+          <div className="absolute right-0 top-0 h-full w-72 flex flex-col" style={{ background: "rgba(10,8,25,0.98)", borderLeft: "1px solid rgba(255,255,255,0.1)" }} onClick={e => e.stopPropagation()}>
+            {/* Drawer header */}
+            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex items-center gap-2">
+                <img src="/logo.png" alt="Freelancer Logo" className="h-8 w-8 object-contain" />
+                <span className="text-base font-bold text-white">Freelancer<span className="gradient-text">.</span></span>
+              </div>
+              <button onClick={() => setMobileMenuOpen(false)} className="text-white/50 hover:text-white text-xl leading-none">✕</button>
+            </div>
+            {/* Drawer content */}
+            <div className="flex flex-col gap-2 p-5 flex-1">
+              <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                <button className="w-full flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>
+                  {t.nav.login} <ArrowRight className="h-4 w-4" />
+                </button>
+              </Link>
+              <button onClick={() => { setShowRegisterModal(true); setMobileMenuOpen(false); }} className="w-full flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white/80 hover:text-white" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)" }}>
+                {t.nav.register}
+              </button>
+              {!isInstalled && (deferredPrompt || isIOS) && (
+                <button onClick={() => { deferredPrompt ? onInstall() : onIOSTip(); setMobileMenuOpen(false); }} className="w-full flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white/70 hover:text-white" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <Download className="h-4 w-4" /> {t.nav.install}
+                </button>
+              )}
+              <div className="mt-2 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="flex items-center gap-3 justify-center">
+                  <LanguageSwitcher />
+                  <ThemePicker active={activeTheme} onChange={onThemeChange} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className={cn(
         "sticky top-0 z-50 transition-all duration-300",
         scrolled ? "py-2" : "py-3"
       )} style={{ background: scrolled ? "rgba(var(--t-bg-rgb),0.85)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Freelancer Logo" className="h-10 w-10 object-contain" />
-            <span className="text-lg font-bold text-white">Freelancer<span className="gradient-text">.</span></span>
-            <LiveClock />
+          {/* Left: logo */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <img src="/logo.png" alt="Freelancer Logo" className="h-8 w-8 sm:h-10 sm:w-10 object-contain" />
+            <span className="text-base sm:text-lg font-bold text-white">Freelancer<span className="gradient-text">.</span></span>
+            <span className="hidden sm:block"><LiveClock /></span>
           </div>
-          <div className="flex items-center gap-2.5">
+
+          {/* Desktop nav */}
+          <div className="hidden sm:flex items-center gap-2.5">
             {!isInstalled && (deferredPrompt || isIOS) && (
-              <button onClick={() => deferredPrompt ? onInstall() : onIOSTip()} className="hidden sm:flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors">
+              <button onClick={() => deferredPrompt ? onInstall() : onIOSTip()} className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors">
                 <Download className="h-3.5 w-3.5" /> {t.nav.install}
               </button>
             )}
             <LanguageSwitcher />
             <ThemePicker active={activeTheme} onChange={onThemeChange} />
-            <button onClick={() => setShowRegisterModal(true)} className="hidden sm:inline-flex text-sm text-white/70 hover:text-white transition-colors px-3 py-1.5 rounded-xl hover:bg-white/5">
+            <button onClick={() => setShowRegisterModal(true)} className="text-sm text-white/70 hover:text-white transition-colors px-3 py-1.5 rounded-xl hover:bg-white/5">
               {t.nav.register}
             </button>
             <Link to="/login">
@@ -1781,6 +1825,20 @@ const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip, activ
                 {t.nav.login} <ArrowRight className="h-3.5 w-3.5" />
               </button>
             </Link>
+          </div>
+
+          {/* Mobile nav */}
+          <div className="flex sm:hidden items-center gap-2">
+            <Link to="/login">
+              <button className="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-semibold text-white" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>
+                {t.nav.login} <ArrowRight className="h-3 w-3" />
+              </button>
+            </Link>
+            <button onClick={() => setMobileMenuOpen(true)} className="flex flex-col gap-1.5 p-2 rounded-xl" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <span className="block h-0.5 w-5 rounded bg-white/70" />
+              <span className="block h-0.5 w-5 rounded bg-white/70" />
+              <span className="block h-0.5 w-5 rounded bg-white/70" />
+            </button>
           </div>
         </div>
       </header>
@@ -1794,7 +1852,7 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
   const parallaxDown = useParallax(-0.06);
   const { t } = useLang();
   return (
-  <section className="relative overflow-hidden py-20 md:py-28 lg:py-36 px-4 sm:px-6">
+  <section className="relative overflow-hidden py-16 md:py-24 lg:py-36 px-4 sm:px-6">
     <Orbs />
     <ParticleField />
     <ConstellationCanvas />
@@ -1818,7 +1876,7 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
           </div>
 
           {/* Headline */}
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight mb-4" style={{ animation: "slide-up 0.7s ease 0.1s both" }}>
+          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black leading-[1.1] tracking-tight mb-4" style={{ animation: "slide-up 0.7s ease 0.1s both" }}>
             <span className="animated-headline">{t.hero.line1}</span>
             <br />
             <span className="animated-headline">{t.hero.line2}</span>
@@ -1827,7 +1885,7 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
           </h1>
 
           {/* Typewriter for professions */}
-          <div className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-6" style={{ animation: "slide-up 0.7s ease 0.15s both" }}>
+          <div className="text-xl sm:text-2xl lg:text-3xl font-bold mb-6" style={{ animation: "slide-up 0.7s ease 0.15s both" }}>
             <TypewriterText />
           </div>
 
@@ -1875,11 +1933,13 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
         </div>
 
         {/* Right: 3D Dashboard — rainbow border + mouse-tilt + floating notifications */}
-        <div className="lg:flex lg:justify-end relative" style={{ animation: "slide-up 0.9s ease 0.2s both" }}>
-          <MouseTiltCard className="w-full max-w-lg">
+        <div className="relative overflow-hidden lg:overflow-visible lg:flex lg:justify-end" style={{ animation: "slide-up 0.9s ease 0.2s both" }}>
+          <MouseTiltCard className="w-full max-w-sm sm:max-w-md lg:max-w-lg mx-auto">
             <HeroDashboard />
           </MouseTiltCard>
-          <FloatingNotifications />
+          <div className="hidden lg:block">
+            <FloatingNotifications />
+          </div>
         </div>
       </div>
     </div>
@@ -2790,7 +2850,7 @@ const Index = () => {
         </div>
       )}
 
-      <main>
+      <main className="overflow-x-hidden">
         <HeroSection stats={stats} />
         <TrustBar />
         <NeonDivider />
