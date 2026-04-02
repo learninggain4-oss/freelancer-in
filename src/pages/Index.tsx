@@ -4837,6 +4837,147 @@ const AppDownloadSection = ({ onAndroidInstall, onIOSInstall, onWindowsInstall }
   </section>
 );
 
+/* ─────────────────────── Freelancer Leaderboard ─────────────────────── */
+const LEADERBOARD = [
+  { rank: 1, name: "Priya S.",    city: "Kochi",     skill: "UI/UX Design",       earned: 112000, change: "+18%", avatar: "PS", color: "#fbbf24" },
+  { rank: 2, name: "Arjun M.",   city: "Bangalore",  skill: "React Development",  earned:  98500, change: "+12%", avatar: "AM", color: "#6366f1" },
+  { rank: 3, name: "Meera T.",   city: "Chennai",    skill: "Content Writing",    earned:  87200, change: "+21%", avatar: "MT", color: "#34d399" },
+  { rank: 4, name: "Rohan V.",   city: "Mumbai",     skill: "Digital Marketing",  earned:  74600, change:  "+9%", avatar: "RV", color: "#f43f5e" },
+  { rank: 5, name: "Anjali K.",  city: "Hyderabad",  skill: "Data Analytics",     earned:  68300, change: "+15%", avatar: "AK", color: "#a855f7" },
+];
+
+const MEDAL = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
+
+const LeaderboardSection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(var(--t-a1-rgb),0.06) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-4xl">
+      <Reveal className="text-center mb-12">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold" style={{ background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)", color: "#fbbf24" }}>
+          <span className="relative flex h-2 w-2"><span className="animate-ping absolute h-full w-full rounded-full bg-yellow-400 opacity-75" /><span className="relative h-2 w-2 rounded-full bg-yellow-400" /></span>
+          Live · April 2026 Leaderboard
+        </div>
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+          This Month's <span className="gradient-text">Top Earners</span>
+        </h2>
+        <p className="text-white/50 max-w-md mx-auto">Real Indian freelancers, real earnings. Could your name be here next month?</p>
+      </Reveal>
+
+      <div className="space-y-3">
+        {LEADERBOARD.map((f, i) => (
+          <Reveal key={f.rank} delay={i * 80}>
+            <div className="group relative flex items-center gap-4 rounded-2xl p-4 sm:p-5 transition-all hover:scale-[1.01]" style={{ background: i === 0 ? "rgba(251,191,36,0.07)" : "rgba(255,255,255,0.04)", border: i === 0 ? "1px solid rgba(251,191,36,0.25)" : "1px solid rgba(255,255,255,0.07)", boxShadow: i === 0 ? "0 0 30px rgba(251,191,36,0.08)" : "none" }}>
+              {/* Rank */}
+              <div className="text-2xl w-8 text-center shrink-0">{MEDAL[i]}</div>
+              {/* Avatar */}
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-black text-white shadow-lg" style={{ background: `${f.color}30`, border: `1.5px solid ${f.color}50`, color: f.color }}>{f.avatar}</div>
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-bold text-white">{f.name}</span>
+                  <span className="text-xs text-white/35">·</span>
+                  <span className="text-xs text-white/40">{f.city}</span>
+                  <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: `${f.color}15`, color: f.color, border: `1px solid ${f.color}25` }}>{f.skill}</span>
+                </div>
+                <p className="text-xs text-white/35 mt-0.5">Earned this month</p>
+              </div>
+              {/* Earnings */}
+              <div className="text-right shrink-0">
+                <div className="text-lg font-black text-white">₹{(f.earned / 1000).toFixed(1)}K</div>
+                <div className="text-xs font-semibold" style={{ color: "#34d399" }}>{f.change} vs last month</div>
+              </div>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+
+      <Reveal className="mt-8 text-center">
+        <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <p className="text-sm text-white/60 mb-3">Your name could be here next month.</p>
+          <Link to="/register/employee">
+            <button className="rounded-2xl px-7 py-3 text-sm font-semibold text-white hover:scale-105 transition-all" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 20px rgba(var(--t-a1-rgb),0.3)" }}>
+              Start Earning Free →
+            </button>
+          </Link>
+        </div>
+      </Reveal>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── Founder's Story Section ─────────────────────── */
+const FounderStorySection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 60% at 20% 50%, rgba(var(--t-a1-rgb),0.05) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-5xl">
+      <Reveal className="text-center mb-14">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
+          <Heart className="h-3.5 w-3.5" /> Our Story
+        </div>
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+          Built by a <span className="gradient-text">Freelancer</span>,<br className="hidden sm:block" /> for Freelancers
+        </h2>
+      </Reveal>
+
+      <div className="grid lg:grid-cols-2 gap-10 items-center">
+        {/* Founder card */}
+        <Reveal>
+          <div className="relative rounded-3xl overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(var(--t-a1-rgb),0.2)" }}>
+            {/* Abstract gradient top */}
+            <div className="h-32" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.3), rgba(var(--t-a2-rgb),0.3))" }} />
+            {/* Avatar */}
+            <div className="relative -mt-12 flex justify-center">
+              <div className="flex h-24 w-24 items-center justify-center rounded-3xl text-3xl font-black text-white shadow-2xl ring-4" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", ringColor: "var(--t-bg)" }}>AK</div>
+            </div>
+            <div className="p-6 pt-4 text-center">
+              <h3 className="text-xl font-black text-white mb-0.5">Anil Kumar</h3>
+              <p className="text-sm text-white/40 mb-1">Founder & CEO, Trivandrum</p>
+              <div className="flex justify-center gap-1 mb-4">
+                {[1,2,3,4,5].map(i => <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />)}
+              </div>
+              <div className="flex justify-center gap-3 flex-wrap">
+                {["10+ yrs freelancing","Ex-Infosys","IIT Madras alum"].map(b => (
+                  <span key={b} className="rounded-full px-3 py-1 text-xs font-semibold text-white/60" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>{b}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Reveal>
+
+        {/* Story text */}
+        <Reveal delay={150} className="space-y-5">
+          <blockquote className="text-lg font-semibold text-white/80 italic border-l-2 pl-4" style={{ borderColor: "var(--t-a1)" }}>
+            "I spent 10 years freelancing on international platforms. I watched them take 20% of everything I earned. I watched Indian freelancers — brilliant, talented people — lose clients to poor conversion rates because payment was complicated. I got angry enough to do something about it."
+          </blockquote>
+          <div className="space-y-4 text-sm text-white/55 leading-relaxed">
+            <p>In 2023, after his third time being double-charged by a foreign platform with zero customer support, <strong className="text-white/80">Anil Kumar quit his side hustle on those platforms forever</strong> and started building Freelancer India from a rented desk in Trivandrum's startup district.</p>
+            <p>The mission was simple: <strong className="text-white/80">an Indian platform, built for Indian realities</strong> — UPI payments, GST invoicing, INR wallets, Hindi and regional language support, and commissions that don't punish success.</p>
+            <p>Today, Freelancer India serves 40,000+ users across 28 states. Every feature is built from feedback from Indian freelancers and the clients who hire them.</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {[
+              { val: "40,000+", label: "Users" },
+              { val: "28",      label: "States" },
+              { val: "₹4.2Cr",  label: "Disbursed" },
+              { val: "4.8★",    label: "Platform rating" },
+            ].map(s => (
+              <div key={s.label} className="rounded-2xl px-4 py-3 text-center min-w-[80px]" style={{ background: "rgba(var(--t-a1-rgb),0.08)", border: "1px solid rgba(var(--t-a1-rgb),0.18)" }}>
+                <div className="text-lg font-black" style={{ color: "var(--t-a1)" }}>{s.val}</div>
+                <div className="text-[10px] text-white/40">{s.label}</div>
+              </div>
+            ))}
+          </div>
+          <Link to="/register/employee">
+            <button className="inline-flex items-center gap-2 rounded-2xl px-6 py-2.5 text-sm font-semibold text-white hover:scale-105 transition-all" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>
+              Join the platform Anil built for you →
+            </button>
+          </Link>
+        </Reveal>
+      </div>
+    </div>
+  </section>
+);
+
 /* ─────────────────────── Main Page ─────────────────────── */
 const Index = () => {
   const { user, profile, loading } = useAuth();
@@ -4851,6 +4992,7 @@ const Index = () => {
   const [lang, setLangState] = useState<LangCode>(() => (localStorage.getItem("fi-lang") as LangCode) || "en");
   const [offerDismissed, setOfferDismissed] = useState(() => localStorage.getItem("fi-offer-dismissed") === "1");
   const [renderPhase, setRenderPhase] = useState(0);
+  const [cookieConsented, setCookieConsented] = useState(() => localStorage.getItem("fi-cookie-consent") !== null);
   const theme = THEMES.find(t => t.id === themeId) ?? THEMES[0];
 
   const handleLangChange = (l: LangCode) => {
@@ -5059,6 +5201,8 @@ const Index = () => {
         <NeonDivider />
         <FeaturedFreelancersSection />
         <NeonDivider />
+        <LeaderboardSection />
+        <NeonDivider />
         <WhyChooseUsSection />
         <NeonDivider />
         <PricingSection />
@@ -5086,6 +5230,8 @@ const Index = () => {
         <TestimonialsSection testimonials={testimonials} />
         <NeonDivider />
         <SuccessStoriesSection />
+        <NeonDivider />
+        <FounderStorySection />
         <NeonDivider />
         <IndiaCoverageSection />
         <NeonDivider />
@@ -5117,6 +5263,46 @@ const Index = () => {
       </main>
 
       <Footer />
+
+      {/* DPDP Cookie Consent Banner */}
+      {!cookieConsented && (
+        <div className="fixed inset-x-0 bottom-0 z-[150] p-3 sm:p-4" style={{ pointerEvents: "none" }}>
+          <div className="mx-auto max-w-3xl rounded-2xl shadow-2xl" style={{ background: "rgba(10,8,25,0.97)", border: "1px solid rgba(var(--t-a1-rgb),0.3)", backdropFilter: "blur(24px)", pointerEvents: "auto" }}>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 sm:p-5">
+              <div className="flex items-start gap-3 flex-1">
+                <span className="text-xl shrink-0 mt-0.5">🍪</span>
+                <div>
+                  <p className="text-xs font-bold text-white mb-0.5">Your Privacy Matters</p>
+                  <p className="text-xs text-white/50 leading-relaxed">
+                    We use cookies to improve your experience and comply with India's{" "}
+                    <strong className="text-white/70">Digital Personal Data Protection Act, 2023 (DPDP)</strong>.
+                    Your data is processed solely to improve platform services and is never sold to third parties.{" "}
+                    <Link to="/legal/privacy-policy" className="underline hover:text-white/80 transition-colors" style={{ color: "var(--t-a1)" }}>Privacy Policy</Link>
+                    {" · "}
+                    <Link to="/legal/terms" className="underline hover:text-white/80 transition-colors" style={{ color: "var(--t-a1)" }}>Terms of Service</Link>
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 shrink-0 sm:ml-4">
+                <button
+                  onClick={() => { localStorage.setItem("fi-cookie-consent", "0"); setCookieConsented(true); }}
+                  className="rounded-xl px-4 py-2 text-xs font-semibold text-white/60 hover:text-white transition-colors"
+                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)" }}
+                >
+                  Decline
+                </button>
+                <button
+                  onClick={() => { localStorage.setItem("fi-cookie-consent", "1"); setCookieConsented(true); }}
+                  className="rounded-xl px-5 py-2 text-xs font-semibold text-white hover:scale-105 transition-all"
+                  style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}
+                >
+                  Accept All
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Install Banner */}
       {showBanner && !isInstalled && !bannerDismissed && (
