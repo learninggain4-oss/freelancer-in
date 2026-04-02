@@ -317,7 +317,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
           {/* Right actions */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto", flexShrink: 0 }}>
 
-            {/* Wallet balance + Withdraw */}
+            {/* Wallet balance */}
             <button onClick={() => navigate(`${basePath}/wallet`)}
               className="hidden sm:flex"
               style={{ alignItems: "center", gap: 7, padding: "5px 10px", borderRadius: 10, background: `${A1}15`, border: `1px solid ${A1}30`, cursor: "pointer", height: 34 }}
@@ -329,14 +329,26 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
               </span>
             </button>
 
-            <button onClick={() => navigate(`${basePath}/wallet`)}
-              className="hidden md:flex"
-              style={{ alignItems: "center", gap: 6, padding: "5px 11px", borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, border: "none", cursor: "pointer", height: 34, color: "white", fontSize: 12, fontWeight: 700, boxShadow: `0 4px 14px rgba(99,102,241,.35)` }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")}
-              onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
-              <ArrowUpRight size={13} />
-              <span>Withdraw</span>
-            </button>
+            {/* CTA: Withdraw (employee) or Post Job (client) */}
+            {userType === "employee" ? (
+              <button onClick={() => navigate(`${basePath}/wallet`)}
+                className="hidden md:flex"
+                style={{ alignItems: "center", gap: 6, padding: "5px 11px", borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, border: "none", cursor: "pointer", height: 34, color: "white", fontSize: 12, fontWeight: 700, boxShadow: `0 4px 14px rgba(99,102,241,.35)` }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")}
+                onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+                <ArrowUpRight size={13} />
+                <span>Withdraw</span>
+              </button>
+            ) : (
+              <button onClick={() => navigate(`${basePath}/projects/create`)}
+                className="hidden md:flex"
+                style={{ alignItems: "center", gap: 6, padding: "5px 11px", borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, border: "none", cursor: "pointer", height: 34, color: "white", fontSize: 12, fontWeight: 700, boxShadow: `0 4px 14px rgba(99,102,241,.35)` }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")}
+                onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+                <Plus size={13} />
+                <span>Post Job</span>
+              </button>
+            )}
 
             {/* Messages */}
             <button onClick={() => navigate(`${basePath}/help-support`)} title="Messages"
