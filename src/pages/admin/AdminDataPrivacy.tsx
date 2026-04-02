@@ -136,7 +136,7 @@ export default function AdminDataPrivacy() {
       <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
         {tabs.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 10, border: `1px solid ${tab === t.key ? A1 : T.border}`, background: tab === t.key ? `${A1}18` : T.card, color: tab === t.key ? T.badgeFg : T.sub, fontWeight: 600, fontSize: 12, cursor: "pointer" }}>
-            <t.icon size={13} /> {t.label} {"badge" in t && (t as any).badge != null && (t as any).badge > 0 && <span style={{ background: "#f87171", color: "#fff", borderRadius: 8, padding: "1px 6px", fontSize: 10, fontWeight: 800 }}>{(t as any).badge}</span>}
+            <t.icon size={13} /> {t.label} {"badge" in t && (t as { badge: number }).badge != null && (t as { badge: number }).badge > 0 && <span style={{ background: "#f87171", color: "#fff", borderRadius: 8, padding: "1px 6px", fontSize: 10, fontWeight: 800 }}>{(t as { badge: number }).badge}</span>}
           </button>
         ))}
       </div>

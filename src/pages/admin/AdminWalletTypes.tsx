@@ -29,6 +29,11 @@ const TH = {
   wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
 };
 
+interface WalletTypeRow extends WalletTypeForm {
+  id: string;
+  is_cleared?: boolean;
+}
+
 interface WalletTypeForm {
   name: string;
   description: string;
@@ -156,7 +161,7 @@ const AdminWalletTypes = () => {
 
   const openCreate = () => { setEditingId(null); setForm(defaultForm); setDialogOpen(true); };
 
-  const openEdit = (wt: any) => {
+  const openEdit = (wt: WalletTypeRow) => {
     setEditingId(wt.id);
     setForm({
       name: wt.name,
@@ -254,7 +259,7 @@ const AdminWalletTypes = () => {
                     <TableCell>
                       <div className="flex flex-col">
                         <span className="font-bold" style={{ color: T.text }}>{wt.wallet_price}</span>
-                        {(wt as any).wallet_price_monthly > 0 && <span className="text-[10px]" style={{ color: T.sub }}>₹{(wt as any).wallet_price_monthly}/mo</span>}
+                        {(wt as WalletTypeRow).wallet_price_monthly > 0 && <span className="text-[10px]" style={{ color: T.sub }}>₹{(wt as WalletTypeRow).wallet_price_monthly}/mo</span>}
                       </div>
                     </TableCell>
                     <TableCell>
