@@ -2263,6 +2263,189 @@ const TestimonialsSection = ({ testimonials }: { testimonials: any[] }) => {
   );
 };
 
+/* ─────────────────────── Featured Freelancers ─────────────────────── */
+const FEATURED_FREELANCERS = [
+  { name: "Arjun Sharma",   role: "Full-Stack Developer",  skills: ["React","Node.js","PostgreSQL"], rating: 4.9, reviews: 134, rate: "₹1,200/hr", avatar: "AS", color: "#60a5fa",  badge: "Top Rated",  loc: "Bengaluru" },
+  { name: "Priya Nair",     role: "UI/UX Designer",        skills: ["Figma","Prototyping","Branding"], rating: 5.0, reviews: 89,  rate: "₹900/hr",  avatar: "PN", color: "#a78bfa",  badge: "Rising Star", loc: "Kochi" },
+  { name: "Rahul Verma",    role: "Digital Marketing",     skills: ["SEO","Google Ads","Analytics"],   rating: 4.8, reviews: 201, rate: "₹700/hr",  avatar: "RV", color: "#34d399",  badge: "Top Rated",  loc: "Delhi" },
+  { name: "Sneha Iyer",     role: "Mobile Developer",      skills: ["Flutter","React Native","iOS"],   rating: 4.9, reviews: 67,  rate: "₹1,500/hr", avatar: "SI", color: "#f97316", badge: "Expert",     loc: "Mumbai" },
+  { name: "Karan Mehta",    role: "Video Editor",          skills: ["Premiere","After Effects","DaVinci"], rating: 4.7, reviews: 155, rate: "₹600/hr", avatar: "KM", color: "#ec4899", badge: "Popular",    loc: "Pune" },
+  { name: "Divya Pillai",   role: "Content Writer",        skills: ["Copywriting","SEO","Blogging"],   rating: 4.9, reviews: 320, rate: "₹450/hr",  avatar: "DP", color: "#fbbf24",  badge: "Top Rated",  loc: "Hyderabad" },
+];
+const StarRating = ({ rating }: { rating: number }) => (
+  <div className="flex items-center gap-0.5">
+    {[1,2,3,4,5].map(i => (
+      <Star key={i} className={`h-3 w-3 ${i <= Math.floor(rating) ? "fill-amber-400 text-amber-400" : "text-white/20"}`} />
+    ))}
+  </div>
+);
+const FeaturedFreelancersSection = () => {
+  const [hovered, setHovered] = useState<number | null>(null);
+  return (
+    <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 50% at 20% 60%, rgba(var(--t-a2-rgb),0.06) 0%, transparent 70%)" }} />
+      <div className="mx-auto max-w-7xl">
+        <Reveal className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-12">
+          <div>
+            <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
+              <Users className="h-3.5 w-3.5" /> Featured Freelancers
+            </div>
+            <h2 className="text-4xl sm:text-5xl font-black text-white mb-2">
+              Meet Our <span className="gradient-text">Top Talent</span>
+            </h2>
+            <p className="text-white/50">Verified professionals ready to bring your project to life.</p>
+          </div>
+          <Link to="/register/client" className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white/70 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+            Browse All <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Reveal>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {FEATURED_FREELANCERS.map((f, i) => (
+            <Reveal key={f.name} delay={i * 80}>
+              <MouseTiltCard intensity={8} className="h-full">
+                <div
+                  className="group h-full rounded-2xl p-5 cursor-pointer transition-all duration-300"
+                  style={{
+                    background: hovered === i ? `${f.color}08` : "rgba(255,255,255,0.04)",
+                    border: hovered === i ? `1px solid ${f.color}35` : "1px solid rgba(255,255,255,0.08)",
+                  }}
+                  onMouseEnter={() => setHovered(i)}
+                  onMouseLeave={() => setHovered(null)}
+                >
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl text-base font-black text-white" style={{ background: `linear-gradient(135deg, ${f.color}cc, ${f.color}66)` }}>
+                          {f.avatar}
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 bg-emerald-500" style={{ borderColor: "rgba(15,15,35,1)" }} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-white text-sm leading-tight">{f.name}</p>
+                        <p className="text-xs text-white/45 mt-0.5">{f.loc}</p>
+                      </div>
+                    </div>
+                    <span className="rounded-full px-2.5 py-1 text-[10px] font-bold shrink-0" style={{ background: `${f.color}18`, color: f.color, border: `1px solid ${f.color}30` }}>
+                      {f.badge}
+                    </span>
+                  </div>
+                  {/* Role */}
+                  <p className="text-sm font-semibold text-white/80 mb-3">{f.role}</p>
+                  {/* Skills */}
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {f.skills.map(skill => (
+                      <span key={skill} className="rounded-lg px-2 py-0.5 text-[10px] font-semibold text-white/55" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}>
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                  {/* Rating + rate */}
+                  <div className="flex items-center justify-between pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+                    <div className="flex items-center gap-2">
+                      <StarRating rating={f.rating} />
+                      <span className="text-xs font-bold text-amber-400">{f.rating}</span>
+                      <span className="text-[10px] text-white/30">({f.reviews})</span>
+                    </div>
+                    <span className="text-sm font-black" style={{ color: f.color }}>{f.rate}</span>
+                  </div>
+                  {/* Hire button */}
+                  <Link to="/register/client">
+                    <button
+                      className="mt-4 w-full rounded-xl py-2.5 text-sm font-semibold text-white transition-all duration-300 hover:scale-[1.02]"
+                      style={{ background: hovered === i ? `linear-gradient(135deg, ${f.color}cc, ${f.color}88)` : "rgba(255,255,255,0.06)", border: hovered === i ? "none" : "1px solid rgba(255,255,255,0.1)" }}
+                    >
+                      Hire Now
+                    </button>
+                  </Link>
+                </div>
+              </MouseTiltCard>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ─────────────────────── Live Projects Strip ─────────────────────── */
+const LIVE_PROJECTS = [
+  { title: "React Developer Needed",        budget: "₹25,000",  tag: "Development", color: "#60a5fa",  time: "2m ago",  bids: 3  },
+  { title: "Logo Design for SaaS Startup",  budget: "₹5,000",   tag: "Design",      color: "#a78bfa",  time: "5m ago",  bids: 7  },
+  { title: "SEO for E-Commerce Store",      budget: "₹12,000",  tag: "Marketing",   color: "#34d399",  time: "8m ago",  bids: 2  },
+  { title: "Flutter App — Food Delivery",   budget: "₹60,000",  tag: "Mobile",      color: "#f97316",  time: "11m ago", bids: 5  },
+  { title: "Product Video Editing",         budget: "₹8,000",   tag: "Video",       color: "#ec4899",  time: "15m ago", bids: 9  },
+  { title: "WordPress Blog Setup",          budget: "₹4,500",   tag: "Web",         color: "#fbbf24",  time: "18m ago", bids: 4  },
+  { title: "Data Analysis Dashboard",       budget: "₹20,000",  tag: "Analytics",   color: "#38bdf8",  time: "22m ago", bids: 1  },
+  { title: "Social Media Content Pack",     budget: "₹7,500",   tag: "Content",     color: "#fb923c",  time: "25m ago", bids: 6  },
+  { title: "Node.js API Development",       budget: "₹35,000",  tag: "Backend",     color: "#4ade80",  time: "30m ago", bids: 8  },
+  { title: "Brand Identity Design",         budget: "₹15,000",  tag: "Branding",    color: "#c084fc",  time: "33m ago", bids: 3  },
+];
+const LiveProjectsStrip = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 50% at 60% 50%, rgba(var(--t-a1-rgb),0.05) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-7xl">
+      <Reveal className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-12">
+        <div>
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
+            <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            Live Projects
+          </div>
+          <h2 className="text-4xl sm:text-5xl font-black text-white mb-2">
+            Browse <span className="gradient-text">Open Projects</span>
+          </h2>
+          <p className="text-white/50">Fresh projects posted by clients — bid before others do.</p>
+        </div>
+        <Link to="/register/employee" className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white/70 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+          View All Projects <ArrowRight className="h-4 w-4" />
+        </Link>
+      </Reveal>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+        {LIVE_PROJECTS.slice(0, 8).map((p, i) => (
+          <Reveal key={p.title} delay={i * 60}>
+            <Link to="/register/employee">
+              <div className="group rounded-2xl p-4 cursor-pointer transition-all duration-300 hover:translate-y-[-2px]" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <span className="rounded-lg px-2 py-0.5 text-[10px] font-bold" style={{ background: `${p.color}18`, color: p.color, border: `1px solid ${p.color}28` }}>{p.tag}</span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[10px] text-white/30">{p.time}</span>
+                  </div>
+                </div>
+                <p className="text-sm font-semibold text-white mb-3 leading-snug group-hover:text-indigo-300 transition-colors">{p.title}</p>
+                <div className="flex items-center justify-between pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                  <span className="text-base font-black" style={{ color: p.color }}>{p.budget}</span>
+                  <div className="flex items-center gap-1">
+                    <Users className="h-3 w-3 text-white/30" />
+                    <span className="text-xs text-white/40">{p.bids} bids</span>
+                  </div>
+                </div>
+                <button className="mt-3 w-full rounded-lg py-2 text-xs font-semibold text-white/60 group-hover:text-white transition-all" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  Place a Bid
+                </button>
+              </div>
+            </Link>
+          </Reveal>
+        ))}
+      </div>
+      {/* Scrolling marquee row for remaining */}
+      <div className="relative overflow-hidden rounded-2xl" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="absolute left-0 top-0 bottom-0 w-16 z-10" style={{ background: "linear-gradient(to right, var(--t-bg), transparent)" }} />
+        <div className="absolute right-0 top-0 bottom-0 w-16 z-10" style={{ background: "linear-gradient(to left, var(--t-bg), transparent)" }} />
+        <div className="flex pt-4" style={{ width: "max-content", animation: "marquee-right 30s linear infinite" }}>
+          {[...LIVE_PROJECTS, ...LIVE_PROJECTS].map((p, i) => (
+            <div key={i} className="flex shrink-0 items-center gap-2 mx-2 rounded-xl px-4 py-2.5" style={{ background: `${p.color}08`, border: `1px solid ${p.color}20` }}>
+              <div className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: p.color }} />
+              <span className="text-xs font-medium text-white/65 whitespace-nowrap">{p.title}</span>
+              <span className="text-xs font-black whitespace-nowrap" style={{ color: p.color }}>{p.budget}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
 /* ─────────────────────── Success Stories ─────────────────────── */
 const SUCCESS_STORIES = [
   {
@@ -3209,7 +3392,11 @@ const Index = () => {
         <NeonDivider />
         <HowItWorksSection />
         <NeonDivider />
+        <LiveProjectsStrip />
+        <NeonDivider />
         <ServicesSection />
+        <NeonDivider />
+        <FeaturedFreelancersSection />
         <NeonDivider />
         <WhyChooseUsSection />
         <NeonDivider />
