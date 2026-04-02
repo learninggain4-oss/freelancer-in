@@ -337,6 +337,44 @@ const GlobalStyles = () => (
     }
     /* magnetic float */
     .magnetic-btn { transition: transform 0.2s cubic-bezier(.17,.67,.34,1.4); }
+    /* cursor trail sparkle */
+    @keyframes cursor-trail {
+      0%   { opacity: 0.9; transform: translate(-50%,-50%) scale(1); }
+      100% { opacity: 0;   transform: translate(-50%,-50%) scale(0.1) translateY(-18px); }
+    }
+    /* floating skill tags */
+    @keyframes float-tag {
+      0%   { opacity: 0; transform: translateY(0px); }
+      10%  { opacity: 1; }
+      85%  { opacity: 0.9; }
+      100% { opacity: 0; transform: translateY(-170px); }
+    }
+    /* aurora blobs drift */
+    @keyframes aurora-drift {
+      0%   { transform: translate(0, 0) scale(1); }
+      30%  { transform: translate(50px, -35px) scale(1.12); }
+      65%  { transform: translate(-30px, 40px) scale(0.9); }
+      100% { transform: translate(0, 0) scale(1); }
+    }
+    /* animated gradient headline */
+    @keyframes gradient-shift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .animated-headline {
+      background: linear-gradient(270deg, #fff 0%, #a78bfa 25%, #60a5fa 50%, #f0abfc 75%, #fff 100%);
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradient-shift 6s ease-in-out infinite;
+    }
+    /* live dot pulse */
+    @keyframes live-bounce { 0%,100% { transform:scale(1); opacity:1; } 50% { transform:scale(1.5); opacity:0.6; } }
+    .live-dot-pulse { animation: live-bounce 1.4s ease-in-out infinite; }
+    /* constellation canvas fade in */
+    .constellation-canvas { animation: slide-up 1.2s ease 0.1s both; }
     ::-webkit-scrollbar { width:6px; }
     ::-webkit-scrollbar-track { background:#0f0f1a; }
     ::-webkit-scrollbar-thumb { background:#4f46e5; border-radius:3px; }
@@ -570,6 +608,157 @@ const HeroDashboard = () => (
         <span className="text-sm font-bold text-white/90">4.9</span>
       </div>
     </div>
+  </div>
+);
+
+/* ─────────────────────── Cursor Trail ─────────────────────── */
+const TRAIL_COLORS = ["#6366f1","#8b5cf6","#ec4899","#4ade80","#f472b6","#60a5fa","#fb923c","#34d399"];
+const CursorTrail = () => {
+  useEffect(() => {
+    let throttle = false;
+    let count = 0;
+    const onMove = (e: MouseEvent) => {
+      if (throttle) return;
+      throttle = true;
+      setTimeout(() => { throttle = false; }, 35);
+      count++;
+      const color = TRAIL_COLORS[count % TRAIL_COLORS.length];
+      const size = Math.random() * 7 + 4;
+      const dot = document.createElement("div");
+      Object.assign(dot.style, {
+        position: "fixed",
+        left: `${e.clientX}px`, top: `${e.clientY}px`,
+        width: `${size}px`, height: `${size}px`,
+        borderRadius: "50%",
+        background: color,
+        transform: "translate(-50%,-50%)",
+        pointerEvents: "none",
+        zIndex: "9990",
+        boxShadow: `0 0 ${size * 2}px ${color}, 0 0 ${size * 4}px ${color}50`,
+        animation: "cursor-trail 0.75s ease-out both",
+      });
+      document.body.appendChild(dot);
+      setTimeout(() => dot.remove(), 750);
+    };
+    window.addEventListener("mousemove", onMove, { passive: true });
+    return () => window.removeEventListener("mousemove", onMove);
+  }, []);
+  return null;
+};
+
+/* ─────────────────────── Constellation Canvas ─────────────────────── */
+const ConstellationCanvas = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d"); if (!ctx) return;
+    const setSize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; };
+    setSize();
+    const w = () => canvas.width, h = () => canvas.height;
+    const N = 55;
+    const dots = Array.from({ length: N }, () => ({
+      x: Math.random() * w(), y: Math.random() * h(),
+      vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35,
+      r: Math.random() * 1.6 + 0.5,
+      hue: Math.floor(Math.random() * 60) + 220,
+    }));
+    let raf: number;
+    const draw = () => {
+      ctx.clearRect(0, 0, w(), h());
+      for (let i = 0; i < N; i++) {
+        for (let j = i + 1; j < N; j++) {
+          const dx = dots[i].x - dots[j].x, dy = dots[i].y - dots[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 130) {
+            ctx.beginPath();
+            ctx.moveTo(dots[i].x, dots[i].y);
+            ctx.lineTo(dots[j].x, dots[j].y);
+            ctx.strokeStyle = `rgba(99,102,241,${0.18 * (1 - dist / 130)})`;
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+          }
+        }
+      }
+      dots.forEach(d => {
+        const grd = ctx.createRadialGradient(d.x, d.y, 0, d.x, d.y, d.r * 2.5);
+        grd.addColorStop(0, `hsla(${d.hue},80%,70%,0.9)`);
+        grd.addColorStop(1, "transparent");
+        ctx.beginPath(); ctx.arc(d.x, d.y, d.r * 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = grd; ctx.fill();
+        d.x += d.vx; d.y += d.vy;
+        if (d.x < 0 || d.x > w()) d.vx *= -1;
+        if (d.y < 0 || d.y > h()) d.vy *= -1;
+      });
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    window.addEventListener("resize", setSize);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", setSize); };
+  }, []);
+  return (
+    <canvas ref={canvasRef} className="constellation-canvas" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} />
+  );
+};
+
+/* ─────────────────────── Floating Skill Tags ─────────────────────── */
+const SKILL_TAGS = [
+  { label: "React.js",    color: "#61dafb" },
+  { label: "Figma",       color: "#f24e1e" },
+  { label: "Python",      color: "#4ade80" },
+  { label: "WordPress",   color: "#21759b" },
+  { label: "Node.js",     color: "#6ead4e" },
+  { label: "Flutter",     color: "#54c5f8" },
+  { label: "Photoshop",   color: "#31a8ff" },
+  { label: "SEO",         color: "#fbbf24" },
+  { label: "Vue.js",      color: "#42b883" },
+  { label: "UI/UX",       color: "#c4b5fd" },
+  { label: "Tailwind",    color: "#38bdf8" },
+  { label: "Android",     color: "#a4c639" },
+];
+const FloatingSkillTags = () => (
+  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 200, pointerEvents: "none", overflow: "hidden" }}>
+    {SKILL_TAGS.map((tag, i) => (
+      <div key={tag.label} style={{
+        position: "absolute",
+        bottom: 0,
+        left: `${5 + (i * 8.1) % 90}%`,
+        display: "flex", alignItems: "center", gap: 5,
+        padding: "4px 11px", borderRadius: 100,
+        background: `${tag.color}15`,
+        border: `1px solid ${tag.color}40`,
+        fontSize: 10.5, fontWeight: 700,
+        color: tag.color,
+        whiteSpace: "nowrap",
+        animation: `float-tag ${3.2 + (i * 0.53) % 2.8}s ease-in ${(i * 0.38) % 4}s both infinite`,
+      }}>
+        <span style={{ width: 5, height: 5, borderRadius: "50%", background: tag.color, flexShrink: 0 }} />
+        {tag.label}
+      </div>
+    ))}
+  </div>
+);
+
+/* ─────────────────────── Aurora Background ─────────────────────── */
+const AURORA_BLOBS = [
+  { w: 700, h: 700, top: "5%",  left: "-8%",  color: "rgba(99,102,241,0.07)",  dur: 9,  delay: 0 },
+  { w: 550, h: 550, top: "60%", right: "-6%", color: "rgba(139,92,246,0.06)",  dur: 11, delay: 2 },
+  { w: 400, h: 400, top: "35%", left: "35%",  color: "rgba(52,211,153,0.045)", dur: 13, delay: 4 },
+  { w: 350, h: 350, top: "80%", left: "15%",  color: "rgba(236,72,153,0.04)",  dur: 15, delay: 1 },
+  { w: 300, h: 300, top: "20%", right: "20%", color: "rgba(59,130,246,0.05)",  dur: 10, delay: 3 },
+];
+const AuroraBackground = () => (
+  <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
+    {AURORA_BLOBS.map((b, i) => (
+      <div key={i} style={{
+        position: "absolute",
+        width: b.w, height: b.h,
+        top: b.top, left: (b as any).left, right: (b as any).right,
+        borderRadius: "50%",
+        background: `radial-gradient(circle, ${b.color} 0%, transparent 70%)`,
+        animation: `aurora-drift ${b.dur}s ease-in-out ${b.delay}s infinite`,
+        filter: "blur(40px)",
+      }} />
+    ))}
   </div>
 );
 
@@ -1010,7 +1199,9 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
   <section className="relative overflow-hidden py-20 md:py-28 lg:py-36 px-4 sm:px-6">
     <Orbs />
     <ParticleField />
+    <ConstellationCanvas />
     <MouseGlowEffect />
+    <FloatingSkillTags />
 
     {/* Grid lines */}
     <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
@@ -1023,16 +1214,16 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
           <div className="mb-5 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-white/80" style={{ background: "rgba(var(--t-a1-rgb),0.15)", border: "1px solid rgba(var(--t-a1-rgb),0.3)", position: "relative" }}>
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" style={{ animation: "glow-ping 1.5s ease-out infinite" }} />
-              <span className="relative h-2 w-2 rounded-full bg-emerald-400" />
+              <span className="relative h-2 w-2 rounded-full bg-emerald-400 live-dot-pulse" />
             </span>
             {t.hero.trustBadge}
           </div>
 
-          {/* Headline with typewriter */}
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight text-white mb-6" style={{ animation: "slide-up 0.7s ease 0.1s both" }}>
-            {t.hero.line1}{" "}
+          {/* Headline with typewriter + animated gradient */}
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight mb-6" style={{ animation: "slide-up 0.7s ease 0.1s both" }}>
+            <span className="animated-headline">{t.hero.line1}</span>
             <br />
-            {t.hero.line2}{" "}
+            <span className="animated-headline" style={{ animationDelay: "1s" }}>{t.hero.line2}</span>
             <br />
             <TypewriterText />
           </h1>
@@ -1592,7 +1783,9 @@ const Index = () => {
     <LangContext.Provider value={{ lang, setLang: handleLangChange, t: translations[lang] }}>
     <div className="min-h-screen flex flex-col" dir={isRTL ? "rtl" : "ltr"} style={{ ...cssVars, background: "var(--t-bg)", color: "white" }}>
       <GlobalStyles />
+      <AuroraBackground />
       <ScrollProgressBar />
+      <CursorTrail />
 
       <Navbar deferredPrompt={deferredPrompt} isInstalled={isInstalled} isIOS={isIOS} onInstall={handleInstall} onIOSTip={() => setShowIOSTip(v => !v)} activeTheme={themeId} onThemeChange={handleThemeChange} />
 
