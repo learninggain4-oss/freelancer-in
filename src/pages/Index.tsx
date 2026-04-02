@@ -9,6 +9,8 @@ import {
   Zap, Lock, Clock, Plus, Minus, Twitter, Linkedin, Instagram, Github,
   MapPin, Mail, Phone, Bell,
   Calculator, Play, Gift, Share2, Wallet, BadgeCheck, X,
+  Award, Trophy, Eye, Scale, Receipt, Building, Layers as LayersIcon,
+  UserCheck, FileCheck, AlertTriangle, Smartphone as SmartphoneIcon2,
 } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -3403,6 +3405,591 @@ const LiveSupportSection = () => (
   </section>
 );
 
+/* ─────────────────────── Live Activity Toast ─────────────────────── */
+const LIVE_ACTIVITIES = [
+  { name: "Arjun K.", city: "Kochi",     action: "completed a ₹38,000 React project",      icon: "💻", time: "just now"  },
+  { name: "Priya S.", city: "Mumbai",    action: "was hired for ₹12,000 logo design",       icon: "🎨", time: "1 min ago" },
+  { name: "Rahul M.", city: "Bangalore", action: "earned ₹55,000 this month",               icon: "💰", time: "2 min ago" },
+  { name: "Sneha R.", city: "Delhi",     action: "received a 5★ review on content project", icon: "⭐", time: "3 min ago" },
+  { name: "Vikas T.", city: "Pune",      action: "won a ₹20,000 marketing contract",        icon: "📣", time: "4 min ago" },
+  { name: "Meera N.", city: "Chennai",   action: "got verified badge for UI/UX Design",     icon: "✅", time: "5 min ago" },
+  { name: "Arun P.",  city: "Hyderabad", action: "completed ₹78,000 Flutter app",           icon: "📱", time: "6 min ago" },
+  { name: "Divya L.", city: "Kolkata",   action: "placed a winning bid on SEO project",     icon: "🔍", time: "7 min ago" },
+];
+const LiveActivityToast = () => {
+  const [current, setCurrent] = useState(0);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const show = () => {
+      setVisible(true);
+      setTimeout(() => setVisible(false), 4200);
+    };
+    show();
+    const interval = setInterval(() => {
+      setCurrent(c => (c + 1) % LIVE_ACTIVITIES.length);
+      show();
+    }, 6000);
+    return () => clearInterval(interval);
+  }, []);
+  const a = LIVE_ACTIVITIES[current];
+  return (
+    <div className="pointer-events-none fixed bottom-6 left-4 z-40 max-w-xs transition-all duration-500" style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(16px)" }}>
+      <div className="rounded-2xl px-4 py-3 shadow-2xl" style={{ background: "rgba(12,10,28,0.95)", border: "1px solid rgba(var(--t-a1-rgb),0.3)", backdropFilter: "blur(16px)" }}>
+        <div className="flex items-start gap-3">
+          <span className="text-xl shrink-0 mt-0.5">{a.icon}</span>
+          <div>
+            <p className="text-xs font-bold text-white leading-snug">
+              <span style={{ color: "var(--t-a1)" }}>{a.name}</span> from {a.city}
+            </p>
+            <p className="text-xs text-white/55 leading-snug">{a.action}</p>
+            <p className="text-[10px] text-white/30 mt-0.5 flex items-center gap-1">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" /> {a.time}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────────────── Client Logos / Companies Hiring ─────────────────────── */
+const COMPANIES = [
+  { name: "TechCraft",     sector: "Software",    bg: "#6366f1", abbr: "TC" },
+  { name: "GrowthBox",     sector: "Marketing",   bg: "#ec4899", abbr: "GB" },
+  { name: "DesignMint",    sector: "Creative",    bg: "#14b8a6", abbr: "DM" },
+  { name: "DataPeak",      sector: "Analytics",   bg: "#f59e0b", abbr: "DP" },
+  { name: "NexaBuild",     sector: "Construction",bg: "#ef4444", abbr: "NB" },
+  { name: "CloudNest",     sector: "SaaS",        bg: "#3b82f6", abbr: "CN" },
+  { name: "MediaBridge",   sector: "Media",       bg: "#8b5cf6", abbr: "MB" },
+  { name: "FinFlow",       sector: "Fintech",     bg: "#22c55e", abbr: "FF" },
+  { name: "ShopRapid",     sector: "E-commerce",  bg: "#f97316", abbr: "SR" },
+  { name: "EduNova",       sector: "EdTech",      bg: "#06b6d4", abbr: "EN" },
+  { name: "HealthSync",    sector: "HealthTech",  bg: "#84cc16", abbr: "HS" },
+  { name: "LogiTrak",      sector: "Logistics",   bg: "#a855f7", abbr: "LT" },
+];
+const ClientLogosSection = () => (
+  <section className="relative py-16 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 50% at 50% 50%, rgba(var(--t-a2-rgb),0.05) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-6xl">
+      <Reveal className="text-center mb-10">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
+          <Building className="h-3.5 w-3.5" /> Companies Hiring
+        </div>
+        <h2 className="text-3xl sm:text-4xl font-black text-white mb-3">
+          Trusted by <span className="gradient-text">500+ Businesses</span>
+        </h2>
+        <p className="text-white/45 text-sm max-w-sm mx-auto">Startups, SMEs, and enterprises across India find top talent here every day.</p>
+      </Reveal>
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+        {COMPANIES.map((c, i) => (
+          <Reveal key={c.name} delay={i * 45}>
+            <div className="group flex flex-col items-center gap-2 rounded-2xl p-4 cursor-default transition-all duration-300 hover:scale-105 hover:border-white/15" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl text-[11px] font-black text-white shadow-lg" style={{ background: c.bg }}>
+                {c.abbr}
+              </div>
+              <p className="text-[10px] font-bold text-white/55 text-center leading-tight">{c.name}</p>
+              <p className="text-[9px] text-white/25 text-center">{c.sector}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+      <Reveal className="mt-8 flex flex-wrap justify-center gap-6 text-center">
+        {[["500+","Businesses"],["12","Industries"],["₹5Cr+","Paid out"],["4.9★","Client Rating"]].map(([v, l]) => (
+          <div key={l}><div className="text-xl font-black" style={{ color: "var(--t-a1)" }}>{v}</div><div className="text-xs text-white/35">{l}</div></div>
+        ))}
+      </Reveal>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── GST & Tax Tools ─────────────────────── */
+const GST_TOOLS = [
+  { icon: Receipt,   title: "Auto GST Invoice",   desc: "Generate professional GST-compliant invoices instantly for every project, with GSTIN validation.", badge: "18% GST handled" },
+  { icon: FileCheck, title: "TDS Certificate",    desc: "Download TDS certificates (Form 16A) for your earnings. We handle 194J deduction automatically.", badge: "194J Compliant" },
+  { icon: FileText,  title: "Form 26AS Ready",    desc: "Your earnings are reflected correctly in Form 26AS for hassle-free ITR filing every year.", badge: "ITR Ready" },
+  { icon: Calculator,title: "Tax Estimator",      desc: "Know your tax liability before filing. Estimate advance tax and plan your quarterly payments.", badge: "Save ₹10,000+ in tax" },
+  { icon: Shield,    title: "Escrow-Protected",   desc: "All payments pass through RBI-compliant escrow. 100% traceable, auditable transactions.", badge: "RBI Compliant" },
+  { icon: Award,     title: "CA Expert Access",   desc: "Connect with verified CAs for ITR filing, GST registration, and freelance tax advisory.", badge: "Expert Help" },
+];
+const GSTToolsSection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 50% at 70% 30%, rgba(52,211,153,0.07) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-6xl">
+      <Reveal className="text-center mb-14">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.22)" }}>
+          <Receipt className="h-3.5 w-3.5" /> GST & Tax Tools
+        </div>
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+          Tax Made <span className="gradient-text">Effortless</span>
+        </h2>
+        <p className="text-white/50 max-w-lg mx-auto">The only Indian freelance platform with built-in GST invoicing, TDS management, and ITR-ready reports. No CA needed for basics.</p>
+      </Reveal>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {GST_TOOLS.map((t, i) => (
+          <Reveal key={t.title} delay={i * 70}>
+            <div className="group h-full rounded-2xl p-5 transition-all duration-300 hover:scale-[1.02]" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex items-start gap-3 mb-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: "linear-gradient(135deg, rgba(52,211,153,0.2), rgba(var(--t-a1-rgb),0.2))" }}>
+                  <t.icon className="h-5 w-5 text-emerald-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-bold text-white mb-0.5">{t.title}</h3>
+                  <span className="inline-block rounded-full px-2 py-0.5 text-[9px] font-bold text-emerald-400" style={{ background: "rgba(52,211,153,0.12)", border: "1px solid rgba(52,211,153,0.2)" }}>{t.badge}</span>
+                </div>
+              </div>
+              <p className="text-xs text-white/50 leading-relaxed">{t.desc}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+      <Reveal className="mt-10 rounded-3xl p-6 text-center" style={{ background: "linear-gradient(135deg, rgba(52,211,153,0.08), rgba(var(--t-a1-rgb),0.08))", border: "1px solid rgba(52,211,153,0.2)" }}>
+        <p className="text-sm font-semibold text-white mb-1">No other Indian freelance platform does this.</p>
+        <p className="text-xs text-white/45 mb-4">Upwork, Fiverr, and Freelancer.com don't support Indian GST invoicing or TDS compliance. We do.</p>
+        <Link to="/register/employee">
+          <button className="inline-flex items-center gap-2 rounded-2xl px-6 py-2.5 text-sm font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg, #34d399, rgba(var(--t-a1-rgb),0.8))" }}>
+            Start Filing Smarter →
+          </button>
+        </Link>
+      </Reveal>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── Freelancer Career Path ─────────────────────── */
+const CAREER_STAGES = [
+  { level: "Starter",    icon: "🌱", months: "0–3 months",  earnings: "₹5K–15K/mo",  color: "#6366f1", badge: "0 reviews needed",
+    perks: ["Profile setup", "First 5 bids free", "Basic support", "Community access"] },
+  { level: "Rising",     icon: "📈", months: "3–9 months",  earnings: "₹15K–35K/mo", color: "#3b82f6", badge: "5+ reviews",
+    perks: ["Priority listing", "Featured in search", "Dedicated chat", "Skill badge"] },
+  { level: "Expert",     icon: "⚡", months: "9–18 months", earnings: "₹35K–80K/mo", color: "#f59e0b", badge: "Verified Expert",
+    perks: ["Top search rank", "Client invitations", "Lower commission", "Expert badge"] },
+  { level: "Top Rated",  icon: "🏆", months: "18+ months",  earnings: "₹80K–2L+/mo", color: "#ec4899", badge: "Top Rated Pro",
+    perks: ["Featured homepage", "Premium clients only", "5% commission", "Personal manager"] },
+];
+const CareerPathSection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 60% at 20% 50%, rgba(var(--t-a1-rgb),0.06) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-6xl">
+      <Reveal className="text-center mb-14">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-amber-300" style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.22)" }}>
+          <Trophy className="h-3.5 w-3.5" /> Career Progression
+        </div>
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+          Your Path to <span className="gradient-text">Top Rated</span>
+        </h2>
+        <p className="text-white/50 max-w-md mx-auto">Every expert started as a Starter. Here's how freelancers grow on our platform, step by step.</p>
+      </Reveal>
+      {/* Timeline */}
+      <div className="relative">
+        {/* Connecting line */}
+        <div className="absolute left-1/2 top-8 bottom-8 w-px hidden lg:block" style={{ background: "linear-gradient(to bottom, rgba(var(--t-a1-rgb),0.3), rgba(251,191,36,0.3), rgba(236,72,153,0.3))" }} />
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-4">
+          {CAREER_STAGES.map((stage, i) => (
+            <Reveal key={stage.level} delay={i * 100}>
+              <div className="relative rounded-3xl p-5 h-full flex flex-col" style={{ background: `${stage.color}0d`, border: `1px solid ${stage.color}30` }}>
+                {/* Step badge */}
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 lg:static lg:translate-x-0 lg:mb-3 inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-black text-white" style={{ background: stage.color }}>
+                  {i + 1}
+                </div>
+                <div className="text-center pt-4 lg:pt-0 mb-4">
+                  <div className="text-3xl mb-2">{stage.icon}</div>
+                  <h3 className="text-base font-black text-white">{stage.level}</h3>
+                  <p className="text-xs text-white/40 mb-1">{stage.months}</p>
+                  <div className="text-lg font-black" style={{ color: stage.color }}>{stage.earnings}</div>
+                  <span className="inline-block mt-1 rounded-full px-2 py-0.5 text-[9px] font-bold text-white" style={{ background: `${stage.color}30`, color: stage.color }}>{stage.badge}</span>
+                </div>
+                <ul className="space-y-1.5 flex-1">
+                  {stage.perks.map(p => (
+                    <li key={p} className="flex items-center gap-2 text-xs text-white/55">
+                      <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: stage.color }} />
+                      {p}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+      <Reveal className="mt-10 text-center">
+        <Link to="/register/employee">
+          <button className="inline-flex items-center gap-2 rounded-2xl px-8 py-3.5 text-sm font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 24px rgba(var(--t-a1-rgb),0.3)" }}>
+            Start Your Journey Today →
+          </button>
+        </Link>
+      </Reveal>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── Security Features ─────────────────────── */
+const SECURITY_FEATURES = [
+  { icon: Shield,       title: "Two-Factor Auth (2FA)",      desc: "Protect your account with OTP via SMS or authenticator app. Mandatory for withdrawals.", color: "#6366f1" },
+  { icon: Eye,          title: "Real-time Fraud Detection",   desc: "AI-powered system monitors every transaction and bid for suspicious activity 24/7.", color: "#ec4899" },
+  { icon: MapPin,       title: "IP & Location Monitoring",    desc: "Receive instant alerts if your account is accessed from a new device or location.", color: "#f59e0b" },
+  { icon: Bell,         title: "Instant Security Alerts",     desc: "Push/email notifications for login attempts, password changes, and withdrawals.", color: "#34d399" },
+  { icon: Lock,         title: "256-bit SSL Encryption",      desc: "All data is encrypted in transit and at rest. PCI DSS compliant payment processing.", color: "#3b82f6" },
+  { icon: UserCheck,    title: "ID Verification (KYC)",       desc: "Aadhaar/PAN-based identity verification prevents fake accounts and fraud.", color: "#a855f7" },
+];
+const SecurityFeaturesSection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 50% at 80% 60%, rgba(99,102,241,0.06) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-6xl">
+      <Reveal className="text-center mb-14">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
+          <Shield className="h-3.5 w-3.5" /> Enterprise Security
+        </div>
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+          Your Security, <span className="gradient-text">Our Priority</span>
+        </h2>
+        <p className="text-white/50 max-w-md mx-auto">Bank-grade security protecting every account, every transaction, every moment.</p>
+      </Reveal>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {SECURITY_FEATURES.map((f, i) => (
+          <Reveal key={f.title} delay={i * 70}>
+            <div className="group h-full rounded-2xl p-5 transition-all duration-300 hover:scale-[1.02]" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl mb-4" style={{ background: `${f.color}18` }}>
+                <f.icon className="h-5 w-5" style={{ color: f.color }} />
+              </div>
+              <h3 className="text-sm font-bold text-white mb-1.5">{f.title}</h3>
+              <p className="text-xs text-white/50 leading-relaxed">{f.desc}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+      <Reveal className="mt-8 flex flex-wrap justify-center gap-4">
+        {["RBI Registered","PCI DSS Level 1","ISO 27001","GDPR Compliant","DPDP Act 2023"].map(badge => (
+          <span key={badge} className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold text-emerald-300" style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)" }}>
+            <CheckCircle className="h-3 w-3" /> {badge}
+          </span>
+        ))}
+      </Reveal>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── Salary vs Freelancing Calculator ─────────────────────── */
+const SalaryCalcSection = () => {
+  const [salary, setSalary] = useState(40000);
+  const SKILL_MULT: Record<string, number> = { "Developer": 2.4, "Designer": 2.0, "Writer": 1.6, "Marketer": 1.8, "Data Analyst": 2.2, "Video Editor": 1.7 };
+  const [skill, setSkill] = useState("Developer");
+  const mult = SKILL_MULT[skill] ?? 2.0;
+  const freelancePotential = Math.round(salary * mult);
+  const extraPerMonth = freelancePotential - salary;
+  const extraPerYear = extraPerMonth * 12;
+  return (
+    <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(var(--t-a2-rgb),0.07) 0%, transparent 70%)" }} />
+      <div className="mx-auto max-w-5xl">
+        <Reveal className="text-center mb-12">
+          <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-pink-300" style={{ background: "rgba(236,72,153,0.1)", border: "1px solid rgba(236,72,153,0.22)" }}>
+            <TrendingUp className="h-3.5 w-3.5" /> Income Comparison
+          </div>
+          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+            Office Job vs <span className="gradient-text">Freelancing</span>
+          </h2>
+          <p className="text-white/50 max-w-md mx-auto">See how much more you could earn as a freelancer compared to your current salary.</p>
+        </Reveal>
+        <div className="grid lg:grid-cols-2 gap-8 items-start">
+          {/* Input */}
+          <Reveal>
+            <div className="rounded-3xl p-6 space-y-6" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div>
+                <div className="flex justify-between mb-2">
+                  <label className="text-xs font-semibold text-white/50 uppercase tracking-widest">Current Monthly Salary</label>
+                  <span className="text-sm font-black" style={{ color: "var(--t-a1)" }}>₹{salary.toLocaleString("en-IN")}</span>
+                </div>
+                <input type="range" min={10000} max={200000} step={5000} value={salary} onChange={e => setSalary(+e.target.value)} className="w-full accent-indigo-500 cursor-pointer" />
+                <div className="flex justify-between text-[10px] text-white/25 mt-1"><span>₹10K</span><span>₹1L</span><span>₹2L</span></div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/50 uppercase tracking-widest mb-2">Your Skill Area</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {Object.keys(SKILL_MULT).map(s => (
+                    <button key={s} onClick={() => setSkill(s)} className="rounded-xl px-2 py-2 text-xs font-semibold transition-all" style={{ background: skill === s ? "rgba(var(--t-a1-rgb),0.2)" : "rgba(255,255,255,0.05)", border: skill === s ? "1px solid rgba(var(--t-a1-rgb),0.4)" : "1px solid rgba(255,255,255,0.08)", color: skill === s ? "var(--t-a1)" : "rgba(255,255,255,0.5)" }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Reveal>
+          {/* Result */}
+          <Reveal direction="right">
+            <div className="rounded-3xl p-6 space-y-4" style={{ background: "linear-gradient(135deg, rgba(236,72,153,0.1), rgba(var(--t-a2-rgb),0.15))", border: "1px solid rgba(236,72,153,0.25)" }}>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl p-4 text-center" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  <p className="text-[10px] text-white/40 mb-1 uppercase tracking-wide">Office Salary</p>
+                  <p className="text-2xl font-black text-white/60">₹{salary.toLocaleString("en-IN")}</p>
+                  <p className="text-[10px] text-white/30">per month</p>
+                </div>
+                <div className="rounded-2xl p-4 text-center" style={{ background: "rgba(236,72,153,0.1)", border: "1px solid rgba(236,72,153,0.3)" }}>
+                  <p className="text-[10px] text-white/40 mb-1 uppercase tracking-wide">Freelancing</p>
+                  <p className="text-2xl font-black text-pink-400">₹{freelancePotential.toLocaleString("en-IN")}</p>
+                  <p className="text-[10px] text-white/30">per month</p>
+                </div>
+              </div>
+              <div className="rounded-2xl p-4 text-center" style={{ background: "linear-gradient(135deg, rgba(236,72,153,0.15), rgba(var(--t-a1-rgb),0.15))", border: "1px solid rgba(236,72,153,0.3)" }}>
+                <p className="text-xs text-white/50 mb-1">You could earn EXTRA</p>
+                <p className="text-4xl font-black text-pink-400">₹{extraPerMonth.toLocaleString("en-IN")}</p>
+                <p className="text-xs text-white/40 mt-0.5">per month · <span className="text-amber-400 font-bold">₹{(extraPerYear/100000).toFixed(1)}L extra per year</span></p>
+              </div>
+              <p className="text-[10px] text-white/30 text-center">Based on average freelancer earnings in your skill category. Actual results vary.</p>
+              <Link to="/register/employee">
+                <button className="w-full rounded-2xl py-3 text-sm font-semibold text-white transition-all hover:scale-[1.02]" style={{ background: "linear-gradient(135deg, #ec4899, var(--t-a2))", boxShadow: "0 0 24px rgba(236,72,153,0.3)" }}>
+                  Start Freelancing →
+                </button>
+              </Link>
+            </div>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ─────────────────────── Community Section ─────────────────────── */
+const COMMUNITY_STATS = [
+  { icon: Users,         stat: "25,000+", label: "Community Members",  color: "#6366f1" },
+  { icon: MessageCircle, stat: "500+",    label: "Daily Discussions",  color: "#ec4899" },
+  { icon: BookOpen,      stat: "120+",    label: "Skill Groups",       color: "#f59e0b" },
+  { icon: Star,          stat: "48",      label: "Live Webinars/Month",color: "#34d399" },
+];
+const SKILL_GROUPS = ["Flutter Devs India", "React & Next.js", "UI/UX Kerala", "Content Writers Hub", "Digital Marketing India", "Data Science Club", "Freelance Finance", "Women in Freelancing", "Malayalam Tech", "Video Creators"];
+const CommunitySection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 50% at 30% 60%, rgba(var(--t-a1-rgb),0.06) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-6xl">
+      <Reveal className="text-center mb-12">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
+          <Users className="h-3.5 w-3.5" /> Community
+        </div>
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+          You're Never <span className="gradient-text">Alone</span>
+        </h2>
+        <p className="text-white/50 max-w-md mx-auto">Join 25,000+ Indian freelancers in our community — forums, skill groups, live webinars, and local meetups.</p>
+      </Reveal>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        {COMMUNITY_STATS.map((s, i) => (
+          <Reveal key={s.label} delay={i * 70}>
+            <div className="rounded-2xl p-5 text-center" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl" style={{ background: `${s.color}18` }}>
+                <s.icon className="h-5 w-5" style={{ color: s.color }} />
+              </div>
+              <div className="text-2xl font-black mb-0.5" style={{ color: s.color }}>{s.stat}</div>
+              <p className="text-xs text-white/45">{s.label}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+      {/* Skill groups */}
+      <Reveal>
+        <div className="rounded-3xl p-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <p className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-4">Popular Skill Groups</p>
+          <div className="flex flex-wrap gap-2">
+            {SKILL_GROUPS.map((g, i) => (
+              <span key={g} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold cursor-default hover:scale-105 transition-transform" style={{ background: `hsla(${(i * 35) % 360}, 60%, 55%, 0.12)`, border: `1px solid hsla(${(i * 35) % 360}, 60%, 55%, 0.25)`, color: `hsla(${(i * 35) % 360}, 80%, 75%, 1)` }}>
+                <Users className="h-3 w-3" /> {g}
+              </span>
+            ))}
+          </div>
+        </div>
+      </Reveal>
+      <Reveal className="mt-6 grid sm:grid-cols-2 gap-4">
+        {[
+          { title: "Weekly Webinars", desc: "Live sessions on freelancing tips, tax, pricing, and portfolio building.", cta: "Join Next Webinar", color: "#6366f1" },
+          { title: "Local Meetups",   desc: "In-person meetups in Kerala, Mumbai, Bangalore, Delhi, and more cities.", cta: "Find Your City",   color: "#ec4899" },
+        ].map(c => (
+          <div key={c.title} className="rounded-2xl p-5 flex items-center gap-4" style={{ background: `${c.color}0d`, border: `1px solid ${c.color}25` }}>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-white mb-1">{c.title}</h3>
+              <p className="text-xs text-white/45 leading-relaxed">{c.desc}</p>
+            </div>
+            <Link to="/register/employee">
+              <button className="shrink-0 rounded-xl px-4 py-2 text-xs font-bold text-white whitespace-nowrap" style={{ background: c.color }}>
+                {c.cta}
+              </button>
+            </Link>
+          </div>
+        ))}
+      </Reveal>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── Client Onboarding Section ─────────────────────── */
+const CLIENT_STEPS = [
+  { step: "01", icon: FileText,  title: "Post Your Project",    desc: "Describe your project, set your budget and deadline. It takes under 3 minutes.", color: "#6366f1" },
+  { step: "02", icon: Users,     title: "Review Proposals",     desc: "Receive bids from verified freelancers within hours. Browse profiles, portfolios, and ratings.", color: "#3b82f6" },
+  { step: "03", icon: UserCheck, title: "Hire & Collaborate",   desc: "Chat, share files, set milestones, and track progress — all inside the platform.", color: "#f59e0b" },
+  { step: "04", icon: Wallet,    title: "Pay When Satisfied",   desc: "Release payment only after you're happy. Escrow protects your money throughout.", color: "#34d399" },
+];
+const CLIENT_BENEFITS = [
+  "No payment until work is approved", "Verified freelancers only",
+  "Dedicated account manager for ₹50K+ projects", "Free dispute resolution",
+  "GST invoice for every payment", "24/7 client support in your language",
+];
+const ClientOnboardingSection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 0%, rgba(var(--t-a1-rgb),0.06) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-6xl">
+      <Reveal className="text-center mb-14">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-blue-300" style={{ background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.25)" }}>
+          <Building className="h-3.5 w-3.5" /> For Clients
+        </div>
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+          Hire Top Talent <span className="gradient-text">in Hours</span>
+        </h2>
+        <p className="text-white/50 max-w-md mx-auto">Post a project for free. Get proposals from verified Indian freelancers. Pay only when you're satisfied.</p>
+      </Reveal>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+        {CLIENT_STEPS.map((s, i) => (
+          <Reveal key={s.step} delay={i * 90}>
+            <div className="relative h-full rounded-2xl p-5 flex flex-col" style={{ background: `${s.color}0d`, border: `1px solid ${s.color}25` }}>
+              <div className="text-4xl font-black mb-3 opacity-15" style={{ color: s.color }}>{s.step}</div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl mb-3" style={{ background: `${s.color}20` }}>
+                <s.icon className="h-5 w-5" style={{ color: s.color }} />
+              </div>
+              <h3 className="text-sm font-bold text-white mb-2">{s.title}</h3>
+              <p className="text-xs text-white/50 leading-relaxed flex-1">{s.desc}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+      <Reveal>
+        <div className="rounded-3xl p-6 md:p-8" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="grid md:grid-cols-2 gap-6 items-center">
+            <div>
+              <h3 className="text-xl font-black text-white mb-4">Why Clients Choose Us</h3>
+              <ul className="space-y-2.5">
+                {CLIENT_BENEFITS.map(b => (
+                  <li key={b} className="flex items-center gap-2.5 text-sm text-white/65">
+                    <CheckCircle className="h-4 w-4 shrink-0 text-emerald-400" /> {b}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="text-center">
+              <div className="text-5xl font-black mb-2 gradient-text">₹0</div>
+              <p className="text-white font-bold mb-1">Free to Post a Project</p>
+              <p className="text-white/45 text-sm mb-5">No subscription. No listing fee. Pay only when you hire.</p>
+              <Link to="/register/employer">
+                <button className="w-full rounded-2xl py-3.5 text-sm font-semibold text-white transition-all hover:scale-[1.02]" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 24px rgba(var(--t-a1-rgb),0.3)" }}>
+                  Post a Project Free →
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </Reveal>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── Legal Contract Templates ─────────────────────── */
+const CONTRACT_TYPES = [
+  { name: "Freelance Service Agreement", icon: FileText, desc: "Standard contract for any freelance project. Covers scope, payment, and IP rights." },
+  { name: "Fixed-Price Project Contract", icon: FileCheck, desc: "Clear deliverables, milestones, and payment terms for one-time projects." },
+  { name: "Retainer Agreement",          icon: Clock,     desc: "Ongoing work contract with monthly billing and defined hours/deliverables." },
+  { name: "NDA / Confidentiality",       icon: Lock,      desc: "Protect client data and project details with a legally valid NDA template." },
+  { name: "IP Transfer Agreement",       icon: Scale,     desc: "Clearly transfer intellectual property rights from freelancer to client." },
+  { name: "Dispute Resolution Clause",   icon: Shield,    desc: "Add a binding arbitration clause to any contract for faster dispute resolution." },
+];
+const LegalContractsSection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 50% at 20% 40%, rgba(var(--t-a2-rgb),0.05) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-6xl">
+      <Reveal className="text-center mb-12">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-purple-300" style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.22)" }}>
+          <Scale className="h-3.5 w-3.5" /> Legal Protection
+        </div>
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+          Free Contract <span className="gradient-text">Templates</span>
+        </h2>
+        <p className="text-white/50 max-w-md mx-auto">Legally-vetted contract templates for every project type — drafted by Indian IP lawyers, free for all members.</p>
+      </Reveal>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        {CONTRACT_TYPES.map((c, i) => (
+          <Reveal key={c.name} delay={i * 60}>
+            <div className="group h-full rounded-2xl p-5 transition-all hover:scale-[1.02] cursor-default" style={{ background: "rgba(168,85,247,0.05)", border: "1px solid rgba(168,85,247,0.12)" }}>
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ background: "rgba(168,85,247,0.15)" }}>
+                  <c.icon className="h-4 w-4 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-white mb-1 leading-snug">{c.name}</h3>
+                  <p className="text-[11px] text-white/45 leading-relaxed">{c.desc}</p>
+                </div>
+              </div>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+      <Reveal className="rounded-3xl p-6 text-center" style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.1), rgba(var(--t-a1-rgb),0.1))", border: "1px solid rgba(168,85,247,0.2)" }}>
+        <p className="text-sm font-semibold text-white mb-2">All templates are free for registered members. Auto-filled with project details.</p>
+        <p className="text-xs text-white/40 mb-4">Compliant with Indian Contract Act 1872 · IT Act 2000 · DPDP Act 2023</p>
+        <Link to="/register/employee">
+          <button className="inline-flex items-center gap-2 rounded-2xl px-6 py-2.5 text-sm font-semibold text-white hover:scale-105 transition-all" style={{ background: "linear-gradient(135deg, #a855f7, var(--t-a1))" }}>
+            Access Templates Free →
+          </button>
+        </Link>
+      </Reveal>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── Escrow Flow Visual ─────────────────────── */
+const ESCROW_STEPS = [
+  { icon: FileText, label: "Project Agreed",  desc: "Client and freelancer agree on scope, timeline, and price.", color: "#6366f1", arrow: true  },
+  { icon: Lock,     label: "Client Deposits", desc: "Client funds the escrow wallet. Money is secure, not yet released.", color: "#3b82f6", arrow: true  },
+  { icon: Code,     label: "Work Delivered",  desc: "Freelancer completes work and submits for client review.", color: "#f59e0b", arrow: true  },
+  { icon: CheckCircle, label: "Client Approves", desc: "Client reviews and approves. Only then is payment released.", color: "#34d399", arrow: true  },
+  { icon: Wallet,   label: "You Get Paid",   desc: "Funds instantly credited to freelancer wallet. Withdraw anytime.", color: "#ec4899", arrow: false },
+];
+const EscrowFlowSection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 50% at 50% 100%, rgba(52,211,153,0.06) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-6xl">
+      <Reveal className="text-center mb-14">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.22)" }}>
+          <Lock className="h-3.5 w-3.5" /> Escrow Protection
+        </div>
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+          How Escrow <span className="gradient-text">Protects You</span>
+        </h2>
+        <p className="text-white/50 max-w-md mx-auto">Your money is never lost. Our escrow system holds payment safely until work is approved — guaranteed.</p>
+      </Reveal>
+      {/* Horizontal flow */}
+      <div className="relative flex flex-col lg:flex-row gap-4 lg:gap-0 items-stretch">
+        {ESCROW_STEPS.map((step, i) => (
+          <div key={step.label} className="relative flex lg:flex-col items-start lg:items-center gap-4 lg:gap-0 flex-1">
+            <Reveal delay={i * 90} className="w-full">
+              <div className="flex flex-col items-center text-center p-5 rounded-2xl h-full" style={{ background: `${step.color}0d`, border: `1px solid ${step.color}25` }}>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full mb-3 shadow-lg" style={{ background: `linear-gradient(135deg, ${step.color}40, ${step.color}20)`, boxShadow: `0 0 20px ${step.color}25` }}>
+                  <step.icon className="h-5 w-5" style={{ color: step.color }} />
+                </div>
+                <p className="text-xs font-black text-white mb-1">{step.label}</p>
+                <p className="text-[10px] text-white/45 leading-relaxed">{step.desc}</p>
+              </div>
+            </Reveal>
+            {/* Arrow connector */}
+            {step.arrow && (
+              <div className="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 h-6 w-6 items-center justify-center rounded-full text-white text-xs font-black" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+                →
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <Reveal className="mt-10 flex flex-wrap justify-center gap-6 text-center">
+        {[["₹0","Lost to fraud (ever)"],["100%","Escrow success rate"],["48hr","Dispute resolution"],["RBI","Compliant escrow"]].map(([v, l]) => (
+          <div key={l}><div className="text-xl font-black mb-0.5 text-emerald-400">{v}</div><div className="text-xs text-white/40">{l}</div></div>
+        ))}
+      </Reveal>
+    </div>
+  </section>
+);
+
 /* ─────────────────────── CTA Section ─────────────────────── */
 const CTASection = () => {
   const { t } = useLang();
@@ -3912,6 +4499,8 @@ const Index = () => {
         <OfferBanner onDismiss={() => { setOfferDismissed(true); localStorage.setItem("fi-offer-dismissed", "1"); }} />
       )}
 
+      <LiveActivityToast />
+
       <Navbar deferredPrompt={deferredPrompt} isInstalled={isInstalled} isIOS={isIOS} onInstall={handleInstall} onIOSTip={() => setShowIOSTip(v => !v)} activeTheme={themeId} onThemeChange={handleThemeChange} />
 
       {/* PWA Install Guide Modal */}
@@ -4000,6 +4589,8 @@ const Index = () => {
         <TrustBar />
         <AsSeenInSection />
         <NeonDivider />
+        <ClientLogosSection />
+        <NeonDivider />
         <FeaturesSection />
         <NeonDivider />
         <PaymentPartnersStrip />
@@ -4008,11 +4599,17 @@ const Index = () => {
         <NeonDivider />
         <HowItWorksSection />
         <NeonDivider />
+        <ClientOnboardingSection />
+        <NeonDivider />
         <LiveProjectsStrip />
         <NeonDivider />
         <ServicesSection />
         <NeonDivider />
         <EarningsCalculatorSection />
+        <NeonDivider />
+        <SalaryCalcSection />
+        <NeonDivider />
+        <CareerPathSection />
         <NeonDivider />
         <FeaturedFreelancersSection />
         <NeonDivider />
@@ -4021,6 +4618,14 @@ const Index = () => {
         <PricingSection />
         <NeonDivider />
         <SkillVerificationSection />
+        <NeonDivider />
+        <GSTToolsSection />
+        <NeonDivider />
+        <SecurityFeaturesSection />
+        <NeonDivider />
+        <EscrowFlowSection />
+        <NeonDivider />
+        <LegalContractsSection />
         <NeonDivider />
         <StatsSection />
         <NeonDivider />
@@ -4033,6 +4638,8 @@ const Index = () => {
         <IndiaCoverageSection />
         <NeonDivider />
         <ReferralBannerSection />
+        <NeonDivider />
+        <CommunitySection />
         <NeonDivider />
         <AppDownloadSection
           onAndroidInstall={() => handleInstall("android")}
