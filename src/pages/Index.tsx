@@ -1757,23 +1757,6 @@ const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip, activ
   );
 };
 
-/* ─────────────────────── Meteor Shower ─────────────────────── */
-const METEORS_DATA = Array.from({ length: 14 }, (_, i) => ({
-  id: i,
-  left: `${5 + (i * 6.7) % 85}%`,
-  top: `${(i * 5.3) % 40}%`,
-  delay: `${(i * 0.9) % 10}s`,
-  duration: `${3.5 + (i * 0.5) % 4}s`,
-  width: `${55 + (i * 17) % 90}px`,
-}));
-const MeteorShower = () => (
-  <div className="pointer-events-none absolute inset-0 overflow-hidden">
-    {METEORS_DATA.map(m => (
-      <div key={m.id} className="meteor" style={{ left: m.left, top: m.top, width: m.width, animationDelay: m.delay, animationDuration: m.duration, opacity: 0.55 }} />
-    ))}
-  </div>
-);
-
 /* ─────────────────────── Hero Section ─────────────────────── */
 const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
   const parallaxUp = useParallax(0.14);
@@ -1783,7 +1766,6 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
   <section className="relative overflow-hidden py-20 md:py-28 lg:py-36 px-4 sm:px-6">
     <Orbs />
     <ParticleField />
-    <MeteorShower />
     <ConstellationCanvas />
     <MouseGlowEffect />
     <FloatingSkillTags />
@@ -2184,10 +2166,6 @@ const CTASection = () => {
           {/* Ripple rings */}
           {[0, 1, 2].map(i => (
             <div key={i} className="ripple-ring" style={{ width: 120 + i * 80, height: 120 + i * 80, border: `1px solid rgba(var(--t-a1-rgb),${0.25 - i * 0.07})`, animationDuration: `${2.5 + i * 0.8}s`, animationDelay: `${i * 0.7}s` }} />
-          ))}
-          {/* Floating emoji bubbles */}
-          {[["🚀","15%","6s","0s"],["💰","75%","7.5s","1.2s"],["⭐","40%","5.5s","2.5s"],["🎯","60%","8s","0.5s"],["💼","25%","6.5s","3s"],["🏆","85%","7s","1.8s"]].map(([emoji, left, dur, delay]) => (
-            <div key={emoji as string} className="emoji-bubble" style={{ position: "absolute", bottom: 0, left: left as string, fontSize: 22, animationDuration: dur as string, animationDelay: delay as string }} >{emoji}</div>
           ))}
           <div className="relative z-10">
             <CTAUrgencyCounter />
