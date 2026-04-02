@@ -1,96 +1,206 @@
 import { useState } from "react";
-import { Layers, AlertTriangle, CheckCircle2, RefreshCw, Activity, Pause, Play } from "lucide-react";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
-import { useToast } from "@/hooks/use-toast";
-import { formatDistanceToNow } from "date-fns";
+import { Layers, AlertTriangle, CheckCircle2, RefreshCw, Activity, Pause, Play, Trash2, XCircle } from "lucide-react";
 
-const A1="#6366f1",A2="#8b5cf6";
-const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
+const A1 = "#6366f1", A2 = "#8b5cf6";
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc" },
+};
 
-interface Queue{id:string;name:string;pending:number;processing:number;failed:number;concurrency:number;priority:number;processingSpeed:number;status:"running"|"paused"|"degraded";}
-const seed=():Queue[]=>[
-  {id:"q1",name:"Email Queue",pending:42,processing:5,failed:2,concurrency:5,priority:1,processingSpeed:120,status:"running"},
-  {id:"q2",name:"SMS Queue",pending:180,processing:10,failed:18,concurrency:10,priority:2,processingSpeed:45,status:"degraded"},
-  {id:"q3",name:"Push Notification Queue",pending:640,processing:20,failed:0,concurrency:20,priority:3,processingSpeed:280,status:"running"},
-  {id:"q4",name:"Payment Webhook Queue",pending:8,processing:2,failed:0,concurrency:2,priority:1,processingSpeed:20,status:"running"},
-  {id:"q5",name:"Report Generation Queue",pending:24,processing:0,failed:0,concurrency:3,priority:5,processingSpeed:0,status:"paused"},
+const QUEUES = [
+  { id:"q1", name:"Email Queue", size:142, processing:8, failed:2, status:"running" },
+  { id:"q2", name:"Notification Queue", size:820, processing:40, failed:0, status:"running" },
+  { id:"q3", name:"Payment Processing Queue", size:12, processing:1, failed:0, status:"running" },
+  { id:"q4", name:"Export Queue", size:0, processing:0, failed:3, status:"paused" },
+  { id:"q5", name:"Search Indexing Queue", size:4200, processing:0, failed:0, status:"crashed" },
 ];
-function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
-const sColor={running:"#4ade80",paused:"#94a3b8",degraded:"#fbbf24"};
 
-export default function AdminQueueManagement(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
-  const[queues,setQueues]=useState(()=>load("admin_queue_mgmt_v1",seed));
-  const[retrying,setRetrying]=useState<string|null>(null);
+export default function AdminQueueManagement() {
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
 
-  const toggle=(id:string)=>{
-    const upd=queues.map(q=>q.id===id?{...q,status:q.status==="paused"?"running" as const:"paused" as const}:q);
-    localStorage.setItem("admin_queue_mgmt_v1",JSON.stringify(upd));setQueues(upd);
-    toast({title:"Queue status updated"});
-  };
-  const retryFailed=async(id:string)=>{
-    setRetrying(id);await new Promise(r=>setTimeout(r,1200));
-    const upd=queues.map(q=>q.id===id?{...q,failed:0,pending:q.pending+q.failed}:q);
-    localStorage.setItem("admin_queue_mgmt_v1",JSON.stringify(upd));setQueues(upd);setRetrying(null);
-    toast({title:"Failed jobs re-queued"});
-  };
-  const setConcurrency=(id:string,val:number)=>{
-    const upd=queues.map(q=>q.id===id?{...q,concurrency:val}:q);
-    localStorage.setItem("admin_queue_mgmt_v1",JSON.stringify(upd));setQueues(upd);
-    toast({title:"Concurrency updated"});
+  const [queues, setQueues] = useState(QUEUES);
+  const [restarting, setRestarting] = useState<string|null>(null);
+  const [retrying, setRetrying] = useState<string|null>(null);
+  const [activeTab, setActiveTab] = useState<"queues"|"metrics"|"logs">("queues");
+
+  const toggleQueue = (id: string) => {
+    setQueues(prev => prev.map(q => q.id === id ? {...q, status: q.status === "running" ? "paused" : "running"} : q));
   };
 
-  const totalPending=queues.reduce((s,q)=>s+q.pending,0);
-  const totalFailed=queues.reduce((s,q)=>s+q.failed,0);
+  const restartQueue = (id: string) => {
+    setRestarting(id);
+    setTimeout(() => {
+      setQueues(prev => prev.map(q => q.id === id ? {...q, status:"running"} : q));
+      setRestarting(null);
+    }, 2500);
+  };
 
-  return(
-    <div style={{maxWidth:980,margin:"0 auto",paddingBottom:40}}>
-      <div style={{background:`linear-gradient(135deg,${A1}22,${A2}15)`,border:`1px solid rgba(99,102,241,.2)`,borderRadius:18,padding:"26px 28px",marginBottom:20}}>
-        <div style={{display:"flex",alignItems:"center",gap:14}}>
-          <div style={{width:48,height:48,borderRadius:14,background:`linear-gradient(135deg,${A1},${A2})`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 0 24px ${A1}55`,flexShrink:0}}><Layers size={22} color="#fff"/></div>
-          <div style={{flex:1}}>
-            <h1 style={{color:T.text,fontWeight:800,fontSize:22,margin:0}}>Background Job Queue Management</h1>
-            <p style={{color:T.sub,fontSize:13,margin:"3px 0 0"}}>Queue dashboard · Length monitoring · Retry mechanism · Priority control · Concurrency · Health monitoring</p>
-          </div>
-        </div>
-        <div style={{display:"flex",gap:10,marginTop:18,flexWrap:"wrap"}}>
-          {[{l:"Total Pending",v:totalPending,c:totalPending>500?"#fbbf24":T.badgeFg},{l:"Failed",v:totalFailed,c:totalFailed>0?"#f87171":"#4ade80"},{l:"Queues",v:queues.length,c:T.badgeFg},{l:"Degraded",v:queues.filter(q=>q.status==="degraded").length,c:"#fbbf24"}].map(s=>(
-            <div key={s.l} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 16px",display:"flex",gap:8,alignItems:"center"}}>
-              <span style={{fontWeight:800,fontSize:18,color:s.c}}>{s.v}</span><span style={{fontSize:11,color:T.sub}}>{s.l}</span>
-            </div>
-          ))}
-        </div>
+  const retryFailed = (id: string) => {
+    setRetrying(id);
+    setTimeout(() => {
+      setQueues(prev => prev.map(q => q.id === id ? {...q, failed:0} : q));
+      setRetrying(null);
+    }, 2000);
+  };
+
+  const statusColor = (s: string) => s === "running" ? "#4ade80" : s === "paused" ? "#fbbf24" : "#f87171";
+
+  const stats = [
+    { label:"Total Queued", value:queues.reduce((a,b)=>a+b.size,0).toLocaleString(), color:"#60a5fa", icon:Layers },
+    { label:"Processing", value:queues.reduce((a,b)=>a+b.processing,0), color:A1, icon:Activity },
+    { label:"Failed Jobs", value:queues.reduce((a,b)=>a+b.failed,0), color:"#f87171", icon:XCircle },
+    { label:"Crashed", value:queues.filter(q=>q.status==="crashed").length, color:"#f87171", icon:AlertTriangle },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold" style={{ color: T.text }}>Queue Monitoring</h1>
+        <p className="text-sm mt-1" style={{ color: T.sub }}>Monitor job queues, restart crashed workers, retry failed jobs, and prevent queue backlogs.</p>
       </div>
-      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-        {queues.map(q=>(
-          <div key={q.id} style={{background:T.card,border:`1px solid ${q.status==="degraded"?"rgba(251,191,36,.2)":T.border}`,borderRadius:13,padding:"14px 18px",display:"flex",gap:12,alignItems:"center"}}>
-            <div style={{width:8,height:8,borderRadius:"50%",background:sColor[q.status],flexShrink:0}}/>
-            <div style={{flex:1}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
-                <span style={{fontWeight:700,fontSize:13,color:T.text}}>{q.name}</span>
-                <span style={{fontSize:10,fontWeight:700,color:sColor[q.status],textTransform:"capitalize"}}>{q.status}</span>
-                <span style={{fontSize:10,color:T.sub}}>P{q.priority}</span>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map(s => (
+          <div key={s.label} className="rounded-2xl p-4 border" style={{ background: T.card, borderColor: T.border }}>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl" style={{ background:`${s.color}18` }}>
+                <s.icon className="h-5 w-5" style={{ color: s.color }} />
               </div>
-              <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:6}}>
-                <span style={{fontSize:12,color:T.sub}}>Pending: <strong style={{color:q.pending>100?"#fbbf24":T.text}}>{q.pending}</strong></span>
-                <span style={{fontSize:12,color:T.sub}}>Processing: {q.processing}</span>
-                <span style={{fontSize:12,color:T.sub}}>Failed: <strong style={{color:q.failed>0?"#f87171":"#4ade80"}}>{q.failed}</strong></span>
-                <span style={{fontSize:12,color:T.sub}}>Speed: {q.processingSpeed}/min</span>
+              <div>
+                <p className="text-xl font-bold" style={{ color: T.text }}>{s.value}</p>
+                <p className="text-[10px] uppercase font-bold tracking-widest" style={{ color: T.sub }}>{s.label}</p>
               </div>
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <span style={{fontSize:12,color:T.sub}}>Concurrency:</span>
-                <input type="number" defaultValue={q.concurrency} onBlur={e=>setConcurrency(q.id,+e.target.value)} style={{width:55,background:T.input,border:`1px solid ${T.border}`,color:T.text,borderRadius:6,padding:"3px 8px",fontSize:12}}/>
-              </div>
-            </div>
-            <div style={{display:"flex",gap:6,flexShrink:0}}>
-              {q.failed>0&&<button onClick={()=>retryFailed(q.id)} disabled={retrying===q.id} style={{padding:"5px 10px",borderRadius:7,background:"rgba(74,222,128,.08)",border:"1px solid rgba(74,222,128,.2)",color:"#4ade80",fontSize:11,fontWeight:600,cursor:"pointer"}}>{retrying===q.id?"…":"Retry"}</button>}
-              <button onClick={()=>toggle(q.id)} style={{display:"flex",alignItems:"center",gap:4,padding:"6px 11px",borderRadius:8,background:q.status==="paused"?"rgba(74,222,128,.08)":"rgba(148,163,184,.08)",border:"1px solid rgba(148,163,184,.2)",color:q.status==="paused"?"#4ade80":"#94a3b8",fontSize:11,fontWeight:600,cursor:"pointer"}}>
-                {q.status==="paused"?<Play size={10}/>:<Pause size={10}/>}{q.status==="paused"?"Resume":"Pause"}
-              </button>
             </div>
           </div>
         ))}
       </div>
+
+      <div className="flex gap-2 border-b" style={{ borderColor: T.border }}>
+        {(["queues","metrics","logs"] as const).map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)} className="px-4 py-2 text-sm font-bold capitalize transition-all"
+            style={{ color: activeTab === tab ? A1 : T.sub, borderBottom: activeTab === tab ? `2px solid ${A1}` : "2px solid transparent" }}>
+            {tab === "queues" ? "Queue Status" : tab === "metrics" ? "Performance" : "Queue Logs"}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "queues" && (
+        <div className="space-y-3">
+          {queues.map(q => (
+            <div key={q.id} className="rounded-2xl border p-5" style={{ background: T.card, borderColor: T.border }}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  <div className={`h-3 w-3 rounded-full mt-1 ${q.status === "running" ? "animate-pulse" : ""}`} style={{ background: statusColor(q.status) }} />
+                  <div>
+                    <p className="font-bold text-sm" style={{ color: T.text }}>{q.name}</p>
+                    <div className="flex gap-4 mt-1 flex-wrap">
+                      <span className="text-xs" style={{ color: T.sub }}>Queued: <strong style={{ color: T.text }}>{q.size.toLocaleString()}</strong></span>
+                      <span className="text-xs" style={{ color: T.sub }}>Processing: <strong style={{ color: T.text }}>{q.processing}</strong></span>
+                      {q.failed > 0 && <span className="text-xs text-red-400">Failed: <strong>{q.failed}</strong></span>}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background:`${statusColor(q.status)}18`, color: statusColor(q.status) }}>
+                    {q.status}
+                  </span>
+                  {q.failed > 0 && (
+                    <button onClick={() => retryFailed(q.id)} disabled={retrying === q.id}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+                      style={{ background:"rgba(99,102,241,.15)", color: A1, opacity: retrying === q.id ? .6 : 1 }}>
+                      <RefreshCw className={`h-3 w-3 ${retrying === q.id ? "animate-spin" : ""}`} />
+                      Retry Failed
+                    </button>
+                  )}
+                  {q.status === "crashed" ? (
+                    <button onClick={() => restartQueue(q.id)} disabled={restarting === q.id}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+                      style={{ background: A1, color:"#fff", opacity: restarting === q.id ? .6 : 1 }}>
+                      <RefreshCw className={`h-3 w-3 ${restarting === q.id ? "animate-spin" : ""}`} />
+                      {restarting === q.id ? "Restarting…" : "Restart"}
+                    </button>
+                  ) : (
+                    <button onClick={() => toggleQueue(q.id)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+                      style={{ background: q.status === "running" ? "rgba(248,113,113,.15)" : "rgba(74,222,128,.15)", color: q.status === "running" ? "#f87171" : "#4ade80" }}>
+                      {q.status === "running" ? <><Pause className="h-3 w-3" /> Pause</> : <><Play className="h-3 w-3" /> Resume</>}
+                    </button>
+                  )}
+                  <button className="p-1.5 rounded-lg hover:bg-white/5 transition-all" style={{ color:"#f87171" }}>
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeTab === "metrics" && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          <div className="rounded-2xl border p-6 space-y-3" style={{ background: T.card, borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Queue Performance</h3>
+            {[
+              { label:"Avg job processing time", value:"1.2s" },
+              { label:"Jobs processed (24h)", value:"124,820" },
+              { label:"Peak queue size (today)", value:"5,200" },
+              { label:"Max concurrent workers", value:"40" },
+              { label:"Auto-retry on failure", value:"3x" },
+            ].map(m => (
+              <div key={m.label} className="flex items-center justify-between p-3 rounded-xl border" style={{ borderColor: T.border }}>
+                <span className="text-sm" style={{ color: T.sub }}>{m.label}</span>
+                <span className="font-bold font-mono" style={{ color: T.text }}>{m.value}</span>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-2xl border p-6 space-y-3" style={{ background: T.card, borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Protection Rules</h3>
+            {[
+              { label:"Duplicate job prevention", active:true },
+              { label:"Job overlap prevention", active:true },
+              { label:"Job timeout detection (>120s)", active:true },
+              { label:"Crash recovery", active:true },
+              { label:"Dead letter queue", active:true },
+            ].map(r => (
+              <div key={r.label} className="flex items-center justify-between p-3 rounded-xl border" style={{ borderColor: T.border }}>
+                <span className="text-sm" style={{ color: T.text }}>{r.label}</span>
+                <CheckCircle2 className="h-4 w-4 text-green-400" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "logs" && (
+        <div className="rounded-2xl border overflow-hidden" style={{ background: T.card, borderColor: T.border }}>
+          <div className="p-4 border-b" style={{ borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Queue Logs</h3>
+          </div>
+          <div className="divide-y" style={{ borderColor: T.border }}>
+            {[
+              { event:"Queue crashed", queue:"Search Indexing Queue", detail:"Worker OOM killed", time:"30 min ago", type:"error" },
+              { event:"Failed jobs retried", queue:"Export Queue", detail:"3 jobs requeued", time:"1 hr ago", type:"info" },
+              { event:"Queue paused", queue:"Export Queue", detail:"Manual pause by admin", time:"2 hrs ago", type:"warning" },
+              { event:"Backlog spike", queue:"Notification Queue", detail:"820 jobs queued", time:"3 hrs ago", type:"warning" },
+              { event:"Queue healthy", queue:"Payment Queue", detail:"0 failures", time:"Today 06:00", type:"success" },
+            ].map((l,i) => (
+              <div key={i} className="flex items-start justify-between p-4 hover:bg-white/5 transition-all">
+                <div>
+                  <p className="font-bold text-sm" style={{ color: T.text }}>{l.event}</p>
+                  <p className="text-xs" style={{ color: T.sub }}>{l.queue} · {l.detail}</p>
+                  <p className="text-xs mt-0.5" style={{ color: T.sub }}>{l.time}</p>
+                </div>
+                <span className={`text-xs font-bold px-2 py-1 rounded-full ${l.type === "error" ? "bg-red-500/15 text-red-400" : l.type === "warning" ? "bg-amber-500/15 text-amber-400" : l.type === "success" ? "bg-green-500/15 text-green-400" : "bg-blue-500/15 text-blue-400"}`}>
+                  {l.type}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

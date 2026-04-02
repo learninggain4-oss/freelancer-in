@@ -1,97 +1,208 @@
 import { useState } from "react";
-import { HardDrive, AlertTriangle, CheckCircle2, Trash2, Upload, Activity } from "lucide-react";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
-import { useToast } from "@/hooks/use-toast";
+import { HardDrive, AlertTriangle, CheckCircle2, Trash2, Upload, Activity, XCircle, RefreshCw, Shield } from "lucide-react";
 
-const A1="#6366f1",A2="#8b5cf6";
-const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
+const A1 = "#6366f1", A2 = "#8b5cf6";
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc" },
+};
 
-interface StorageBucket{id:string;name:string;usedGB:number;limitGB:number;files:number;maxFileMB:number;retentionDays:number;status:"ok"|"warning"|"full";}
-const seed=():StorageBucket[]=>[
-  {id:"b1",name:"User Avatars",usedGB:4.2,limitGB:10,files:12840,maxFileMB:5,retentionDays:365,status:"ok"},
-  {id:"b2",name:"Job Attachments",usedGB:18.6,limitGB:20,files:4510,maxFileMB:50,retentionDays:180,status:"warning"},
-  {id:"b3",name:"KYC Documents",usedGB:9.8,limitGB:10,files:6200,maxFileMB:20,retentionDays:1825,status:"warning"},
-  {id:"b4",name:"Invoice PDFs",usedGB:2.1,limitGB:50,files:84200,maxFileMB:2,retentionDays:2555,status:"ok"},
-  {id:"b5",name:"Backups",usedGB:44.8,limitGB:50,files:124,maxFileMB:5120,retentionDays:90,status:"warning"},
+const BUCKETS = [
+  { name:"user-avatars", used:4.2, total:20, files:18200, type:"images" },
+  { name:"job-attachments", used:12.8, total:50, files:42000, type:"documents" },
+  { name:"id-verification", used:8.4, total:20, files:6800, type:"documents" },
+  { name:"chat-files", used:2.1, total:10, files:8400, type:"mixed" },
+  { name:"temp-uploads", used:0.8, total:5, files:320, type:"temp" },
 ];
-function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
-const sColor={ok:"#4ade80",warning:"#fbbf24",full:"#f87171"};
 
-export default function AdminStorageManager(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
-  const[buckets,setBuckets]=useState(()=>load("admin_storage_v1",seed));
-  const[cleaning,setCleaning]=useState<string|null>(null);
+export default function AdminStorageManager() {
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
 
-  const cleanup=async(b:StorageBucket)=>{
-    setCleaning(b.id);await new Promise(r=>setTimeout(r,1800));
-    const freed=b.usedGB*.3;
-    const upd=buckets.map(x=>x.id===b.id?{...x,usedGB:Math.max(0,x.usedGB-freed),status:(x.usedGB-freed)/x.limitGB<.7?"ok" as const:"warning" as const}:x);
-    localStorage.setItem("admin_storage_v1",JSON.stringify(upd));setBuckets(upd);setCleaning(null);
-    toast({title:`${b.name} — ${freed.toFixed(1)} GB freed`});
-  };
-  const saveLimit=(id:string,val:number)=>{
-    const upd=buckets.map(b=>b.id===id?{...b,maxFileMB:val}:b);
-    localStorage.setItem("admin_storage_v1",JSON.stringify(upd));setBuckets(upd);
-    toast({title:"File size limit updated"});
+  const [cleaning, setCleaning] = useState(false);
+  const [uploadBlocked, setUploadBlocked] = useState(false);
+  const [fileSizeLimit, setFileSizeLimit] = useState(10);
+  const [activeTab, setActiveTab] = useState<"usage"|"controls"|"logs">("usage");
+
+  const totalUsed = BUCKETS.reduce((a,b) => a + b.used, 0);
+  const totalCapacity = BUCKETS.reduce((a,b) => a + b.total, 0);
+  const usagePercent = Math.round((totalUsed / totalCapacity) * 100);
+
+  const runCleanup = () => {
+    setCleaning(true);
+    setTimeout(() => setCleaning(false), 2500);
   };
 
-  const totalUsed=buckets.reduce((s,b)=>s+b.usedGB,0);
-  const totalLimit=buckets.reduce((s,b)=>s+b.limitGB,0);
-  const warnings=buckets.filter(b=>b.status!=="ok").length;
+  const usageColor = usagePercent > 85 ? "#f87171" : usagePercent > 65 ? "#fbbf24" : "#4ade80";
 
-  return(
-    <div style={{maxWidth:980,margin:"0 auto",paddingBottom:40}}>
-      <div style={{background:`linear-gradient(135deg,${A1}22,${A2}15)`,border:`1px solid rgba(99,102,241,.2)`,borderRadius:18,padding:"26px 28px",marginBottom:20}}>
-        <div style={{display:"flex",alignItems:"center",gap:14}}>
-          <div style={{width:48,height:48,borderRadius:14,background:`linear-gradient(135deg,${A1},${A2})`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 0 24px ${A1}55`,flexShrink:0}}><HardDrive size={22} color="#fff"/></div>
-          <div style={{flex:1}}>
-            <h1 style={{color:T.text,fontWeight:800,fontSize:22,margin:0}}>Storage Management System</h1>
-            <p style={{color:T.sub,fontSize:13,margin:"3px 0 0"}}>Usage monitoring · Limit config · Usage alerts · Auto cleanup · File size limits · Retention policy</p>
-          </div>
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: T.text }}>Storage Monitoring</h1>
+          <p className="text-sm mt-1" style={{ color: T.sub }}>Monitor disk usage, configure limits, run cleanup tools, and prevent storage exhaustion.</p>
         </div>
-        <div style={{display:"flex",gap:10,marginTop:18,flexWrap:"wrap"}}>
-          {[{l:"Total Used",v:`${totalUsed.toFixed(1)} GB`,c:totalUsed/totalLimit>.8?"#f87171":T.badgeFg},{l:"Total Limit",v:`${totalLimit} GB`,c:T.badgeFg},{l:"Warnings",v:warnings,c:warnings>0?"#fbbf24":"#4ade80"},{l:"Total Files",v:buckets.reduce((s,b)=>s+b.files,0).toLocaleString(),c:T.badgeFg}].map(s=>(
-            <div key={s.l} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 16px",display:"flex",gap:8,alignItems:"center"}}>
-              <span style={{fontWeight:800,fontSize:18,color:s.c}}>{s.v}</span><span style={{fontSize:11,color:T.sub}}>{s.l}</span>
-            </div>
-          ))}
-        </div>
+        <button onClick={runCleanup} disabled={cleaning}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all"
+          style={{ background: A1, color:"#fff", opacity: cleaning ? .6 : 1 }}>
+          <RefreshCw className={`h-4 w-4 ${cleaning ? "animate-spin" : ""}`} />
+          {cleaning ? "Cleaning…" : "Run Cleanup"}
+        </button>
       </div>
-      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-        {buckets.map(b=>{
-          const pct=Math.round((b.usedGB/b.limitGB)*100);
-          return(
-            <div key={b.id} style={{background:T.card,border:`1px solid ${b.status!=="ok"?`${sColor[b.status]}33`:T.border}`,borderRadius:13,padding:"14px 18px"}}>
-              <div style={{display:"flex",gap:12,alignItems:"flex-start",marginBottom:8}}>
-                <div style={{flex:1}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
-                    <span style={{fontWeight:700,fontSize:13,color:T.text}}>{b.name}</span>
-                    <span style={{fontSize:10,fontWeight:700,color:sColor[b.status],textTransform:"capitalize"}}>{b.status}</span>
-                    <span style={{fontSize:10,color:T.sub}}>Max: {b.maxFileMB} MB/file</span>
-                    <span style={{fontSize:10,color:T.sub}}>Retain: {b.retentionDays}d</span>
-                  </div>
-                  <div style={{marginBottom:6}}>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
-                      <span style={{fontSize:11,color:T.sub}}>{b.usedGB.toFixed(1)} / {b.limitGB} GB ({pct}%)</span>
-                      <span style={{fontSize:11,color:T.sub}}>{b.files.toLocaleString()} files</span>
-                    </div>
-                    <div style={{height:5,borderRadius:5,background:"rgba(255,255,255,.07)"}}>
-                      <div style={{height:"100%",borderRadius:5,background:sColor[b.status],width:`${pct}%`,transition:"width .5s"}}/>
-                    </div>
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <span style={{fontSize:12,color:T.sub}}>File limit (MB):</span>
-                    <input type="number" defaultValue={b.maxFileMB} onBlur={e=>saveLimit(b.id,+e.target.value)} style={{width:70,background:T.input,border:`1px solid ${T.border}`,color:T.text,borderRadius:6,padding:"3px 8px",fontSize:12}}/>
-                  </div>
-                </div>
-                <button onClick={()=>cleanup(b)} disabled={cleaning===b.id} style={{padding:"6px 12px",borderRadius:8,background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.2)",color:"#f87171",fontSize:11,fontWeight:600,cursor:"pointer",flexShrink:0}}>
-                  {cleaning===b.id?"Cleaning…":"Auto Cleanup"}
-                </button>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label:"Total Used", value:`${totalUsed.toFixed(1)} GB`, color:usageColor, icon:HardDrive },
+          { label:"Total Capacity", value:`${totalCapacity} GB`, color:"#60a5fa", icon:HardDrive },
+          { label:"Usage", value:`${usagePercent}%`, color:usageColor, icon:Activity },
+          { label:"Total Files", value:BUCKETS.reduce((a,b)=>a+b.files,0).toLocaleString(), color:A1, icon:Upload },
+        ].map(s => (
+          <div key={s.label} className="rounded-2xl p-4 border" style={{ background: T.card, borderColor: T.border }}>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl" style={{ background:`${s.color}18` }}>
+                <s.icon className="h-5 w-5" style={{ color: s.color }} />
+              </div>
+              <div>
+                <p className="text-xl font-bold" style={{ color: T.text }}>{s.value}</p>
+                <p className="text-[10px] uppercase font-bold tracking-widest" style={{ color: T.sub }}>{s.label}</p>
               </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
+
+      {/* Overall progress */}
+      <div className="rounded-2xl border p-5" style={{ background: T.card, borderColor: T.border }}>
+        <div className="flex items-center justify-between mb-3">
+          <span className="font-bold text-sm" style={{ color: T.text }}>Overall Storage Utilization</span>
+          <span className="font-bold font-mono text-sm" style={{ color: usageColor }}>{usagePercent}%</span>
+        </div>
+        <div className="h-3 rounded-full overflow-hidden" style={{ background: T.border }}>
+          <div className="h-full rounded-full transition-all" style={{ width:`${usagePercent}%`, background: usageColor }} />
+        </div>
+        <p className="text-xs mt-2" style={{ color: T.sub }}>{totalUsed.toFixed(1)} GB used of {totalCapacity} GB</p>
+        {usagePercent > 70 && (
+          <div className="mt-3 p-3 rounded-xl flex items-center gap-3 bg-amber-500/10 border border-amber-500/20">
+            <AlertTriangle className="h-4 w-4 text-amber-400" />
+            <span className="text-sm text-amber-400 font-bold">Storage usage above 70% — consider running cleanup or expanding capacity</span>
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-2 border-b" style={{ borderColor: T.border }}>
+        {(["usage","controls","logs"] as const).map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)} className="px-4 py-2 text-sm font-bold capitalize transition-all"
+            style={{ color: activeTab === tab ? A1 : T.sub, borderBottom: activeTab === tab ? `2px solid ${A1}` : "2px solid transparent" }}>
+            {tab === "usage" ? "Bucket Usage" : tab === "controls" ? "Controls" : "Storage Logs"}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "usage" && (
+        <div className="space-y-3">
+          {BUCKETS.map(b => {
+            const pct = Math.round((b.used / b.total) * 100);
+            const color = pct > 85 ? "#f87171" : pct > 65 ? "#fbbf24" : "#4ade80";
+            return (
+              <div key={b.name} className="rounded-2xl border p-5" style={{ background: T.card, borderColor: T.border }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <span className="font-bold font-mono text-sm" style={{ color: T.text }}>{b.name}</span>
+                    <span className="ml-3 text-xs font-bold px-2 py-0.5 rounded-full" style={{ background:`${A1}15`, color: A1 }}>{b.type}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs" style={{ color: T.sub }}>{b.files.toLocaleString()} files</span>
+                    <span className="font-bold font-mono text-sm" style={{ color }}>{b.used}/{b.total} GB</span>
+                    <button className="p-1.5 rounded-lg hover:bg-white/5 transition-all" style={{ color:"#f87171" }}>
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: T.border }}>
+                  <div className="h-full rounded-full transition-all" style={{ width:`${pct}%`, background: color }} />
+                </div>
+                <p className="text-[10px] mt-1 text-right font-mono" style={{ color: T.sub }}>{pct}% used</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {activeTab === "controls" && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          <div className="rounded-2xl border p-6 space-y-5" style={{ background: T.card, borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Storage Controls</h3>
+            <div className="flex items-start justify-between gap-4 p-4 rounded-xl border" style={{ borderColor: T.border }}>
+              <div>
+                <p className="font-bold text-sm" style={{ color: T.text }}>Block uploads when storage full</p>
+                <p className="text-xs mt-1" style={{ color: T.sub }}>Prevent new uploads when usage exceeds 95%</p>
+              </div>
+              <button onClick={() => setUploadBlocked(v => !v)}
+                className="w-12 h-6 rounded-full relative transition-all shrink-0"
+                style={{ background: uploadBlocked ? A1 : T.border }}>
+                <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${uploadBlocked ? "left-6" : "left-0.5"}`} />
+              </button>
+            </div>
+            <div className="p-4 rounded-xl border space-y-3" style={{ borderColor: T.border }}>
+              <p className="font-bold text-sm" style={{ color: T.text }}>File size limit per upload</p>
+              <div className="flex items-center gap-3">
+                <input type="range" min={1} max={50} value={fileSizeLimit} onChange={e => setFileSizeLimit(+e.target.value)} className="flex-1 accent-indigo-500" />
+                <span className="font-bold font-mono w-16 text-right" style={{ color: T.text }}>{fileSizeLimit} MB</span>
+              </div>
+            </div>
+            <div className="p-4 rounded-xl border" style={{ borderColor: T.border }}>
+              <p className="font-bold text-sm mb-1" style={{ color: T.text }}>Storage threshold alert</p>
+              <p className="text-xs" style={{ color: T.sub }}>Alert sent when usage exceeds 80% · Currently active</p>
+            </div>
+          </div>
+          <div className="rounded-2xl border p-6 space-y-4" style={{ background: T.card, borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Cleanup & Auto Rules</h3>
+            {[
+              { label:"Auto-delete temp uploads after 24h", active:true },
+              { label:"Compress images on upload", active:true },
+              { label:"Archive files older than 1 year", active:false },
+              { label:"Storage capacity forecast (weekly)", active:true },
+              { label:"Duplicate file detection", active:false },
+            ].map(r => (
+              <div key={r.label} className="flex items-center justify-between p-3 rounded-xl border" style={{ borderColor: T.border }}>
+                <span className="text-sm" style={{ color: T.text }}>{r.label}</span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${r.active ? "bg-green-500/15 text-green-400" : "bg-red-500/15 text-red-400"}`}>
+                  {r.active ? "Active" : "Off"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "logs" && (
+        <div className="rounded-2xl border overflow-hidden" style={{ background: T.card, borderColor: T.border }}>
+          <div className="p-4 border-b" style={{ borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Storage Logs</h3>
+          </div>
+          <div className="divide-y" style={{ borderColor: T.border }}>
+            {[
+              { event:"Cleanup ran", bucket:"temp-uploads", result:"820 MB freed", time:"1 hr ago", type:"success" },
+              { event:"Storage alert", bucket:"job-attachments", result:"Crossed 75% threshold", time:"3 hrs ago", type:"warning" },
+              { event:"Large file upload blocked", bucket:"id-verification", result:"File: 48 MB > 10 MB limit", time:"5 hrs ago", type:"warning" },
+              { event:"Auto-delete ran", bucket:"temp-uploads", result:"128 files deleted", time:"Yesterday", type:"info" },
+            ].map((l,i) => (
+              <div key={i} className="flex items-start justify-between p-4 hover:bg-white/5 transition-all">
+                <div>
+                  <p className="font-bold text-sm" style={{ color: T.text }}>{l.event}</p>
+                  <p className="text-xs" style={{ color: T.sub }}>{l.bucket} · {l.result}</p>
+                  <p className="text-xs mt-0.5" style={{ color: T.sub }}>{l.time}</p>
+                </div>
+                <span className={`text-xs font-bold px-2 py-1 rounded-full ${l.type === "success" ? "bg-green-500/15 text-green-400" : l.type === "warning" ? "bg-amber-500/15 text-amber-400" : "bg-blue-500/15 text-blue-400"}`}>
+                  {l.type}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

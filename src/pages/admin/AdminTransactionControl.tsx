@@ -1,141 +1,200 @@
 import { useState } from "react";
-import { IndianRupee, ShieldCheck, AlertTriangle, CheckCircle2, Search, Lock, RefreshCw, Eye } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
-import { useAdminAudit } from "@/hooks/use-admin-audit";
-import { useToast } from "@/hooks/use-toast";
-import { format, formatDistanceToNow } from "date-fns";
+import { IndianRupee, ShieldCheck, AlertTriangle, CheckCircle2, Search, Lock, RefreshCw, XCircle, Eye } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
-  black: { bg:"#070714",card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badge:"rgba(99,102,241,.2)",badgeFg:"#a5b4fc" },
-  white: { bg:"#f0f4ff",card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badge:"rgba(99,102,241,.1)",badgeFg:"#4f46e5" },
-  wb:    { bg:"#f0f4ff",card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badge:"rgba(99,102,241,.1)",badgeFg:"#4f46e5" },
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc" },
 };
 
-interface Transaction { id:string; txnId:string; userId:string; type:"withdrawal"|"deposit"|"fee"|"refund"; amount:number; status:"confirmed"|"pending"|"duplicate"|"failed"|"review"; isDuplicate:boolean; duplicateOf?:string; gateway:string; createdAt:string; reviewNote?:string; }
-
-const seedTxns = (): Transaction[] => [
-  { id:"t1", txnId:"TXN_2024_001821", userId:"4821", type:"withdrawal", amount:25000, status:"confirmed",  isDuplicate:false, gateway:"Razorpay", createdAt:new Date(Date.now()-300000).toISOString() },
-  { id:"t2", txnId:"TXN_2024_001822", userId:"4821", type:"withdrawal", amount:25000, status:"duplicate",  isDuplicate:true,  duplicateOf:"TXN_2024_001821", gateway:"Razorpay", createdAt:new Date(Date.now()-295000).toISOString(), reviewNote:"Same amount + user + gateway within 60s window" },
-  { id:"t3", txnId:"TXN_2024_001823", userId:"2241", type:"deposit",    amount:10000, status:"confirmed",  isDuplicate:false, gateway:"Razorpay", createdAt:new Date(Date.now()-600000).toISOString() },
-  { id:"t4", txnId:"TXN_2024_001824", userId:"9901", type:"withdrawal", amount:5000,  status:"review",     isDuplicate:false, gateway:"Manual",   createdAt:new Date(Date.now()-900000).toISOString(),   reviewNote:"Amount exceeds single-transaction limit ₹5,000" },
-  { id:"t5", txnId:"TXN_2024_001825", userId:"3310", type:"refund",     amount:1200,  status:"failed",     isDuplicate:false, gateway:"Razorpay", createdAt:new Date(Date.now()-1800000).toISOString() },
-  { id:"t6", txnId:"TXN_2024_001826", userId:"5544", type:"fee",        amount:199,   status:"confirmed",  isDuplicate:false, gateway:"Internal", createdAt:new Date(Date.now()-3600000).toISOString() },
+const TRANSACTIONS = [
+  { id:"txn_001", user:"Ravi Kumar", amount:5000, status:"success", ref:"PAY-2026-001", duplicate:false, time:"2 min ago" },
+  { id:"txn_002", user:"Priya Sharma", amount:12000, status:"duplicate", ref:"PAY-2026-002", duplicate:true, time:"15 min ago" },
+  { id:"txn_003", user:"Arjun Singh", amount:3500, status:"pending", ref:"PAY-2026-003", duplicate:false, time:"1 hr ago" },
+  { id:"txn_004", user:"Meena Patel", amount:8000, status:"success", ref:"PAY-2026-004", duplicate:false, time:"3 hrs ago" },
+  { id:"txn_005", user:"Dev Nair", amount:2200, status:"locked", ref:"PAY-2026-005", duplicate:false, time:"5 hrs ago" },
 ];
-
-function load<T>(key:string,seed:()=>T[]): T[] {
-  try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
-  const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
-}
-
-const statusColor: Record<string,string> = { confirmed:"#4ade80", pending:"#fbbf24", duplicate:"#f87171", failed:"#f87171", review:"#fb923c" };
-const typeColor:   Record<string,string> = { withdrawal:"#f87171", deposit:"#4ade80", fee:"#94a3b8", refund:"#fbbf24" };
 
 export default function AdminTransactionControl() {
   const { theme } = useDashboardTheme();
   const T = TH[theme];
-  const { logAction } = useAdminAudit();
-  const { toast } = useToast();
 
-  const [txns, setTxns]   = useState<Transaction[]>(()=>load("admin_txn_control_v1",seedTxns));
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("all");
-  const [approving, setApproving] = useState<string|null>(null);
-  const [rejecting, setRejecting] = useState<string|null>(null);
+  const [activeTab, setActiveTab] = useState<"protection"|"transactions"|"logs">("protection");
+  const [retryLimit, setRetryLimit] = useState(3);
+  const [lockEnabled, setLockEnabled] = useState(true);
+  const [doubleClickProtect, setDoubleClickProtect] = useState(true);
+  const [idempotencyEnabled, setIdempotencyEnabled] = useState(true);
 
-  const approve = async (id:string) => {
-    setApproving(id);
-    await new Promise(r=>setTimeout(r,700));
-    const updated = txns.map(t=>t.id===id?{...t,status:"confirmed" as const}:t);
-    localStorage.setItem("admin_txn_control_v1",JSON.stringify(updated));
-    setTxns(updated); setApproving(null);
-    logAction("Transaction Approved",txns.find(t=>t.id===id)?.txnId||"","Finance","success");
-    toast({ title:"Transaction approved" });
+  const filtered = TRANSACTIONS.filter(t =>
+    t.user.toLowerCase().includes(search.toLowerCase()) || t.ref.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const statusColor = (s: string) => {
+    if (s === "success") return "#4ade80";
+    if (s === "duplicate") return "#f87171";
+    if (s === "locked") return "#fbbf24";
+    return "#94a3b8";
   };
 
-  const reject = async (id:string) => {
-    setRejecting(id);
-    await new Promise(r=>setTimeout(r,700));
-    const updated = txns.map(t=>t.id===id?{...t,status:"failed" as const}:t);
-    localStorage.setItem("admin_txn_control_v1",JSON.stringify(updated));
-    setTxns(updated); setRejecting(null);
-    logAction("Transaction Rejected",txns.find(t=>t.id===id)?.txnId||"","Finance","warning");
-    toast({ title:"Transaction rejected" });
-  };
+  const stats = [
+    { label:"Total Today", value:"₹4,82,000", color:"#60a5fa", icon:IndianRupee },
+    { label:"Success Rate", value:"97.2%", color:"#4ade80", icon:CheckCircle2 },
+    { label:"Duplicates Blocked", value:"3", color:"#f87171", icon:XCircle },
+    { label:"Locked Txns", value:"1", color:"#fbbf24", icon:Lock },
+  ];
 
-  const filtered = txns.filter(t=>{
-    if(filter!=="all"&&t.status!==filter) return false;
-    if(search&&!t.txnId.toLowerCase().includes(search.toLowerCase())&&!t.userId.includes(search)) return false;
-    return true;
-  });
-
-  const dupes = txns.filter(t=>t.isDuplicate).length;
-  const reviews = txns.filter(t=>t.status==="review").length;
+  const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
+    <button onClick={onChange} className="w-12 h-6 rounded-full relative transition-all shrink-0"
+      style={{ background: checked ? A1 : T.border }}>
+      <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${checked ? "left-6" : "left-0.5"}`} />
+    </button>
+  );
 
   return (
-    <div style={{ maxWidth:1000,margin:"0 auto",paddingBottom:40 }}>
-      <div style={{ background:`linear-gradient(135deg,${A1}22,${A2}15)`,border:`1px solid rgba(99,102,241,.2)`,borderRadius:18,padding:"26px 28px",marginBottom:20 }}>
-        <div style={{ display:"flex",alignItems:"center",gap:14 }}>
-          <div style={{ width:48,height:48,borderRadius:14,background:`linear-gradient(135deg,${A1},${A2})`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 0 24px ${A1}55`,flexShrink:0 }}>
-            <IndianRupee size={22} color="#fff"/>
-          </div>
-          <div style={{ flex:1 }}>
-            <h1 style={{ color:T.text,fontWeight:800,fontSize:22,margin:0 }}>Duplicate Transaction Protection</h1>
-            <p style={{ color:T.sub,fontSize:13,margin:"3px 0 0" }}>Unique ID validation · Duplicate detection · Transaction locking · Retry protection · Manual review</p>
-          </div>
-        </div>
-        <div style={{ display:"flex",gap:10,marginTop:18,flexWrap:"wrap" }}>
-          {[{l:"Total Transactions",v:txns.length,c:T.badgeFg},{l:"Duplicates Blocked",v:dupes,c:dupes>0?"#f87171":"#94a3b8"},{l:"Pending Review",v:reviews,c:reviews>0?"#fb923c":"#94a3b8"},{l:"Confirmed",v:txns.filter(t=>t.status==="confirmed").length,c:"#4ade80"}].map(s=>(
-            <div key={s.l} style={{ background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 16px",display:"flex",gap:8,alignItems:"center" }}>
-              <span style={{ fontWeight:800,fontSize:18,color:s.c }}>{s.v}</span><span style={{ fontSize:11,color:T.sub }}>{s.l}</span>
-            </div>
-          ))}
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold" style={{ color: T.text }}>Transaction Protection</h1>
+        <p className="text-sm mt-1" style={{ color: T.sub }}>Prevent duplicate payments, manage idempotency keys, and monitor transaction integrity.</p>
       </div>
 
-      <div style={{ display:"flex",gap:8,marginBottom:12,flexWrap:"wrap" }}>
-        <div style={{ position:"relative",flex:1,minWidth:200 }}>
-          <Search size={13} style={{ position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",color:T.sub }}/>
-          <Input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by TXN ID or user ID…" style={{ background:T.input,border:`1px solid ${T.border}`,color:T.text,borderRadius:10,paddingLeft:32,fontSize:12 }}/>
-        </div>
-        <div style={{ display:"flex",gap:6 }}>
-          {["all","confirmed","duplicate","review","failed"].map(s=>(
-            <button key={s} onClick={()=>setFilter(s)} style={{ padding:"6px 12px",borderRadius:8,fontSize:11,fontWeight:600,cursor:"pointer",border:`1px solid ${filter===s?A1:T.border}`,background:filter===s?`${A1}15`:T.card,color:filter===s?T.badgeFg:T.sub,textTransform:"capitalize" }}>{s}</button>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ background:"rgba(74,222,128,.04)",border:"1px solid rgba(74,222,128,.1)",borderRadius:10,padding:"9px 14px",marginBottom:12,display:"flex",gap:8,alignItems:"center" }}>
-        <ShieldCheck size={12} color="#4ade80"/>
-        <span style={{ fontSize:11,color:"#4ade80" }}>Duplicate detection: same user + amount + gateway within 60-second window. All duplicates are automatically blocked and flagged for review.</span>
-      </div>
-
-      <div style={{ background:T.card,border:`1px solid ${T.border}`,borderRadius:16,overflow:"hidden" }}>
-        {filtered.map((t,i)=>(
-          <div key={t.id} style={{ display:"flex",gap:12,padding:"13px 18px",borderBottom:i<filtered.length-1?`1px solid ${T.border}`:"none",alignItems:"center" }}>
-            <div style={{ width:9,height:9,borderRadius:"50%",background:statusColor[t.status],flexShrink:0 }}/>
-            <div style={{ flex:1 }}>
-              <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:2,flexWrap:"wrap" }}>
-                <span style={{ fontFamily:"monospace",fontWeight:700,fontSize:12,color:T.text }}>{t.txnId}</span>
-                <span style={{ fontSize:10,fontWeight:700,color:typeColor[t.type],background:`${typeColor[t.type]}15`,padding:"2px 7px",borderRadius:5,textTransform:"capitalize" }}>{t.type}</span>
-                <span style={{ fontSize:10,fontWeight:700,color:statusColor[t.status],background:`${statusColor[t.status]}15`,padding:"2px 7px",borderRadius:5,textTransform:"capitalize" }}>{t.status}</span>
-                {t.isDuplicate&&<span style={{ fontSize:10,color:"#f87171" }}>→ duplicate of {t.duplicateOf}</span>}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map(s => (
+          <div key={s.label} className="rounded-2xl p-4 border" style={{ background: T.card, borderColor: T.border }}>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl" style={{ background:`${s.color}18` }}>
+                <s.icon className="h-5 w-5" style={{ color: s.color }} />
               </div>
-              <p style={{ fontSize:12,color:T.sub,margin:0 }}>User: {t.userId} · ₹{t.amount.toLocaleString()} · {t.gateway} · {formatDistanceToNow(new Date(t.createdAt))} ago</p>
-              {t.reviewNote&&<p style={{ fontSize:11,color:"#fb923c",margin:"2px 0 0" }}>{t.reviewNote}</p>}
-            </div>
-            <div style={{ display:"flex",gap:6,flexShrink:0 }}>
-              {t.status==="review"&&(
-                <>
-                  <button onClick={()=>approve(t.id)} disabled={approving===t.id} style={{ padding:"5px 12px",borderRadius:7,background:"rgba(74,222,128,.08)",border:"1px solid rgba(74,222,128,.2)",color:"#4ade80",fontSize:11,fontWeight:600,cursor:"pointer" }}>{approving===t.id?"…":"Approve"}</button>
-                  <button onClick={()=>reject(t.id)} disabled={rejecting===t.id} style={{ padding:"5px 12px",borderRadius:7,background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.2)",color:"#f87171",fontSize:11,fontWeight:600,cursor:"pointer" }}>{rejecting===t.id?"…":"Reject"}</button>
-                </>
-              )}
+              <div>
+                <p className="text-xl font-bold" style={{ color: T.text }}>{s.value}</p>
+                <p className="text-[10px] uppercase font-bold tracking-widest" style={{ color: T.sub }}>{s.label}</p>
+              </div>
             </div>
           </div>
         ))}
       </div>
+
+      <div className="flex gap-2 border-b" style={{ borderColor: T.border }}>
+        {(["protection","transactions","logs"] as const).map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)} className="px-4 py-2 text-sm font-bold capitalize transition-all"
+            style={{ color: activeTab === tab ? A1 : T.sub, borderBottom: activeTab === tab ? `2px solid ${A1}` : "2px solid transparent" }}>
+            {tab === "protection" ? "Protection Rules" : tab === "transactions" ? "Transactions" : "Integrity Logs"}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "protection" && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          <div className="rounded-2xl border p-6 space-y-5" style={{ background: T.card, borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Core Protection Controls</h3>
+            {[
+              { label:"Payment idempotency key generation", sub:"Auto-generate unique key per payment attempt", checked:idempotencyEnabled, set:setIdempotencyEnabled },
+              { label:"Payment transaction lock", sub:"Lock transaction while processing to prevent duplicates", checked:lockEnabled, set:setLockEnabled },
+              { label:"Double-click payment protection", sub:"Block rapid repeat submissions from UI", checked:doubleClickProtect, set:setDoubleClickProtect },
+            ].map(s => (
+              <div key={s.label} className="flex items-start justify-between gap-4 p-4 rounded-xl border" style={{ borderColor: T.border }}>
+                <div>
+                  <p className="font-bold text-sm" style={{ color: T.text }}>{s.label}</p>
+                  <p className="text-xs mt-1" style={{ color: T.sub }}>{s.sub}</p>
+                </div>
+                <Toggle checked={s.checked} onChange={() => s.set(v => !v)} />
+              </div>
+            ))}
+            <div className="flex items-center justify-between p-4 rounded-xl border" style={{ borderColor: T.border }}>
+              <div>
+                <p className="font-bold text-sm" style={{ color: T.text }}>Payment retry limit</p>
+                <p className="text-xs mt-1" style={{ color: T.sub }}>Max retry attempts before blocking</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setRetryLimit(v => Math.max(1, v-1))} className="h-7 w-7 rounded-full border flex items-center justify-center" style={{ borderColor: T.border, color: T.text }}>−</button>
+                <span className="w-6 text-center font-bold" style={{ color: T.text }}>{retryLimit}</span>
+                <button onClick={() => setRetryLimit(v => Math.min(10, v+1))} className="h-7 w-7 rounded-full border flex items-center justify-center" style={{ borderColor: T.border, color: T.text }}>+</button>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-2xl border p-6 space-y-4" style={{ background: T.card, borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Duplicate Detection Engine</h3>
+            {[
+              { label:"Payment unique reference validator", ok:true },
+              { label:"Duplicate payment detection engine", ok:true },
+              { label:"Payment verification before processing", ok:true },
+              { label:"Payment reconciliation system", ok:true },
+              { label:"Refund auto-trigger (on duplicate)", ok:idempotencyEnabled },
+            ].map(c => (
+              <div key={c.label} className="flex items-center justify-between p-3 rounded-xl border" style={{ borderColor: T.border }}>
+                <span className="text-sm" style={{ color: T.text }}>{c.label}</span>
+                {c.ok ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <AlertTriangle className="h-4 w-4 text-amber-400" />}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "transactions" && (
+        <>
+          <div className="flex items-center gap-3 px-3 py-2 rounded-xl border" style={{ background: T.input, borderColor: T.border }}>
+            <Search className="h-4 w-4" style={{ color: T.sub }} />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by user or reference…"
+              className="bg-transparent flex-1 text-sm outline-none" style={{ color: T.text }} />
+          </div>
+          <div className="rounded-2xl border overflow-hidden" style={{ background: T.card, borderColor: T.border }}>
+            <div className="divide-y" style={{ borderColor: T.border }}>
+              {filtered.map(txn => (
+                <div key={txn.id} className="flex items-center justify-between p-4 hover:bg-white/5 transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="h-2.5 w-2.5 rounded-full" style={{ background: statusColor(txn.status) }} />
+                    <div>
+                      <p className="font-bold text-sm" style={{ color: T.text }}>{txn.user}</p>
+                      <p className="text-xs font-mono" style={{ color: T.sub }}>{txn.ref} · {txn.time}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="font-bold font-mono" style={{ color: T.text }}>₹{txn.amount.toLocaleString()}</span>
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background:`${statusColor(txn.status)}18`, color: statusColor(txn.status) }}>
+                      {txn.status}
+                    </span>
+                    {txn.duplicate && (
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-500/15 text-red-400">DUPLICATE</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeTab === "logs" && (
+        <div className="rounded-2xl border overflow-hidden" style={{ background: T.card, borderColor: T.border }}>
+          <div className="p-4 border-b" style={{ borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Payment Integrity Logs</h3>
+          </div>
+          <div className="divide-y" style={{ borderColor: T.border }}>
+            {[
+              { event:"Duplicate payment blocked", ref:"PAY-2026-002", user:"Priya Sharma", action:"Auto-refund triggered", time:"15 min ago", severity:"high" },
+              { event:"Idempotency key validated", ref:"PAY-2026-001", user:"Ravi Kumar", action:"Payment processed", time:"2 min ago", severity:"info" },
+              { event:"Transaction locked", ref:"PAY-2026-005", user:"Dev Nair", action:"Pending investigation", time:"5 hrs ago", severity:"medium" },
+              { event:"Reconciliation completed", ref:"batch_daily", user:"System", action:"0 discrepancies", time:"Yesterday", severity:"info" },
+            ].map((l,i) => (
+              <div key={i} className="flex items-start justify-between p-4 hover:bg-white/5 transition-all">
+                <div className="flex items-start gap-3">
+                  <div className={`h-2.5 w-2.5 rounded-full mt-1.5 ${l.severity === "high" ? "bg-red-400" : l.severity === "medium" ? "bg-amber-400" : "bg-blue-400"}`} />
+                  <div>
+                    <p className="font-bold text-sm" style={{ color: T.text }}>{l.event}</p>
+                    <p className="text-xs" style={{ color: T.sub }}>{l.ref} · {l.user}</p>
+                    <p className="text-xs mt-0.5" style={{ color: T.sub }}>{l.action} · {l.time}</p>
+                  </div>
+                </div>
+                <span className={`text-xs font-bold px-2 py-1 rounded-full ${l.severity === "high" ? "bg-red-500/15 text-red-400" : l.severity === "medium" ? "bg-amber-500/15 text-amber-400" : "bg-blue-500/15 text-blue-400"}`}>
+                  {l.severity}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

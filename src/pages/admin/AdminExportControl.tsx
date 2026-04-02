@@ -1,85 +1,256 @@
 import { useState } from "react";
-import { Download, AlertTriangle, CheckCircle2, Lock, FileText, Shield } from "lucide-react";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
-import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { Download, FileText, CheckCircle2, AlertTriangle, RefreshCw, Eye, BarChart3, Clock, XCircle, FileCheck } from "lucide-react";
 
-const A1="#6366f1",A2="#8b5cf6";
-const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
+const A1 = "#6366f1", A2 = "#8b5cf6";
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+};
 
-interface ExportRequest{id:string;requestedBy:string;dataType:string;status:"pending"|"approved"|"rejected"|"completed";sizeKb:number;maskPII:boolean;encrypted:boolean;requestedAt:string;approvedBy?:string;}
-const seed=():ExportRequest[]=>[
-  {id:"e1",requestedBy:"Admin A",dataType:"User Data (10k records)",status:"pending",sizeKb:4200,maskPII:true,encrypted:true,requestedAt:new Date(Date.now()-3600000).toISOString()},
-  {id:"e2",requestedBy:"Support Team",dataType:"Transaction Logs",status:"approved",sizeKb:18400,maskPII:false,encrypted:true,requestedAt:new Date(Date.now()-86400000).toISOString(),approvedBy:"Super Admin"},
-  {id:"e3",requestedBy:"Finance",dataType:"Commission Reports",status:"completed",sizeKb:1200,maskPII:false,encrypted:false,requestedAt:new Date(Date.now()-172800000).toISOString(),approvedBy:"Admin B"},
+const FORMATS = [
+  { id:"csv", label:"CSV", desc:"Comma-separated values, UTF-8 encoded", icon:"📄", compatible:true },
+  { id:"excel", label:"Excel (.xlsx)", desc:"Microsoft Excel format, full Unicode support", icon:"📊", compatible:true },
+  { id:"pdf", label:"PDF", desc:"Portable Document Format, read-only", icon:"📕", compatible:true },
+  { id:"json", label:"JSON", desc:"Machine-readable, API-friendly", icon:"🔧", compatible:true },
+  { id:"xml", label:"XML", desc:"Legacy format, limited Unicode support", icon:"🗂️", compatible:false },
 ];
-function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
-const sColor={pending:"#fbbf24",approved:"#4ade80",rejected:"#f87171",completed:"#a5b4fc"};
 
-export default function AdminExportControl(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
-  const[requests,setRequests]=useState(()=>load("admin_export_ctrl_v1",seed));
-  const[acting,setActing]=useState<string|null>(null);
-  const[maxSizeMB,setMaxSizeMB]=useState(50);
+const LOGS = [
+  { id:1, format:"CSV", status:"success", size:"2.3 MB", rows:14200, time:"2 min ago", user:"admin@site.com" },
+  { id:2, format:"Excel", status:"success", size:"5.1 MB", rows:31000, time:"1 hr ago", user:"manager@site.com" },
+  { id:3, format:"PDF", status:"failed", size:"—", rows:0, time:"3 hrs ago", user:"admin@site.com" },
+  { id:4, format:"JSON", status:"success", size:"8.7 MB", rows:52000, time:"Yesterday", user:"dev@site.com" },
+  { id:5, format:"XML", status:"failed", size:"—", rows:0, time:"2 days ago", user:"admin@site.com" },
+];
 
-  const approve=async(id:string)=>{
-    setActing(id);await new Promise(r=>setTimeout(r,600));
-    const upd=requests.map(r=>r.id===id?{...r,status:"approved" as const,approvedBy:"Admin"}:r);
-    localStorage.setItem("admin_export_ctrl_v1",JSON.stringify(upd));setRequests(upd);setActing(null);
-    toast({title:"Export approved"});
+export default function AdminExportControl() {
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
+
+  const [selectedFormat, setSelectedFormat] = useState("csv");
+  const [encoding, setEncoding] = useState("utf8");
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [validationResult, setValidationResult] = useState<null|"pass"|"fail">(null);
+  const [retrying, setRetrying] = useState(false);
+  const [activeTab, setActiveTab] = useState<"config"|"logs"|"health">("config");
+
+  const runValidation = () => {
+    setValidating(true);
+    setValidationResult(null);
+    setTimeout(() => { setValidating(false); setValidationResult("pass"); }, 1800);
   };
-  const reject=async(id:string)=>{
-    setActing(id);await new Promise(r=>setTimeout(r,400));
-    const upd=requests.map(r=>r.id===id?{...r,status:"rejected" as const}:r);
-    localStorage.setItem("admin_export_ctrl_v1",JSON.stringify(upd));setRequests(upd);setActing(null);
-    toast({title:"Export rejected"});
+
+  const handleRetry = () => {
+    setRetrying(true);
+    setTimeout(() => setRetrying(false), 2000);
   };
 
-  const pending=requests.filter(r=>r.status==="pending").length;
+  const stats = [
+    { label:"Total Exports", value:"1,842", icon:Download, color:"#60a5fa" },
+    { label:"Success Rate", value:"96.4%", icon:CheckCircle2, color:"#4ade80" },
+    { label:"Failed Exports", value:"66", icon:XCircle, color:"#f87171" },
+    { label:"Avg File Size", value:"4.2 MB", icon:FileText, color:A1 },
+  ];
 
-  return(
-    <div style={{maxWidth:980,margin:"0 auto",paddingBottom:40}}>
-      <div style={{background:`linear-gradient(135deg,${A1}22,${A2}15)`,border:`1px solid rgba(99,102,241,.2)`,borderRadius:18,padding:"26px 28px",marginBottom:20}}>
-        <div style={{display:"flex",alignItems:"center",gap:14}}>
-          <div style={{width:48,height:48,borderRadius:14,background:`linear-gradient(135deg,${A1},${A2})`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 0 24px ${A1}55`,flexShrink:0}}><Download size={22} color="#fff"/></div>
-          <div style={{flex:1}}>
-            <h1 style={{color:T.text,fontWeight:800,fontSize:22,margin:0}}>Data Export Control System</h1>
-            <p style={{color:T.sub,fontSize:13,margin:"3px 0 0"}}>Export permissions · Data masking · Approval workflow · Export logs · Size limit · Encryption · Audit trail</p>
-          </div>
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: T.text }}>Export Format Validation</h1>
+          <p className="text-sm mt-1" style={{ color: T.sub }}>Configure and validate export formats, encoding, and compatibility.</p>
         </div>
-        <div style={{display:"flex",gap:10,marginTop:18,flexWrap:"wrap"}}>
-          {[{l:"Pending",v:pending,c:pending>0?"#fbbf24":"#4ade80"},{l:"Approved",v:requests.filter(r=>r.status==="approved").length,c:"#4ade80"},{l:"Max Size",v:`${maxSizeMB} MB`,c:T.badgeFg}].map(s=>(
-            <div key={s.l} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 16px",display:"flex",gap:8,alignItems:"center"}}>
-              <span style={{fontWeight:800,fontSize:18,color:s.c}}>{s.v}</span><span style={{fontSize:11,color:T.sub}}>{s.l}</span>
-            </div>
-          ))}
-        </div>
+        <button onClick={handleRetry} disabled={retrying}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all"
+          style={{ background: A1, color:"#fff", opacity: retrying ? .6 : 1 }}>
+          <RefreshCw className={`h-4 w-4 ${retrying ? "animate-spin" : ""}`} />
+          {retrying ? "Retrying…" : "Retry Failed"}
+        </button>
       </div>
-      <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,padding:"14px 18px",marginBottom:12,display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
-        <span style={{fontSize:12,color:T.sub}}>Max export size (MB):</span>
-        <input type="number" value={maxSizeMB} onChange={e=>setMaxSizeMB(+e.target.value)} style={{width:80,background:T.input,border:`1px solid ${T.border}`,color:T.text,borderRadius:7,padding:"5px 8px",fontSize:12}}/>
-        <button onClick={()=>toast({title:`Max export size set to ${maxSizeMB} MB`})} style={{padding:"6px 14px",borderRadius:8,background:`${A1}15`,border:`1px solid ${A1}33`,color:T.badgeFg,fontSize:12,fontWeight:600,cursor:"pointer"}}>Save</button>
-      </div>
-      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-        {requests.map(r=>(
-          <div key={r.id} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:13,padding:"14px 18px",display:"flex",gap:12,alignItems:"center"}}>
-            <div style={{flex:1}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3,flexWrap:"wrap"}}>
-                <span style={{fontWeight:700,fontSize:13,color:T.text}}>{r.dataType}</span>
-                <span style={{fontSize:10,fontWeight:700,color:sColor[r.status],textTransform:"capitalize"}}>{r.status}</span>
-                {r.maskPII&&<span style={{fontSize:10,color:"#4ade80"}}>PII masked</span>}
-                {r.encrypted&&<span style={{fontSize:10,color:"#4ade80"}}>Encrypted</span>}
-                <span style={{fontSize:10,color:T.sub}}>{(r.sizeKb/1024).toFixed(1)} MB</span>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map(s => (
+          <div key={s.label} className="rounded-2xl p-4 border" style={{ background: T.card, borderColor: T.border }}>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl" style={{ background:`${s.color}18` }}>
+                <s.icon className="h-5 w-5" style={{ color: s.color }} />
               </div>
-              <p style={{fontSize:12,color:T.sub,margin:0}}>By {r.requestedBy} · {format(new Date(r.requestedAt),"MMM d, HH:mm")}{r.approvedBy?` · Approved by ${r.approvedBy}`:""}</p>
+              <div>
+                <p className="text-xl font-bold" style={{ color: T.text }}>{s.value}</p>
+                <p className="text-[10px] uppercase font-bold tracking-widest" style={{ color: T.sub }}>{s.label}</p>
+              </div>
             </div>
-            {r.status==="pending"&&<div style={{display:"flex",gap:6,flexShrink:0}}>
-              <button onClick={()=>approve(r.id)} disabled={acting===r.id} style={{padding:"6px 12px",borderRadius:8,background:"rgba(74,222,128,.08)",border:"1px solid rgba(74,222,128,.2)",color:"#4ade80",fontSize:11,fontWeight:600,cursor:"pointer"}}>Approve</button>
-              <button onClick={()=>reject(r.id)} disabled={acting===r.id} style={{padding:"6px 12px",borderRadius:8,background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.2)",color:"#f87171",fontSize:11,fontWeight:600,cursor:"pointer"}}>Reject</button>
-            </div>}
           </div>
         ))}
       </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2 border-b" style={{ borderColor: T.border }}>
+        {(["config","logs","health"] as const).map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            className="px-4 py-2 text-sm font-bold capitalize transition-all"
+            style={{ color: activeTab === tab ? A1 : T.sub, borderBottom: activeTab === tab ? `2px solid ${A1}` : "2px solid transparent" }}>
+            {tab === "config" ? "Format Config" : tab === "logs" ? "Export Logs" : "Health"}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "config" && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Format Selection */}
+          <div className="rounded-2xl border p-6 space-y-4" style={{ background: T.card, borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Export Format Selection</h3>
+            <div className="space-y-3">
+              {FORMATS.map(f => (
+                <button key={f.id} onClick={() => setSelectedFormat(f.id)}
+                  className="w-full flex items-center gap-4 p-3 rounded-xl border transition-all text-left"
+                  style={{ background: selectedFormat === f.id ? `${A1}15` : "transparent", borderColor: selectedFormat === f.id ? A1 : T.border }}>
+                  <span className="text-2xl">{f.icon}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm" style={{ color: T.text }}>{f.label}</span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${f.compatible ? "bg-green-500/15 text-green-400" : "bg-red-500/15 text-red-400"}`}>
+                        {f.compatible ? "Compatible" : "Issues"}
+                      </span>
+                    </div>
+                    <p className="text-xs mt-0.5" style={{ color: T.sub }}>{f.desc}</p>
+                  </div>
+                  {selectedFormat === f.id && <CheckCircle2 className="h-5 w-5 text-[#4ade80]" />}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Encoding & Validation */}
+          <div className="space-y-4">
+            <div className="rounded-2xl border p-6 space-y-4" style={{ background: T.card, borderColor: T.border }}>
+              <h3 className="font-bold" style={{ color: T.text }}>Encoding Validation</h3>
+              <div className="space-y-3">
+                {["utf8","latin1","ascii"].map(enc => (
+                  <button key={enc} onClick={() => setEncoding(enc)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl border transition-all"
+                    style={{ background: encoding === enc ? `${A1}15` : "transparent", borderColor: encoding === enc ? A1 : T.border }}>
+                    <span className="text-sm font-bold" style={{ color: T.text }}>
+                      {enc === "utf8" ? "UTF-8 (Recommended)" : enc === "latin1" ? "Latin-1" : "ASCII"}
+                    </span>
+                    {encoding === enc && <CheckCircle2 className="h-4 w-4 text-[#4ade80]" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border p-6 space-y-4" style={{ background: T.card, borderColor: T.border }}>
+              <h3 className="font-bold" style={{ color: T.text }}>Validation & Preview</h3>
+              <div className="flex gap-3">
+                <button onClick={runValidation} disabled={validating}
+                  className="flex-1 py-2 rounded-xl text-sm font-bold border transition-all flex items-center justify-center gap-2"
+                  style={{ borderColor: A1, color: A1, opacity: validating ? .6 : 1 }}>
+                  <FileCheck className={`h-4 w-4 ${validating ? "animate-pulse" : ""}`} />
+                  {validating ? "Validating…" : "Run Validation"}
+                </button>
+                <button onClick={() => setPreviewOpen(v => !v)}
+                  className="flex-1 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+                  style={{ background: `${A2}20`, color: A2 }}>
+                  <Eye className="h-4 w-4" /> Preview
+                </button>
+              </div>
+              {validationResult && (
+                <div className={`p-3 rounded-xl flex items-center gap-3 ${validationResult === "pass" ? "bg-green-500/10 border border-green-500/20" : "bg-red-500/10 border border-red-500/20"}`}>
+                  {validationResult === "pass" ? <CheckCircle2 className="h-5 w-5 text-green-400" /> : <AlertTriangle className="h-5 w-5 text-red-400" />}
+                  <span className="text-sm font-bold" style={{ color: validationResult === "pass" ? "#4ade80" : "#f87171" }}>
+                    {validationResult === "pass" ? "Validation passed — export is safe" : "Validation failed — check encoding settings"}
+                  </span>
+                </div>
+              )}
+              {previewOpen && (
+                <div className="rounded-xl p-3 font-mono text-xs border" style={{ background:"rgba(0,0,0,.3)", borderColor: T.border, color: T.sub }}>
+                  <p>id,name,email,amount,date</p>
+                  <p>1,Ravi Kumar,ravi@mail.com,5000,2026-04-01</p>
+                  <p>2,Priya Sharma,priya@mail.com,12000,2026-04-01</p>
+                  <p className="opacity-50">…{" "}14,197 more rows</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "logs" && (
+        <div className="rounded-2xl border overflow-hidden" style={{ background: T.card, borderColor: T.border }}>
+          <div className="p-4 border-b" style={{ borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Export Logs</h3>
+          </div>
+          <div className="divide-y" style={{ borderColor: T.border }}>
+            {LOGS.map(log => (
+              <div key={log.id} className="flex items-center justify-between p-4 hover:bg-white/5 transition-all">
+                <div className="flex items-center gap-4">
+                  <div className={`h-2 w-2 rounded-full ${log.status === "success" ? "bg-green-400" : "bg-red-400"}`} />
+                  <div>
+                    <p className="font-bold text-sm" style={{ color: T.text }}>{log.format} Export</p>
+                    <p className="text-xs" style={{ color: T.sub }}>{log.user} · {log.time}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-6 text-right">
+                  <div>
+                    <p className="text-xs font-bold" style={{ color: T.text }}>{log.rows > 0 ? log.rows.toLocaleString() : "—"} rows</p>
+                    <p className="text-xs" style={{ color: T.sub }}>{log.size}</p>
+                  </div>
+                  <span className={`text-xs font-bold px-2 py-1 rounded-full ${log.status === "success" ? "bg-green-500/15 text-green-400" : "bg-red-500/15 text-red-400"}`}>
+                    {log.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "health" && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          <div className="rounded-2xl border p-6 space-y-4" style={{ background: T.card, borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Export Health Dashboard</h3>
+            {[
+              { label:"CSV Engine", status:"healthy", latency:"12ms" },
+              { label:"Excel Renderer", status:"healthy", latency:"34ms" },
+              { label:"PDF Generator", status:"degraded", latency:"820ms" },
+              { label:"JSON Serializer", status:"healthy", latency:"8ms" },
+              { label:"Encoding Layer", status:"healthy", latency:"5ms" },
+            ].map(svc => (
+              <div key={svc.label} className="flex items-center justify-between p-3 rounded-xl border" style={{ borderColor: T.border }}>
+                <div className="flex items-center gap-3">
+                  <div className={`h-2.5 w-2.5 rounded-full ${svc.status === "healthy" ? "bg-green-400" : "bg-amber-400"}`} />
+                  <span className="text-sm font-bold" style={{ color: T.text }}>{svc.label}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-mono" style={{ color: T.sub }}>{svc.latency}</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${svc.status === "healthy" ? "bg-green-500/15 text-green-400" : "bg-amber-500/15 text-amber-400"}`}>
+                    {svc.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-2xl border p-6 space-y-4" style={{ background: T.card, borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>File Verification</h3>
+            <p className="text-sm" style={{ color: T.sub }}>Last 3 export files verified against checksums.</p>
+            {["export_20260401_01.csv","export_20260401_02.xlsx","export_20260331_01.json"].map((f,i) => (
+              <div key={f} className="flex items-center justify-between p-3 rounded-xl border" style={{ borderColor: T.border }}>
+                <div className="flex items-center gap-3">
+                  <FileText className="h-4 w-4" style={{ color: T.sub }} />
+                  <span className="text-xs font-mono" style={{ color: T.text }}>{f}</span>
+                </div>
+                {i === 1
+                  ? <AlertTriangle className="h-4 w-4 text-amber-400" />
+                  : <CheckCircle2 className="h-4 w-4 text-green-400" />}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

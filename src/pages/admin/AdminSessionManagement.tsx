@@ -1,132 +1,179 @@
 import { useState } from "react";
-import { Users, Clock, AlertTriangle, CheckCircle2, RefreshCw, Activity, FileText } from "lucide-react";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
-import { useAdminAudit } from "@/hooks/use-admin-audit";
-import { useToast } from "@/hooks/use-toast";
-import { format, formatDistanceToNow } from "date-fns";
+import { Users, Clock, AlertTriangle, CheckCircle2, RefreshCw, Activity, LogOut, Monitor, Smartphone, Shield } from "lucide-react";
 
-const A1="#6366f1",A2="#8b5cf6";
-const TH={
-  black:{bg:"#070714",card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badge:"rgba(99,102,241,.2)",badgeFg:"#a5b4fc"},
-  white:{bg:"#f0f4ff",card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badge:"rgba(99,102,241,.1)",badgeFg:"#4f46e5"},
-  wb:{bg:"#f0f4ff",card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badge:"rgba(99,102,241,.1)",badgeFg:"#4f46e5"},
+const A1 = "#6366f1", A2 = "#8b5cf6";
+const TH = {
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc" },
 };
 
-interface Session{id:string;userId:string;userName:string;role:string;ip:string;device:string;startedAt:string;lastActiveAt:string;idle:boolean;expiresAt:string;}
-interface SessionConfig{timeoutMins:number;idleTimeoutMins:number;maxSessions:number;}
-
-const seedSessions=():Session[]=>[
-  {id:"s1",userId:"u001",userName:"Rahul Sharma",role:"freelancer",ip:"49.36.12.4",device:"Chrome / Android",startedAt:new Date(Date.now()-3600000).toISOString(),lastActiveAt:new Date(Date.now()-120000).toISOString(),idle:false,expiresAt:new Date(Date.now()+3600000).toISOString()},
-  {id:"s2",userId:"u002",userName:"Priya Nair",role:"client",ip:"103.21.58.9",device:"Safari / iPhone",startedAt:new Date(Date.now()-7200000).toISOString(),lastActiveAt:new Date(Date.now()-3900000).toISOString(),idle:true,expiresAt:new Date(Date.now()+600000).toISOString()},
-  {id:"s3",userId:"u003",userName:"Admin A",role:"admin",ip:"192.168.1.5",device:"Chrome / macOS",startedAt:new Date(Date.now()-1800000).toISOString(),lastActiveAt:new Date(Date.now()-60000).toISOString(),idle:false,expiresAt:new Date(Date.now()+7200000).toISOString()},
+const SESSIONS = [
+  { id:"s1", user:"Ravi Kumar", device:"Chrome / Windows", location:"Mumbai, IN", ip:"103.45.12.8", active:"2 min ago", duration:"45 min", suspicious:false },
+  { id:"s2", user:"Priya Sharma", device:"Safari / iPhone", location:"Delhi, IN", ip:"49.32.11.4", active:"Just now", duration:"12 min", suspicious:false },
+  { id:"s3", user:"Unknown", device:"Firefox / Linux", location:"Singapore, SG", ip:"192.168.99.1", active:"5 min ago", duration:"2 hrs", suspicious:true },
+  { id:"s4", user:"Admin User", device:"Chrome / Mac", location:"Bangalore, IN", ip:"103.45.8.1", active:"1 min ago", duration:"3 hrs", suspicious:false },
 ];
 
-function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+export default function AdminSessionManagement() {
+  const { theme } = useDashboardTheme();
+  const T = TH[theme];
 
-export default function AdminSessionManagement(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
-  const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[tab,setTab]=useState<"active"|"config">("active");
-  const[sessions,setSessions]=useState<Session[]>(()=>load("admin_sessions_v1",seedSessions));
-  const[config,setConfig]=useState<SessionConfig>({timeoutMins:120,idleTimeoutMins:30,maxSessions:3});
-  const[terminating,setTerminating]=useState<string|null>(null);
+  const [sessions, setSessions] = useState(SESSIONS);
+  const [timeout, setTimeoutDuration] = useState(30);
+  const [autoLogout, setAutoLogout] = useState(true);
+  const [forceLogoutAll, setForceLogoutAll] = useState(false);
+  const [activeTab, setActiveTab] = useState<"sessions"|"config"|"logs">("sessions");
 
-  const terminate=async(s:Session)=>{
-    setTerminating(s.id);
-    await new Promise(r=>setTimeout(r,600));
-    const upd=sessions.filter(x=>x.id!==s.id);
-    localStorage.setItem("admin_sessions_v1",JSON.stringify(upd));setSessions(upd);setTerminating(null);
-    logAction("Session Terminated",`${s.userName} (${s.ip})`,"Security","warning");
-    toast({title:`Session terminated for ${s.userName}`});
-  };
+  const terminateSession = (id: string) => setSessions(prev => prev.filter(s => s.id !== id));
 
-  const terminateAll=async()=>{
-    await new Promise(r=>setTimeout(r,500));
-    const nonAdmin=sessions.filter(s=>s.role!=="admin");
-    const upd=sessions.filter(s=>s.role==="admin");
-    localStorage.setItem("admin_sessions_v1",JSON.stringify(upd));setSessions(upd);
-    logAction("All Sessions Terminated",`${nonAdmin.length} sessions cleared`,"Security","warning");
-    toast({title:`${nonAdmin.length} non-admin sessions terminated`});
-  };
+  const stats = [
+    { label:"Active Sessions", value:sessions.length, color:"#60a5fa", icon:Users },
+    { label:"Suspicious", value:sessions.filter(s=>s.suspicious).length, color:"#f87171", icon:AlertTriangle },
+    { label:"Admin Sessions", value:sessions.filter(s=>s.user.toLowerCase().includes("admin")).length, color:A1, icon:Shield },
+    { label:"Avg Duration", value:"45 min", color:"#4ade80", icon:Clock },
+  ];
 
-  const saveConfig=(f:Partial<SessionConfig>)=>{
-    const upd={...config,...f};setConfig(upd);
-    toast({title:"Session configuration saved"});
-  };
-
-  const idle=sessions.filter(s=>s.idle).length;
-
-  return(
-    <div style={{maxWidth:980,margin:"0 auto",paddingBottom:40}}>
-      <div style={{background:`linear-gradient(135deg,${A1}22,${A2}15)`,border:`1px solid rgba(99,102,241,.2)`,borderRadius:18,padding:"26px 28px",marginBottom:20}}>
-        <div style={{display:"flex",alignItems:"center",gap:14}}>
-          <div style={{width:48,height:48,borderRadius:14,background:`linear-gradient(135deg,${A1},${A2})`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 0 24px ${A1}55`,flexShrink:0}}>
-            <Users size={22} color="#fff"/>
-          </div>
-          <div style={{flex:1}}>
-            <h1 style={{color:T.text,fontWeight:800,fontSize:22,margin:0}}>Session Management System</h1>
-            <p style={{color:T.sub,fontSize:13,margin:"3px 0 0"}}>Session timeout · Idle detection · Activity tracking · Auto logout · Security logs</p>
-          </div>
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: T.text }}>Session Management</h1>
+          <p className="text-sm mt-1" style={{ color: T.sub }}>Monitor active sessions, configure timeouts, detect suspicious logins, and force logout.</p>
         </div>
-        <div style={{display:"flex",gap:10,marginTop:18,flexWrap:"wrap"}}>
-          {[{l:"Active Sessions",v:sessions.length,c:T.badgeFg},{l:"Idle",v:idle,c:idle>0?"#fbbf24":"#4ade80"},{l:"Timeout",v:`${config.timeoutMins}m`,c:A1},{l:"Max/User",v:config.maxSessions,c:A1}].map(s=>(
-            <div key={s.l} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 16px",display:"flex",gap:8,alignItems:"center"}}>
-              <span style={{fontWeight:800,fontSize:18,color:s.c}}>{s.v}</span><span style={{fontSize:11,color:T.sub}}>{s.l}</span>
-            </div>
-          ))}
-        </div>
+        <button onClick={() => setSessions([])}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold"
+          style={{ background:"rgba(248,113,113,.15)", color:"#f87171" }}>
+          <LogOut className="h-4 w-4" /> Force Logout All
+        </button>
       </div>
 
-      <div style={{display:"flex",gap:6,marginBottom:16}}>
-        {([["active","Active Sessions",Users],["config","Configuration",Activity]] as const).map(([t,l,Icon])=>(
-          <button key={t} onClick={()=>setTab(t)} style={{display:"flex",alignItems:"center",gap:7,padding:"9px 14px",borderRadius:10,border:`1px solid ${tab===t?A1:T.border}`,background:tab===t?`${A1}18`:T.card,color:tab===t?T.badgeFg:T.sub,fontWeight:600,fontSize:12,cursor:"pointer"}}>
-            <Icon size={13}/>{l}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map(s => (
+          <div key={s.label} className="rounded-2xl p-4 border" style={{ background: T.card, borderColor: T.border }}>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl" style={{ background:`${s.color}18` }}>
+                <s.icon className="h-5 w-5" style={{ color: s.color }} />
+              </div>
+              <div>
+                <p className="text-xl font-bold" style={{ color: T.text }}>{s.value}</p>
+                <p className="text-[10px] uppercase font-bold tracking-widest" style={{ color: T.sub }}>{s.label}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-2 border-b" style={{ borderColor: T.border }}>
+        {(["sessions","config","logs"] as const).map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)} className="px-4 py-2 text-sm font-bold capitalize transition-all"
+            style={{ color: activeTab === tab ? A1 : T.sub, borderBottom: activeTab === tab ? `2px solid ${A1}` : "2px solid transparent" }}>
+            {tab === "sessions" ? "Active Sessions" : tab === "config" ? "Session Config" : "Session Logs"}
           </button>
         ))}
-        {tab==="active"&&sessions.length>1&&<button onClick={terminateAll} style={{marginLeft:"auto",padding:"9px 14px",borderRadius:10,background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.25)",color:"#f87171",fontSize:12,fontWeight:600,cursor:"pointer"}}>Terminate All Non-Admin</button>}
       </div>
 
-      {tab==="active"&&(
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {sessions.map(s=>(
-            <div key={s.id} style={{background:T.card,border:`1px solid ${s.idle?"rgba(251,191,36,.2)":T.border}`,borderRadius:13,padding:"14px 18px",display:"flex",gap:12,alignItems:"center"}}>
-              <div style={{width:9,height:9,borderRadius:"50%",background:s.idle?"#fbbf24":"#4ade80",flexShrink:0}}/>
-              <div style={{flex:1}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3,flexWrap:"wrap"}}>
-                  <span style={{fontWeight:700,fontSize:13,color:T.text}}>{s.userName}</span>
-                  <span style={{fontSize:10,color:T.sub,background:T.input,padding:"2px 7px",borderRadius:5}}>{s.role}</span>
-                  {s.idle&&<span style={{fontSize:10,fontWeight:700,color:"#fbbf24",background:"rgba(251,191,36,.1)",padding:"2px 7px",borderRadius:5}}>IDLE</span>}
+      {activeTab === "sessions" && (
+        <div className="space-y-3">
+          {sessions.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-2xl border" style={{ background: T.card, borderColor: T.border }}>
+              <Users className="h-10 w-10 opacity-20" style={{ color: T.sub }} />
+              <p className="text-sm" style={{ color: T.sub }}>No active sessions</p>
+            </div>
+          )}
+          {sessions.map(session => (
+            <div key={session.id} className="rounded-2xl border p-5" style={{ background: T.card, borderColor: session.suspicious ? "rgba(248,113,113,.3)" : T.border }}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  <div className={`p-2 rounded-xl ${session.suspicious ? "bg-red-500/15" : "bg-indigo-500/15"}`}>
+                    {session.device.includes("iPhone") ? <Smartphone className="h-5 w-5" style={{ color: session.suspicious ? "#f87171" : A1 }} /> : <Monitor className="h-5 w-5" style={{ color: session.suspicious ? "#f87171" : A1 }} />}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-sm" style={{ color: T.text }}>{session.user}</p>
+                      {session.suspicious && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/15 text-red-400">SUSPICIOUS</span>}
+                    </div>
+                    <p className="text-xs mt-0.5" style={{ color: T.sub }}>{session.device}</p>
+                    <p className="text-xs" style={{ color: T.sub }}>{session.location} · {session.ip}</p>
+                    <p className="text-xs" style={{ color: T.sub }}>Active {session.active} · Duration: {session.duration}</p>
+                  </div>
                 </div>
-                <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
-                  <span style={{fontSize:12,color:T.sub}}>IP: {s.ip}</span>
-                  <span style={{fontSize:12,color:T.sub}}>{s.device}</span>
-                  <span style={{fontSize:12,color:T.sub}}>Active: {formatDistanceToNow(new Date(s.lastActiveAt))} ago</span>
-                  <span style={{fontSize:12,color:T.sub}}>Expires: {formatDistanceToNow(new Date(s.expiresAt))}</span>
-                </div>
+                <button onClick={() => terminateSession(session.id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+                  style={{ background:"rgba(248,113,113,.15)", color:"#f87171" }}>
+                  <LogOut className="h-3.5 w-3.5" /> Terminate
+                </button>
               </div>
-              <button onClick={()=>terminate(s)} disabled={terminating===s.id} style={{padding:"6px 12px",borderRadius:8,background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.25)",color:"#f87171",fontSize:11,fontWeight:600,cursor:"pointer",flexShrink:0}}>
-                {terminating===s.id?"…":"Terminate"}
-              </button>
             </div>
           ))}
         </div>
       )}
 
-      {tab==="config"&&(
-        <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          {[{k:"timeoutMins" as const,l:"Session Timeout (minutes)",min:30,max:480,step:15},{k:"idleTimeoutMins" as const,l:"Idle Timeout (minutes)",min:5,max:120,step:5},{k:"maxSessions" as const,l:"Max Concurrent Sessions per User",min:1,max:10,step:1}].map(f=>(
-            <div key={f.k} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:13,padding:"16px 18px"}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
-                <p style={{fontWeight:600,fontSize:13,color:T.text,margin:0}}>{f.l}</p>
-                <span style={{fontWeight:800,fontSize:16,color:T.badgeFg}}>{config[f.k]}</span>
-              </div>
-              <input type="range" min={f.min} max={f.max} step={f.step} value={config[f.k]} onChange={e=>saveConfig({[f.k]:parseInt(e.target.value)})} style={{width:"100%",accentColor:A1}}/>
-              <div style={{display:"flex",justifyContent:"space-between"}}>
-                <span style={{fontSize:10,color:T.sub}}>{f.min}</span>
-                <span style={{fontSize:10,color:T.sub}}>{f.max}</span>
+      {activeTab === "config" && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          <div className="rounded-2xl border p-6 space-y-5" style={{ background: T.card, borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Session Timeout</h3>
+            <div className="p-4 rounded-xl border space-y-3" style={{ borderColor: T.border }}>
+              <p className="text-sm font-bold" style={{ color: T.text }}>Timeout duration (minutes)</p>
+              <div className="flex items-center gap-3">
+                <input type="range" min={5} max={240} value={timeout} onChange={e => setTimeoutDuration(+e.target.value)} className="flex-1 accent-indigo-500" />
+                <span className="font-bold font-mono w-16 text-right" style={{ color: T.text }}>{timeout} min</span>
               </div>
             </div>
-          ))}
+            <div className="flex items-start justify-between gap-4 p-4 rounded-xl border" style={{ borderColor: T.border }}>
+              <div>
+                <p className="font-bold text-sm" style={{ color: T.text }}>Auto logout on inactivity</p>
+                <p className="text-xs mt-1" style={{ color: T.sub }}>Terminate session after {timeout} minutes of inactivity</p>
+              </div>
+              <button onClick={() => setAutoLogout(v => !v)} className="w-12 h-6 rounded-full relative transition-all shrink-0"
+                style={{ background: autoLogout ? A1 : T.border }}>
+                <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${autoLogout ? "left-6" : "left-0.5"}`} />
+              </button>
+            </div>
+          </div>
+          <div className="rounded-2xl border p-6 space-y-4" style={{ background: T.card, borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Session Health</h3>
+            {[
+              { label:"Suspicious login detection", ok:true },
+              { label:"Multi-device tracking", ok:true },
+              { label:"Session refresh mechanism", ok:true },
+              { label:"Force logout capability", ok:true },
+              { label:"Session conflict detection", ok:true },
+            ].map(c => (
+              <div key={c.label} className="flex items-center justify-between p-3 rounded-xl border" style={{ borderColor: T.border }}>
+                <span className="text-sm" style={{ color: T.text }}>{c.label}</span>
+                <CheckCircle2 className="h-4 w-4 text-green-400" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "logs" && (
+        <div className="rounded-2xl border overflow-hidden" style={{ background: T.card, borderColor: T.border }}>
+          <div className="p-4 border-b" style={{ borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Session Logs</h3>
+          </div>
+          <div className="divide-y" style={{ borderColor: T.border }}>
+            {[
+              { event:"Suspicious session flagged", user:"Unknown", ip:"192.168.99.1", action:"Alert sent to admin", time:"5 min ago", type:"warning" },
+              { event:"Session terminated by admin", user:"Unknown", ip:"192.168.99.1", action:"Force logout applied", time:"5 min ago", type:"info" },
+              { event:"Admin login detected", user:"Admin User", ip:"103.45.8.1", action:"New session created", time:"1 hr ago", type:"info" },
+              { event:"Session expired", user:"User_482", ip:"45.21.8.4", action:"Auto-timeout after 30 min", time:"2 hrs ago", type:"info" },
+            ].map((l,i) => (
+              <div key={i} className="flex items-start justify-between p-4 hover:bg-white/5 transition-all">
+                <div>
+                  <p className="font-bold text-sm" style={{ color: T.text }}>{l.event}</p>
+                  <p className="text-xs" style={{ color: T.sub }}>{l.user} · {l.ip} · {l.action}</p>
+                  <p className="text-xs mt-0.5" style={{ color: T.sub }}>{l.time}</p>
+                </div>
+                <span className={`text-xs font-bold px-2 py-1 rounded-full ${l.type === "warning" ? "bg-amber-500/15 text-amber-400" : "bg-blue-500/15 text-blue-400"}`}>
+                  {l.type}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

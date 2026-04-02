@@ -1,207 +1,220 @@
 import { useState } from "react";
-import { ClipboardList, Lock, Eye, Hash, Database, RefreshCw, Search, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
-import { useAdminAudit } from "@/hooks/use-admin-audit";
-import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { ClipboardList, Search, Download, User, Shield, Eye, AlertTriangle, CheckCircle2 } from "lucide-react";
 
-const A1 = "#6366f1", A2 = "#8b5cf6";
+const A1 = "#6366f1";
 const TH = {
-  black: { bg:"#070714",card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badge:"rgba(99,102,241,.2)",badgeFg:"#a5b4fc" },
-  white: { bg:"#f0f4ff",card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badge:"rgba(99,102,241,.1)",badgeFg:"#4f46e5" },
-  wb:    { bg:"#f0f4ff",card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badge:"rgba(99,102,241,.1)",badgeFg:"#4f46e5" },
+  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)" },
+  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc" },
+  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc" },
 };
 
-interface AuditEntry { id:string; action:string; actor:string; target:string; category:string; severity:"info"|"warning"|"critical"; timestamp:string; ip:string; hash:string; verified:boolean; }
-interface AccessAttempt { id:string; actor:string; action:string; ip:string; timestamp:string; suspicious:boolean; reason?:string; }
-interface RetentionPolicy { category:string; retainDays:number; autoBackup:boolean; exportAllowed:boolean; }
-
-const seedAudit = (): AuditEntry[] => [
-  { id:"a1", action:"User account suspended",                 actor:"Admin A",     target:"user_id:4821",   category:"User Mgmt",   severity:"warning",  timestamp:new Date(Date.now()-900000).toISOString(),    ip:"192.168.1.10", hash:"sha256:e3b0c44298fc", verified:true },
-  { id:"a2", action:"Withdrawal approved ₹25,000",           actor:"Admin B",     target:"txn_id:TXN8821", category:"Finance",     severity:"warning",  timestamp:new Date(Date.now()-1800000).toISOString(),   ip:"192.168.1.11", hash:"sha256:a1b2c3d4e5f6", verified:true },
-  { id:"a3", action:"Feature toggle: DUAL_APPROVAL enabled", actor:"Super Admin", target:"config",         category:"Config",      severity:"critical", timestamp:new Date(Date.now()-3600000).toISOString(),   ip:"192.168.1.1",  hash:"sha256:9f86d081884c", verified:true },
-  { id:"a4", action:"Admin role granted",                    actor:"Super Admin", target:"user_id:2241",   category:"Security",    severity:"critical", timestamp:new Date(Date.now()-7200000).toISOString(),   ip:"192.168.1.1",  hash:"sha256:4a44dc15364d", verified:true },
-  { id:"a5", action:"Bulk export requested (8,420 rows)",    actor:"Admin A",     target:"export_req:e1",  category:"Data",        severity:"warning",  timestamp:new Date(Date.now()-86400000).toISOString(),  ip:"192.168.1.10", hash:"sha256:7c8e4b9d1f2a", verified:true },
-  { id:"a6", action:"Config sync executed",                  actor:"System",      target:"all_configs",    category:"Config",      severity:"info",     timestamp:new Date(Date.now()-10800000).toISOString(),  ip:"127.0.0.1",    hash:"sha256:2d1f4c8e9b7a", verified:true },
-  { id:"a7", action:"Orphan cleanup: 7 items removed",       actor:"Admin C",     target:"storage",        category:"Maintenance", severity:"info",     timestamp:new Date(Date.now()-14400000).toISOString(),  ip:"192.168.1.12", hash:"sha256:8b1e5d3c9f7a", verified:true },
+const LOGS = [
+  { id:1, action:"User role changed", actor:"superadmin@site.com", target:"user_482", type:"admin", severity:"high", time:"2 min ago", ip:"103.45.12.8" },
+  { id:2, action:"Withdrawal approved", actor:"admin@site.com", target:"txn_9234", type:"finance", severity:"medium", time:"15 min ago", ip:"103.45.12.9" },
+  { id:3, action:"User banned", actor:"admin@site.com", target:"user_291", type:"user", severity:"high", time:"1 hr ago", ip:"103.45.12.9" },
+  { id:4, action:"Settings updated", actor:"manager@site.com", target:"system_config", type:"admin", severity:"medium", time:"3 hrs ago", ip:"192.168.1.1" },
+  { id:5, action:"Export generated", actor:"manager@site.com", target:"report_q1", type:"system", severity:"low", time:"5 hrs ago", ip:"192.168.1.1" },
+  { id:6, action:"Password reset (admin)", actor:"superadmin@site.com", target:"user_103", type:"user", severity:"high", time:"Yesterday", ip:"103.45.12.8" },
+  { id:7, action:"API key created", actor:"dev@site.com", target:"api_key_44", type:"security", severity:"high", time:"Yesterday", ip:"10.0.0.5" },
+  { id:8, action:"Cache cleared", actor:"admin@site.com", target:"cache_all", type:"system", severity:"low", time:"2 days ago", ip:"103.45.12.9" },
 ];
 
-const seedAccess = (): AccessAttempt[] => [
-  { id:"x1", actor:"Admin A",  action:"Accessed Audit Logs",  ip:"192.168.1.10", timestamp:new Date(Date.now()-1800000).toISOString(),  suspicious:false },
-  { id:"x2", actor:"Unknown",  action:"Attempted log export", ip:"45.79.12.200", timestamp:new Date(Date.now()-3600000).toISOString(),  suspicious:true,  reason:"IP not in allowlist — 3 failed auth attempts before this" },
-  { id:"x3", actor:"Admin B",  action:"Accessed Audit Logs",  ip:"192.168.1.11", timestamp:new Date(Date.now()-7200000).toISOString(),  suspicious:false },
-  { id:"x4", actor:"Support1", action:"Searched audit logs",  ip:"10.0.0.45",    timestamp:new Date(Date.now()-10800000).toISOString(), suspicious:true,  reason:"Role 'support' does not have audit log read permission" },
-];
-
-const POLICIES: RetentionPolicy[] = [
-  { category:"Security Events",  retainDays:365, autoBackup:true,  exportAllowed:false },
-  { category:"Finance Actions",  retainDays:730, autoBackup:true,  exportAllowed:false },
-  { category:"User Management",  retainDays:180, autoBackup:true,  exportAllowed:true  },
-  { category:"Config Changes",   retainDays:365, autoBackup:true,  exportAllowed:false },
-  { category:"System / Info",    retainDays:90,  autoBackup:false, exportAllowed:true  },
-];
-
-function load<T>(key:string,seed:()=>T[]): T[] {
-  try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
-  const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
-}
-
-const sevColor = { info:"#94a3b8", warning:"#fbbf24", critical:"#f87171" };
-const catColor: Record<string,string> = { "User Mgmt":"#4ade80","Finance":"#fb923c","Config":"#a5b4fc","Security":"#f87171","Data":"#fbbf24","Maintenance":"#6366f1" };
+const TYPES = ["all","admin","user","finance","system","security"];
 
 export default function AdminAuditLogs() {
   const { theme } = useDashboardTheme();
   const T = TH[theme];
-  const { logAction } = useAdminAudit();
-  const { toast } = useToast();
 
-  const [tab, setTab]   = useState<"logs"|"access"|"integrity"|"policy">("logs");
-  const [entries]       = useState<AuditEntry[]>(()=>load("admin_audit_entries_v1",seedAudit));
-  const [access]        = useState<AccessAttempt[]>(()=>load("admin_audit_access_v1",seedAccess));
   const [search, setSearch] = useState("");
-  const [verifying, setVerifying] = useState(false);
-  const [verifyResult, setVerifyResult] = useState<string|null>(null);
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [severityFilter, setSeverityFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState<"logs"|"settings"|"health">("logs");
 
-  const filtered = entries.filter(e => !search || e.action.toLowerCase().includes(search.toLowerCase()) || e.actor.toLowerCase().includes(search.toLowerCase()) || e.category.toLowerCase().includes(search.toLowerCase()));
-  const suspicious = access.filter(a=>a.suspicious).length;
+  const filtered = LOGS.filter(l => {
+    const matchSearch = l.action.toLowerCase().includes(search.toLowerCase()) || l.actor.toLowerCase().includes(search.toLowerCase());
+    const matchType = typeFilter === "all" || l.type === typeFilter;
+    const matchSev = severityFilter === "all" || l.severity === severityFilter;
+    return matchSearch && matchType && matchSev;
+  });
 
-  const runIntegrityCheck = async () => {
-    setVerifying(true); setVerifyResult(null);
-    await new Promise(r=>setTimeout(r,2000));
-    setVerifying(false);
-    setVerifyResult(`✓ ${entries.length} log entries verified\n✓ All SHA-256 hashes intact\n✓ No tampering detected\n✓ Chain continuity confirmed\n✓ Last backup: ${format(new Date(Date.now()-3600000),"MMM d, HH:mm")}`);
-    logAction("Log Integrity Check","All audit log hashes verified","Security","success");
-    toast({ title:"Integrity check passed — all logs verified" });
+  const severityColor = (s: string) => s === "high" ? "#f87171" : s === "medium" ? "#fbbf24" : "#94a3b8";
+  const typeColor = (t: string) => {
+    if (t === "admin") return A1;
+    if (t === "security") return "#f87171";
+    if (t === "finance") return "#4ade80";
+    if (t === "user") return "#60a5fa";
+    return "#94a3b8";
   };
 
+  const stats = [
+    { label:"Total Logs (24h)", value:"4,820", color:"#60a5fa", icon:ClipboardList },
+    { label:"Admin Actions", value:"142", color:A1, icon:Shield },
+    { label:"User Actions", value:"3,210", color:"#4ade80", icon:User },
+    { label:"High Severity", value:"28", color:"#f87171", icon:AlertTriangle },
+  ];
+
   return (
-    <div style={{ maxWidth:1000,margin:"0 auto",paddingBottom:40 }}>
-      <div style={{ background:`linear-gradient(135deg,${A1}22,${A2}15)`,border:`1px solid rgba(99,102,241,.2)`,borderRadius:18,padding:"26px 28px",marginBottom:20 }}>
-        <div style={{ display:"flex",alignItems:"center",gap:14 }}>
-          <div style={{ width:48,height:48,borderRadius:14,background:`linear-gradient(135deg,${A1},${A2})`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 0 24px ${A1}55`,flexShrink:0 }}>
-            <ClipboardList size={22} color="#fff"/>
-          </div>
-          <div style={{ flex:1 }}>
-            <h1 style={{ color:T.text,fontWeight:800,fontSize:22,margin:0 }}>Audit Log Protection</h1>
-            <p style={{ color:T.sub,fontSize:13,margin:"3px 0 0" }}>Immutable write-once logs · SHA-256 hash chain · Tamper detection · Access control · Retention policy</p>
-          </div>
-          <div style={{ background:"rgba(74,222,128,.08)",border:"1px solid rgba(74,222,128,.2)",borderRadius:10,padding:"8px 14px",display:"flex",gap:7,alignItems:"center" }}>
-            <Lock size={12} color="#4ade80"/>
-            <span style={{ fontSize:11,fontWeight:700,color:"#4ade80" }}>WRITE-ONCE</span>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ color: T.text }}>Comprehensive Audit Logging</h1>
+          <p className="text-sm mt-1" style={{ color: T.sub }}>Track all admin and user actions with full change history and export capability.</p>
         </div>
-        <div style={{ display:"flex",gap:10,marginTop:18,flexWrap:"wrap" }}>
-          {[{l:"Total Entries",v:entries.length,c:T.badgeFg},{l:"Verified",v:entries.filter(e=>e.verified).length,c:"#4ade80"},{l:"Suspicious Access",v:suspicious,c:suspicious>0?"#f87171":"#94a3b8"},{l:"Critical Events",v:entries.filter(e=>e.severity==="critical").length,c:"#f87171"}].map(s=>(
-            <div key={s.l} style={{ background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 16px",display:"flex",gap:8,alignItems:"center" }}>
-              <span style={{ fontWeight:800,fontSize:18,color:s.c }}>{s.v}</span><span style={{ fontSize:11,color:T.sub }}>{s.l}</span>
-            </div>
-          ))}
-        </div>
+        <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold" style={{ background: A1, color:"#fff" }}>
+          <Download className="h-4 w-4" /> Export Logs
+        </button>
       </div>
 
-      <div style={{ display:"flex",gap:6,marginBottom:16,flexWrap:"wrap" }}>
-        {([["logs","Audit Log",ClipboardList],["access","Access Control",Eye],["integrity","Integrity",Hash],["policy","Retention Policy",Database]] as const).map(([t,l,Icon])=>(
-          <button key={t} onClick={()=>setTab(t)} style={{ display:"flex",alignItems:"center",gap:7,padding:"9px 14px",borderRadius:10,border:`1px solid ${tab===t?A1:T.border}`,background:tab===t?`${A1}18`:T.card,color:tab===t?T.badgeFg:T.sub,fontWeight:600,fontSize:12,cursor:"pointer" }}>
-            <Icon size={13}/>{l}{t==="access"&&suspicious>0&&<span style={{ background:"#f87171",color:"#fff",borderRadius:8,padding:"1px 6px",fontSize:10,fontWeight:800 }}>{suspicious}</span>}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map(s => (
+          <div key={s.label} className="rounded-2xl p-4 border" style={{ background: T.card, borderColor: T.border }}>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl" style={{ background:`${s.color}18` }}>
+                <s.icon className="h-5 w-5" style={{ color: s.color }} />
+              </div>
+              <div>
+                <p className="text-xl font-bold" style={{ color: T.text }}>{s.value}</p>
+                <p className="text-[10px] uppercase font-bold tracking-widest" style={{ color: T.sub }}>{s.label}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-2 border-b" style={{ borderColor: T.border }}>
+        {(["logs","settings","health"] as const).map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)} className="px-4 py-2 text-sm font-bold capitalize transition-all"
+            style={{ color: activeTab === tab ? A1 : T.sub, borderBottom: activeTab === tab ? `2px solid ${A1}` : "2px solid transparent" }}>
+            {tab === "logs" ? "Activity Logs" : tab === "settings" ? "Retention Settings" : "Health"}
           </button>
         ))}
       </div>
 
-      {tab==="logs"&&(
+      {activeTab === "logs" && (
         <>
-          <div style={{ position:"relative",marginBottom:10 }}>
-            <Search size={14} style={{ position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:T.sub }}/>
-            <Input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by action, actor, or category…" style={{ background:T.input,border:`1px solid ${T.border}`,color:T.text,borderRadius:10,paddingLeft:36 }}/>
+          <div className="flex gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-1 min-w-[200px] px-3 py-2 rounded-xl border" style={{ background: T.input, borderColor: T.border }}>
+              <Search className="h-4 w-4" style={{ color: T.sub }} />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search actions or actors…"
+                className="bg-transparent flex-1 text-sm outline-none" style={{ color: T.text }} />
+            </div>
+            <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+              className="px-3 py-2 rounded-xl border text-sm font-bold outline-none" style={{ background: T.input, borderColor: T.border, color: T.text }}>
+              {TYPES.map(t => <option key={t} value={t}>{t === "all" ? "All Types" : t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+            </select>
+            <select value={severityFilter} onChange={e => setSeverityFilter(e.target.value)}
+              className="px-3 py-2 rounded-xl border text-sm font-bold outline-none" style={{ background: T.input, borderColor: T.border, color: T.text }}>
+              {["all","high","medium","low"].map(s => <option key={s} value={s}>{s === "all" ? "All Severity" : s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+            </select>
           </div>
-          <div style={{ background:"rgba(74,222,128,.04)",border:"1px solid rgba(74,222,128,.1)",borderRadius:10,padding:"8px 14px",marginBottom:10,display:"flex",gap:8,alignItems:"center" }}>
-            <Lock size={11} color="#4ade80"/><span style={{ fontSize:11,color:"#4ade80" }}>Logs are immutable — editing and deletion are permanently disabled. Every entry is SHA-256 hashed and chain-linked.</span>
-          </div>
-          <div style={{ background:T.card,border:`1px solid ${T.border}`,borderRadius:16,overflow:"hidden" }}>
-            {filtered.map((e,i)=>(
-              <div key={e.id} style={{ display:"flex",gap:12,padding:"13px 18px",borderBottom:i<filtered.length-1?`1px solid ${T.border}`:"none",alignItems:"flex-start" }}>
-                <div style={{ width:9,height:9,borderRadius:"50%",background:(sevColor as Record<string,string>)[e.severity],flexShrink:0,marginTop:5 }}/>
-                <div style={{ flex:1 }}>
-                  <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:3,flexWrap:"wrap" }}>
-                    <span style={{ fontWeight:700,fontSize:13,color:T.text }}>{e.action}</span>
-                    <span style={{ fontSize:10,fontWeight:700,color:(catColor[e.category])||T.badgeFg,background:`${(catColor[e.category])||A1}15`,padding:"2px 7px",borderRadius:5 }}>{e.category}</span>
-                    <span style={{ fontSize:10,fontWeight:700,color:(sevColor as Record<string,string>)[e.severity],background:`${(sevColor as Record<string,string>)[e.severity]}15`,padding:"2px 7px",borderRadius:5,textTransform:"uppercase" }}>{e.severity}</span>
-                    {e.verified&&<span style={{ fontSize:10,color:"#4ade80" }}>✓</span>}
+          <div className="rounded-2xl border overflow-hidden" style={{ background: T.card, borderColor: T.border }}>
+            <div className="p-3 border-b" style={{ borderColor: T.border }}>
+              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: T.sub }}>{filtered.length} records</span>
+            </div>
+            <div className="divide-y" style={{ borderColor: T.border }}>
+              {filtered.map(log => (
+                <div key={log.id} className="flex items-start justify-between p-4 hover:bg-white/5 transition-all">
+                  <div className="flex items-start gap-4">
+                    <div className="h-2.5 w-2.5 rounded-full mt-1.5" style={{ background: severityColor(log.severity) }} />
+                    <div>
+                      <p className="font-bold text-sm" style={{ color: T.text }}>{log.action}</p>
+                      <p className="text-xs mt-0.5" style={{ color: T.sub }}>
+                        <span style={{ color: typeColor(log.type) }}>{log.actor}</span>{" → "}{log.target}
+                      </p>
+                      <p className="text-xs mt-0.5" style={{ color: T.sub }}>IP: {log.ip} · {log.time}</p>
+                    </div>
                   </div>
-                  <p style={{ fontSize:11,color:T.sub,margin:0 }}>{e.actor} · {e.target} · IP:{e.ip} · {format(new Date(e.timestamp),"MMM d, HH:mm:ss")}</p>
-                  <p style={{ fontSize:10,color:T.sub,margin:"1px 0 0",fontFamily:"monospace",opacity:.55 }}>{e.hash}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background:`${typeColor(log.type)}15`, color: typeColor(log.type) }}>{log.type}</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background:`${severityColor(log.severity)}15`, color: severityColor(log.severity) }}>{log.severity}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+              {filtered.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-12 gap-2">
+                  <Eye className="h-8 w-8 opacity-20" style={{ color: T.sub }} />
+                  <p className="text-sm" style={{ color: T.sub }}>No logs match your filters</p>
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}
 
-      {tab==="access"&&(
-        <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
-          <div style={{ background:"rgba(248,113,113,.04)",border:"1px solid rgba(248,113,113,.12)",borderRadius:10,padding:"10px 14px",marginBottom:4,display:"flex",gap:8 }}>
-            <AlertTriangle size={13} color="#f87171" style={{ flexShrink:0,marginTop:1 }}/>
-            <p style={{ fontSize:12,color:T.sub,margin:0,lineHeight:1.6 }}>All access to audit logs is recorded. Suspicious access attempts trigger immediate alerts. Only Super Admin has full access.</p>
-          </div>
-          {access.map(a=>(
-            <div key={a.id} style={{ background:T.card,border:`1px solid ${a.suspicious?"rgba(248,113,113,.25)":T.border}`,borderRadius:13,padding:"14px 18px",display:"flex",gap:12,alignItems:"flex-start" }}>
-              {a.suspicious?<AlertTriangle size={16} color="#f87171" style={{ flexShrink:0,marginTop:2 }}/>:<CheckCircle2 size={16} color="#4ade80" style={{ flexShrink:0,marginTop:2 }}/>}
-              <div style={{ flex:1 }}>
-                <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:3,flexWrap:"wrap" }}>
-                  <span style={{ fontWeight:700,fontSize:13,color:T.text }}>{a.action}</span>
-                  <span style={{ fontSize:11,color:T.sub }}>by {a.actor}</span>
-                  {a.suspicious&&<span style={{ fontSize:10,fontWeight:700,color:"#f87171",background:"rgba(248,113,113,.1)",padding:"2px 7px",borderRadius:5 }}>SUSPICIOUS</span>}
-                </div>
-                <p style={{ fontSize:12,color:T.sub,margin:0 }}>IP: {a.ip} · {format(new Date(a.timestamp),"MMM d, HH:mm")}</p>
-                {a.reason&&<p style={{ fontSize:12,color:"#f87171",margin:"3px 0 0" }}>{a.reason}</p>}
+      {activeTab === "settings" && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          <div className="rounded-2xl border p-6 space-y-4" style={{ background: T.card, borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Retention Policy</h3>
+            {[
+              { label:"Admin action logs", days:365 },
+              { label:"User action logs", days:90 },
+              { label:"Finance logs", days:730 },
+              { label:"Security logs", days:730 },
+              { label:"System logs", days:30 },
+            ].map(p => (
+              <div key={p.label} className="flex items-center justify-between p-3 rounded-xl border" style={{ borderColor: T.border }}>
+                <span className="text-sm" style={{ color: T.text }}>{p.label}</span>
+                <span className="font-bold text-sm font-mono" style={{ color: A1 }}>{p.days} days</span>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {tab==="integrity"&&(
-        <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
-          <div style={{ background:T.card,border:`1px solid ${T.border}`,borderRadius:14,padding:"20px 22px" }}>
-            <h3 style={{ color:T.text,fontWeight:700,fontSize:15,margin:"0 0 10px" }}>Log Integrity Verification</h3>
-            <p style={{ fontSize:12,color:T.sub,margin:"0 0 16px",lineHeight:1.7 }}>Each entry is SHA-256 hashed and chain-linked to the previous entry. Any modification, deletion, or insertion is immediately detected by the hash chain validator.</p>
-            <button onClick={runIntegrityCheck} disabled={verifying} style={{ display:"flex",alignItems:"center",gap:6,padding:"10px 20px",borderRadius:10,background:`linear-gradient(135deg,${A1},${A2})`,border:"none",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",opacity:verifying?.7:1 }}>
-              <RefreshCw size={13} className={verifying?"animate-spin":""}/>{verifying?"Verifying…":"Run Integrity Check"}
-            </button>
-            {verifyResult&&<div style={{ marginTop:16,background:"rgba(74,222,128,.06)",border:"1px solid rgba(74,222,128,.15)",borderRadius:10,padding:"12px 16px",fontFamily:"monospace",fontSize:12,color:"#4ade80",whiteSpace:"pre-line",lineHeight:1.8 }}>{verifyResult}</div>}
+            ))}
           </div>
-          <div style={{ background:T.card,border:`1px solid ${T.border}`,borderRadius:14,padding:"18px 20px" }}>
-            <h3 style={{ color:T.text,fontWeight:700,fontSize:14,margin:"0 0 12px" }}>Hash Chain Preview</h3>
-            {entries.slice(0,3).map((e,i)=>(
-              <div key={e.id} style={{ display:"flex",gap:10,marginBottom:8,alignItems:"center" }}>
-                <div style={{ width:22,height:22,borderRadius:6,background:`${A1}18`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
-                  <span style={{ fontSize:9,fontWeight:800,color:T.badgeFg }}>#{i+1}</span>
-                </div>
-                <div style={{ flex:1 }}>
-                  <p style={{ fontSize:11,color:T.text,margin:0,fontWeight:600 }}>{e.action}</p>
-                  <p style={{ fontSize:10,color:T.sub,margin:0,fontFamily:"monospace" }}>{e.hash} — <span style={{ color:"#4ade80" }}>✓ valid</span></p>
-                </div>
+          <div className="rounded-2xl border p-6 space-y-4" style={{ background: T.card, borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Integrity Validation</h3>
+            {[
+              { check:"Log tamper detection", status:true },
+              { check:"Encrypted log storage", status:true },
+              { check:"Log export signed", status:true },
+              { check:"Real-time log streaming", status:false },
+              { check:"External SIEM integration", status:false },
+            ].map(c => (
+              <div key={c.check} className="flex items-center justify-between p-3 rounded-xl border" style={{ borderColor: T.border }}>
+                <span className="text-sm" style={{ color: T.text }}>{c.check}</span>
+                {c.status ? <CheckCircle2 className="h-5 w-5 text-green-400" /> : <AlertTriangle className="h-5 w-5 text-amber-400" />}
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {tab==="policy"&&(
-        <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
-          {POLICIES.map(p=>(
-            <div key={p.category} style={{ background:T.card,border:`1px solid ${T.border}`,borderRadius:13,padding:"14px 18px",display:"flex",alignItems:"center",gap:12 }}>
-              <div style={{ flex:1 }}>
-                <p style={{ fontWeight:700,fontSize:14,color:T.text,margin:"0 0 4px" }}>{p.category}</p>
-                <div style={{ display:"flex",gap:12,flexWrap:"wrap" }}>
-                  <span style={{ fontSize:12,color:T.sub }}>Retain: <strong style={{ color:T.text }}>{p.retainDays} days</strong></span>
-                  <span style={{ fontSize:12,color:T.sub }}>Auto Backup: <strong style={{ color:p.autoBackup?"#4ade80":"#94a3b8" }}>{p.autoBackup?"Yes":"No"}</strong></span>
-                  <span style={{ fontSize:12,color:T.sub }}>Export: <strong style={{ color:p.exportAllowed?"#fbbf24":"#f87171" }}>{p.exportAllowed?"Allowed":"Restricted"}</strong></span>
+      {activeTab === "health" && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          <div className="rounded-2xl border p-6 space-y-3" style={{ background: T.card, borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Monitoring Dashboard</h3>
+            {[
+              { label:"Log ingestion rate", value:"82 logs/min" },
+              { label:"Storage used", value:"14.2 GB / 50 GB" },
+              { label:"Oldest log", value:"365 days ago" },
+              { label:"Last integrity check", value:"2 hrs ago" },
+              { label:"Failed log writes", value:"0" },
+            ].map(m => (
+              <div key={m.label} className="flex items-center justify-between p-3 rounded-xl border" style={{ borderColor: T.border }}>
+                <span className="text-sm" style={{ color: T.sub }}>{m.label}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-sm font-bold" style={{ color: T.text }}>{m.value}</span>
+                  <CheckCircle2 className="h-4 w-4 text-green-400" />
                 </div>
               </div>
-              <Lock size={14} color={p.exportAllowed?"#fbbf24":"#f87171"} style={{ flexShrink:0 }}/>
-            </div>
-          ))}
+            ))}
+          </div>
+          <div className="rounded-2xl border p-6 space-y-3" style={{ background: T.card, borderColor: T.border }}>
+            <h3 className="font-bold" style={{ color: T.text }}>Alert System</h3>
+            {[
+              { alert:"High-severity action", channel:"Email + In-app" },
+              { alert:"Bulk export attempt", channel:"Email" },
+              { alert:"Admin login from new IP", channel:"Email + SMS" },
+              { alert:"Log storage >80%", channel:"In-app" },
+              { alert:"Log write failure", channel:"Email + SMS" },
+            ].map(a => (
+              <div key={a.alert} className="flex items-start justify-between p-3 rounded-xl border" style={{ borderColor: T.border }}>
+                <div>
+                  <p className="text-sm font-bold" style={{ color: T.text }}>{a.alert}</p>
+                  <p className="text-xs" style={{ color: T.sub }}>{a.channel}</p>
+                </div>
+                <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5" />
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
