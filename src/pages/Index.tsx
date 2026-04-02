@@ -2269,7 +2269,7 @@ const CTASection = () => {
   return (
     <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
       <Reveal>
-        <div className="mx-auto max-w-5xl relative rounded-3xl overflow-hidden p-10 md:p-16 text-center" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.15) 0%, rgba(var(--t-a2-rgb),0.15) 50%, rgba(52,211,153,0.1) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}>
+        <div className="mx-auto max-w-5xl relative rounded-3xl overflow-hidden p-6 sm:p-10 md:p-16 text-center" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.15) 0%, rgba(var(--t-a2-rgb),0.15) 50%, rgba(52,211,153,0.1) 100%)", border: "1px solid rgba(255,255,255,0.1)" }}>
           <div className="absolute -top-20 -right-20 h-60 w-60 rounded-full spin-slow" style={{ border: "1px solid rgba(var(--t-a1-rgb),0.15)" }} />
           <div className="absolute -bottom-20 -left-20 h-60 w-60 rounded-full spin-reverse" style={{ border: "1px solid rgba(var(--t-a2-rgb),0.1)" }} />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.1) 0%, transparent 70%)" }} />
