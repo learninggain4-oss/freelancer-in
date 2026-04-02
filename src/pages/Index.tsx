@@ -121,6 +121,66 @@ const GlobalStyles = () => (
     @keyframes overlay-in {
       from { opacity:0; } to { opacity:1; }
     }
+
+    /* ── NEW: Particle drift ── */
+    @keyframes particle-drift {
+      0%   { transform: translateY(0px) translateX(0px) scale(1); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { transform: translateY(-120px) translateX(var(--drift-x, 20px)) scale(0.4); opacity: 0; }
+    }
+    /* ── NEW: Shimmer scan line ── */
+    @keyframes shimmer-scan {
+      0%   { transform: translateX(-100%) skewX(-15deg); }
+      100% { transform: translateX(300%) skewX(-15deg); }
+    }
+    /* ── NEW: Orbit rings ── */
+    @keyframes orbit-cw  { from { transform: rotate(0deg);   } to { transform: rotate(360deg);  } }
+    @keyframes orbit-ccw { from { transform: rotate(0deg);   } to { transform: rotate(-360deg); } }
+    /* ── NEW: Neon border pulse ── */
+    @keyframes neon-border {
+      0%,100% { box-shadow: 0 0 8px rgba(var(--t-a1-rgb),0.4), 0 0 30px rgba(var(--t-a1-rgb),0.15), inset 0 0 8px rgba(var(--t-a1-rgb),0.05); }
+      50%     { box-shadow: 0 0 20px rgba(var(--t-a1-rgb),0.7), 0 0 60px rgba(var(--t-a1-rgb),0.3), inset 0 0 15px rgba(var(--t-a1-rgb),0.1); }
+    }
+    /* ── NEW: Sparkle burst ── */
+    @keyframes sparkle {
+      0%   { transform: scale(0) rotate(0deg); opacity:0; }
+      50%  { opacity: 1; }
+      100% { transform: scale(1.5) rotate(180deg); opacity: 0; }
+    }
+    /* ── NEW: Blink cursor ── */
+    @keyframes blink-cursor {
+      0%,100% { opacity: 1; }
+      50%     { opacity: 0; }
+    }
+    /* ── NEW: Morph blob ── */
+    @keyframes morph-blob {
+      0%,100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+      25%     { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+      50%     { border-radius: 50% 50% 20% 80% / 25% 80% 20% 75%; }
+      75%     { border-radius: 67% 33% 47% 53% / 37% 20% 80% 63%; }
+    }
+    /* ── NEW: Wave stagger ── */
+    @keyframes wave-up {
+      from { opacity:0; transform: translateY(30px) scale(0.97); }
+      to   { opacity:1; transform: translateY(0)    scale(1); }
+    }
+    /* ── NEW: Glow ping ── */
+    @keyframes glow-ping {
+      0%   { transform: scale(1);   opacity: 0.8; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    /* ── NEW: Scan line (hero card) ── */
+    @keyframes scan-line {
+      0%   { top: -10%; }
+      100% { top: 110%; }
+    }
+    /* ── NEW: Hue rotate ── */
+    @keyframes hue-rotate {
+      0%   { filter: hue-rotate(0deg); }
+      100% { filter: hue-rotate(360deg); }
+    }
+
     .modal-enter { animation: modal-in 0.3s cubic-bezier(.17,.67,.34,1.2) both; }
     .overlay-enter { animation: overlay-in 0.25s ease both; }
     .float-1 { animation: float  6s ease-in-out infinite; }
@@ -131,8 +191,14 @@ const GlobalStyles = () => (
     .spin-slow    { animation: spin-slow    20s linear infinite; }
     .spin-reverse { animation: spin-reverse 25s linear infinite; }
     .pulse-glow   { animation: pulse-glow   3s ease-in-out infinite; }
-    .rotate-3d    { animation: rotate-3d    8s ease-in-out infinite; }
+    .rotate-3d    { animation: rotate-3d    10s ease-in-out infinite; }
     .marquee-track { animation: marquee 30s linear infinite; }
+    .orbit-cw-12  { animation: orbit-cw  12s linear infinite; }
+    .orbit-cw-18  { animation: orbit-cw  18s linear infinite; }
+    .orbit-ccw-15 { animation: orbit-ccw 15s linear infinite; }
+    .neon-border  { animation: neon-border 3s ease-in-out infinite; }
+    .morph-blob   { animation: morph-blob 10s ease-in-out infinite; }
+    .blink-cursor { animation: blink-cursor 1s step-end infinite; }
     .gradient-animated {
       background-size: 300% 300%;
       animation: gradient-shift 5s ease infinite;
@@ -187,6 +253,25 @@ const GlobalStyles = () => (
     }
     .hero-dashboard {
       animation: rotate-3d 10s ease-in-out infinite;
+    }
+    /* shimmer btn */
+    .shimmer-btn { position: relative; overflow: hidden; }
+    .shimmer-btn::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 40%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+      animation: shimmer-scan 2.4s ease-in-out infinite;
+    }
+    /* glow ping ring */
+    .glow-ping::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: inherit;
+      border: 2px solid rgba(var(--t-a1-rgb), 0.6);
+      animation: glow-ping 1.8s ease-out infinite;
     }
     ::-webkit-scrollbar { width:6px; }
     ::-webkit-scrollbar-track { background:#0f0f1a; }
@@ -320,8 +405,40 @@ const AnimatedCounter = ({ value, prefix = "", suffix = "" }: { value: string; p
 /* ─────────────────────── Hero 3D Illustration ─────────────────────── */
 const HeroDashboard = () => (
   <div className="relative w-full max-w-lg mx-auto select-none hero-dashboard" style={{ perspective: "1200px" }}>
+
+    {/* ── Orbit Ring 1 (outer) ── */}
+    <div className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ zIndex: 0 }}>
+      <div className="orbit-cw-18 absolute" style={{
+        width: "118%", height: "118%", borderRadius: "50%",
+        border: "1px dashed rgba(var(--t-a1-rgb),0.18)",
+      }}>
+        {/* Orbit dot */}
+        <div style={{ position: "absolute", top: -4, left: "50%", transform: "translateX(-50%)", width: 8, height: 8, borderRadius: "50%", background: "var(--t-a1)", boxShadow: "0 0 10px var(--t-a1)" }} />
+      </div>
+    </div>
+
+    {/* ── Orbit Ring 2 (inner ccw) ── */}
+    <div className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ zIndex: 0 }}>
+      <div className="orbit-ccw-15 absolute" style={{
+        width: "88%", height: "88%", borderRadius: "50%",
+        border: "1px solid rgba(var(--t-a2-rgb),0.12)",
+      }}>
+        <div style={{ position: "absolute", bottom: -4, left: "50%", transform: "translateX(-50%)", width: 6, height: 6, borderRadius: "50%", background: "var(--t-a2)", boxShadow: "0 0 8px var(--t-a2)" }} />
+      </div>
+    </div>
+
+    {/* ── Scan line on the card ── */}
+    <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl" style={{ zIndex: 2 }}>
+      <div style={{
+        position: "absolute", left: 0, right: 0, height: 2,
+        background: "linear-gradient(90deg, transparent, rgba(var(--t-a1-rgb),0.5), transparent)",
+        animation: "scan-line 4s linear infinite",
+        filter: "blur(1px)",
+      }} />
+    </div>
+
     {/* Main dashboard card */}
-    <div className="glass rounded-2xl p-5 shadow-2xl" style={{ boxShadow: "0 40px 80px -20px rgba(0,0,0,0.6), 0 0 60px rgba(var(--t-a1-rgb),0.15)" }}>
+    <div className="glass neon-border rounded-2xl p-5 shadow-2xl" style={{ position: "relative", zIndex: 1, boxShadow: "0 40px 80px -20px rgba(0,0,0,0.6), 0 0 60px rgba(var(--t-a1-rgb),0.15)" }}>
       {/* Top bar */}
       <div className="flex items-center gap-2 mb-4">
         <div className="flex gap-1.5">
@@ -392,12 +509,105 @@ const HeroDashboard = () => (
   </div>
 );
 
+/* ─────────────────────── Typewriter Text ─────────────────────── */
+const TYPEWRITER_WORDS = ["Freelancers", "Designers", "Developers", "Marketers", "Creators"];
+const TypewriterText = () => {
+  const [wordIdx, setWordIdx] = useState(0);
+  const [displayed, setDisplayed] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [pause, setPause] = useState(false);
+  useEffect(() => {
+    if (pause) { const t = setTimeout(() => setPause(false), 1200); return () => clearTimeout(t); }
+    const word = TYPEWRITER_WORDS[wordIdx];
+    if (!deleting && displayed.length < word.length) {
+      const t = setTimeout(() => setDisplayed(word.slice(0, displayed.length + 1)), 80);
+      return () => clearTimeout(t);
+    }
+    if (!deleting && displayed.length === word.length) {
+      setPause(true); setDeleting(true); return;
+    }
+    if (deleting && displayed.length > 0) {
+      const t = setTimeout(() => setDisplayed(displayed.slice(0, -1)), 45);
+      return () => clearTimeout(t);
+    }
+    if (deleting && displayed.length === 0) {
+      setDeleting(false); setWordIdx(i => (i + 1) % TYPEWRITER_WORDS.length);
+    }
+  }, [displayed, deleting, pause, wordIdx]);
+  return (
+    <span className="gradient-text" style={{ display: "inline-block", minWidth: 180 }}>
+      {displayed}<span className="blink-cursor" style={{ marginLeft: 2, fontWeight: 300, opacity: 1 }}>|</span>
+    </span>
+  );
+};
+
+/* ─────────────────────── Particle Field ─────────────────────── */
+const PARTICLES = Array.from({ length: 36 }, (_, i) => ({
+  id: i,
+  x: Math.random() * 100,
+  y: Math.random() * 100,
+  size: 1.5 + Math.random() * 2.5,
+  delay: Math.random() * 8,
+  dur: 5 + Math.random() * 8,
+  driftX: (Math.random() - 0.5) * 60,
+  opacity: 0.2 + Math.random() * 0.5,
+}));
+const ParticleField = () => (
+  <div className="pointer-events-none absolute inset-0 overflow-hidden">
+    {PARTICLES.map(p => (
+      <div key={p.id} style={{
+        position: "absolute", left: `${p.x}%`, top: `${p.y}%`,
+        width: p.size, height: p.size, borderRadius: "50%",
+        background: "rgba(var(--t-a1-rgb), 0.8)",
+        boxShadow: `0 0 ${p.size * 3}px rgba(var(--t-a1-rgb), 0.6)`,
+        animation: `particle-drift ${p.dur}s ease-in-out ${p.delay}s infinite`,
+        "--drift-x": `${p.driftX}px`,
+      } as React.CSSProperties} />
+    ))}
+  </div>
+);
+
+/* ─────────────────────── Mouse Glow Effect ─────────────────────── */
+const MouseGlowEffect = () => {
+  const [pos, setPos] = useState({ x: -999, y: -999 });
+  const [visible, setVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const section = ref.current?.parentElement;
+    if (!section) return;
+    const move = (e: MouseEvent) => {
+      const rect = section.getBoundingClientRect();
+      setPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      setVisible(true);
+    };
+    const leave = () => setVisible(false);
+    section.addEventListener("mousemove", move);
+    section.addEventListener("mouseleave", leave);
+    return () => { section.removeEventListener("mousemove", move); section.removeEventListener("mouseleave", leave); };
+  }, []);
+  return (
+    <div ref={ref} className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div style={{
+        position: "absolute", left: pos.x - 150, top: pos.y - 150,
+        width: 300, height: 300, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.12) 0%, transparent 70%)",
+        filter: "blur(20px)",
+        transition: "opacity .3s ease",
+        opacity: visible ? 1 : 0,
+        pointerEvents: "none",
+      }} />
+    </div>
+  );
+};
+
 /* ─────────────────────── Orb decorations ─────────────────────── */
 const Orbs = () => (
   <>
     <div className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(var(--t-a2-rgb),0.35) 0%, transparent 70%)", filter: "blur(40px)" }} />
     <div className="pointer-events-none absolute top-1/3 -right-32 h-80 w-80 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.3) 0%, transparent 70%)", filter: "blur(40px)", animationDelay: "1.5s" }} />
     <div className="pointer-events-none absolute -bottom-20 left-1/4 h-72 w-72 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(52,211,153,0.2) 0%, transparent 70%)", filter: "blur(40px)", animationDelay: "3s" }} />
+    {/* Morphing blob */}
+    <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 morph-blob opacity-[0.07]" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }} />
   </>
 );
 
@@ -566,28 +776,42 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
   return (
   <section className="relative overflow-hidden py-20 md:py-28 lg:py-36 px-4 sm:px-6">
     <Orbs />
-    <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
+    <ParticleField />
+    <MouseGlowEffect />
+
+    {/* Grid lines */}
+    <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
 
     <div className="mx-auto max-w-7xl">
       <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         <div className="text-center lg:text-left" style={{ animation: "slide-up 0.7s ease both" }}>
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-white/80" style={{ background: "rgba(var(--t-a1-rgb),0.15)", border: "1px solid rgba(var(--t-a1-rgb),0.3)" }}>
-            <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 pulse-glow" />
+
+          {/* Trust badge with glow ping */}
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-white/80" style={{ background: "rgba(var(--t-a1-rgb),0.15)", border: "1px solid rgba(var(--t-a1-rgb),0.3)", position: "relative" }}>
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" style={{ animation: "glow-ping 1.5s ease-out infinite" }} />
+              <span className="relative h-2 w-2 rounded-full bg-emerald-400" />
+            </span>
             {t.hero.trustBadge}
           </div>
+
+          {/* Headline with typewriter */}
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight text-white mb-6" style={{ animation: "slide-up 0.7s ease 0.1s both" }}>
             {t.hero.line1}{" "}
             <br />
             {t.hero.line2}{" "}
             <br />
-            <span className="gradient-text">{t.hero.line3}</span>
+            <TypewriterText />
           </h1>
+
           <p className="text-base sm:text-lg text-white/60 leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0" style={{ animation: "slide-up 0.7s ease 0.2s both" }}>
             {t.hero.subtitle}
           </p>
+
+          {/* CTA buttons — primary has shimmer scan */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-10" style={{ animation: "slide-up 0.7s ease 0.3s both" }}>
             <Link to="/register/employee">
-              <button className="group flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-base font-semibold text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
+              <button className="shimmer-btn group flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-base font-semibold text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
                 <Briefcase className="h-5 w-5" />
                 {t.hero.joinFreelancer}
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -600,11 +824,12 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
               </button>
             </Link>
           </div>
-          {/* Mini stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-lg mx-auto lg:mx-0" style={{ animation: "slide-up 0.7s ease 0.4s both" }}>
-            {heroStats.map((s) => (
-              <div key={s.label} className="text-center lg:text-left">
-                <div className="text-2xl font-black text-white">
+
+          {/* Mini stats — wave stagger */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-lg mx-auto lg:mx-0">
+            {heroStats.map((s, i) => (
+              <div key={s.label} className="text-center lg:text-left" style={{ animation: `wave-up 0.6s ease ${0.5 + i * 0.1}s both` }}>
+                <div className="text-2xl font-black" style={{ color: "var(--t-a1)" }}>
                   <AnimatedCounter value={s.value} prefix={s.prefix} suffix={s.suffix} />
                 </div>
                 <div className="text-xs text-white/40 mt-0.5">{s.label}</div>
