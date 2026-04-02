@@ -2537,27 +2537,63 @@ const AppDownloadSection = () => (
             ))}
           </div>
 
-          {/* Download buttons */}
+          {/* Download buttons — Coming Soon */}
           <Reveal delay={300}>
-            <div className="flex flex-col sm:flex-row gap-3">
-              {/* App Store */}
-              <a href="#" className="flex items-center gap-3 rounded-2xl px-5 py-3.5 transition-all hover:scale-105 hover:shadow-lg" style={{ background: "#000", border: "1px solid rgba(255,255,255,0.15)" }}>
-                <svg viewBox="0 0 24 24" className="h-7 w-7 fill-white shrink-0"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-                <div>
-                  <div className="text-white/50 text-[10px] leading-none mb-0.5">Download on the</div>
-                  <div className="text-white font-bold text-sm leading-none">App Store</div>
+            <div className="flex flex-col sm:flex-row gap-3 mb-5">
+              {/* App Store — disabled */}
+              <div className="relative">
+                <div className="flex items-center gap-3 rounded-2xl px-5 py-3.5 cursor-not-allowed select-none" style={{ background: "#000", border: "1px solid rgba(255,255,255,0.12)", opacity: 0.55 }}>
+                  <svg viewBox="0 0 24 24" className="h-7 w-7 fill-white shrink-0"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                  <div>
+                    <div className="text-white/50 text-[10px] leading-none mb-0.5">Download on the</div>
+                    <div className="text-white font-bold text-sm leading-none">App Store</div>
+                  </div>
                 </div>
-              </a>
-              {/* Google Play */}
-              <a href="#" className="flex items-center gap-3 rounded-2xl px-5 py-3.5 transition-all hover:scale-105 hover:shadow-lg" style={{ background: "#000", border: "1px solid rgba(255,255,255,0.15)" }}>
-                <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0"><path fill="#4CAF50" d="M1.22 0c-.03.08-.06.16-.06.26v23.48c0 .1.03.18.06.26l12.04-12L1.22 0z"/><path fill="#FFC107" d="M17.28 8.93L4.88.18l9.96 9.96 2.44-1.21z"/><path fill="#F44336" d="M4.88 23.82l12.4-8.75-2.44-1.21L4.88 23.82z"/><path fill="#2196F3" d="M22.5 11.24l-3.1-1.73-2.74 1.36 2.74 2.74 3.1-1.37z"/></svg>
-                <div>
-                  <div className="text-white/50 text-[10px] leading-none mb-0.5">Get it on</div>
-                  <div className="text-white font-bold text-sm leading-none">Google Play</div>
+                <span className="absolute -top-2 -right-2 rounded-full px-2 py-0.5 text-[9px] font-black text-white" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>
+                  SOON
+                </span>
+              </div>
+
+              {/* Google Play — disabled */}
+              <div className="relative">
+                <div className="flex items-center gap-3 rounded-2xl px-5 py-3.5 cursor-not-allowed select-none" style={{ background: "#000", border: "1px solid rgba(255,255,255,0.12)", opacity: 0.55 }}>
+                  <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0"><path fill="#4CAF50" d="M1.22 0c-.03.08-.06.16-.06.26v23.48c0 .1.03.18.06.26l12.04-12L1.22 0z"/><path fill="#FFC107" d="M17.28 8.93L4.88.18l9.96 9.96 2.44-1.21z"/><path fill="#F44336" d="M4.88 23.82l12.4-8.75-2.44-1.21L4.88 23.82z"/><path fill="#2196F3" d="M22.5 11.24l-3.1-1.73-2.74 1.36 2.74 2.74 3.1-1.37z"/></svg>
+                  <div>
+                    <div className="text-white/50 text-[10px] leading-none mb-0.5">Get it on</div>
+                    <div className="text-white font-bold text-sm leading-none">Google Play</div>
+                  </div>
                 </div>
-              </a>
+                <span className="absolute -top-2 -right-2 rounded-full px-2 py-0.5 text-[9px] font-black text-white" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>
+                  SOON
+                </span>
+              </div>
             </div>
-            <p className="mt-3 text-white/30 text-xs">Coming soon — notify me when available</p>
+
+            {/* Notify Me banner */}
+            <div className="rounded-2xl p-4" style={{ background: "rgba(var(--t-a1-rgb),0.08)", border: "1px solid rgba(var(--t-a1-rgb),0.2)" }}>
+              <div className="flex items-center gap-2 mb-3">
+                <Clock className="h-4 w-4 shrink-0" style={{ color: "var(--t-a1)" }} />
+                <span className="text-sm font-bold text-white">Coming Soon</span>
+                <span className="ml-auto text-xs text-white/40">App Store &amp; Google Play</span>
+              </div>
+              <p className="text-white/55 text-xs mb-3 leading-relaxed">
+                Our mobile app is currently under development. Enter your email to get notified the moment it launches.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  placeholder="your@email.com"
+                  className="flex-1 min-w-0 rounded-xl px-3 py-2 text-xs text-white placeholder-white/30 outline-none focus:ring-1"
+                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", focusRingColor: "var(--t-a1)" }}
+                />
+                <button
+                  className="shrink-0 rounded-xl px-4 py-2 text-xs font-bold text-white transition-all hover:scale-105 hover:opacity-90"
+                  style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}
+                >
+                  Notify Me
+                </button>
+              </div>
+            </div>
           </Reveal>
         </div>
       </div>
