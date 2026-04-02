@@ -7,7 +7,7 @@ import {
   GraduationCap, Heart, Headphones, ShoppingCart, Cpu, BookOpen,
   Smartphone as PhoneIcon, TrendingUp, Layers, Search, ChevronDown, ChevronUp,
   Zap, Lock, Clock, Plus, Minus, Twitter, Linkedin, Instagram, Github,
-  MapPin, Mail, Phone,
+  MapPin, Mail, Phone, Bell,
 } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -2263,6 +2263,355 @@ const TestimonialsSection = ({ testimonials }: { testimonials: any[] }) => {
   );
 };
 
+/* ─────────────────────── Success Stories ─────────────────────── */
+const SUCCESS_STORIES = [
+  {
+    name: "Priya Nair",
+    role: "UI/UX Designer",
+    location: "Kochi, Kerala",
+    client: "TechStartup Pvt Ltd",
+    project: "Mobile App Redesign",
+    earned: "₹1,20,000",
+    period: "3 months",
+    result: "App downloads increased 340%",
+    avatar: "PN",
+    color: "#a78bfa",
+    tag: "Design",
+  },
+  {
+    name: "Arjun Sharma",
+    role: "Full-Stack Developer",
+    location: "Bengaluru, Karnataka",
+    client: "RetailChain India",
+    project: "E-Commerce Platform",
+    earned: "₹2,50,000",
+    period: "5 months",
+    result: "Sales grew 2x after launch",
+    avatar: "AS",
+    color: "#60a5fa",
+    tag: "Development",
+  },
+  {
+    name: "Meera Pillai",
+    role: "Content Strategist",
+    location: "Chennai, Tamil Nadu",
+    client: "FinTech Corp",
+    project: "SEO Content Campaign",
+    earned: "₹75,000",
+    period: "2 months",
+    result: "Organic traffic up 5x",
+    avatar: "MP",
+    color: "#34d399",
+    tag: "Content",
+  },
+];
+const SuccessStoriesSection = () => {
+  const [active, setActive] = useState(0);
+  const s = SUCCESS_STORIES[active];
+  return (
+    <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 0%, rgba(var(--t-a1-rgb),0.06) 0%, transparent 70%)" }} />
+      <div className="mx-auto max-w-7xl">
+        <Reveal className="text-center mb-14">
+          <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-amber-300" style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)" }}>
+            <TrendingUp className="h-3.5 w-3.5" /> Success Stories
+          </div>
+          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+            Real <span className="gradient-text">Results</span>, Real People
+          </h2>
+          <p className="text-white/50 max-w-md mx-auto">Freelancers across India are building life-changing careers on our platform.</p>
+        </Reveal>
+        <div className="grid lg:grid-cols-2 gap-10 items-center">
+          <div className="flex flex-col gap-4">
+            {SUCCESS_STORIES.map((story, i) => (
+              <Reveal key={story.name} delay={i * 80}>
+                <button
+                  onClick={() => setActive(i)}
+                  className="w-full text-left rounded-2xl p-5 transition-all duration-300"
+                  style={{
+                    background: active === i ? `${story.color}12` : "rgba(255,255,255,0.03)",
+                    border: active === i ? `1px solid ${story.color}40` : "1px solid rgba(255,255,255,0.07)",
+                    transform: active === i ? "translateX(4px)" : "translateX(0)",
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-black text-white" style={{ background: `linear-gradient(135deg, ${story.color}80, ${story.color}40)` }}>
+                      {story.avatar}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="font-bold text-white text-sm">{story.name}</p>
+                        <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: `${story.color}20`, color: story.color }}>{story.tag}</span>
+                      </div>
+                      <p className="text-xs text-white/40">{story.role} · {story.location}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-base font-black" style={{ color: story.color }}>{story.earned}</p>
+                      <p className="text-[10px] text-white/40">in {story.period}</p>
+                    </div>
+                  </div>
+                </button>
+              </Reveal>
+            ))}
+          </div>
+          <Reveal direction="right">
+            <div className="rounded-3xl p-8" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(20px)" }}>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl text-lg font-black text-white" style={{ background: `linear-gradient(135deg, ${s.color}80, ${s.color}40)` }}>
+                    {s.avatar}
+                  </div>
+                  <div>
+                    <p className="font-bold text-white">{s.name}</p>
+                    <p className="text-xs text-white/50">{s.role}</p>
+                  </div>
+                </div>
+                <span className="rounded-full px-3 py-1 text-xs font-bold" style={{ background: `${s.color}20`, color: s.color }}>{s.tag}</span>
+              </div>
+              <div className="rounded-2xl p-4 mb-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <div className="text-xs text-white/40 mb-1 uppercase tracking-widest">Project</div>
+                <div className="font-bold text-white mb-0.5">{s.project}</div>
+                <div className="text-xs text-white/50">Client: {s.client}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="rounded-xl p-4 text-center" style={{ background: `${s.color}10`, border: `1px solid ${s.color}25` }}>
+                  <div className="text-2xl font-black mb-1" style={{ color: s.color }}>{s.earned}</div>
+                  <div className="text-xs text-white/50">Total Earned</div>
+                </div>
+                <div className="rounded-xl p-4 text-center" style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)" }}>
+                  <div className="text-2xl font-black text-emerald-400 mb-1">{s.period}</div>
+                  <div className="text-xs text-white/50">Duration</div>
+                </div>
+              </div>
+              <div className="rounded-xl p-4 flex items-center gap-3" style={{ background: "linear-gradient(135deg, rgba(52,211,153,0.12), rgba(var(--t-a1-rgb),0.08))", border: "1px solid rgba(52,211,153,0.2)" }}>
+                <TrendingUp className="h-5 w-5 text-emerald-400 shrink-0" />
+                <div>
+                  <div className="text-xs text-white/40 mb-0.5">Result Achieved</div>
+                  <div className="text-sm font-bold text-emerald-400">{s.result}</div>
+                </div>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ─────────────────────── Why Choose Us ─────────────────────── */
+const COMPETITORS = ["Upwork", "Fiverr", "Freelancer.com"];
+const COMPARE_ROWS = [
+  { feature: "Indian Freelancers Focus",   us: true,  others: [false, false, false] },
+  { feature: "INR Payments & UPI",         us: true,  others: [false, false, false] },
+  { feature: "Hindi / Regional Language",  us: true,  others: [false, false, false] },
+  { feature: "Zero Commission (Starter)",  us: true,  others: [false, false, false] },
+  { feature: "Escrow Protection",          us: true,  others: [true,  true,  true]  },
+  { feature: "24/7 India Support",         us: true,  others: [false, false, false] },
+  { feature: "GST Invoice Generation",     us: true,  others: [false, false, false] },
+  { feature: "Instant UPI Withdrawal",     us: true,  others: [false, false, false] },
+];
+const WhyChooseUsSection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 50% at 30% 80%, rgba(var(--t-a2-rgb),0.06) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-5xl">
+      <Reveal className="text-center mb-14">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-cyan-300" style={{ background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.2)" }}>
+          <Shield className="h-3.5 w-3.5" /> Why Choose Us
+        </div>
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+          Built <span className="gradient-text">For India</span>
+        </h2>
+        <p className="text-white/50 max-w-md mx-auto">We're not a global platform trying to fit India — we're built exclusively for Indian professionals.</p>
+      </Reveal>
+      <Reveal>
+        <div className="rounded-3xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[480px]">
+              <thead>
+                <tr style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                  <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-widest text-white/30 w-full">Feature</th>
+                  <th className="px-5 py-4 text-center text-xs font-bold min-w-[120px]" style={{ color: "var(--t-a1)" }}>
+                    <span className="inline-flex flex-col items-center gap-1">
+                      <span className="text-base">🇮🇳</span>
+                      <span>Freelancer India</span>
+                    </span>
+                  </th>
+                  {COMPETITORS.map(c => (
+                    <th key={c} className="px-5 py-4 text-center text-xs font-semibold text-white/30 min-w-[90px]">{c}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARE_ROWS.map((row, i) => (
+                  <tr key={row.feature} style={{ background: i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <td className="px-5 py-3.5 text-sm text-white/70 font-medium">{row.feature}</td>
+                    <td className="px-5 py-3.5 text-center">
+                      <span className="inline-flex items-center justify-center h-6 w-6 rounded-full mx-auto" style={{ background: "rgba(52,211,153,0.15)" }}>
+                        <CheckCircle className="h-4 w-4 text-emerald-400" />
+                      </span>
+                    </td>
+                    {row.others.map((has, j) => (
+                      <td key={j} className="px-5 py-3.5 text-center">
+                        {has
+                          ? <CheckCircle className="h-4 w-4 text-white/25 mx-auto" />
+                          : <span className="inline-block h-4 w-4 text-center text-white/20 mx-auto leading-none text-lg">×</span>
+                        }
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </Reveal>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── Blog / Tips Preview ─────────────────────── */
+const BLOG_POSTS = [
+  {
+    tag: "Earning Guide",
+    tagColor: "#a78bfa",
+    title: "How to Earn ₹1 Lakh/Month as a Freelancer in India",
+    excerpt: "A step-by-step guide to building a sustainable freelance income — from profile optimization to client retention.",
+    readTime: "6 min read",
+    date: "Mar 28, 2026",
+    emoji: "💰",
+  },
+  {
+    tag: "Tips & Tricks",
+    tagColor: "#60a5fa",
+    title: "Top 10 Mistakes Freelancers Make on Their Profiles",
+    excerpt: "Avoid these common pitfalls to win more bids, build trust, and land premium clients faster.",
+    readTime: "4 min read",
+    date: "Mar 22, 2026",
+    emoji: "🎯",
+  },
+  {
+    tag: "Client Guide",
+    tagColor: "#34d399",
+    title: "How to Write a Project Brief That Attracts Top Talent",
+    excerpt: "Clear briefs = better proposals. Learn what information freelancers need to deliver excellent results.",
+    readTime: "5 min read",
+    date: "Mar 15, 2026",
+    emoji: "📝",
+  },
+];
+const BlogPreviewSection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 50% at 70% 30%, rgba(var(--t-a1-rgb),0.05) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-7xl">
+      <Reveal className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-12">
+        <div>
+          <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
+            <BookOpen className="h-3.5 w-3.5" /> Blog & Resources
+          </div>
+          <h2 className="text-4xl sm:text-5xl font-black text-white mb-2">
+            Learn &amp; <span className="gradient-text">Grow</span>
+          </h2>
+          <p className="text-white/50">Freelancing tips, earning guides &amp; platform updates.</p>
+        </div>
+        <a href="#" className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white/70 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+          View All <ArrowRight className="h-4 w-4" />
+        </a>
+      </Reveal>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {BLOG_POSTS.map((post, i) => (
+          <Reveal key={post.title} delay={i * 100}>
+            <MouseTiltCard intensity={8} className="h-full">
+              <div className="group h-full rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:translate-y-[-2px]" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="flex items-center justify-center text-5xl py-10" style={{ background: `linear-gradient(135deg, ${post.tagColor}12, ${post.tagColor}06)`, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  {post.emoji}
+                </div>
+                <div className="p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="rounded-full px-2.5 py-0.5 text-[10px] font-bold" style={{ background: `${post.tagColor}20`, color: post.tagColor }}>{post.tag}</span>
+                    <span className="text-xs text-white/30">{post.date}</span>
+                  </div>
+                  <h3 className="text-sm font-bold text-white mb-2 leading-snug group-hover:text-indigo-300 transition-colors">{post.title}</h3>
+                  <p className="text-xs text-white/45 leading-relaxed mb-4">{post.excerpt}</p>
+                  <div className="flex items-center justify-between pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                    <span className="text-xs text-white/30">{post.readTime}</span>
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: post.tagColor }}>
+                      Read <ArrowRight className="h-3 w-3" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </MouseTiltCard>
+          </Reveal>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── Newsletter / Job Alert Signup ─────────────────────── */
+const NewsletterSection = () => {
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setLoading(true);
+    setTimeout(() => { setLoading(false); setSubmitted(true); }, 1200);
+  };
+  return (
+    <section className="relative py-16 md:py-20 px-4 sm:px-6 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.06) 0%, rgba(var(--t-a2-rgb),0.06) 50%, rgba(52,211,153,0.04) 100%)", borderTop: "1px solid rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.05)" }} />
+      <div className="mx-auto max-w-2xl relative z-10">
+        <Reveal className="text-center">
+          <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
+            <Bell className="h-3.5 w-3.5" /> Job Alerts
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-black text-white mb-3">
+            Never Miss a <span className="gradient-text">Perfect Project</span>
+          </h2>
+          <p className="text-white/50 mb-8 max-w-sm mx-auto text-sm leading-relaxed">
+            Get notified instantly when new projects match your skills. Be the first to bid.
+          </p>
+          {submitted ? (
+            <div className="rounded-2xl px-6 py-5 flex items-center gap-3 justify-center" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.25)" }}>
+              <CheckCircle className="h-5 w-5 text-emerald-400 shrink-0" />
+              <p className="text-sm font-semibold text-emerald-300">You're subscribed! We'll alert you on new matching projects.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="w-full rounded-xl pl-11 pr-4 py-3.5 text-sm text-white placeholder-white/30 outline-none focus:ring-2 transition-all"
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", focusRingColor: "var(--t-a1)" }}
+                  onFocus={e => (e.currentTarget.style.borderColor = "rgba(var(--t-a1-rgb),0.5)")}
+                  onBlur={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)")}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="shrink-0 flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold text-white transition-all hover:scale-105 disabled:opacity-60"
+                style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))", boxShadow: "0 0 20px rgba(var(--t-a1-rgb),0.3)" }}
+              >
+                {loading ? <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <Bell className="h-4 w-4" />}
+                {loading ? "Subscribing..." : "Get Alerts"}
+              </button>
+            </form>
+          )}
+          <p className="mt-4 text-xs text-white/25">No spam — only relevant project alerts. Unsubscribe anytime.</p>
+        </Reveal>
+      </div>
+    </section>
+  );
+};
+
 /* ─────────────────────── CTA Section ─────────────────────── */
 const CTASection = () => {
   const { t } = useLang();
@@ -2862,17 +3211,25 @@ const Index = () => {
         <NeonDivider />
         <ServicesSection />
         <NeonDivider />
+        <WhyChooseUsSection />
+        <NeonDivider />
         <StatsSection />
         <NeonDivider />
         <PaymentSafetySection />
         <NeonDivider />
         <TestimonialsSection testimonials={testimonials} />
         <NeonDivider />
+        <SuccessStoriesSection />
+        <NeonDivider />
         <AppDownloadSection
           onAndroidInstall={() => handleInstall("android")}
           onIOSInstall={handleIOSInstall}
           onWindowsInstall={() => handleInstall("windows")}
         />
+        <NeonDivider />
+        <BlogPreviewSection />
+        <NeonDivider />
+        <NewsletterSection />
         <NeonDivider />
         <CTASection />
         <FAQSection />
