@@ -1277,7 +1277,6 @@ const LiveJobFeed = () => (
         </div>
       ))}
     </div>
-    <OppositeMarquee />
   </section>
 );
 
