@@ -155,6 +155,9 @@ const WalletTypes = lazy(() => import("./pages/WalletTypes"));
 const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));
 const Projects = lazy(() => import("./pages/Projects"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const HowItWorks = lazy(() => import("./pages/HowItWorks"));
+const Community = lazy(() => import("./pages/Community"));
 const TransactionHistory = lazy(() => import("./pages/wallet/TransactionHistory"));
 const WithdrawalHistory = lazy(() => import("./pages/wallet/WithdrawalHistory"));
 const WalletQRPage = lazy(() => import("./pages/wallet/WalletQRPage"));
@@ -228,6 +231,9 @@ const AppContent = () => {
             <Route path="/install" element={<InstallApp />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/projects" element={<Projects />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/community" element={<Community />} />
             <Route path="/complete-profile" element={<CompleteProfile />} />
             <Route path="/legal/:slug" element={<LegalDocument />} />
 

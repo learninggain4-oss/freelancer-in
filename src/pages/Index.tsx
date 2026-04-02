@@ -2078,6 +2078,11 @@ const HowItWorksSection = () => {
             ))}
           </div>
         </div>
+        <Reveal className="mt-10 text-center">
+          <Link to="/how-it-works" className="inline-flex items-center gap-1.5 rounded-2xl px-6 py-2.5 text-sm font-semibold text-white hover:scale-105 transition-all" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)", color: "var(--t-a1)" }}>
+            View full step-by-step guide →
+          </Link>
+        </Reveal>
       </div>
     </section>
   );
@@ -3072,6 +3077,11 @@ const PricingSection = () => (
       <Reveal className="mt-8 text-center">
         <p className="text-xs text-white/30">All plans include: escrow protection · dispute resolution · INR withdrawals · GST invoicing · 24/7 support</p>
       </Reveal>
+      <Reveal className="mt-6 text-center">
+        <Link to="/pricing" className="inline-flex items-center gap-1.5 rounded-2xl px-6 py-2.5 text-sm font-semibold hover:scale-105 transition-all" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.25)", color: "#34d399" }}>
+          View full pricing & plan comparison →
+        </Link>
+      </Reveal>
     </div>
   </section>
 );
@@ -3812,6 +3822,11 @@ const CommunitySection = () => (
             </Link>
           </div>
         ))}
+      </Reveal>
+      <Reveal className="mt-8 text-center">
+        <Link to="/community" className="inline-flex items-center gap-1.5 rounded-2xl px-6 py-2.5 text-sm font-semibold hover:scale-105 transition-all" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)", color: "var(--t-a1)" }}>
+          Explore full community — groups, webinars & meetups →
+        </Link>
       </Reveal>
     </div>
   </section>
@@ -4835,6 +4850,7 @@ const Index = () => {
   const [themeId, setThemeId] = useState<ThemeId>(() => (localStorage.getItem("fi-theme") as ThemeId) || "midnight");
   const [lang, setLangState] = useState<LangCode>(() => (localStorage.getItem("fi-lang") as LangCode) || "en");
   const [offerDismissed, setOfferDismissed] = useState(() => localStorage.getItem("fi-offer-dismissed") === "1");
+  const [renderPhase, setRenderPhase] = useState(0);
   const theme = THEMES.find(t => t.id === themeId) ?? THEMES[0];
 
   const handleLangChange = (l: LangCode) => {
@@ -4870,6 +4886,12 @@ const Index = () => {
     const t = setTimeout(() => setShowBanner(true), 5000);
     return () => clearTimeout(t);
   }, [isInstalled, bannerDismissed, deferredPrompt, isIOS]);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setRenderPhase(1), 150);
+    const t2 = setTimeout(() => setRenderPhase(2), 600);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
 
   const handleInstall = async (platform: "android"|"windows" = "android") => {
     if (deferredPrompt) {
@@ -5003,6 +5025,7 @@ const Index = () => {
       )}
 
       <main className="overflow-x-hidden">
+        {/* ── Phase 0: Above-fold — renders immediately ── */}
         <HeroSection stats={stats} />
         <TrustBar />
         <AsSeenInSection />
@@ -5016,6 +5039,9 @@ const Index = () => {
         <LiveJobFeed />
         <NeonDivider />
         <HowItWorksSection />
+
+        {/* ── Phase 1: Mid-page — renders after 150ms ── */}
+        {renderPhase >= 1 && (<>
         <NeonDivider />
         <ClientOnboardingSection />
         <NeonDivider />
@@ -5052,6 +5078,10 @@ const Index = () => {
         <StatsSection />
         <NeonDivider />
         <PaymentSafetySection />
+        </>)}
+
+        {/* ── Phase 2: Bottom of page — renders after 600ms ── */}
+        {renderPhase >= 2 && (<>
         <NeonDivider />
         <TestimonialsSection testimonials={testimonials} />
         <NeonDivider />
@@ -5083,6 +5113,7 @@ const Index = () => {
         <NeonDivider />
         <CTASection />
         <FAQSection />
+        </>)}
       </main>
 
       <Footer />
