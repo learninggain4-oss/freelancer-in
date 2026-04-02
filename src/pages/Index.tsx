@@ -505,6 +505,35 @@ const GlobalStyles = () => (
     /* ── Wave 6: Hover shimmer on trust logos ── */
     .trust-logo { transition: all 0.3s ease; }
     .trust-logo:hover { transform: scale(1.08); filter: brightness(1.3); }
+
+    /* ── Wave 7: Floating emoji ── */
+    @keyframes emoji-float {
+      0%   { transform: translateY(0) scale(0) rotate(-15deg); opacity:0; }
+      12%  { transform: translateY(-20px) scale(1.15) rotate(8deg); opacity:1; }
+      88%  { opacity:0.85; }
+      100% { transform: translateY(-170px) scale(0.5) rotate(22deg); opacity:0; }
+    }
+    /* ── Wave 7: Holographic shine ── */
+    .holo-card { position:relative; overflow:hidden; }
+    .holo-card::after {
+      content:''; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+      background: radial-gradient(circle at var(--hx,50%) var(--hy,50%),
+        rgba(255,255,255,0.14) 0%, rgba(var(--t-a1-rgb),0.1) 28%, rgba(var(--t-a2-rgb),0.06) 50%, transparent 68%);
+      opacity: var(--holo-op,0); transition: opacity 0.4s ease;
+    }
+    /* ── Wave 7: Character wave ── */
+    @keyframes char-wave {
+      0%,100% { transform:translateY(0px) rotate(0deg); }
+      50%     { transform:translateY(-8px) rotate(-2deg); }
+    }
+    /* ── Wave 7: Section badge glow pulse ── */
+    @keyframes badge-glow {
+      0%,100% { box-shadow:0 0 0 0 rgba(var(--t-a1-rgb),0); }
+      50%     { box-shadow:0 0 0 5px rgba(var(--t-a1-rgb),0.18), 0 0 22px rgba(var(--t-a1-rgb),0.12); }
+    }
+    .badge-pulse { animation: badge-glow 2.8s ease-in-out infinite; }
+    /* ── Wave 7: Magnetic wrapper spring ── */
+    .magnetic-wrap { transition: transform 0.35s cubic-bezier(.17,.67,.34,1.4); display:inline-block; }
     ::-webkit-scrollbar { width:6px; }
     ::-webkit-scrollbar-track { background:#0f0f1a; }
     ::-webkit-scrollbar-thumb { background:#4f46e5; border-radius:3px; }
@@ -888,6 +917,84 @@ const WordReveal = ({ text, className = "", delay = 0 }: { text: string; classNa
       ))}
     </span>
   );
+};
+
+/* ─────────────────────── Wave 7: Floating Emoji ─────────────────────── */
+const EMOJIS_LIST = ["⭐","💯","🙌","🔥","💪","✨","👏","🎯","💎","🚀","❤️","🎉"];
+const fireEmoji = (e: React.MouseEvent<HTMLDivElement>) => {
+  const r = e.currentTarget.getBoundingClientRect();
+  const count = 5 + Math.floor(Math.random() * 4);
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement("div");
+    const x = r.left + 20 + Math.random() * (r.width - 40);
+    const y = r.top + r.height * 0.4;
+    const size = 16 + Math.random() * 16;
+    el.style.cssText = `position:fixed;left:${x}px;top:${y}px;font-size:${size}px;pointer-events:none;z-index:9999;user-select:none;animation:emoji-float ${1.3 + Math.random() * 0.7}s ease ${Math.random() * 0.25}s forwards;`;
+    el.textContent = EMOJIS_LIST[Math.floor(Math.random() * EMOJIS_LIST.length)];
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2200);
+  }
+};
+
+/* ─────────────────────── Wave 7: Magnetic Wrapper ─────────────────────── */
+const MagneticWrapper = ({ children, strength = 0.4 }: { children: React.ReactNode; strength?: number }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const onMove = (e: React.MouseEvent) => {
+    const el = ref.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    const x = (e.clientX - r.left - r.width / 2) * strength;
+    const y = (e.clientY - r.top - r.height / 2) * strength;
+    el.style.transform = `translate(${x}px,${y}px) scale(1.04)`;
+  };
+  const onLeave = () => { if (ref.current) ref.current.style.transform = "translate(0,0) scale(1)"; };
+  return (
+    <div ref={ref} className="magnetic-wrap" onMouseMove={onMove} onMouseLeave={onLeave}>
+      {children}
+    </div>
+  );
+};
+
+/* ─────────────────────── Wave 7: Holographic Stat Card ─────────────────────── */
+const HoloCard = ({ children, className = "", style: st = {} }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const onMove = (e: React.MouseEvent) => {
+    const el = ref.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--hx", `${((e.clientX - r.left) / r.width) * 100}%`);
+    el.style.setProperty("--hy", `${((e.clientY - r.top) / r.height) * 100}%`);
+    el.style.setProperty("--holo-op", "1");
+  };
+  const onLeave = () => ref.current?.style.setProperty("--holo-op", "0");
+  return (
+    <div ref={ref} className={`holo-card ${className}`} style={st} onMouseMove={onMove} onMouseLeave={onLeave}>
+      {children}
+    </div>
+  );
+};
+
+/* ─────────────────────── Wave 7: Wave Characters Headline ─────────────────────── */
+const WaveChars = ({ text, className = "" }: { text: string; className?: string }) => (
+  <span className={className}>
+    {text.split("").map((ch, i) => (
+      <span key={i} style={{
+        display: "inline-block",
+        animation: `char-wave ${2 + (i % 4) * 0.3}s ease-in-out ${i * 0.07}s infinite`,
+      }}>
+        {ch === " " ? "\u00A0" : ch}
+      </span>
+    ))}
+  </span>
+);
+
+/* ─────────────────────── Wave 7: Hero Scroll Parallax ─────────────────────── */
+const useParallax = (factor = 0.12) => {
+  const [offset, setOffset] = useState(0);
+  useEffect(() => {
+    const h = () => setOffset(window.scrollY * factor);
+    window.addEventListener("scroll", h, { passive: true });
+    return () => window.removeEventListener("scroll", h);
+  }, [factor]);
+  return offset;
 };
 
 /* ─────────────────────── Rotating Rainbow Border Card ─────────────────────── */
@@ -1605,6 +1712,8 @@ const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip, activ
 
 /* ─────────────────────── Hero Section ─────────────────────── */
 const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
+  const parallaxUp = useParallax(0.14);
+  const parallaxDown = useParallax(-0.06);
   const { t } = useLang();
   return (
   <section className="relative overflow-hidden py-20 md:py-28 lg:py-36 px-4 sm:px-6">
@@ -1619,7 +1728,7 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
 
     <div className="mx-auto max-w-7xl">
       <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-        <div className="text-center lg:text-left" style={{ animation: "slide-up 0.7s ease both" }}>
+        <div className="text-center lg:text-left" style={{ animation: "slide-up 0.7s ease both", transform: `translateY(${parallaxUp}px)`, willChange: "transform" }}>
 
           {/* Trust badge with glow ping */}
           <div className="mb-5 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-white/80" style={{ background: "rgba(var(--t-a1-rgb),0.15)", border: "1px solid rgba(var(--t-a1-rgb),0.3)", position: "relative" }}>
@@ -1630,11 +1739,11 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
             {t.hero.trustBadge}
           </div>
 
-          {/* Headline with typewriter + animated gradient */}
+          {/* Headline with WaveChars + typewriter + animated gradient */}
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight mb-6" style={{ animation: "slide-up 0.7s ease 0.1s both" }}>
-            <span className="animated-headline">{t.hero.line1}</span>
+            <WaveChars text={t.hero.line1} className="animated-headline" />
             <br />
-            <span className="animated-headline" style={{ animationDelay: "1s" }}>{t.hero.line2}</span>
+            <WaveChars text={t.hero.line2} className="animated-headline" />
             <br />
             <TypewriterText />
           </h1>
@@ -1643,21 +1752,25 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
             {t.hero.subtitle}
           </p>
 
-          {/* CTA buttons — primary has confetti + sparkle burst + shimmer */}
+          {/* CTA buttons — magnetic pull + confetti + sparkle + shimmer */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-10" style={{ animation: "slide-up 0.7s ease 0.3s both" }}>
-            <div onClick={fireConfetti}>
-              <SparkleBtn to="/register/employee" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
-                <Briefcase className="h-5 w-5" />
-                {t.hero.joinFreelancer}
-                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </SparkleBtn>
-            </div>
-            <Link to="/register/client">
-              <button className="flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-base font-semibold text-white/80 hover:text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)" }}>
-                <Users className="h-5 w-5" />
-                {t.hero.joinEmployer}
-              </button>
-            </Link>
+            <MagneticWrapper>
+              <div onClick={fireConfetti}>
+                <SparkleBtn to="/register/employee" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
+                  <Briefcase className="h-5 w-5" />
+                  {t.hero.joinFreelancer}
+                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </SparkleBtn>
+              </div>
+            </MagneticWrapper>
+            <MagneticWrapper>
+              <Link to="/register/client">
+                <button className="flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-base font-semibold text-white/80 hover:text-white transition-all w-full sm:w-auto" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)" }}>
+                  <Users className="h-5 w-5" />
+                  {t.hero.joinEmployer}
+                </button>
+              </Link>
+            </MagneticWrapper>
           </div>
 
           {/* Avatar stack social proof */}
@@ -1733,7 +1846,7 @@ const FeaturesSection = () => {
       <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full" style={{ background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.08) 0%, transparent 70%)" }} />
       <div className="mx-auto max-w-7xl">
         <Reveal className="text-center mb-14">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
+          <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
             <Zap className="h-3.5 w-3.5" /> Platform Features
           </div>
           <SplitTextReveal text={t.features.heading} tag="h2" className="text-4xl sm:text-5xl font-black mb-4 gradient-text underline-glow" />
@@ -1775,7 +1888,7 @@ const HowItWorksSection = () => {
       <div className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 0%, rgba(var(--t-a1-rgb),0.04) 50%, transparent 100%)" }} />
       <div className="mx-auto max-w-7xl">
         <Reveal className="text-center mb-14">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
+          <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
             <CheckCircle className="h-3.5 w-3.5" /> Simple Process
           </div>
           <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
@@ -1822,7 +1935,7 @@ const ServicesSection = () => {
       <div className="pointer-events-none absolute top-0 right-0 h-[500px] w-[500px]" style={{ background: "radial-gradient(circle at top right, rgba(52,211,153,0.06) 0%, transparent 60%)" }} />
       <div className="mx-auto max-w-7xl">
         <Reveal className="text-center mb-14">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-cyan-300" style={{ background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.2)" }}>
+          <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-cyan-300" style={{ background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.2)" }}>
             <Layers className="h-3.5 w-3.5" /> 2,700+ Categories
           </div>
           <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">Top <span className="gradient-text">Service</span> Categories</h2>
@@ -1903,9 +2016,9 @@ const StatsSection = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {statItems.map((s, i) => (
             <Reveal key={i} delay={i * 100}>
-              <div className="card-3d group relative rounded-2xl p-6 text-center overflow-hidden cursor-default" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <HoloCard className="card-3d group relative rounded-2xl p-6 text-center cursor-default" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <LiveBadge />
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.1), rgba(var(--t-a2-rgb),0.1))" }} />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.1), rgba(var(--t-a2-rgb),0.1))", borderRadius: "inherit" }} />
                 <div className="relative z-10">
                   <div className="text-4xl sm:text-5xl font-black mb-2" style={{ background: "linear-gradient(135deg, #a78bfa, #60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                     <AnimatedCounter value={s.value} prefix={s.prefix} suffix={s.suffix} />
@@ -1913,7 +2026,7 @@ const StatsSection = () => {
                   <p className="text-sm text-white/50 font-medium">{s.label}</p>
                 </div>
                 <div className="absolute -bottom-6 -right-6 h-24 w-24 rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }} />
-              </div>
+              </HoloCard>
             </Reveal>
           ))}
         </div>
@@ -1941,7 +2054,7 @@ const TestimonialsSection = ({ testimonials }: { testimonials: any[] }) => {
       <div className="pointer-events-none absolute bottom-0 left-0 h-[400px] w-[400px]" style={{ background: "radial-gradient(circle at bottom left, rgba(var(--t-a2-rgb),0.08) 0%, transparent 60%)" }} />
       <div className="mx-auto max-w-7xl">
         <Reveal className="text-center mb-14">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-amber-300" style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)" }}>
+          <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-amber-300" style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)" }}>
             <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> Testimonials
           </div>
           <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">What they <span className="gradient-text">say</span></h2>
@@ -1953,7 +2066,7 @@ const TestimonialsSection = ({ testimonials }: { testimonials: any[] }) => {
             <CarouselContent className="-ml-4">
               {testimonials.map((t) => (
                 <CarouselItem key={t.id} className="pl-4 sm:basis-1/2 lg:basis-1/3">
-                  <div className="card-3d group h-full rounded-2xl p-5 cursor-pointer overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div className="card-3d group h-full rounded-2xl p-5 cursor-pointer overflow-hidden" onMouseEnter={fireEmoji} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                     <Quote className="mb-3 h-8 w-8 text-indigo-400/30 group-hover:text-indigo-400/60 transition-colors" style={{ animation: "quote-bob 3.5s ease-in-out infinite" }} />
                     <p className="text-sm text-white/60 leading-relaxed italic mb-4 flex-1">"{t.quote}"</p>
                     <div className="flex items-center gap-3 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
@@ -2032,7 +2145,7 @@ const FAQSection = () => {
       <div className="pointer-events-none absolute top-0 right-0 h-[400px] w-[400px]" style={{ background: "radial-gradient(circle at top right, rgba(52,211,153,0.05) 0%, transparent 60%)" }} />
       <div className="mx-auto max-w-3xl">
         <Reveal className="text-center mb-14">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
+          <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
             <MessageCircle className="h-3.5 w-3.5" /> FAQ
           </div>
           <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">{t.faq.heading}</h2>
