@@ -7,10 +7,10 @@ interface ThemeToggleProps {
   setTheme: (t: DashboardTheme) => void;
 }
 
-const themes: { value: DashboardTheme; labelEn: string; labelMl: string; icon: React.ReactNode; bg: string; fg: string }[] = [
-  { value: "black", labelEn: "Black", labelMl: "കറുത്ത", icon: <Moon size={13} />, bg: "#0d0d24", fg: "white" },
-  { value: "white", labelEn: "White", labelMl: "വെളുത്ത", icon: <Sun size={13} />, bg: "#ffffff", fg: "#0d0d24" },
-  { value: "wb",    labelEn: "White & Black", labelMl: "വ & ക", icon: <Circle size={13} />, bg: "linear-gradient(135deg,#ffffff 50%,#0d0d24 50%)", fg: "#6366f1" },
+const themes: { value: DashboardTheme; labelEn: string; labelSub: string; icon: React.ReactNode; bg: string; fg: string }[] = [
+  { value: "black", labelEn: "Dark",         labelSub: "Dark navy background",   icon: <Moon size={13} />, bg: "#0d0d24", fg: "white" },
+  { value: "white", labelEn: "Light",        labelSub: "Light background",        icon: <Sun size={13} />,  bg: "#ffffff", fg: "#0d0d24" },
+  { value: "wb",    labelEn: "Light & Dark", labelSub: "Light content, dark nav", icon: <Circle size={13} />, bg: "linear-gradient(135deg,#ffffff 50%,#0d0d24 50%)", fg: "#6366f1" },
 ];
 
 const ThemeToggle = ({ theme, setTheme }: ThemeToggleProps) => {
@@ -66,7 +66,7 @@ const ThemeToggle = ({ theme, setTheme }: ThemeToggleProps) => {
           {/* Header */}
           <div style={{ padding: "10px 14px 8px", borderBottom: theme === "black" ? "1px solid rgba(255,255,255,.06)" : "1px solid rgba(0,0,0,.06)" }}>
             <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: theme === "black" ? "rgba(255,255,255,.3)" : "rgba(0,0,0,.35)" }}>
-              തീം തിരഞ്ഞെടുക്കുക
+              Select Theme
             </p>
           </div>
 
@@ -97,7 +97,7 @@ const ThemeToggle = ({ theme, setTheme }: ThemeToggleProps) => {
                 }} />
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: 13, fontWeight: 600, color: theme === "black" ? "rgba(255,255,255,.85)" : "rgba(0,0,0,.8)", lineHeight: 1.2 }}>{t.labelEn}</p>
-                  <p style={{ fontSize: 10, color: theme === "black" ? "rgba(255,255,255,.3)" : "rgba(0,0,0,.4)", marginTop: 1 }}>{t.labelMl}</p>
+                  <p style={{ fontSize: 10, color: theme === "black" ? "rgba(255,255,255,.3)" : "rgba(0,0,0,.4)", marginTop: 1 }}>{t.labelSub}</p>
                 </div>
                 {isActive && (
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

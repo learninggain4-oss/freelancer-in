@@ -186,8 +186,8 @@ const AdminDashboard = () => {
               <Shield size={22} color="white" />
             </div>
             <div>
-              <h1 style={{ fontSize: 22, fontWeight: 900, color: "white", letterSpacing: "-0.5px" }}>Admin Dashboard</h1>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,.55)", marginTop: 1 }}>Platform overview & management</p>
+              <h1 style={{ fontSize: 22, fontWeight: 900, color: tok.secTitle, letterSpacing: "-0.5px" }}>Admin Dashboard</h1>
+              <p style={{ fontSize: 12, color: tok.cardSub, marginTop: 1 }}>Platform overview & management</p>
             </div>
             <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: "rgba(34,197,94,.18)", border: "1px solid rgba(34,197,94,.3)" }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
