@@ -473,6 +473,38 @@ const GlobalStyles = () => (
     .social-icon { transition: all 0.25s ease; }
     .social-icon:hover { transform: scale(1.2) translateY(-2px); box-shadow: 0 0 16px rgba(var(--t-a1-rgb),0.5) !important; border-color: rgba(var(--t-a1-rgb),0.5) !important; }
     .social-icon:hover svg { color: var(--t-a1) !important; }
+
+    /* ── Wave 6: Confetti particle ── */
+    @keyframes confetti-fly {
+      0%   { transform: translate(0,0) rotate(0deg) scale(1); opacity:1; }
+      80%  { opacity:0.8; }
+      100% { transform: translate(var(--vx,0px),var(--vy,-90px)) rotate(var(--vr,360deg)) scale(0.2); opacity:0; }
+    }
+    /* ── Wave 6: Radar ping rings ── */
+    @keyframes radar-ring {
+      0%   { transform: scale(1);   opacity:0.55; }
+      100% { transform: scale(2.9); opacity:0; }
+    }
+    /* ── Wave 6: Quote icon float-bob ── */
+    @keyframes quote-bob {
+      0%,100% { transform: translateY(0)   rotate(-4deg) scale(1); }
+      50%     { transform: translateY(-9px) rotate(4deg)  scale(1.1); }
+    }
+    /* ── Wave 6: Opposite marquee ── */
+    @keyframes marquee-opposite { 0% { transform:translateX(-50%); } 100% { transform:translateX(0); } }
+    /* ── Wave 6: Neon divider pulse ── */
+    @keyframes divider-glow {
+      0%,100% { opacity:0.35; }
+      50%     { opacity:0.9; }
+    }
+    /* ── Wave 6: Word by word reveal ── */
+    @keyframes word-in {
+      from { opacity:0; transform:translateY(22px) skewY(3deg); }
+      to   { opacity:1; transform:translateY(0)    skewY(0deg); }
+    }
+    /* ── Wave 6: Hover shimmer on trust logos ── */
+    .trust-logo { transition: all 0.3s ease; }
+    .trust-logo:hover { transform: scale(1.08); filter: brightness(1.3); }
     ::-webkit-scrollbar { width:6px; }
     ::-webkit-scrollbar-track { background:#0f0f1a; }
     ::-webkit-scrollbar-thumb { background:#4f46e5; border-radius:3px; }
@@ -786,6 +818,77 @@ const FAQSweep = ({ active }: { active: boolean }) => (
     </div>
   ) : null
 );
+
+/* ─────────────────────── Wave 6: Confetti Burst ─────────────────────── */
+const CONFETTI_COLORS = ["#6366f1","#8b5cf6","#ec4899","#f59e0b","#4ade80","#60a5fa","#f97316","#e879f9","#34d399","#fb7185"];
+const fireConfetti = (e: React.MouseEvent<HTMLElement>) => {
+  const r = e.currentTarget.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  for (let i = 0; i < 32; i++) {
+    const angle = (i / 32) * Math.PI * 2;
+    const dist = 55 + Math.random() * 140;
+    const vx = Math.cos(angle) * dist;
+    const vy = Math.sin(angle) * dist - 55;
+    const size = 5 + Math.random() * 9;
+    const el = document.createElement("div");
+    el.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;width:${size}px;height:${size}px;background:${CONFETTI_COLORS[i % CONFETTI_COLORS.length]};border-radius:${Math.random() > 0.5 ? "50%" : "3px"};pointer-events:none;z-index:9999;--vx:${vx}px;--vy:${vy}px;--vr:${200 + Math.random() * 520}deg;animation:confetti-fly 1s cubic-bezier(.17,.67,.12,.99) ${Math.random() * 0.12}s forwards;`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+  }
+};
+
+/* ─────────────────────── Wave 6: Radar Rings ─────────────────────── */
+const RadarRings = () => (
+  <>
+    <div className="absolute inset-0 rounded-full pointer-events-none" style={{ border: "1.5px solid rgba(var(--t-a1-rgb),0.45)", animation: "radar-ring 2.4s ease-out infinite" }} />
+    <div className="absolute inset-0 rounded-full pointer-events-none" style={{ border: "1.5px solid rgba(var(--t-a2-rgb),0.3)", animation: "radar-ring 2.4s ease-out infinite 0.8s" }} />
+  </>
+);
+
+/* ─────────────────────── Wave 6: Opposite-direction marquee ─────────────────────── */
+const TECH_TAGS = ["React","Node.js","Figma","Python","Vue.js","MongoDB","AWS","Laravel","Flutter","Swift","Kotlin","PostgreSQL","TypeScript","Next.js","Django","Redis","GraphQL","Tailwind","Docker","Supabase","Prisma","Firebase"];
+const OppositeMarquee = () => (
+  <div style={{ overflow: "hidden", position: "relative", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+    <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 80, background: "linear-gradient(to right, var(--t-bg), transparent)", zIndex: 2 }} />
+    <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 80, background: "linear-gradient(to left, var(--t-bg), transparent)", zIndex: 2 }} />
+    <div style={{ display: "flex", gap: "0.75rem", width: "max-content", animation: "marquee-opposite 28s linear infinite" }}>
+      {[...TECH_TAGS, ...TECH_TAGS].map((tag, i) => (
+        <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 100, padding: "5px 14px", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", background: "rgba(var(--t-a2-rgb),0.07)", border: "1px solid rgba(var(--t-a2-rgb),0.18)", color: "rgba(var(--t-a2-rgb),0.85)" }}>
+          <span style={{ width: 5, height: 5, borderRadius: "50%", background: "rgba(var(--t-a2-rgb),0.7)", display: "inline-block" }} />
+          {tag}
+        </span>
+      ))}
+    </div>
+  </div>
+);
+
+/* ─────────────────────── Wave 6: Neon Section Divider ─────────────────────── */
+const NeonDivider = () => (
+  <div style={{ position: "relative", height: 1, overflow: "hidden", background: "rgba(255,255,255,0.04)" }}>
+    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg,transparent,rgba(var(--t-a1-rgb),0.7),rgba(var(--t-a2-rgb),0.9),rgba(52,211,153,0.6),transparent)", animation: "divider-glow 3.5s ease-in-out infinite" }} />
+    <div style={{ position: "absolute", top: -3, height: 7, width: 90, borderRadius: 99, background: "linear-gradient(90deg,transparent,rgba(var(--t-a1-rgb),1),rgba(var(--t-a2-rgb),1),transparent)", boxShadow: "0 0 16px 3px rgba(var(--t-a1-rgb),0.65)", animation: "beam-travel 4.5s ease-in-out infinite 0.5s" }} />
+  </div>
+);
+
+/* ─────────────────────── Wave 6: Word-by-Word Reveal ─────────────────────── */
+const WordReveal = ({ text, className = "", delay = 0 }: { text: string; className?: string; delay?: number }) => {
+  const [vis, setVis] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVis(true); obs.disconnect(); } }, { threshold: 0.4 });
+    obs.observe(el); return () => obs.disconnect();
+  }, []);
+  return (
+    <span ref={ref} className={className}>
+      {text.split(" ").map((word, i) => (
+        <span key={i} style={{ display: "inline-block", marginRight: "0.3em", opacity: vis ? 1 : 0, transform: vis ? "none" : "translateY(22px) skewY(3deg)", transition: `opacity 0.5s ease ${delay + i * 110}ms, transform 0.5s cubic-bezier(.17,.67,.34,1.2) ${delay + i * 110}ms` }}>
+          {word}
+        </span>
+      ))}
+    </span>
+  );
+};
 
 /* ─────────────────────── Rotating Rainbow Border Card ─────────────────────── */
 const RotatingBorderCard = ({ children }: { children: React.ReactNode }) => (
@@ -1174,6 +1277,7 @@ const LiveJobFeed = () => (
         </div>
       ))}
     </div>
+    <OppositeMarquee />
   </section>
 );
 
@@ -1540,13 +1644,15 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
             {t.hero.subtitle}
           </p>
 
-          {/* CTA buttons — primary has sparkle burst + shimmer */}
+          {/* CTA buttons — primary has confetti + sparkle burst + shimmer */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-10" style={{ animation: "slide-up 0.7s ease 0.3s both" }}>
-            <SparkleBtn to="/register/employee" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
-              <Briefcase className="h-5 w-5" />
-              {t.hero.joinFreelancer}
-              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </SparkleBtn>
+            <div onClick={fireConfetti}>
+              <SparkleBtn to="/register/employee" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
+                <Briefcase className="h-5 w-5" />
+                {t.hero.joinFreelancer}
+                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </SparkleBtn>
+            </div>
             <Link to="/register/client">
               <button className="flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-base font-semibold text-white/80 hover:text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)" }}>
                 <Users className="h-5 w-5" />
@@ -1673,7 +1779,9 @@ const HowItWorksSection = () => {
           <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
             <CheckCircle className="h-3.5 w-3.5" /> Simple Process
           </div>
-          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">{t.howItWorks.heading}</h2>
+          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+            <WordReveal text={t.howItWorks.heading} />
+          </h2>
           <p className="text-white/50 max-w-md mx-auto">{t.howItWorks.sub}</p>
         </Reveal>
         <div className="relative">
@@ -1684,6 +1792,7 @@ const HowItWorksSection = () => {
               <Reveal key={s.step} delay={i * 120}>
                 <SpotlightCard className="step-3d card-shimmer group relative rounded-2xl p-6 text-center cursor-pointer" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   <div className="relative mx-auto mb-5 flex h-14 w-14 items-center justify-center">
+                    <RadarRings />
                     <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${s.color} opacity-20 group-hover:opacity-40 transition-opacity blur-lg`} />
                     <div className={`relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${s.color} shadow-lg`} style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.3)" }}>
                       <s.icon className="h-6 w-6 text-white" />
@@ -1787,7 +1896,9 @@ const StatsSection = () => {
       <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full spin-reverse" style={{ border: "1px solid rgba(var(--t-a2-rgb),0.1)" }} />
       <div className="mx-auto max-w-7xl relative z-10">
         <Reveal className="text-center mb-14">
-          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">{t.stats.heading}</h2>
+          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+            <WordReveal text={t.stats.heading} />
+          </h2>
           <p className="text-white/50">{t.stats.sub}</p>
         </Reveal>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
@@ -1844,7 +1955,7 @@ const TestimonialsSection = ({ testimonials }: { testimonials: any[] }) => {
               {testimonials.map((t) => (
                 <CarouselItem key={t.id} className="pl-4 sm:basis-1/2 lg:basis-1/3">
                   <div className="card-3d group h-full rounded-2xl p-5 cursor-pointer overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                    <Quote className="mb-3 h-8 w-8 text-indigo-400/30 group-hover:text-indigo-400/60 transition-colors" />
+                    <Quote className="mb-3 h-8 w-8 text-indigo-400/30 group-hover:text-indigo-400/60 transition-colors" style={{ animation: "quote-bob 3.5s ease-in-out infinite" }} />
                     <p className="text-sm text-white/60 leading-relaxed italic mb-4 flex-1">"{t.quote}"</p>
                     <div className="flex items-center gap-3 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
                       {t.photo_path ? (
@@ -1896,7 +2007,7 @@ const CTASection = () => {
             <p className="text-white/60 mb-6 max-w-md mx-auto">{t.cta.sub}</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/register/employee">
-                <RippleBtn className="group shimmer-btn magnetic-btn flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-base font-semibold text-white w-full sm:w-auto" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4)" }}>
+                <RippleBtn onClick={fireConfetti as any} className="group shimmer-btn magnetic-btn flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-base font-semibold text-white w-full sm:w-auto" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4)" }}>
                   <Briefcase className="h-4 w-4" /> {t.cta.joinFreelancer} <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </RippleBtn>
               </Link>
@@ -2117,11 +2228,17 @@ const Index = () => {
         <HeroSection stats={stats} />
         <TrustBar />
         <LiveJobFeed />
+        <NeonDivider />
         <FeaturesSection />
+        <NeonDivider />
         <HowItWorksSection />
+        <NeonDivider />
         <ServicesSection />
+        <NeonDivider />
         <StatsSection />
+        <NeonDivider />
         <TestimonialsSection testimonials={testimonials} />
+        <NeonDivider />
         <CTASection />
         <FAQSection />
       </main>
