@@ -229,7 +229,13 @@ export default function ProjectsPage() {
     root.style.setProperty("--t-a1-rgb", t.a1rgb);
     root.style.setProperty("--t-a2-rgb", t.a2rgb);
     document.body.style.background = t.bg;
-    return () => { document.body.style.background = ""; };
+    document.title = "Browse Freelance Projects India | 1,000+ Live Jobs | Freelancer India";
+    const desc = document.querySelector('meta[name="description"]');
+    if (desc) desc.setAttribute("content", "Browse 1,000+ live freelance projects in India. Filter by category, budget, and deadline. Bid on web development, design, content, marketing projects and more. Get paid via UPI.");
+    return () => {
+      document.title = "Freelancer India — Hire Top Indian Freelancers | UPI Payments | ₹0 Commission (3 Months)";
+      document.body.style.background = "";
+    };
   }, []);
 
   const filtered = useMemo(() => {

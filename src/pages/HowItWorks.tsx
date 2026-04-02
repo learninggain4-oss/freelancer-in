@@ -52,7 +52,13 @@ export default function HowItWorks() {
     root.style.setProperty("--t-a1-rgb", t.a1rgb);
     root.style.setProperty("--t-a2-rgb", t.a2rgb);
     document.body.style.background = t.bg;
-    return () => { document.body.style.background = ""; };
+    document.title = "How It Works | Freelancer India | Start Freelancing in Minutes";
+    const desc = document.querySelector('meta[name="description"]');
+    if (desc) desc.setAttribute("content", "Learn how Freelancer India works. Create your profile, browse projects, bid, get hired, and get paid via UPI — all in one platform. Step-by-step guide for freelancers and clients.");
+    return () => {
+      document.title = "Freelancer India — Hire Top Indian Freelancers | UPI Payments | ₹0 Commission (3 Months)";
+      document.body.style.background = "";
+    };
   }, []);
 
   const steps = tab === "freelancer" ? FREELANCER_STEPS : CLIENT_STEPS;

@@ -63,7 +63,13 @@ export default function Community() {
     root.style.setProperty("--t-a1-rgb", t.a1rgb);
     root.style.setProperty("--t-a2-rgb", t.a2rgb);
     document.body.style.background = t.bg;
-    return () => { document.body.style.background = ""; };
+    document.title = "Community | Freelancer India | 25,000+ Indian Freelancers";
+    const desc = document.querySelector('meta[name="description"]');
+    if (desc) desc.setAttribute("content", "Join India's most active freelancing community. 120+ skill groups, weekly webinars, local meetups in Kerala, Bangalore, Mumbai, Delhi. Network with 25,000+ Indian freelancers.");
+    return () => {
+      document.title = "Freelancer India — Hire Top Indian Freelancers | UPI Payments | ₹0 Commission (3 Months)";
+      document.body.style.background = "";
+    };
   }, []);
 
   const filtered = SKILL_GROUPS.filter(g =>

@@ -100,7 +100,13 @@ export default function Pricing() {
     root.style.setProperty("--t-a1-rgb", t.a1rgb);
     root.style.setProperty("--t-a2-rgb", t.a2rgb);
     document.body.style.background = t.bg;
-    return () => { document.body.style.background = ""; };
+    document.title = "Pricing Plans | Freelancer India | 0% Commission for 3 Months";
+    const desc = document.querySelector('meta[name="description"]');
+    if (desc) desc.setAttribute("content", "Freelancer India pricing plans. Start free with 0% commission for 3 months. Upgrade to Pro (8% commission, ₹499/mo) or Business (5% commission, ₹1,499/mo). No hidden fees. UPI & bank withdrawals.");
+    return () => {
+      document.title = "Freelancer India — Hire Top Indian Freelancers | UPI Payments | ₹0 Commission (3 Months)";
+      document.body.style.background = "";
+    };
   }, []);
 
   return (
