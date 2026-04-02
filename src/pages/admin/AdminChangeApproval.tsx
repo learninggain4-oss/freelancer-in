@@ -42,7 +42,7 @@ export default function AdminChangeApproval(){
     const upd=changes.map(x=>x.id===id?{...x,status:"approved" as const,reviewedAt:new Date().toISOString(),reviewedBy:"Super Admin"}:x);
     localStorage.setItem("admin_change_approval_v1",JSON.stringify(upd));setChanges(upd);setApproving(null);
     const c=changes.find(x=>x.id===id)!;
-    logAction("Change Approved",`${c.field}: ${c.oldValue} → ${c.newValue}`,"Config","warning");
+    logAction("Change Approved",`${c.field}: ${c.oldValue} → ${c.newValue}`,"System","warning");
     toast({title:"Change approved and applied"});
   };
 
