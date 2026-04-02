@@ -1739,13 +1739,18 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
           </div>
 
           {/* Headline */}
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight mb-6" style={{ animation: "slide-up 0.7s ease 0.1s both" }}>
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight mb-4" style={{ animation: "slide-up 0.7s ease 0.1s both" }}>
             <span className="animated-headline">{t.hero.line1}</span>
             <br />
             <span className="animated-headline">{t.hero.line2}</span>
             <br />
             <span className="animated-headline gradient-text">{t.hero.line3}</span>
           </h1>
+
+          {/* Typewriter for professions */}
+          <div className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-6" style={{ animation: "slide-up 0.7s ease 0.15s both" }}>
+            <TypewriterText />
+          </div>
 
           <p className="text-base sm:text-lg text-white/60 leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0" style={{ animation: "slide-up 0.7s ease 0.2s both" }}>
             {t.hero.subtitle}
