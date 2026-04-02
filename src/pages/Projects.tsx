@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Search, Filter, ArrowRight, Users, Clock, Briefcase, Code, Palette,
@@ -201,6 +201,14 @@ const ALL_PROJECTS: Project[] = PROJECT_TITLES.map(([title, cat, budget], i) => 
   description: DESCRIPTIONS[cat] || "",
 }));
 
+const THEMES_MAP: Record<string, { bg: string; bgRgb: string; a1: string; a2: string; a1rgb: string; a2rgb: string }> = {
+  midnight: { bg: "#070714", bgRgb: "7,7,20",    a1: "#6366f1", a2: "#8b5cf6", a1rgb: "99,102,241",  a2rgb: "139,92,246" },
+  crimson:  { bg: "#0f0407", bgRgb: "15,4,7",    a1: "#f43f5e", a2: "#fb7185", a1rgb: "244,63,94",   a2rgb: "251,113,133" },
+  ocean:    { bg: "#020b12", bgRgb: "2,11,18",   a1: "#0ea5e9", a2: "#06b6d4", a1rgb: "14,165,233",  a2rgb: "6,182,212"  },
+  forest:   { bg: "#030f06", bgRgb: "3,15,6",    a1: "#22c55e", a2: "#16a34a", a1rgb: "34,197,94",   a2rgb: "22,163,74"  },
+  amber:    { bg: "#0c0800", bgRgb: "12,8,0",    a1: "#f59e0b", a2: "#f97316", a1rgb: "245,158,11",  a2rgb: "249,115,22" },
+};
+
 export default function ProjectsPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
@@ -209,6 +217,20 @@ export default function ProjectsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
   const PER_PAGE = 24;
+
+  useEffect(() => {
+    const id = (localStorage.getItem("fi-theme") || "midnight") as string;
+    const t = THEMES_MAP[id] ?? THEMES_MAP["midnight"];
+    const root = document.documentElement;
+    root.style.setProperty("--t-bg", t.bg);
+    root.style.setProperty("--t-bg-rgb", t.bgRgb);
+    root.style.setProperty("--t-a1", t.a1);
+    root.style.setProperty("--t-a2", t.a2);
+    root.style.setProperty("--t-a1-rgb", t.a1rgb);
+    root.style.setProperty("--t-a2-rgb", t.a2rgb);
+    document.body.style.background = t.bg;
+    return () => { document.body.style.background = ""; };
+  }, []);
 
   const filtered = useMemo(() => {
     let list = [...ALL_PROJECTS];
