@@ -2569,31 +2569,6 @@ const AppDownloadSection = () => (
               </div>
             </div>
 
-            {/* Notify Me banner */}
-            <div className="rounded-2xl p-4" style={{ background: "rgba(var(--t-a1-rgb),0.08)", border: "1px solid rgba(var(--t-a1-rgb),0.2)" }}>
-              <div className="flex items-center gap-2 mb-3">
-                <Clock className="h-4 w-4 shrink-0" style={{ color: "var(--t-a1)" }} />
-                <span className="text-sm font-bold text-white">Coming Soon</span>
-                <span className="ml-auto text-xs text-white/40">App Store &amp; Google Play</span>
-              </div>
-              <p className="text-white/55 text-xs mb-3 leading-relaxed">
-                Our mobile app is currently under development. Enter your email to get notified the moment it launches.
-              </p>
-              <div className="flex gap-2">
-                <input
-                  type="email"
-                  placeholder="your@email.com"
-                  className="flex-1 min-w-0 rounded-xl px-3 py-2 text-xs text-white placeholder-white/30 outline-none focus:ring-1"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", focusRingColor: "var(--t-a1)" }}
-                />
-                <button
-                  className="shrink-0 rounded-xl px-4 py-2 text-xs font-bold text-white transition-all hover:scale-105 hover:opacity-90"
-                  style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}
-                >
-                  Notify Me
-                </button>
-              </div>
-            </div>
           </Reveal>
         </div>
       </div>
