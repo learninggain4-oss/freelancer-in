@@ -154,6 +154,7 @@ const AdminVendorManager = lazy(() => import("./pages/admin/AdminVendorManager")
 const WalletTypes = lazy(() => import("./pages/WalletTypes"));
 const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));
+const Projects = lazy(() => import("./pages/Projects"));
 const TransactionHistory = lazy(() => import("./pages/wallet/TransactionHistory"));
 const WithdrawalHistory = lazy(() => import("./pages/wallet/WithdrawalHistory"));
 const WalletQRPage = lazy(() => import("./pages/wallet/WalletQRPage"));
@@ -226,6 +227,7 @@ const AppContent = () => {
             <Route path="/verification-pending" element={<VerificationPending />} />
             <Route path="/install" element={<InstallApp />} />
             <Route path="/categories" element={<Categories />} />
+            <Route path="/projects" element={<Projects />} />
             <Route path="/complete-profile" element={<CompleteProfile />} />
             <Route path="/legal/:slug" element={<LegalDocument />} />
 

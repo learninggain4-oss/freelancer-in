@@ -2396,7 +2396,7 @@ const LiveProjectsStrip = () => (
           </h2>
           <p className="text-white/50">Fresh projects posted by clients — bid before others do.</p>
         </div>
-        <Link to="/register/employee" className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white/70 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+        <Link to="/projects" className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white/70 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
           View All Projects <ArrowRight className="h-4 w-4" />
         </Link>
       </Reveal>
