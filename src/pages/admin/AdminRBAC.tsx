@@ -62,7 +62,7 @@ export default function AdminRBAC() {
   const { data: admins = [] } = useQuery({
     queryKey: ["admin-rbac-users"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id,full_name,email,user_type,created_at").in("user_type", ["admin", "employee", "client"]).order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("profiles").select("id,full_name,email,user_type,created_at").order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
     },
