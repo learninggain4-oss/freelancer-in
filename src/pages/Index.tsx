@@ -2342,6 +2342,229 @@ const Footer = () => {
   );
 };
 
+/* ─────────────────────── Payment Safety Section ─────────────────────── */
+const PAYMENT_TRUST = [
+  { icon: Lock,          title: "Escrow Protection",     desc: "Payment is held securely until you approve the work. Never lose money." },
+  { icon: Shield,        title: "100% Refund Guarantee", desc: "If work isn't delivered, full refund is processed within 24 hours." },
+  { icon: CheckCircle,   title: "SSL Encrypted",         desc: "All transactions use bank-grade 256-bit SSL encryption end-to-end." },
+  { icon: CreditCard,    title: "Dispute Resolution",    desc: "Our team mediates every dispute fairly and resolves it within 48 hrs." },
+];
+
+const PaymentSafetySection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 80% 50%, rgba(var(--t-a1-rgb),0.07) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-7xl">
+      <div className="grid lg:grid-cols-2 gap-14 items-center">
+
+        {/* Left: text + trust list */}
+        <div>
+          <Reveal>
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.25)" }}>
+              <Shield className="h-3.5 w-3.5" /> Payment Security
+            </div>
+            <h2 className="text-4xl sm:text-5xl font-black text-white mb-4 leading-tight">
+              Your Money is <span className="gradient-text">100% Safe</span>
+            </h2>
+            <p className="text-white/55 text-base leading-relaxed mb-8 max-w-md">
+              Every rupee on Freelancer India is protected by our escrow system. Pay only when you're satisfied — guaranteed.
+            </p>
+          </Reveal>
+
+          <div className="space-y-4">
+            {PAYMENT_TRUST.map((item, i) => (
+              <Reveal key={item.title} delay={i * 80}>
+                <div className="flex items-start gap-4 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: "linear-gradient(135deg, rgba(52,211,153,0.2), rgba(var(--t-a1-rgb),0.2))" }}>
+                    <item.icon className="h-5 w-5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-white text-sm mb-0.5">{item.title}</div>
+                    <div className="text-white/50 text-xs leading-relaxed">{item.desc}</div>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: payment methods + stat */}
+        <Reveal direction="right">
+          <div className="rounded-3xl p-8" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(20px)" }}>
+
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/35 mb-5">Accepted Payment Methods</p>
+
+            {/* Payment logos */}
+            <div className="grid grid-cols-3 gap-3 mb-8">
+              {[
+                { label: "UPI",       bg: "#f97316", text: "#fff",    letter: "₹" },
+                { label: "Razorpay",  bg: "#3b82f6", text: "#fff",    letter: "R" },
+                { label: "RuPay",     bg: "#16a34a", text: "#fff",    letter: "RP" },
+                { label: "Visa",      bg: "#1d4ed8", text: "#fff",    letter: "V" },
+                { label: "Mastercard",bg: "#dc2626", text: "#fff",    letter: "MC" },
+                { label: "Net Banking",bg:"#6366f1", text: "#fff",    letter: "NB" },
+              ].map(p => (
+                <div key={p.label} className="flex flex-col items-center gap-2 rounded-2xl p-3 cursor-pointer hover:scale-105 transition-transform" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div className="h-10 w-10 rounded-xl flex items-center justify-center text-sm font-black" style={{ background: p.bg, color: p.text }}>
+                    {p.letter}
+                  </div>
+                  <span className="text-[10px] text-white/50 font-medium text-center leading-tight">{p.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Big stat */}
+            <div className="rounded-2xl p-5 text-center" style={{ background: "linear-gradient(135deg, rgba(52,211,153,0.12), rgba(var(--t-a1-rgb),0.12))", border: "1px solid rgba(52,211,153,0.2)" }}>
+              <div className="text-4xl font-black text-white mb-1">₹500 Cr+</div>
+              <div className="text-emerald-400 text-sm font-semibold">Safely Transacted on Platform</div>
+              <div className="text-white/40 text-xs mt-1">Across 50,000+ completed projects</div>
+            </div>
+
+            {/* Badges row */}
+            <div className="mt-4 flex flex-wrap gap-2 justify-center">
+              {["PCI DSS Compliant","RBI Registered","ISO 27001"].map(b => (
+                <span key={b} className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
+                  <CheckCircle className="h-3 w-3" /> {b}
+                </span>
+              ))}
+            </div>
+          </div>
+        </Reveal>
+      </div>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── App Download Section ─────────────────────── */
+const APP_FEATURES = [
+  { icon: Briefcase,     text: "Track all your projects in real-time" },
+  { icon: MessageCircle, text: "Live chat with clients & freelancers" },
+  { icon: CreditCard,    text: "Instant payment notifications & wallet" },
+  { icon: Zap,           text: "Smart job alerts tailored to your skills" },
+];
+
+const AppDownloadSection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 80% at 20% 50%, rgba(var(--t-a2-rgb),0.08) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-7xl">
+      <div className="grid lg:grid-cols-2 gap-14 items-center">
+
+        {/* Left: phone mockup */}
+        <Reveal direction="left">
+          <div className="flex justify-center lg:justify-start">
+            <div className="relative">
+              {/* Phone frame */}
+              <div className="relative w-56 rounded-[44px] p-2 shadow-2xl" style={{ background: "linear-gradient(145deg,#1e1e2e,#0f0f1a)", border: "2px solid rgba(255,255,255,0.12)" }}>
+                {/* Notch */}
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 h-4 w-20 rounded-full z-10" style={{ background: "#0f0f1a" }} />
+                {/* Screen */}
+                <div className="rounded-[38px] overflow-hidden" style={{ background: "linear-gradient(145deg, #1a1a2e, #16213e)", minHeight: "440px", padding: "40px 12px 20px" }}>
+                  {/* Status bar */}
+                  <div className="flex justify-between items-center mb-6 px-1">
+                    <span className="text-[9px] text-white/60 font-semibold">9:41</span>
+                    <div className="flex gap-1 items-center">
+                      <div className="w-3 h-1.5 rounded-sm bg-white/50" />
+                      <div className="w-1 h-1 rounded-full bg-white/50" />
+                    </div>
+                  </div>
+                  {/* App content */}
+                  <div className="text-center mb-5">
+                    <div className="mx-auto mb-2 h-10 w-10 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>
+                      <Briefcase className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="text-white text-xs font-bold">Freelancer India</div>
+                    <div className="text-white/40 text-[9px]">Good morning, Rahul 👋</div>
+                  </div>
+                  {/* Earnings card */}
+                  <div className="rounded-2xl p-3 mb-3" style={{ background: "linear-gradient(135deg,rgba(var(--t-a1-rgb),0.3),rgba(var(--t-a2-rgb),0.3))", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    <div className="text-[9px] text-white/50 mb-1">This Month</div>
+                    <div className="text-white text-lg font-black">₹42,500</div>
+                    <div className="text-emerald-400 text-[9px]">↑ +18% from last month</div>
+                  </div>
+                  {/* Mini job cards */}
+                  {[
+                    { title:"React App", budget:"₹25,000", tag:"New Bid" },
+                    { title:"Logo Design", budget:"₹6,000",  tag:"Active" },
+                  ].map(j => (
+                    <div key={j.title} className="rounded-xl p-2.5 mb-2 flex items-center justify-between" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                      <div>
+                        <div className="text-[9px] font-bold text-white">{j.title}</div>
+                        <div className="text-[8px] text-white/40">{j.budget}</div>
+                      </div>
+                      <span className="rounded-full px-2 py-0.5 text-[8px] font-bold" style={{ background: j.tag === "New Bid" ? "rgba(var(--t-a1-rgb),0.25)" : "rgba(52,211,153,0.2)", color: j.tag === "New Bid" ? "var(--t-a1)" : "#34d399" }}>
+                        {j.tag}
+                      </span>
+                    </div>
+                  ))}
+                  {/* Bottom nav */}
+                  <div className="mt-4 flex justify-around pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+                    {[Briefcase, MessageCircle, CreditCard, Users].map((Icon, i) => (
+                      <Icon key={i} className={`h-4 w-4 ${i === 0 ? "text-indigo-400" : "text-white/30"}`} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {/* Glow */}
+              <div className="absolute inset-0 -z-10 rounded-[44px] blur-3xl opacity-30" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }} />
+            </div>
+          </div>
+        </Reveal>
+
+        {/* Right: text + features + buttons */}
+        <div>
+          <Reveal>
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
+              <Smartphone className="h-3.5 w-3.5" /> Mobile App
+            </div>
+            <h2 className="text-4xl sm:text-5xl font-black text-white mb-4 leading-tight">
+              Manage Work <span className="gradient-text">On The Go</span>
+            </h2>
+            <p className="text-white/55 text-base leading-relaxed mb-8 max-w-md">
+              Download the Freelancer India app and stay on top of your projects, bids, chats, and payments — anywhere, anytime.
+            </p>
+          </Reveal>
+
+          {/* Feature list */}
+          <div className="space-y-3 mb-10">
+            {APP_FEATURES.map((f, i) => (
+              <Reveal key={i} delay={i * 70}>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(var(--t-a1-rgb),0.15)" }}>
+                    <f.icon className="h-4 w-4" style={{ color: "var(--t-a1)" }} />
+                  </div>
+                  <span className="text-white/75 text-sm">{f.text}</span>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+
+          {/* Download buttons */}
+          <Reveal delay={300}>
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* App Store */}
+              <a href="#" className="flex items-center gap-3 rounded-2xl px-5 py-3.5 transition-all hover:scale-105 hover:shadow-lg" style={{ background: "#000", border: "1px solid rgba(255,255,255,0.15)" }}>
+                <svg viewBox="0 0 24 24" className="h-7 w-7 fill-white shrink-0"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                <div>
+                  <div className="text-white/50 text-[10px] leading-none mb-0.5">Download on the</div>
+                  <div className="text-white font-bold text-sm leading-none">App Store</div>
+                </div>
+              </a>
+              {/* Google Play */}
+              <a href="#" className="flex items-center gap-3 rounded-2xl px-5 py-3.5 transition-all hover:scale-105 hover:shadow-lg" style={{ background: "#000", border: "1px solid rgba(255,255,255,0.15)" }}>
+                <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0"><path fill="#4CAF50" d="M1.22 0c-.03.08-.06.16-.06.26v23.48c0 .1.03.18.06.26l12.04-12L1.22 0z"/><path fill="#FFC107" d="M17.28 8.93L4.88.18l9.96 9.96 2.44-1.21z"/><path fill="#F44336" d="M4.88 23.82l12.4-8.75-2.44-1.21L4.88 23.82z"/><path fill="#2196F3" d="M22.5 11.24l-3.1-1.73-2.74 1.36 2.74 2.74 3.1-1.37z"/></svg>
+                <div>
+                  <div className="text-white/50 text-[10px] leading-none mb-0.5">Get it on</div>
+                  <div className="text-white font-bold text-sm leading-none">Google Play</div>
+                </div>
+              </a>
+            </div>
+            <p className="mt-3 text-white/30 text-xs">Coming soon — notify me when available</p>
+          </Reveal>
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
 /* ─────────────────────── Main Page ─────────────────────── */
 const Index = () => {
   const { user, profile, loading } = useAuth();
@@ -2457,7 +2680,11 @@ const Index = () => {
         <NeonDivider />
         <StatsSection />
         <NeonDivider />
+        <PaymentSafetySection />
+        <NeonDivider />
         <TestimonialsSection testimonials={testimonials} />
+        <NeonDivider />
+        <AppDownloadSection />
         <NeonDivider />
         <CTASection />
         <FAQSection />
