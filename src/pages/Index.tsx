@@ -3990,6 +3990,424 @@ const EscrowFlowSection = () => (
   </section>
 );
 
+/* ─────────────────────── Project Brief Generator ─────────────────────── */
+const BRIEF_QUESTIONS = [
+  {
+    id: "type", label: "What do you need built?",
+    options: ["Website / Web App", "Mobile App", "Logo / Branding", "Content Writing", "Digital Marketing", "Video / Animation", "Data Analysis", "Other"],
+  },
+  {
+    id: "budget", label: "What's your budget range?",
+    options: ["Under ₹5,000", "₹5,000 – ₹15,000", "₹15,000 – ₹50,000", "₹50,000 – ₹1,50,000", "₹1,50,000+", "Not sure yet"],
+  },
+  {
+    id: "timeline", label: "When do you need it?",
+    options: ["ASAP (within 1 week)", "2–4 weeks", "1–2 months", "2–3 months", "Flexible / No rush"],
+  },
+  {
+    id: "experience", label: "Preferred freelancer level?",
+    options: ["Beginner (budget-friendly)", "Intermediate (balanced)", "Expert (premium quality)", "Doesn't matter"],
+  },
+  {
+    id: "extras", label: "Any specific requirements?",
+    options: ["Must be India-based", "Verified badge required", "Malayalam speaker preferred", "Fast communicator", "Has similar portfolio", "None"],
+  },
+];
+const BRIEF_TEMPLATES: Record<string, Record<string, string>> = {
+  type:       { "Website / Web App": "a modern website/web application", "Mobile App": "a cross-platform mobile application", "Logo / Branding": "a professional logo and brand identity", "Content Writing": "high-quality written content", "Digital Marketing": "a digital marketing campaign", "Video / Animation": "a professional video/animation", "Data Analysis": "data analysis and reporting", "Other": "a custom project" },
+  budget:     { "Under ₹5,000": "a budget of under ₹5,000", "₹5,000 – ₹15,000": "a budget of ₹5,000–₹15,000", "₹15,000 – ₹50,000": "a budget of ₹15,000–₹50,000", "₹50,000 – ₹1,50,000": "a budget of ₹50,000–₹1,50,000", "₹1,50,000+": "a budget above ₹1,50,000", "Not sure yet": "a flexible budget" },
+  timeline:   { "ASAP (within 1 week)": "delivered within 1 week", "2–4 weeks": "completed in 2–4 weeks", "1–2 months": "completed within 1–2 months", "2–3 months": "completed in 2–3 months", "Flexible / No rush": "completed at a flexible timeline" },
+  experience: { "Beginner (budget-friendly)": "a beginner freelancer", "Intermediate (balanced)": "an intermediate freelancer", "Expert (premium quality)": "an expert freelancer", "Doesn't matter": "a freelancer of any level" },
+  extras:     { "Must be India-based": "India-based", "Verified badge required": "verified badge holder", "Malayalam speaker preferred": "Malayalam speaker preferred", "Fast communicator": "fast communicator", "Has similar portfolio": "with relevant portfolio", "None": "no special requirements" },
+};
+const ProjectBriefGenerator = () => {
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [generated, setGenerated] = useState(false);
+  const current = BRIEF_QUESTIONS[step];
+  const isLast = step === BRIEF_QUESTIONS.length - 1;
+  const handleSelect = (opt: string) => {
+    const next = { ...answers, [current.id]: opt };
+    setAnswers(next);
+    if (isLast) { setGenerated(true); }
+    else { setTimeout(() => setStep(s => s + 1), 280); }
+  };
+  const brief = generated ? `I'm looking for ${BRIEF_TEMPLATES.type[answers.type] ?? "a project"} with ${BRIEF_TEMPLATES.budget[answers.budget] ?? "a set budget"}, ${BRIEF_TEMPLATES.timeline[answers.timeline] ?? "in a reasonable time"}, by ${BRIEF_TEMPLATES.experience[answers.experience] ?? "a skilled freelancer"} who is ${BRIEF_TEMPLATES.extras[answers.extras] ?? "flexible"}. Looking forward to reviewing proposals.` : "";
+  const reset = () => { setStep(0); setAnswers({}); setGenerated(false); };
+  return (
+    <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(var(--t-a1-rgb),0.08) 0%, transparent 70%)" }} />
+      <div className="mx-auto max-w-3xl">
+        <Reveal className="text-center mb-12">
+          <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
+            <Zap className="h-3.5 w-3.5" /> Project Brief Generator
+          </div>
+          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+            Describe What <span className="gradient-text">You Need</span>
+          </h2>
+          <p className="text-white/50 max-w-md mx-auto">Answer 5 quick questions — we'll generate a ready-to-post project brief and connect you with the right freelancers.</p>
+        </Reveal>
+        <Reveal>
+          <div className="rounded-3xl overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(var(--t-a1-rgb),0.2)" }}>
+            {/* Progress bar */}
+            <div className="h-1 w-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+              <div className="h-1 transition-all duration-500" style={{ width: generated ? "100%" : `${((step) / BRIEF_QUESTIONS.length) * 100}%`, background: "linear-gradient(90deg, var(--t-a1), var(--t-a2))" }} />
+            </div>
+            <div className="p-6 md:p-8">
+              {!generated ? (
+                <>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-bold text-white/30">Step {step + 1} of {BRIEF_QUESTIONS.length}</span>
+                    {Object.keys(answers).map(k => (
+                      <span key={k} className="h-1.5 w-6 rounded-full" style={{ background: "rgba(var(--t-a1-rgb),0.5)" }} />
+                    ))}
+                  </div>
+                  <h3 className="text-xl font-black text-white mb-6">{current.label}</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {current.options.map(opt => (
+                      <button key={opt} onClick={() => handleSelect(opt)} className="rounded-2xl px-4 py-3 text-left text-sm font-semibold transition-all hover:scale-[1.02]" style={{ background: answers[current.id] === opt ? "rgba(var(--t-a1-rgb),0.2)" : "rgba(255,255,255,0.05)", border: answers[current.id] === opt ? "1px solid rgba(var(--t-a1-rgb),0.5)" : "1px solid rgba(255,255,255,0.09)", color: answers[current.id] === opt ? "var(--t-a1)" : "rgba(255,255,255,0.65)" }}>
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                  {step > 0 && (
+                    <button onClick={() => setStep(s => s - 1)} className="mt-4 text-xs text-white/30 hover:text-white/60 transition-colors">
+                      ← Back
+                    </button>
+                  )}
+                </>
+              ) : (
+                <div className="space-y-5">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: "rgba(52,211,153,0.15)" }}>
+                      <CheckCircle className="h-4 w-4 text-emerald-400" />
+                    </div>
+                    <span className="text-sm font-bold text-emerald-400">Your project brief is ready!</span>
+                  </div>
+                  <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    <p className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-3">Generated Brief</p>
+                    <p className="text-sm text-white/80 leading-relaxed italic">"{brief}"</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {BRIEF_QUESTIONS.map(q => (
+                      <div key={q.id} className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                        <p className="text-[10px] text-white/30 mb-0.5 uppercase tracking-wide">{q.label.split(" ").slice(0,3).join(" ")}...</p>
+                        <p className="text-xs font-semibold text-white/70">{answers[q.id]}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Link to="/register/employer" className="flex-1">
+                      <button className="w-full rounded-2xl py-3.5 text-sm font-semibold text-white transition-all hover:scale-[1.02]" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 24px rgba(var(--t-a1-rgb),0.35)" }}>
+                        Post This Project Now →
+                      </button>
+                    </Link>
+                    <button onClick={reset} className="rounded-2xl px-5 py-3 text-sm font-semibold text-white/50 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}>
+                      Start Over
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </Reveal>
+        <Reveal className="mt-6 flex flex-wrap justify-center gap-6 text-center">
+          {[["Free","to post project"],["< 2hrs","first proposals"],["Zero","listing fee"],["100%","escrow protected"]].map(([v, l]) => (
+            <div key={l}><div className="text-lg font-black" style={{ color: "var(--t-a1)" }}>{v}</div><div className="text-xs text-white/35">{l}</div></div>
+          ))}
+        </Reveal>
+      </div>
+    </section>
+  );
+};
+
+/* ─────────────────────── Milestone Payment Section ─────────────────────── */
+const MILESTONES = [
+  { pct: 30, label: "Kickoff Payment",   when: "On project start",         icon: Zap,         color: "#6366f1", desc: "Client deposits 30% upfront. Funds locked in escrow. Freelancer begins work with confidence." },
+  { pct: 40, label: "Midpoint Release",  when: "After midpoint delivery",  icon: CheckCircle, color: "#3b82f6", desc: "Client reviews mid-delivery and approves. 40% released from escrow to freelancer wallet." },
+  { pct: 30, label: "Final Payment",     when: "On project completion",    icon: Trophy,      color: "#34d399", desc: "Final deliverable approved. Remaining 30% released. Project marked complete. Rating exchanged." },
+];
+const MilestonePaymentSection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 50% at 80% 50%, rgba(var(--t-a2-rgb),0.06) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-5xl">
+      <Reveal className="text-center mb-14">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-blue-300" style={{ background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.25)" }}>
+          <Layers className="h-3.5 w-3.5" /> Milestone Payments
+        </div>
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+          Pay in <span className="gradient-text">Safe Milestones</span>
+        </h2>
+        <p className="text-white/50 max-w-md mx-auto">Large projects are split into milestones. No one pays everything upfront. No one works for free. Both sides are protected.</p>
+      </Reveal>
+      {/* Visual timeline */}
+      <div className="relative mb-10">
+        {/* Connecting track */}
+        <div className="absolute top-8 left-0 right-0 h-0.5 hidden md:block" style={{ background: "linear-gradient(90deg, #6366f1, #3b82f6, #34d399)" }} />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+          {MILESTONES.map((m, i) => (
+            <Reveal key={m.label} delay={i * 100}>
+              <div className="relative flex flex-col items-center text-center">
+                {/* Circle node */}
+                <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full mb-4 shadow-xl" style={{ background: `${m.color}20`, border: `2px solid ${m.color}60`, boxShadow: `0 0 30px ${m.color}30` }}>
+                  <m.icon className="h-7 w-7" style={{ color: m.color }} />
+                  <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full text-xs font-black text-white" style={{ background: m.color }}>{i + 1}</span>
+                </div>
+                {/* Percentage pill */}
+                <div className="mb-3 rounded-full px-4 py-1 text-2xl font-black" style={{ color: m.color, background: `${m.color}15`, border: `1px solid ${m.color}30` }}>{m.pct}%</div>
+                <h3 className="text-sm font-black text-white mb-1">{m.label}</h3>
+                <p className="text-xs text-white/35 mb-3 font-medium">{m.when}</p>
+                <p className="text-xs text-white/50 leading-relaxed max-w-[200px]">{m.desc}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+      {/* Total bar */}
+      <Reveal>
+        <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <p className="text-xs text-white/40 mb-3 font-semibold uppercase tracking-widest">Payment Distribution</p>
+          <div className="flex rounded-xl overflow-hidden h-6 mb-3">
+            {MILESTONES.map(m => (
+              <div key={m.label} className="flex items-center justify-center text-xs font-black text-white transition-all" style={{ width: `${m.pct}%`, background: m.color }}>{m.pct}%</div>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {MILESTONES.map(m => (
+              <span key={m.label} className="flex items-center gap-1.5 text-xs text-white/55">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: m.color }} /> {m.label}
+              </span>
+            ))}
+          </div>
+        </div>
+      </Reveal>
+      <Reveal className="mt-6 grid sm:grid-cols-2 gap-4">
+        {[
+          { title: "Clients are protected",    desc: "You only pay each milestone after approving the work. Never lose money on unfinished projects.", color: "#3b82f6", icon: Shield },
+          { title: "Freelancers are protected", desc: "Start working with milestone funds already in escrow. No more working and waiting to get paid.", color: "#34d399", icon: Lock },
+        ].map(c => (
+          <div key={c.title} className="flex items-start gap-3 rounded-2xl p-4" style={{ background: `${c.color}0d`, border: `1px solid ${c.color}25` }}>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `${c.color}18` }}>
+              <c.icon className="h-4 w-4" style={{ color: c.color }} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white mb-1">{c.title}</h3>
+              <p className="text-xs text-white/50 leading-relaxed">{c.desc}</p>
+            </div>
+          </div>
+        ))}
+      </Reveal>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── Badge System ─────────────────────── */
+const BADGES = [
+  { icon: "⭐", name: "Rising Star",       color: "#fbbf24", glow: "rgba(251,191,36,0.3)",   desc: "Earned by new freelancers who complete 3+ projects with 4★+ rating in the first 60 days.", how: "3 projects · 4★+ rating" },
+  { icon: "⚡", name: "Quick Responder",   color: "#6366f1", glow: "rgba(99,102,241,0.3)",    desc: "Responds to client messages within 1 hour on average. Clients love fast communicators.", how: "< 1hr response time" },
+  { icon: "🎯", name: "On Time",           color: "#34d399", glow: "rgba(52,211,153,0.3)",    desc: "Delivered 95%+ of projects before the agreed deadline. Reliability made visible.", how: "95%+ on-time delivery" },
+  { icon: "💬", name: "Top Communicator", color: "#ec4899", glow: "rgba(236,72,153,0.3)",    desc: "Consistently receives 5★ communication ratings from clients across multiple projects.", how: "5★ communication" },
+  { icon: "🔥", name: "Hot Streak",        color: "#f97316", glow: "rgba(249,115,22,0.3)",    desc: "Completed 5+ projects in 30 days without a single dispute or refund request.", how: "5 projects in 30 days" },
+  { icon: "🏆", name: "Top Rated Pro",     color: "#a855f7", glow: "rgba(168,85,247,0.35)",   desc: "Platform's highest honour. Given to the top 1% of freelancers based on all performance metrics.", how: "Top 1% overall" },
+  { icon: "🛡️", name: "Verified Expert",  color: "#3b82f6", glow: "rgba(59,130,246,0.3)",    desc: "Completed skills test, ID verification, and has 10+ completed projects with 4.8★+ average.", how: "Skill test + 10 projects" },
+  { icon: "💎", name: "Diamond Member",   color: "#06b6d4", glow: "rgba(6,182,212,0.3)",     desc: "Loyal member with 2+ years on platform, 50+ completed projects, and ₹5L+ total earned.", how: "2yrs · 50 projects · ₹5L+" },
+];
+const BadgeSystemSection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(var(--t-a1-rgb),0.06) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-6xl">
+      <Reveal className="text-center mb-14">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-amber-300" style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.22)" }}>
+          <Award className="h-3.5 w-3.5" /> Achievement Badges
+        </div>
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+          Earn Badges, <span className="gradient-text">Stand Out</span>
+        </h2>
+        <p className="text-white/50 max-w-md mx-auto">Badges appear on your profile and help clients instantly identify your strengths. The more you earn, the more you win.</p>
+      </Reveal>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {BADGES.map((b, i) => (
+          <Reveal key={b.name} delay={i * 60}>
+            <div className="group h-full rounded-2xl p-5 transition-all duration-300 hover:scale-[1.03] cursor-default" style={{ background: `${b.color}0a`, border: `1px solid ${b.color}25`, boxShadow: `0 0 0 0 ${b.glow}` }}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl shadow-lg transition-transform group-hover:scale-110" style={{ background: `${b.color}18`, boxShadow: `0 4px 15px ${b.glow}` }}>
+                  {b.icon}
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-white leading-tight">{b.name}</h3>
+                  <span className="inline-block rounded-full px-2 py-0.5 text-[9px] font-bold mt-0.5" style={{ background: `${b.color}18`, color: b.color, border: `1px solid ${b.color}30` }}>{b.how}</span>
+                </div>
+              </div>
+              <p className="text-[11px] text-white/45 leading-relaxed">{b.desc}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+      <Reveal className="mt-10 rounded-3xl p-6 md:p-8 text-center" style={{ background: "linear-gradient(135deg, rgba(251,191,36,0.08), rgba(var(--t-a1-rgb),0.1))", border: "1px solid rgba(251,191,36,0.2)" }}>
+        <p className="text-base font-black text-white mb-2">Profiles with 3+ badges get <span className="text-amber-400">2.5× more views</span></p>
+        <p className="text-white/40 text-sm mb-5">Badges are displayed prominently on your profile and in search results. Clients filter by badge type.</p>
+        <Link to="/register/employee">
+          <button className="inline-flex items-center gap-2 rounded-2xl px-7 py-3 text-sm font-semibold text-white hover:scale-105 transition-all" style={{ background: "linear-gradient(135deg, #fbbf24, var(--t-a1))", boxShadow: "0 0 24px rgba(251,191,36,0.3)" }}>
+            <Award className="h-4 w-4" /> Start Earning Badges
+          </button>
+        </Link>
+      </Reveal>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── Mobile App Screenshots ─────────────────────── */
+const APP_SCREENS = [
+  {
+    title: "Dashboard",
+    color: "#6366f1",
+    items: [
+      { label: "Earnings Today", value: "₹4,200", sub: "+12% from yesterday", bar: 72 },
+      { label: "Active Projects", value: "3", sub: "2 due this week" },
+      { label: "Unread Messages", value: "7", sub: "From 4 clients" },
+    ],
+  },
+  {
+    title: "Project Feed",
+    color: "#ec4899",
+    items: [
+      { label: "React Dashboard", value: "₹35,000", sub: "Development · 8 bids" },
+      { label: "Logo Design", value: "₹8,500", sub: "Design · 3 bids" },
+      { label: "SEO Audit", value: "₹12,000", sub: "Marketing · 5 bids" },
+    ],
+  },
+  {
+    title: "Wallet",
+    color: "#34d399",
+    items: [
+      { label: "Available Balance", value: "₹28,750", sub: "Withdraw anytime", bar: 85 },
+      { label: "In Escrow", value: "₹15,000", sub: "2 active projects" },
+      { label: "This Month", value: "₹52,300", sub: "Personal best 🎉" },
+    ],
+  },
+];
+const PhoneMockup = ({ screen, active }: { screen: typeof APP_SCREENS[0]; active: boolean }) => (
+  <div className="transition-all duration-500 mx-auto" style={{ width: 180, transform: active ? "scale(1.05)" : "scale(0.92)", opacity: active ? 1 : 0.55 }}>
+    {/* Phone frame */}
+    <div className="relative rounded-[2rem] p-[3px] shadow-2xl" style={{ background: `linear-gradient(135deg, ${screen.color}60, rgba(255,255,255,0.15))`, boxShadow: active ? `0 20px 60px ${screen.color}35` : "none" }}>
+      <div className="rounded-[1.75rem] overflow-hidden" style={{ background: "#08061a" }}>
+        {/* Notch */}
+        <div className="flex justify-center pt-2 pb-1">
+          <div className="h-1 w-12 rounded-full" style={{ background: "rgba(255,255,255,0.1)" }} />
+        </div>
+        {/* Screen content */}
+        <div className="px-3 pb-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-black text-white">{screen.title}</span>
+            <div className="flex h-5 w-5 items-center justify-center rounded-full" style={{ background: `${screen.color}25` }}>
+              <Bell className="h-2.5 w-2.5" style={{ color: screen.color }} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            {screen.items.map((item, i) => (
+              <div key={i} className="rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.05)" }}>
+                <div className="flex justify-between items-start mb-1">
+                  <span className="text-[9px] text-white/40 leading-tight">{item.label}</span>
+                  <span className="text-[11px] font-black" style={{ color: screen.color }}>{item.value}</span>
+                </div>
+                <span className="text-[8px] text-white/30">{item.sub}</span>
+                {item.bar && (
+                  <div className="mt-1.5 h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
+                    <div className="h-1 rounded-full" style={{ width: `${item.bar}%`, background: screen.color }} />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          {/* Bottom nav */}
+          <div className="flex justify-around mt-3 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            {[Briefcase, Search, Bell, Star].map((Icon, i) => (
+              <div key={i} className="flex flex-col items-center gap-0.5">
+                <Icon className="h-3 w-3" style={{ color: i === 0 ? screen.color : "rgba(255,255,255,0.25)" }} />
+                <div className="h-0.5 w-3 rounded-full" style={{ background: i === 0 ? screen.color : "transparent" }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+const MobileAppScreensSection = () => {
+  const [activeScreen, setActiveScreen] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setActiveScreen(s => (s + 1) % APP_SCREENS.length), 3000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 70% at 80% 50%, rgba(var(--t-a1-rgb),0.06) 0%, transparent 70%)" }} />
+      <div className="mx-auto max-w-6xl">
+        <Reveal className="text-center mb-14">
+          <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.22)" }}>
+            <Smartphone className="h-3.5 w-3.5" /> Mobile App
+          </div>
+          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+            Manage Everything <span className="gradient-text">On the Go</span>
+          </h2>
+          <p className="text-white/50 max-w-md mx-auto">A full-featured mobile experience. Bid, chat, track earnings, and withdraw — all from your phone.</p>
+        </Reveal>
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Phones */}
+          <Reveal>
+            <div className="flex justify-center items-end gap-4">
+              {APP_SCREENS.map((screen, i) => (
+                <div key={screen.title} onClick={() => setActiveScreen(i)} className="cursor-pointer">
+                  <PhoneMockup screen={screen} active={i === activeScreen} />
+                </div>
+              ))}
+            </div>
+            {/* Dots */}
+            <div className="flex justify-center gap-2 mt-6">
+              {APP_SCREENS.map((_, i) => (
+                <button key={i} onClick={() => setActiveScreen(i)} className="h-1.5 rounded-full transition-all" style={{ width: i === activeScreen ? 24 : 6, background: i === activeScreen ? "var(--t-a1)" : "rgba(255,255,255,0.2)" }} />
+              ))}
+            </div>
+          </Reveal>
+          {/* Feature list */}
+          <Reveal direction="right">
+            <div className="space-y-4">
+              <h3 className="text-xl font-black text-white mb-6">Everything you need, in your pocket</h3>
+              {[
+                { icon: Briefcase,     title: "Browse & Bid on Projects",     desc: "See new projects the moment they're posted. Place bids in under 30 seconds.",    color: "#6366f1" },
+                { icon: MessageCircle, title: "Real-time Client Chat",        desc: "Chat, share files, send voice notes, and manage projects — no email needed.",    color: "#ec4899" },
+                { icon: Wallet,        title: "Instant Earnings Dashboard",   desc: "Track earnings by day, week, or month. One tap to request a withdrawal.",        color: "#34d399" },
+                { icon: Bell,          title: "Smart Job Alerts",            desc: "Get notified instantly when a project matching your skills is posted.",            color: "#f59e0b" },
+                { icon: Star,          title: "Profile & Reviews",            desc: "View and respond to client reviews. Update portfolio on the go.",                  color: "#3b82f6" },
+              ].map((f, i) => (
+                <div key={f.title} className="flex items-start gap-3 rounded-2xl p-3.5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `${f.color}18` }}>
+                    <f.icon className="h-4 w-4" style={{ color: f.color }} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white mb-0.5">{f.title}</h4>
+                    <p className="text-xs text-white/45 leading-relaxed">{f.desc}</p>
+                  </div>
+                </div>
+              ))}
+              <div className="flex gap-3 mt-6">
+                {[
+                  { label: "Android", icon: "▶", bg: "#16a34a" },
+                  { label: "iOS",     icon: "", bg: "#1d4ed8" },
+                ].map(btn => (
+                  <button key={btn.label} className="flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-bold text-white hover:scale-105 transition-all" style={{ background: btn.bg }}>
+                    {btn.icon && <span>{btn.icon}</span>} {btn.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 /* ─────────────────────── CTA Section ─────────────────────── */
 const CTASection = () => {
   const { t } = useLang();
@@ -4611,6 +5029,8 @@ const Index = () => {
         <NeonDivider />
         <CareerPathSection />
         <NeonDivider />
+        <BadgeSystemSection />
+        <NeonDivider />
         <FeaturedFreelancersSection />
         <NeonDivider />
         <WhyChooseUsSection />
@@ -4624,6 +5044,8 @@ const Index = () => {
         <SecurityFeaturesSection />
         <NeonDivider />
         <EscrowFlowSection />
+        <NeonDivider />
+        <MilestonePaymentSection />
         <NeonDivider />
         <LegalContractsSection />
         <NeonDivider />
@@ -4641,6 +5063,8 @@ const Index = () => {
         <NeonDivider />
         <CommunitySection />
         <NeonDivider />
+        <MobileAppScreensSection />
+        <NeonDivider />
         <AppDownloadSection
           onAndroidInstall={() => handleInstall("android")}
           onIOSInstall={handleIOSInstall}
@@ -4650,6 +5074,8 @@ const Index = () => {
         <LiveSupportSection />
         <NeonDivider />
         <DemoVideoSection />
+        <NeonDivider />
+        <ProjectBriefGenerator />
         <NeonDivider />
         <BlogPreviewSection />
         <NeonDivider />
