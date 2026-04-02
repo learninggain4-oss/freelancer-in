@@ -565,7 +565,7 @@ const AdminTimeSlotManagement = () => {
                                    <p className="font-mono text-sm font-bold truncate" style={{ color: T.text }}>
                                       {formatTime(slot.start_hour, slot.start_minute)}
                                       <span style={{ color: T.sub }}> — </span>
-                                      {formatHour ? formatTime(slot.end_hour, slot.end_minute) : ""}
+                                      {formatTime(slot.end_hour, slot.end_minute)}
                                    </p>
                                    <div className="flex items-center gap-2 mt-0.5">
                                       <Users className="h-3 w-3" style={{ color: T.sub }} />
