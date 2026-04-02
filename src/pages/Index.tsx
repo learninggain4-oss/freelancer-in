@@ -1410,7 +1410,7 @@ const MouseTiltCard = ({ children, className = "", intensity = 12 }: { children:
 };
 
 /* ─────────────────────── Ripple Button ─────────────────────── */
-const RippleBtn = ({ children, onClick, className = "", style = {} }: { children: React.ReactNode; onClick?: () => void; className?: string; style?: React.CSSProperties }) => {
+const RippleBtn = ({ children, onClick, className = "", style = {} }: { children: React.ReactNode; onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void; className?: string; style?: React.CSSProperties }) => {
   const ref = useRef<HTMLButtonElement>(null);
   const createRipple = (e: React.MouseEvent<HTMLButtonElement>) => {
     const btn = ref.current; if (!btn) return;
@@ -1423,7 +1423,7 @@ const RippleBtn = ({ children, onClick, className = "", style = {} }: { children
     Object.assign(wave.style, { width: `${size}px`, height: `${size}px`, left: `${x}px`, top: `${y}px` });
     btn.appendChild(wave);
     setTimeout(() => wave.remove(), 700);
-    onClick?.();
+    onClick?.(e);
   };
   return (
     <button ref={ref} className={`ripple-container ${className}`} style={style} onClick={createRipple}>
