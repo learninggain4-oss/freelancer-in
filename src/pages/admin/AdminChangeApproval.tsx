@@ -50,7 +50,7 @@ export default function AdminChangeApproval(){
     setRejecting(id);await new Promise(r=>setTimeout(r,700));
     const upd=changes.map(x=>x.id===id?{...x,status:"rejected" as const,reviewedAt:new Date().toISOString(),reviewedBy:"Super Admin",rejectReason:rejectNote||"Rejected by admin"}:x);
     localStorage.setItem("admin_change_approval_v1",JSON.stringify(upd));setChanges(upd);setRejecting(null);setRejectNote("");
-    logAction("Change Rejected",changes.find(x=>x.id===id)?.field||"","Config","warning");
+    logAction("Change Rejected",changes.find(x=>x.id===id)?.field||"","System","warning");
     toast({title:"Change rejected"});
   };
 
