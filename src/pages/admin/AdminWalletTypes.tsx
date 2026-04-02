@@ -177,7 +177,7 @@ const AdminWalletTypes = () => {
       minimum_withdrawal: Number(wt.minimum_withdrawal),
       wallet_price_monthly: Number(wt.wallet_price_monthly || 0),
       wallet_expiry: wt.wallet_expiry || "Unlimited",
-      perks: (wt.perks || []).join(", "),
+      perks: Array.isArray(wt.perks) ? wt.perks.join(", ") : String(wt.perks || ""),
       upgrade_requirements: wt.upgrade_requirements || "",
       display_order: wt.display_order,
       is_active: wt.is_active,
