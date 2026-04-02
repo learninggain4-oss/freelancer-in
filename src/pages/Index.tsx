@@ -582,6 +582,35 @@ const GlobalStyles = () => (
     .badge-pulse { animation: badge-glow 2.8s ease-in-out infinite; }
     /* ── Wave 7: Magnetic wrapper spring ── */
     .magnetic-wrap { transition: transform 0.35s cubic-bezier(.17,.67,.34,1.4); display:inline-block; }
+    /* ── Spinning accent border ── */
+    .accent-spin-border { position:relative; border-radius:18px; padding:1.5px; }
+    .accent-spin-border::before {
+      content:''; position:absolute; inset:0; border-radius:18px; overflow:hidden;
+      background: conic-gradient(from 0deg, transparent 30%, rgba(var(--t-a1-rgb),0.8) 50%, rgba(var(--t-a2-rgb),0.6) 60%, transparent 70%);
+      animation: spin-360 4s linear infinite; z-index:0; mask: linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);
+      mask-composite: exclude; -webkit-mask-composite: destination-out; padding: 1.5px;
+    }
+    .accent-spin-border-inner { position:relative; z-index:1; border-radius:16.5px; width:100%; height:100%; }
+    /* ── Counter glow burst ── */
+    @keyframes counter-burst {
+      0%   { text-shadow: none; transform: scale(1); }
+      35%  { text-shadow: 0 0 18px rgba(var(--t-a1-rgb),0.95), 0 0 36px rgba(var(--t-a2-rgb),0.6); transform: scale(1.14); }
+      100% { text-shadow: none; transform: scale(1); }
+    }
+    /* ── Service card scan shimmer ── */
+    .service-scan { position:relative; overflow:hidden; }
+    .service-scan::after {
+      content:''; position:absolute; top:0; left:-120%; width:60%; height:100%;
+      background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.10) 50%, transparent 70%);
+      transition: none;
+    }
+    .service-scan:hover::after { animation: scan-sweep 0.55s ease forwards; }
+    @keyframes scan-sweep { from { left:-120%; } to { left:140%; } }
+    /* ── Feature section drifting dots ── */
+    @keyframes dot-drift {
+      0%,100% { transform:translateY(0) translateX(0) scale(1); opacity:0.5; }
+      50%      { transform:translateY(-30px) translateX(15px) scale(1.3); opacity:1; }
+    }
     ::-webkit-scrollbar { width:6px; }
     ::-webkit-scrollbar-track { background:#0f0f1a; }
     ::-webkit-scrollbar-thumb { background:#4f46e5; border-radius:3px; }
@@ -687,6 +716,7 @@ const Reveal = ({ children, className = "", delay = 0, direction = "up" }: {
 /* ─────────────────────── Animated Counter ─────────────────────── */
 const AnimatedCounter = ({ value, prefix = "", suffix = "" }: { value: string; prefix?: string; suffix?: string }) => {
   const [display, setDisplay] = useState("0");
+  const [burst, setBurst] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
   const animated = useRef(false);
   useEffect(() => {
@@ -701,6 +731,7 @@ const AnimatedCounter = ({ value, prefix = "", suffix = "" }: { value: string; p
           const eased = 1 - Math.pow(1 - t, 3);
           setDisplay(Math.round(eased * target).toLocaleString("en-IN"));
           if (t < 1) requestAnimationFrame(tick);
+          else { setBurst(true); setTimeout(() => setBurst(false), 750); }
         };
         requestAnimationFrame(tick);
       }
@@ -708,7 +739,7 @@ const AnimatedCounter = ({ value, prefix = "", suffix = "" }: { value: string; p
     obs.observe(el);
     return () => obs.disconnect();
   }, [value]);
-  return <span ref={ref}>{prefix}{display}{suffix}</span>;
+  return <span ref={ref} style={burst ? { animation: "counter-burst 0.75s ease forwards", display: "inline-block" } : {}}>{prefix}{display}{suffix}</span>;
 };
 
 /* ─────────────────────── Hero 3D Illustration ─────────────────────── */
@@ -1896,6 +1927,17 @@ const FeaturesSection = () => {
   return (
     <section id="features" className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
       <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full" style={{ background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.08) 0%, transparent 70%)" }} />
+      {/* Drifting ambient dots */}
+      {[
+        { x:"12%", y:"18%", s:6,  c:"var(--t-a1)", d:"8s",  dl:"0s"   },
+        { x:"88%", y:"25%", s:4,  c:"var(--t-a2)", d:"11s", dl:"1.5s" },
+        { x:"25%", y:"75%", s:8,  c:"#34d399",     d:"9s",  dl:"0.7s" },
+        { x:"72%", y:"65%", s:5,  c:"var(--t-a1)", d:"13s", dl:"2.2s" },
+        { x:"50%", y:"10%", s:3,  c:"var(--t-a2)", d:"7s",  dl:"3s"   },
+        { x:"90%", y:"80%", s:7,  c:"#818cf8",     d:"10s", dl:"0.3s" },
+      ].map((dot, i) => (
+        <div key={i} className="pointer-events-none absolute rounded-full" style={{ left:dot.x, top:dot.y, width:dot.s, height:dot.s, background:dot.c, filter:"blur(1px)", animation:`dot-drift ${dot.d} ease-in-out infinite`, animationDelay:dot.dl, opacity:0.5 }} />
+      ))}
       <div className="mx-auto max-w-7xl">
         <Reveal className="text-center mb-14">
           <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
@@ -1999,7 +2041,7 @@ const ServicesSection = () => {
           {services.map((s, i) => (
             <Reveal key={s.label} delay={i * 70}>
               <MouseTiltCard intensity={10}>
-                <div className={`service-3d group relative rounded-2xl p-5 cursor-pointer overflow-hidden bg-gradient-to-br ${s.gradient}`} style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className={`service-3d service-scan group relative rounded-2xl p-5 cursor-pointer overflow-hidden bg-gradient-to-br ${s.gradient}`} style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
                   <div className={`service-icon-wrap mb-3 flex h-11 w-11 items-center justify-center rounded-xl float-${(i % 5) + 1}`} style={{ background: "rgba(255,255,255,0.08)" }}>
                     <s.icon className={`h-5 w-5 ${s.iconColor}`} />
                   </div>
@@ -2070,7 +2112,9 @@ const StatsSection = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {statItems.map((s, i) => (
             <Reveal key={i} delay={i * 100}>
-              <HoloCard className="card-3d group relative rounded-2xl p-6 text-center cursor-default" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="accent-spin-border">
+              <div className="accent-spin-border-inner">
+              <HoloCard className="card-3d group relative rounded-2xl p-6 text-center cursor-default" style={{ background: "rgba(255,255,255,0.04)" }}>
                 <LiveBadge />
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.1), rgba(var(--t-a2-rgb),0.1))", borderRadius: "inherit" }} />
                 <div className="relative z-10">
@@ -2081,6 +2125,8 @@ const StatsSection = () => {
                 </div>
                 <div className="absolute -bottom-6 -right-6 h-24 w-24 rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }} />
               </HoloCard>
+              </div>
+              </div>
             </Reveal>
           ))}
         </div>
