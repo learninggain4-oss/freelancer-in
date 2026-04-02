@@ -1738,13 +1738,13 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
             {t.hero.trustBadge}
           </div>
 
-          {/* Headline with WaveChars + typewriter + animated gradient */}
+          {/* Headline with WaveChars + animated gradient */}
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight mb-6" style={{ animation: "slide-up 0.7s ease 0.1s both" }}>
             <WaveChars text={t.hero.line1} className="animated-headline" />
             <br />
             <WaveChars text={t.hero.line2} className="animated-headline" />
             <br />
-            <TypewriterText />
+            <WaveChars text={t.hero.line3} className="animated-headline gradient-text" />
           </h1>
 
           <p className="text-base sm:text-lg text-white/60 leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0" style={{ animation: "slide-up 0.7s ease 0.2s both" }}>
