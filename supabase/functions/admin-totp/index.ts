@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
     if (userError || !user) throw new Error("Not authenticated");
 
     // Check admin role
-    const { data: isAdmin } = await userClient.rpc("has_role", {
+    const { data: isAdmin } = await adminClient.rpc("has_role", {
       _user_id: user.id,
       _role: "admin",
     });
