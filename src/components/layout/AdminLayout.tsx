@@ -510,7 +510,7 @@ const AdminLayout = () => {
     queryKey: ["admin-layout-profile", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data } = await supabase.from("profiles").select("full_name,email,avatar_url").eq("id", user.id).single();
+      const { data } = await supabase.from("profiles").select("full_name,email").eq("id", user.id).single();
       return data;
     },
     enabled: !!user?.id,
