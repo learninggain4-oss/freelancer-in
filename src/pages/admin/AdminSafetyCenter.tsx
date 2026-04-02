@@ -83,7 +83,7 @@ export default function AdminSafetyCenter() {
   const { data: ipBlockCount = 0 } = useQuery({
     queryKey: ["safety-ip-blocks"],
     queryFn: async () => {
-      const { count } = await supabase.from("ip_blocks").select("*", { count: "exact", head: true }).eq("is_blocked", true);
+      const { count } = await supabase.from("blocked_ips").select("*", { count: "exact", head: true });
       return count || 0;
     },
   });
