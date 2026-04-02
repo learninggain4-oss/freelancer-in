@@ -375,6 +375,51 @@ const GlobalStyles = () => (
     .live-dot-pulse { animation: live-bounce 1.4s ease-in-out infinite; }
     /* constellation canvas fade in */
     .constellation-canvas { animation: slide-up 1.2s ease 0.1s both; }
+    /* rotating rainbow border */
+    @keyframes spin-360 { to { transform: rotate(360deg); } }
+    .rainbow-border { position:relative; border-radius:26px; overflow:hidden; padding:2px; }
+    .rainbow-border::before {
+      content:''; position:absolute;
+      top:50%; left:50%; width:200%; padding-bottom:200%;
+      background: conic-gradient(#6366f1,#8b5cf6,#ec4899,#fbbf24,#4ade80,#60a5fa,#f97316,#6366f1);
+      transform:translate(-50%,-50%);
+      animation: spin-360 5s linear infinite;
+      opacity:0.75;
+    }
+    .rainbow-border-inner { position:relative; z-index:1; border-radius:24px; overflow:hidden; }
+    /* money badge float */
+    @keyframes money-float {
+      0%   { opacity:0; transform:translateY(0) scale(0.85); }
+      12%  { opacity:1; transform:translateY(-12px) scale(1); }
+      88%  { opacity:1; }
+      100% { opacity:0; transform:translateY(-220px) scale(0.9); }
+    }
+    /* split char reveal */
+    @keyframes split-char {
+      from { opacity:0; transform:translateY(24px) rotateX(-40deg); }
+      to   { opacity:1; transform:translateY(0) rotateX(0deg); }
+    }
+    /* sparkle star burst */
+    @keyframes star-burst {
+      0%   { opacity:1; transform:translate(0,0) scale(1) rotate(0deg); }
+      100% { opacity:0; transform:translate(var(--sx,30px),var(--sy,-30px)) scale(0) rotate(180deg); }
+    }
+    /* highlight sweep — reveals colored underline */
+    @keyframes underline-grow { from { width:0; } to { width:100%; } }
+    .underline-glow { position:relative; display:inline-block; }
+    .underline-glow::after {
+      content:''; position:absolute; bottom:-4px; left:0; height:3px; width:0;
+      background:linear-gradient(90deg,var(--t-a1),var(--t-a2),#4ade80);
+      border-radius:4px; box-shadow:0 0 10px var(--t-a1);
+      animation: underline-grow 1.2s ease 0.8s both;
+    }
+    /* count pop for stats */
+    @keyframes stat-pop {
+      0%  { transform:scale(1); }
+      50% { transform:scale(1.18); filter:drop-shadow(0 0 12px var(--t-a1)); }
+      100%{ transform:scale(1); filter:none; }
+    }
+    .stat-pop-anim { animation: stat-pop 0.5s cubic-bezier(.17,.67,.34,1.4) both; }
     ::-webkit-scrollbar { width:6px; }
     ::-webkit-scrollbar-track { background:#0f0f1a; }
     ::-webkit-scrollbar-thumb { background:#4f46e5; border-radius:3px; }
@@ -610,6 +655,138 @@ const HeroDashboard = () => (
     </div>
   </div>
 );
+
+/* ─────────────────────── Rotating Rainbow Border Card ─────────────────────── */
+const RotatingBorderCard = ({ children }: { children: React.ReactNode }) => (
+  <div className="rainbow-border">
+    <div className="rainbow-border-inner">{children}</div>
+  </div>
+);
+
+/* ─────────────────────── Floating Money Badges ─────────────────────── */
+const MONEY_BADGES = [
+  { amount: "₹42,000", label: "App Dev",         emoji: "💻", color: "#a5b4fc", x: "72%" },
+  { amount: "₹18,500", label: "UI Design",        emoji: "🎨", color: "#4ade80", x: "58%" },
+  { amount: "₹67,500", label: "Full-Stack",       emoji: "🚀", color: "#60a5fa", x: "82%" },
+  { amount: "₹8,750",  label: "Content",          emoji: "✍️",  color: "#fbbf24", x: "64%" },
+  { amount: "₹31,200", label: "SEO Campaign",     emoji: "📈", color: "#34d399", x: "76%" },
+  { amount: "₹15,000", label: "Photoshop",        emoji: "🖌️",  color: "#f9a8d4", x: "68%" },
+];
+const FloatingMoneyBadges = () => (
+  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 280, pointerEvents: "none", overflow: "hidden" }}>
+    {MONEY_BADGES.map((b, i) => (
+      <div key={i} style={{
+        position: "absolute", bottom: 0, left: b.x,
+        animation: `money-float ${4 + (i * 0.65) % 2.5}s ease-in ${(i * 0.9) % 5}s both infinite`,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "6px 13px", borderRadius: 12, background: "rgba(10,10,25,0.88)", border: `1px solid ${b.color}40`, backdropFilter: "blur(16px)", boxShadow: `0 4px 20px rgba(0,0,0,0.4), 0 0 14px ${b.color}20`, whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 16 }}>{b.emoji}</span>
+          <div>
+            <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: b.color, lineHeight: 1.2 }}>{b.amount}</p>
+            <p style={{ margin: 0, fontSize: 9.5, color: "rgba(255,255,255,0.4)", lineHeight: 1 }}>{b.label}</p>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+/* ─────────────────────── Split Text Reveal ─────────────────────── */
+const SplitTextReveal = ({ text, className = "", delay = 0, tag = "span" }: {
+  text: string; className?: string; delay?: number; tag?: "h1"|"h2"|"span"|"p";
+}) => {
+  const [vis, setVis] = useState(false);
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVis(true); obs.disconnect(); } }, { threshold: 0.3 });
+    obs.observe(el); return () => obs.disconnect();
+  }, []);
+  const Tag = tag as keyof JSX.IntrinsicElements;
+  return (
+    <Tag ref={ref as React.RefObject<HTMLElement & HTMLHeadingElement & HTMLParagraphElement>} className={className} style={{ perspective: 600 }}>
+      {text.split("").map((ch, i) => (
+        <span key={i} style={{ display: "inline-block", opacity: vis ? 1 : 0, transform: vis ? "translateY(0) rotateX(0)" : "translateY(28px) rotateX(-45deg)", transition: `opacity .5s ease ${delay + i * 28}ms, transform .5s cubic-bezier(.17,.67,.34,1.2) ${delay + i * 28}ms` }}>
+          {ch === " " ? "\u00A0" : ch}
+        </span>
+      ))}
+    </Tag>
+  );
+};
+
+/* ─────────────────────── Text Scramble Hook ─────────────────────── */
+const SCRAMBLE = "!@#$%^&*ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+const useScramble = (original: string) => {
+  const [text, setText] = useState(original);
+  const active = useRef(false);
+  const trigger = () => {
+    if (active.current) return;
+    active.current = true;
+    let iter = 0;
+    const id = setInterval(() => {
+      setText(original.split("").map((ch, i) => {
+        if (ch === " ") return " ";
+        if (i < iter) return ch;
+        return SCRAMBLE[Math.floor(Math.random() * SCRAMBLE.length)];
+      }).join(""));
+      iter += 0.7;
+      if (iter >= original.length) { clearInterval(id); setText(original); active.current = false; }
+    }, 38);
+  };
+  return { text, trigger };
+};
+
+/* ─────────────────────── Scramble Card Title ─────────────────────── */
+const ScrambleCardTitle = ({ title }: { title: string }) => {
+  const { text, trigger } = useScramble(title);
+  return (
+    <h3 className="text-base font-bold text-white mb-2 cursor-default" onMouseEnter={trigger}>{text}</h3>
+  );
+};
+
+/* ─────────────────────── Sparkle CTA Button ─────────────────────── */
+const STAR_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
+const SparkleBtn = ({ children, to, className = "", style: st = {} }: { children: React.ReactNode; to: string; className?: string; style?: React.CSSProperties }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const burst = () => {
+    const container = ref.current; if (!container) return;
+    STAR_ANGLES.forEach((angle, i) => {
+      const star = document.createElement("div");
+      const rad = (angle * Math.PI) / 180;
+      const dist = 28 + Math.random() * 20;
+      const sx = Math.cos(rad) * dist;
+      const sy = Math.sin(rad) * dist;
+      const colors = ["#6366f1","#f472b6","#fbbf24","#4ade80","#60a5fa"];
+      const color = colors[i % colors.length];
+      const size = 5 + Math.random() * 5;
+      Object.assign(star.style, {
+        position: "absolute",
+        width: `${size}px`, height: `${size}px`,
+        borderRadius: "50%",
+        background: color,
+        top: "50%", left: "50%",
+        transform: "translate(-50%,-50%)",
+        pointerEvents: "none",
+        zIndex: "10",
+        animation: `star-burst 0.6s ${i * 0.04}s ease-out both`,
+        boxShadow: `0 0 ${size * 2}px ${color}`,
+      });
+      star.style.setProperty("--sx", `${sx}px`);
+      star.style.setProperty("--sy", `${sy}px`);
+      container.appendChild(star);
+      setTimeout(() => star.remove(), 700);
+    });
+  };
+  return (
+    <Link to={to}>
+      <div ref={ref} className={`relative overflow-visible ${className}`}>
+        <button onMouseEnter={burst} className="shimmer-btn group flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-base font-semibold text-white transition-all hover:scale-105 w-full sm:w-auto" style={st}>
+          {children}
+        </button>
+      </div>
+    </Link>
+  );
+};
 
 /* ─────────────────────── Cursor Trail ─────────────────────── */
 const TRAIL_COLORS = ["#6366f1","#8b5cf6","#ec4899","#4ade80","#f472b6","#60a5fa","#fb923c","#34d399"];
@@ -1232,15 +1409,13 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
             {t.hero.subtitle}
           </p>
 
-          {/* CTA buttons — primary has shimmer scan */}
+          {/* CTA buttons — primary has sparkle burst + shimmer */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-10" style={{ animation: "slide-up 0.7s ease 0.3s both" }}>
-            <Link to="/register/employee">
-              <button className="shimmer-btn group flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-base font-semibold text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
-                <Briefcase className="h-5 w-5" />
-                {t.hero.joinFreelancer}
-                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </Link>
+            <SparkleBtn to="/register/employee" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
+              <Briefcase className="h-5 w-5" />
+              {t.hero.joinFreelancer}
+              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </SparkleBtn>
             <Link to="/register/client">
               <button className="flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-base font-semibold text-white/80 hover:text-white transition-all hover:scale-105 w-full sm:w-auto" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)" }}>
                 <Users className="h-5 w-5" />
@@ -1267,16 +1442,19 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
           </div>
         </div>
 
-        {/* Right: 3D Dashboard with mouse-tilt + floating notifications */}
+        {/* Right: 3D Dashboard — rainbow border + mouse-tilt + floating notifications */}
         <div className="lg:flex lg:justify-end relative" style={{ animation: "slide-up 0.9s ease 0.2s both" }}>
           <MouseTiltCard className="w-full max-w-lg">
-            <HeroDashboard />
+            <RotatingBorderCard>
+              <HeroDashboard />
+            </RotatingBorderCard>
           </MouseTiltCard>
           <FloatingNotifications />
         </div>
       </div>
     </div>
 
+    <FloatingMoneyBadges />
     <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent, var(--t-bg))" }} />
   </section>
   );
@@ -1324,7 +1502,7 @@ const FeaturesSection = () => {
           <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
             <Zap className="h-3.5 w-3.5" /> Platform Features
           </div>
-          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4 gradient-text">{t.features.heading}</h2>
+          <SplitTextReveal text={t.features.heading} tag="h2" className="text-4xl sm:text-5xl font-black mb-4 gradient-text underline-glow" />
           <p className="text-white/50 max-w-md mx-auto">{t.features.subheading}</p>
         </Reveal>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -1336,7 +1514,7 @@ const FeaturesSection = () => {
                   <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${f.color} float-${(i % 3) + 1}`} style={{ boxShadow: "0 8px 20px rgba(0,0,0,0.3)" }}>
                     <f.icon className="h-5 w-5 text-white" />
                   </div>
-                  <h3 className="text-base font-bold text-white mb-2">{t.features.items[i]?.title}</h3>
+                  <ScrambleCardTitle title={t.features.items[i]?.title ?? ""} />
                   <p className="text-sm text-white/50 leading-relaxed">{t.features.items[i]?.desc}</p>
                 </div>
                 <div className={`absolute -bottom-6 -right-6 h-20 w-20 rounded-full bg-gradient-to-br ${f.color} opacity-10 group-hover:opacity-20 transition-opacity blur-xl`} />
