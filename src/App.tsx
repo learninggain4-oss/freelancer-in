@@ -110,6 +110,26 @@ const AdminSessionManager = lazy(() => import("./pages/admin/AdminSessionManager
 const AdminNotificationCenter = lazy(() => import("./pages/admin/AdminNotificationCenter"));
 const AdminFileManager = lazy(() => import("./pages/admin/AdminFileManager"));
 const AdminHighAvailability = lazy(() => import("./pages/admin/AdminHighAvailability"));
+const AdminDataIntegrity = lazy(() => import("./pages/admin/AdminDataIntegrity"));
+const AdminNetworkMonitor = lazy(() => import("./pages/admin/AdminNetworkMonitor"));
+const AdminDeadlockProtection = lazy(() => import("./pages/admin/AdminDeadlockProtection"));
+const AdminNotificationDelivery = lazy(() => import("./pages/admin/AdminNotificationDelivery"));
+const AdminChangeApproval = lazy(() => import("./pages/admin/AdminChangeApproval"));
+const AdminTimeSyncSystem = lazy(() => import("./pages/admin/AdminTimeSyncSystem"));
+const AdminBackupVerification = lazy(() => import("./pages/admin/AdminBackupVerification"));
+const AdminLockoutRecovery = lazy(() => import("./pages/admin/AdminLockoutRecovery"));
+const AdminSystemResources = lazy(() => import("./pages/admin/AdminSystemResources"));
+const AdminApiValidation = lazy(() => import("./pages/admin/AdminApiValidation"));
+const AdminSessionManagement = lazy(() => import("./pages/admin/AdminSessionManagement"));
+const AdminPermissionSync = lazy(() => import("./pages/admin/AdminPermissionSync"));
+const AdminLogManagement = lazy(() => import("./pages/admin/AdminLogManagement"));
+const AdminDataImport = lazy(() => import("./pages/admin/AdminDataImport"));
+const AdminConfigRollback = lazy(() => import("./pages/admin/AdminConfigRollback"));
+const AdminMonitoringRedundancy = lazy(() => import("./pages/admin/AdminMonitoringRedundancy"));
+const AdminDataSync = lazy(() => import("./pages/admin/AdminDataSync"));
+const AdminSecurityPatch = lazy(() => import("./pages/admin/AdminSecurityPatch"));
+const AdminTokenManagement = lazy(() => import("./pages/admin/AdminTokenManagement"));
+const AdminDisasterRecovery = lazy(() => import("./pages/admin/AdminDisasterRecovery"));
 const AdminConfigManagement = lazy(() => import("./pages/admin/AdminConfigManagement"));
 const AdminMaintenanceCenter = lazy(() => import("./pages/admin/AdminMaintenanceCenter"));
 const AdminRateLimiting = lazy(() => import("./pages/admin/AdminRateLimiting"));
@@ -364,6 +384,26 @@ const AppContent = () => {
               <Route path="notification-center" element={<AdminNotificationCenter />} />
               <Route path="file-manager" element={<AdminFileManager />} />
               <Route path="high-availability" element={<AdminHighAvailability />} />
+              <Route path="data-integrity" element={<AdminDataIntegrity />} />
+              <Route path="network-monitor" element={<AdminNetworkMonitor />} />
+              <Route path="deadlock-protection" element={<AdminDeadlockProtection />} />
+              <Route path="notification-delivery" element={<AdminNotificationDelivery />} />
+              <Route path="change-approval" element={<AdminChangeApproval />} />
+              <Route path="time-sync" element={<AdminTimeSyncSystem />} />
+              <Route path="backup-verification" element={<AdminBackupVerification />} />
+              <Route path="lockout-recovery" element={<AdminLockoutRecovery />} />
+              <Route path="system-resources" element={<AdminSystemResources />} />
+              <Route path="api-validation" element={<AdminApiValidation />} />
+              <Route path="session-management" element={<AdminSessionManagement />} />
+              <Route path="permission-sync" element={<AdminPermissionSync />} />
+              <Route path="log-management" element={<AdminLogManagement />} />
+              <Route path="data-import" element={<AdminDataImport />} />
+              <Route path="config-rollback" element={<AdminConfigRollback />} />
+              <Route path="monitoring-redundancy" element={<AdminMonitoringRedundancy />} />
+              <Route path="data-sync" element={<AdminDataSync />} />
+              <Route path="security-patch" element={<AdminSecurityPatch />} />
+              <Route path="token-management" element={<AdminTokenManagement />} />
+              <Route path="disaster-recovery" element={<AdminDisasterRecovery />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
