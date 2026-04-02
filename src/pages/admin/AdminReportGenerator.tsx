@@ -189,10 +189,3 @@ export default function AdminReportGenerator() {
     </div>
   );
 }
-
-function ToggleRight({ size, color }: { size:number; color:string }) {
-  return <svg width={size} height={size/2} viewBox="0 0 28 14" fill="none"><rect width="28" height="14" rx="7" fill={color} opacity=".2"/><rect x="14" y="2" width="10" height="10" rx="5" fill={color}/></svg>;
-}
-function ToggleLeft({ size, color }: { size:number; color:string }) {
-  return <svg width={size} height={size/2} viewBox="0 0 28 14" fill="none"><rect width="28" height="14" rx="7" fill={color} opacity=".2"/><rect x="4" y="2" width="10" height="10" rx="5" fill={color}/></svg>;
-}
