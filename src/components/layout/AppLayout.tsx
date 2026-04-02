@@ -11,7 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Briefcase, Search, MessageSquare, ChevronDown, X, User, Settings,
-  LogOut, IndianRupee, ArrowUpRight, Wallet, Bell,
+  LogOut, IndianRupee, ArrowUpRight, Wallet, Bell, Plus,
   LayoutDashboard, FileText, ClipboardCheck, CircleHelp, Gift, Star,
 } from "lucide-react";
 

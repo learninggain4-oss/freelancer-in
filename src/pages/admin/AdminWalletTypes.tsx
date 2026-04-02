@@ -177,7 +177,7 @@ const AdminWalletTypes = () => {
       minimum_withdrawal: Number(wt.minimum_withdrawal),
       wallet_price_monthly: Number(wt.wallet_price_monthly || 0),
       wallet_expiry: wt.wallet_expiry || "Unlimited",
-      perks: (wt.perks || []).join(", "),
+      perks: Array.isArray(wt.perks) ? wt.perks.join(", ") : String(wt.perks || ""),
       upgrade_requirements: wt.upgrade_requirements || "",
       display_order: wt.display_order,
       is_active: wt.is_active,
@@ -259,7 +259,7 @@ const AdminWalletTypes = () => {
                     <TableCell>
                       <div className="flex flex-col">
                         <span className="font-bold" style={{ color: T.text }}>{wt.wallet_price}</span>
-                        {(wt as WalletTypeRow).wallet_price_monthly > 0 && <span className="text-[10px]" style={{ color: T.sub }}>₹{(wt as WalletTypeRow).wallet_price_monthly}/mo</span>}
+                        {Number((wt as unknown as WalletTypeRow).wallet_price_monthly || 0) > 0 && <span className="text-[10px]" style={{ color: T.sub }}>₹{(wt as unknown as WalletTypeRow).wallet_price_monthly}/mo</span>}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -277,7 +277,7 @@ const AdminWalletTypes = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" style={{ color: T.sub }} onClick={() => openEdit(wt)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" style={{ color: T.sub }} onClick={() => openEdit(wt as unknown as WalletTypeRow)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8" style={{ color: T.sub }} onClick={() => clearMutation.mutate({ id: wt.id, cleared: !wt.is_cleared })}>
