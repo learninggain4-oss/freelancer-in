@@ -2540,7 +2540,7 @@ const AppDownloadSection = () => (
           {/* Download buttons — Coming Soon */}
           <Reveal delay={300}>
             {/* Direct download row */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
               {/* Android APK */}
               <a
                 href="#"
@@ -2563,6 +2563,18 @@ const AppDownloadSection = () => (
                 <div>
                   <div className="text-white/60 text-[10px] leading-none mb-0.5">Download for</div>
                   <div className="text-white font-bold text-sm leading-none">iOS (iPhone)</div>
+                </div>
+              </a>
+              {/* Windows */}
+              <a
+                href="#"
+                className="flex items-center gap-3 rounded-2xl px-5 py-3.5 transition-all hover:scale-105 hover:shadow-lg"
+                style={{ background: "linear-gradient(135deg,rgba(var(--t-a1-rgb),0.2),rgba(var(--t-a2-rgb),0.2))", border: "1px solid rgba(var(--t-a1-rgb),0.35)" }}
+              >
+                <svg viewBox="0 0 24 24" className="h-7 w-7 fill-current text-blue-400 shrink-0"><path d="M3 12V6.75l6-1.32v6.57H3zM20.93 3 11 4.57v7.43h9.93L21 3zM3 13h6v6.57l-6-1.32V13zm7.07 6.88L21 21v-8h-9.93l-.00 6.88z"/></svg>
+                <div>
+                  <div className="text-white/60 text-[10px] leading-none mb-0.5">Download for</div>
+                  <div className="text-white font-bold text-sm leading-none">Windows</div>
                 </div>
               </a>
             </div>
