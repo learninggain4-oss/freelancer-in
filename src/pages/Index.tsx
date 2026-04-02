@@ -2442,7 +2442,7 @@ const APP_FEATURES = [
   { icon: Zap,           text: "Smart job alerts tailored to your skills" },
 ];
 
-const AppDownloadSection = ({ onInstall, onIOSTip }: { onInstall: () => void; onIOSTip: () => void }) => (
+const AppDownloadSection = ({ onAndroidInstall, onIOSInstall, onWindowsInstall }: { onAndroidInstall: () => void; onIOSInstall: () => void; onWindowsInstall: () => void }) => (
   <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
     <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 80% at 20% 50%, rgba(var(--t-a2-rgb),0.08) 0%, transparent 70%)" }} />
     <div className="mx-auto max-w-7xl">
@@ -2543,7 +2543,7 @@ const AppDownloadSection = ({ onInstall, onIOSTip }: { onInstall: () => void; on
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
               {/* Android APK */}
               <button
-                onClick={onInstall}
+                onClick={onAndroidInstall}
                 className="flex items-center gap-3 rounded-2xl px-5 py-3.5 transition-all hover:scale-105 hover:shadow-lg w-full text-left"
                 style={{ background: "linear-gradient(135deg,rgba(var(--t-a1-rgb),0.2),rgba(var(--t-a2-rgb),0.2))", border: "1px solid rgba(var(--t-a1-rgb),0.35)" }}
               >
@@ -2555,7 +2555,7 @@ const AppDownloadSection = ({ onInstall, onIOSTip }: { onInstall: () => void; on
               </button>
               {/* iOS */}
               <button
-                onClick={onIOSTip}
+                onClick={onIOSInstall}
                 className="flex items-center gap-3 rounded-2xl px-5 py-3.5 transition-all hover:scale-105 hover:shadow-lg w-full text-left"
                 style={{ background: "linear-gradient(135deg,rgba(var(--t-a1-rgb),0.2),rgba(var(--t-a2-rgb),0.2))", border: "1px solid rgba(var(--t-a1-rgb),0.35)" }}
               >
@@ -2567,7 +2567,7 @@ const AppDownloadSection = ({ onInstall, onIOSTip }: { onInstall: () => void; on
               </button>
               {/* Windows */}
               <button
-                onClick={onInstall}
+                onClick={onWindowsInstall}
                 className="flex items-center gap-3 rounded-2xl px-5 py-3.5 transition-all hover:scale-105 hover:shadow-lg w-full text-left"
                 style={{ background: "linear-gradient(135deg,rgba(var(--t-a1-rgb),0.2),rgba(var(--t-a2-rgb),0.2))", border: "1px solid rgba(var(--t-a1-rgb),0.35)" }}
               >
@@ -2624,6 +2624,7 @@ const Index = () => {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSTip, setShowIOSTip] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState<"android"|"ios"|"windows"|null>(null);
   const [showBanner, setShowBanner] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [themeId, setThemeId] = useState<ThemeId>(() => (localStorage.getItem("fi-theme") as ThemeId) || "midnight");
@@ -2664,13 +2665,18 @@ const Index = () => {
     return () => clearTimeout(t);
   }, [isInstalled, bannerDismissed, deferredPrompt, isIOS]);
 
-  const handleInstall = async () => {
-    if (!deferredPrompt) return;
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") setIsInstalled(true);
-    setDeferredPrompt(null);
+  const handleInstall = async (platform: "android"|"windows" = "android") => {
+    if (deferredPrompt) {
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") setIsInstalled(true);
+      setDeferredPrompt(null);
+    } else {
+      setShowInstallGuide(platform);
+    }
   };
+
+  const handleIOSInstall = () => setShowInstallGuide("ios");
 
   if (!loading && user && profile) {
     if (profile.approval_status === "approved") {
@@ -2702,6 +2708,72 @@ const Index = () => {
       <GlowCursor />
 
       <Navbar deferredPrompt={deferredPrompt} isInstalled={isInstalled} isIOS={isIOS} onInstall={handleInstall} onIOSTip={() => setShowIOSTip(v => !v)} activeTheme={themeId} onThemeChange={handleThemeChange} />
+
+      {/* PWA Install Guide Modal */}
+      {showInstallGuide && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }} onClick={() => setShowInstallGuide(null)}>
+          <div className="w-full max-w-sm rounded-3xl p-6 shadow-2xl" style={{ background: "rgba(15,10,30,0.97)", border: "1px solid rgba(var(--t-a1-rgb),0.35)" }} onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="h-10 w-10 rounded-2xl flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>
+                {showInstallGuide === "android" && <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white"><path d="M17.523 15.341a.75.75 0 0 1-.75.75H7.227a.75.75 0 0 1-.75-.75V8.659a.75.75 0 0 1 .75-.75h9.546a.75.75 0 0 1 .75.75v6.682zM14.47 3.22l1.06-1.84a.25.25 0 0 0-.43-.25l-1.08 1.87A6.55 6.55 0 0 0 12 2.75a6.55 6.55 0 0 0-2.02.25L8.9 1.13a.25.25 0 0 0-.43.25l1.06 1.84A6.5 6.5 0 0 0 5.5 8.25h13a6.5 6.5 0 0 0-4.03-5.03zM9.5 6.5a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5zm5 0a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5z"/></svg>}
+                {showInstallGuide === "ios" && <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>}
+                {showInstallGuide === "windows" && <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white"><path d="M3 12V6.75l6-1.32v6.57H3zM20.93 3 11 4.57v7.43h9.93L21 3zM3 13h6v6.57l-6-1.32V13zm7.07 6.88L21 21v-8h-9.93l-.00 6.88z"/></svg>}
+              </div>
+              <div>
+                <div className="text-white font-bold text-base">
+                  {showInstallGuide === "android" && "Install on Android"}
+                  {showInstallGuide === "ios" && "Install on iPhone"}
+                  {showInstallGuide === "windows" && "Install on Windows"}
+                </div>
+                <div className="text-white/50 text-xs">Freelancer India App</div>
+              </div>
+              <button onClick={() => setShowInstallGuide(null)} className="ml-auto text-white/40 hover:text-white text-lg leading-none">✕</button>
+            </div>
+
+            {/* Steps */}
+            <div className="space-y-3">
+              {showInstallGuide === "android" && [
+                { n: "1", text: "Chrome browser-ൽ ഈ website തുറക്കുക" },
+                { n: "2", text: "3-dot menu (⋮) tap ചെയ്യുക" },
+                { n: "3", text: "\"Add to Home screen\" / \"Install App\" tap ചെയ്യുക" },
+                { n: "4", text: "\"Install\" confirm ചെയ്യുക — Home screen-ൽ app കാണും" },
+              ].map(s => (
+                <div key={s.n} className="flex items-start gap-3">
+                  <span className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>{s.n}</span>
+                  <span className="text-white/75 text-sm leading-relaxed">{s.text}</span>
+                </div>
+              ))}
+              {showInstallGuide === "ios" && [
+                { n: "1", text: "Safari browser-ൽ ഈ website തുറക്കുക" },
+                { n: "2", text: "Share button (↑ box) tap ചെയ്യുക" },
+                { n: "3", text: "\"Add to Home Screen\" tap ചെയ്യുക" },
+                { n: "4", text: "\"Add\" tap ചെയ്യുക — Home screen-ൽ app icon കാണും" },
+              ].map(s => (
+                <div key={s.n} className="flex items-start gap-3">
+                  <span className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>{s.n}</span>
+                  <span className="text-white/75 text-sm leading-relaxed">{s.text}</span>
+                </div>
+              ))}
+              {showInstallGuide === "windows" && [
+                { n: "1", text: "Chrome അല്ലെങ്കിൽ Edge browser-ൽ ഈ website തുറക്കുക" },
+                { n: "2", text: "Address bar-ലെ install icon (⊕) click ചെയ്യുക" },
+                { n: "3", text: "\"Install\" click ചെയ്യുക — desktop shortcut ആകും" },
+                { n: "4", text: "Start menu-ൽ \"Freelancer India\" കണ്ടെത്തി use ചെയ്യുക" },
+              ].map(s => (
+                <div key={s.n} className="flex items-start gap-3">
+                  <span className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>{s.n}</span>
+                  <span className="text-white/75 text-sm leading-relaxed">{s.text}</span>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={() => setShowInstallGuide(null)} className="mt-6 w-full rounded-2xl py-3 text-sm font-bold text-white" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* iOS tip */}
       {showIOSTip && isIOS && (
@@ -2736,7 +2808,11 @@ const Index = () => {
         <NeonDivider />
         <TestimonialsSection testimonials={testimonials} />
         <NeonDivider />
-        <AppDownloadSection onInstall={handleInstall} onIOSTip={() => setShowIOSTip(v => !v)} />
+        <AppDownloadSection
+          onAndroidInstall={() => handleInstall("android")}
+          onIOSInstall={handleIOSInstall}
+          onWindowsInstall={() => handleInstall("windows")}
+        />
         <NeonDivider />
         <CTASection />
         <FAQSection />
