@@ -421,6 +421,54 @@ const GlobalStyles = () => (
     }
     .stat-pop-anim { animation: stat-pop 0.5s cubic-bezier(.17,.67,.34,1.4) both; }
 
+    /* ── Meteor shower ── */
+    @keyframes meteor-fall {
+      0%   { transform: translateX(0) translateY(0); opacity: 1; }
+      70%  { opacity: 0.6; }
+      100% { transform: translateX(400px) translateY(400px); opacity: 0; }
+    }
+    .meteor {
+      position: absolute;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.1) 60%, transparent 100%);
+      border-radius: 9999px;
+      transform: rotate(-35deg);
+      animation: meteor-fall linear infinite;
+    }
+    .meteor::after {
+      content: '';
+      position: absolute;
+      right: 0; top: 50%;
+      transform: translateY(-50%);
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: white;
+      box-shadow: 0 0 6px 3px rgba(180,180,255,0.7);
+    }
+
+    /* ── Emoji bubble rise ── */
+    @keyframes emoji-bubble {
+      0%   { transform: translateY(0) scale(1) rotate(0deg); opacity: 0.85; }
+      40%  { transform: translateY(-80px) scale(1.15) rotate(6deg); opacity: 0.6; }
+      80%  { transform: translateY(-160px) scale(0.9) rotate(-4deg); opacity: 0.3; }
+      100% { transform: translateY(-230px) scale(0.7) rotate(8deg); opacity: 0; }
+    }
+    .emoji-bubble { animation: emoji-bubble ease-in-out infinite; pointer-events: none; user-select: none; }
+
+    /* ── Neon card border pulse ── */
+    @keyframes neon-card-pulse {
+      0%, 100% { box-shadow: 0 0 0px rgba(var(--t-a1-rgb),0); border-color: rgba(255,255,255,0.08); }
+      50%      { box-shadow: 0 0 18px rgba(var(--t-a1-rgb),0.35), 0 0 40px rgba(var(--t-a1-rgb),0.12); border-color: rgba(var(--t-a1-rgb),0.45); }
+    }
+    .neon-card { animation: neon-card-pulse 3s ease-in-out infinite; }
+
+    /* ── Ripple expand rings ── */
+    @keyframes ripple-ring {
+      0%   { transform: translate(-50%,-50%) scale(0.3); opacity: 0.7; }
+      100% { transform: translate(-50%,-50%) scale(2.5); opacity: 0; }
+    }
+    .ripple-ring { animation: ripple-ring ease-out infinite; border-radius: 50%; position: absolute; top: 50%; left: 50%; pointer-events: none; }
+
     /* ── Wave 5: Traveling beam along connector ── */
     @keyframes beam-travel {
       0%   { left: -80px; opacity: 0; }
@@ -1709,6 +1757,23 @@ const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip, activ
   );
 };
 
+/* ─────────────────────── Meteor Shower ─────────────────────── */
+const METEORS_DATA = Array.from({ length: 14 }, (_, i) => ({
+  id: i,
+  left: `${5 + (i * 6.7) % 85}%`,
+  top: `${(i * 5.3) % 40}%`,
+  delay: `${(i * 0.9) % 10}s`,
+  duration: `${3.5 + (i * 0.5) % 4}s`,
+  width: `${55 + (i * 17) % 90}px`,
+}));
+const MeteorShower = () => (
+  <div className="pointer-events-none absolute inset-0 overflow-hidden">
+    {METEORS_DATA.map(m => (
+      <div key={m.id} className="meteor" style={{ left: m.left, top: m.top, width: m.width, animationDelay: m.delay, animationDuration: m.duration, opacity: 0.55 }} />
+    ))}
+  </div>
+);
+
 /* ─────────────────────── Hero Section ─────────────────────── */
 const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
   const parallaxUp = useParallax(0.14);
@@ -1718,6 +1783,7 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
   <section className="relative overflow-hidden py-20 md:py-28 lg:py-36 px-4 sm:px-6">
     <Orbs />
     <ParticleField />
+    <MeteorShower />
     <ConstellationCanvas />
     <MouseGlowEffect />
     <FloatingSkillTags />
@@ -1859,7 +1925,7 @@ const FeaturesSection = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {featureMeta.map((f, i) => (
             <Reveal key={i} delay={i * 80} direction={i % 2 === 0 ? "up" : i % 4 < 2 ? "left" : "right"}>
-              <SpotlightCard className="feature-card-3d card-shimmer group relative h-full rounded-2xl p-5 cursor-pointer" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <SpotlightCard className="feature-card-3d card-shimmer neon-card group relative h-full rounded-2xl p-5 cursor-pointer" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", animationDelay: `${i * 0.7}s` }}>
                 <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${f.color} rounded-2xl`} style={{ opacity: 0 }} />
                 <div className="relative z-10">
                   <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${f.color} float-${(i % 3) + 1}`} style={{ boxShadow: "0 8px 20px rgba(0,0,0,0.3)" }}>
@@ -2115,6 +2181,14 @@ const CTASection = () => {
           <div className="absolute -top-20 -right-20 h-60 w-60 rounded-full spin-slow" style={{ border: "1px solid rgba(var(--t-a1-rgb),0.15)" }} />
           <div className="absolute -bottom-20 -left-20 h-60 w-60 rounded-full spin-reverse" style={{ border: "1px solid rgba(var(--t-a2-rgb),0.1)" }} />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.1) 0%, transparent 70%)" }} />
+          {/* Ripple rings */}
+          {[0, 1, 2].map(i => (
+            <div key={i} className="ripple-ring" style={{ width: 120 + i * 80, height: 120 + i * 80, border: `1px solid rgba(var(--t-a1-rgb),${0.25 - i * 0.07})`, animationDuration: `${2.5 + i * 0.8}s`, animationDelay: `${i * 0.7}s` }} />
+          ))}
+          {/* Floating emoji bubbles */}
+          {[["🚀","15%","6s","0s"],["💰","75%","7.5s","1.2s"],["⭐","40%","5.5s","2.5s"],["🎯","60%","8s","0.5s"],["💼","25%","6.5s","3s"],["🏆","85%","7s","1.8s"]].map(([emoji, left, dur, delay]) => (
+            <div key={emoji as string} className="emoji-bubble" style={{ position: "absolute", bottom: 0, left: left as string, fontSize: 22, animationDuration: dur as string, animationDelay: delay as string }} >{emoji}</div>
+          ))}
           <div className="relative z-10">
             <CTAUrgencyCounter />
             <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
