@@ -8,6 +8,7 @@ import {
   Smartphone as PhoneIcon, TrendingUp, Layers, Search, ChevronDown, ChevronUp,
   Zap, Lock, Clock, Plus, Minus, Twitter, Linkedin, Instagram, Github,
   MapPin, Mail, Phone, Bell,
+  Calculator, Play, Gift, Share2, Wallet, BadgeCheck, X,
 } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -2795,6 +2796,612 @@ const NewsletterSection = () => {
   );
 };
 
+/* ─────────────────────── Offer / Launch Banner ─────────────────────── */
+const OfferBanner = ({ onDismiss }: { onDismiss: () => void }) => (
+  <div className="relative z-50 flex items-center justify-center gap-3 px-4 py-2.5 text-center text-xs sm:text-sm font-semibold text-white" style={{ background: "linear-gradient(90deg, rgba(var(--t-a1-rgb),0.9), rgba(var(--t-a2-rgb),0.85), rgba(52,211,153,0.8))" }}>
+    <span className="inline-flex items-center gap-2">
+      <span className="hidden sm:inline animate-pulse">🎉</span>
+      <span><strong>Launch Offer:</strong> Zero Commission for your first 3 months —</span>
+      <Link to="/register/employee" className="underline underline-offset-2 hover:text-white/80 font-black whitespace-nowrap">Claim Now</Link>
+    </span>
+    <button onClick={onDismiss} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors">
+      <X className="h-4 w-4" />
+    </button>
+  </div>
+);
+
+/* ─────────────────────── As Seen In / Media ─────────────────────── */
+const MEDIA_MENTIONS = [
+  { name: "The Hindu",         abbr: "TH",  color: "#ef4444", sub: "Business"      },
+  { name: "YourStory",         abbr: "YS",  color: "#6366f1", sub: "Startup News"  },
+  { name: "Economic Times",    abbr: "ET",  color: "#f59e0b", sub: "Tech & Jobs"   },
+  { name: "Business Today",    abbr: "BT",  color: "#3b82f6", sub: "Finance"       },
+  { name: "Inc42",             abbr: "I42", color: "#ec4899", sub: "Startup Media" },
+  { name: "Hindustan Times",   abbr: "HT",  color: "#22c55e", sub: "Digital"       },
+];
+const AsSeenInSection = () => (
+  <section className="relative py-14 px-4 sm:px-6 overflow-hidden" style={{ borderTop: "1px solid rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+    <div className="mx-auto max-w-5xl">
+      <Reveal className="text-center mb-8">
+        <p className="text-xs font-semibold uppercase tracking-widest text-white/25">As Seen In</p>
+      </Reveal>
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+        {MEDIA_MENTIONS.map((m, i) => (
+          <Reveal key={m.name} delay={i * 60}>
+            <div className="flex flex-col items-center gap-2 rounded-2xl p-4 transition-all duration-300 hover:scale-105 cursor-default" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl text-xs font-black text-white" style={{ background: m.color }}>
+                {m.abbr}
+              </div>
+              <p className="text-[10px] font-bold text-white/50 text-center leading-tight">{m.name}</p>
+              <p className="text-[9px] text-white/25 text-center">{m.sub}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── Payment Partners Strip ─────────────────────── */
+const PAYMENT_PARTNERS = [
+  { name: "UPI",         bg: "#f97316", letter: "₹",  desc: "Instant Transfer"   },
+  { name: "Razorpay",    bg: "#3b82f6", letter: "R",  desc: "Payment Gateway"    },
+  { name: "RuPay",       bg: "#16a34a", letter: "RP", desc: "Indian Network"     },
+  { name: "Visa",        bg: "#1d4ed8", letter: "V",  desc: "Global Card"        },
+  { name: "Mastercard",  bg: "#dc2626", letter: "MC", desc: "Worldwide"          },
+  { name: "Net Banking", bg: "#6366f1", letter: "NB", desc: "All Indian Banks"   },
+  { name: "PhonePe",     bg: "#7c3aed", letter: "PP", desc: "UPI App"            },
+  { name: "Google Pay",  bg: "#059669", letter: "GP", desc: "Tap to Pay"         },
+];
+const TRUST_CERTS = ["RBI Registered", "PCI DSS Compliant", "ISO 27001", "256-bit SSL"];
+const PaymentPartnersStrip = () => (
+  <section className="relative py-12 px-4 sm:px-6 overflow-hidden" style={{ background: "rgba(255,255,255,0.015)", borderTop: "1px solid rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+    <div className="mx-auto max-w-6xl">
+      <Reveal className="text-center mb-8">
+        <p className="text-xs font-semibold uppercase tracking-widest text-white/25 mb-2">Accepted Payment Methods</p>
+        <div className="flex flex-wrap gap-2 justify-center mt-3">
+          {TRUST_CERTS.map(c => (
+            <span key={c} className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold text-emerald-300" style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.18)" }}>
+              <CheckCircle className="h-2.5 w-2.5" /> {c}
+            </span>
+          ))}
+        </div>
+      </Reveal>
+      <div className="flex flex-wrap justify-center gap-3">
+        {PAYMENT_PARTNERS.map((p, i) => (
+          <Reveal key={p.name} delay={i * 50}>
+            <div className="flex items-center gap-2.5 rounded-2xl px-4 py-2.5 hover:scale-105 transition-transform cursor-default" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-black text-white" style={{ background: p.bg }}>
+                {p.letter}
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white leading-tight">{p.name}</p>
+                <p className="text-[9px] text-white/35">{p.desc}</p>
+              </div>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── Earnings Calculator ─────────────────────── */
+const SKILL_RATES: Record<string, number> = {
+  "Full-Stack Development": 1200, "Mobile Development (Flutter/RN)": 1400,
+  "UI/UX Design": 900, "Graphic Design": 650, "Video Editing": 600,
+  "Digital Marketing / SEO": 750, "Content Writing": 450,
+  "Data Science / Analytics": 1100, "DevOps / Cloud": 1300,
+  "WordPress / Web Design": 550, "Customer Support": 350,
+  "Translation / Transcription": 400,
+};
+const EXP_MULTIPLIERS = [0.7, 1.0, 1.35, 1.75];
+const EXP_LABELS = ["Beginner (0–1 yr)", "Intermediate (1–3 yr)", "Experienced (3–6 yr)", "Expert (6+ yr)"];
+const EarningsCalculatorSection = () => {
+  const [skill, setSkill] = useState("Full-Stack Development");
+  const [expIdx, setExpIdx] = useState(1);
+  const [hours, setHours] = useState(20);
+  const baseRate = SKILL_RATES[skill] ?? 800;
+  const effectiveRate = Math.round(baseRate * EXP_MULTIPLIERS[expIdx]);
+  const monthly = Math.round(effectiveRate * hours * 4);
+  const yearly = monthly * 12;
+  const afterCommission = Math.round(monthly * 0.9);
+  return (
+    <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(var(--t-a1-rgb),0.07) 0%, transparent 70%)" }} />
+      <div className="mx-auto max-w-5xl">
+        <Reveal className="text-center mb-12">
+          <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
+            <Calculator className="h-3.5 w-3.5" /> Earnings Calculator
+          </div>
+          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+            How Much Can <span className="gradient-text">You Earn?</span>
+          </h2>
+          <p className="text-white/50 max-w-md mx-auto">Enter your skill and availability to get a personalised income estimate.</p>
+        </Reveal>
+        <div className="grid lg:grid-cols-2 gap-8 items-start">
+          {/* Controls */}
+          <Reveal>
+            <div className="rounded-3xl p-6 space-y-6" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              {/* Skill picker */}
+              <div>
+                <label className="block text-xs font-semibold text-white/50 uppercase tracking-widest mb-2">Your Primary Skill</label>
+                <div className="relative">
+                  <select value={skill} onChange={e => setSkill(e.target.value)} className="w-full appearance-none rounded-xl px-4 pr-10 py-3 text-sm text-white outline-none cursor-pointer" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)" }}>
+                    {Object.keys(SKILL_RATES).map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+                </div>
+              </div>
+              {/* Experience */}
+              <div>
+                <label className="block text-xs font-semibold text-white/50 uppercase tracking-widest mb-3">Experience Level</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {EXP_LABELS.map((lbl, i) => (
+                    <button key={lbl} onClick={() => setExpIdx(i)} className="rounded-xl px-3 py-2.5 text-xs font-semibold text-left transition-all" style={{ background: expIdx === i ? "rgba(var(--t-a1-rgb),0.2)" : "rgba(255,255,255,0.04)", border: expIdx === i ? "1px solid rgba(var(--t-a1-rgb),0.4)" : "1px solid rgba(255,255,255,0.07)", color: expIdx === i ? "var(--t-a1)" : "rgba(255,255,255,0.55)" }}>
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Hours slider */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-xs font-semibold text-white/50 uppercase tracking-widest">Hours per Week</label>
+                  <span className="text-sm font-black" style={{ color: "var(--t-a1)" }}>{hours} hrs</span>
+                </div>
+                <input type="range" min={5} max={50} step={5} value={hours} onChange={e => setHours(+e.target.value)} className="w-full accent-indigo-500 cursor-pointer" />
+                <div className="flex justify-between text-[10px] text-white/25 mt-1"><span>5 hrs</span><span>Part-time</span><span>Full-time</span><span>50 hrs</span></div>
+              </div>
+              <div className="rounded-xl p-3 text-xs text-white/35 leading-relaxed" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                Estimate based on current market rates for India. Actual earnings vary by profile quality, client reviews, and availability.
+              </div>
+            </div>
+          </Reveal>
+          {/* Result */}
+          <Reveal direction="right">
+            <div className="rounded-3xl p-6 space-y-4" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.1), rgba(var(--t-a2-rgb),0.1))", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
+              <p className="text-xs font-semibold text-white/40 uppercase tracking-widest">Your Estimated Monthly Earnings</p>
+              <div>
+                <div className="text-5xl sm:text-6xl font-black mb-1" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                  ₹{monthly.toLocaleString("en-IN")}
+                </div>
+                <p className="text-white/40 text-sm">per month</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                {[
+                  { label: "Hourly Rate",         value: `₹${effectiveRate}/hr`,                    color: "var(--t-a1)" },
+                  { label: "Weekly Earnings",      value: `₹${(effectiveRate * hours).toLocaleString("en-IN")}`, color: "var(--t-a2)" },
+                  { label: "After 10% Commission", value: `₹${afterCommission.toLocaleString("en-IN")}/mo`, color: "#34d399" },
+                  { label: "Yearly Potential",     value: `₹${(yearly/100000).toFixed(1)}L/yr`,     color: "#fbbf24" },
+                ].map(item => (
+                  <div key={item.label} className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <p className="text-[10px] text-white/40 mb-0.5">{item.label}</p>
+                    <p className="text-sm font-black" style={{ color: item.color }}>{item.value}</p>
+                  </div>
+                ))}
+              </div>
+              <Link to="/register/employee">
+                <button className="mt-2 w-full rounded-2xl py-3.5 text-sm font-semibold text-white transition-all hover:scale-[1.02]" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 24px rgba(var(--t-a1-rgb),0.35)" }}>
+                  Start Earning Today →
+                </button>
+              </Link>
+            </div>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ─────────────────────── Pricing Section ─────────────────────── */
+const PLANS = [
+  {
+    name: "Starter", price: "Free", sub: "Forever free to join",
+    commission: "0%", commissionNote: "first 3 months",
+    color: "#34d399", popular: false,
+    features: ["Unlimited project bids", "Basic profile listing", "UPI & bank withdrawal", "Email support", "Project chat", "Invoice generation"],
+    cta: "Get Started Free",
+  },
+  {
+    name: "Pro", price: "₹499", sub: "per month", commission: "8%", commissionNote: "commission on earnings",
+    color: "#6366f1", popular: true,
+    features: ["Everything in Starter", "Priority in search results", "Verified Pro badge", "Advanced analytics", "Dedicated account manager", "Instant withdrawal", "Featured profile listing"],
+    cta: "Go Pro",
+  },
+  {
+    name: "Business", price: "₹1,499", sub: "per month", commission: "5%", commissionNote: "lowest commission",
+    color: "#f59e0b", popular: false,
+    features: ["Everything in Pro", "Multiple team members", "White-label contracts", "API access", "Custom invoicing", "Priority dispute resolution", "SLA-backed support"],
+    cta: "Contact Sales",
+  },
+];
+const PricingSection = () => (
+  <section id="pricing" className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 80% 50% at 50% 100%, rgba(var(--t-a2-rgb),0.06) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-6xl">
+      <Reveal className="text-center mb-14">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
+          <CreditCard className="h-3.5 w-3.5" /> Pricing & Plans
+        </div>
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+          Transparent <span className="gradient-text">Pricing</span>
+        </h2>
+        <p className="text-white/50 max-w-md mx-auto">No hidden fees. Start free, upgrade when ready. Zero commission for first 3 months.</p>
+      </Reveal>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {PLANS.map((plan, i) => (
+          <Reveal key={plan.name} delay={i * 100}>
+            <div className="relative h-full rounded-3xl p-6 flex flex-col" style={{ background: plan.popular ? `${plan.color}0d` : "rgba(255,255,255,0.04)", border: plan.popular ? `1px solid ${plan.color}50` : "1px solid rgba(255,255,255,0.08)", boxShadow: plan.popular ? `0 0 40px ${plan.color}15` : "none" }}>
+              {plan.popular && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-[10px] font-black text-white" style={{ background: `linear-gradient(135deg, ${plan.color}, ${plan.color}aa)` }}>
+                  MOST POPULAR
+                </div>
+              )}
+              <div className="mb-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-3 w-3 rounded-full" style={{ background: plan.color }} />
+                  <span className="text-sm font-bold text-white/70 uppercase tracking-wider">{plan.name}</span>
+                </div>
+                <div className="text-4xl font-black text-white mb-0.5">{plan.price}</div>
+                <p className="text-xs text-white/40">{plan.sub}</p>
+              </div>
+              <div className="rounded-xl p-3 mb-5 text-center" style={{ background: `${plan.color}12`, border: `1px solid ${plan.color}25` }}>
+                <span className="text-2xl font-black" style={{ color: plan.color }}>{plan.commission}</span>
+                <span className="ml-1 text-xs text-white/50">{plan.commissionNote}</span>
+              </div>
+              <ul className="space-y-2.5 flex-1 mb-6">
+                {plan.features.map(f => (
+                  <li key={f} className="flex items-center gap-2.5 text-sm text-white/65">
+                    <CheckCircle className="h-4 w-4 shrink-0" style={{ color: plan.color }} />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/register/employee">
+                <button className="w-full rounded-2xl py-3 text-sm font-semibold text-white transition-all hover:scale-[1.02]" style={{ background: plan.popular ? `linear-gradient(135deg, ${plan.color}cc, ${plan.color}88)` : "rgba(255,255,255,0.07)", border: plan.popular ? "none" : "1px solid rgba(255,255,255,0.12)" }}>
+                  {plan.cta}
+                </button>
+              </Link>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+      <Reveal className="mt-8 text-center">
+        <p className="text-xs text-white/30">All plans include: escrow protection · dispute resolution · INR withdrawals · GST invoicing · 24/7 support</p>
+      </Reveal>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── Platform Demo Video ─────────────────────── */
+const DemoVideoSection = () => {
+  const [playing, setPlaying] = useState(false);
+  return (
+    <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(var(--t-a1-rgb),0.06) 0%, transparent 70%)" }} />
+      <div className="mx-auto max-w-5xl">
+        <Reveal className="text-center mb-12">
+          <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-indigo-300" style={{ background: "rgba(var(--t-a1-rgb),0.12)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
+            <Play className="h-3.5 w-3.5" /> Platform Demo
+          </div>
+          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+            See It in <span className="gradient-text">Action</span>
+          </h2>
+          <p className="text-white/50 max-w-md mx-auto">Watch how freelancers and clients connect on Freelancer India in under 60 seconds.</p>
+        </Reveal>
+        <Reveal>
+          <div className="relative rounded-3xl overflow-hidden cursor-pointer group" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.15), rgba(var(--t-a2-rgb),0.15))", border: "1px solid rgba(var(--t-a1-rgb),0.25)", aspectRatio: "16/9" }} onClick={() => setPlaying(true)}>
+            {playing ? (
+              <iframe
+                className="absolute inset-0 w-full h-full"
+                src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1"
+                title="Freelancer India Platform Demo"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            ) : (
+              <>
+                {/* Fake video thumbnail */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.2) 0%, rgba(var(--t-a2-rgb),0.2) 100%)" }} />
+                  {/* Decorative grid */}
+                  <div className="absolute inset-0 opacity-5" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
+                  {/* Play button */}
+                  <div className="relative z-10 flex h-20 w-20 items-center justify-center rounded-full shadow-2xl group-hover:scale-110 transition-transform duration-300" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 50px rgba(var(--t-a1-rgb),0.5)" }}>
+                    <Play className="h-8 w-8 text-white ml-1 fill-white" />
+                  </div>
+                  <div className="relative z-10 text-center">
+                    <p className="text-white font-bold mb-1">Freelancer India — Platform Walkthrough</p>
+                    <p className="text-white/50 text-sm">60 seconds · How it works</p>
+                  </div>
+                  {/* Floating labels */}
+                  {[
+                    { text: "Post a Project", x: "8%",  y: "20%", color: "#60a5fa" },
+                    { text: "Get Proposals",  x: "72%", y: "15%", color: "#a78bfa" },
+                    { text: "Pay Securely",   x: "15%", y: "75%", color: "#34d399" },
+                    { text: "Rate & Review",  x: "65%", y: "70%", color: "#fbbf24" },
+                  ].map(l => (
+                    <div key={l.text} className="absolute rounded-full px-3 py-1 text-xs font-bold text-white hidden sm:block" style={{ left: l.x, top: l.y, background: `${l.color}25`, border: `1px solid ${l.color}50`, color: l.color }}>
+                      {l.text}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </Reveal>
+        <Reveal className="flex flex-wrap justify-center gap-6 mt-8">
+          {[["1M+","Views"],["4.8★","Rating"],["60s","Watch time"],["Free","Platform"]].map(([val, lbl]) => (
+            <div key={lbl} className="text-center">
+              <div className="text-2xl font-black mb-0.5" style={{ color: "var(--t-a1)" }}>{val}</div>
+              <div className="text-xs text-white/40">{lbl}</div>
+            </div>
+          ))}
+        </Reveal>
+      </div>
+    </section>
+  );
+};
+
+/* ─────────────────────── Referral Program Banner ─────────────────────── */
+const ReferralBannerSection = () => (
+  <section className="relative py-16 md:py-20 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(251,191,36,0.06) 0%, rgba(var(--t-a1-rgb),0.06) 50%, rgba(52,211,153,0.05) 100%)", borderTop: "1px solid rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.05)" }} />
+    <div className="mx-auto max-w-5xl">
+      <div className="rounded-3xl p-8 md:p-12 relative overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(251,191,36,0.1), rgba(var(--t-a1-rgb),0.12))", border: "1px solid rgba(251,191,36,0.25)" }}>
+        <div className="pointer-events-none absolute -top-10 -right-10 h-48 w-48 rounded-full" style={{ background: "radial-gradient(circle, rgba(251,191,36,0.12) 0%, transparent 70%)" }} />
+        <div className="pointer-events-none absolute -bottom-10 -left-10 h-48 w-48 rounded-full" style={{ background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.1) 0%, transparent 70%)" }} />
+        <div className="relative z-10 grid lg:grid-cols-2 gap-8 items-center">
+          <div>
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-amber-300" style={{ background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.3)" }}>
+              <Gift className="h-3.5 w-3.5" /> Referral Program
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-white mb-3 leading-tight">
+              Refer a Friend,<br /><span className="text-amber-400">Earn ₹500</span>
+            </h2>
+            <p className="text-white/55 text-sm leading-relaxed mb-6 max-w-md">
+              For every friend you refer who completes their first project, you earn ₹500 instantly — no limits on how many you can refer.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <Link to="/register/employee">
+                <button className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg, #fbbf24, #f97316)", boxShadow: "0 0 24px rgba(251,191,36,0.35)" }}>
+                  <Gift className="h-4 w-4" /> Start Referring
+                </button>
+              </Link>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { step: "1", icon: Share2, label: "Share your referral link with friends" },
+              { step: "2", icon: Users, label: "They register & complete first project" },
+              { step: "3", icon: Wallet, label: "₹500 credited to your wallet instantly" },
+            ].map(s => (
+              <div key={s.step} className="rounded-2xl p-4 text-center" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}>
+                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-white" style={{ background: "linear-gradient(135deg, rgba(251,191,36,0.3), rgba(var(--t-a1-rgb),0.3))" }}>
+                  <s.icon className="h-5 w-5 text-amber-400" />
+                </div>
+                <div className="text-xs font-bold text-white/60 mb-1">Step {s.step}</div>
+                <p className="text-[10px] text-white/40 leading-relaxed">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── India Coverage ─────────────────────── */
+const INDIA_STATES = [
+  "Kerala","Karnataka","Tamil Nadu","Andhra Pradesh","Telangana",
+  "Maharashtra","Gujarat","Rajasthan","Delhi","Uttar Pradesh",
+  "West Bengal","Bihar","Odisha","Madhya Pradesh","Punjab",
+  "Haryana","Himachal Pradesh","Uttarakhand","Goa","Assam",
+  "Jharkhand","Chhattisgarh","Jammu & Kashmir","Manipur","Meghalaya",
+  "Tripura","Sikkim","Nagaland",
+];
+const IndiaCoverageSection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 80% 50% at 50% 80%, rgba(var(--t-a1-rgb),0.05) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-6xl">
+      <Reveal className="text-center mb-12">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
+          <MapPin className="h-3.5 w-3.5" /> Nationwide Presence
+        </div>
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+          Working Across <span className="gradient-text">All of India</span>
+        </h2>
+        <p className="text-white/50 max-w-md mx-auto">Freelancers and clients from every state, every language, every industry — all on one platform.</p>
+      </Reveal>
+      <div className="grid lg:grid-cols-2 gap-12 items-center">
+        {/* Stats */}
+        <Reveal>
+          <div className="space-y-4">
+            {[
+              { label: "States & UTs covered", value: "28+", color: "#6366f1" },
+              { label: "Languages supported", value: "12+", color: "#34d399" },
+              { label: "Cities with active freelancers", value: "500+", color: "#f59e0b" },
+              { label: "Projects delivered nationwide", value: "10,000+", color: "#ec4899" },
+            ].map(s => (
+              <div key={s.label} className="flex items-center gap-4 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <div className="text-3xl font-black shrink-0" style={{ color: s.color, minWidth: 80 }}>{s.value}</div>
+                <p className="text-white/60 text-sm font-medium">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </Reveal>
+        {/* State grid */}
+        <Reveal direction="right">
+          <div className="flex flex-wrap gap-2">
+            {INDIA_STATES.map((state, i) => (
+              <span key={state} className="rounded-full px-3 py-1.5 text-[11px] font-semibold transition-all hover:scale-105 cursor-default" style={{
+                background: `hsla(${(i * 37) % 360}, 60%, 55%, 0.12)`,
+                border: `1px solid hsla(${(i * 37) % 360}, 60%, 55%, 0.3)`,
+                color: `hsla(${(i * 37) % 360}, 80%, 75%, 1)`,
+              }}>
+                {state}
+              </span>
+            ))}
+            <span className="rounded-full px-3 py-1.5 text-[11px] font-semibold" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.3)" }}>
+              + All UTs
+            </span>
+          </div>
+        </Reveal>
+      </div>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── Skill Verification Badge ─────────────────────── */
+const VERIFY_STEPS = [
+  { icon: FileText,    title: "Complete Profile",    desc: "Add your skills, experience, portfolio, and education details." },
+  { icon: Code,        title: "Take Skill Test",     desc: "Pass a 15-min online assessment specific to your expertise area." },
+  { icon: Star,        title: "Earn 3+ Reviews",     desc: "Complete 3 projects with 4★+ client rating and positive feedback." },
+  { icon: Shield,      title: "ID Verification",     desc: "Upload Aadhaar or PAN for identity verification — takes 24 hours." },
+];
+const SkillVerificationSection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 50% at 80% 30%, rgba(var(--t-a2-rgb),0.06) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-6xl">
+      <Reveal className="text-center mb-14">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-amber-300" style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)" }}>
+          <BadgeCheck className="h-3.5 w-3.5" /> Verified Badge
+        </div>
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+          Earn Your <span className="gradient-text">Verified Badge</span>
+        </h2>
+        <p className="text-white/50 max-w-md mx-auto">Verified freelancers earn 3× more. Stand out to premium clients who trust only verified talent.</p>
+      </Reveal>
+      <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {VERIFY_STEPS.map((step, i) => (
+            <Reveal key={step.title} delay={i * 80}>
+              <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl mb-3" style={{ background: "linear-gradient(135deg, rgba(251,191,36,0.2), rgba(var(--t-a1-rgb),0.2))" }}>
+                  <step.icon className="h-5 w-5 text-amber-400" />
+                </div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-xs font-black text-amber-400">0{i + 1}</span>
+                  <h3 className="text-sm font-bold text-white">{step.title}</h3>
+                </div>
+                <p className="text-xs text-white/45 leading-relaxed">{step.desc}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+        <Reveal direction="right">
+          <div className="rounded-3xl p-8 text-center" style={{ background: "linear-gradient(135deg, rgba(251,191,36,0.1), rgba(var(--t-a1-rgb),0.12))", border: "1px solid rgba(251,191,36,0.25)" }}>
+            <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl" style={{ background: "linear-gradient(135deg, #fbbf24, #f97316)", boxShadow: "0 0 50px rgba(251,191,36,0.3)" }}>
+              <BadgeCheck className="h-12 w-12 text-white" />
+            </div>
+            <h3 className="text-xl font-black text-white mb-2">Verified Pro</h3>
+            <p className="text-white/50 text-sm mb-6 leading-relaxed">
+              Clients filter specifically for Verified freelancers. Your profile gets a gold badge, priority search placement, and trust signals that convert.
+            </p>
+            {[
+              { stat: "3×", label: "More project invitations" },
+              { stat: "40%", label: "Higher average project value" },
+              { stat: "85%", label: "Client conversion rate" },
+            ].map(s => (
+              <div key={s.label} className="flex items-center justify-between py-2.5" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                <span className="text-xs text-white/45">{s.label}</span>
+                <span className="text-base font-black text-amber-400">{s.stat}</span>
+              </div>
+            ))}
+            <Link to="/register/employee">
+              <button className="mt-5 w-full rounded-2xl py-3 text-sm font-semibold text-white transition-all hover:scale-[1.02]" style={{ background: "linear-gradient(135deg, #fbbf24, #f97316)", boxShadow: "0 0 20px rgba(251,191,36,0.3)" }}>
+                Get Verified Now
+              </button>
+            </Link>
+          </div>
+        </Reveal>
+      </div>
+    </div>
+  </section>
+);
+
+/* ─────────────────────── Live Support Section ─────────────────────── */
+const SUPPORT_LANGS = ["Malayalam","Hindi","English","Tamil","Telugu","Kannada","Bengali","Marathi"];
+const SUPPORT_FEATURES = [
+  { icon: MessageCircle, title: "Live Chat",        desc: "Instant chat support, response under 2 minutes",     stat: "< 2 min" },
+  { icon: Phone,         title: "Phone Support",    desc: "Call us Mon–Sat 9AM–9PM in your language",           stat: "Mon–Sat" },
+  { icon: Mail,          title: "Email Support",    desc: "Detailed issue resolution within 4 hours guaranteed", stat: "< 4 hrs" },
+  { icon: Shield,        title: "Dispute Help",     desc: "Dedicated mediation team resolves disputes in 48hrs", stat: "48 hrs" },
+];
+const LiveSupportSection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 50% at 30% 70%, rgba(var(--t-a1-rgb),0.05) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-6xl">
+      <Reveal className="text-center mb-12">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-emerald-300" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
+          <Headphones className="h-3.5 w-3.5" /> 24/7 Support
+        </div>
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+          Support in <span className="gradient-text">Your Language</span>
+        </h2>
+        <p className="text-white/50 max-w-md mx-auto">Real humans available round the clock. We speak Malayalam, Hindi, Tamil, and 5 more regional languages.</p>
+      </Reveal>
+      {/* Language badges */}
+      <Reveal className="flex flex-wrap gap-2 justify-center mb-12">
+        {SUPPORT_LANGS.map((lang, i) => (
+          <span key={lang} className="rounded-full px-4 py-1.5 text-xs font-bold text-white" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+            {lang}
+          </span>
+        ))}
+      </Reveal>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {SUPPORT_FEATURES.map((f, i) => (
+          <Reveal key={f.title} delay={i * 80}>
+            <div className="rounded-2xl p-5 text-center h-full" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(52,211,153,0.2), rgba(var(--t-a1-rgb),0.2))" }}>
+                <f.icon className="h-6 w-6 text-emerald-400" />
+              </div>
+              <div className="text-lg font-black text-emerald-400 mb-1">{f.stat}</div>
+              <h3 className="text-sm font-bold text-white mb-2">{f.title}</h3>
+              <p className="text-xs text-white/45 leading-relaxed">{f.desc}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+      {/* Chat preview card */}
+      <Reveal className="mt-10 mx-auto max-w-md">
+        <div className="rounded-3xl p-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="relative">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl text-white font-bold text-sm" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>FI</div>
+              <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2" style={{ borderColor: "rgba(7,7,20,1)" }} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white">Freelancer India Support</p>
+              <p className="text-[10px] text-emerald-400">Online · Typically replies in &lt; 2 min</p>
+            </div>
+          </div>
+          {[
+            { from: "support", text: "നമസ്കാരം! Freelancer India-ൽ സ്വാഗതം. ഞങ്ങൾ എങ്ങനെ സഹായിക്കാം?" },
+            { from: "user",    text: "Hello, I need help setting up my profile." },
+            { from: "support", text: "Of course! I'll guide you step by step. What skill are you looking to showcase first?" },
+          ].map((msg, i) => (
+            <div key={i} className={`flex mb-2 ${msg.from === "user" ? "justify-end" : "justify-start"}`}>
+              <div className="max-w-[80%] rounded-2xl px-3 py-2 text-[11px] leading-relaxed" style={{ background: msg.from === "user" ? "rgba(var(--t-a1-rgb),0.25)" : "rgba(255,255,255,0.06)", color: msg.from === "user" ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.65)" }}>
+                {msg.text}
+              </div>
+            </div>
+          ))}
+          <div className="flex gap-2 mt-3">
+            <div className="flex-1 rounded-xl px-3 py-2 text-xs text-white/30" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              Type a message...
+            </div>
+            <button className="rounded-xl px-3 py-2 text-xs font-semibold text-white" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>
+              Send
+            </button>
+          </div>
+        </div>
+      </Reveal>
+    </div>
+  </section>
+);
+
 /* ─────────────────────── CTA Section ─────────────────────── */
 const CTASection = () => {
   const { t } = useLang();
@@ -3221,6 +3828,7 @@ const Index = () => {
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [themeId, setThemeId] = useState<ThemeId>(() => (localStorage.getItem("fi-theme") as ThemeId) || "midnight");
   const [lang, setLangState] = useState<LangCode>(() => (localStorage.getItem("fi-lang") as LangCode) || "en");
+  const [offerDismissed, setOfferDismissed] = useState(() => localStorage.getItem("fi-offer-dismissed") === "1");
   const theme = THEMES.find(t => t.id === themeId) ?? THEMES[0];
 
   const handleLangChange = (l: LangCode) => {
@@ -3298,6 +3906,10 @@ const Index = () => {
       <ScrollProgressBar />
       <CursorTrail />
       <GlowCursor />
+
+      {!offerDismissed && (
+        <OfferBanner onDismiss={() => { setOfferDismissed(true); localStorage.setItem("fi-offer-dismissed", "1"); }} />
+      )}
 
       <Navbar deferredPrompt={deferredPrompt} isInstalled={isInstalled} isIOS={isIOS} onInstall={handleInstall} onIOSTip={() => setShowIOSTip(v => !v)} activeTheme={themeId} onThemeChange={handleThemeChange} />
 
@@ -3385,8 +3997,11 @@ const Index = () => {
       <main className="overflow-x-hidden">
         <HeroSection stats={stats} />
         <TrustBar />
+        <AsSeenInSection />
         <NeonDivider />
         <FeaturesSection />
+        <NeonDivider />
+        <PaymentPartnersStrip />
         <NeonDivider />
         <LiveJobFeed />
         <NeonDivider />
@@ -3396,9 +4011,15 @@ const Index = () => {
         <NeonDivider />
         <ServicesSection />
         <NeonDivider />
+        <EarningsCalculatorSection />
+        <NeonDivider />
         <FeaturedFreelancersSection />
         <NeonDivider />
         <WhyChooseUsSection />
+        <NeonDivider />
+        <PricingSection />
+        <NeonDivider />
+        <SkillVerificationSection />
         <NeonDivider />
         <StatsSection />
         <NeonDivider />
@@ -3408,11 +4029,19 @@ const Index = () => {
         <NeonDivider />
         <SuccessStoriesSection />
         <NeonDivider />
+        <IndiaCoverageSection />
+        <NeonDivider />
+        <ReferralBannerSection />
+        <NeonDivider />
         <AppDownloadSection
           onAndroidInstall={() => handleInstall("android")}
           onIOSInstall={handleIOSInstall}
           onWindowsInstall={() => handleInstall("windows")}
         />
+        <NeonDivider />
+        <LiveSupportSection />
+        <NeonDivider />
+        <DemoVideoSection />
         <NeonDivider />
         <BlogPreviewSection />
         <NeonDivider />
