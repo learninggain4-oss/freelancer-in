@@ -582,26 +582,6 @@ const GlobalStyles = () => (
     .badge-pulse { animation: badge-glow 2.8s ease-in-out infinite; }
     /* ── Wave 7: Magnetic wrapper spring ── */
     .magnetic-wrap { transition: transform 0.35s cubic-bezier(.17,.67,.34,1.4); display:inline-block; }
-    /* ── Project Showcase Marquee ── */
-    @keyframes marquee-left  { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-    @keyframes marquee-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
-    .proj-marquee-track { display: flex; gap: 14px; width: max-content; }
-    .proj-marquee-track.left  { animation: marquee-left  28s linear infinite; }
-    .proj-marquee-track.right { animation: marquee-right 34s linear infinite; }
-    .proj-marquee-track:hover { animation-play-state: paused; }
-    .proj-card {
-      width: 200px; flex-shrink: 0; border-radius: 16px; overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.1);
-      background: rgba(255,255,255,0.04);
-      backdrop-filter: blur(10px);
-      transition: transform 0.3s ease, border-color 0.3s ease;
-      cursor: pointer;
-    }
-    .proj-card:hover { transform: translateY(-4px) scale(1.02); border-color: rgba(var(--t-a1-rgb),0.5); }
-    .proj-card img { width: 100%; height: 130px; object-fit: cover; display: block; }
-    .proj-card-info { padding: 10px 12px; }
-    .proj-card-title { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.85); line-height: 1.3; margin-bottom: 4px; }
-    .proj-card-amount { font-size: 10px; color: rgba(var(--t-a1-rgb),1); font-weight: 700; }
     /* ── Spinning accent border ── */
     .accent-spin-border { position:relative; border-radius:18px; padding:1.5px; }
     .accent-spin-border::before {
@@ -1900,57 +1880,6 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
             <HeroDashboard />
           </MouseTiltCard>
           <FloatingNotifications />
-        </div>
-      </div>
-    </div>
-
-    {/* ── Project Showcase Marquee (freelancer.in style) ── */}
-    <div className="relative mt-14 overflow-hidden" style={{ maskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)" }}>
-      {/* Row 1 — scrolls left */}
-      <div className="mb-3 overflow-hidden">
-        <div className="proj-marquee-track left">
-          {[
-            { img: "https://www.f-cdn.com/assets/main/en/assets/home/crowd-favorites/ui-ux-video-editing-app.jpg", title: "UI/UX Video Editing App", amount: "₹41,500" },
-            { img: "https://www.f-cdn.com/assets/main/en/assets/home/hero/mobile-phone-mobile.jpg", title: "Mobile App Design", amount: "₹28,000" },
-            { img: "https://www.f-cdn.com/assets/main/en/assets/home/hero/nasa-mobile.jpg", title: "NASA Logo Redesign", amount: "₹1,20,000" },
-            { img: "https://www.f-cdn.com/assets/main/en/assets/home/crowd-favorites/mobile-app.jpg", title: "Cross-platform Mobile App", amount: "₹65,000" },
-            { img: "https://www.f-cdn.com/assets/main/en/assets/home/hero/house-mobile.jpg", title: "Architecture 3D Render", amount: "₹18,500" },
-            { img: "https://www.f-cdn.com/assets/main/en/assets/home/hero/ai-contest-mobile.jpg", title: "AI Poster Design Contest", amount: "₹12,000" },
-            { img: "https://picsum.photos/id/180/400/260", title: "E-Commerce Website", amount: "₹55,000" },
-            { img: "https://picsum.photos/id/366/400/260", title: "Brand Identity Kit", amount: "₹22,000" },
-          ].flatMap(p => [p, { ...p }]).map((p, i) => (
-            <div key={i} className="proj-card">
-              <img src={p.img} alt={p.title} loading="lazy" />
-              <div className="proj-card-info">
-                <div className="proj-card-title">{p.title}</div>
-                <div className="proj-card-amount">Delivered for {p.amount}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Row 2 — scrolls right */}
-      <div className="overflow-hidden">
-        <div className="proj-marquee-track right">
-          {[
-            { img: "https://picsum.photos/id/442/400/260", title: "React Admin Dashboard", amount: "₹48,000" },
-            { img: "https://www.f-cdn.com/assets/main/en/assets/home/hero/ai-contest-mobile.jpg", title: "Generative AI Illustrations", amount: "₹9,500" },
-            { img: "https://picsum.photos/id/326/400/260", title: "Python Data Pipeline", amount: "₹72,000" },
-            { img: "https://www.f-cdn.com/assets/main/en/assets/home/hero/nasa-mobile.jpg", title: "Corporate Video Edit", amount: "₹35,000" },
-            { img: "https://picsum.photos/id/239/400/260", title: "Logo + Brand Guidelines", amount: "₹15,000" },
-            { img: "https://www.f-cdn.com/assets/main/en/assets/home/crowd-favorites/ui-ux-video-editing-app.jpg", title: "SaaS Landing Page Design", amount: "₹31,000" },
-            { img: "https://picsum.photos/id/119/400/260", title: "WordPress Blog Setup", amount: "₹8,500" },
-            { img: "https://www.f-cdn.com/assets/main/en/assets/home/hero/house-mobile.jpg", title: "Interior 3D Walkthrough", amount: "₹42,000" },
-          ].flatMap(p => [p, { ...p }]).map((p, i) => (
-            <div key={i} className="proj-card">
-              <img src={p.img} alt={p.title} loading="lazy" />
-              <div className="proj-card-info">
-                <div className="proj-card-title">{p.title}</div>
-                <div className="proj-card-amount">Delivered for {p.amount}</div>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </div>
