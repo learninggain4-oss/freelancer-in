@@ -2734,10 +2734,10 @@ const Index = () => {
             {/* Steps */}
             <div className="space-y-3">
               {showInstallGuide === "android" && [
-                { n: "1", text: "Chrome browser-ൽ ഈ website തുറക്കുക" },
-                { n: "2", text: "3-dot menu (⋮) tap ചെയ്യുക" },
-                { n: "3", text: "\"Add to Home screen\" / \"Install App\" tap ചെയ്യുക" },
-                { n: "4", text: "\"Install\" confirm ചെയ്യുക — Home screen-ൽ app കാണും" },
+                { n: "1", text: "Open this website in Chrome on your Android device" },
+                { n: "2", text: "Tap the 3-dot menu (⋮) at the top right" },
+                { n: "3", text: "Tap \"Add to Home screen\" or \"Install App\"" },
+                { n: "4", text: "Tap \"Install\" to confirm — the app icon will appear on your Home screen" },
               ].map(s => (
                 <div key={s.n} className="flex items-start gap-3">
                   <span className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>{s.n}</span>
@@ -2745,10 +2745,10 @@ const Index = () => {
                 </div>
               ))}
               {showInstallGuide === "ios" && [
-                { n: "1", text: "Safari browser-ൽ ഈ website തുറക്കുക" },
-                { n: "2", text: "Share button (↑ box) tap ചെയ്യുക" },
-                { n: "3", text: "\"Add to Home Screen\" tap ചെയ്യുക" },
-                { n: "4", text: "\"Add\" tap ചെയ്യുക — Home screen-ൽ app icon കാണും" },
+                { n: "1", text: "Open this website in Safari on your iPhone" },
+                { n: "2", text: "Tap the Share button (box with an arrow ↑) at the bottom" },
+                { n: "3", text: "Scroll down and tap \"Add to Home Screen\"" },
+                { n: "4", text: "Tap \"Add\" — the app icon will appear on your Home screen" },
               ].map(s => (
                 <div key={s.n} className="flex items-start gap-3">
                   <span className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>{s.n}</span>
@@ -2756,10 +2756,10 @@ const Index = () => {
                 </div>
               ))}
               {showInstallGuide === "windows" && [
-                { n: "1", text: "Chrome അല്ലെങ്കിൽ Edge browser-ൽ ഈ website തുറക്കുക" },
-                { n: "2", text: "Address bar-ലെ install icon (⊕) click ചെയ്യുക" },
-                { n: "3", text: "\"Install\" click ചെയ്യുക — desktop shortcut ആകും" },
-                { n: "4", text: "Start menu-ൽ \"Freelancer India\" കണ്ടെത്തി use ചെയ്യുക" },
+                { n: "1", text: "Open this website in Chrome or Edge on your Windows PC" },
+                { n: "2", text: "Click the install icon (⊕) in the address bar" },
+                { n: "3", text: "Click \"Install\" to confirm — a desktop shortcut will be created" },
+                { n: "4", text: "Find \"Freelancer India\" in your Start menu or desktop" },
               ].map(s => (
                 <div key={s.n} className="flex items-start gap-3">
                   <span className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>{s.n}</span>
