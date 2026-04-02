@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Users, Monitor, LogOut, AlertTriangle, CheckCircle2, Clock, RefreshCw, Wifi, WifiOff, Shield } from "lucide-react";
+import { Users, Monitor, LogOut, AlertTriangle, CheckCircle2, Clock, RefreshCw, Wifi, WifiOff, Shield, ToggleLeft, ToggleRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
