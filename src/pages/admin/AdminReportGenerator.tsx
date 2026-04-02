@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, Clock, CheckCircle2, AlertTriangle, Play, Download, RefreshCw, List, Settings } from "lucide-react";
+import { BarChart3, Clock, CheckCircle2, AlertTriangle, Play, Download, RefreshCw, List, Settings, ToggleLeft, ToggleRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
@@ -70,7 +70,7 @@ export default function AdminReportGenerator() {
   };
 
   const saveSetting = (id:string) => {
-    const updated = settings.map(s=>s.id===id?{...s,value:s.type==="number"?Number(editVal):editVal}:s);
+    const updated = settings.map(s=>s.id===id?{...s,value:s.type==="number"?Number(editVal):Boolean(editVal)}:s);
     localStorage.setItem("admin_report_settings_v1",JSON.stringify(updated));
     setSettings(updated); toast({ title:"Report setting updated" }); setEditId(null);
   };

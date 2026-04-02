@@ -50,7 +50,7 @@ export default function AdminDataRetention() {
     const updated = policies.map(x=>x.id===p.id?{...x,pendingDeletion:0,lastCleaned:new Date().toISOString()}:x);
     localStorage.setItem("admin_retention_v1",JSON.stringify(updated));
     setPolicies(updated); setCleaning(null); setConfirmClean(null);
-    logAction("Data Cleanup Executed",`${p.pendingDeletion.toLocaleString()} ${p.dataType} records deleted`,"Compliance","warning");
+    logAction("Data Cleanup Executed",`${p.pendingDeletion.toLocaleString()} ${p.dataType} records deleted`,"Security","warning");
     toast({ title:`${p.pendingDeletion.toLocaleString()} ${p.dataType} records deleted` });
   };
 
@@ -60,7 +60,7 @@ export default function AdminDataRetention() {
     setPolicies(updated);
     toast({ title:"Retention policy updated" });
     setEditId(null);
-    logAction("Retention Policy Changed",`${policies.find(p=>p.id===id)?.dataType} → ${editDays} days`,"Compliance","warning");
+    logAction("Retention Policy Changed",`${policies.find(p=>p.id===id)?.dataType} → ${editDays} days`,"Security","warning");
   };
 
   const toggleAuto = (id:string) => {

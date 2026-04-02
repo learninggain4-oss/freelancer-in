@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Edit2, Check, X, ChevronDown, ChevronRight, Briefcase, Target, Layers, Settings2, Save } from "lucide-react";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { cn } from "@/lib/utils";

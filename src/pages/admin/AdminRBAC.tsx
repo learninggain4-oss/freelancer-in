@@ -62,7 +62,7 @@ export default function AdminRBAC() {
   const { data: admins = [] } = useQuery({
     queryKey: ["admin-rbac-users"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id,full_name,email,user_type,created_at").eq("user_type", "admin").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("profiles").select("id,full_name,email,user_type,created_at").order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
     },
@@ -182,14 +182,15 @@ export default function AdminRBAC() {
                 </tr>
               </thead>
               <tbody>
-                {admins.map((admin: { id: string; full_name?: string; email?: string }) => {
+                {admins.map((admin) => {
                   const currentRole = getEffectiveRole(admin.id);
                   const roleCfg = ROLES.find(r => r.key === currentRole) || ROLES[1];
                   const RoleIcon = roleCfg.icon;
+                  const displayName = Array.isArray(admin.full_name) ? admin.full_name[0] : admin.full_name || "—";
                   return (
                     <tr key={admin.id} style={{ borderBottom: `1px solid ${T.border}` }}>
                       <td style={{ padding: "12px 20px" }}>
-                        <p style={{ fontWeight: 600, fontSize: 13, color: T.text, margin: 0 }}>{admin.full_name || "—"}</p>
+                        <p style={{ fontWeight: 600, fontSize: 13, color: T.text, margin: 0 }}>{displayName}</p>
                         <p style={{ fontSize: 11, color: T.sub, margin: 0 }}>{admin.email || admin.id.slice(0, 12) + "…"}</p>
                       </td>
                       <td style={{ padding: "12px 20px" }}>
@@ -201,7 +202,7 @@ export default function AdminRBAC() {
                       <td style={{ padding: "12px 20px" }}>
                         <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                           {ROLES.map(r => (
-                            <button key={r.key} onClick={() => requestRoleChange(admin.id, admin.full_name || "Admin", r.key)}
+                            <button key={r.key} onClick={() => requestRoleChange(admin.id, displayName, r.key)}
                               disabled={currentRole === r.key}
                               style={{ padding: "4px 10px", borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: currentRole === r.key ? "default" : "pointer", border: `1px solid ${currentRole === r.key ? r.color + "44" : T.border}`, background: currentRole === r.key ? r.bg : T.input, color: currentRole === r.key ? r.color : T.sub, opacity: currentRole === r.key ? 1 : 0.7, transition: "all .15s" }}>
                               {r.label}

@@ -24,7 +24,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  Search, Wallet, IndianRupee, Clock, PlusCircle, MinusCircle,
+  Search, Wallet, IndianRupee, Clock, PlusCircle, MinusCircle, Loader2,
   Lock, ArrowRightLeft, Pencil, Trash2, User, ChevronLeft, ChevronRight, EyeOff, Unlock, LayoutDashboard,
 } from "lucide-react";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";

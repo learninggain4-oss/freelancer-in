@@ -254,7 +254,7 @@ const AdminWalletTypes = () => {
                     <TableCell>
                       <div className="flex flex-col">
                         <span className="font-bold" style={{ color: T.text }}>{wt.wallet_price}</span>
-                        {wt.wallet_price_monthly > 0 && <span className="text-[10px]" style={{ color: T.sub }}>₹{wt.wallet_price_monthly}/mo</span>}
+                        {(wt as any).wallet_price_monthly > 0 && <span className="text-[10px]" style={{ color: T.sub }}>₹{(wt as any).wallet_price_monthly}/mo</span>}
                       </div>
                     </TableCell>
                     <TableCell>

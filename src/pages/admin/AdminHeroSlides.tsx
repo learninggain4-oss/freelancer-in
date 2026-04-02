@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, Pencil, Save, X, Upload, Image, GripVertical, Slideshow, Loader2 } from "lucide-react";
+import { Plus, Trash2, Pencil, Save, X, Upload, Image, GripVertical, Presentation, Loader2 } from "lucide-react";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 
 const TH = {

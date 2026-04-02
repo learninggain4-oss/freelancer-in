@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Users, Monitor, LogOut, AlertTriangle, CheckCircle2, Clock, RefreshCw, Wifi, WifiOff, Shield } from "lucide-react";
+import { Users, Monitor, LogOut, AlertTriangle, CheckCircle2, Clock, RefreshCw, Wifi, WifiOff, Shield, ToggleLeft, ToggleRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
@@ -78,7 +78,7 @@ export default function AdminSessionManager() {
   };
 
   const savePol = (id:string) => {
-    const updated = policies.map(p=>p.id===id?{...p,value:p.type==="number"?Number(editVal):editVal}:p);
+    const updated = policies.map(p=>p.id===id?{...p,value:p.type==="number"?Number(editVal):Boolean(editVal)}:p);
     localStorage.setItem("admin_session_policy_v1",JSON.stringify(updated));
     setPolicies(updated);
     toast({ title:"Session policy updated" });

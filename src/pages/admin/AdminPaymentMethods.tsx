@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  Loader2, Plus, Trash2, Edit2, X, CreditCard,
+  Loader2, Plus, Trash2, Edit2, X, CreditCard, RefreshCw,
   GripVertical, Check, Upload, Image as ImageIcon,
 } from "lucide-react";
 import {

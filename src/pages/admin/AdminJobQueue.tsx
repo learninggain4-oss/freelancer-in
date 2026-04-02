@@ -76,7 +76,7 @@ export default function AdminJobQueue() {
   };
 
   const saveSetting = (id:string) => {
-    const updated = settings.map(s=>s.id===id?{...s,value:s.type==="number"?Number(editVal):editVal}:s);
+    const updated = settings.map(s=>s.id===id?{...s,value:s.type==="number"?Number(editVal):Boolean(editVal)}:s);
     localStorage.setItem("admin_job_settings_v1",JSON.stringify(updated));
     setSettings(updated); toast({ title:"Job setting updated" }); setEditId(null);
   };

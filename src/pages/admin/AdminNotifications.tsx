@@ -11,7 +11,8 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Bell, Pencil, EyeOff, ChevronUp, Save, Send, Users, User, ShieldCheck, Filter } from "lucide-react";
+import { Search, Bell, Pencil, EyeOff, ChevronUp, Save, Send, Users, User, ShieldCheck, Filter, Loader2 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 

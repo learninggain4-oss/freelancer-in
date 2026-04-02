@@ -20,7 +20,7 @@ const RECOVERY_KEY  = "admin_recovery_accounts_v1";
 
 interface ApprovalRequest {
   id: string; action: string; requestedBy: string; target: string;
-  category: "Financial" | "Security" | "User Management" | "System" | "Data";
+  category: "Financial" | "Security" | "User Management" | "System" | "Content" | "Authentication" | "General";
   risk: "critical" | "high" | "medium";
   status: "pending" | "approved" | "rejected";
   reason: string; notes?: string;
@@ -34,10 +34,10 @@ interface RecoveryAccount {
 
 function seedApprovals(): ApprovalRequest[] {
   return [
-    { id: "a1", action: "Bulk Delete 1,200 Inactive Users", requestedBy: "Admin A", target: "User Database", category: "Data", risk: "critical", status: "pending", reason: "Clear accounts inactive for 2+ years", requestedAt: new Date(Date.now() - 3600000).toISOString() },
+    { id: "a1", action: "Bulk Delete 1,200 Inactive Users", requestedBy: "Admin A", target: "User Database", category: "User Management", risk: "critical", status: "pending", reason: "Clear accounts inactive for 2+ years", requestedAt: new Date(Date.now() - 3600000).toISOString() },
     { id: "a2", action: "Approve Withdrawal ₹85,000 (User: DEMO)", requestedBy: "Admin B", target: "Wallet #W-0042", category: "Financial", risk: "high", status: "pending", reason: "High-value withdrawal flagged for dual approval", requestedAt: new Date(Date.now() - 7200000).toISOString() },
     { id: "a3", action: "Grant Admin Role to freeandin@gmail.com", requestedBy: "Admin A", target: "freeandin@gmail.com", category: "Security", risk: "critical", status: "approved", reason: "New super admin required for operations", requestedAt: new Date(Date.now() - 86400000).toISOString(), resolvedAt: new Date(Date.now() - 82800000).toISOString(), resolvedBy: "Super Admin" },
-    { id: "a4", action: "Export Full User Database (CSV)", requestedBy: "Admin C", target: "profiles table", category: "Data", risk: "high", status: "pending", reason: "Compliance audit requirement", requestedAt: new Date(Date.now() - 1800000).toISOString() },
+    { id: "a4", action: "Export Full User Database (CSV)", requestedBy: "Admin C", target: "profiles table", category: "System", risk: "high", status: "pending", reason: "Compliance audit requirement", requestedAt: new Date(Date.now() - 1800000).toISOString() },
     { id: "a5", action: "Reset Platform Commission to 5%", requestedBy: "Admin B", target: "PLATFORM_COMMISSION_RATE", category: "Financial", risk: "medium", status: "rejected", reason: "Proposed change from 10% to 5%", notes: "Rejected: Requires board approval first", requestedAt: new Date(Date.now() - 172800000).toISOString(), resolvedAt: new Date(Date.now() - 169200000).toISOString(), resolvedBy: "Super Admin" },
   ];
 }

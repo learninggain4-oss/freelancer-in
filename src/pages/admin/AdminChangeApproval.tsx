@@ -42,7 +42,7 @@ export default function AdminChangeApproval(){
     const upd=changes.map(x=>x.id===id?{...x,status:"approved" as const,reviewedAt:new Date().toISOString(),reviewedBy:"Super Admin"}:x);
     localStorage.setItem("admin_change_approval_v1",JSON.stringify(upd));setChanges(upd);setApproving(null);
     const c=changes.find(x=>x.id===id)!;
-    logAction("Change Approved",`${c.field}: ${c.oldValue} → ${c.newValue}`,"Config","warning");
+    logAction("Change Approved",`${c.field}: ${c.oldValue} → ${c.newValue}`,"System","warning");
     toast({title:"Change approved and applied"});
   };
 
@@ -50,7 +50,7 @@ export default function AdminChangeApproval(){
     setRejecting(id);await new Promise(r=>setTimeout(r,700));
     const upd=changes.map(x=>x.id===id?{...x,status:"rejected" as const,reviewedAt:new Date().toISOString(),reviewedBy:"Super Admin",rejectReason:rejectNote||"Rejected by admin"}:x);
     localStorage.setItem("admin_change_approval_v1",JSON.stringify(upd));setChanges(upd);setRejecting(null);setRejectNote("");
-    logAction("Change Rejected",changes.find(x=>x.id===id)?.field||"","Config","warning");
+    logAction("Change Rejected",changes.find(x=>x.id===id)?.field||"","System","warning");
     toast({title:"Change rejected"});
   };
 
@@ -59,7 +59,7 @@ export default function AdminChangeApproval(){
     const upd=changes.map(x=>x.id===id?{...x,status:"rolled_back" as const}:x);
     localStorage.setItem("admin_change_approval_v1",JSON.stringify(upd));setChanges(upd);setRolling(null);
     const c=changes.find(x=>x.id===id)!;
-    logAction("Change Rolled Back",`${c.field} restored to ${c.oldValue}`,"Config","warning");
+    logAction("Change Rolled Back",`${c.field} restored to ${c.oldValue}`,"System","warning");
     toast({title:`${c.field} rolled back to ${c.oldValue}`});
   };
 

@@ -89,7 +89,7 @@ export default function AdminCacheManager() {
   };
 
   const saveSetting = (id:string) => {
-    const updated = settings.map(s=>s.id===id?{...s,value:s.type==="number"?Number(editVal):editVal}:s);
+    const updated = settings.map(s=>s.id===id?{...s,value:s.type==="number"?Number(editVal):Boolean(editVal)}:s);
     localStorage.setItem("admin_cache_settings_v1",JSON.stringify(updated));
     setSettings(updated);
     toast({ title:"Cache setting updated" });
