@@ -5068,7 +5068,6 @@ const Index = () => {
   const [lang, setLangState] = useState<LangCode>(() => (localStorage.getItem("fi-lang") as LangCode) || "en");
   const [offerDismissed, setOfferDismissed] = useState(() => localStorage.getItem("fi-offer-dismissed") === "1");
   const [renderPhase, setRenderPhase] = useState(0);
-  const [cookieConsented, setCookieConsented] = useState(() => localStorage.getItem("fi-cookie-consent") !== null);
   const theme = THEMES.find(t => t.id === themeId) ?? THEMES[0];
 
   const handleLangChange = (l: LangCode) => {
@@ -5317,45 +5316,6 @@ const Index = () => {
 
       <Footer />
 
-      {/* DPDP Cookie Consent Banner */}
-      {!cookieConsented && (
-        <div className="fixed inset-x-0 bottom-0 z-[150] p-3 sm:p-4" style={{ pointerEvents: "none" }}>
-          <div className="mx-auto max-w-3xl rounded-2xl shadow-2xl" style={{ background: "rgba(10,8,25,0.97)", border: "1px solid rgba(var(--t-a1-rgb),0.3)", backdropFilter: "blur(24px)", pointerEvents: "auto" }}>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 sm:p-5">
-              <div className="flex items-start gap-3 flex-1">
-                <span className="text-xl shrink-0 mt-0.5">🍪</span>
-                <div>
-                  <p className="text-xs font-bold text-white mb-0.5">Your Privacy Matters</p>
-                  <p className="text-xs text-white/50 leading-relaxed">
-                    We use cookies to improve your experience and comply with India's{" "}
-                    <strong className="text-white/70">Digital Personal Data Protection Act, 2023 (DPDP)</strong>.
-                    Your data is processed solely to improve platform services and is never sold to third parties.{" "}
-                    <Link to="/legal/privacy-policy" className="underline hover:text-white/80 transition-colors" style={{ color: "var(--t-a1)" }}>Privacy Policy</Link>
-                    {" · "}
-                    <Link to="/legal/terms" className="underline hover:text-white/80 transition-colors" style={{ color: "var(--t-a1)" }}>Terms of Service</Link>
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2 shrink-0 sm:ml-4">
-                <button
-                  onClick={() => { localStorage.setItem("fi-cookie-consent", "0"); setCookieConsented(true); }}
-                  className="rounded-xl px-4 py-2 text-xs font-semibold text-white/60 hover:text-white transition-colors"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)" }}
-                >
-                  Decline
-                </button>
-                <button
-                  onClick={() => { localStorage.setItem("fi-cookie-consent", "1"); setCookieConsented(true); }}
-                  className="rounded-xl px-5 py-2 text-xs font-semibold text-white hover:scale-105 transition-all"
-                  style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}
-                >
-                  Accept All
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Install Banner */}
       {showBanner && !isInstalled && !bannerDismissed && (
