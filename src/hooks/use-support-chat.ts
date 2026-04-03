@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,71 +22,135 @@ export interface SupportMessage {
   created_at: string;
   sender?: { full_name: string[]; user_type: string } | null;
   reactions?: SupportReaction[];
+  _optimistic?: boolean;
 }
+
+const fetchMessages = async (conversationId: string): Promise<SupportMessage[]> => {
+  const { data, error } = await supabase
+    .from("support_messages")
+    .select("*, sender:sender_id(full_name, user_type)")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+
+  const msgIds = (data || []).map((m: any) => m.id);
+  let reactions: any[] = [];
+  if (msgIds.length > 0) {
+    const { data: rxns } = await supabase
+      .from("support_message_reactions")
+      .select("*")
+      .in("message_id", msgIds);
+    reactions = rxns || [];
+  }
+
+  return (data || []).map((msg: any) => ({
+    ...msg,
+    reactions: reactions.filter((r) => r.message_id === msg.id),
+  })) as SupportMessage[];
+};
+
+const fetchSingleMessage = async (messageId: string): Promise<SupportMessage | null> => {
+  const { data, error } = await supabase
+    .from("support_messages")
+    .select("*, sender:sender_id(full_name, user_type)")
+    .eq("id", messageId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return { ...data, reactions: [] } as SupportMessage;
+};
 
 export const useSupportChat = (conversationId: string | undefined) => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
+  const QK = ["support-messages", conversationId];
 
   const { data: messages = [], isLoading } = useQuery({
-    queryKey: ["support-messages", conversationId],
-    queryFn: async () => {
-      if (!conversationId) return [];
-      const { data, error } = await supabase
-        .from("support_messages")
-        .select("*, sender:sender_id(full_name, user_type)")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-
-      // Fetch reactions
-      const msgIds = (data || []).map((m: any) => m.id);
-      let reactions: any[] = [];
-      if (msgIds.length > 0) {
-        const { data: rxns } = await supabase
-          .from("support_message_reactions")
-          .select("*")
-          .in("message_id", msgIds);
-        reactions = rxns || [];
-      }
-
-      return (data || []).map((msg: any) => ({
-        ...msg,
-        reactions: reactions.filter((r) => r.message_id === msg.id),
-      })) as SupportMessage[];
-    },
+    queryKey: QK,
+    queryFn: () => fetchMessages(conversationId!),
     enabled: !!conversationId,
+    staleTime: Infinity,
   });
 
-  // Real-time subscription
+  // ── Real-time: append/update/remove messages directly in cache ──────
   useEffect(() => {
     if (!conversationId) return;
+
     const channel = supabase
       .channel(`support-msgs:${conversationId}`)
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "support_messages",
-        filter: `conversation_id=eq.${conversationId}`,
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ["support-messages", conversationId] });
-      })
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "support_message_reactions",
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ["support-messages", conversationId] });
-      })
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "support_messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        async (payload) => {
+          const newMsg = await fetchSingleMessage(payload.new.id);
+          if (!newMsg) return;
+          queryClient.setQueryData<SupportMessage[]>(QK, (prev = []) => {
+            // Remove any optimistic placeholder with same temp id, then append
+            const withoutOptimistic = prev.filter(
+              (m) => !m._optimistic || m.content !== newMsg.content || m.sender_id !== newMsg.sender_id
+            );
+            // Avoid duplicates
+            if (withoutOptimistic.some((m) => m.id === newMsg.id)) return withoutOptimistic;
+            return [...withoutOptimistic, newMsg];
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "support_messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        async (payload) => {
+          const updated = await fetchSingleMessage(payload.new.id);
+          if (!updated) return;
+          queryClient.setQueryData<SupportMessage[]>(QK, (prev = []) =>
+            prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m))
+          );
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "support_messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          queryClient.setQueryData<SupportMessage[]>(QK, (prev = []) =>
+            prev.filter((m) => m.id !== payload.old.id)
+          );
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "support_message_reactions",
+        },
+        () => {
+          // Only refetch reactions — lightweight
+          queryClient.invalidateQueries({ queryKey: QK });
+        }
+      )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [conversationId, queryClient]);
 
-  // Mark as read
+    return () => { supabase.removeChannel(channel); };
+  }, [conversationId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Mark incoming messages as read ─────────────────────────────────
   useEffect(() => {
     if (!conversationId || !profile?.id || messages.length === 0) return;
     const unreadIds = messages
-      .filter((m) => !m.is_read && m.sender_id !== profile.id)
+      .filter((m) => !m.is_read && m.sender_id !== profile.id && !m._optimistic)
       .map((m) => m.id);
     if (unreadIds.length > 0) {
       supabase
@@ -97,39 +161,69 @@ export const useSupportChat = (conversationId: string | undefined) => {
     }
   }, [messages, conversationId, profile?.id]);
 
-  const sendMessage = async (content: string, filePath?: string, fileName?: string) => {
-    if (!conversationId || !profile?.id) return;
-    const insert: any = {
-      conversation_id: conversationId,
-      sender_id: profile.id,
-      content,
-    };
-    if (filePath) insert.file_path = filePath;
-    if (fileName) insert.file_name = fileName;
-    const { error } = await supabase.from("support_messages").insert(insert);
-    if (error) throw error;
-  };
+  // ── Send with optimistic update ─────────────────────────────────────
+  const sendMessage = useCallback(
+    async (content: string, filePath?: string, fileName?: string) => {
+      if (!conversationId || !profile?.id) return;
 
-  const toggleReaction = async (messageId: string, emoji: string) => {
-    if (!profile?.id) return;
-    const { data: existing } = await supabase
-      .from("support_message_reactions")
-      .select("id")
-      .eq("message_id", messageId)
-      .eq("user_id", profile.id)
-      .eq("emoji", emoji)
-      .maybeSingle();
+      const tempId = `opt-${Date.now()}`;
+      const optimistic: SupportMessage = {
+        id: tempId,
+        conversation_id: conversationId,
+        sender_id: profile.id,
+        content,
+        file_path: filePath ?? null,
+        file_name: fileName ?? null,
+        is_read: false,
+        created_at: new Date().toISOString(),
+        reactions: [],
+        _optimistic: true,
+      };
 
-    if (existing) {
-      await supabase.from("support_message_reactions").delete().eq("id", existing.id);
-    } else {
-      await supabase.from("support_message_reactions").insert({
-        message_id: messageId,
-        user_id: profile.id,
-        emoji,
-      });
-    }
-  };
+      // Show immediately
+      queryClient.setQueryData<SupportMessage[]>(QK, (prev = []) => [...prev, optimistic]);
+
+      const insert: any = { conversation_id: conversationId, sender_id: profile.id, content };
+      if (filePath) insert.file_path = filePath;
+      if (fileName) insert.file_name = fileName;
+
+      const { error } = await supabase.from("support_messages").insert(insert);
+      if (error) {
+        // Roll back optimistic on failure
+        queryClient.setQueryData<SupportMessage[]>(QK, (prev = []) =>
+          prev.filter((m) => m.id !== tempId)
+        );
+        throw error;
+      }
+      // Real-time INSERT event will replace the optimistic entry
+    },
+    [conversationId, profile?.id, queryClient] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  // ── Reactions ───────────────────────────────────────────────────────
+  const toggleReaction = useCallback(
+    async (messageId: string, emoji: string) => {
+      if (!profile?.id) return;
+      const { data: existing } = await supabase
+        .from("support_message_reactions")
+        .select("id")
+        .eq("message_id", messageId)
+        .eq("user_id", profile.id)
+        .eq("emoji", emoji)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase.from("support_message_reactions").delete().eq("id", existing.id);
+      } else {
+        await supabase.from("support_message_reactions").insert({
+          message_id: messageId,
+          user_id: profile.id,
+          emoji,
+        });
+      }
+    },
+    [profile?.id]
+  );
 
   return { messages, isLoading, sendMessage, toggleReaction };
 };
@@ -165,8 +259,24 @@ export const useMyConversation = () => {
 
 /** Admin: list all support conversations with user info and last message */
 export const useAllConversations = () => {
+  const queryClient = useQueryClient();
+  const AQK = ["admin-support-conversations"];
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-support-conv-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "support_messages" }, () => {
+        queryClient.invalidateQueries({ queryKey: AQK });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "support_conversations" }, () => {
+        queryClient.invalidateQueries({ queryKey: AQK });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return useQuery({
-    queryKey: ["admin-support-conversations"],
+    queryKey: AQK,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("support_conversations")
@@ -191,16 +301,12 @@ export const useAllConversations = () => {
             .eq("is_read", false)
             .neq("sender_id", conv.user_id);
 
-          return {
-            ...conv,
-            last_message: lastMsg,
-            unread_count: count || 0,
-          };
+          return { ...conv, last_message: lastMsg, unread_count: count || 0 };
         })
       );
 
       return enriched;
     },
-    refetchInterval: 15000,
+    staleTime: Infinity,
   });
 };
