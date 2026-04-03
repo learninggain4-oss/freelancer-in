@@ -441,6 +441,8 @@ const AdminHelpSupport = () => {
     replyBorder:  "#075e54",
     emojiPicker:  "#ffffff",
   };
+  const isSuperAdmin = (profile as any)?.user_type === "super_admin";
+
   const { data: conversations = [], isLoading: loadingConvs } = useAllConversations();
   const { deleteConversation } = useDeleteConversation();
   const [confirmDeleteConvId, setConfirmDeleteConvId] = useState<string | null>(null);
@@ -945,9 +947,11 @@ const AdminHelpSupport = () => {
                 <button onClick={() => { setShowHeaderMenu(false); setConfirmClear(true); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", background: "none", border: "none", cursor: "pointer", color: "#f87171", fontSize: 13.5, fontWeight: 500, borderBottom: `1px solid ${WA.ctxBorder}` }}>
                   <Trash2 size={16} style={{ color: "#f87171" }} /> Clear Messages
                 </button>
-                <button onClick={() => { setShowHeaderMenu(false); setConfirmDeleteConvId(selectedConvId!); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: 13.5, fontWeight: 600 }}>
-                  <Trash2 size={16} style={{ color: "#ef4444" }} /> Delete Conversation
-                </button>
+                {isSuperAdmin && (
+                  <button onClick={() => { setShowHeaderMenu(false); setConfirmDeleteConvId(selectedConvId!); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: 13.5, fontWeight: 600 }}>
+                    <Trash2 size={16} style={{ color: "#ef4444" }} /> Delete Conversation
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -1504,16 +1508,18 @@ const AdminHelpSupport = () => {
                   </div>
                 </div>
 
-                {/* Delete button — visible on hover */}
-                <button
-                  onClick={e => { e.stopPropagation(); setConfirmDeleteConvId(conv.id); }}
-                  title="Delete conversation"
-                  style={{ flexShrink: 0, width: 32, height: 32, borderRadius: "50%", background: "rgba(239,68,68,.1)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity .15s" }}
-                  onMouseEnter={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.background = "rgba(239,68,68,.18)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.opacity = "0"; e.currentTarget.style.background = "rgba(239,68,68,.1)"; }}
-                >
-                  <Trash2 size={15} style={{ color: "#ef4444" }} />
-                </button>
+                {/* Delete button — super_admin only, visible on hover */}
+                {isSuperAdmin && (
+                  <button
+                    onClick={e => { e.stopPropagation(); setConfirmDeleteConvId(conv.id); }}
+                    title="Delete conversation"
+                    style={{ flexShrink: 0, width: 32, height: 32, borderRadius: "50%", background: "rgba(239,68,68,.1)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity .15s" }}
+                    onMouseEnter={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.background = "rgba(239,68,68,.18)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.opacity = "0"; e.currentTarget.style.background = "rgba(239,68,68,.1)"; }}
+                  >
+                    <Trash2 size={15} style={{ color: "#ef4444" }} />
+                  </button>
+                )}
               </div>
             );
           })

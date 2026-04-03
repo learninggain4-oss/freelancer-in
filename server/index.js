@@ -1109,8 +1109,8 @@ app.delete("/functions/v1/support-delete-conversation", async (req, res) => {
       .select("user_type")
       .eq("user_id", user.id)
       .maybeSingle();
-    if (callerProfile?.user_type !== "admin") {
-      return res.status(403).json({ error: "Admin only" });
+    if (callerProfile?.user_type !== "super_admin") {
+      return res.status(403).json({ error: "Super admin only" });
     }
 
     // Verify conversation exists
