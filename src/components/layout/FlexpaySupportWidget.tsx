@@ -258,7 +258,7 @@ const FlexpaySupportWidget = ({ theme, userId, profileId }: Props) => {
           background: cardBg,
           border: `1px solid ${borderC}`,
           boxShadow: "0 24px 64px rgba(0,0,0,.22), 0 8px 24px rgba(0,0,0,.12)",
-          zIndex: 9998,
+          zIndex: 10002,
           animation: "fpOpen .22s cubic-bezier(.22,1,.36,1)",
         }}>
           <div
@@ -420,7 +420,7 @@ const FlexpaySupportWidget = ({ theme, userId, profileId }: Props) => {
           cursor: dragging ? "grabbing" : "grab",
           display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: glowSm,
-          zIndex: 9999,
+          zIndex: 10001,
           touchAction: "none",
           userSelect: "none",
           ["--fp-g1" as string]: glowSm,

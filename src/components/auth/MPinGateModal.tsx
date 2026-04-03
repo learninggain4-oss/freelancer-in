@@ -322,7 +322,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
   }, [pin]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (forgot) return;
+    if (forgot || blocked) return;
     if (e.key >= "0" && e.key <= "9") addDigit(e.key);
     else if (e.key === "Backspace") addDigit("⌫");
     else if (e.key === "Enter" && pin.length === PIN_LEN) handleProceed();
@@ -514,7 +514,8 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
                   Unlocks in {mins > 0 ? `${mins} min ${secs} sec` : `${secs} seconds`}
                 </p>
 
-                <div style={{borderTop:`1px solid ${borderC}`, paddingTop:16}}>
+                {/* Reset PIN option */}
+                <div style={{borderTop:`1px solid ${borderC}`, paddingTop:16, marginBottom:14}}>
                   <p style={{margin:"0 0 10px", fontSize:12.5, color:subC}}>Don't remember your M-Pin?</p>
                   <button onClick={openForgot}
                     style={{
@@ -524,6 +525,38 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
                     }}>
                     Reset via Identity Verification
                   </button>
+                </div>
+
+                {/* Flexpay Support chat */}
+                <div style={{
+                  borderRadius:14, padding:"13px 15px",
+                  background: isDark ? "#0f1f3a" : "#eff6ff",
+                  border:"1.5px solid rgba(2,132,199,.25)",
+                  display:"flex", alignItems:"center", gap:12, textAlign:"left",
+                }}>
+                  <div style={{
+                    width:40, height:40, borderRadius:"50%", flexShrink:0,
+                    background:"linear-gradient(135deg,#0284c7,#0369a1)",
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    boxShadow:"0 4px 12px rgba(2,132,199,.35)",
+                  }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+                      <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{display:"flex", alignItems:"center", gap:5, marginBottom:2}}>
+                      <p style={{margin:0, fontWeight:800, fontSize:13, color:"#0284c7"}}>Flexpay Support</p>
+                      <div style={{display:"flex", alignItems:"center", gap:3}}>
+                        <div style={{width:6, height:6, borderRadius:"50%", background:"#22c55e"}}/>
+                        <span style={{fontSize:10, color:"#22c55e", fontWeight:700}}>24/7</span>
+                      </div>
+                    </div>
+                    <p style={{margin:0, fontSize:11.5, color:subC, lineHeight:1.4}}>
+                      Tap the chat button (bottom-right) to reach us instantly.
+                    </p>
+                  </div>
                 </div>
               </div>
             );
