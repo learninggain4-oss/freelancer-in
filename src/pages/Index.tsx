@@ -429,31 +429,6 @@ const GlobalStyles = () => (
     }
     .stat-pop-anim { animation: stat-pop 0.5s cubic-bezier(.17,.67,.34,1.4) both; }
 
-    /* ── Meteor shower ── */
-    @keyframes meteor-fall {
-      0%   { transform: translateX(0) translateY(0) rotate(-35deg); opacity: 0; }
-      5%   { opacity: 1; }
-      80%  { opacity: 0.5; }
-      100% { transform: translateX(500px) translateY(500px) rotate(-35deg); opacity: 0; }
-    }
-    .meteor {
-      position: absolute;
-      height: 1.5px;
-      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 30%, rgba(255,255,255,0.95) 80%, white 100%);
-      border-radius: 9999px;
-      animation: meteor-fall linear infinite;
-      will-change: transform, opacity;
-    }
-    .meteor::after {
-      content: '';
-      position: absolute;
-      right: 0; top: 50%;
-      transform: translateY(-50%);
-      width: 4px; height: 4px;
-      border-radius: 50%;
-      background: white;
-      box-shadow: 0 0 8px 3px rgba(180,180,255,0.9), 0 0 20px 6px rgba(var(--t-a1-rgb),0.4);
-    }
     /* ── Twinkling stars ── */
     @keyframes twinkle {
       0%, 100% { opacity: 0; transform: scale(0.4); }
@@ -1888,27 +1863,6 @@ const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip, activ
   );
 };
 
-/* ─────────────────────── Meteor Shower ─────────────────────── */
-const METEOR_DATA = [
-  { top: "6%",  left: "8%",  w: 140, dur: "7s",   del: "0s"   },
-  { top: "18%", left: "38%", w: 100, dur: "5.5s",  del: "1.8s" },
-  { top: "4%",  left: "62%", w: 165, dur: "9s",   del: "3.4s" },
-  { top: "26%", left: "80%", w: 85,  dur: "6.5s",  del: "0.6s" },
-  { top: "11%", left: "53%", w: 120, dur: "8.2s",  del: "4.6s" },
-  { top: "22%", left: "26%", w: 75,  dur: "6s",   del: "2.3s" },
-  { top: "3%",  left: "88%", w: 110, dur: "7.5s",  del: "1.1s" },
-  { top: "33%", left: "70%", w: 90,  dur: "5.2s",  del: "3.9s" },
-  { top: "14%", left: "4%",  w: 130, dur: "8.8s",  del: "5.2s" },
-  { top: "28%", left: "47%", w: 70,  dur: "6.8s",  del: "0.4s" },
-];
-const MeteorShower = () => (
-  <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ zIndex: 1 }}>
-    {METEOR_DATA.map((m, i) => (
-      <div key={i} className="meteor" style={{ top: m.top, left: m.left, width: m.w, animationDuration: m.dur, animationDelay: m.del }} />
-    ))}
-  </div>
-);
-
 /* ─────────────────────── Twinkling Stars ─────────────────────── */
 const STAR_DATA = [
   { left: "7%",  top: "11%", s: 2, dur: "2.5s", del: "0s"   },
@@ -1976,7 +1930,6 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
   return (
   <section className="relative overflow-hidden py-16 md:py-24 lg:py-36 px-4 sm:px-6">
     <TwinkleStars />
-    <MeteorShower />
     <Orbs />
     <ParticleField />
     <ConstellationCanvas />
