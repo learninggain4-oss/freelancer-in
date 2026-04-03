@@ -452,9 +452,7 @@ const AdminHelpSupport = () => {
 
   const selectedConv = conversations.find((c: any) => c.id === selectedConvId);
 
-  useEffect(() => {
-    if (!searchOpen) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, searchOpen]);
+  // Auto-scroll disabled per admin preference
 
   // Keyboard shortcut detection
   useEffect(() => {
@@ -501,9 +499,6 @@ const AdminHelpSupport = () => {
     bottomRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
   }, []);
 
-  useEffect(() => {
-    if (!searchOpen) scrollToBottom(false);
-  }, [messages.length, searchOpen, scrollToBottom]);
 
   // Scroll watcher for scroll-to-bottom button
   const handleMsgScroll = () => {
@@ -556,7 +551,6 @@ const AdminHelpSupport = () => {
       setTyping(true);
       if (typingTimer.current) clearTimeout(typingTimer.current);
       typingTimer.current = setTimeout(() => setTyping(false), 3000);
-      setTimeout(() => scrollToBottom(), 100);
     } catch (e: any) {
       toast.error(e.message);
     }
