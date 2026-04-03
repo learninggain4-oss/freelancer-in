@@ -362,7 +362,7 @@ export const useAllConversations = () => {
             .select("*", { count: "exact", head: true })
             .eq("conversation_id", conv.id)
             .eq("is_read", false)
-            .neq("sender_id", conv.user_id);
+            .eq("sender_id", conv.user_id);   // messages FROM user that admin hasn't read
 
           return { ...conv, last_message: lastMsg, unread_count: count || 0 };
         })
@@ -370,6 +370,6 @@ export const useAllConversations = () => {
 
       return enriched;
     },
-    staleTime: Infinity,
+    staleTime: 10000,
   });
 };
