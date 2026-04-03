@@ -284,7 +284,7 @@ const HelpSupport = () => {
   // ── CHAT VIEW (Messages Tab) ──────────────────────────────────────
   if (activeTab === "messages") {
     return (
-      <div className="flex flex-col" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 70, zIndex: 40, background: T.bg }}
+      <div className="flex flex-col" style={{ position: "fixed", top: 56, left: 0, right: 0, bottom: 70, zIndex: 40, background: T.bg }}
         onClick={() => { setCtxMsg(null); setShowReactionFor(null); setShowHeaderMenu(false); }}>
 
         {/* ── Header ── */}
