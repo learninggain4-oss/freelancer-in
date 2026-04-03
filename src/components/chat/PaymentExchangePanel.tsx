@@ -759,7 +759,7 @@ const PaymentExchangePanel = ({
               {confirmation?.phone_number && (
                 <div className="text-xs bg-muted/50 rounded p-2 space-y-1">
                   <p className="font-medium text-foreground">
-                    Employee Payment App Phone:
+                    Freelancer Payment App Phone:
                   </p>
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-semibold">
@@ -1175,7 +1175,7 @@ const PaymentExchangePanel = ({
                   {/* Client sees phone number */}
                   {confirmation?.phone_number && (
                     <div className="text-xs bg-muted/50 rounded p-2 space-y-1">
-                      <p className="font-medium text-foreground">Employee Payment App Phone:</p>
+                      <p className="font-medium text-foreground">Freelancer Payment App Phone:</p>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-semibold">{confirmation.phone_number}</span>
                         <CopyButton text={confirmation.phone_number} label="Phone number" />

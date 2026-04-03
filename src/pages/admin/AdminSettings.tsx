@@ -638,7 +638,7 @@ const AdminSettings = () => {
                               onCheckedChange={toggleSelectAll}
                             />
                           </th>
-                          <th className="p-3 font-semibold uppercase tracking-wider text-[10px]">Client</th>
+                          <th className="p-3 font-semibold uppercase tracking-wider text-[10px]">Employer</th>
                           <th className="p-3 font-semibold uppercase tracking-wider text-[10px]">Status</th>
                           <th className="p-3 font-semibold uppercase tracking-wider text-[10px] text-right">Action</th>
                         </tr>

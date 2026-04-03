@@ -95,7 +95,7 @@ const ChatBotPopup = () => {
           answer = `💰 Your available balance is ₹${(profile.available_balance ?? 0).toLocaleString("en-IN")} and hold balance is ₹${(profile.hold_balance ?? 0).toLocaleString("en-IN")}.`;
           break;
         case "account-type":
-          answer = `📋 Your account type is **${profile.user_type === "employee" ? "Employee" : "Client"}**.`;
+          answer = `📋 Your account type is **${profile.user_type === "employee" ? "Freelancer" : "Employer"}**.`;
           break;
         case "approval-status":
           answer = `✅ Your approval status is **${profile.approval_status?.charAt(0).toUpperCase()}${profile.approval_status?.slice(1)}**.`;

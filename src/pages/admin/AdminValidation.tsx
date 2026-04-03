@@ -390,7 +390,7 @@ const AdminValidation = () => {
                              <span className="font-bold">{(selected.project as any)?.name || "Unknown"}</span>
                           </div>
                           <div className="flex flex-col">
-                             <span className="text-[10px] opacity-40 uppercase">Employee</span>
+                             <span className="text-[10px] opacity-40 uppercase">Freelancer</span>
                              <span className="font-bold">{(selected.employee as any)?.full_name?.[0] || "Unknown"} <span className="opacity-30 font-mono text-xs">({(selected.employee as any)?.user_code?.[0]})</span></span>
                           </div>
                        </div>

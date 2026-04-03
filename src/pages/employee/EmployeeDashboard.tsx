@@ -219,7 +219,7 @@ const EmployeeDashboard = () => {
     { icon: CheckCircle,      label: "Completed Jobs",   value: completedCount,                              color: "#4ade80",  bg: "rgba(34,197,94,.12)",   trend: "+2",    trendUp: true },
     { icon: Briefcase,        label: "Active Jobs",      value: activeCount,                                 color: "#a5b4fc",  bg: "rgba(99,102,241,.12)",  trend: "Live",  trendUp: true },
     { icon: Target,           label: "Success Rate",     value: `${successRate}%`,                           color: "#2dd4bf",  bg: "rgba(20,184,166,.12)",  trend: "Good",  trendUp: true },
-    { icon: Star,             label: "Client Rating",    value: "4.9 ★",                                     color: "#fbbf24",  bg: "rgba(245,158,11,.12)",  trend: "Top",   trendUp: true },
+    { icon: Star,             label: "Employer Rating",    value: "4.9 ★",                                     color: "#fbbf24",  bg: "rgba(245,158,11,.12)",  trend: "Top",   trendUp: true },
     { icon: ArrowUpRight,     label: "Withdrawals",      value: withdrawCount,                               color: "#f87171",  bg: "rgba(239,68,68,.12)",   trend: "Total", trendUp: false },
   ];
 

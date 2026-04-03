@@ -443,6 +443,7 @@ const AdminHelpSupport = () => {
   };
   const SUPER_ADMIN_EMAILS = ["freeandin9@gmail.com"];
   const isSuperAdmin = SUPER_ADMIN_EMAILS.includes((user?.email || "").toLowerCase());
+  const formatUserType = (t: string) => t === "employee" ? "Freelancer" : t === "client" ? "Employer" : t;
 
   const { data: conversations = [], isLoading: loadingConvs } = useAllConversations();
   const { deleteConversation } = useDeleteConversation();
@@ -800,7 +801,7 @@ const AdminHelpSupport = () => {
   // Chat view
   if (selectedConvId && selectedConv) {
     const userName = getUserDisplayName(selectedConv);
-    const userType = (selectedConv as any).user?.user_type || "";
+    const userType = formatUserType((selectedConv as any).user?.user_type || "");
 
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 8rem)", marginTop: -8, borderRadius: 12, overflow: "hidden", boxShadow: "0 8px 40px rgba(0,0,0,.3)" }}
@@ -1442,7 +1443,7 @@ const AdminHelpSupport = () => {
           filteredConversations.map((conv: any) => {
             const userName = getUserDisplayName(conv);
             const userCode = getUserCode(conv);
-            const userType = (conv as any).user?.user_type || "";
+            const userType = formatUserType((conv as any).user?.user_type || "");
             const isSelected = selectedConvId === conv.id;
             const initial = userName.charAt(0).toUpperCase();
             // Deterministic avatar colour per initial

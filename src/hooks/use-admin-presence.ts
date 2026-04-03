@@ -79,7 +79,7 @@ export const useAdminPresence = (upgradeRequestId: string | undefined) => {
       event: "typing",
       payload: {
         userId: profile.id,
-        userName: profile.full_name?.join(" ") || "Employee",
+        userName: profile.full_name?.join(" ") || "Freelancer",
         isTyping,
       },
     });

@@ -354,7 +354,7 @@ const UpgradeChat = () => {
             addBotMessageWithTyping("Unable to load wallet details.");
             return;
           }
-          const employeeName = profile?.full_name?.join(" ") || "Employee";
+          const employeeName = profile?.full_name?.join(" ") || "Freelancer";
           const price = requestedWallet.wallet_price || "N/A";
           const features = (requestedWallet.perks as string[]) || [];
           const dbDetails = getDbMessage("details", lang);
@@ -400,7 +400,7 @@ const UpgradeChat = () => {
           setStep("waiting");
           // Notify admin
           try {
-            const employeeName = profile?.full_name?.join(" ") || "Employee";
+            const employeeName = profile?.full_name?.join(" ") || "Freelancer";
             const { data: adminProfiles } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
             if (adminProfiles?.length) {
               await supabase.from("notifications").insert(

@@ -49,7 +49,7 @@ const WithdrawalHistory = () => {
   });
 
   const getEmployeeName = (emp: any) => {
-    if (!emp) return "Employee";
+    if (!emp) return "Freelancer";
     return Array.isArray(emp.full_name) ? emp.full_name.join(" ") : emp.full_name;
   };
 

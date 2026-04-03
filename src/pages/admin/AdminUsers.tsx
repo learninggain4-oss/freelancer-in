@@ -397,8 +397,8 @@ const AdminUsers = () => {
           </SelectTrigger>
           <SelectContent style={{ background: T.card, borderColor: T.border }}>
             <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="employee">Employee</SelectItem>
-            <SelectItem value="client">Client</SelectItem>
+            <SelectItem value="employee">Freelancer</SelectItem>
+            <SelectItem value="client">Employer</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -516,8 +516,8 @@ const AdminUsers = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="employee">Employee</SelectItem>
-                  <SelectItem value="client">Client</SelectItem>
+                  <SelectItem value="employee">Freelancer</SelectItem>
+                  <SelectItem value="client">Employer</SelectItem>
                 </SelectContent>
               </Select>
             </div>

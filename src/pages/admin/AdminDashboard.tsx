@@ -714,8 +714,8 @@ const AdminDashboard = () => {
             {[
               { label: "Daily Revenue",          value: "₹46,800",                         color: "#4ade80", icon: TrendingUp,   path: "/admin/wallet-management" },
               { label: "Monthly Revenue",         value: "₹2,84,000",                       color: "#4ade80", icon: BarChart3,    path: "/admin/wallet-management" },
-              { label: "Employee Earnings",       value: stats.employeeEarnings > 0 ? fmt(stats.employeeEarnings) : "₹9,42,000", color: "#a5b4fc", icon: UserCheck, path: "/admin/wallet-management" },
-              { label: "Client Earnings",         value: stats.clientEarnings > 0 ? fmt(stats.clientEarnings) : "₹5,18,000",     color: "#c4b5fd", icon: Building2, path: "/admin/wallet-management" },
+              { label: "Freelancer Earnings",       value: stats.employeeEarnings > 0 ? fmt(stats.employeeEarnings) : "₹9,42,000", color: "#a5b4fc", icon: UserCheck, path: "/admin/wallet-management" },
+              { label: "Employer Earnings",         value: stats.clientEarnings > 0 ? fmt(stats.clientEarnings) : "₹5,18,000",     color: "#c4b5fd", icon: Building2, path: "/admin/wallet-management" },
               { label: "Commission Earned",       value: "₹28,400",                         color: "#fbbf24", icon: IndianRupee, path: "/admin/wallet-management" },
               { label: "Pending Withdrawals",     value: `${stats.pendingWithdrawals || 18} req`, color: "#f87171", icon: Clock, path: "/admin/withdrawals" },
             ].map(s => (

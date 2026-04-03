@@ -127,7 +127,7 @@ const AdminWithdrawals = () => {
         <Table>
           <TableHeader>
             <TableRow style={{ borderColor: T.border, background: theme === "black" ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}>
-              <TableHead style={{ color: T.sub }}>Employee</TableHead>
+              <TableHead style={{ color: T.sub }}>Freelancer</TableHead>
               <TableHead style={{ color: T.sub }}>Order ID</TableHead>
               <TableHead style={{ color: T.sub }}>Amount</TableHead>
               <TableHead style={{ color: T.sub }}>Method</TableHead>

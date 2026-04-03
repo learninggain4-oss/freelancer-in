@@ -270,7 +270,7 @@ const ClientProjects = () => {
                         {r.employee?.full_name?.charAt(0) || 'E'}
                       </div>
                       <div>
-                        <h3 className="text-base font-bold tracking-tight" style={{ color: T.text }}>{r.employee?.full_name ?? "Employee"}</h3>
+                        <h3 className="text-base font-bold tracking-tight" style={{ color: T.text }}>{r.employee?.full_name ?? "Freelancer"}</h3>
                         <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>{r.employee?.user_code} • {r.employee?.work_experience ?? "Fresh"}</p>
                       </div>
                     </div>

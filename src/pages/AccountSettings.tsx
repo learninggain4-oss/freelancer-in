@@ -58,7 +58,7 @@ const AccountSettings = () => {
                 { icon: User, label: "Name", value: Array.isArray(profile?.full_name) ? profile.full_name[0] : profile?.full_name },
                 { icon: Fingerprint, label: "User Code", value: Array.isArray(profile?.user_code) ? profile.user_code[0] : profile?.user_code, isBadge: true },
                 { icon: Mail, label: "Email", value: profile?.email },
-                { icon: Lock, label: "Account Type", value: profile?.user_type === "employee" ? "Employee" : "Client", isBadge: true },
+                { icon: Lock, label: "Account Type", value: profile?.user_type === "employee" ? "Freelancer" : "Employer", isBadge: true },
               ].map((item, idx) => (
                 <div key={idx}>
                   <div className="flex items-center gap-3 py-3.5">
