@@ -157,7 +157,12 @@ const HelpSupport = () => {
   const recordingTimerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingStreamRef = useRef<MediaStream | null>(null);
   const cancelledRef       = useRef(false);
-  const cameraRef          = useRef<HTMLInputElement>(null);
+  const videoRef           = useRef<HTMLVideoElement>(null);
+  const canvasRef          = useRef<HTMLCanvasElement>(null);
+  const cameraStreamRef    = useRef<MediaStream | null>(null);
+  const [showCamera, setShowCamera]     = useState(false);
+  const [facingMode, setFacingMode]     = useState<"environment" | "user">("environment");
+  const [cameraReady, setCameraReady]   = useState(false);
 
   const { data: faqs = [] } = useQuery({
     queryKey: ["help-faqs"],
@@ -225,19 +230,68 @@ const HelpSupport = () => {
     e.target.value = "";
   };
 
-  const handleCameraChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !conversation?.id || !profile?.id) return;
+  const stopCameraStream = () => {
+    cameraStreamRef.current?.getTracks().forEach(t => t.stop());
+    cameraStreamRef.current = null;
+  };
+
+  const openCamera = async (mode: "environment" | "user" = facingMode) => {
     try {
-      const ext  = file.name.split(".").pop() || "jpg";
-      const path = `support/${conversation.id}/${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("support-files").upload(path, file);
-      if (upErr) throw upErr;
-      await sendMessage(`📷 ${file.name}`, path, file.name);
-      toast.success("Photo sent!");
-      setTimeout(() => scrollToBottom(), 100);
-    } catch (err: any) { toast.error(err.message || "Upload failed"); }
-    e.target.value = "";
+      stopCameraStream();
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode, width: { ideal: 1280 }, height: { ideal: 720 } } });
+      cameraStreamRef.current = stream;
+      setFacingMode(mode);
+      setShowCamera(true);
+      setCameraReady(false);
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(() => {});
+        }
+      }, 80);
+    } catch (err: any) {
+      const denied = err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError";
+      if (denied) setShowMicDenied(true);
+      else toast.error("Could not access camera");
+    }
+  };
+
+  const closeCamera = () => {
+    stopCameraStream();
+    setShowCamera(false);
+    setCameraReady(false);
+  };
+
+  const flipCamera = () => {
+    const next = facingMode === "environment" ? "user" : "environment";
+    openCamera(next);
+  };
+
+  const capturePhoto = async () => {
+    if (!videoRef.current || !canvasRef.current || !conversation?.id || !profile?.id) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width  = video.videoWidth  || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    if (facingMode === "user") {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      closeCamera();
+      try {
+        const path = `support/${conversation.id}/${Date.now()}.jpg`;
+        const { error } = await supabase.storage.from("support-files").upload(path, blob, { contentType: "image/jpeg" });
+        if (error) throw error;
+        await sendMessage("📷 Photo", path, "photo.jpg");
+        toast.success("Photo sent!");
+        setTimeout(() => scrollToBottom(), 100);
+      } catch (err: any) { toast.error(err.message || "Failed to send photo"); }
+    }, "image/jpeg", 0.92);
   };
 
   const handleKeyDown = (_e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -661,6 +715,56 @@ const HelpSupport = () => {
           </div>
         )}
 
+        {/* ── Live Camera Overlay ── */}
+        {showCamera && (
+          <div style={{ position: "fixed", inset: 0, background: "#000", zIndex: 100, display: "flex", flexDirection: "column" }}>
+            {/* Top controls */}
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", background: "linear-gradient(to bottom, rgba(0,0,0,.6), transparent)" }}>
+              <button onClick={closeCamera}
+                style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,.15)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
+                <X size={20} style={{ color: "#fff" }} />
+              </button>
+              <button onClick={flipCamera}
+                style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,.15)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+              </button>
+            </div>
+
+            {/* Video stream */}
+            <video
+              ref={videoRef}
+              playsInline
+              muted
+              onCanPlay={() => setCameraReady(true)}
+              style={{ width: "100%", height: "100%", objectFit: "cover", transform: facingMode === "user" ? "scaleX(-1)" : "none" }}
+            />
+
+            {/* Loading indicator */}
+            {!cameraReady && (
+              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: 40, height: 40, border: "3px solid rgba(255,255,255,.3)", borderTop: "3px solid #fff", borderRadius: "50%", animation: "cam-spin 0.8s linear infinite" }} />
+              </div>
+            )}
+
+            {/* Shutter row */}
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center", padding: "28px 0 40px", background: "linear-gradient(to top, rgba(0,0,0,.65), transparent)" }}>
+              <button onClick={capturePhoto} disabled={!cameraReady}
+                style={{ width: 72, height: 72, borderRadius: "50%", background: "none", border: "4px solid #fff", cursor: cameraReady ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", opacity: cameraReady ? 1 : 0.4, transition: "transform .1s", boxShadow: "0 0 0 3px rgba(255,255,255,.25)" }}
+                onMouseDown={e => (e.currentTarget.style.transform = "scale(0.92)")}
+                onMouseUp={e => (e.currentTarget.style.transform = "scale(1)")}
+                onTouchStart={e => (e.currentTarget.style.transform = "scale(0.92)")}
+                onTouchEnd={e => (e.currentTarget.style.transform = "scale(1)")}>
+                <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#fff" }} />
+              </button>
+            </div>
+
+            {/* Hidden canvas for capture */}
+            <canvas ref={canvasRef} style={{ display: "none" }} />
+          </div>
+        )}
+
         {/* ── Mic Permission Denied Dialog ── */}
         {showMicDenied && (() => {
           const ua = navigator.userAgent;
@@ -819,10 +923,7 @@ const HelpSupport = () => {
 
               <input ref={fileRef} type="file" accept="image/*,application/*,.pdf,.doc,.docx,.zip" style={{ display: "none" }} onChange={handleFileChange} />
 
-              {/* Hidden camera input — opens native camera on mobile */}
-              <input ref={cameraRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleCameraChange} />
-
-              <button onClick={() => cameraRef.current?.click()}
+              <button onClick={() => openCamera()}
                 style={{ background: "none", border: "none", cursor: "pointer", padding: 8, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Camera size={20} style={{ color: T.sub }} />
               </button>
@@ -871,6 +972,9 @@ const HelpSupport = () => {
           @keyframes voice-bar {
             from { height: 4px; }
             to   { height: 18px; }
+          }
+          @keyframes cam-spin {
+            to { transform: rotate(360deg); }
           }
         `}</style>
       </div>
