@@ -1213,14 +1213,21 @@ app.post("/functions/v1/security-questions-save", async (req, res) => {
 
     const { answers } = req.body;
     if (!Array.isArray(answers) || answers.length !== 10)
-      return res.status(400).json({ error: "Must provide exactly 10 answers" });
+      return res.status(400).json({ error: "Must provide an array of 10 entries" });
 
-    // Hash each answer: SHA-256(lowercased_trimmed_answer:userId:sq-idx)
-    const hashes = answers.map((ans, idx) => {
-      const raw = String(ans || "").toLowerCase().trim();
-      if (!raw) throw new Error(`Answer ${idx + 1} is empty`);
-      return crypto.createHash("sha256").update(`${raw}:${user.id}:sq-${idx}`).digest("hex");
-    });
+    // Hash only non-empty answers, require at least 3
+    const hashes = [];
+    for (let idx = 0; idx < answers.length; idx++) {
+      const raw = String(answers[idx] || "").toLowerCase().trim();
+      if (raw) {
+        hashes.push({
+          idx,
+          hash: crypto.createHash("sha256").update(`${raw}:${user.id}:sq-${idx}`).digest("hex"),
+        });
+      }
+    }
+    if (hashes.length < 3)
+      return res.status(400).json({ error: "Please answer at least 3 security questions" });
 
     const adminAuth = getAdminClient().auth.admin;
     const { error } = await adminAuth.updateUserById(user.id, {

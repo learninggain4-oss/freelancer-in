@@ -63,8 +63,9 @@ export default function SecurityQuestionsModal({ theme, onDone }: Props) {
   const inputBg  = isDark ? "rgba(255,255,255,.06)" : "#ffffff";
   const hdr      = `linear-gradient(135deg, ${accent} 0%, ${accentD} 100%)`;
 
+  const MIN_REQUIRED = 3;
   const answered = answers.filter(a => a.trim().length > 0).length;
-  const allDone  = answered === 10;
+  const allDone  = answered >= MIN_REQUIRED;
 
   const setAnswer = (idx: number, val: string) => {
     setAnswers(prev => { const n=[...prev]; n[idx]=val; return n; });
@@ -76,11 +77,12 @@ export default function SecurityQuestionsModal({ theme, onDone }: Props) {
   };
 
   const validateAll = () => {
-    const errs = answers.map(a => a.trim() ? "" : "This field is required");
-    setErrors(errs);
-    const firstBad = errs.findIndex(e => e);
-    if (firstBad !== -1) setExpanded(firstBad);
-    return errs.every(e => !e);
+    if (answered < MIN_REQUIRED) {
+      setGlobalError(`Please answer at least ${MIN_REQUIRED} questions to continue.`);
+      return false;
+    }
+    setErrors(Array(10).fill(""));
+    return true;
   };
 
   const handleSubmit = async () => {
@@ -155,7 +157,7 @@ export default function SecurityQuestionsModal({ theme, onDone }: Props) {
           <div style={{ marginTop: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
               <span style={{ fontSize: 11, color: "rgba(255,255,255,.75)", fontWeight: 600 }}>
-                PROGRESS
+                ANSWERED (min. {MIN_REQUIRED} required)
               </span>
               <span style={{ fontSize: 11, color: "rgba(255,255,255,.9)", fontWeight: 700 }}>
                 {answered} / 10
@@ -165,7 +167,7 @@ export default function SecurityQuestionsModal({ theme, onDone }: Props) {
               <div style={{
                 height: "100%", borderRadius: 3,
                 width: `${(answered / 10) * 100}%`,
-                background: "white",
+                background: answered >= MIN_REQUIRED ? "white" : "rgba(255,255,255,.7)",
                 transition: "width .3s ease",
               }} />
             </div>
@@ -328,7 +330,7 @@ export default function SecurityQuestionsModal({ theme, onDone }: Props) {
             {submitting
               ? <><RefreshCw size={16} style={{ animation: "sqSpin 1s linear infinite" }} /> Saving securely...</>
               : !allDone
-                ? <><ShieldCheck size={16} /> Answer all {10 - answered} remaining questions</>
+                ? <><ShieldCheck size={16} /> Answer {MIN_REQUIRED - answered} more question{MIN_REQUIRED - answered !== 1 ? "s" : ""} to continue</>
                 : <><ShieldCheck size={16} /> Save & Continue</>}
           </button>
         </div>
