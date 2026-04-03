@@ -183,7 +183,7 @@ const AnnouncementForm = ({ editingAnnouncement, onClose }: AnnouncementFormProp
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="everyone">Everyone</SelectItem>
-              <SelectItem value="employees">Employees Only</SelectItem>
+              <SelectItem value="employees">Freelancers Only</SelectItem>
               <SelectItem value="clients">Clients Only</SelectItem>
             </SelectContent>
           </Select>
