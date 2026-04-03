@@ -90,16 +90,23 @@ export const useSupportChat = (conversationId: string | undefined) => {
         async (payload) => {
           // Client-side filter: only handle messages for this conversation
           if ((payload.new as any).conversation_id !== conversationId) return;
-          const newMsg = await fetchSingleMessage((payload.new as any).id);
-          if (!newMsg) return;
+          // Try full fetch (with sender join); if RLS blocks it, use raw payload
+          let newMsg: SupportMessage | null = await fetchSingleMessage((payload.new as any).id);
+          if (!newMsg) {
+            // Fallback: build message from raw payload fields
+            newMsg = {
+              ...(payload.new as any),
+              reactions: [],
+            } as SupportMessage;
+          }
           queryClient.setQueryData<SupportMessage[]>(QK, (prev = []) => {
             // Remove any optimistic placeholder with same content+sender, then append
             const withoutOptimistic = prev.filter(
-              (m) => !m._optimistic || m.content !== newMsg.content || m.sender_id !== newMsg.sender_id
+              (m) => !m._optimistic || m.content !== newMsg!.content || m.sender_id !== newMsg!.sender_id
             );
             // Avoid duplicates
-            if (withoutOptimistic.some((m) => m.id === newMsg.id)) return withoutOptimistic;
-            return [...withoutOptimistic, newMsg];
+            if (withoutOptimistic.some((m) => m.id === newMsg!.id)) return withoutOptimistic;
+            return [...withoutOptimistic, newMsg!];
           });
         }
       )
