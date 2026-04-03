@@ -1311,9 +1311,19 @@ const AdminHelpSupport = () => {
 
       {/* ── Conversations header ── */}
       <div style={{ background: WA.header, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-        <div>
-          <h1 style={{ fontWeight: 700, fontSize: 20, color: WA.headerText, margin: 0 }}>Support Inbox</h1>
-          <p style={{ fontSize: 12, color: WA.headerSub, margin: 0 }}>Customer conversations</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div>
+            <h1 style={{ fontWeight: 700, fontSize: 20, color: WA.headerText, margin: 0 }}>Support Inbox</h1>
+            <p style={{ fontSize: 12, color: WA.headerSub, margin: 0 }}>Customer conversations</p>
+          </div>
+          {(() => {
+            const totalUnread = filteredConversations.reduce((sum: number, c: any) => sum + (c.unread_count || 0), 0);
+            return totalUnread > 0 ? (
+              <span style={{ minWidth: 24, height: 24, borderRadius: 12, background: WA.unreadBg, color: WA.unreadText, fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 7px" }}>
+                {totalUnread > 99 ? "99+" : totalUnread}
+              </span>
+            ) : null;
+          })()}
         </div>
         <div style={{ position: "relative", width: 200 }}>
           <Search style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: WA.subText }} />
@@ -1391,7 +1401,7 @@ const AdminHelpSupport = () => {
 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
-                    <span style={{ fontWeight: 600, fontSize: 15, color: WA.incomingText, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "65%" }}>{userName}</span>
+                    <span style={{ fontWeight: (conv as any).unread_count > 0 ? 700 : 600, fontSize: 15, color: WA.incomingText, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "65%" }}>{userName}</span>
                     <span style={{ fontSize: 11, color: isOnline ? "#25d366" : WA.subText, whiteSpace: "nowrap", flexShrink: 0, fontWeight: isOnline ? 600 : 400 }}>
                       {lastSeenLabel}
                     </span>
@@ -1400,6 +1410,11 @@ const AdminHelpSupport = () => {
                     <span style={{ fontSize: 13, color: WA.subText, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {userCode} · <span style={{ textTransform: "capitalize" }}>{userType}</span>
                     </span>
+                    {(conv as any).unread_count > 0 && (
+                      <span style={{ flexShrink: 0, minWidth: 20, height: 20, borderRadius: 10, background: WA.unreadBg, color: WA.unreadText, fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px" }}>
+                        {(conv as any).unread_count > 99 ? "99+" : (conv as any).unread_count}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
