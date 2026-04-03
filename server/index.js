@@ -1043,7 +1043,11 @@ app.delete("/functions/v1/support-delete-message", async (req, res) => {
       .maybeSingle();
 
     if (fetchErr || !msg) return res.status(404).json({ error: "Message not found" });
-    if (msg.sender_id !== user.id) return res.status(403).json({ error: "Cannot delete another user's message" });
+
+    // Allow admins to delete any message
+    const { data: callerProfile } = await supabase.from("profiles").select("user_type").eq("user_id", user.id).maybeSingle();
+    const isAdmin = callerProfile?.user_type === "admin";
+    if (!isAdmin && msg.sender_id !== user.id) return res.status(403).json({ error: "Cannot delete another user's message" });
 
     const { error } = await supabase.from("support_messages").delete().eq("id", messageId);
     if (error) return res.status(500).json({ error: error.message });
@@ -1073,7 +1077,11 @@ app.delete("/functions/v1/support-clear-history", async (req, res) => {
       .maybeSingle();
 
     if (fetchErr || !conv) return res.status(404).json({ error: "Conversation not found" });
-    if (conv.user_id !== user.id) return res.status(403).json({ error: "Not your conversation" });
+
+    // Allow admins to clear any conversation
+    const { data: callerProfile2 } = await supabase.from("profiles").select("user_type").eq("user_id", user.id).maybeSingle();
+    const isAdmin2 = callerProfile2?.user_type === "admin";
+    if (!isAdmin2 && conv.user_id !== user.id) return res.status(403).json({ error: "Not your conversation" });
 
     const { error } = await supabase.from("support_messages").delete().eq("conversation_id", conversationId);
     if (error) return res.status(500).json({ error: error.message });

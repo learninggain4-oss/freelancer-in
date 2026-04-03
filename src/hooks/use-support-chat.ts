@@ -209,7 +209,8 @@ export const useSupportChat = (conversationId: string | undefined) => {
   const deleteMessage = useCallback(
     async (messageId: string, senderId: string) => {
       if (!profile?.id) return;
-      if (senderId !== profile.id) throw new Error("You can only delete your own messages");
+      const isAdmin = (profile as any)?.user_type === "admin";
+      if (!isAdmin && senderId !== profile.id) throw new Error("You can only delete your own messages");
 
       // Optimistically remove from cache immediately
       queryClient.setQueryData<SupportMessage[]>(QK, (prev = []) =>
