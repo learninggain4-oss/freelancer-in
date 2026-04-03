@@ -81,6 +81,8 @@ const LanguageSwitcher = () => {
 /* ─────────────────────── Global animation styles ─────────────────────── */
 const GlobalStyles = () => (
   <style>{`
+    html { scroll-behavior: smooth; }
+    * { -webkit-tap-highlight-color: transparent; }
     @keyframes float {
       0%,100% { transform: translateY(0px) rotate(0deg); }
       33%      { transform: translateY(-18px) rotate(1.5deg); }
@@ -1199,30 +1201,36 @@ const SparkleBtn = ({ children, to, className = "", style: st = {} }: { children
 const TRAIL_COLORS = ["#6366f1","#8b5cf6","#ec4899","#4ade80","#f472b6","#60a5fa","#fb923c","#34d399"];
 const CursorTrail = () => {
   useEffect(() => {
-    let throttle = false;
+    let rafPending = false;
     let count = 0;
+    let lastX = 0, lastY = 0;
     const onMove = (e: MouseEvent) => {
-      if (throttle) return;
-      throttle = true;
-      setTimeout(() => { throttle = false; }, 35);
-      count++;
-      const color = TRAIL_COLORS[count % TRAIL_COLORS.length];
-      const size = Math.random() * 7 + 4;
-      const dot = document.createElement("div");
-      Object.assign(dot.style, {
-        position: "fixed",
-        left: `${e.clientX}px`, top: `${e.clientY}px`,
-        width: `${size}px`, height: `${size}px`,
-        borderRadius: "50%",
-        background: color,
-        transform: "translate(-50%,-50%)",
-        pointerEvents: "none",
-        zIndex: "9990",
-        boxShadow: `0 0 ${size * 2}px ${color}, 0 0 ${size * 4}px ${color}50`,
-        animation: "cursor-trail 0.75s ease-out both",
+      lastX = e.clientX; lastY = e.clientY;
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(() => {
+        rafPending = false;
+        count++;
+        if (count % 2 !== 0) return; // skip every other frame → ~30fps trail
+        const color = TRAIL_COLORS[count % TRAIL_COLORS.length];
+        const size = Math.random() * 6 + 3;
+        const dot = document.createElement("div");
+        Object.assign(dot.style, {
+          position: "fixed",
+          left: "0px", top: "0px",
+          width: `${size}px`, height: `${size}px`,
+          borderRadius: "50%",
+          background: color,
+          transform: `translate(${lastX - size / 2}px,${lastY - size / 2}px)`,
+          pointerEvents: "none",
+          zIndex: "9990",
+          willChange: "opacity, transform",
+          boxShadow: `0 0 ${size * 2}px ${color}`,
+          animation: "cursor-trail 0.6s ease-out both",
+        });
+        document.body.appendChild(dot);
+        setTimeout(() => dot.remove(), 600);
       });
-      document.body.appendChild(dot);
-      setTimeout(() => dot.remove(), 750);
     };
     window.addEventListener("mousemove", onMove, { passive: true });
     return () => window.removeEventListener("mousemove", onMove);
@@ -1232,15 +1240,24 @@ const CursorTrail = () => {
 
 /* ─────────────────────── Global Ambient Glow Cursor ─────────────────────── */
 const GlowCursor = () => {
-  const [pos, setPos] = useState({ x: -9999, y: -9999 });
+  const dotRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const move = (e: MouseEvent) => setPos({ x: e.clientX, y: e.clientY });
+    let rafId: number;
+    let tx = -9999, ty = -9999, cx = -9999, cy = -9999;
+    const move = (e: MouseEvent) => { tx = e.clientX - 280; ty = e.clientY - 280; };
+    const animate = () => {
+      cx += (tx - cx) * 0.12;
+      cy += (ty - cy) * 0.12;
+      if (dotRef.current) dotRef.current.style.transform = `translate(${cx}px,${cy}px)`;
+      rafId = requestAnimationFrame(animate);
+    };
     window.addEventListener("mousemove", move, { passive: true });
-    return () => window.removeEventListener("mousemove", move);
+    rafId = requestAnimationFrame(animate);
+    return () => { window.removeEventListener("mousemove", move); cancelAnimationFrame(rafId); };
   }, []);
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" style={{ mixBlendMode: "screen" }}>
-      <div style={{ position: "absolute", left: pos.x - 280, top: pos.y - 280, width: 560, height: 560, borderRadius: "50%", background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.07) 0%, rgba(var(--t-a2-rgb),0.04) 40%, transparent 70%)", transition: "left 0.12s ease, top 0.12s ease", filter: "blur(8px)" }} />
+      <div ref={dotRef} style={{ position: "absolute", left: 0, top: 0, width: 560, height: 560, borderRadius: "50%", background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.07) 0%, rgba(var(--t-a2-rgb),0.04) 40%, transparent 70%)", filter: "blur(8px)", willChange: "transform" }} />
     </div>
   );
 };
@@ -1250,40 +1267,43 @@ const ConstellationCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = canvasRef.current; if (!canvas) return;
-    const ctx = canvas.getContext("2d"); if (!ctx) return;
+    const ctx = canvas.getContext("2d", { alpha: true }); if (!ctx) return;
     const setSize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; };
     setSize();
     const w = () => canvas.width, h = () => canvas.height;
-    const N = 55;
+    const N = 28; // Reduced from 55 → fewer calculations (28² = 378 vs 55² = 1485 per frame)
     const dots = Array.from({ length: N }, () => ({
       x: Math.random() * w(), y: Math.random() * h(),
-      vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35,
-      r: Math.random() * 1.6 + 0.5,
+      vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 1.4 + 0.4,
       hue: Math.floor(Math.random() * 60) + 220,
     }));
     let raf: number;
+    let visible = true;
+    const obs = new IntersectionObserver(([e]) => { visible = e.isIntersecting; }, { threshold: 0 });
+    obs.observe(canvas);
     const draw = () => {
+      if (!visible) { raf = requestAnimationFrame(draw); return; } // skip draw when off-screen
       ctx.clearRect(0, 0, w(), h());
       for (let i = 0; i < N; i++) {
         for (let j = i + 1; j < N; j++) {
           const dx = dots[i].x - dots[j].x, dy = dots[i].y - dots[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 130) {
+          const dist2 = dx * dx + dy * dy;
+          if (dist2 < 130 * 130) {
+            const dist = Math.sqrt(dist2);
             ctx.beginPath();
             ctx.moveTo(dots[i].x, dots[i].y);
             ctx.lineTo(dots[j].x, dots[j].y);
-            ctx.strokeStyle = `rgba(99,102,241,${0.18 * (1 - dist / 130)})`;
-            ctx.lineWidth = 0.6;
+            ctx.strokeStyle = `rgba(99,102,241,${0.15 * (1 - dist / 130)})`;
+            ctx.lineWidth = 0.5;
             ctx.stroke();
           }
         }
       }
       dots.forEach(d => {
-        const grd = ctx.createRadialGradient(d.x, d.y, 0, d.x, d.y, d.r * 2.5);
-        grd.addColorStop(0, `hsla(${d.hue},80%,70%,0.9)`);
-        grd.addColorStop(1, "transparent");
-        ctx.beginPath(); ctx.arc(d.x, d.y, d.r * 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = grd; ctx.fill();
+        ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${d.hue},75%,70%,0.8)`;
+        ctx.fill();
         d.x += d.vx; d.y += d.vy;
         if (d.x < 0 || d.x > w()) d.vx *= -1;
         if (d.y < 0 || d.y > h()) d.vy *= -1;
@@ -1291,11 +1311,11 @@ const ConstellationCanvas = () => {
       raf = requestAnimationFrame(draw);
     };
     draw();
-    window.addEventListener("resize", setSize);
-    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", setSize); };
+    window.addEventListener("resize", setSize, { passive: true });
+    return () => { cancelAnimationFrame(raf); obs.disconnect(); window.removeEventListener("resize", setSize); };
   }, []);
   return (
-    <canvas ref={canvasRef} className="constellation-canvas" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} />
+    <canvas ref={canvasRef} className="constellation-canvas" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", willChange: "transform" }} />
   );
 };
 
@@ -1356,6 +1376,7 @@ const AuroraBackground = () => (
         background: `radial-gradient(circle, ${b.color} 0%, transparent 70%)`,
         animation: `aurora-drift ${b.dur}s ease-in-out ${b.delay}s infinite`,
         filter: "blur(40px)",
+        willChange: "transform",
       }} />
     ))}
   </div>
@@ -1363,18 +1384,19 @@ const AuroraBackground = () => (
 
 /* ─────────────────────── Scroll Progress Bar ─────────────────────── */
 const ScrollProgressBar = () => {
-  const [pct, setPct] = useState(0);
+  const barRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const update = () => {
       const el = document.documentElement;
-      setPct((el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100);
+      const pct = (el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100;
+      if (barRef.current) barRef.current.style.width = `${pct}%`;
     };
     window.addEventListener("scroll", update, { passive: true });
     return () => window.removeEventListener("scroll", update);
   }, []);
   return (
     <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: 3, zIndex: 9999, background: "rgba(255,255,255,0.05)" }}>
-      <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg, var(--t-a1), var(--t-a2), #4ade80)", transition: "width .1s linear", boxShadow: "0 0 10px var(--t-a1)" }} />
+      <div ref={barRef} style={{ height: "100%", width: "0%", background: "linear-gradient(90deg, var(--t-a1), var(--t-a2), #4ade80)", willChange: "width", boxShadow: "0 0 10px var(--t-a1)" }} />
     </div>
   );
 };
@@ -1590,32 +1612,33 @@ const ParticleField = () => (
 
 /* ─────────────────────── Mouse Glow Effect ─────────────────────── */
 const MouseGlowEffect = () => {
-  const [pos, setPos] = useState({ x: -999, y: -999 });
-  const [visible, setVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const glowRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const section = ref.current?.parentElement;
     if (!section) return;
     const move = (e: MouseEvent) => {
+      if (!glowRef.current) return;
       const rect = section.getBoundingClientRect();
-      setPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-      setVisible(true);
+      glowRef.current.style.transform = `translate(${e.clientX - rect.left - 150}px,${e.clientY - rect.top - 150}px)`;
+      glowRef.current.style.opacity = "1";
     };
-    const leave = () => setVisible(false);
-    section.addEventListener("mousemove", move);
-    section.addEventListener("mouseleave", leave);
+    const leave = () => { if (glowRef.current) glowRef.current.style.opacity = "0"; };
+    section.addEventListener("mousemove", move, { passive: true });
+    section.addEventListener("mouseleave", leave, { passive: true });
     return () => { section.removeEventListener("mousemove", move); section.removeEventListener("mouseleave", leave); };
   }, []);
   return (
     <div ref={ref} className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div style={{
-        position: "absolute", left: pos.x - 150, top: pos.y - 150,
+      <div ref={glowRef} style={{
+        position: "absolute", left: 0, top: 0,
         width: 300, height: 300, borderRadius: "50%",
         background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.12) 0%, transparent 70%)",
         filter: "blur(20px)",
         transition: "opacity .3s ease",
-        opacity: visible ? 1 : 0,
+        opacity: 0,
         pointerEvents: "none",
+        willChange: "transform",
       }} />
     </div>
   );
