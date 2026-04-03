@@ -1121,7 +1121,14 @@ app.delete("/functions/v1/support-delete-conversation", async (req, res) => {
       .maybeSingle();
     if (fetchErr || !conv) return res.status(404).json({ error: "Conversation not found" });
 
-    // Delete conversation — messages cascade-delete via FK ON DELETE CASCADE
+    // Delete all messages first (avoid FK constraint if CASCADE not set in DB)
+    const { error: msgErr } = await supabase
+      .from("support_messages")
+      .delete()
+      .eq("conversation_id", conversationId);
+    if (msgErr) return res.status(500).json({ error: "Failed to delete messages: " + msgErr.message });
+
+    // Now delete the conversation
     const { error } = await supabase
       .from("support_conversations")
       .delete()
