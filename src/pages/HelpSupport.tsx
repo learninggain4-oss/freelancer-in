@@ -228,6 +228,23 @@ const HelpSupport = () => {
     },
   });
 
+  // Fetch support agent profile picture from the first admin message
+  const agentSenderId = messages.find((m) => m.sender_id !== profile?.id)?.sender_id ?? null;
+  const { data: agentProfile } = useQuery({
+    queryKey: ["support-agent-profile", agentSenderId],
+    queryFn: async () => {
+      if (!agentSenderId) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url, full_name")
+        .eq("id", agentSenderId)
+        .maybeSingle();
+      return data ?? null;
+    },
+    enabled: !!agentSenderId,
+    staleTime: 60_000,
+  });
+
   // Scroll to bottom
   const scrollToBottom = useCallback((smooth = true) => {
     bottomRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
@@ -467,8 +484,12 @@ const HelpSupport = () => {
           <button onClick={() => setActiveTab("dashboard")} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 8, display: "flex", alignItems: "center" }}>
             <ArrowLeft size={18} style={{ color: T.sub }} />
           </button>
-          <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <span style={{ color: "#fff", fontWeight: 800, fontSize: 14 }}>FI</span>
+          <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+            {agentProfile?.avatar_url ? (
+              <img src={agentProfile.avatar_url} alt="Support" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              <span style={{ color: "#fff", fontWeight: 800, fontSize: 14 }}>FI</span>
+            )}
           </div>
           <div style={{ flex: 1 }}>
             <p style={{ fontWeight: 700, fontSize: 14, color: T.text, margin: 0 }}>Flexpay Support (24/7)</p>
