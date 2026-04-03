@@ -92,6 +92,20 @@ const TH = {
     alertBdr: "rgba(21,128,61,.08)",
     timelineLine: "rgba(21,128,61,.1)",
   },
+  ocean: {
+    cardBg:   "#ffffff", cardBdr: "rgba(14,165,233,.1)",
+    text:     "#0c4a6e", sub: "#4b83a3",
+    rowHover: "rgba(14,165,233,.05)", pullFg: "rgba(75,131,163,.5)",
+    chartTip: { background: "#ffffff", border: "1px solid rgba(14,165,233,.15)", color: "#0c4a6e" },
+    chartAxis:"#4b83a3",
+    emptyBg:  "#e0f2fe", emptyFg: "#4b83a3",
+    emptySub: "#7dd3fc",
+    badgeBg:  "#e0f2fe", badgeFg: "#4b83a3",
+    sectionIconBg: (color: string) => `${color}18`,
+    alertBg: "#f0f9ff",
+    alertBdr: "rgba(14,165,233,.08)",
+    timelineLine: "rgba(14,165,233,.1)",
+  },
 };
 
 const MOCK_ALERTS = [

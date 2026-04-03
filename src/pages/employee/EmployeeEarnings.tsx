@@ -16,7 +16,8 @@ const TH = {
   white: { bg: "#f0f4ff", card: "#ffffff", border: "rgba(0,0,0,.08)", text: "#1e293b", sub: "#64748b", input: "#f8fafc", tip: { background: "#fff", border: "1px solid rgba(0,0,0,.1)", color: "#1e293b" }, axis: "#9ca3af" },
   wb:    { bg: "#f0f4ff", card: "#ffffff", border: "rgba(0,0,0,.08)", text: "#1e293b", sub: "#64748b", input: "#f8fafc", tip: { background: "#fff", border: "1px solid rgba(0,0,0,.1)", color: "#1e293b" },
   warm:  { bg:"#fef6e4", card:"#fffdf7", border:"rgba(180,83,9,.1)", text:"#1c1a17", sub:"#78716c", input:"#fffdf7" },
-  forest: { bg:"#f1faf4", card:"#ffffff", border:"rgba(21,128,61,.1)", text:"#0f2d18", sub:"#4b7c5d", input:"#ffffff" }, axis: "#9ca3af" },
+  forest: { bg:"#f1faf4", card:"#ffffff", border:"rgba(21,128,61,.1)", text:"#0f2d18", sub:"#4b7c5d", input:"#ffffff" },
+  ocean: { bg:"#f0f9ff", card:"#ffffff", border:"rgba(14,165,233,.1)", text:"#0c4a6e", sub:"#4b83a3", input:"#ffffff" }, axis: "#9ca3af" },
 };
 
 const MOCK_MONTHLY = [

@@ -207,6 +207,43 @@ const T = {
     shadowLg:   "0 8px 32px rgba(21,128,61,.12)",
     shadowXl:   "0 12px 40px rgba(21,128,61,.14)",
   },
+  ocean: {
+    shell:      "#f0f9ff",
+    header:     "rgba(240,249,255,.97)",
+    headerBdr:  "rgba(14,165,233,.12)",
+    logo:       "#0c4a6e",
+    logoSub:    "rgba(3,105,161,.6)",
+    mainBg:     "#f0f9ff",
+    mainText:   "#0c4a6e",
+    mainSub:    "#4b83a3",
+    cardBg:     "#ffffff",
+    cardBdr:    "rgba(14,165,233,.1)",
+    mutedBg:    "#e0f2fe",
+    inputBg:    "#ffffff",
+    inputBdr:   "rgba(14,165,233,.18)",
+    inputFg:    "#0c4a6e",
+    inputPh:    "rgba(75,131,163,.55)",
+    accent:     "#0284c7",
+    green:      "#16a34a",
+    orange:     "#b45309",
+    red:        "#dc2626",
+    orbA:       "rgba(14,165,233,.1)",
+    orbB:       "rgba(2,132,199,.07)",
+    gridLine:   "rgba(14,165,233,.018)",
+    hoverRow:   "rgba(14,165,233,.05)",
+    iconBtn:    "rgba(14,165,233,.08)",
+    iconBtnHov: "rgba(14,165,233,.14)",
+    dropBg:     "#ffffff",
+    dropBdr:    "rgba(14,165,233,.12)",
+    searchBg:   "rgba(14,165,233,.07)",
+    searchBdr:  "rgba(14,165,233,.14)",
+    footerBg:   "rgba(240,249,255,.97)",
+    footerBdr:  "rgba(14,165,233,.1)",
+    shadowSm:   "0 2px 12px rgba(14,165,233,.08)",
+    shadowMd:   "0 4px 20px rgba(14,165,233,.1)",
+    shadowLg:   "0 8px 32px rgba(14,165,233,.12)",
+    shadowXl:   "0 12px 40px rgba(14,165,233,.14)",
+  },
 };
 
 function buildCss(t: typeof T.black): string {
@@ -292,6 +329,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
   const isHeaderDark = theme === "black" || theme === "wb";
   const isWarm   = theme === "warm";
   const isForest = theme === "forest";
+  const isOcean  = theme === "ocean";
   const basePath = userType === "employee" ? "/employee" : "/client";
 
   const { data: walletProfile } = useQuery({
@@ -327,9 +365,9 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
 
   const iconBtnStyle: React.CSSProperties = {
     width: 34, height: 34, borderRadius: 9, background: tok.iconBtn,
-    border: `1px solid ${isHeaderDark ? "rgba(255,255,255,.08)" : isWarm ? "rgba(180,83,9,.14)" : isForest ? "rgba(21,128,61,.14)" : "rgba(0,0,0,.07)"}`,
+    border: `1px solid ${isHeaderDark ? "rgba(255,255,255,.08)" : isWarm ? "rgba(180,83,9,.14)" : isForest ? "rgba(21,128,61,.14)" : isOcean ? "rgba(14,165,233,.14)" : "rgba(0,0,0,.07)"}`,
     display: "flex", alignItems: "center", justifyContent: "center",
-    cursor: "pointer", color: isHeaderDark ? "rgba(255,255,255,.5)" : isWarm ? "#78716c" : isForest ? "#4b7c5d" : "#6b7280",
+    cursor: "pointer", color: isHeaderDark ? "rgba(255,255,255,.5)" : isWarm ? "#78716c" : isForest ? "#4b7c5d" : isOcean ? "#4b83a3" : "#6b7280",
     transition: "all .15s", flexShrink: 0,
   };
 
@@ -374,7 +412,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
           <div ref={searchRef} style={{ flex: 1, maxWidth: 340, position: "relative", margin: "0 4px" }}>
             {searchOpen ? (
               <div style={{ display: "flex", alignItems: "center", gap: 7, background: tok.searchBg, border: `1px solid ${A1}55`, borderRadius: 10, padding: "0 11px", height: 34 }}>
-                <Search size={12} color={isHeaderDark ? "rgba(255,255,255,.4)" : isWarm ? "rgba(120,113,108,.6)" : "#9ca3af"} />
+                <Search size={12} color={isHeaderDark ? "rgba(255,255,255,.4)" : isWarm ? "rgba(120,113,108,.6)" : isForest ? "rgba(75,124,93,.6)" : isOcean ? "rgba(75,131,163,.6)" : "#9ca3af"} />
                 <input autoFocus value={searchQ} onChange={e => setSearchQ(e.target.value)}
                   placeholder="Search features..."
                   style={{ flex: 1, background: "none", border: "none", outline: "none", color: isHeaderDark ? "rgba(255,255,255,.9)" : "#0d0d24", fontSize: 12.5 }} />
@@ -414,8 +452,8 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
               style={{ alignItems: "center", gap: 7, padding: "5px 10px", borderRadius: 10, background: `${A1}15`, border: `1px solid ${A1}30`, cursor: "pointer", height: 34 }}
               onMouseEnter={e => (e.currentTarget.style.background = `${A1}25`)}
               onMouseLeave={e => (e.currentTarget.style.background = `${A1}15`)}>
-              <IndianRupee size={12} color={isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : isForest ? "#16a34a" : "#4f46e5"} />
-              <span style={{ fontSize: 12.5, fontWeight: 800, color: isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : isForest ? "#16a34a" : "#4f46e5" }}>
+              <IndianRupee size={12} color={isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : isForest ? "#16a34a" : isOcean ? "#0284c7" : "#4f46e5"} />
+              <span style={{ fontSize: 12.5, fontWeight: 800, color: isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : isForest ? "#16a34a" : isOcean ? "#0284c7" : "#4f46e5" }}>
                 {walletBalance.toLocaleString("en-IN")}
               </span>
             </button>
