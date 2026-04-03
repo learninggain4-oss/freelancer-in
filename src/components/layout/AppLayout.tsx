@@ -3,6 +3,8 @@ import { Outlet, useNavigate } from "react-router-dom";
 import BottomTabBar from "./BottomTabBar";
 import SideDrawer from "./SideDrawer";
 import FlexpaySupportWidget from "./FlexpaySupportWidget";
+import MPinGateModal from "@/components/auth/MPinGateModal";
+import { useMpinGate } from "@/hooks/use-mpin-gate";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import ThemeToggle from "./ThemeToggle";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
@@ -319,6 +321,8 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
   const { signOut, user, profile } = useAuth();
   const navigate = useNavigate();
 
+  const { mode: mpinMode, markVerified } = useMpinGate(userType);
+
   const profileRef = useRef<HTMLDivElement>(null);
   const searchRef  = useRef<HTMLDivElement>(null);
 
@@ -558,6 +562,10 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
 
       {userType === "employee" && user?.id && profile?.id && (
         <FlexpaySupportWidget theme={theme} userId={user.id} profileId={profile.id} />
+      )}
+
+      {userType === "employee" && (mpinMode === "create" || mpinMode === "verify") && (
+        <MPinGateModal mode={mpinMode} theme={theme} onVerified={markVerified} />
       )}
     </div>
   );

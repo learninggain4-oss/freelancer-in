@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { createClient } from "@supabase/supabase-js";
 import cron from "node-cron";
+import crypto from "crypto";
 
 const app = express();
 app.use(cors({ origin: "*" }));
@@ -1137,6 +1138,75 @@ app.delete("/functions/v1/support-delete-conversation", async (req, res) => {
     if (error) return res.status(500).json({ error: error.message });
 
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── M-Pin helper ────────────────────────────────────────────────────────────
+function hashMpin(pin, userId) {
+  return crypto.createHash("sha256").update(`${pin}:${userId}:flexpay`).digest("hex");
+}
+
+// GET /functions/v1/mpin-status — check if user has a PIN set
+app.get("/functions/v1/mpin-status", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const adminAuth = getAdminClient().auth.admin;
+    const { data: { user: u }, error } = await adminAuth.getUserById(user.id);
+    if (error || !u) return res.status(404).json({ error: "User not found" });
+
+    const hasPin = !!(u.app_metadata?.mpin_hash);
+    res.json({ hasPin });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /functions/v1/mpin-set — create / reset M-Pin
+app.post("/functions/v1/mpin-set", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const { pin } = req.body;
+    if (!pin || !/^\d{4,6}$/.test(pin))
+      return res.status(400).json({ error: "PIN must be 4–6 digits" });
+
+    const mpin_hash = hashMpin(pin, user.id);
+    const adminAuth = getAdminClient().auth.admin;
+    const { error } = await adminAuth.updateUserById(user.id, {
+      app_metadata: { mpin_hash },
+    });
+    if (error) return res.status(500).json({ error: error.message });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /functions/v1/mpin-verify — verify M-Pin
+app.post("/functions/v1/mpin-verify", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const { pin } = req.body;
+    if (!pin || !/^\d{4,6}$/.test(pin))
+      return res.status(400).json({ error: "PIN must be 4–6 digits" });
+
+    const adminAuth = getAdminClient().auth.admin;
+    const { data: { user: u }, error } = await adminAuth.getUserById(user.id);
+    if (error || !u) return res.status(404).json({ error: "User not found" });
+
+    const expected = u.app_metadata?.mpin_hash;
+    if (!expected) return res.status(400).json({ error: "No PIN set", hasPin: false });
+
+    const valid = hashMpin(pin, user.id) === expected;
+    res.json({ valid });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
