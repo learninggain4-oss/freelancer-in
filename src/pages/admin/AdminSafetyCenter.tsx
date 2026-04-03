@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
   Shield, ShieldCheck, ShieldAlert, Activity, Database, Server, Clock, Lock, Unlock,
@@ -11,7 +11,6 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -56,6 +55,7 @@ export default function AdminSafetyCenter() {
   const [sessionTimeout, setSessionTimeout] = useState(() => parseInt(localStorage.getItem(SESSION_TIMEOUT_KEY) || "30"));
   const [dbStatus, setDbStatus] = useState<"checking" | "online" | "offline">("checking");
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; type: string }>({ open: false, type: "" });
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const adminName = (profile as unknown as { full_name?: string[]; email?: string } | null)?.full_name?.[0] || (profile as unknown as { email?: string } | null)?.email || "Admin";
 
@@ -71,12 +71,18 @@ export default function AdminSafetyCenter() {
   }, []);
 
   const handleRefresh = useCallback(async () => {
-    await checkDb();
-    await queryClient.invalidateQueries({ queryKey: ["safety-sessions"] });
-    await queryClient.invalidateQueries({ queryKey: ["safety-ip-blocks"] });
-    await queryClient.invalidateQueries({ queryKey: ["safety-pending-wd"] });
-    toast({ title: "System health refreshed", description: "All metrics have been updated." });
-  }, [checkDb, queryClient, toast]);
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await checkDb();
+      await queryClient.refetchQueries({ queryKey: ["safety-sessions"] });
+      await queryClient.refetchQueries({ queryKey: ["safety-ip-blocks"] });
+      await queryClient.refetchQueries({ queryKey: ["safety-pending-wd"] });
+      toast({ title: "System health refreshed", description: "All metrics have been updated." });
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isRefreshing, checkDb, queryClient, toast]);
 
   useEffect(() => { checkDb(); }, [checkDb]);
 
@@ -168,8 +174,13 @@ export default function AdminSafetyCenter() {
                 <span style={{ fontSize: 11, color: "#fbbf24", fontWeight: 700 }}>MAINTENANCE</span>
               </div>
             )}
-            <button onClick={handleRefresh} style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 10, background: T.card, border: `1px solid ${T.border}`, color: T.sub, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-              <RefreshCw size={13} className={dbStatus === "checking" ? "animate-spin" : ""} /> Refresh
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 10, background: isRefreshing ? `${A1}22` : T.card, border: `1px solid ${isRefreshing ? A1 : T.border}`, color: isRefreshing ? "#a5b4fc" : T.sub, fontSize: 12, fontWeight: 600, cursor: isRefreshing ? "not-allowed" : "pointer", transition: "all .2s", minWidth: 90 }}
+            >
+              <RefreshCw size={13} className={isRefreshing ? "animate-spin" : ""} />
+              {isRefreshing ? "Refreshing…" : "Refresh"}
             </button>
           </div>
         </div>
