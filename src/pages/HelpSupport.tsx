@@ -3,7 +3,7 @@ import {
   Send, Search, X, BookOpen, UserCircle, ChevronRight,
   HelpCircle, Smile, Paperclip, Mic, ChevronDown,
   Check, CheckCheck, CornerUpLeft, Copy, Trash2, ArrowLeft,
-  Phone, Video, MoreVertical, Image as ImageIcon, Play, Pause, Square,
+  Phone, Video, MoreVertical, Image as ImageIcon, Play, Pause, Square, Camera,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
@@ -157,6 +157,7 @@ const HelpSupport = () => {
   const recordingTimerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingStreamRef = useRef<MediaStream | null>(null);
   const cancelledRef       = useRef(false);
+  const cameraRef          = useRef<HTMLInputElement>(null);
 
   const { data: faqs = [] } = useQuery({
     queryKey: ["help-faqs"],
@@ -219,6 +220,21 @@ const HelpSupport = () => {
       if (upErr) throw upErr;
       await sendMessage(`📎 ${file.name}`, path, file.name);
       toast.success("File sent!");
+      setTimeout(() => scrollToBottom(), 100);
+    } catch (err: any) { toast.error(err.message || "Upload failed"); }
+    e.target.value = "";
+  };
+
+  const handleCameraChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !conversation?.id || !profile?.id) return;
+    try {
+      const ext  = file.name.split(".").pop() || "jpg";
+      const path = `support/${conversation.id}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("support-files").upload(path, file);
+      if (upErr) throw upErr;
+      await sendMessage(`📷 ${file.name}`, path, file.name);
+      toast.success("Photo sent!");
       setTimeout(() => scrollToBottom(), 100);
     } catch (err: any) { toast.error(err.message || "Upload failed"); }
     e.target.value = "";
@@ -802,6 +818,14 @@ const HelpSupport = () => {
               </button>
 
               <input ref={fileRef} type="file" accept="image/*,application/*,.pdf,.doc,.docx,.zip" style={{ display: "none" }} onChange={handleFileChange} />
+
+              {/* Hidden camera input — opens native camera on mobile */}
+              <input ref={cameraRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleCameraChange} />
+
+              <button onClick={() => cameraRef.current?.click()}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 8, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Camera size={20} style={{ color: T.sub }} />
+              </button>
 
               <div style={{ flex: 1, background: T.input, border: `1px solid ${T.inputBorder}`, borderRadius: 22, padding: "8px 14px", display: "flex", alignItems: "center" }}>
                 <textarea
