@@ -3,7 +3,7 @@ import {
   Send, Search, X, BookOpen, UserCircle, ChevronRight,
   HelpCircle, Smile, Paperclip, Mic, ChevronDown,
   Check, CheckCheck, CornerUpLeft, Copy, Trash2, ArrowLeft,
-  Phone, Video, MoreVertical, Image as ImageIcon,
+  Phone, Video, MoreVertical, Image as ImageIcon, Play, Pause, Square,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
@@ -143,12 +143,19 @@ const HelpSupport = () => {
   const [showReactionFor, setShowReactionFor] = useState<string | null>(null);
   const [showHeaderMenu, setShowHeaderMenu]   = useState(false);
   const [confirmClear, setConfirmClear]       = useState(false);
+  const [isRecording, setIsRecording]         = useState(false);
+  const [recordingTime, setRecordingTime]     = useState(0);
 
-  const scrollRef    = useRef<HTMLDivElement>(null);
-  const bottomRef    = useRef<HTMLDivElement>(null);
-  const inputRef     = useRef<HTMLTextAreaElement>(null);
-  const fileRef      = useRef<HTMLInputElement>(null);
-  const typingTimer  = useRef<any>(null);
+  const scrollRef          = useRef<HTMLDivElement>(null);
+  const bottomRef          = useRef<HTMLDivElement>(null);
+  const inputRef           = useRef<HTMLTextAreaElement>(null);
+  const fileRef            = useRef<HTMLInputElement>(null);
+  const typingTimer        = useRef<any>(null);
+  const mediaRecorderRef   = useRef<MediaRecorder | null>(null);
+  const audioChunksRef     = useRef<Blob[]>([]);
+  const recordingTimerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordingStreamRef = useRef<MediaStream | null>(null);
+  const cancelledRef       = useRef(false);
 
   const { data: faqs = [] } = useQuery({
     queryKey: ["help-faqs"],
@@ -245,6 +252,117 @@ const HelpSupport = () => {
       await clearHistory(conversation.id);
       toast.success("Chat history cleared");
     } catch (e: any) { toast.error(e.message || "Failed to clear history"); }
+  };
+
+  // ── Voice recording helpers ──────────────────────────────────────
+  const fmtRecTime = (s: number) =>
+    `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordingStreamRef.current = stream;
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/ogg";
+      const mr = new MediaRecorder(stream, { mimeType });
+      audioChunksRef.current = [];
+      cancelledRef.current = false;
+
+      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        if (cancelledRef.current) { audioChunksRef.current = []; return; }
+        const ext = mimeType.includes("webm") ? "webm" : "ogg";
+        const blob = new Blob(audioChunksRef.current, { type: mimeType });
+        if (blob.size < 500) return;
+        try {
+          if (!conversation?.id || !profile?.id) return;
+          const path = `support/${conversation.id}/${Date.now()}.${ext}`;
+          const { error } = await supabase.storage.from("support-files").upload(path, blob, { contentType: mimeType });
+          if (error) throw error;
+          await sendMessage("🎤 Voice message", path, `voice.${ext}`);
+          setTimeout(() => scrollToBottom(), 100);
+        } catch (err: any) { toast.error(err.message || "Failed to send voice message"); }
+      };
+
+      mr.start(100);
+      mediaRecorderRef.current = mr;
+      setIsRecording(true);
+      setRecordingTime(0);
+      recordingTimerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
+    } catch { toast.error("Microphone access denied"); }
+  };
+
+  const stopAndSend = () => {
+    if (!mediaRecorderRef.current || !isRecording) return;
+    cancelledRef.current = false;
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    recordingStreamRef.current?.getTracks().forEach(t => t.stop());
+    mediaRecorderRef.current.stop();
+    setIsRecording(false);
+  };
+
+  const cancelRecording = () => {
+    if (!mediaRecorderRef.current) return;
+    cancelledRef.current = true;
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    recordingStreamRef.current?.getTracks().forEach(t => t.stop());
+    mediaRecorderRef.current.stop();
+    setIsRecording(false);
+    setRecordingTime(0);
+  };
+
+  // ── Inline VoicePlayer ────────────────────────────────────────────
+  const VoicePlayer = ({ filePath, isMe }: { filePath: string; isMe: boolean }) => {
+    const [audioUrl, setAudioUrl] = useState<string | null>(null);
+    const [playing, setPlaying]   = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [dur, setDur]           = useState(0);
+    const aRef = useRef<HTMLAudioElement>(null);
+
+    useEffect(() => {
+      supabase.storage.from("support-files").createSignedUrl(filePath, 3600)
+        .then(({ data }) => { if (data?.signedUrl) setAudioUrl(data.signedUrl); });
+    }, [filePath]);
+
+    const toggle = () => {
+      if (!aRef.current) return;
+      if (playing) { aRef.current.pause(); setPlaying(false); }
+      else { aRef.current.play().then(() => setPlaying(true)).catch(() => {}); }
+    };
+
+    const fmtDur = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 190, paddingBottom: 2 }}>
+        <audio
+          ref={aRef}
+          src={audioUrl || undefined}
+          onTimeUpdate={() => { if (aRef.current && aRef.current.duration) setProgress((aRef.current.currentTime / aRef.current.duration) * 100); }}
+          onLoadedMetadata={() => { if (aRef.current) setDur(aRef.current.duration); }}
+          onEnded={() => { setPlaying(false); setProgress(0); }}
+        />
+        <button onClick={toggle}
+          style={{ width: 36, height: 36, borderRadius: "50%", background: isMe ? "rgba(255,255,255,.22)" : "rgba(99,102,241,.15)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          {playing
+            ? <Pause size={15} style={{ color: isMe ? "#fff" : "#6366f1" }} />
+            : <Play  size={15} style={{ color: isMe ? "#fff" : "#6366f1", transform: "translateX(1px)" }} />}
+        </button>
+        <div style={{ flex: 1 }}>
+          {/* Waveform bars */}
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 20, marginBottom: 3 }}>
+            {[4,7,11,8,14,10,6,13,9,12,7,10,5,8,11,7].map((h, i) => (
+              <div key={i} style={{ width: 3, height: playing ? `${h}px` : `${Math.max(3, h * (progress / 100 + 0.15))}px`, borderRadius: 2, background: i < (progress / 100) * 16 ? (isMe ? "#fff" : "#6366f1") : (isMe ? "rgba(255,255,255,.3)" : "rgba(99,102,241,.25)"), transition: "height .3s ease" }} />
+            ))}
+          </div>
+          <div style={{ height: 2, background: isMe ? "rgba(255,255,255,.2)" : "rgba(99,102,241,.15)", borderRadius: 1, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${progress}%`, background: isMe ? "#fff" : "#6366f1", borderRadius: 1, transition: "width .3s linear" }} />
+          </div>
+          <span style={{ fontSize: 10, color: isMe ? "rgba(255,255,255,.65)" : T.sub, marginTop: 2, display: "block" }}>
+            {dur ? fmtDur(dur) : "0:00"}
+          </span>
+        </div>
+        <Mic size={12} style={{ color: isMe ? "rgba(255,255,255,.45)" : T.sub, flexShrink: 0 }} />
+      </div>
+    );
   };
 
   const filteredMessages = searchQuery
@@ -403,7 +521,11 @@ const HelpSupport = () => {
                               </>
                             );
                           })()}
-                          {!isReply && <p style={{ margin: 0, fontSize: 13.5, color: T.text, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{msg.content}</p>}
+                          {!isReply && (
+                            (msg.file_name && msg.file_name.startsWith("voice.") && msg.file_path)
+                              ? <VoicePlayer filePath={msg.file_path} isMe={isMe} />
+                              : <p style={{ margin: 0, fontSize: 13.5, color: T.text, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{msg.content}</p>
+                          )}
 
                           {/* Time + ticks */}
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 3, marginTop: 3 }}>
@@ -547,48 +669,86 @@ const HelpSupport = () => {
 
         {/* ── Input Bar ── */}
         <div style={{ background: T.inputBar, borderTop: `1px solid ${T.headerBorder}`, padding: "8px 10px", display: "flex", alignItems: "flex-end", gap: 8, flexShrink: 0, zIndex: 20, backdropFilter: "blur(16px)" }}>
-          <button onClick={() => setShowEmoji(s => !s)}
-            style={{ background: showEmoji ? "rgba(99,102,241,.2)" : "none", border: "none", cursor: "pointer", padding: 8, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <Smile size={20} style={{ color: showEmoji ? "#6366f1" : T.sub }} />
-          </button>
 
-          <button onClick={() => fileRef.current?.click()}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 8, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <Paperclip size={20} style={{ color: T.sub }} />
-          </button>
+          {isRecording ? (
+            /* ── Recording state ── */
+            <>
+              <button onClick={cancelRecording}
+                style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(239,68,68,.12)", border: "1.5px solid rgba(239,68,68,.35)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <X size={17} style={{ color: "#ef4444" }} />
+              </button>
 
-          <input ref={fileRef} type="file" accept="image/*,application/*,.pdf,.doc,.docx,.zip" style={{ display: "none" }} onChange={handleFileChange} />
+              <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, background: T.input, border: "1.5px solid rgba(239,68,68,.35)", borderRadius: 22, padding: "8px 14px" }}>
+                <span style={{ animation: "rec-pulse 1.1s ease-in-out infinite", display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#ef4444", flexShrink: 0 }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#ef4444", minWidth: 38, fontVariantNumeric: "tabular-nums" }}>{fmtRecTime(recordingTime)}</span>
+                <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: 2, height: 22, overflow: "hidden" }}>
+                  {Array.from({ length: 22 }).map((_, i) => (
+                    <div key={i} style={{ width: 3, borderRadius: 2, background: "rgba(239,68,68,.65)", animation: `voice-bar ${0.5 + (i % 7) * 0.09}s ease-in-out infinite alternate`, flexShrink: 0 }} />
+                  ))}
+                </div>
+                <span style={{ fontSize: 11, color: T.sub, whiteSpace: "nowrap" }}>← Slide to cancel</span>
+              </div>
 
-          <div style={{ flex: 1, background: T.input, border: `1px solid ${T.inputBorder}`, borderRadius: 22, padding: "8px 14px", display: "flex", alignItems: "center" }}>
-            <textarea
-              ref={inputRef}
-              value={newMessage}
-              onChange={e => setNewMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Type a message…"
-              rows={1}
-              style={{ flex: 1, background: "none", border: "none", outline: "none", color: T.text, fontSize: 13.5, resize: "none", lineHeight: 1.4, maxHeight: 100, overflowY: "auto", scrollbarWidth: "none", fontFamily: "inherit" }}
-            />
-          </div>
-
-          {newMessage.trim() ? (
-            <button onClick={handleSend}
-              style={{ width: 42, height: 42, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 12px rgba(99,102,241,.45)" }}>
-              <Send size={17} style={{ color: "#fff", transform: "translateX(1px)" }} />
-            </button>
+              <button onClick={stopAndSend}
+                style={{ width: 42, height: 42, borderRadius: "50%", background: "linear-gradient(135deg,#ef4444,#dc2626)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 12px rgba(239,68,68,.45)" }}>
+                <Send size={17} style={{ color: "#fff", transform: "translateX(1px)" }} />
+              </button>
+            </>
           ) : (
-            <button
-              style={{ width: 42, height: 42, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 12px rgba(99,102,241,.45)" }}>
-              <Mic size={17} style={{ color: "#fff" }} />
-            </button>
+            /* ── Normal state ── */
+            <>
+              <button onClick={() => setShowEmoji(s => !s)}
+                style={{ background: showEmoji ? "rgba(99,102,241,.2)" : "none", border: "none", cursor: "pointer", padding: 8, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Smile size={20} style={{ color: showEmoji ? "#6366f1" : T.sub }} />
+              </button>
+
+              <button onClick={() => fileRef.current?.click()}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 8, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Paperclip size={20} style={{ color: T.sub }} />
+              </button>
+
+              <input ref={fileRef} type="file" accept="image/*,application/*,.pdf,.doc,.docx,.zip" style={{ display: "none" }} onChange={handleFileChange} />
+
+              <div style={{ flex: 1, background: T.input, border: `1px solid ${T.inputBorder}`, borderRadius: 22, padding: "8px 14px", display: "flex", alignItems: "center" }}>
+                <textarea
+                  ref={inputRef}
+                  value={newMessage}
+                  onChange={e => setNewMessage(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type a message…"
+                  rows={1}
+                  style={{ flex: 1, background: "none", border: "none", outline: "none", color: T.text, fontSize: 13.5, resize: "none", lineHeight: 1.4, maxHeight: 100, overflowY: "auto", scrollbarWidth: "none", fontFamily: "inherit" }}
+                />
+              </div>
+
+              {newMessage.trim() ? (
+                <button onClick={handleSend}
+                  style={{ width: 42, height: 42, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 12px rgba(99,102,241,.45)" }}>
+                  <Send size={17} style={{ color: "#fff", transform: "translateX(1px)" }} />
+                </button>
+              ) : (
+                <button onClick={startRecording}
+                  style={{ width: 42, height: 42, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 12px rgba(99,102,241,.45)" }}>
+                  <Mic size={17} style={{ color: "#fff" }} />
+                </button>
+              )}
+            </>
           )}
         </div>
 
-        {/* Typing animation keyframes */}
+        {/* Keyframes */}
         <style>{`
           @keyframes typing-bounce {
             0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
             30% { transform: translateY(-5px); opacity: 1; }
+          }
+          @keyframes rec-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.35; transform: scale(0.7); }
+          }
+          @keyframes voice-bar {
+            from { height: 4px; }
+            to   { height: 18px; }
           }
         `}</style>
       </div>
