@@ -93,8 +93,8 @@ const FlexpaySupportWidget = ({ theme, userId, profileId }: Props) => {
   useEffect(() => { injectCSS(); }, []);
 
   useEffect(() => {
-    const left = window.innerWidth  - BTN - 16;
-    const top  = window.innerHeight - BTN - 90;
+    const left = window.innerWidth - BTN - 16;
+    const top  = 62;
     setPos({ left, top });
   }, []);
 
