@@ -1016,43 +1016,56 @@ const AdminHelpSupport = () => {
         {!isRecording && (
           <div style={{ padding: "10px 14px", borderTop: `1px solid ${T.border}`, background: T.card, backdropFilter: "blur(12px)", borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }}>
             <input type="file" ref={fileRef} style={{ display: "none" }} onChange={handleFileUpload} accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx" />
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
-              {/* Quick replies */}
-              <button onClick={e => { e.stopPropagation(); setQuickRepliesOpen(o => !o); if (!quickRepliesOpen) { setShowAddForm(false); setShowAnalytics(false); setShowManage(false); } }} style={{ width: 36, height: 36, borderRadius: 10, background: quickRepliesOpen ? "rgba(99,102,241,.2)" : T.input, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Zap size={17} style={{ color: quickRepliesOpen ? "#6366f1" : T.sub }} />
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 6 }}>
+
+              {/* ── Left action buttons ── */}
+              <button onClick={e => { e.stopPropagation(); setQuickRepliesOpen(o => !o); if (!quickRepliesOpen) { setShowAddForm(false); setShowAnalytics(false); setShowManage(false); } }} title="Quick Replies" style={{ width: 34, height: 34, borderRadius: 10, background: quickRepliesOpen ? "rgba(99,102,241,.2)" : T.input, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Zap size={16} style={{ color: quickRepliesOpen ? "#6366f1" : T.sub }} />
               </button>
-              {/* Emoji */}
-              <button onClick={e => { e.stopPropagation(); setShowEmoji(o => !o); }} style={{ width: 36, height: 36, borderRadius: 10, background: showEmoji ? "rgba(99,102,241,.2)" : T.input, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Smile size={17} style={{ color: showEmoji ? "#6366f1" : T.sub }} />
+              <button onClick={e => { e.stopPropagation(); setShowEmoji(o => !o); }} title="Emoji" style={{ width: 34, height: 34, borderRadius: 10, background: showEmoji ? "rgba(99,102,241,.2)" : T.input, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Smile size={16} style={{ color: showEmoji ? "#6366f1" : T.sub }} />
               </button>
-              {/* Text input */}
+              <button onClick={() => fileRef.current?.click()} title="Attach file" style={{ width: 34, height: 34, borderRadius: 10, background: T.input, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Paperclip size={16} style={{ color: T.sub }} />
+              </button>
+
+              {/* ── Textarea ── */}
               <textarea
                 ref={inputRef}
-                placeholder='Type a message or use "/" for quick replies...'
+                placeholder='Type a message...'
                 value={newMessage}
                 onChange={e => { setNewMessage(e.target.value); e.target.style.height = "44px"; e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; }}
                 onKeyDown={handleInputKeyDown}
-                style={{ flex: 1, minHeight: 44, maxHeight: 120, padding: "12px 14px", borderRadius: 18, border: "none", outline: "none", resize: "none", background: T.input, color: T.text, fontSize: 13, fontFamily: "inherit", overflow: "auto" }}
+                style={{ flex: 1, minHeight: 44, maxHeight: 120, padding: "11px 14px", borderRadius: 18, border: "none", outline: "none", resize: "none", background: T.input, color: T.text, fontSize: 13, fontFamily: "inherit", overflow: "auto" }}
                 rows={1}
               />
-              {/* File */}
-              <button onClick={() => fileRef.current?.click()} style={{ width: 36, height: 36, borderRadius: 10, background: T.input, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Paperclip size={17} style={{ color: T.sub }} />
+
+              {/* ── Right: Voice · Camera · Send (always separate, always visible) ── */}
+              {/* Voice */}
+              <button
+                onClick={startRecording}
+                title="Voice message"
+                style={{ width: 38, height: 38, borderRadius: "50%", background: T.input, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+              >
+                <Mic size={17} style={{ color: T.sub }} />
               </button>
               {/* Camera */}
-              <button onClick={() => setShowCamera(true)} style={{ width: 36, height: 36, borderRadius: 10, background: T.input, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <button
+                onClick={() => setShowCamera(true)}
+                title="Camera"
+                style={{ width: 38, height: 38, borderRadius: "50%", background: T.input, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+              >
                 <Camera size={17} style={{ color: T.sub }} />
               </button>
-              {/* Mic / Send */}
-              {newMessage.trim() || previewTemplate ? (
-                <button onClick={() => handleSend()} style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <Send size={17} style={{ color: "#fff" }} />
-                </button>
-              ) : (
-                <button onMouseDown={startRecording} onMouseUp={() => stopRecording(false)} onTouchStart={startRecording} onTouchEnd={() => stopRecording(false)} style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <Mic size={17} style={{ color: "#fff" }} />
-                </button>
-              )}
+              {/* Send */}
+              <button
+                onClick={() => handleSend()}
+                title="Send"
+                disabled={!newMessage.trim() && !previewTemplate}
+                style={{ width: 38, height: 38, borderRadius: "50%", background: newMessage.trim() || previewTemplate ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : "rgba(99,102,241,.2)", border: "none", cursor: newMessage.trim() || previewTemplate ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background .2s" }}
+              >
+                <Send size={16} style={{ color: newMessage.trim() || previewTemplate ? "#fff" : "rgba(99,102,241,.5)" }} />
+              </button>
             </div>
           </div>
         )}
