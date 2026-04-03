@@ -8,7 +8,7 @@ const STORAGE_KEY = "dashboard_theme";
 ;(() => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved || saved === "black") document.documentElement.classList.add("dark");
+    if (saved === "black") document.documentElement.classList.add("dark");
     else document.documentElement.classList.remove("dark");
   } catch {}
 })();
@@ -32,7 +32,7 @@ export function useDashboardTheme() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved === "black" || saved === "white" || saved === "wb" || saved === "warm" || saved === "forest" || saved === "ocean") return saved;
     } catch {}
-    return "black";
+    return "ocean";
   });
 
   useEffect(() => {
