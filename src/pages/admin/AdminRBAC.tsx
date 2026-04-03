@@ -1,12 +1,13 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   ShieldCheck, Crown, User, Eye, Lock, Check, X as XIcon, Users, Plus,
-  Trash2, Search, Loader2, Mail, ChevronDown,
+  Trash2, Search, Loader2, Mail, ChevronDown, BadgeCheck,
 } from "lucide-react";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
+import { useAuth } from "@/contexts/AuthContext";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
 
@@ -63,8 +64,34 @@ export default function AdminRBAC() {
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, profile } = useAuth();
 
   const [members, setMembers] = useState<AdminMember[]>(loadMembers);
+
+  /* Auto-seed the currently logged-in super admin */
+  useEffect(() => {
+    if (!user) return;
+    setMembers(prev => {
+      if (prev.some(m => m.userId === user.id)) return prev;
+      const email = user.email || "";
+      const rawName = profile
+        ? (Array.isArray((profile as unknown as { full_name: string[] }).full_name)
+            ? (profile as unknown as { full_name: string[] }).full_name[0]
+            : (profile as unknown as { full_name: string }).full_name)
+        : null;
+      const name = rawName || email.split("@")[0] || "Super Admin";
+      const seed: AdminMember = {
+        userId:  user.id,
+        name,
+        email,
+        role:    "super_admin",
+        addedAt: new Date().toISOString(),
+      };
+      const updated = [seed, ...prev];
+      saveMembers(updated);
+      return updated;
+    });
+  }, [user, profile]);
 
   const [showAddModal, setShowAddModal]   = useState(false);
   const [searchEmail, setSearchEmail]     = useState("");
@@ -380,19 +407,27 @@ export default function AdminRBAC() {
               </thead>
               <tbody>
                 {members.map(member => {
-                  const roleCfg = ROLES.find(r => r.key === member.role) || ROLES[1];
-                  const RoleIcon = roleCfg.icon;
+                  const isSelf    = user?.id === member.userId;
+                  const roleCfg   = ROLES.find(r => r.key === member.role) || ROLES[1];
+                  const RoleIcon  = roleCfg.icon;
                   const addedDate = new Date(member.addedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
                   return (
-                    <tr key={member.userId} style={{ borderBottom: `1px solid ${T.border}` }}>
+                    <tr key={member.userId} style={{ borderBottom: `1px solid ${T.border}`, background: isSelf ? `${A1}07` : "transparent" }}>
                       {/* User */}
                       <td style={{ padding: "13px 20px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{ width: 36, height: 36, borderRadius: 10, background: `${A1}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: 10, background: isSelf ? `${A1}28` : `${A1}18`, border: isSelf ? `1.5px solid ${A1}55` : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                             <User size={15} color={A1} />
                           </div>
                           <div>
-                            <p style={{ fontWeight: 600, fontSize: 13, color: T.text, margin: 0 }}>{member.name}</p>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <p style={{ fontWeight: 600, fontSize: 13, color: T.text, margin: 0 }}>{member.name}</p>
+                              {isSelf && (
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 9, fontWeight: 800, color: A1, background: `${A1}18`, border: `1px solid ${A1}33`, borderRadius: 5, padding: "1px 6px", letterSpacing: .5, textTransform: "uppercase" }}>
+                                  <BadgeCheck size={9} /> You
+                                </span>
+                              )}
+                            </div>
                             <p style={{ fontSize: 11, color: T.sub, margin: 0 }}>{member.email}</p>
                           </div>
                         </div>
@@ -406,19 +441,23 @@ export default function AdminRBAC() {
                       </td>
                       {/* Assign Role buttons */}
                       <td style={{ padding: "13px 20px" }}>
-                        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                          {ROLES.map(r => {
-                            const active = member.role === r.key;
-                            return (
-                              <button key={r.key}
-                                onClick={() => !active && setRoleChangeTarget({ member, newRole: r.key })}
-                                disabled={active}
-                                style={{ padding: "4px 10px", borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: active ? "default" : "pointer", border: `1px solid ${active ? r.color + "55" : T.border}`, background: active ? r.bg : T.input, color: active ? r.color : T.sub, opacity: active ? 1 : 0.75, transition: "all .15s" }}>
-                                {r.label}
-                              </button>
-                            );
-                          })}
-                        </div>
+                        {isSelf ? (
+                          <span style={{ fontSize: 11, color: T.sub, fontStyle: "italic" }}>Cannot change own role</span>
+                        ) : (
+                          <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                            {ROLES.map(r => {
+                              const active = member.role === r.key;
+                              return (
+                                <button key={r.key}
+                                  onClick={() => !active && setRoleChangeTarget({ member, newRole: r.key })}
+                                  disabled={active}
+                                  style={{ padding: "4px 10px", borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: active ? "default" : "pointer", border: `1px solid ${active ? r.color + "55" : T.border}`, background: active ? r.bg : T.input, color: active ? r.color : T.sub, opacity: active ? 1 : 0.75, transition: "all .15s" }}>
+                                  {r.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </td>
                       {/* Added date */}
                       <td style={{ padding: "13px 20px" }}>
@@ -426,11 +465,17 @@ export default function AdminRBAC() {
                       </td>
                       {/* Delete */}
                       <td style={{ padding: "13px 20px", textAlign: "center" }}>
-                        <button onClick={() => setDeleteTarget(member)}
-                          style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(248,113,113,.08)", border: "1px solid rgba(248,113,113,.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", margin: "0 auto", transition: "all .15s" }}
-                          title="Remove admin">
-                          <Trash2 size={14} color="#f87171" />
-                        </button>
+                        {isSelf ? (
+                          <div style={{ width: 32, height: 32, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", opacity: 0.2 }} title="Cannot remove yourself">
+                            <Lock size={13} color={T.sub} />
+                          </div>
+                        ) : (
+                          <button onClick={() => setDeleteTarget(member)}
+                            style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(248,113,113,.08)", border: "1px solid rgba(248,113,113,.2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", margin: "0 auto", transition: "all .15s" }}
+                            title="Remove admin">
+                            <Trash2 size={14} color="#f87171" />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
