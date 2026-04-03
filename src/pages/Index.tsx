@@ -697,8 +697,8 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 /* ─────────────────────── Scroll-triggered reveal ─────────────────────── */
-const Reveal = ({ children, className = "", delay = 0, direction = "up" }: {
-  children: React.ReactNode; className?: string; delay?: number; direction?: "up"|"left"|"right";
+const Reveal = ({ children, className = "", delay = 0, direction = "up", style: extraStyle }: {
+  children: React.ReactNode; className?: string; delay?: number; direction?: "up"|"left"|"right"; style?: React.CSSProperties;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
