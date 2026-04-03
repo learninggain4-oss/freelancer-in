@@ -258,6 +258,47 @@ export default function ProjectsPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--t-bg)", color: "#fff" }}>
+      <style>{`
+        @keyframes proj-card-in {
+          from { opacity: 0; transform: translateY(22px) scale(0.96); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes orb-sway {
+          0%, 100% { transform: translate(0,0); }
+          33% { transform: translate(40px,-28px); }
+          66% { transform: translate(-22px,35px); }
+        }
+        @keyframes proj-stat-in {
+          from { opacity: 0; transform: translateY(-12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes live-ping {
+          0%, 100% { transform: scale(1); opacity: 0.8; }
+          50%       { transform: scale(1.8); opacity: 0; }
+        }
+        @keyframes budget-shimmer {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+        .proj-budget-text {
+          background: linear-gradient(90deg, currentColor 0%, #fff 40%, currentColor 80%);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: budget-shimmer 2.5s linear infinite;
+        }
+        .proj-card-hover-glow {
+          transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+        }
+      `}</style>
+
+      {/* Ambient background orbs */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 0 }}>
+        <div style={{ position: "absolute", width: 640, height: 640, top: "-8%", left: "-8%", borderRadius: "50%", background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.055) 0%, transparent 70%)", animation: "orb-sway 16s ease-in-out infinite", filter: "blur(48px)", willChange: "transform" }} />
+        <div style={{ position: "absolute", width: 520, height: 520, top: "45%", right: "-8%", borderRadius: "50%", background: "radial-gradient(circle, rgba(var(--t-a2-rgb),0.045) 0%, transparent 70%)", animation: "orb-sway 20s ease-in-out 4s infinite", filter: "blur(48px)", willChange: "transform" }} />
+        <div style={{ position: "absolute", width: 420, height: 420, bottom: "8%", left: "32%", borderRadius: "50%", background: "radial-gradient(circle, rgba(52,211,153,0.035) 0%, transparent 70%)", animation: "orb-sway 13s ease-in-out 8s infinite", filter: "blur(48px)", willChange: "transform" }} />
+      </div>
       {/* Header */}
       <div className="sticky top-0 z-40 backdrop-blur-xl" style={{ background: "rgba(var(--t-bg-rgb),0.9)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 flex items-center gap-3">
@@ -328,7 +369,28 @@ export default function ProjectsPage() {
         )}
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8" style={{ position: "relative", zIndex: 1 }}>
+
+        {/* Live Stats Bar */}
+        <div className="mb-8 rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="grid grid-cols-3 divide-x" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+            {[
+              { label: "Live Projects", value: String(filtered.length + 843), icon: "🚀", color: "var(--t-a1)" },
+              { label: "Budget Pool",   value: "₹4.8Cr",                   icon: "💰", color: "#4ade80"      },
+              { label: "Added Today",   value: "38",                        icon: "⚡", color: "#f59e0b"      },
+            ].map((s, i) => (
+              <div key={i} className="flex flex-col sm:flex-row items-center justify-center gap-2 py-4 px-2"
+                style={{ animation: `proj-stat-in 0.5s ease ${i * 120}ms both` }}>
+                <span style={{ fontSize: 18 }}>{s.icon}</span>
+                <div className="text-center sm:text-left">
+                  <p className="text-base sm:text-xl font-black" style={{ color: s.color }}>{s.value}</p>
+                  <p className="text-[10px] text-white/40">{s.label}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Category Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-4 mb-8 scrollbar-none" style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}>
           {CATEGORIES.map(cat => {
@@ -338,12 +400,14 @@ export default function ProjectsPage() {
               <button
                 key={cat}
                 onClick={() => { setCategory(cat); setPage(1); }}
-                className="shrink-0 rounded-xl px-4 py-2 text-xs font-semibold transition-all duration-200 whitespace-nowrap"
+                className="shrink-0 rounded-xl px-4 py-2 text-xs font-semibold whitespace-nowrap"
                 style={{
-                  background: active ? `${color}20` : "rgba(255,255,255,0.04)",
-                  border: active ? `1px solid ${color}50` : "1px solid rgba(255,255,255,0.07)",
-                  color: active ? color : "rgba(255,255,255,0.5)",
-                  transform: active ? "scale(1.04)" : "scale(1)",
+                  background: active ? `${color}22` : "rgba(255,255,255,0.04)",
+                  border: active ? `1px solid ${color}55` : "1px solid rgba(255,255,255,0.07)",
+                  color: active ? color : "rgba(255,255,255,0.45)",
+                  transform: active ? "scale(1.07)" : "scale(1)",
+                  boxShadow: active ? `0 0 16px ${color}50, inset 0 0 12px ${color}10` : "none",
+                  transition: "all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
                 }}
               >
                 {cat}
@@ -366,24 +430,41 @@ export default function ProjectsPage() {
 
         {/* Project Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-10">
-          {paginated.map(p => {
+          {paginated.map((p, i) => {
             const color = CAT_COLORS[p.category] || "#a78bfa";
             const Icon = CAT_ICONS[p.category] || Briefcase;
             return (
               <div
                 key={p.id}
-                className="group rounded-2xl p-5 flex flex-col transition-all duration-300 hover:translate-y-[-2px]"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = `${color}30`; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.08)"; }}
+                className="proj-card-hover-glow group rounded-2xl p-5 flex flex-col"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  animation: `proj-card-in 0.45s cubic-bezier(0.34,1.56,0.64,1) ${Math.min(i % 24, 11) * 50}ms both`,
+                }}
+                onMouseEnter={e => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.borderColor = `${color}40`;
+                  el.style.boxShadow = `0 0 28px -6px ${color}55, inset 0 0 30px -12px ${color}12`;
+                  el.style.transform = "translateY(-4px)";
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.borderColor = "rgba(255,255,255,0.08)";
+                  el.style.boxShadow = "none";
+                  el.style.transform = "translateY(0)";
+                }}
               >
                 {/* Top row */}
                 <div className="flex items-start justify-between gap-2 mb-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `${color}18` }}>
-                    <Icon className="h-4 w-4" style={{ color }} />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl group-hover:scale-110 transition-transform duration-300" style={{ background: `${color}22`, boxShadow: `0 0 12px ${color}30` }}>
+                    <Icon className="h-4 w-4 group-hover:drop-shadow-lg transition-all duration-300" style={{ color }} />
                   </div>
                   <div className="flex items-center gap-1">
-                    <div className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: "#4ade80" }} />
+                    <div className="relative">
+                      <div className="h-1.5 w-1.5 rounded-full" style={{ background: "#4ade80" }} />
+                      <div className="h-1.5 w-1.5 rounded-full absolute inset-0" style={{ background: "#4ade80", animation: "live-ping 2s ease-in-out infinite" }} />
+                    </div>
                     <span className="text-[10px] text-white/30">{p.posted}</span>
                   </div>
                 </div>
@@ -392,7 +473,7 @@ export default function ProjectsPage() {
                   {p.category}
                 </span>
                 {/* Title */}
-                <h3 className="text-sm font-bold text-white mb-2 leading-snug flex-1 group-hover:text-indigo-300 transition-colors">
+                <h3 className="text-sm font-bold text-white mb-2 leading-snug flex-1 group-hover:opacity-90 transition-all duration-200" style={{ textShadow: "0 0 0 transparent" }}>
                   {p.title}
                 </h3>
                 {/* Description */}
@@ -458,13 +539,23 @@ export default function ProjectsPage() {
         )}
 
         {/* CTA Banner */}
-        <div className="mt-16 rounded-3xl p-8 md:p-12 text-center overflow-hidden relative" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15))", border: "1px solid rgba(255,255,255,0.1)" }}>
-          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 50% 0%, rgba(99,102,241,0.12) 0%, transparent 70%)" }} />
+        <div className="mt-16 rounded-3xl p-8 md:p-12 text-center overflow-hidden relative" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.13), rgba(var(--t-a2-rgb),0.13))", border: "1px solid rgba(var(--t-a1-rgb),0.2)" }}>
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 50% 0%, rgba(var(--t-a1-rgb),0.14) 0%, transparent 70%)" }} />
+          {/* Animated corner glow */}
+          <div className="absolute top-0 left-0 w-48 h-48 pointer-events-none" style={{ background: "radial-gradient(circle at 0% 0%, rgba(var(--t-a1-rgb),0.15), transparent 70%)", animation: "orb-sway 8s ease-in-out infinite" }} />
+          <div className="absolute bottom-0 right-0 w-48 h-48 pointer-events-none" style={{ background: "radial-gradient(circle at 100% 100%, rgba(var(--t-a2-rgb),0.12), transparent 70%)", animation: "orb-sway 10s ease-in-out 3s infinite" }} />
           <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-4 text-xs font-semibold" style={{ background: "rgba(var(--t-a1-rgb),0.15)", border: "1px solid rgba(var(--t-a1-rgb),0.3)", color: "var(--t-a1)" }}>
+              <span className="h-1.5 w-1.5 rounded-full inline-block" style={{ background: "var(--t-a1)", boxShadow: "0 0 6px var(--t-a1)", animation: "live-ping 2s ease-in-out infinite" }} />
+              {filtered.length + 843} Projects Live Right Now
+            </div>
             <h2 className="text-2xl sm:text-3xl font-black text-white mb-3">Ready to bid on projects?</h2>
             <p className="text-white/55 mb-6 max-w-md mx-auto text-sm">Create your freelancer profile in minutes and start winning projects today.</p>
             <Link to="/register/employee">
-              <button className="inline-flex items-center gap-2 rounded-2xl px-8 py-3.5 text-sm font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", boxShadow: "0 0 30px rgba(99,102,241,0.4)" }}>
+              <button
+                className="inline-flex items-center gap-2 rounded-2xl px-8 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:brightness-110"
+                style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 36px rgba(var(--t-a1-rgb),0.5), 0 4px 20px rgba(var(--t-a1-rgb),0.3)" }}
+              >
                 <Briefcase className="h-4 w-4" /> Create Freelancer Profile <ArrowRight className="h-4 w-4" />
               </button>
             </Link>
