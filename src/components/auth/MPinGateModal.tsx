@@ -654,15 +654,14 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
                         value={digit}
                         onChange={e => handleTotpChange(idx, e.target.value)}
                         onKeyDown={e => handleTotpKeyDown(idx, e)}
-                        onFocus={e => e.currentTarget.select()}
-                        style={{
-                          width:40, height:48, textAlign:"center", fontSize:20, fontWeight:700,
-                          border:`2px solid ${digit ? accent : borderC}`,
-                          borderRadius:11, background:digit ? `${accent}14` : inputBg,
-                          color:textC, outline:"none", transition:"all .15s",
-                          fontFamily:"monospace", caretColor:"transparent",
-                        }}
-                        onFocus={e => { e.currentTarget.style.borderColor=accent; e.currentTarget.select(); }}
+                         style={{
+                           width:40, height:48, textAlign:"center", fontSize:20, fontWeight:700,
+                           border:`2px solid ${digit ? accent : borderC}`,
+                           borderRadius:11, background:digit ? `${accent}14` : inputBg,
+                           color:textC, outline:"none", transition:"all .15s",
+                           fontFamily:"monospace", caretColor:"transparent",
+                         }}
+                         onFocus={e => { e.currentTarget.style.borderColor=accent; e.currentTarget.select(); }}
                         onBlur={e => { if(!totpBoxes[idx]) e.currentTarget.style.borderColor=borderC; }}
                       />
                     ))}

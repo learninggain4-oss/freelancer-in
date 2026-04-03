@@ -250,7 +250,7 @@ export default function AdminRBAC() {
     const updated = invitations.map(i => i.id === inv.id ? { ...i, status: "cancelled" as const } : i);
     setInvitations(updated);
     saveInvitations(updated);
-    logAction("Invitation Cancelled", `Cancelled invite for ${inv.email}`, "Security", "info");
+    logAction("Invitation Cancelled", `Cancelled invite for ${inv.email}`, "Security", "warning");
     toast({ title: "Invitation cancelled", description: `Invite for ${inv.email} has been cancelled.` });
     setCancelTarget(null);
   };
