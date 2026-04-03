@@ -13,9 +13,8 @@ const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Super admin email list — users who can perform destructive admin actions
-const SUPER_ADMIN_EMAILS = (process.env.SUPER_ADMIN_EMAILS || "freeandin9@gmail.com")
-  .split(",").map(e => e.trim().toLowerCase());
+const SUPER_ADMIN_EMAILS = (process.env.SUPER_ADMIN_EMAILS || "")
+  .split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
 
 function isSuperAdmin(userEmail) {
   return SUPER_ADMIN_EMAILS.includes((userEmail || "").toLowerCase());
