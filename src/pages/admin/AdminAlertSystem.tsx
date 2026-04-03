@@ -24,7 +24,7 @@ interface ServiceDep { id: string; name: string; url: string; category: string; 
 
 const defaultChannels: AlertChannel[] = [
   { id: "c1", type: "email",   label: "Admin Email",         endpoint: "freeandin@gmail.com", enabled: true },
-  { id: "c2", type: "push",    label: "OneSignal Push",      endpoint: "freelancer-india.lovable.app", enabled: true },
+  { id: "c2", type: "push",    label: "OneSignal Push",      endpoint: "your-app.replit.app", enabled: true },
   { id: "c3", type: "sms",     label: "SMS Gateway",         endpoint: "+91 98XXXXXXXX", enabled: false },
   { id: "c4", type: "webhook", label: "Slack Webhook",       endpoint: "https://hooks.slack.com/…", enabled: false },
 ];
