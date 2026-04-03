@@ -368,7 +368,7 @@ export const useAllConversations = () => {
       const { data, error } = await supabase
         .from("support_conversations")
         .select("*, user:user_id(full_name, user_type, user_code, email, last_seen_at, profile_photo_path)")
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false });
       if (error) throw error;
 
       const enriched = await Promise.all(
@@ -392,8 +392,18 @@ export const useAllConversations = () => {
         })
       );
 
+      // Sort: conversations with unread messages first, then by most recent activity
+      enriched.sort((a, b) => {
+        const aTime = a.last_message?.created_at ?? a.created_at;
+        const bTime = b.last_message?.created_at ?? b.created_at;
+        // Unread conversations bubble to top, then sort by recency
+        if ((b.unread_count > 0) !== (a.unread_count > 0)) return b.unread_count > 0 ? 1 : -1;
+        return new Date(bTime).getTime() - new Date(aTime).getTime();
+      });
+
       return enriched;
     },
-    staleTime: 10000,
+    staleTime: 0,
+    refetchInterval: 4000,   // Poll every 4 s as realtime fallback
   });
 };
