@@ -83,6 +83,9 @@ const GlobalStyles = () => (
   <style>{`
     html { scroll-behavior: smooth; }
     * { -webkit-tap-highlight-color: transparent; }
+    /* Subtle alternating section backgrounds for visual rhythm */
+    main > section:nth-of-type(even) { background: rgba(255,255,255,0.018); }
+    main > section:nth-of-type(odd)  { background: transparent; }
     @keyframes float {
       0%,100% { transform: translateY(0px) rotate(0deg); }
       33%      { transform: translateY(-18px) rotate(1.5deg); }
@@ -5194,56 +5197,40 @@ const Index = () => {
         <HeroSection stats={stats} />
         <TrustBar />
         <AsSeenInSection />
-        <NeonDivider />
         <ClientLogosSection />
         <NeonDivider />
         <FeaturesSection />
-        <NeonDivider />
         <PaymentPartnersStrip />
-        <NeonDivider />
         <LiveJobFeed />
         <NeonDivider />
         <HowItWorksSection />
 
         {/* ── Phase 1: Mid-page — renders after 150ms ── */}
         {renderPhase >= 1 && (<>
-        <NeonDivider />
         <ClientOnboardingSection />
-        <NeonDivider />
         <LiveProjectsStrip />
         <NeonDivider />
         <ServicesSection />
-        <NeonDivider />
         <EarningsCalculatorSection />
-        <NeonDivider />
         <SalaryCalcSection />
-        <NeonDivider />
         <CareerPathSection />
         <NeonDivider />
         <BadgeSystemSection />
-        <NeonDivider />
         <FeaturedFreelancersSection />
-        <NeonDivider />
         <LeaderboardSection />
         <NeonDivider />
         <WhyChooseUsSection />
         <NeonDivider />
         <PricingSection />
-        <NeonDivider />
         <SkillVerificationSection />
-        <NeonDivider />
         <GSTToolsSection />
-        <NeonDivider />
         <SecurityFeaturesSection />
         <NeonDivider />
         <EscrowFlowSection />
-        <NeonDivider />
         <MilestonePaymentSection />
-        <NeonDivider />
         <LegalContractsSection />
         <NeonDivider />
         <StatsSection />
-        <NeonDivider />
         <PaymentSafetySection />
         </>)}
 
@@ -5251,17 +5238,13 @@ const Index = () => {
         {renderPhase >= 2 && (<>
         <NeonDivider />
         <TestimonialsSection testimonials={testimonials} />
-        <NeonDivider />
         <SuccessStoriesSection />
         <NeonDivider />
         <FounderStorySection />
-        <NeonDivider />
         <IndiaCoverageSection />
-        <NeonDivider />
         <ReferralBannerSection />
         <NeonDivider />
         <CommunitySection />
-        <NeonDivider />
         <MobileAppScreensSection />
         <NeonDivider />
         <AppDownloadSection
@@ -5269,15 +5252,12 @@ const Index = () => {
           onIOSInstall={handleIOSInstall}
           onWindowsInstall={() => handleInstall("windows")}
         />
-        <NeonDivider />
         <LiveSupportSection />
         <NeonDivider />
         <DemoVideoSection />
-        <NeonDivider />
         <ProjectBriefGenerator />
         <NeonDivider />
         <BlogPreviewSection />
-        <NeonDivider />
         <NewsletterSection />
         <NeonDivider />
         <CTASection />
