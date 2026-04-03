@@ -366,6 +366,81 @@ const AdminHelpSupport = () => {
   const { profile } = useAuth();
   const { theme } = useDashboardTheme();
   const T = TH[theme];
+
+  // WhatsApp-style color palette mapped to dark / light theme
+  const WA = theme === "black" ? {
+    bg:           "#0b141a",
+    chatBg:       "#0b141a",
+    chatPattern:  "radial-gradient(circle, rgba(134,150,160,.04) 1px, transparent 1px)",
+    header:       "#202c33",
+    headerText:   "#e9edef",
+    headerSub:    "#8696a0",
+    outgoing:     "#005c4b",
+    outgoingText: "#e9edef",
+    outgoingTime: "rgba(233,237,239,.55)",
+    incoming:     "#202c33",
+    incomingText: "#e9edef",
+    incomingTime: "#8696a0",
+    inputBar:     "#202c33",
+    input:        "#2a3942",
+    inputText:    "#e9edef",
+    border:       "rgba(134,150,160,.15)",
+    tickSent:     "#8696a0",
+    tickRead:     "#53bdeb",
+    ctxMenu:      "#233138",
+    ctxBorder:    "rgba(134,150,160,.2)",
+    dateBg:       "rgba(32,44,51,.92)",
+    dateText:     "#8696a0",
+    scrollBtn:    "rgba(32,44,51,.95)",
+    convBg:       "#111b21",
+    convItem:     "#202c33",
+    convHover:    "#2a3942",
+    unreadBg:     "#00a884",
+    unreadText:   "#fff",
+    avatarBg:     "#2a3942",
+    avatarText:   "#8696a0",
+    searchBg:     "#2a3942",
+    subText:      "#8696a0",
+    replyBg:      "rgba(0,168,132,.12)",
+    replyBorder:  "#00a884",
+    emojiPicker:  "#233138",
+  } : {
+    bg:           "#efeae2",
+    chatBg:       "#efeae2",
+    chatPattern:  "radial-gradient(circle, rgba(0,0,0,.05) 1px, transparent 1px)",
+    header:       "#075e54",
+    headerText:   "#ffffff",
+    headerSub:    "rgba(255,255,255,.75)",
+    outgoing:     "#d9fdd3",
+    outgoingText: "#111b21",
+    outgoingTime: "#667781",
+    incoming:     "#ffffff",
+    incomingText: "#111b21",
+    incomingTime: "#667781",
+    inputBar:     "#f0f2f5",
+    input:        "#ffffff",
+    inputText:    "#111b21",
+    border:       "rgba(0,0,0,.08)",
+    tickSent:     "#667781",
+    tickRead:     "#53bdeb",
+    ctxMenu:      "#ffffff",
+    ctxBorder:    "rgba(0,0,0,.1)",
+    dateBg:       "rgba(255,255,255,.9)",
+    dateText:     "#667781",
+    scrollBtn:    "rgba(255,255,255,.95)",
+    convBg:       "#ffffff",
+    convItem:     "#ffffff",
+    convHover:    "#f5f5f5",
+    unreadBg:     "#00a884",
+    unreadText:   "#fff",
+    avatarBg:     "#dfe5e7",
+    avatarText:   "#667781",
+    searchBg:     "#f0f2f5",
+    subText:      "#667781",
+    replyBg:      "rgba(7,94,84,.08)",
+    replyBorder:  "#075e54",
+    emojiPicker:  "#ffffff",
+  };
   const { data: conversations = [], isLoading: loadingConvs } = useAllConversations();
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
   const { messages, isLoading: loadingMessages, sendMessage, deleteMessage, clearHistory, toggleReaction } = useSupportChat(selectedConvId ?? undefined);
@@ -711,7 +786,8 @@ const AdminHelpSupport = () => {
     const userType = (selectedConv as any).user?.user_type || "";
 
     return (
-      <div className="flex flex-col h-[calc(100vh-8rem)] -mt-2" onClick={() => { setCtxMsg(null); setShowHeaderMenu(false); setShowEmoji(false); setShowReactionFor(null); }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 8rem)", marginTop: -8, borderRadius: 12, overflow: "hidden", boxShadow: "0 8px 40px rgba(0,0,0,.3)" }}
+        onClick={() => { setCtxMsg(null); setShowHeaderMenu(false); setShowEmoji(false); setShowReactionFor(null); }}>
         {/* ── Camera overlay ── */}
         {showCamera && (
           <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#000", display: "flex", flexDirection: "column" }}>
@@ -766,44 +842,50 @@ const AdminHelpSupport = () => {
 
         {/* ── Context menu ── */}
         {ctxMsg && (
-          <div onClick={e => e.stopPropagation()} style={{ position: "fixed", left: Math.min(ctxPos.x, window.innerWidth - 180), top: Math.min(ctxPos.y, window.innerHeight - 200), zIndex: 8000, background: T.card, border: `1px solid ${T.border}`, borderRadius: 14, minWidth: 170, boxShadow: "0 8px 32px rgba(0,0,0,.3)", overflow: "hidden" }}>
+          <div onClick={e => e.stopPropagation()} style={{ position: "fixed", left: Math.min(ctxPos.x, window.innerWidth - 190), top: Math.min(ctxPos.y, window.innerHeight - 180), zIndex: 8000, background: WA.ctxMenu, border: `1px solid ${WA.ctxBorder}`, borderRadius: 10, minWidth: 180, boxShadow: "0 8px 32px rgba(0,0,0,.3)", overflow: "hidden" }}>
             {[
-              { icon: <CornerUpLeft size={14} />, label: "Reply", action: () => { setReplyTo(ctxMsg); setCtxMsg(null); } },
-              { icon: <Copy size={14} />, label: "Copy", action: () => { navigator.clipboard.writeText(ctxMsg.content); toast.success("Copied"); setCtxMsg(null); } },
-              { icon: <Trash2 size={14} />, label: "Delete", danger: true, action: () => handleDeleteMsg(ctxMsg) },
+              { icon: <CornerUpLeft size={15} />, label: "Reply", action: () => { setReplyTo(ctxMsg); setCtxMsg(null); } },
+              { icon: <Copy size={15} />, label: "Copy", action: () => { navigator.clipboard.writeText(ctxMsg.content); toast.success("Copied"); setCtxMsg(null); } },
+              { icon: <Trash2 size={15} />, label: "Delete", danger: true, action: () => handleDeleteMsg(ctxMsg) },
             ].map((item, i) => (
-              <button key={i} onClick={item.action} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", background: "none", border: "none", cursor: "pointer", color: item.danger ? "#f87171" : T.text, fontSize: 13, fontWeight: 600, borderBottom: i < 2 ? `1px solid ${T.border}` : "none" }}>
-                <span style={{ color: item.danger ? "#f87171" : T.sub }}>{item.icon}</span>{item.label}
+              <button key={i} onClick={item.action} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "13px 18px", background: "none", border: "none", cursor: "pointer", color: item.danger ? "#f87171" : WA.incomingText, fontSize: 13.5, fontWeight: 400, borderBottom: i < 2 ? `1px solid ${WA.ctxBorder}` : "none" }}>
+                <span style={{ color: item.danger ? "#f87171" : WA.subText }}>{item.icon}</span>{item.label}
               </button>
             ))}
           </div>
         )}
 
-        {/* ── Header ── */}
-        <div className="flex items-center gap-3 p-4 border-b transition-all" style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)", borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
-          <button onClick={() => { setSelectedConvId(null); setPreviewTemplate(null); setReplyTo(null); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 8 }}>
-            <ArrowLeft size={18} style={{ color: T.sub }} />
+        {/* ── WhatsApp Header ── */}
+        <div style={{ background: WA.header, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, zIndex: 20 }}>
+          <button onClick={() => { setSelectedConvId(null); setPreviewTemplate(null); setReplyTo(null); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 2px", display: "flex", alignItems: "center" }}>
+            <ArrowLeft size={20} style={{ color: WA.headerText }} />
           </button>
-          <div style={{ flex: 1 }}>
-            <p style={{ fontWeight: 700, fontSize: 14, color: T.text, margin: 0 }}>{userName}</p>
-            <p style={{ fontSize: 11, color: typing ? "#4ade80" : T.sub, margin: 0, textTransform: "capitalize" }}>
-              {typing ? "typing…" : `${userType} · ${getUserCode(selectedConv)}`}
+          {/* Avatar */}
+          <div style={{ width: 40, height: 40, borderRadius: "50%", background: WA.avatarBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: "2px solid rgba(255,255,255,.15)" }}>
+            <span style={{ fontWeight: 700, fontSize: 16, color: theme === "black" ? "#e9edef" : "#fff" }}>{userName.charAt(0).toUpperCase()}</span>
+          </div>
+          {/* Name + status */}
+          <div style={{ flex: 1, cursor: "pointer" }}>
+            <p style={{ fontWeight: 600, fontSize: 15, color: WA.headerText, margin: 0, lineHeight: 1.2 }}>{userName}</p>
+            <p style={{ fontSize: 12, color: WA.headerSub, margin: 0 }}>
+              {typing ? <span style={{ color: "#4ade80" }}>typing…</span> : `${userType} · ${getUserCode(selectedConv)}`}
             </p>
           </div>
-          <button onClick={() => { setSearchOpen(s => !s); setSearchQuery(""); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 8 }}>
-            <Search size={17} style={{ color: T.sub }} />
+          {/* Actions */}
+          <button onClick={() => { setSearchOpen(s => !s); setSearchQuery(""); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 8, borderRadius: "50%", display: "flex", alignItems: "center" }}>
+            <Search size={20} style={{ color: WA.headerText }} />
           </button>
           <div style={{ position: "relative" }}>
-            <button onClick={e => { e.stopPropagation(); setShowHeaderMenu(s => !s); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 8 }}>
-              <MoreVertical size={17} style={{ color: T.sub }} />
+            <button onClick={e => { e.stopPropagation(); setShowHeaderMenu(s => !s); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 8, borderRadius: "50%", display: "flex", alignItems: "center" }}>
+              <MoreVertical size={20} style={{ color: WA.headerText }} />
             </button>
             {showHeaderMenu && (
-              <div onClick={e => e.stopPropagation()} style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, minWidth: 180, background: T.card, border: `1px solid ${T.border}`, borderRadius: 14, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,.3)", zIndex: 50 }}>
-                <button onClick={() => { setShowHeaderMenu(false); setSearchOpen(s => !s); setSearchQuery(""); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", background: "none", border: "none", cursor: "pointer", color: T.text, fontSize: 13, fontWeight: 600, borderBottom: `1px solid ${T.border}` }}>
-                  <Search size={15} style={{ color: T.sub }} /> Search
+              <div onClick={e => e.stopPropagation()} style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, minWidth: 190, background: WA.ctxMenu, border: `1px solid ${WA.ctxBorder}`, borderRadius: 10, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,.3)", zIndex: 50 }}>
+                <button onClick={() => { setShowHeaderMenu(false); setSearchOpen(s => !s); setSearchQuery(""); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", background: "none", border: "none", cursor: "pointer", color: WA.incomingText, fontSize: 13.5, fontWeight: 500, borderBottom: `1px solid ${WA.ctxBorder}` }}>
+                  <Search size={16} style={{ color: WA.subText }} /> Search
                 </button>
-                <button onClick={() => { setShowHeaderMenu(false); setConfirmClear(true); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", background: "none", border: "none", cursor: "pointer", color: "#f87171", fontSize: 13, fontWeight: 600 }}>
-                  <Trash2 size={15} style={{ color: "#f87171" }} /> Clear History
+                <button onClick={() => { setShowHeaderMenu(false); setConfirmClear(true); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", background: "none", border: "none", cursor: "pointer", color: "#f87171", fontSize: 13.5, fontWeight: 500 }}>
+                  <Trash2 size={16} style={{ color: "#f87171" }} /> Clear History
                 </button>
               </div>
             )}
@@ -812,21 +894,24 @@ const AdminHelpSupport = () => {
 
         {/* ── Search bar ── */}
         {searchOpen && (
-          <div className="p-3 border-b animate-in slide-in-from-top duration-200" style={{ background: T.card, borderColor: T.border }}>
-            <Input placeholder="Search messages..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-9 text-sm border-none" style={{ background: T.input, color: T.text }} autoFocus />
-            {searchQuery && <p className="text-[10px] mt-1" style={{ color: T.sub }}>{filteredMessages.length} result{filteredMessages.length !== 1 ? "s" : ""}</p>}
+          <div style={{ background: WA.searchBg, borderBottom: `1px solid ${WA.border}`, padding: "8px 14px", display: "flex", gap: 10, alignItems: "center", flexShrink: 0 }}>
+            <Search size={15} style={{ color: WA.subText, flexShrink: 0 }} />
+            <input autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search messages…"
+              style={{ flex: 1, background: "none", border: "none", outline: "none", color: WA.incomingText, fontSize: 13 }} />
+            {searchQuery && <span style={{ fontSize: 11, color: WA.subText }}>{filteredMessages.length} found</span>}
+            <button onClick={() => { setSearchOpen(false); setSearchQuery(""); }} style={{ background: "none", border: "none", cursor: "pointer" }}><X size={16} style={{ color: WA.subText }} /></button>
           </div>
         )}
 
-        {/* ── Messages ── */}
+        {/* ── Messages (WhatsApp chat background) ── */}
         <div
           ref={scrollRef}
           onScroll={handleMsgScroll}
-          style={{ flex: 1, overflowY: "auto", padding: "12px 16px", background: theme === "black" ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.2)", position: "relative" }}
+          style={{ flex: 1, overflowY: "auto", padding: "8px 12px 12px", background: WA.chatBg, backgroundImage: WA.chatPattern, backgroundSize: "20px 20px", position: "relative" }}
         >
-          {/* Reaction emoji picker popup */}
+          {/* Reaction emoji picker */}
           {showReactionFor && (
-            <div onClick={e => e.stopPropagation()} style={{ position: "fixed", bottom: 200, right: 24, zIndex: 8500, background: T.card, border: `1px solid ${T.border}`, borderRadius: 20, padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 6, maxWidth: 280, boxShadow: "0 8px 32px rgba(0,0,0,.3)" }}>
+            <div onClick={e => e.stopPropagation()} style={{ position: "fixed", bottom: 200, right: 24, zIndex: 8500, background: WA.ctxMenu, border: `1px solid ${WA.ctxBorder}`, borderRadius: 20, padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 6, maxWidth: 280, boxShadow: "0 8px 32px rgba(0,0,0,.3)" }}>
               {ADMIN_EMOJIS.slice(0, 16).map(e => (
                 <button key={e} onClick={() => { toggleReaction(showReactionFor, e); setShowReactionFor(null); }} style={{ fontSize: 20, background: "none", border: "none", cursor: "pointer", borderRadius: 8, padding: 4, lineHeight: 1 }}>{e}</button>
               ))}
@@ -834,11 +919,17 @@ const AdminHelpSupport = () => {
           )}
 
           {loadingMessages ? (
-            <div className="space-y-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-3/4 rounded-2xl" style={{ background: T.border }} />)}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "12px 0" }}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: i % 2 === 0 ? "flex-end" : "flex-start" }}>
+                  <div style={{ width: `${45 + (i % 3) * 15}%`, height: 60, borderRadius: 12, background: WA.border }} />
+                </div>
+              ))}
+            </div>
           ) : filteredMessages.length === 0 ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: "48px 0" }}>
-              <MessageCircle style={{ width: 48, height: 48, marginBottom: 16, opacity: 0.2, color: T.text }} />
-              <p style={{ fontSize: 13, color: T.sub }}>{searchQuery ? "No messages match your search." : "No messages yet. Start the conversation!"}</p>
+              <MessageCircle style={{ width: 48, height: 48, marginBottom: 16, opacity: 0.2, color: WA.subText }} />
+              <p style={{ fontSize: 13, color: WA.subText }}>{searchQuery ? "No messages match your search." : "No messages yet. Start the conversation!"}</p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 2, paddingBottom: 8 }}>
@@ -855,68 +946,79 @@ const AdminHelpSupport = () => {
                   return acc;
                 }, {});
                 const showDate = idx === 0 || !isSameDay(filteredMessages[idx - 1].created_at, msg.created_at);
+                const bubbleBg  = isMine ? WA.outgoing  : WA.incoming;
+                const bubbleClr = isMine ? WA.outgoingText : WA.incomingText;
+                const timeClr   = isMine ? WA.outgoingTime : WA.incomingTime;
 
                 return (
                   <div key={msg.id}>
                     {/* ── Date separator ── */}
                     {showDate && (
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", margin: "12px 0 8px" }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: T.sub, background: theme === "black" ? "rgba(255,255,255,.07)" : "rgba(0,0,0,.07)", padding: "3px 12px", borderRadius: 20 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", margin: "14px 0 10px" }}>
+                        <span style={{ fontSize: 11.5, fontWeight: 500, color: WA.dateText, background: WA.dateBg, padding: "4px 14px", borderRadius: 20, boxShadow: "0 1px 4px rgba(0,0,0,.12)" }}>
                           {formatDateLabel(msg.created_at)}
                         </span>
                       </div>
                     )}
 
-                    <div style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start", marginBottom: 2 }}>
-                      <div style={{ maxWidth: "72%" }}>
+                    <div style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start", marginBottom: 3, paddingLeft: isMine ? 48 : 0, paddingRight: isMine ? 0 : 48 }}>
+                      <div style={{ maxWidth: "78%", position: "relative" }}>
+                        {/* WhatsApp bubble tail */}
+                        {isMine ? (
+                          <div style={{ position: "absolute", right: -7, top: 0, width: 0, height: 0, borderLeft: `8px solid ${bubbleBg}`, borderTop: "8px solid transparent", borderBottom: 0, borderRight: 0 }} />
+                        ) : (
+                          <div style={{ position: "absolute", left: -7, top: 0, width: 0, height: 0, borderRight: `8px solid ${bubbleBg}`, borderTop: "8px solid transparent", borderBottom: 0, borderLeft: 0 }} />
+                        )}
+
                         <div
                           onContextMenu={e => { e.preventDefault(); setCtxMsg(msg); setCtxPos({ x: e.clientX, y: e.clientY }); setShowReactionFor(null); }}
-                          style={{ background: isMine ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : T.card, borderRadius: isMine ? "18px 18px 4px 18px" : "18px 18px 18px 4px", padding: "10px 14px", border: isMine ? "none" : `1px solid ${T.border}`, cursor: "context-menu" }}
+                          style={{ background: bubbleBg, borderRadius: isMine ? "8px 0 8px 8px" : "0 8px 8px 8px", padding: "7px 12px 6px", boxShadow: "0 1px 2px rgba(0,0,0,.15)", cursor: "context-menu", minWidth: 80 }}
                         >
-                          <p style={{ fontSize: 10, fontWeight: 600, color: isMine ? "rgba(255,255,255,.6)" : T.sub, marginBottom: 4 }}>{isMine ? "You (Admin)" : userName}</p>
+                          {/* Sender label for incoming only */}
+                          {!isMine && <p style={{ fontSize: 11.5, fontWeight: 600, color: "#00a884", marginBottom: 3, margin: "0 0 3px" }}>Support Agent</p>}
 
                           {isVoice && voiceUrls[msg.id] ? (
-                            <AdminVoicePlayer src={voiceUrls[msg.id]} isMe={isMine} subColor={T.sub} />
+                            <AdminVoicePlayer src={voiceUrls[msg.id]} isMe={isMine} subColor={timeClr} />
                           ) : isPhoto ? (
                             photoUrls[msg.id]
-                              ? <img src={photoUrls[msg.id]} alt="Photo" style={{ maxWidth: 200, borderRadius: 12, display: "block" }} />
-                              : <div style={{ width: 200, height: 130, borderRadius: 12, background: "rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ width: 24, height: 24, border: "2px solid rgba(255,255,255,.5)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} /></div>
+                              ? <img src={photoUrls[msg.id]} alt="Photo" style={{ maxWidth: 220, borderRadius: 8, display: "block", margin: "0 0 2px" }} />
+                              : <div style={{ width: 220, height: 140, borderRadius: 8, background: "rgba(0,0,0,.1)", display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ width: 24, height: 24, border: "2px solid rgba(255,255,255,.5)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} /></div>
                           ) : isFile ? (
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                              <Paperclip size={14} style={{ color: isMine ? "rgba(255,255,255,.7)" : T.sub }} />
-                              <span style={{ fontSize: 13, color: isMine ? "#fff" : T.text }}>{msg.file_name}</span>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(0,0,0,.06)", borderRadius: 8, padding: "8px 10px" }}>
+                              <Paperclip size={16} style={{ color: bubbleClr, opacity: 0.7 }} />
+                              <span style={{ fontSize: 13, color: bubbleClr }}>{msg.file_name}</span>
                             </div>
                           ) : (
-                            <p style={{ fontSize: 13, color: isMine ? "#fff" : T.text, whiteSpace: "pre-wrap", margin: 0, lineHeight: 1.5 }}>{msg.content}</p>
+                            <p style={{ fontSize: 14, color: bubbleClr, whiteSpace: "pre-wrap", margin: 0, lineHeight: 1.45, wordBreak: "break-word" }}>{msg.content}</p>
                           )}
 
-                          {/* Timestamp + read receipt */}
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: isMine ? "flex-end" : "flex-start", gap: 4, marginTop: 5 }}>
-                            <span style={{ fontSize: 10, color: isMine ? "rgba(255,255,255,.5)" : T.sub }}>
+                          {/* Timestamp + ticks */}
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 3, marginTop: 3 }}>
+                            <span style={{ fontSize: 11, color: timeClr, whiteSpace: "nowrap" }}>
                               {new Date(msg.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}
                             </span>
                             {isMine && (
                               msg.is_read
-                                ? <CheckCheck size={13} style={{ color: "#60a5fa" }} />
-                                : <Check size={13} style={{ color: "rgba(255,255,255,.45)" }} />
+                                ? <CheckCheck size={14} style={{ color: WA.tickRead }} />
+                                : <Check size={14} style={{ color: WA.tickSent }} />
                             )}
                           </div>
                         </div>
 
-                        {/* Reaction row */}
+                        {/* Reactions row */}
                         {Object.keys(grouped).length > 0 && (
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4, justifyContent: isMine ? "flex-end" : "flex-start" }}>
                             {Object.entries(grouped).map(([emoji, { count, hasMe }]) => (
-                              <button key={emoji} onClick={() => toggleReaction(msg.id, emoji)} style={{ display: "inline-flex", alignItems: "center", gap: 3, borderRadius: 20, border: hasMe ? "1px solid rgba(99,102,241,.5)" : `1px solid ${T.border}`, background: hasMe ? "rgba(99,102,241,.1)" : "transparent", padding: "2px 8px", fontSize: 12, cursor: "pointer", color: T.text }}>
-                                {emoji}<span style={{ fontSize: 10, color: T.sub }}>{count}</span>
+                              <button key={emoji} onClick={() => toggleReaction(msg.id, emoji)} style={{ display: "inline-flex", alignItems: "center", gap: 3, borderRadius: 20, border: hasMe ? "1px solid #00a884" : `1px solid ${WA.border}`, background: hasMe ? "rgba(0,168,132,.12)" : WA.dateBg, padding: "2px 8px", fontSize: 12, cursor: "pointer", color: bubbleClr, boxShadow: "0 1px 3px rgba(0,0,0,.1)" }}>
+                                {emoji}<span style={{ fontSize: 10, color: WA.subText }}>{count}</span>
                               </button>
                             ))}
-                            <button onClick={e => { e.stopPropagation(); setShowReactionFor(showReactionFor === msg.id ? null : msg.id); }} style={{ display: "inline-flex", alignItems: "center", gap: 2, borderRadius: 20, border: `1px solid ${T.border}`, background: "transparent", padding: "2px 8px", fontSize: 12, cursor: "pointer", color: T.sub }}>+</button>
+                            <button onClick={e => { e.stopPropagation(); setShowReactionFor(showReactionFor === msg.id ? null : msg.id); }} style={{ display: "inline-flex", alignItems: "center", borderRadius: 20, border: `1px solid ${WA.border}`, background: WA.dateBg, padding: "2px 8px", fontSize: 12, cursor: "pointer", color: WA.subText }}>+</button>
                           </div>
                         )}
                         {Object.keys(grouped).length === 0 && (
-                          <div style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start", marginTop: 2 }}>
-                            <button onClick={e => { e.stopPropagation(); setShowReactionFor(showReactionFor === msg.id ? null : msg.id); }} style={{ opacity: 0, transition: "opacity .2s", fontSize: 13, background: "none", border: "none", cursor: "pointer", color: T.sub, padding: "0 4px" }} onMouseEnter={e => (e.currentTarget.style.opacity = "1")} onMouseLeave={e => (e.currentTarget.style.opacity = "0")}>😊 +</button>
+                          <div style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start", marginTop: 1 }}>
+                            <button onClick={e => { e.stopPropagation(); setShowReactionFor(showReactionFor === msg.id ? null : msg.id); }} style={{ opacity: 0, transition: "opacity .2s", fontSize: 12, background: "none", border: "none", cursor: "pointer", color: WA.subText }} onMouseEnter={e => (e.currentTarget.style.opacity = "1")} onMouseLeave={e => (e.currentTarget.style.opacity = "0")}>😊</button>
                           </div>
                         )}
                       </div>
@@ -930,8 +1032,8 @@ const AdminHelpSupport = () => {
 
           {/* Scroll to bottom button */}
           {showScrollBtn && (
-            <button onClick={() => scrollToBottom()} style={{ position: "sticky", bottom: 12, float: "right", width: 36, height: 36, borderRadius: "50%", background: T.card, border: `1px solid ${T.border}`, boxShadow: "0 4px 16px rgba(0,0,0,.25)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 10 }}>
-              <ChevronDown size={18} style={{ color: T.sub }} />
+            <button onClick={() => scrollToBottom()} style={{ position: "sticky", bottom: 12, float: "right", width: 40, height: 40, borderRadius: "50%", background: WA.incoming, boxShadow: "0 4px 16px rgba(0,0,0,.3)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: "none", zIndex: 10 }}>
+              <ChevronDown size={20} style={{ color: WA.subText }} />
             </button>
           )}
         </div>
@@ -1098,7 +1200,7 @@ const AdminHelpSupport = () => {
 
         {/* ── Emoji picker ── */}
         {showEmoji && (
-          <div onClick={e => e.stopPropagation()} style={{ padding: "10px 14px", display: "flex", flexWrap: "wrap", gap: 6, background: T.card, borderTop: `1px solid ${T.border}` }}>
+          <div onClick={e => e.stopPropagation()} style={{ padding: "10px 14px", display: "flex", flexWrap: "wrap", gap: 6, background: WA.inputBar, borderTop: `1px solid ${WA.border}` }}>
             {ADMIN_EMOJIS.map(emoji => (
               <button key={emoji} onClick={() => { setNewMessage(m => m + emoji); setShowEmoji(false); }} style={{ fontSize: 20, background: "none", border: "none", cursor: "pointer", borderRadius: 8, padding: 4 }}>{emoji}</button>
             ))}
@@ -1107,20 +1209,20 @@ const AdminHelpSupport = () => {
 
         {/* ── Reply preview ── */}
         {replyTo && (
-          <div style={{ padding: "8px 14px", display: "flex", alignItems: "center", gap: 10, background: T.card, borderTop: `1px solid ${T.border}` }}>
-            <CornerUpLeft size={14} style={{ color: "#6366f1", flexShrink: 0 }} />
-            <p style={{ flex: 1, fontSize: 12, color: T.sub, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{replyTo.content.slice(0, 60)}</p>
-            <button onClick={() => setReplyTo(null)} style={{ background: "none", border: "none", cursor: "pointer" }}><X size={14} style={{ color: T.sub }} /></button>
+          <div style={{ padding: "8px 14px 4px", display: "flex", alignItems: "center", gap: 10, background: WA.inputBar, borderTop: `1px solid ${WA.border}`, borderLeft: `4px solid ${WA.replyBorder}` }}>
+            <CornerUpLeft size={14} style={{ color: "#00a884", flexShrink: 0 }} />
+            <p style={{ flex: 1, fontSize: 12, color: WA.subText, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{replyTo.content.slice(0, 60)}</p>
+            <button onClick={() => setReplyTo(null)} style={{ background: "none", border: "none", cursor: "pointer" }}><X size={14} style={{ color: WA.subText }} /></button>
           </div>
         )}
 
         {/* ── Voice recording UI ── */}
         {isRecording && (
-          <div style={{ padding: "10px 14px", borderTop: `1px solid ${T.border}`, background: T.card, display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ padding: "10px 14px", borderTop: `1px solid ${WA.border}`, background: WA.inputBar, display: "flex", alignItems: "center", gap: 10 }}>
             <button onClick={() => stopRecording(true)} style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(239,68,68,.12)", border: "1.5px solid rgba(239,68,68,.35)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <X size={17} style={{ color: "#ef4444" }} />
             </button>
-            <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, background: T.input, border: "1.5px solid rgba(239,68,68,.35)", borderRadius: 22, padding: "8px 14px" }}>
+            <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, background: WA.input, border: "1.5px solid rgba(239,68,68,.35)", borderRadius: 22, padding: "8px 14px" }}>
               <span style={{ animation: "rec-pulse 1.1s ease-in-out infinite", display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#ef4444", flexShrink: 0 }} />
               <span style={{ fontSize: 13, fontWeight: 700, color: "#ef4444", minWidth: 38, fontVariantNumeric: "tabular-nums" }}>{fmtDur(recordingTime)}</span>
               <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: 2, height: 22, overflow: "hidden" }}>
@@ -1128,67 +1230,57 @@ const AdminHelpSupport = () => {
                   <div key={i} style={{ width: 3, borderRadius: 2, background: "rgba(239,68,68,.65)", animation: `voice-bar ${0.5 + (i % 7) * 0.09}s ease-in-out infinite alternate`, flexShrink: 0 }} />
                 ))}
               </div>
-              <span style={{ fontSize: 11, color: T.sub, whiteSpace: "nowrap" }}>← Slide to cancel</span>
+              <span style={{ fontSize: 11, color: WA.subText, whiteSpace: "nowrap" }}>← Slide to cancel</span>
             </div>
-            <button onClick={() => stopRecording(false)} style={{ width: 42, height: 42, borderRadius: "50%", background: "linear-gradient(135deg,#ef4444,#dc2626)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 12px rgba(239,68,68,.45)" }}>
+            <button onClick={() => stopRecording(false)} style={{ width: 44, height: 44, borderRadius: "50%", background: "#00a884", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 12px rgba(0,168,132,.45)" }}>
               <Send size={17} style={{ color: "#fff", transform: "translateX(1px)" }} />
             </button>
           </div>
         )}
 
-        {/* ── Input bar ── */}
+        {/* ── WhatsApp Input bar ── */}
         {!isRecording && (
-          <div style={{ padding: "10px 14px", borderTop: `1px solid ${T.border}`, background: T.card, backdropFilter: "blur(12px)", borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }}>
+          <div style={{ padding: "8px 12px", background: WA.inputBar, flexShrink: 0 }}>
             <input type="file" ref={fileRef} style={{ display: "none" }} onChange={handleFileUpload} accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx" />
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 6 }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
 
-              {/* ── Left action buttons ── */}
-              <button onClick={e => { e.stopPropagation(); setQuickRepliesOpen(o => !o); if (!quickRepliesOpen) { setShowAddForm(false); setShowAnalytics(false); setShowManage(false); } }} title="Quick Replies" style={{ width: 34, height: 34, borderRadius: 10, background: quickRepliesOpen ? "rgba(99,102,241,.2)" : T.input, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Zap size={16} style={{ color: quickRepliesOpen ? "#6366f1" : T.sub }} />
+              {/* ── Left icons: Zap · Emoji · Attach ── */}
+              <button onClick={e => { e.stopPropagation(); setQuickRepliesOpen(o => !o); if (!quickRepliesOpen) { setShowAddForm(false); setShowAnalytics(false); setShowManage(false); } }} title="Quick Replies"
+                style={{ width: 36, height: 36, borderRadius: "50%", background: quickRepliesOpen ? "rgba(0,168,132,.18)" : "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Zap size={20} style={{ color: quickRepliesOpen ? "#00a884" : WA.subText }} />
               </button>
-              <button onClick={e => { e.stopPropagation(); setShowEmoji(o => !o); }} title="Emoji" style={{ width: 34, height: 34, borderRadius: 10, background: showEmoji ? "rgba(99,102,241,.2)" : T.input, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Smile size={16} style={{ color: showEmoji ? "#6366f1" : T.sub }} />
+              <button onClick={e => { e.stopPropagation(); setShowEmoji(o => !o); }} title="Emoji"
+                style={{ width: 36, height: 36, borderRadius: "50%", background: showEmoji ? "rgba(0,168,132,.18)" : "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Smile size={20} style={{ color: showEmoji ? "#00a884" : WA.subText }} />
               </button>
-              <button onClick={() => fileRef.current?.click()} title="Attach file" style={{ width: 34, height: 34, borderRadius: 10, background: T.input, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Paperclip size={16} style={{ color: T.sub }} />
+              <button onClick={() => fileRef.current?.click()} title="Attach file"
+                style={{ width: 36, height: 36, borderRadius: "50%", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Paperclip size={20} style={{ color: WA.subText }} />
               </button>
 
               {/* ── Textarea ── */}
               <textarea
                 ref={inputRef}
-                placeholder='Type a message...'
+                placeholder="Type a message…"
                 value={newMessage}
-                onChange={e => { setNewMessage(e.target.value); e.target.style.height = "44px"; e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; }}
+                onChange={e => { setNewMessage(e.target.value); e.target.style.height = "42px"; e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; }}
                 onKeyDown={handleInputKeyDown}
-                style={{ flex: 1, minHeight: 44, maxHeight: 120, padding: "11px 14px", borderRadius: 18, border: "none", outline: "none", resize: "none", background: T.input, color: T.text, fontSize: 13, fontFamily: "inherit", overflow: "auto" }}
+                style={{ flex: 1, minHeight: 42, maxHeight: 120, padding: "10px 14px", borderRadius: 22, border: "none", outline: "none", resize: "none", background: WA.input, color: WA.inputText, fontSize: 14, fontFamily: "inherit", overflow: "auto", lineHeight: 1.4 }}
                 rows={1}
               />
 
-              {/* ── Right: Voice · Camera · Send (always separate, always visible) ── */}
-              {/* Voice */}
-              <button
-                onClick={startRecording}
-                title="Voice message"
-                style={{ width: 38, height: 38, borderRadius: "50%", background: T.input, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
-              >
-                <Mic size={17} style={{ color: T.sub }} />
+              {/* ── Right: Voice · Camera · Send ── */}
+              <button onClick={startRecording} title="Voice message"
+                style={{ width: 42, height: 42, borderRadius: "50%", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Mic size={22} style={{ color: WA.subText }} />
               </button>
-              {/* Camera */}
-              <button
-                onClick={() => setShowCamera(true)}
-                title="Camera"
-                style={{ width: 38, height: 38, borderRadius: "50%", background: T.input, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
-              >
-                <Camera size={17} style={{ color: T.sub }} />
+              <button onClick={() => setShowCamera(true)} title="Camera"
+                style={{ width: 42, height: 42, borderRadius: "50%", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Camera size={22} style={{ color: WA.subText }} />
               </button>
-              {/* Send */}
-              <button
-                onClick={() => handleSend()}
-                title="Send"
-                disabled={!newMessage.trim() && !previewTemplate}
-                style={{ width: 38, height: 38, borderRadius: "50%", background: newMessage.trim() || previewTemplate ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : "rgba(99,102,241,.2)", border: "none", cursor: newMessage.trim() || previewTemplate ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background .2s" }}
-              >
-                <Send size={16} style={{ color: newMessage.trim() || previewTemplate ? "#fff" : "rgba(99,102,241,.5)" }} />
+              <button onClick={() => handleSend()} title="Send" disabled={!newMessage.trim() && !previewTemplate}
+                style={{ width: 44, height: 44, borderRadius: "50%", background: (newMessage.trim() || previewTemplate) ? "#00a884" : WA.searchBg, border: "none", cursor: (newMessage.trim() || previewTemplate) ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background .2s", boxShadow: (newMessage.trim() || previewTemplate) ? "0 2px 8px rgba(0,168,132,.4)" : "none" }}>
+                <Send size={18} style={{ color: (newMessage.trim() || previewTemplate) ? "#fff" : WA.subText, transform: "translateX(1px)" }} />
               </button>
             </div>
           </div>
@@ -1203,33 +1295,45 @@ const AdminHelpSupport = () => {
     );
   }
 
-  // Conversation list view
+  // Conversation list view — WhatsApp style
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div style={{ display: "flex", flexDirection: "column", gap: 0, height: "calc(100vh - 8rem)", marginTop: -8, borderRadius: 12, overflow: "hidden", boxShadow: "0 8px 40px rgba(0,0,0,.25)", background: WA.convBg }}>
+
+      {/* ── Conversations header ── */}
+      <div style={{ background: WA.header, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: T.text }}>Help & Support</h1>
-          <p className="text-sm" style={{ color: T.sub }}>Manage customer support conversations</p>
+          <h1 style={{ fontWeight: 700, fontSize: 20, color: WA.headerText, margin: 0 }}>Support Inbox</h1>
+          <p style={{ fontSize: 12, color: WA.headerSub, margin: 0 }}>Customer conversations</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: T.sub }} />
-            <Input
-              placeholder="Search conversations..."
-              value={convSearch}
-              onChange={(e) => setConvSearch(e.target.value)}
-              className="h-10 pl-10 border-none rounded-xl"
-              style={{ background: T.card, color: T.text, border: `1px solid ${T.border}` }}
-            />
-          </div>
+        <div style={{ position: "relative", width: 200 }}>
+          <Search style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: WA.subText }} />
+          <input
+            placeholder="Search…"
+            value={convSearch}
+            onChange={(e) => setConvSearch(e.target.value)}
+            style={{ width: "100%", height: 36, paddingLeft: 32, paddingRight: 12, borderRadius: 22, border: "none", outline: "none", background: theme === "black" ? "#111b21" : "rgba(255,255,255,.2)", color: WA.headerText, fontSize: 13 }}
+          />
         </div>
       </div>
 
-      <div className="grid gap-3">
-        {filteredConversations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 rounded-2xl border border-dashed" style={{ borderColor: T.border, background: T.card }}>
-            <MessageCircle className="h-12 w-12 mb-4 opacity-20" style={{ color: T.text }} />
-            <p className="text-sm" style={{ color: T.sub }}>No conversations found</p>
+      {/* ── Conversation list ── */}
+      <div style={{ flex: 1, overflowY: "auto", background: WA.convBg }}>
+        {loadingConvs ? (
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", borderBottom: `1px solid ${WA.border}` }}>
+                <div style={{ width: 50, height: 50, borderRadius: "50%", background: WA.border, flexShrink: 0 }} />
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ height: 13, width: "55%", borderRadius: 8, background: WA.border }} />
+                  <div style={{ height: 11, width: "80%", borderRadius: 8, background: WA.border }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredConversations.length === 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 40 }}>
+            <MessageCircle style={{ width: 52, height: 52, marginBottom: 16, opacity: 0.15, color: WA.subText }} />
+            <p style={{ fontSize: 14, color: WA.subText }}>No conversations found</p>
           </div>
         ) : (
           filteredConversations.map((conv: any) => {
@@ -1237,39 +1341,42 @@ const AdminHelpSupport = () => {
             const userCode = getUserCode(conv);
             const userType = (conv as any).user?.user_type || "";
             const isSelected = selectedConvId === conv.id;
+            const initial = userName.charAt(0).toUpperCase();
+            // Deterministic avatar colour per initial
+            const avatarColors = ["#128c7e","#075e54","#25d366","#34b7f1","#e91e63","#9c27b0","#3f51b5"];
+            const avatarBg = avatarColors[initial.charCodeAt(0) % avatarColors.length];
 
             return (
               <div
                 key={conv.id}
                 onClick={() => setSelectedConvId(conv.id)}
-                className="group flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99] border"
-                style={{ 
-                  background: isSelected ? T.badge : T.card, 
-                  borderColor: isSelected ? T.badgeFg : T.border,
-                  backdropFilter: "blur(12px)"
+                style={{
+                  display: "flex", alignItems: "center", gap: 14, padding: "13px 20px",
+                  borderBottom: `1px solid ${WA.border}`,
+                  background: isSelected ? (theme === "black" ? "#2a3942" : "#f0f2f5") : WA.convItem,
+                  cursor: "pointer", transition: "background .15s"
                 }}
+                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = WA.convHover; }}
+                onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = WA.convItem; }}
               >
-                <div 
-                  className="flex h-12 w-12 items-center justify-center rounded-xl text-lg font-bold"
-                  style={{ background: T.input, color: T.badgeFg, border: `1px solid ${T.border}` }}
-                >
-                  {userName.charAt(0)}
+                {/* Circular avatar */}
+                <div style={{ width: 50, height: 50, borderRadius: "50%", background: avatarBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ fontWeight: 700, fontSize: 20, color: "#fff" }}>{initial}</span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-semibold truncate" style={{ color: T.text }}>{userName}</h3>
-                    <span className="text-[10px]" style={{ color: T.sub }}>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
+                    <span style={{ fontWeight: 600, fontSize: 15, color: WA.incomingText, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "65%" }}>{userName}</span>
+                    <span style={{ fontSize: 11, color: WA.subText, whiteSpace: "nowrap", flexShrink: 0 }}>
                       {safeDist(conv.created_at, "—", { addSuffix: true })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="h-5 text-[10px] capitalize" style={{ background: T.nav, color: T.sub, borderColor: T.border }}>
-                      {userType}
-                    </Badge>
-                    <span className="text-xs" style={{ color: T.sub }}>{userCode}</span>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 13, color: WA.subText, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {userCode} · <span style={{ textTransform: "capitalize" }}>{userType}</span>
+                    </span>
                   </div>
                 </div>
-                <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" style={{ color: T.sub }} />
               </div>
             );
           })
