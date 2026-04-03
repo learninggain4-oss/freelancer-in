@@ -273,7 +273,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
                 Freelancer<span style={{ color: A1 }}>.</span>in
               </p>
               <p style={{ fontSize: 8.5, color: tok.logoSub, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, margin: 0 }}>
-                {userType} portal
+                {userType === "employee" ? "Freelancer Portal" : "Client Portal"}
               </p>
             </div>
           </div>

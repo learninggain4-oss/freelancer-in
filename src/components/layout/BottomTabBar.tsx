@@ -1,4 +1,4 @@
-import { Home, Briefcase, Wallet, CircleHelp, Menu, ClipboardCheck, FileText, MessagesSquare, Crown } from "lucide-react";
+import { Home, Briefcase, Wallet, CircleHelp, Menu, ClipboardCheck, FileText } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { DashboardTheme } from "@/hooks/use-dashboard-theme";
 
@@ -31,7 +31,7 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
         { label: "Attend",   icon: ClipboardCheck,path: `${base}/attendance` },
         { label: "Requests", icon: FileText,      path: `${base}/requests` },
         { label: "Wallet",   icon: Wallet,        path: `${base}/wallet` },
-        { label: "Chat",     icon: MessagesSquare,path: `${base}/help-support` },
+        { label: "Help",     icon: CircleHelp,    path: `${base}/help-support` },
       ]
     : [
         { label: "Home",   icon: Home,          path: `${base}/dashboard` },
