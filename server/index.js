@@ -1175,6 +1175,107 @@ app.post("/functions/v1/mpin-set", async (req, res) => {
   }
 });
 
+// The 10 security questions (must match frontend)
+const SQ_QUESTIONS = [
+  "What is the name of your first pet?",
+  "What is your mother's maiden name?",
+  "What was the name of your primary school?",
+  "What city were you born in?",
+  "What is the name of your best childhood friend?",
+  "What was your childhood nickname?",
+  "What is the name of the street you grew up on?",
+  "What is your oldest sibling's first name?",
+  "What was the make and model of your first vehicle?",
+  "What is your all-time favourite food?",
+];
+
+// GET /functions/v1/forgot-mpin-options — what identity options does this user have?
+app.get("/functions/v1/forgot-mpin-options", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const adminAuth = getAdminClient().auth.admin;
+    const { data: { user: u }, error } = await adminAuth.getUserById(user.id);
+    if (error || !u) return res.status(404).json({ error: "User not found" });
+
+    const hasTotp = !!u.app_metadata?.totp_setup_done && !!u.app_metadata?.totp_secret;
+    const savedAnswers = u.app_metadata?.security_answers || [];
+    const hasSq = Array.isArray(savedAnswers) && savedAnswers.length >= 3;
+
+    // Pick 3 random questions from the answered set
+    let sqQuestions = [];
+    if (hasSq) {
+      const shuffled = [...savedAnswers].sort(() => Math.random() - 0.5).slice(0, 3);
+      sqQuestions = shuffled.map(a => ({
+        idx: a.idx,
+        question: SQ_QUESTIONS[a.idx] || `Question ${a.idx + 1}`,
+      }));
+    }
+
+    res.json({ hasTotp, hasSq, sqQuestions });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /functions/v1/forgot-mpin-verify-totp — verify TOTP for forgot-pin flow
+app.post("/functions/v1/forgot-mpin-verify-totp", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const { token } = req.body;
+    if (!token || !/^\d{6}$/.test(String(token)))
+      return res.status(400).json({ error: "Token must be 6 digits" });
+
+    const adminAuth = getAdminClient().auth.admin;
+    const { data: { user: u }, error } = await adminAuth.getUserById(user.id);
+    if (error || !u) return res.status(404).json({ error: "User not found" });
+
+    const secret = u.app_metadata?.totp_secret;
+    if (!secret) return res.status(400).json({ error: "Google Authenticator not set up" });
+
+    const valid = verifyTotp(token, secret);
+    res.json({ valid });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /functions/v1/forgot-mpin-verify-sq — verify security question answers
+app.post("/functions/v1/forgot-mpin-verify-sq", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const { answers } = req.body; // [{idx: number, answer: string}]
+    if (!Array.isArray(answers) || answers.length < 3)
+      return res.status(400).json({ error: "Must provide at least 3 answers" });
+
+    const adminAuth = getAdminClient().auth.admin;
+    const { data: { user: u }, error } = await adminAuth.getUserById(user.id);
+    if (error || !u) return res.status(404).json({ error: "User not found" });
+
+    const savedAnswers = u.app_metadata?.security_answers || [];
+    if (!Array.isArray(savedAnswers) || savedAnswers.length < 3)
+      return res.status(400).json({ error: "Security questions not set up" });
+
+    // Verify each answer
+    let allCorrect = true;
+    for (const { idx, answer } of answers) {
+      const raw = String(answer || "").toLowerCase().trim();
+      const computed = crypto.createHash("sha256").update(`${raw}:${user.id}:sq-${idx}`).digest("hex");
+      const saved = savedAnswers.find(a => a.idx === idx);
+      if (!saved || computed !== saved.hash) { allCorrect = false; break; }
+    }
+
+    res.json({ valid: allCorrect });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /functions/v1/security-questions-status — check if user has answered security questions
 app.get("/functions/v1/security-questions-status", async (req, res) => {
   try {
