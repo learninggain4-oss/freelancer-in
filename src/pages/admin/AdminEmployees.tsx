@@ -110,7 +110,7 @@ const AdminEmployees = () => {
     if (error || data?.error) {
       toast.error(data?.error || error?.message || "Delete failed");
     } else {
-      toast.success("Employee permanently deleted");
+      toast.success("Freelancer permanently deleted");
       fetchData();
     }
   };
@@ -158,7 +158,7 @@ const AdminEmployees = () => {
               <Award className="h-8 w-8" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold tracking-tight">Employees</h2>
+              <h2 className="text-3xl font-bold tracking-tight">Freelancers</h2>
               <p className="text-indigo-100 opacity-80">Manage your workforce and their balances</p>
             </div>
           </div>
@@ -171,7 +171,7 @@ const AdminEmployees = () => {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className="border-none backdrop-blur-md" style={{ background: T.card }}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium" style={{ color: T.sub }}>Total Employees</CardTitle>
+            <CardTitle className="text-sm font-medium" style={{ color: T.sub }}>Total Freelancers</CardTitle>
             <Users className="h-5 w-5 text-indigo-400" />
           </CardHeader>
           <CardContent>
@@ -336,10 +336,10 @@ const AdminEmployees = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>
               {confirmAction?.type === "delete"
-                ? "Permanently Delete Employee?"
+                ? "Permanently Delete Freelancer?"
                 : confirmAction?.type === "block"
-                ? "Block Employee?"
-                : "Unblock Employee?"}
+                ? "Block Freelancer?"
+                : "Unblock Freelancer?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirmAction?.type === "delete"

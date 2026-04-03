@@ -295,7 +295,7 @@ const AdminUpgradeChatPanel = ({
         if (data?.userId === profileId) return;
         if (data?.isTyping) {
           setIsEmployeeTyping(true);
-          setEmployeeTypingName(data?.userName || "Employee");
+          setEmployeeTypingName(data?.userName || "Freelancer");
           if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
           typingTimeoutRef.current = setTimeout(() => setIsEmployeeTyping(false), 3000);
         } else {

@@ -28,7 +28,7 @@ const TH = {
 
 const audienceLabel: Record<string, string> = {
   everyone: "Everyone",
-  employees: "Employees Only",
+  employees: "Freelancers Only",
   clients: "Clients Only",
 };
 

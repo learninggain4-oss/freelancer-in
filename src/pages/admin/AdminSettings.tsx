@@ -797,7 +797,7 @@ const AdminSettings = () => {
               <div className="space-y-4">
                 <h4 className="font-bold flex items-center gap-2" style={{ color: T.text }}>
                   <div className="h-1.5 w-1.5 rounded-full bg-[#6366f1]" />
-                  Employee Code Settings
+                  Freelancer Code Settings
                 </h4>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
@@ -844,12 +844,12 @@ const AdminSettings = () => {
                         supabase.from("app_settings").upsert({ key: "employee_code_include_month", value: String(empIncludeMonth) }, { onConflict: "key" }),
                         supabase.from("app_settings").upsert({ key: "employee_code_separator", value: empSeparator }, { onConflict: "key" }),
                       ]);
-                      toast({ title: "Employee settings saved" });
+                      toast({ title: "Freelancer settings saved" });
                     } finally { setSaving(null); }
                   }}
                   disabled={saving === "emp_code"}
                 >
-                  Save Employee Config
+                  Save Freelancer Config
                 </Button>
               </div>
 

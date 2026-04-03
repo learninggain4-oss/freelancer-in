@@ -225,7 +225,7 @@ const AdminAttendance = () => {
               </SelectTrigger>
               <SelectContent style={{ background: theme === 'black' ? '#1a1a2e' : '#fff', borderColor: T.border }}>
                 <SelectItem value="all">All Users</SelectItem>
-                <SelectItem value="employee">Employees</SelectItem>
+                <SelectItem value="employee">Freelancers</SelectItem>
                 <SelectItem value="client">Clients</SelectItem>
               </SelectContent>
             </Select>

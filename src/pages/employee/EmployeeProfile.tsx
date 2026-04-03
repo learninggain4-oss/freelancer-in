@@ -112,7 +112,7 @@ const EmployeeProfile = () => {
 
   const isVerified = aadhaarStatus === "verified";
   const walletNumber = (profile as any)?.wallet_number ?? "—";
-  const fullName = Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Employee";
+  const fullName = Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Freelancer";
   const userCode = Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—";
 
   // Profile completion: 9 criteria

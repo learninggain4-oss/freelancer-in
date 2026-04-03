@@ -397,7 +397,7 @@ const AdminWalletManagement = () => {
             </div>
             <Tabs value={userTab} onValueChange={(v) => setUserTab(v as "employee" | "client")} className="w-[300px]">
               <TabsList className="w-full h-10 bg-transparent border p-0 gap-1 rounded-xl" style={{ borderColor: T.border }}>
-                <TabsTrigger value="employee" className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white" style={{ color: T.sub }}>Employees</TabsTrigger>
+                <TabsTrigger value="employee" className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white" style={{ color: T.sub }}>Freelancers</TabsTrigger>
                 <TabsTrigger value="client" className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white" style={{ color: T.sub }}>Clients</TabsTrigger>
               </TabsList>
             </Tabs>

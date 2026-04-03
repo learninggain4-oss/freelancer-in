@@ -308,7 +308,7 @@ const EmployeeDashboard = () => {
 
         {/* ── Wallet Card ── */}
         <WalletCard
-          name={Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Employee"}
+          name={Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Freelancer"}
           userCode={Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—"}
           walletNumber={profile?.wallet_number}
           availableBalance={profile?.available_balance ?? 0}

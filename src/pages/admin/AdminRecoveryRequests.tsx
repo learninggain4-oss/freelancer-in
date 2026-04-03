@@ -213,7 +213,7 @@ const AdminRecoveryRequests = () => {
                       )}
                     </div>
                     <p className="text-sm" style={{ color: T.sub }}>
-                      Employee: <span className="font-semibold" style={{ color: T.text }}>{req.employee?.full_name?.[0] || "Unknown"}</span> ({req.employee?.user_code?.[0]})
+                      Freelancer: <span className="font-semibold" style={{ color: T.text }}>{req.employee?.full_name?.[0] || "Unknown"}</span> ({req.employee?.user_code?.[0]})
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

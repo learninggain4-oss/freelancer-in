@@ -250,7 +250,7 @@ const AdminNotifications = () => {
                 </SelectTrigger>
                 <SelectContent style={{ background: T.card, borderColor: T.border, color: T.text }}>
                   <SelectItem value="all"><div className="flex items-center gap-2"><Users className="h-3.5 w-3.5" /> All Users</div></SelectItem>
-                  <SelectItem value="employees"><div className="flex items-center gap-2"><User className="h-3.5 w-3.5" /> Employees Only</div></SelectItem>
+                  <SelectItem value="employees"><div className="flex items-center gap-2"><User className="h-3.5 w-3.5" /> Freelancers Only</div></SelectItem>
                   <SelectItem value="clients"><div className="flex items-center gap-2"><User className="h-3.5 w-3.5" /> Clients Only</div></SelectItem>
                   <SelectItem value="individual"><div className="flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5" /> Individual User</div></SelectItem>
                 </SelectContent>
