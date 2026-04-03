@@ -1049,11 +1049,11 @@ const HelpSupport = () => {
                     e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
                     // Broadcast typing event to admin
                     if (conversation?.id) {
-                      supabase.channel(`bc:conv:${conversation.id}`)
+                      supabase.channel(`typing:conv:${conversation.id}`)
                         .send({ type: "broadcast", event: "typing", payload: { isTyping: true } });
                       if (typingBroadcastTimer.current) clearTimeout(typingBroadcastTimer.current);
                       typingBroadcastTimer.current = setTimeout(() => {
-                        supabase.channel(`bc:conv:${conversation.id}`)
+                        supabase.channel(`typing:conv:${conversation.id}`)
                           .send({ type: "broadcast", event: "typing", payload: { isTyping: false } });
                       }, 2000);
                     }

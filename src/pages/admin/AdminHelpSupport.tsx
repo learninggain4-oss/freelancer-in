@@ -498,8 +498,9 @@ const AdminHelpSupport = () => {
   const [showReactionFor, setShowReactionFor]   = useState<string | null>(null);
   const [typing, setTyping]                     = useState(false);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [userTyping, setUserTyping]             = useState(false);
-  const userTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Per-conversation typing state for the inbox list
+  const [typingConvIds, setTypingConvIds]       = useState<Record<string, boolean>>({});
+  const typingConvTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const fileRef            = useRef<HTMLInputElement>(null);
   const mediaRecorderRef   = useRef<MediaRecorder | null>(null);
@@ -602,28 +603,30 @@ const AdminHelpSupport = () => {
     setShowScrollBtn(el.scrollHeight - el.scrollTop - el.clientHeight > 120);
   };
 
-  // Listen for real user typing events via broadcast channel
+  // Listen for typing events on ALL conversation channels (for inbox list indicators)
   useEffect(() => {
-    if (!selectedConvId) { setUserTyping(false); return; }
-    const ch = supabase
-      .channel(`bc:conv:${selectedConvId}`)
-      .on("broadcast", { event: "typing" }, ({ payload }) => {
-        if (payload?.isTyping) {
-          setUserTyping(true);
-          if (userTypingTimer.current) clearTimeout(userTypingTimer.current);
-          userTypingTimer.current = setTimeout(() => setUserTyping(false), 3000);
-        } else {
-          if (userTypingTimer.current) clearTimeout(userTypingTimer.current);
-          setUserTyping(false);
-        }
-      })
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-      setUserTyping(false);
-      if (userTypingTimer.current) clearTimeout(userTypingTimer.current);
-    };
-  }, [selectedConvId]);
+    if (!conversations.length) return;
+    const channels = conversations.map((conv: any) => {
+      const ch = supabase
+        .channel(`typing:conv:${conv.id}`)
+        .on("broadcast", { event: "typing" }, ({ payload }) => {
+          if (payload?.isTyping) {
+            setTypingConvIds(prev => ({ ...prev, [conv.id]: true }));
+            if (typingConvTimers.current[conv.id]) clearTimeout(typingConvTimers.current[conv.id]);
+            typingConvTimers.current[conv.id] = setTimeout(() => {
+              setTypingConvIds(prev => { const n = { ...prev }; delete n[conv.id]; return n; });
+            }, 3000);
+          } else {
+            if (typingConvTimers.current[conv.id]) clearTimeout(typingConvTimers.current[conv.id]);
+            setTypingConvIds(prev => { const n = { ...prev }; delete n[conv.id]; return n; });
+          }
+        })
+        .subscribe();
+      return ch;
+    });
+    return () => { channels.forEach(ch => supabase.removeChannel(ch)); };
+  }, [conversations.length]);
+
 
   // Typing simulation — show "typing..." after user sends a message
   useEffect(() => {
@@ -1119,7 +1122,7 @@ const AdminHelpSupport = () => {
                 );
               })}
               {/* ── User typing indicator (WhatsApp animated dots) ── */}
-              {userTyping && (
+              {typingConvIds[selectedConvId ?? ""] && (
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 6, padding: "4px 14px 8px" }}>
                   <div style={{ width: 28, height: 28, borderRadius: "50%", background: WA.incoming, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 12, fontWeight: 700, color: WA.incomingText }}>
                     {(getUserDisplayName(selectedConv!)).charAt(0).toUpperCase()}
@@ -1539,9 +1542,20 @@ const AdminHelpSupport = () => {
                     </span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: 13, color: WA.subText, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {userCode} · <span style={{ textTransform: "capitalize" }}>{userType}</span>
-                    </span>
+                    {typingConvIds[conv.id] ? (
+                      <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, color: "#25d366", fontStyle: "italic", fontWeight: 500 }}>
+                        typing
+                        <span style={{ display: "inline-flex", gap: 3, alignItems: "center" }}>
+                          <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#25d366", display: "inline-block", animation: "typingDot 1.2s ease-in-out infinite", animationDelay: "0ms" }} />
+                          <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#25d366", display: "inline-block", animation: "typingDot 1.2s ease-in-out infinite", animationDelay: "200ms" }} />
+                          <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#25d366", display: "inline-block", animation: "typingDot 1.2s ease-in-out infinite", animationDelay: "400ms" }} />
+                        </span>
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 13, color: WA.subText, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {userCode} · <span style={{ textTransform: "capitalize" }}>{userType}</span>
+                      </span>
+                    )}
                     {(conv as any).unread_count > 0 && (
                       <span style={{ flexShrink: 0, minWidth: 20, height: 20, borderRadius: 10, background: WA.unreadBg, color: WA.unreadText, fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px" }}>
                         {(conv as any).unread_count > 99 ? "99+" : (conv as any).unread_count}
