@@ -3,6 +3,58 @@ import cors from "cors";
 import { createClient } from "@supabase/supabase-js";
 import cron from "node-cron";
 import crypto from "crypto";
+import { createRequire } from "module";
+const _require = createRequire(import.meta.url);
+const QRCode   = _require("qrcode");
+
+// ── Minimal TOTP (RFC 6238) implementation ──────────────────────────────────
+const BASE32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+
+function base32Decode(str) {
+  const s = str.replace(/=+$/, "").toUpperCase();
+  const out = [];
+  let bits = 0, val = 0;
+  for (const ch of s) {
+    const idx = BASE32_ALPHABET.indexOf(ch);
+    if (idx === -1) continue;
+    val = (val << 5) | idx;
+    bits += 5;
+    if (bits >= 8) { out.push((val >>> (bits - 8)) & 0xff); bits -= 8; }
+  }
+  return Buffer.from(out);
+}
+
+function generateTotpSecret() {
+  const bytes = crypto.randomBytes(15);
+  let result = "";
+  let bits = 0, val = 0;
+  for (const b of bytes) {
+    val = (val << 8) | b;
+    bits += 8;
+    while (bits >= 5) { result += BASE32_ALPHABET[(val >>> (bits - 5)) & 31]; bits -= 5; }
+  }
+  if (bits > 0) result += BASE32_ALPHABET[(val << (5 - bits)) & 31];
+  return result.toUpperCase();
+}
+
+function totpCode(secret, counter) {
+  const buf = Buffer.alloc(8);
+  buf.writeBigInt64BE(BigInt(counter));
+  const key  = base32Decode(secret);
+  const hmac = crypto.createHmac("sha1", key).update(buf).digest();
+  const off  = hmac[hmac.length - 1] & 0xf;
+  const code = ((hmac[off] & 0x7f) << 24 | hmac[off+1] << 16 | hmac[off+2] << 8 | hmac[off+3]) % 1_000_000;
+  return code.toString().padStart(6, "0");
+}
+
+function verifyTotp(token, secret, window = 1) {
+  const counter = Math.floor(Date.now() / 1000 / 30);
+  for (let i = -window; i <= window; i++) {
+    if (totpCode(secret, counter + i) === String(token).padStart(6, "0")) return true;
+  }
+  return false;
+}
+// ───────────────────────────────────────────────────────────────────────────
 
 const app = express();
 app.use(cors({ origin: "*" }));
@@ -46,71 +98,6 @@ async function getUserFromToken(authHeader) {
   return user;
 }
 
-// ─── TOTP helpers ───
-
-function base32Decode(str) {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-  const cleaned = str.replace(/=+$/, "").toUpperCase();
-  let bits = "";
-  for (const c of cleaned) {
-    const val = alphabet.indexOf(c);
-    if (val === -1) throw new Error("Invalid base32 character");
-    bits += val.toString(2).padStart(5, "0");
-  }
-  const bytes = new Uint8Array(Math.floor(bits.length / 8));
-  for (let i = 0; i < bytes.length; i++) {
-    bytes[i] = parseInt(bits.slice(i * 8, i * 8 + 8), 2);
-  }
-  return bytes;
-}
-
-function base32Encode(bytes) {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-  let bits = "";
-  for (const b of bytes) bits += b.toString(2).padStart(8, "0");
-  let result = "";
-  for (let i = 0; i < bits.length; i += 5) {
-    const chunk = bits.slice(i, i + 5).padEnd(5, "0");
-    result += alphabet[parseInt(chunk, 2)];
-  }
-  const padding = (8 - (result.length % 8)) % 8;
-  return result + "=".repeat(padding);
-}
-
-async function hmacSha1(key, data) {
-  const { createHmac } = await import("crypto");
-  const hmac = createHmac("sha1", Buffer.from(key));
-  hmac.update(Buffer.from(data));
-  return new Uint8Array(hmac.digest());
-}
-
-async function verifyTOTP(secret, token, window = 1) {
-  const timeStep = 30;
-  const now = Math.floor(Date.now() / 1000 / timeStep);
-  for (let i = -window; i <= window; i++) {
-    const time = now + i;
-    const timeBuffer = new Uint8Array(8);
-    const view = new DataView(timeBuffer.buffer);
-    view.setBigUint64(0, BigInt(time));
-    const key = base32Decode(secret);
-    const hmac = await hmacSha1(key, timeBuffer);
-    const offset = hmac[hmac.length - 1] & 0x0f;
-    const code =
-      ((hmac[offset] & 0x7f) << 24) |
-      ((hmac[offset + 1] & 0xff) << 16) |
-      ((hmac[offset + 2] & 0xff) << 8) |
-      (hmac[offset + 3] & 0xff);
-    const expected = (code % 1000000).toString().padStart(6, "0");
-    if (expected === token) return true;
-  }
-  return false;
-}
-
-function generateSecret() {
-  const { randomBytes } = require("crypto");
-  const bytes = randomBytes(20);
-  return base32Encode(new Uint8Array(bytes));
-}
 
 async function hashPassword(password) {
   const { createHash } = await import("crypto");
@@ -1239,6 +1226,113 @@ app.post("/functions/v1/security-questions-save", async (req, res) => {
     if (error) return res.status(500).json({ error: error.message });
 
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /functions/v1/totp-status — check if TOTP is set up for user
+app.get("/functions/v1/totp-status", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const adminAuth = getAdminClient().auth.admin;
+    const { data: { user: u }, error } = await adminAuth.getUserById(user.id);
+    if (error || !u) return res.status(404).json({ error: "User not found" });
+
+    res.json({ setup: !!u.app_metadata?.totp_setup_done });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /functions/v1/totp-setup-init — generate TOTP secret, return QR code + key
+app.post("/functions/v1/totp-setup-init", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const secret = generateTotpSecret();
+    const label  = encodeURIComponent(user.email || user.id);
+    const issuer = encodeURIComponent("Freelancer India");
+    const otpauthUrl = `otpauth://totp/${issuer}:${label}?secret=${secret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
+
+    const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl, {
+      errorCorrectionLevel: "M",
+      margin: 2,
+      width: 220,
+    });
+
+    // Store pending secret (not yet activated)
+    const adminAuth = getAdminClient().auth.admin;
+    await adminAuth.updateUserById(user.id, {
+      app_metadata: { totp_pending_secret: secret },
+    });
+
+    // Format secret for display (groups of 4)
+    const formattedSecret = secret.match(/.{1,4}/g)?.join(" ") || secret;
+
+    res.json({ qrCodeDataUrl, formattedSecret, otpauthUrl });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /functions/v1/totp-setup-verify — verify TOTP during setup and activate
+app.post("/functions/v1/totp-setup-verify", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const { token } = req.body;
+    if (!token || !/^\d{6}$/.test(String(token)))
+      return res.status(400).json({ error: "Token must be 6 digits" });
+
+    const adminAuth = getAdminClient().auth.admin;
+    const { data: { user: u }, error } = await adminAuth.getUserById(user.id);
+    if (error || !u) return res.status(404).json({ error: "User not found" });
+
+    const pendingSecret = u.app_metadata?.totp_pending_secret;
+    if (!pendingSecret) return res.status(400).json({ error: "No TOTP setup in progress" });
+
+    const valid = verifyTotp(token, pendingSecret);
+    if (!valid) return res.status(400).json({ error: "Incorrect code. Check your authenticator app and try again." });
+
+    // Activate TOTP
+    await adminAuth.updateUserById(user.id, {
+      app_metadata: {
+        totp_secret: pendingSecret,
+        totp_pending_secret: null,
+        totp_setup_done: true,
+      },
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /functions/v1/totp-verify — verify TOTP code on login
+app.post("/functions/v1/totp-verify", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const { token } = req.body;
+    if (!token || !/^\d{6}$/.test(String(token)))
+      return res.status(400).json({ error: "Token must be 6 digits" });
+
+    const adminAuth = getAdminClient().auth.admin;
+    const { data: { user: u }, error } = await adminAuth.getUserById(user.id);
+    if (error || !u) return res.status(404).json({ error: "User not found" });
+
+    const secret = u.app_metadata?.totp_secret;
+    if (!secret) return res.status(400).json({ error: "TOTP not configured", setup: false });
+
+    const valid = verifyTotp(token, secret);
+    res.json({ valid });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

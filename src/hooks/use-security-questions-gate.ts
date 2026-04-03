@@ -1,25 +1,28 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+type SqStatus = "idle" | "checking" | "show" | "passed";
+
 export function useSecurityQuestionsGate(mpinDone: boolean, userId: string | undefined) {
-  const [showQuestions, setShowQuestions] = useState(false);
-  const [checking, setChecking] = useState(false);
+  const [status, setStatus] = useState<SqStatus>("idle");
 
   useEffect(() => {
-    if (!mpinDone || !userId) return;
+    if (!mpinDone || !userId) { setStatus("idle"); return; }
 
-    // Session-level cache so we don't refetch on every re-render
     const cacheKey = `sq_done_${userId}`;
-    if (sessionStorage.getItem(cacheKey) === "1") return;
+    if (sessionStorage.getItem(cacheKey) === "1") {
+      setStatus("passed");
+      return;
+    }
 
     let cancelled = false;
-    setChecking(true);
+    setStatus("checking");
 
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
-        if (!token) { if (!cancelled) setShowQuestions(true); return; }
+        if (!token) { if (!cancelled) setStatus("show"); return; }
 
         const res = await fetch("/functions/v1/security-questions-status", {
           headers: { Authorization: `Bearer ${token}` },
@@ -28,13 +31,12 @@ export function useSecurityQuestionsGate(mpinDone: boolean, userId: string | und
         if (cancelled) return;
         if (json.done) {
           sessionStorage.setItem(cacheKey, "1");
+          setStatus("passed");
         } else {
-          setShowQuestions(true);
+          setStatus("show");
         }
       } catch {
-        if (!cancelled) setShowQuestions(true);
-      } finally {
-        if (!cancelled) setChecking(false);
+        if (!cancelled) setStatus("show");
       }
     })();
 
@@ -43,8 +45,12 @@ export function useSecurityQuestionsGate(mpinDone: boolean, userId: string | und
 
   const markQuestionsDone = useCallback(() => {
     if (userId) sessionStorage.setItem(`sq_done_${userId}`, "1");
-    setShowQuestions(false);
+    setStatus("passed");
   }, [userId]);
 
-  return { showQuestions, checking, markQuestionsDone };
+  return {
+    showQuestions: status === "show",
+    sqGatePassed: status === "passed",
+    markQuestionsDone,
+  };
 }

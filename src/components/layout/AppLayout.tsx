@@ -5,8 +5,10 @@ import SideDrawer from "./SideDrawer";
 import FlexpaySupportWidget from "./FlexpaySupportWidget";
 import MPinGateModal from "@/components/auth/MPinGateModal";
 import SecurityQuestionsModal from "@/components/auth/SecurityQuestionsModal";
+import TotpGateModal from "@/components/auth/TotpGateModal";
 import { useMpinGate } from "@/hooks/use-mpin-gate";
 import { useSecurityQuestionsGate } from "@/hooks/use-security-questions-gate";
+import { useTotpGate } from "@/hooks/use-totp-gate";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import ThemeToggle from "./ThemeToggle";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
@@ -324,8 +326,13 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
   const navigate = useNavigate();
 
   const { mode: mpinMode, markVerified } = useMpinGate(userType);
-  const { showQuestions, markQuestionsDone } = useSecurityQuestionsGate(
+  const { showQuestions, sqGatePassed, markQuestionsDone } = useSecurityQuestionsGate(
     userType === "employee" && mpinMode === "done",
+    user?.id ?? undefined,
+  );
+
+  const { totpMode, markTotpDone } = useTotpGate(
+    userType === "employee" && sqGatePassed,
     user?.id ?? undefined,
   );
 
@@ -576,6 +583,10 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
 
       {userType === "employee" && mpinMode === "done" && showQuestions && (
         <SecurityQuestionsModal theme={theme} onDone={markQuestionsDone} />
+      )}
+
+      {userType === "employee" && sqGatePassed && (totpMode === "setup" || totpMode === "verify") && (
+        <TotpGateModal mode={totpMode} theme={theme} onVerified={markTotpDone} />
       )}
     </div>
   );
