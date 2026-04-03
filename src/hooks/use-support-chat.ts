@@ -68,55 +68,54 @@ export const useSupportChat = (conversationId: string | undefined) => {
     queryKey: QK,
     queryFn: () => fetchMessages(conversationId!),
     enabled: !!conversationId,
-    staleTime: Infinity,
+    staleTime: 4_000,
+    refetchInterval: 5_000,          // poll every 5 s — catches admin msgs if RT misses
+    refetchIntervalInBackground: false,
   });
 
-  // ── Real-time: append/update/remove messages directly in cache ──────
-  // NOTE: We intentionally do NOT pass server-side row filters because
-  // Supabase Realtime with RLS can silently drop events from other users
-  // (e.g. admin replying). We filter by conversation_id client-side instead.
+  // ── Real-time subscriptions ──────────────────────────────────────────
+  // Strategy: TWO parallel channels for maximum reliability
+  //   1. Broadcast channel (`bc:conv:<id>`) — bypasses RLS entirely.
+  //      Both sender (user/admin) explicitly broadcast a "ping" after each insert.
+  //      Receiver triggers a full refetch immediately.
+  //   2. postgres_changes (no server-side filter) — secondary safety net
+  //      for cases where the broadcast is missed (reconnects, tab focus, etc.)
   useEffect(() => {
     if (!conversationId) return;
 
-    const channel = supabase
-      .channel(`support-msgs:${conversationId}`)
+    // ── Channel 1: Broadcast (RLS-free, instant) ──
+    const broadcastChannel = supabase
+      .channel(`bc:conv:${conversationId}`, { config: { broadcast: { self: false } } })
+      .on("broadcast", { event: "new_message" }, () => {
+        // Immediately refetch the full message list
+        queryClient.invalidateQueries({ queryKey: QK });
+      })
+      .subscribe();
+
+    // ── Channel 2: postgres_changes (no row filter — client-side filter instead) ──
+    const pgChannel = supabase
+      .channel(`pg:conv:${conversationId}`)
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "support_messages",
-        },
+        { event: "INSERT", schema: "public", table: "support_messages" },
         async (payload) => {
-          // Client-side filter: only handle messages for this conversation
           if ((payload.new as any).conversation_id !== conversationId) return;
-          // Try full fetch (with sender join); if RLS blocks it, use raw payload
           let newMsg: SupportMessage | null = await fetchSingleMessage((payload.new as any).id);
           if (!newMsg) {
-            // Fallback: build message from raw payload fields
-            newMsg = {
-              ...(payload.new as any),
-              reactions: [],
-            } as SupportMessage;
+            newMsg = { ...(payload.new as any), reactions: [] } as SupportMessage;
           }
           queryClient.setQueryData<SupportMessage[]>(QK, (prev = []) => {
-            // Remove any optimistic placeholder with same content+sender, then append
-            const withoutOptimistic = prev.filter(
+            const withoutOpt = prev.filter(
               (m) => !m._optimistic || m.content !== newMsg!.content || m.sender_id !== newMsg!.sender_id
             );
-            // Avoid duplicates
-            if (withoutOptimistic.some((m) => m.id === newMsg!.id)) return withoutOptimistic;
-            return [...withoutOptimistic, newMsg!];
+            if (withoutOpt.some((m) => m.id === newMsg!.id)) return withoutOpt;
+            return [...withoutOpt, newMsg!];
           });
         }
       )
       .on(
         "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "support_messages",
-        },
+        { event: "UPDATE", schema: "public", table: "support_messages" },
         async (payload) => {
           if ((payload.new as any).conversation_id !== conversationId) return;
           const updated = await fetchSingleMessage((payload.new as any).id);
@@ -128,14 +127,8 @@ export const useSupportChat = (conversationId: string | undefined) => {
       )
       .on(
         "postgres_changes",
-        {
-          event: "DELETE",
-          schema: "public",
-          table: "support_messages",
-        },
+        { event: "DELETE", schema: "public", table: "support_messages" },
         (payload) => {
-          // For DELETE, old row data may not include conversation_id without REPLICA IDENTITY FULL
-          // So we attempt removal by id regardless — it's a no-op if not in cache
           queryClient.setQueryData<SupportMessage[]>(QK, (prev = []) =>
             prev.filter((m) => m.id !== (payload.old as any).id)
           );
@@ -143,18 +136,15 @@ export const useSupportChat = (conversationId: string | undefined) => {
       )
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "support_message_reactions",
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: QK });
-        }
+        { event: "*", schema: "public", table: "support_message_reactions" },
+        () => { queryClient.invalidateQueries({ queryKey: QK }); }
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(broadcastChannel);
+      supabase.removeChannel(pgChannel);
+    };
   }, [conversationId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Mark incoming messages as read ─────────────────────────────────
@@ -206,7 +196,11 @@ export const useSupportChat = (conversationId: string | undefined) => {
         );
         throw error;
       }
-      // Real-time INSERT event will replace the optimistic entry
+      // Broadcast a "ping" so the OTHER side's broadcast listener refetches immediately
+      // (bypasses RLS — works even when postgres_changes events are blocked)
+      supabase
+        .channel(`bc:conv:${conversationId}`)
+        .send({ type: "broadcast", event: "new_message", payload: {} });
     },
     [conversationId, profile?.id, queryClient] // eslint-disable-line react-hooks/exhaustive-deps
   );
