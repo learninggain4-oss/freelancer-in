@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Database, Plus, Edit2, Trash2, CheckCircle2, XCircle, Loader2, RefreshCw, Copy, ToggleLeft, ToggleRight, Clock, Shield, AlertTriangle, ChevronDown, ChevronUp, TestTube2, History, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -70,10 +70,19 @@ export default function AdminDatabaseManager() {
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 
+  const formRef = useRef<HTMLDivElement>(null);
+
   const [connections, setConnections] = useState<DbConnection[]>(load);
   const [editing, setEditing] = useState<DbConnection | null>(null);
   const [form, setForm] = useState<typeof BLANK>(BLANK);
   const [showForm, setShowForm] = useState(false);
+
+  useEffect(() => {
+    if (showForm && formRef.current) {
+      setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    }
+  }, [showForm]);
+
   const [testing, setTesting] = useState<string | null>(null);
   const [confirmSwitch, setConfirmSwitch] = useState<DbConnection | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<DbConnection | null>(null);
@@ -208,7 +217,7 @@ export default function AdminDatabaseManager() {
 
       {/* Add/Edit form */}
       {showForm && (
-        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: "20px 22px", marginBottom: 16 }}>
+        <div ref={formRef} style={{ background: T.card, border: `2px solid ${A1}55`, borderRadius: 16, padding: "20px 22px", marginBottom: 16, boxShadow: `0 0 24px ${A1}22` }}>
           <h3 style={{ color: T.text, fontWeight: 700, fontSize: 15, margin: "0 0 16px" }}>{editing ? "Edit Connection" : "New Database Connection"}</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
