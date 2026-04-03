@@ -431,27 +431,40 @@ const GlobalStyles = () => (
 
     /* ── Meteor shower ── */
     @keyframes meteor-fall {
-      0%   { transform: translateX(0) translateY(0); opacity: 1; }
-      70%  { opacity: 0.6; }
-      100% { transform: translateX(400px) translateY(400px); opacity: 0; }
+      0%   { transform: translateX(0) translateY(0) rotate(-35deg); opacity: 0; }
+      5%   { opacity: 1; }
+      80%  { opacity: 0.5; }
+      100% { transform: translateX(500px) translateY(500px) rotate(-35deg); opacity: 0; }
     }
     .meteor {
       position: absolute;
-      height: 2px;
-      background: linear-gradient(90deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.1) 60%, transparent 100%);
+      height: 1.5px;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 30%, rgba(255,255,255,0.95) 80%, white 100%);
       border-radius: 9999px;
-      transform: rotate(-35deg);
       animation: meteor-fall linear infinite;
+      will-change: transform, opacity;
     }
     .meteor::after {
       content: '';
       position: absolute;
       right: 0; top: 50%;
       transform: translateY(-50%);
-      width: 5px; height: 5px;
+      width: 4px; height: 4px;
       border-radius: 50%;
       background: white;
-      box-shadow: 0 0 6px 3px rgba(180,180,255,0.7);
+      box-shadow: 0 0 8px 3px rgba(180,180,255,0.9), 0 0 20px 6px rgba(var(--t-a1-rgb),0.4);
+    }
+    /* ── Twinkling stars ── */
+    @keyframes twinkle {
+      0%, 100% { opacity: 0; transform: scale(0.4); }
+      40%, 60% { opacity: 1; transform: scale(1); }
+    }
+    /* ── Floating rupee ── */
+    @keyframes float-rupee {
+      0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+      8%   { opacity: 0.9; }
+      75%  { opacity: 0.5; }
+      100% { transform: translateY(-110px) translateX(var(--rx, 18px)) scale(0.5); opacity: 0; }
     }
 
     /* ── Emoji bubble rise ── */
@@ -1875,6 +1888,86 @@ const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip, activ
   );
 };
 
+/* ─────────────────────── Meteor Shower ─────────────────────── */
+const METEOR_DATA = [
+  { top: "6%",  left: "8%",  w: 140, dur: "7s",   del: "0s"   },
+  { top: "18%", left: "38%", w: 100, dur: "5.5s",  del: "1.8s" },
+  { top: "4%",  left: "62%", w: 165, dur: "9s",   del: "3.4s" },
+  { top: "26%", left: "80%", w: 85,  dur: "6.5s",  del: "0.6s" },
+  { top: "11%", left: "53%", w: 120, dur: "8.2s",  del: "4.6s" },
+  { top: "22%", left: "26%", w: 75,  dur: "6s",   del: "2.3s" },
+  { top: "3%",  left: "88%", w: 110, dur: "7.5s",  del: "1.1s" },
+  { top: "33%", left: "70%", w: 90,  dur: "5.2s",  del: "3.9s" },
+  { top: "14%", left: "4%",  w: 130, dur: "8.8s",  del: "5.2s" },
+  { top: "28%", left: "47%", w: 70,  dur: "6.8s",  del: "0.4s" },
+];
+const MeteorShower = () => (
+  <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ zIndex: 1 }}>
+    {METEOR_DATA.map((m, i) => (
+      <div key={i} className="meteor" style={{ top: m.top, left: m.left, width: m.w, animationDuration: m.dur, animationDelay: m.del }} />
+    ))}
+  </div>
+);
+
+/* ─────────────────────── Twinkling Stars ─────────────────────── */
+const STAR_DATA = [
+  { left: "7%",  top: "11%", s: 2, dur: "2.5s", del: "0s"   },
+  { left: "24%", top: "7%",  s: 1, dur: "3.5s", del: "1s"   },
+  { left: "41%", top: "19%", s: 2, dur: "2.1s", del: "0.4s" },
+  { left: "59%", top: "4%",  s: 1, dur: "4s",   del: "2.1s" },
+  { left: "77%", top: "14%", s: 2, dur: "3.1s", del: "1.6s" },
+  { left: "91%", top: "28%", s: 1, dur: "2.8s", del: "0.9s" },
+  { left: "14%", top: "38%", s: 2, dur: "3.3s", del: "3.1s" },
+  { left: "33%", top: "52%", s: 1, dur: "2.3s", del: "1.3s" },
+  { left: "53%", top: "43%", s: 2, dur: "4.6s", del: "0.2s" },
+  { left: "69%", top: "58%", s: 1, dur: "3.9s", del: "2.7s" },
+  { left: "83%", top: "68%", s: 2, dur: "2.7s", del: "0.7s" },
+  { left: "4%",  top: "72%", s: 1, dur: "3.5s", del: "1.9s" },
+  { left: "47%", top: "78%", s: 2, dur: "3.0s", del: "3.6s" },
+  { left: "64%", top: "83%", s: 1, dur: "3.2s", del: "1.0s" },
+  { left: "19%", top: "88%", s: 2, dur: "2.8s", del: "2.3s" },
+];
+const TwinkleStars = () => (
+  <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ zIndex: 0 }}>
+    {STAR_DATA.map((s, i) => (
+      <div key={i} style={{
+        position: "absolute", left: s.left, top: s.top,
+        width: s.s, height: s.s, borderRadius: "50%",
+        background: "#ffffff",
+        opacity: 0,
+        animation: `twinkle ${s.dur} ease-in-out ${s.del} infinite`,
+        boxShadow: s.s > 1 ? "0 0 5px 1px rgba(180,180,255,0.7)" : "none",
+        willChange: "opacity, transform",
+      }} />
+    ))}
+  </div>
+);
+
+/* ─────────────────────── Floating Rupees ─────────────────────── */
+const RUPEE_DATA = [
+  { left: "8%",  dur: "3.6s", del: "0s",   rx: "14px"  },
+  { left: "20%", dur: "4.3s", del: "0.7s", rx: "-11px" },
+  { left: "36%", dur: "3.9s", del: "1.4s", rx: "19px"  },
+  { left: "52%", dur: "4.7s", del: "0.2s", rx: "-9px"  },
+  { left: "68%", dur: "3.3s", del: "1.9s", rx: "16px"  },
+  { left: "83%", dur: "4.1s", del: "0.5s", rx: "-14px" },
+];
+const FloatingRupees = () => (
+  <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-40 overflow-hidden" style={{ zIndex: 1 }}>
+    {RUPEE_DATA.map((r, i) => (
+      <div key={i} style={{
+        position: "absolute", left: r.left, bottom: "5%",
+        fontSize: 15, fontWeight: 900,
+        color: "#4ade80",
+        textShadow: "0 0 10px rgba(74,222,128,0.8), 0 0 20px rgba(74,222,128,0.4)",
+        animation: `float-rupee ${r.dur} ease-out ${r.del} infinite`,
+        "--rx": r.rx,
+        willChange: "transform, opacity",
+      } as React.CSSProperties}>₹</div>
+    ))}
+  </div>
+);
+
 /* ─────────────────────── Hero Section ─────────────────────── */
 const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
   const parallaxUp = useParallax(0.14);
@@ -1882,6 +1975,8 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
   const { t } = useLang();
   return (
   <section className="relative overflow-hidden py-16 md:py-24 lg:py-36 px-4 sm:px-6">
+    <TwinkleStars />
+    <MeteorShower />
     <Orbs />
     <ParticleField />
     <ConstellationCanvas />
@@ -2941,6 +3036,7 @@ const EarningsCalculatorSection = () => {
   const afterCommission = Math.round(monthly * 0.9);
   return (
     <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+      <FloatingRupees />
       <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(var(--t-a1-rgb),0.07) 0%, transparent 70%)" }} />
       <div className="mx-auto max-w-5xl">
         <Reveal className="text-center mb-12">
@@ -4170,6 +4266,7 @@ const MILESTONES = [
 ];
 const MilestonePaymentSection = () => (
   <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <FloatingRupees />
     <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 60% 50% at 80% 50%, rgba(var(--t-a2-rgb),0.06) 0%, transparent 70%)" }} />
     <div className="mx-auto max-w-5xl">
       <Reveal className="text-center mb-14">
