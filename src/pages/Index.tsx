@@ -4927,7 +4927,7 @@ const FounderStorySection = () => (
             <div className="h-32" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.3), rgba(var(--t-a2-rgb),0.3))" }} />
             {/* Avatar */}
             <div className="relative -mt-12 flex justify-center">
-              <div className="flex h-24 w-24 items-center justify-center rounded-3xl text-3xl font-black text-white shadow-2xl ring-4" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", ringColor: "var(--t-bg)" }}>AK</div>
+              <div className="flex h-24 w-24 items-center justify-center rounded-3xl text-3xl font-black text-white shadow-2xl ring-4 ring-[var(--t-bg)]" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>AK</div>
             </div>
             <div className="p-6 pt-4 text-center">
               <h3 className="text-xl font-black text-white mb-0.5">Anil Kumar</h3>
