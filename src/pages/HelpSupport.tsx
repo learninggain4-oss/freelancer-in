@@ -485,8 +485,8 @@ const HelpSupport = () => {
             <ArrowLeft size={18} style={{ color: T.sub }} />
           </button>
           <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-            {agentProfile?.avatar_url ? (
-              <img src={agentProfile.avatar_url} alt="Support" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            {agentProfile?.profile_photo_path ? (
+              <img src={agentProfile.profile_photo_path} alt="Support" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
               <span style={{ color: "#fff", fontWeight: 800, fontSize: 14 }}>FI</span>
             )}
