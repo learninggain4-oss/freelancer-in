@@ -343,7 +343,7 @@ export const useAllConversations = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("support_conversations")
-        .select("*, user:user_id(full_name, user_type, user_code, email)")
+        .select("*, user:user_id(full_name, user_type, user_code, email, last_seen_at)")
         .order("created_at", { ascending: true });
       if (error) throw error;
 

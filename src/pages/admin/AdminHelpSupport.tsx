@@ -868,7 +868,17 @@ const AdminHelpSupport = () => {
           <div style={{ flex: 1, cursor: "pointer" }}>
             <p style={{ fontWeight: 600, fontSize: 15, color: WA.headerText, margin: 0, lineHeight: 1.2 }}>{userName}</p>
             <p style={{ fontSize: 12, color: WA.headerSub, margin: 0 }}>
-              {typing ? <span style={{ color: "#4ade80" }}>typing…</span> : `${userType} · ${getUserCode(selectedConv)}`}
+              {typing ? (
+                <span style={{ color: "#4ade80" }}>typing…</span>
+              ) : (() => {
+                const lsa = (selectedConv as any).user?.last_seen_at;
+                const online = lsa ? (Date.now() - new Date(lsa).getTime()) < 5 * 60 * 1000 : false;
+                return online
+                  ? <span style={{ color: "#25d366" }}>Online</span>
+                  : lsa
+                    ? `last seen ${safeDist(lsa, "", { addSuffix: true })}`
+                    : `${userType} · ${getUserCode(selectedConv)}`;
+              })()}
             </p>
           </div>
           {/* Actions */}
@@ -1346,6 +1356,16 @@ const AdminHelpSupport = () => {
             const avatarColors = ["#128c7e","#075e54","#25d366","#34b7f1","#e91e63","#9c27b0","#3f51b5"];
             const avatarBg = avatarColors[initial.charCodeAt(0) % avatarColors.length];
 
+            const lastSeenAt = (conv as any).user?.last_seen_at;
+            const isOnline = lastSeenAt
+              ? (Date.now() - new Date(lastSeenAt).getTime()) < 5 * 60 * 1000
+              : false;
+            const lastSeenLabel = lastSeenAt
+              ? isOnline
+                ? "Online"
+                : safeDist(lastSeenAt, "Never", { addSuffix: true })
+              : "Never seen";
+
             return (
               <div
                 key={conv.id}
@@ -1359,16 +1379,21 @@ const AdminHelpSupport = () => {
                 onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = WA.convHover; }}
                 onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = WA.convItem; }}
               >
-                {/* Circular avatar */}
-                <div style={{ width: 50, height: 50, borderRadius: "50%", background: avatarBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <span style={{ fontWeight: 700, fontSize: 20, color: "#fff" }}>{initial}</span>
+                {/* Circular avatar with online dot */}
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  <div style={{ width: 50, height: 50, borderRadius: "50%", background: avatarBg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontWeight: 700, fontSize: 20, color: "#fff" }}>{initial}</span>
+                  </div>
+                  {isOnline && (
+                    <span style={{ position: "absolute", bottom: 2, right: 2, width: 12, height: 12, borderRadius: "50%", background: "#25d366", border: `2px solid ${WA.convItem}` }} />
+                  )}
                 </div>
 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
                     <span style={{ fontWeight: 600, fontSize: 15, color: WA.incomingText, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "65%" }}>{userName}</span>
-                    <span style={{ fontSize: 11, color: WA.subText, whiteSpace: "nowrap", flexShrink: 0 }}>
-                      {safeDist(conv.created_at, "—", { addSuffix: true })}
+                    <span style={{ fontSize: 11, color: isOnline ? "#25d366" : WA.subText, whiteSpace: "nowrap", flexShrink: 0, fontWeight: isOnline ? 600 : 400 }}>
+                      {lastSeenLabel}
                     </span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
