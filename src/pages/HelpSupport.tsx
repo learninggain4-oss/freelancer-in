@@ -141,6 +141,8 @@ const HelpSupport = () => {
   const [typing, setTyping]                 = useState(false);
   const [expandedFaq, setExpandedFaq]       = useState<string | null>(null);
   const [showReactionFor, setShowReactionFor] = useState<string | null>(null);
+  const [showHeaderMenu, setShowHeaderMenu]   = useState(false);
+  const [confirmClear, setConfirmClear]       = useState(false);
 
   const scrollRef    = useRef<HTMLDivElement>(null);
   const bottomRef    = useRef<HTMLDivElement>(null);
@@ -227,6 +229,23 @@ const HelpSupport = () => {
 
   const copyMsg = (msg: any) => { navigator.clipboard.writeText(msg.content); toast.success("Copied!"); setCtxMsg(null); };
 
+  const deleteMsg = async (msg: any) => {
+    setCtxMsg(null);
+    if (msg.sender_id !== profile?.id) { toast.error("You can only delete your own messages"); return; }
+    const { error } = await supabase.from("support_messages").delete().eq("id", msg.id);
+    if (error) toast.error("Failed to delete message");
+    else toast.success("Message deleted");
+  };
+
+  const clearHistory = async () => {
+    setConfirmClear(false);
+    setShowHeaderMenu(false);
+    if (!conversation?.id) return;
+    const { error } = await supabase.from("support_messages").delete().eq("conversation_id", conversation.id);
+    if (error) toast.error("Failed to clear history");
+    else toast.success("Chat history cleared");
+  };
+
   const filteredMessages = searchQuery
     ? messages.filter(m => m.content.toLowerCase().includes(searchQuery.toLowerCase()))
     : messages;
@@ -245,7 +264,7 @@ const HelpSupport = () => {
   if (activeTab === "messages") {
     return (
       <div className="flex flex-col" style={{ height: "100%", minHeight: 0, background: T.bg, position: "relative" }}
-        onClick={() => { setCtxMsg(null); setShowReactionFor(null); }}>
+        onClick={() => { setCtxMsg(null); setShowReactionFor(null); setShowHeaderMenu(false); }}>
 
         {/* ── Header ── */}
         <div style={{ background: T.header, borderBottom: `1px solid ${T.headerBorder}`, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, zIndex: 10 }}>
@@ -261,13 +280,26 @@ const HelpSupport = () => {
               {typing ? "typing..." : "online"}
             </p>
           </div>
-          <div style={{ display: "flex", gap: 2 }}>
+          <div style={{ display: "flex", gap: 2, position: "relative" }}>
             <button onClick={() => { setSearchOpen(s => !s); setSearchQuery(""); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "6px", borderRadius: 8, display: "flex", alignItems: "center" }}>
               <Search size={17} style={{ color: T.sub }} />
             </button>
-            <button style={{ background: "none", border: "none", cursor: "pointer", padding: "6px", borderRadius: 8, display: "flex", alignItems: "center" }}>
+            <button onClick={e => { e.stopPropagation(); setShowHeaderMenu(s => !s); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "6px", borderRadius: 8, display: "flex", alignItems: "center" }}>
               <MoreVertical size={17} style={{ color: T.sub }} />
             </button>
+            {/* Header dropdown */}
+            {showHeaderMenu && (
+              <div onClick={e => e.stopPropagation()} style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, minWidth: 180, background: T.ctxMenu, border: `1px solid ${T.ctxBorder}`, borderRadius: 14, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,.3)", zIndex: 50 }}>
+                <button onClick={() => { setShowHeaderMenu(false); setSearchOpen(s => !s); setSearchQuery(""); }}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", background: "none", border: "none", cursor: "pointer", color: T.text, fontSize: 13, fontWeight: 600, borderBottom: `1px solid ${T.ctxBorder}` }}>
+                  <Search size={15} style={{ color: T.sub }} /> Search
+                </button>
+                <button onClick={() => { setShowHeaderMenu(false); setConfirmClear(true); }}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", background: "none", border: "none", cursor: "pointer", color: "#f87171", fontSize: 13, fontWeight: 600 }}>
+                  <Trash2 size={15} style={{ color: "#f87171" }} /> Clear History
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -441,20 +473,40 @@ const HelpSupport = () => {
 
         {/* ── Context menu ── */}
         {ctxMsg && (
-          <div onClick={e => e.stopPropagation()} style={{ position: "fixed", left: Math.min(ctxPos.x, window.innerWidth - 180), top: Math.min(ctxPos.y, window.innerHeight - 200), zIndex: 50, background: T.ctxMenu, border: `1px solid ${T.ctxBorder}`, borderRadius: 14, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,.3)", minWidth: 170 }}>
+          <div onClick={e => e.stopPropagation()} style={{ position: "fixed", left: Math.min(ctxPos.x, window.innerWidth - 180), top: Math.min(ctxPos.y, window.innerHeight - 220), zIndex: 50, background: T.ctxMenu, border: `1px solid ${T.ctxBorder}`, borderRadius: 14, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,.3)", minWidth: 170 }}>
             {[
-              { icon: CornerUpLeft, label: "Reply", action: () => { setReplyTo(ctxMsg); setCtxMsg(null); inputRef.current?.focus(); } },
-              { icon: Copy,          label: "Copy",  action: () => copyMsg(ctxMsg) },
-              { icon: Smile,         label: "React", action: () => { setShowReactionFor(ctxMsg.id); setCtxMsg(null); } },
-            ].map(item => {
+              { icon: CornerUpLeft, label: "Reply", color: T.text, action: () => { setReplyTo(ctxMsg); setCtxMsg(null); inputRef.current?.focus(); } },
+              { icon: Copy,          label: "Copy",  color: T.text, action: () => copyMsg(ctxMsg) },
+              { icon: Smile,         label: "React", color: T.text, action: () => { setShowReactionFor(ctxMsg.id); setCtxMsg(null); } },
+              ...(ctxMsg.sender_id === profile?.id
+                ? [{ icon: Trash2, label: "Delete", color: "#f87171", action: () => deleteMsg(ctxMsg) }]
+                : []),
+            ].map((item, i, arr) => {
               const Icon = item.icon;
               return (
                 <button key={item.label} onClick={item.action}
-                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "none", border: "none", cursor: "pointer", color: T.text, fontSize: 13, fontWeight: 600 }}>
-                  <Icon size={15} style={{ color: T.sub }} /> {item.label}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "none", border: "none", cursor: "pointer", color: item.color, fontSize: 13, fontWeight: 600, borderBottom: i < arr.length - 1 ? `1px solid ${T.ctxBorder}` : "none" }}>
+                  <Icon size={15} style={{ color: item.color }} /> {item.label}
                 </button>
               );
             })}
+          </div>
+        )}
+
+        {/* ── Clear History Confirm ── */}
+        {confirmClear && (
+          <div onClick={() => setConfirmClear(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: T.ctxMenu, border: `1px solid ${T.ctxBorder}`, borderRadius: 20, padding: 24, maxWidth: 320, width: "100%", boxShadow: "0 16px 48px rgba(0,0,0,.4)" }}>
+              <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(248,113,113,.15)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                <Trash2 size={22} style={{ color: "#f87171" }} />
+              </div>
+              <p style={{ fontWeight: 800, fontSize: 16, color: T.text, textAlign: "center", margin: "0 0 8px" }}>Clear Chat History?</p>
+              <p style={{ fontSize: 13, color: T.sub, textAlign: "center", margin: "0 0 20px", lineHeight: 1.5 }}>All messages in this conversation will be permanently deleted. This cannot be undone.</p>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setConfirmClear(false)} style={{ flex: 1, padding: "11px", borderRadius: 12, border: `1px solid ${T.ctxBorder}`, background: "none", cursor: "pointer", color: T.sub, fontSize: 13, fontWeight: 600 }}>Cancel</button>
+                <button onClick={clearHistory} style={{ flex: 1, padding: "11px", borderRadius: 12, border: "none", background: "linear-gradient(135deg,#ef4444,#dc2626)", cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 700 }}>Clear All</button>
+              </div>
+            </div>
           </div>
         )}
 
