@@ -721,17 +721,17 @@ const HelpSupport = () => {
                 />
               </div>
 
-              {newMessage.trim() ? (
-                <button onClick={handleSend}
-                  style={{ width: 42, height: 42, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 12px rgba(99,102,241,.45)" }}>
-                  <Send size={17} style={{ color: "#fff", transform: "translateX(1px)" }} />
-                </button>
-              ) : (
-                <button onClick={startRecording}
-                  style={{ width: 42, height: 42, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 12px rgba(99,102,241,.45)" }}>
-                  <Mic size={17} style={{ color: "#fff" }} />
-                </button>
-              )}
+              {/* Mic — always visible */}
+              <button onClick={startRecording}
+                style={{ width: 42, height: 42, borderRadius: "50%", background: "none", border: `1.5px solid ${T.inputBorder}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Mic size={18} style={{ color: T.sub }} />
+              </button>
+
+              {/* Send — always visible */}
+              <button onClick={handleSend}
+                style={{ width: 42, height: 42, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 12px rgba(99,102,241,.45)", opacity: newMessage.trim() ? 1 : 0.5 }}>
+                <Send size={17} style={{ color: "#fff", transform: "translateX(1px)" }} />
+              </button>
             </>
           )}
         </div>
