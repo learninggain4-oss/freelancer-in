@@ -1188,7 +1188,8 @@ app.post("/functions/v1/mpin-set", async (req, res) => {
   }
 });
 
-// POST /functions/v1/mpin-forgot-send — send OTP to user's registered email (uses Supabase email OTP)
+// POST /functions/v1/mpin-forgot-send — clear M-Pin hash so user can reset after email verification
+// NOTE: email OTP is sent directly from the browser Supabase client (not from server)
 app.post("/functions/v1/mpin-forgot-send", async (req, res) => {
   try {
     const user = await getUserFromToken(req.headers.authorization);
@@ -1197,10 +1198,10 @@ app.post("/functions/v1/mpin-forgot-send", async (req, res) => {
     const email = user.email;
     if (!email) return res.status(400).json({ error: "No email on account" });
 
-    const anonClient = getAnonClient();
-    const { error } = await anonClient.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: false },
+    // Clear the PIN hash so the user can create a new one after email verification
+    const adminAuth = getAdminClient().auth.admin;
+    const { error } = await adminAuth.updateUserById(user.id, {
+      app_metadata: { mpin_hash: null },
     });
     if (error) return res.status(500).json({ error: error.message });
 

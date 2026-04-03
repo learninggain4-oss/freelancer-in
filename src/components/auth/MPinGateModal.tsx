@@ -92,6 +92,19 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
     if (forgot && forgotStep === "otp") setTimeout(() => otpRef.current?.focus(), 300);
   }, [step, forgot, forgotStep]);
 
+  // If the user clicked the magic link in their email, Supabase signs them in and
+  // the parent hook re-checks — since mpin_hash was cleared, mode becomes "create".
+  // Detect that change and exit the forgot flow so the normal Create M-Pin screen shows.
+  useEffect(() => {
+    if (mode === "create" && forgot && forgotStep !== "newpin") {
+      setForgot(false);
+      setForgotStep("email");
+      setOtpVal("");
+      setOtpError("");
+      setOtpSent(false);
+    }
+  }, [mode]);
+
   const isDark   = theme === "black";
   const accent   = isDark ? "#818cf8" : theme === "warm" ? "#d97706" : theme === "forest" ? "#16a34a" : theme === "ocean" ? "#0284c7" : "#4f46e5";
   const accentD  = isDark ? "#6366f1" : theme === "warm" ? "#b45309" : theme === "forest" ? "#15803d" : theme === "ocean" ? "#0369a1" : "#3730a3";
@@ -214,17 +227,29 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
     setSendingOtp(true);
     setOtpError("");
     try {
+      // Step 1: Clear the M-Pin hash on server (so magic-link flow also works)
       const token = await getToken();
       const res = await fetch("/functions/v1/mpin-forgot-send", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Failed to send OTP");
+      if (!res.ok) throw new Error(json.error || "Server error");
+
+      // Step 2: Send OTP email directly from browser (server-side signInWithOtp doesn't work reliably)
+      const { error: otpErr } = await supabase.auth.signInWithOtp({
+        email: userEmail,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: window.location.origin,
+        },
+      });
+      if (otpErr) throw new Error(otpErr.message);
+
       setOtpSent(true);
       setForgotStep("otp");
     } catch (err: unknown) {
-      setOtpError(err instanceof Error ? err.message : "Could not send OTP");
+      setOtpError(err instanceof Error ? err.message : "Could not send email. Please try again.");
     } finally {
       setSendingOtp(false);
     }
@@ -427,12 +452,22 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
         {/* ── Forgot: OTP entry screen ───────────────────────── */}
         {forgot && forgotStep === "otp" && (
           <div style={{ padding: "28px 24px 32px", animation: "mpinSlideIn .25s ease" }}>
-            <p style={{ margin: "0 0 6px", fontSize: 13, color: subC, lineHeight: 1.6, textAlign: "center" }}>
-              OTP sent to
+            <p style={{ margin: "0 0 4px", fontSize: 13, color: subC, lineHeight: 1.6, textAlign: "center" }}>
+              Email sent to
             </p>
-            <p style={{ margin: "0 0 20px", fontSize: 13.5, fontWeight: 700, color: textC, textAlign: "center", wordBreak: "break-all" }}>
+            <p style={{ margin: "0 0 14px", fontSize: 13.5, fontWeight: 700, color: textC, textAlign: "center", wordBreak: "break-all" }}>
               {userEmail}
             </p>
+            <div style={{
+              background: isDark ? "rgba(2,132,199,.1)" : "#eff6ff",
+              border: `1px solid ${isDark ? "rgba(2,132,199,.25)" : "#bfdbfe"}`,
+              borderRadius: 10, padding: "10px 14px", marginBottom: 18,
+              fontSize: 12, color: isDark ? "#93c5fd" : "#1d4ed8", lineHeight: 1.55,
+            }}>
+              <strong>Option 1:</strong> Enter the 6-digit code from the email below.<br />
+              <strong>Option 2:</strong> Click the link in the email — you'll be signed in automatically and the M-Pin screen will update.<br />
+              <span style={{ opacity: .75 }}>Check spam/junk folder if email not received.</span>
+            </div>
 
             <div style={{ marginBottom: 6 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: subC, letterSpacing: ".5px", textTransform: "uppercase" }}>
