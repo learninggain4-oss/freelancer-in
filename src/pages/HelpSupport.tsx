@@ -200,6 +200,7 @@ const HelpSupport = () => {
   const [isRecording, setIsRecording]         = useState(false);
   const [recordingTime, setRecordingTime]     = useState(0);
   const [showMicDenied, setShowMicDenied]     = useState(false);
+  const [showCamDenied, setShowCamDenied]     = useState(false);
 
   const scrollRef          = useRef<HTMLDivElement>(null);
   const bottomRef          = useRef<HTMLDivElement>(null);
@@ -305,7 +306,7 @@ const HelpSupport = () => {
       }, 80);
     } catch (err: any) {
       const denied = err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError";
-      if (denied) setShowMicDenied(true);
+      if (denied) setShowCamDenied(true);
       else toast.error("Could not access camera");
     }
   };
@@ -844,6 +845,94 @@ const HelpSupport = () => {
                     Dismiss
                   </button>
                   <button onClick={() => { setShowMicDenied(false); setTimeout(startRecording, 300); }}
+                    style={{ flex: 1, padding: "11px", borderRadius: 12, border: "none", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 700 }}>
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── Camera Permission Denied Dialog ── */}
+        {showCamDenied && (() => {
+          const ua = navigator.userAgent;
+          const isIOS = /iPhone|iPad|iPod/i.test(ua);
+          const isAndroid = /Android/i.test(ua);
+          const isPWA = (isIOS && (navigator as any).standalone === true)
+                     || (!isIOS && window.matchMedia("(display-mode: standalone)").matches);
+
+          type Step = { n: string; text: string };
+          let platform = "";
+          let steps: Step[] = [];
+
+          if (isIOS && isPWA) {
+            platform = "iPhone / iPad (App)";
+            steps = [
+              { n: "1", text: "Open the iPhone Settings app" },
+              { n: "2", text: "Go to Privacy & Security → Camera" },
+              { n: "3", text: "Toggle ON for Freelancer India" },
+              { n: "4", text: "Return to the app and tap Try Again" },
+            ];
+          } else if (isIOS) {
+            platform = "iPhone / iPad (Safari)";
+            steps = [
+              { n: "1", text: "Open the iPhone Settings app" },
+              { n: "2", text: "Go to Safari → Camera" },
+              { n: "3", text: "Select \"Ask\" or \"Allow\"" },
+              { n: "4", text: "Reload Safari and tap Try Again" },
+            ];
+          } else if (isAndroid && isPWA) {
+            platform = "Android (App)";
+            steps = [
+              { n: "1", text: "Open your phone's Settings app" },
+              { n: "2", text: "Go to Apps → Freelancer India" },
+              { n: "3", text: "Tap Permissions → Camera → Allow" },
+              { n: "4", text: "Return to the app and tap Try Again" },
+            ];
+          } else if (isAndroid) {
+            platform = "Android (Chrome)";
+            steps = [
+              { n: "1", text: "Tap the 🔒 icon in the address bar" },
+              { n: "2", text: "Tap \"Permissions\"" },
+              { n: "3", text: "Set Camera → Allow" },
+              { n: "4", text: "Refresh the page and tap Try Again" },
+            ];
+          } else {
+            platform = "Desktop Browser";
+            steps = [
+              { n: "1", text: "Click the 🔒 lock icon in the address bar" },
+              { n: "2", text: "Select \"Site settings\" or \"Permissions\"" },
+              { n: "3", text: "Set Camera → Allow" },
+              { n: "4", text: "Reload the page and click Try Again" },
+            ];
+          }
+
+          return (
+            <div onClick={() => setShowCamDenied(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+              <div onClick={e => e.stopPropagation()} style={{ background: T.ctxMenu, border: `1px solid ${T.ctxBorder}`, borderRadius: 20, padding: 24, maxWidth: 340, width: "100%", boxShadow: "0 16px 48px rgba(0,0,0,.4)" }}>
+                <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(239,68,68,.12)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                  <Camera size={24} style={{ color: "#ef4444" }} />
+                </div>
+                <p style={{ fontWeight: 800, fontSize: 16, color: T.text, textAlign: "center", margin: "0 0 4px" }}>Camera Access Denied</p>
+                <p style={{ fontSize: 11, color: "#6366f1", textAlign: "center", fontWeight: 600, margin: "0 0 12px", letterSpacing: 0.3 }}>{platform}</p>
+                <p style={{ fontSize: 13, color: T.sub, textAlign: "center", margin: "0 0 14px", lineHeight: 1.55 }}>
+                  Follow these steps to enable camera access:
+                </p>
+                <div style={{ background: T.replyBg, border: `1px solid ${T.replyBorder}20`, borderRadius: 12, padding: "12px 14px", marginBottom: 20 }}>
+                  {steps.map((s, idx) => (
+                    <div key={s.n} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: idx < steps.length - 1 ? 10 : 0 }}>
+                      <span style={{ width: 22, height: 22, borderRadius: "50%", background: "#6366f1", color: "#fff", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>{s.n}</span>
+                      <span style={{ fontSize: 12.5, color: T.text, lineHeight: 1.55 }}>{s.text}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={() => setShowCamDenied(false)}
+                    style={{ flex: 1, padding: "11px", borderRadius: 12, border: `1px solid ${T.ctxBorder}`, background: "none", cursor: "pointer", color: T.sub, fontSize: 13, fontWeight: 600 }}>
+                    Dismiss
+                  </button>
+                  <button onClick={() => { setShowCamDenied(false); setTimeout(() => openCamera(), 300); }}
                     style={{ flex: 1, padding: "11px", borderRadius: 12, border: "none", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 700 }}>
                     Try Again
                   </button>
