@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-export type DashboardTheme = "black" | "white" | "wb" | "warm";
+export type DashboardTheme = "black" | "white" | "wb" | "warm" | "forest";
 export type DashboardThemeKey = "black" | "white" | "wb";
 
 const STORAGE_KEY = "dashboard_theme";
@@ -22,14 +22,15 @@ function applyDarkClass(t: DashboardTheme) {
 }
 
 export function resolveThemeKey(t: DashboardTheme): DashboardThemeKey {
-  return t === "warm" ? "white" : t;
+  if (t === "warm" || t === "forest") return "white";
+  return t;
 }
 
 export function useDashboardTheme() {
   const [theme, setThemeState] = useState<DashboardTheme>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved === "black" || saved === "white" || saved === "wb" || saved === "warm") return saved;
+      if (saved === "black" || saved === "white" || saved === "wb" || saved === "warm" || saved === "forest") return saved;
     } catch {}
     return "black";
   });

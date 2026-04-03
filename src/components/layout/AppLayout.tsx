@@ -170,6 +170,43 @@ const T = {
     shadowLg:   "0 8px 32px rgba(180,83,9,.12)",
     shadowXl:   "0 12px 40px rgba(180,83,9,.14)",
   },
+  forest: {
+    shell:      "#f1faf4",
+    header:     "rgba(241,250,244,.97)",
+    headerBdr:  "rgba(21,128,61,.12)",
+    logo:       "#0f2d18",
+    logoSub:    "rgba(75,124,93,.6)",
+    mainBg:     "#f1faf4",
+    mainText:   "#0f2d18",
+    mainSub:    "#4b7c5d",
+    cardBg:     "#ffffff",
+    cardBdr:    "rgba(21,128,61,.1)",
+    mutedBg:    "#dcfce7",
+    inputBg:    "#ffffff",
+    inputBdr:   "rgba(21,128,61,.18)",
+    inputFg:    "#0f2d18",
+    inputPh:    "rgba(75,124,93,.55)",
+    accent:     "#16a34a",
+    green:      "#15803d",
+    orange:     "#b45309",
+    red:        "#dc2626",
+    orbA:       "rgba(22,163,74,.1)",
+    orbB:       "rgba(21,128,61,.07)",
+    gridLine:   "rgba(21,128,61,.018)",
+    hoverRow:   "rgba(21,128,61,.05)",
+    iconBtn:    "rgba(21,128,61,.08)",
+    iconBtnHov: "rgba(21,128,61,.14)",
+    dropBg:     "#ffffff",
+    dropBdr:    "rgba(21,128,61,.12)",
+    searchBg:   "rgba(21,128,61,.07)",
+    searchBdr:  "rgba(21,128,61,.14)",
+    footerBg:   "rgba(241,250,244,.97)",
+    footerBdr:  "rgba(21,128,61,.1)",
+    shadowSm:   "0 2px 12px rgba(21,128,61,.08)",
+    shadowMd:   "0 4px 20px rgba(21,128,61,.1)",
+    shadowLg:   "0 8px 32px rgba(21,128,61,.12)",
+    shadowXl:   "0 12px 40px rgba(21,128,61,.14)",
+  },
 };
 
 function buildCss(t: typeof T.black): string {
@@ -253,7 +290,8 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
   const tok = T[theme];
   const css = buildCss(tok);
   const isHeaderDark = theme === "black" || theme === "wb";
-  const isWarm = theme === "warm";
+  const isWarm   = theme === "warm";
+  const isForest = theme === "forest";
   const basePath = userType === "employee" ? "/employee" : "/client";
 
   const { data: walletProfile } = useQuery({
@@ -289,9 +327,9 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
 
   const iconBtnStyle: React.CSSProperties = {
     width: 34, height: 34, borderRadius: 9, background: tok.iconBtn,
-    border: `1px solid ${isHeaderDark ? "rgba(255,255,255,.08)" : isWarm ? "rgba(180,83,9,.14)" : "rgba(0,0,0,.07)"}`,
+    border: `1px solid ${isHeaderDark ? "rgba(255,255,255,.08)" : isWarm ? "rgba(180,83,9,.14)" : isForest ? "rgba(21,128,61,.14)" : "rgba(0,0,0,.07)"}`,
     display: "flex", alignItems: "center", justifyContent: "center",
-    cursor: "pointer", color: isHeaderDark ? "rgba(255,255,255,.5)" : isWarm ? "#78716c" : "#6b7280",
+    cursor: "pointer", color: isHeaderDark ? "rgba(255,255,255,.5)" : isWarm ? "#78716c" : isForest ? "#4b7c5d" : "#6b7280",
     transition: "all .15s", flexShrink: 0,
   };
 
@@ -376,8 +414,8 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
               style={{ alignItems: "center", gap: 7, padding: "5px 10px", borderRadius: 10, background: `${A1}15`, border: `1px solid ${A1}30`, cursor: "pointer", height: 34 }}
               onMouseEnter={e => (e.currentTarget.style.background = `${A1}25`)}
               onMouseLeave={e => (e.currentTarget.style.background = `${A1}15`)}>
-              <IndianRupee size={12} color={isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : "#4f46e5"} />
-              <span style={{ fontSize: 12.5, fontWeight: 800, color: isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : "#4f46e5" }}>
+              <IndianRupee size={12} color={isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : isForest ? "#16a34a" : "#4f46e5"} />
+              <span style={{ fontSize: 12.5, fontWeight: 800, color: isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : isForest ? "#16a34a" : "#4f46e5" }}>
                 {walletBalance.toLocaleString("en-IN")}
               </span>
             </button>
