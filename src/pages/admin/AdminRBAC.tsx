@@ -242,7 +242,7 @@ export default function AdminRBAC() {
     saveInvitations(updated);
     const link = `${window.location.origin}/register?invite=${token}&email=${encodeURIComponent(inv.email)}&role=${inv.role}`;
     handleCopyLink(link);
-    logAction("Invitation Resent", `Resent invite to ${inv.email}`, "Security", "info");
+    logAction("Invitation Resent", `Resent invite to ${inv.email}`, "Security", "success");
     toast({ title: "Invitation refreshed", description: `New link generated and copied for ${inv.email}` });
   };
 
@@ -250,7 +250,7 @@ export default function AdminRBAC() {
     const updated = invitations.map(i => i.id === inv.id ? { ...i, status: "cancelled" as const } : i);
     setInvitations(updated);
     saveInvitations(updated);
-    logAction("Invitation Cancelled", `Cancelled invite for ${inv.email}`, "Security", "info");
+    logAction("Invitation Cancelled", `Cancelled invite for ${inv.email}`, "Security", "warning");
     toast({ title: "Invitation cancelled", description: `Invite for ${inv.email} has been cancelled.` });
     setCancelTarget(null);
   };
