@@ -5,8 +5,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { safeFmt, safeDist } from "@/lib/admin-date";
+import { safeFmt } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -48,7 +47,7 @@ const BLANK: { name: string; value: string; description: string; environment: "a
 const envBadge: Record<string, { color: string; bg: string }> = { all: { color: "#a5b4fc", bg: "rgba(99,102,241,.12)" }, production: { color: "#f87171", bg: "rgba(248,113,113,.12)" }, staging: { color: "#fbbf24", bg: "rgba(251,191,36,.12)" }, testing: { color: "#4ade80", bg: "rgba(74,222,128,.12)" } };
 
 export default function AdminEnvVars() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { themeKey } = useDashboardTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
