@@ -660,42 +660,42 @@ const HelpSupport = () => {
           if (isIOS && isPWA) {
             platform = "iPhone / iPad (App)";
             steps = [
-              { n: "1", text: "iPhone-ൽ Settings app തുറക്കുക" },
-              { n: "2", text: "Privacy & Security → Microphone tap ചെയ്യുക" },
-              { n: "3", text: "Freelancer India app-ന് അടുത്ത് toggle ON ചെയ്യുക" },
-              { n: "4", text: "App-ലേക്ക് തിരിച്ചു വന്ന് Try Again tap ചെയ്യുക" },
+              { n: "1", text: "Open the iPhone Settings app" },
+              { n: "2", text: "Go to Privacy & Security → Microphone" },
+              { n: "3", text: "Toggle ON for Freelancer India" },
+              { n: "4", text: "Return to the app and tap Try Again" },
             ];
           } else if (isIOS) {
             platform = "iPhone / iPad (Safari)";
             steps = [
-              { n: "1", text: "iPhone Settings app തുറക്കുക" },
-              { n: "2", text: "Safari → Microphone tap ചെയ്യുക" },
-              { n: "3", text: "\"Ask\" അല്ലെങ്കിൽ \"Allow\" select ചെയ്യുക" },
-              { n: "4", text: "Safari-ലേക്ക് തിരിച്ചു വന്ന് page reload ചെയ്ത് Try Again tap ചെയ്യുക" },
+              { n: "1", text: "Open the iPhone Settings app" },
+              { n: "2", text: "Go to Safari → Microphone" },
+              { n: "3", text: "Select \"Ask\" or \"Allow\"" },
+              { n: "4", text: "Reload Safari and tap Try Again" },
             ];
           } else if (isAndroid && isPWA) {
             platform = "Android (App)";
             steps = [
-              { n: "1", text: "Phone-ൽ Settings app തുറക്കുക" },
-              { n: "2", text: "Apps → Freelancer India search ചെയ്യുക" },
-              { n: "3", text: "Permissions → Microphone → Allow tap ചെയ്യുക" },
-              { n: "4", text: "App-ലേക്ക് തിരിച്ചു വന്ന് Try Again tap ചെയ്യുക" },
+              { n: "1", text: "Open your phone's Settings app" },
+              { n: "2", text: "Go to Apps → Freelancer India" },
+              { n: "3", text: "Tap Permissions → Microphone → Allow" },
+              { n: "4", text: "Return to the app and tap Try Again" },
             ];
           } else if (isAndroid) {
             platform = "Android (Chrome)";
             steps = [
-              { n: "1", text: "Address bar-ൽ 🔒 icon tap ചെയ്യുക" },
-              { n: "2", text: "\"Permissions\" tap ചെയ്യുക" },
-              { n: "3", text: "Microphone → Allow select ചെയ്യുക" },
-              { n: "4", text: "Page refresh ചെയ്ത് Try Again tap ചെയ്യുക" },
+              { n: "1", text: "Tap the 🔒 icon in the address bar" },
+              { n: "2", text: "Tap \"Permissions\"" },
+              { n: "3", text: "Set Microphone → Allow" },
+              { n: "4", text: "Refresh the page and tap Try Again" },
             ];
           } else {
             platform = "Desktop Browser";
             steps = [
-              { n: "1", text: "Address bar-ൽ 🔒 lock icon click ചെയ്യുക" },
-              { n: "2", text: "\"Site settings\" അല്ലെങ്കിൽ \"Permissions\" select ചെയ്യുക" },
-              { n: "3", text: "Microphone → Allow set ചെയ്യുക" },
-              { n: "4", text: "Page reload ചെയ്ത് Try Again click ചെയ്യുക" },
+              { n: "1", text: "Click the 🔒 lock icon in the address bar" },
+              { n: "2", text: "Select \"Site settings\" or \"Permissions\"" },
+              { n: "3", text: "Set Microphone → Allow" },
+              { n: "4", text: "Reload the page and click Try Again" },
             ];
           }
 
@@ -708,7 +708,7 @@ const HelpSupport = () => {
                 <p style={{ fontWeight: 800, fontSize: 16, color: T.text, textAlign: "center", margin: "0 0 4px" }}>Microphone Access Denied</p>
                 <p style={{ fontSize: 11, color: "#6366f1", textAlign: "center", fontWeight: 600, margin: "0 0 12px", letterSpacing: 0.3 }}>{platform}</p>
                 <p style={{ fontSize: 13, color: T.sub, textAlign: "center", margin: "0 0 14px", lineHeight: 1.55 }}>
-                  Voice recording enable ചെയ്യാൻ ഈ steps follow ചെയ്യുക:
+                  Follow these steps to enable microphone access:
                 </p>
                 <div style={{ background: T.replyBg, border: `1px solid ${T.replyBorder}20`, borderRadius: 12, padding: "12px 14px", marginBottom: 20 }}>
                   {steps.map((s, idx) => (
