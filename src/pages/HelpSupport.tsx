@@ -121,6 +121,60 @@ const TH = {
   },
 };
 
+// ── VoicePlayer — top-level component (hooks must not be inside another component body) ──
+function VoicePlayer({ filePath, isMe, subColor }: { filePath: string; isMe: boolean; subColor: string }) {
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [playing, setPlaying]   = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [dur, setDur]           = useState(0);
+  const aRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    supabase.storage.from("support-files").createSignedUrl(filePath, 3600)
+      .then(({ data }) => { if (data?.signedUrl) setAudioUrl(data.signedUrl); });
+  }, [filePath]);
+
+  const toggle = () => {
+    if (!aRef.current) return;
+    if (playing) { aRef.current.pause(); setPlaying(false); }
+    else { aRef.current.play().then(() => setPlaying(true)).catch(() => {}); }
+  };
+
+  const fmtDur = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 190, paddingBottom: 2 }}>
+      <audio
+        ref={aRef}
+        src={audioUrl || undefined}
+        onTimeUpdate={() => { if (aRef.current && aRef.current.duration) setProgress((aRef.current.currentTime / aRef.current.duration) * 100); }}
+        onLoadedMetadata={() => { if (aRef.current) setDur(aRef.current.duration); }}
+        onEnded={() => { setPlaying(false); setProgress(0); }}
+      />
+      <button onClick={toggle}
+        style={{ width: 36, height: 36, borderRadius: "50%", background: isMe ? "rgba(255,255,255,.22)" : "rgba(99,102,241,.15)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        {playing
+          ? <Pause size={15} style={{ color: isMe ? "#fff" : "#6366f1" }} />
+          : <Play  size={15} style={{ color: isMe ? "#fff" : "#6366f1", transform: "translateX(1px)" }} />}
+      </button>
+      <div style={{ flex: 1 }}>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 20, marginBottom: 3 }}>
+          {[4,7,11,8,14,10,6,13,9,12,7,10,5,8,11,7].map((h, i) => (
+            <div key={i} style={{ width: 3, height: playing ? `${h}px` : `${Math.max(3, h * (progress / 100 + 0.15))}px`, borderRadius: 2, background: i < (progress / 100) * 16 ? (isMe ? "#fff" : "#6366f1") : (isMe ? "rgba(255,255,255,.3)" : "rgba(99,102,241,.25)"), transition: "height .3s ease" }} />
+          ))}
+        </div>
+        <div style={{ height: 2, background: isMe ? "rgba(255,255,255,.2)" : "rgba(99,102,241,.15)", borderRadius: 1, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${progress}%`, background: isMe ? "#fff" : "#6366f1", borderRadius: 1, transition: "width .3s linear" }} />
+        </div>
+        <span style={{ fontSize: 10, color: isMe ? "rgba(255,255,255,.65)" : subColor, marginTop: 2, display: "block" }}>
+          {dur ? fmtDur(dur) : "0:00"}
+        </span>
+      </div>
+      <Mic size={12} style={{ color: isMe ? "rgba(255,255,255,.45)" : subColor, flexShrink: 0 }} />
+    </div>
+  );
+}
+
 const HelpSupport = () => {
   const { profile } = useAuth();
   const { theme } = useDashboardTheme();
@@ -386,60 +440,6 @@ const HelpSupport = () => {
     setRecordingTime(0);
   };
 
-  // ── Inline VoicePlayer ────────────────────────────────────────────
-  const VoicePlayer = ({ filePath, isMe }: { filePath: string; isMe: boolean }) => {
-    const [audioUrl, setAudioUrl] = useState<string | null>(null);
-    const [playing, setPlaying]   = useState(false);
-    const [progress, setProgress] = useState(0);
-    const [dur, setDur]           = useState(0);
-    const aRef = useRef<HTMLAudioElement>(null);
-
-    useEffect(() => {
-      supabase.storage.from("support-files").createSignedUrl(filePath, 3600)
-        .then(({ data }) => { if (data?.signedUrl) setAudioUrl(data.signedUrl); });
-    }, [filePath]);
-
-    const toggle = () => {
-      if (!aRef.current) return;
-      if (playing) { aRef.current.pause(); setPlaying(false); }
-      else { aRef.current.play().then(() => setPlaying(true)).catch(() => {}); }
-    };
-
-    const fmtDur = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
-
-    return (
-      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 190, paddingBottom: 2 }}>
-        <audio
-          ref={aRef}
-          src={audioUrl || undefined}
-          onTimeUpdate={() => { if (aRef.current && aRef.current.duration) setProgress((aRef.current.currentTime / aRef.current.duration) * 100); }}
-          onLoadedMetadata={() => { if (aRef.current) setDur(aRef.current.duration); }}
-          onEnded={() => { setPlaying(false); setProgress(0); }}
-        />
-        <button onClick={toggle}
-          style={{ width: 36, height: 36, borderRadius: "50%", background: isMe ? "rgba(255,255,255,.22)" : "rgba(99,102,241,.15)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          {playing
-            ? <Pause size={15} style={{ color: isMe ? "#fff" : "#6366f1" }} />
-            : <Play  size={15} style={{ color: isMe ? "#fff" : "#6366f1", transform: "translateX(1px)" }} />}
-        </button>
-        <div style={{ flex: 1 }}>
-          {/* Waveform bars */}
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 20, marginBottom: 3 }}>
-            {[4,7,11,8,14,10,6,13,9,12,7,10,5,8,11,7].map((h, i) => (
-              <div key={i} style={{ width: 3, height: playing ? `${h}px` : `${Math.max(3, h * (progress / 100 + 0.15))}px`, borderRadius: 2, background: i < (progress / 100) * 16 ? (isMe ? "#fff" : "#6366f1") : (isMe ? "rgba(255,255,255,.3)" : "rgba(99,102,241,.25)"), transition: "height .3s ease" }} />
-            ))}
-          </div>
-          <div style={{ height: 2, background: isMe ? "rgba(255,255,255,.2)" : "rgba(99,102,241,.15)", borderRadius: 1, overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${progress}%`, background: isMe ? "#fff" : "#6366f1", borderRadius: 1, transition: "width .3s linear" }} />
-          </div>
-          <span style={{ fontSize: 10, color: isMe ? "rgba(255,255,255,.65)" : T.sub, marginTop: 2, display: "block" }}>
-            {dur ? fmtDur(dur) : "0:00"}
-          </span>
-        </div>
-        <Mic size={12} style={{ color: isMe ? "rgba(255,255,255,.45)" : T.sub, flexShrink: 0 }} />
-      </div>
-    );
-  };
 
   const filteredMessages = searchQuery
     ? messages.filter(m => m.content.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -599,7 +599,7 @@ const HelpSupport = () => {
                           })()}
                           {!isReply && (
                             (msg.file_name && msg.file_name.startsWith("voice.") && msg.file_path)
-                              ? <VoicePlayer filePath={msg.file_path} isMe={isMe} />
+                              ? <VoicePlayer filePath={msg.file_path} isMe={isMe} subColor={T.sub} />
                               : <p style={{ margin: 0, fontSize: 13.5, color: T.text, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{msg.content}</p>
                           )}
 
