@@ -385,7 +385,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
                       </div>
                       <div>
                         <p style={{ fontWeight: 700, fontSize: 13, color: tok.mainText, margin: 0 }}>{typeof userName === "string" ? userName : Array.isArray(userName) ? userName[0] : "User"}</p>
-                        <p style={{ fontSize: 10.5, color: tok.mainSub, margin: 0, textTransform: "capitalize" }}>{userType} account</p>
+                        <p style={{ fontSize: 10.5, color: tok.mainSub, margin: 0, textTransform: "capitalize" }}>{userType === "employee" ? "Freelancer Account" : "Client Account"}</p>
                       </div>
                     </div>
                   </div>
