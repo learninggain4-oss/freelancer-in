@@ -1,13 +1,12 @@
-import { useState, useEffect, useRef } from "react";
-import { Database, Plus, Edit2, Trash2, CheckCircle2, XCircle, Loader2, RefreshCw, Copy, ToggleLeft, ToggleRight, Clock, Shield, AlertTriangle, ChevronDown, ChevronUp, TestTube2, History, Star } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Database, Plus, Edit2, Trash2, CheckCircle2, XCircle, Loader2, Copy, ToggleRight, TestTube2, History, Star, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { safeFmt, safeDist } from "@/lib/admin-date";
+import { safeFmt } from "@/lib/admin-date";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -56,33 +55,26 @@ function addHistory(action: string, details: string) {
   } catch { /* */ }
 }
 
-const BLANK: Omit<DbConnection, "id"|"createdAt"|"updatedAt"> = {
-  name: "", provider: "supabase", projectUrl: "", anonKey: "", dbName: "postgres",
-  username: "postgres", environment: "production", isActive: false, isPrimary: false, notes: "",
+const BLANK = {
+  name: "", provider: "supabase" as DbConnection["provider"],
+  projectUrl: "", anonKey: "", dbName: "postgres",
+  username: "postgres", environment: "production" as DbConnection["environment"],
+  isActive: false, isPrimary: false, notes: "",
 };
 
 const envColor = { production: "#f87171", staging: "#fbbf24", testing: "#4ade80" };
 const providerIcon = { supabase: "⚡", postgresql: "🐘", mysql: "🐬" };
 
 export default function AdminDatabaseManager() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { themeKey } = useDashboardTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 
-  const formRef = useRef<HTMLDivElement>(null);
-
   const [connections, setConnections] = useState<DbConnection[]>(load);
   const [editing, setEditing] = useState<DbConnection | null>(null);
-  const [form, setForm] = useState<typeof BLANK>(BLANK);
-  const [showForm, setShowForm] = useState(false);
-
-  useEffect(() => {
-    if (showForm && formRef.current) {
-      setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-    }
-  }, [showForm]);
-
+  const [form, setForm] = useState({ ...BLANK });
+  const [modalOpen, setModalOpen] = useState(false);
   const [testing, setTesting] = useState<string | null>(null);
   const [confirmSwitch, setConfirmSwitch] = useState<DbConnection | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<DbConnection | null>(null);
@@ -90,9 +82,59 @@ export default function AdminDatabaseManager() {
   const [history, setHistory] = useState<{ id: string; timestamp: string; action: string; details: string }[]>([]);
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
 
-  useEffect(() => { setHistory(JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]")); }, [showHistory]);
+  useEffect(() => {
+    if (showHistory) {
+      setHistory(JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"));
+    }
+  }, [showHistory]);
 
   const persist = (conns: DbConnection[]) => { save(conns); setConnections(conns); };
+
+  const openAdd = () => {
+    setEditing(null);
+    setForm({ ...BLANK });
+    setModalOpen(true);
+  };
+
+  const openEdit = (conn: DbConnection) => {
+    setEditing(conn);
+    setForm({
+      name: conn.name, provider: conn.provider, projectUrl: conn.projectUrl,
+      anonKey: conn.anonKey, dbName: conn.dbName, username: conn.username,
+      environment: conn.environment, isActive: conn.isActive, isPrimary: conn.isPrimary,
+      notes: conn.notes || "",
+    });
+    setModalOpen(true);
+  };
+
+  const closeModal = () => { setModalOpen(false); setEditing(null); setForm({ ...BLANK }); };
+
+  const saveForm = () => {
+    if (!form.name.trim()) { toast({ title: "Connection name is required", variant: "destructive" }); return; }
+    if (!form.projectUrl.trim()) { toast({ title: "Project URL is required", variant: "destructive" }); return; }
+
+    if (editing) {
+      const updated = connections.map(c =>
+        c.id === editing.id ? { ...editing, ...form, updatedAt: new Date().toISOString() } : c
+      );
+      persist(updated);
+      addHistory("Connection Updated", `Modified: ${form.name}`);
+      logAction("DB Connection Updated", `Updated ${form.name}`, "System", "success");
+      toast({ title: "Connection updated successfully" });
+    } else {
+      const newConn: DbConnection = {
+        ...form,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      persist([...connections, newConn]);
+      addHistory("Connection Added", `New connection: ${form.name}`);
+      logAction("DB Connection Added", `Added ${form.name}`, "System", "success");
+      toast({ title: "Connection added successfully", description: `${form.name} has been added to the list.` });
+    }
+    closeModal();
+  };
 
   const testConnection = async (conn: DbConnection) => {
     setTesting(conn.id);
@@ -123,24 +165,6 @@ export default function AdminDatabaseManager() {
     setConfirmSwitch(null);
   };
 
-  const saveForm = () => {
-    if (!form.name || !form.projectUrl) { toast({ title: "Name and URL are required", variant: "destructive" }); return; }
-    if (editing) {
-      const updated = connections.map(c => c.id === editing.id ? { ...editing, ...form, updatedAt: new Date().toISOString() } : c);
-      persist(updated);
-      addHistory("Connection Updated", `Modified: ${form.name}`);
-      logAction("DB Connection Updated", `Updated ${form.name}`, "System", "success");
-      toast({ title: "Connection updated" });
-    } else {
-      const newConn: DbConnection = { ...form, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-      persist([...connections, newConn]);
-      addHistory("Connection Added", `New connection: ${form.name}`);
-      logAction("DB Connection Added", `Added ${form.name}`, "System", "success");
-      toast({ title: "Connection added" });
-    }
-    setShowForm(false); setEditing(null); setForm(BLANK);
-  };
-
   const deleteConn = (conn: DbConnection) => {
     if (conn.isActive) { toast({ title: "Cannot delete active connection", variant: "destructive" }); return; }
     persist(connections.filter(c => c.id !== conn.id));
@@ -150,19 +174,19 @@ export default function AdminDatabaseManager() {
     setConfirmDelete(null);
   };
 
-  const openEdit = (conn: DbConnection) => {
-    setEditing(conn);
-    setForm({ name: conn.name, provider: conn.provider, projectUrl: conn.projectUrl, anonKey: conn.anonKey, dbName: conn.dbName, username: conn.username, environment: conn.environment, isActive: conn.isActive, isPrimary: conn.isPrimary, notes: conn.notes });
-    setShowForm(true);
+  const inputStyle: React.CSSProperties = {
+    background: T.input, border: `1px solid ${T.border}`, color: T.text, borderRadius: 10,
   };
 
-  const inp = (style?: object) => ({ background: T.input, border: `1px solid ${T.border}`, color: T.text, borderRadius: 10, ...style });
+  const selectStyle: React.CSSProperties = {
+    ...inputStyle, width: "100%", padding: "9px 12px", fontSize: 13, outline: "none",
+  };
 
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto", paddingBottom: 40 }}>
       {/* Hero */}
       <div style={{ background: `linear-gradient(135deg,${A1}22,${A2}15)`, border: `1px solid rgba(99,102,241,.2)`, borderRadius: 18, padding: "26px 28px", marginBottom: 20, position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", right: 0, top: 0, width: 180, height: 180, background: `radial-gradient(circle at top right,${A2}12,transparent 70%)` }} />
+        <div style={{ position: "absolute", right: 0, top: 0, width: 180, height: 180, background: `radial-gradient(circle at top right,${A2}12,transparent 70%)`, pointerEvents: "none" }} />
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ width: 48, height: 48, borderRadius: 14, background: `linear-gradient(135deg,${A1},${A2})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 24px ${A1}55`, flexShrink: 0 }}>
             <Database size={22} color="#fff" />
@@ -171,17 +195,28 @@ export default function AdminDatabaseManager() {
             <h1 style={{ color: T.text, fontWeight: 800, fontSize: 22, margin: 0 }}>Database Manager</h1>
             <p style={{ color: T.sub, fontSize: 13, margin: "3px 0 0" }}>Manage Supabase / PostgreSQL connections, test health, and switch active databases</p>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => { setShowHistory(!showHistory); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, background: T.card, border: `1px solid ${T.border}`, color: T.sub, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+          <div style={{ display: "flex", gap: 8, position: "relative", zIndex: 1 }}>
+            <button
+              onClick={() => setShowHistory(h => !h)}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, background: T.card, border: `1px solid ${T.border}`, color: T.sub, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+            >
               <History size={13} /> History
             </button>
-            <button onClick={() => { setEditing(null); setForm(BLANK); setShowForm(true); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, border: "none", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+            <button
+              onClick={openAdd}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, border: "none", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: `0 4px 12px ${A1}44` }}
+            >
               <Plus size={14} /> Add Connection
             </button>
           </div>
         </div>
         <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
-          {[{ label: "Total Connections", val: connections.length, color: T.badgeFg }, { label: "Active", val: connections.filter(c => c.isActive).length, color: "#4ade80" }, { label: "Healthy", val: connections.filter(c => c.testStatus === "ok").length, color: "#4ade80" }, { label: "Failed", val: connections.filter(c => c.testStatus === "fail").length, color: "#f87171" }].map(s => (
+          {[
+            { label: "Total Connections", val: connections.length, color: T.badgeFg },
+            { label: "Active", val: connections.filter(c => c.isActive).length, color: "#4ade80" },
+            { label: "Healthy", val: connections.filter(c => c.testStatus === "ok").length, color: "#4ade80" },
+            { label: "Failed", val: connections.filter(c => c.testStatus === "fail").length, color: "#f87171" },
+          ].map(s => (
             <div key={s.label} style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 10, padding: "8px 16px", display: "flex", gap: 8, alignItems: "center" }}>
               <span style={{ fontWeight: 800, fontSize: 18, color: s.color }}>{s.val}</span>
               <span style={{ fontSize: 11, color: T.sub }}>{s.label}</span>
@@ -190,7 +225,7 @@ export default function AdminDatabaseManager() {
         </div>
       </div>
 
-      {/* Connection history panel */}
+      {/* History panel */}
       {showHistory && (
         <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: "18px 20px", marginBottom: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
@@ -198,71 +233,22 @@ export default function AdminDatabaseManager() {
             <h3 style={{ color: T.text, fontWeight: 700, fontSize: 14, margin: 0 }}>Connection History</h3>
             <span style={{ fontSize: 11, color: T.sub, marginLeft: "auto" }}>{history.length} events</span>
           </div>
-          {history.length === 0 ? <p style={{ color: T.sub, fontSize: 12, textAlign: "center", padding: "16px 0" }}>No history yet</p> : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-              {history.slice(0, 8).map(h => (
-                <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 9, background: T.input, border: `1px solid ${T.border}` }}>
-                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: A1, flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{h.action}: </span>
-                    <span style={{ fontSize: 12, color: T.sub }}>{h.details}</span>
+          {history.length === 0
+            ? <p style={{ color: T.sub, fontSize: 12, textAlign: "center", padding: "16px 0" }}>No history yet</p>
+            : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                {history.slice(0, 8).map(h => (
+                  <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 9, background: T.input, border: `1px solid ${T.border}` }}>
+                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: A1, flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{h.action}: </span>
+                      <span style={{ fontSize: 12, color: T.sub }}>{h.details}</span>
+                    </div>
+                    <span style={{ fontSize: 10, color: T.sub, flexShrink: 0 }}>{safeFmt(h.timestamp, "MMM d, HH:mm")}</span>
                   </div>
-                  <span style={{ fontSize: 10, color: T.sub, flexShrink: 0 }}>{safeFmt(h.timestamp, "MMM d, HH:mm")}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Add/Edit form */}
-      {showForm && (
-        <div ref={formRef} style={{ background: T.card, border: `2px solid ${A1}55`, borderRadius: 16, padding: "20px 22px", marginBottom: 16, boxShadow: `0 0 24px ${A1}22` }}>
-          <h3 style={{ color: T.text, fontWeight: 700, fontSize: 15, margin: "0 0 16px" }}>{editing ? "Edit Connection" : "New Database Connection"}</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div>
-              <label style={{ fontSize: 11, color: T.sub, fontWeight: 600, display: "block", marginBottom: 5 }}>CONNECTION NAME *</label>
-              <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Primary Production DB" style={inp()} />
-            </div>
-            <div>
-              <label style={{ fontSize: 11, color: T.sub, fontWeight: 600, display: "block", marginBottom: 5 }}>PROVIDER</label>
-              <select value={form.provider} onChange={e => setForm(f => ({ ...f, provider: e.target.value as DbConnection["provider"] }))} style={{ ...inp(), width: "100%", padding: "9px 12px", fontSize: 13 }}>
-                <option value="supabase">⚡ Supabase</option>
-                <option value="postgresql">🐘 PostgreSQL</option>
-                <option value="mysql">🐬 MySQL</option>
-              </select>
-            </div>
-            <div style={{ gridColumn: "1 / -1" }}>
-              <label style={{ fontSize: 11, color: T.sub, fontWeight: 600, display: "block", marginBottom: 5 }}>PROJECT URL *</label>
-              <Input value={form.projectUrl} onChange={e => setForm(f => ({ ...f, projectUrl: e.target.value }))} placeholder="https://your-project.supabase.co" style={inp()} />
-            </div>
-            <div style={{ gridColumn: "1 / -1" }}>
-              <label style={{ fontSize: 11, color: T.sub, fontWeight: 600, display: "block", marginBottom: 5 }}>API KEY / ANON KEY</label>
-              <Input type="password" value={form.anonKey} onChange={e => setForm(f => ({ ...f, anonKey: e.target.value }))} placeholder="eyJhbGci... (stored masked)" style={inp()} />
-            </div>
-            <div>
-              <label style={{ fontSize: 11, color: T.sub, fontWeight: 600, display: "block", marginBottom: 5 }}>DATABASE NAME</label>
-              <Input value={form.dbName} onChange={e => setForm(f => ({ ...f, dbName: e.target.value }))} placeholder="postgres" style={inp()} />
-            </div>
-            <div>
-              <label style={{ fontSize: 11, color: T.sub, fontWeight: 600, display: "block", marginBottom: 5 }}>ENVIRONMENT</label>
-              <select value={form.environment} onChange={e => setForm(f => ({ ...f, environment: e.target.value as DbConnection["environment"] }))} style={{ ...inp(), width: "100%", padding: "9px 12px", fontSize: 13 }}>
-                <option value="production">Production</option>
-                <option value="staging">Staging</option>
-                <option value="testing">Testing</option>
-              </select>
-            </div>
-            <div style={{ gridColumn: "1 / -1" }}>
-              <label style={{ fontSize: 11, color: T.sub, fontWeight: 600, display: "block", marginBottom: 5 }}>NOTES</label>
-              <Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optional description" style={inp()} />
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-            <button onClick={saveForm} style={{ padding: "9px 20px", borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, border: "none", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-              {editing ? "Save Changes" : "Add Connection"}
-            </button>
-            <button onClick={() => { setShowForm(false); setEditing(null); setForm(BLANK); }} style={{ padding: "9px 16px", borderRadius: 10, background: T.input, border: `1px solid ${T.border}`, color: T.sub, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Cancel</button>
-          </div>
+                ))}
+              </div>
+            )}
         </div>
       )}
 
@@ -274,7 +260,9 @@ export default function AdminDatabaseManager() {
           const maskedKey = conn.anonKey.length > 8 ? conn.anonKey.slice(0, 12) + "••••••••" + conn.anonKey.slice(-4) : conn.anonKey;
           return (
             <div key={conn.id} style={{ background: T.card, border: `1px solid ${conn.isActive ? "rgba(99,102,241,.3)" : T.border}`, borderRadius: 16, padding: "18px 20px", position: "relative" }}>
-              {conn.isActive && <div style={{ position: "absolute", top: 12, right: 12, background: `${A1}22`, border: `1px solid ${A1}44`, borderRadius: 8, padding: "3px 9px", fontSize: 10, fontWeight: 800, color: T.badgeFg }}>ACTIVE</div>}
+              {conn.isActive && (
+                <div style={{ position: "absolute", top: 12, right: 12, background: `${A1}22`, border: `1px solid ${A1}44`, borderRadius: 8, padding: "3px 9px", fontSize: 10, fontWeight: 800, color: T.badgeFg }}>ACTIVE</div>
+              )}
               {conn.isPrimary && <Star size={12} color="#fbbf24" style={{ position: "absolute", top: 14, right: conn.isActive ? 80 : 12 }} />}
               <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                 <div style={{ width: 42, height: 42, borderRadius: 12, background: `${A1}15`, border: `1px solid ${A1}25`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
@@ -288,14 +276,24 @@ export default function AdminDatabaseManager() {
                   <p style={{ fontSize: 12, color: T.sub, margin: "0 0 8px", fontFamily: "monospace" }}>{conn.projectUrl}</p>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 8, background: statusBg }}>
-                      {conn.testStatus === "pending" ? <Loader2 size={11} color={statusColor} className="animate-spin" /> : conn.testStatus === "ok" ? <CheckCircle2 size={11} color={statusColor} /> : <XCircle size={11} color={statusColor} />}
-                      <span style={{ fontSize: 11, fontWeight: 700, color: statusColor }}>{conn.testStatus === "ok" ? "Healthy" : conn.testStatus === "fail" ? "Failed" : "Unknown"}</span>
+                      {conn.testStatus === "pending"
+                        ? <Loader2 size={11} color={statusColor} className="animate-spin" />
+                        : conn.testStatus === "ok"
+                        ? <CheckCircle2 size={11} color={statusColor} />
+                        : <XCircle size={11} color={statusColor} />}
+                      <span style={{ fontSize: 11, fontWeight: 700, color: statusColor }}>
+                        {conn.testStatus === "ok" ? "Healthy" : conn.testStatus === "fail" ? "Failed" : "Unknown"}
+                      </span>
                     </div>
                     {conn.lastTested && <span style={{ fontSize: 10, color: T.sub }}>Tested {safeFmt(conn.lastTested, "MMM d, HH:mm")}</span>}
                     <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 8, background: T.input }}>
-                      <span style={{ fontSize: 11, color: T.sub, fontFamily: "monospace" }}>{showKeys[conn.id] ? (conn.anonKey === "••••••••••••••••••••••••" ? conn.anonKey : conn.anonKey) : maskedKey}</span>
-                      <button onClick={() => setShowKeys(k => ({ ...k, [conn.id]: !k[conn.id] }))} style={{ background: "none", border: "none", cursor: "pointer", color: T.sub, fontSize: 10, padding: 0 }}>{showKeys[conn.id] ? "hide" : "show"}</button>
-                      <button onClick={() => { navigator.clipboard.writeText(conn.anonKey); toast({ title: "Key copied" }); }} style={{ background: "none", border: "none", cursor: "pointer", color: T.sub, padding: 0 }}><Copy size={10} /></button>
+                      <span style={{ fontSize: 11, color: T.sub, fontFamily: "monospace" }}>{showKeys[conn.id] ? conn.anonKey : maskedKey}</span>
+                      <button onClick={() => setShowKeys(k => ({ ...k, [conn.id]: !k[conn.id] }))} style={{ background: "none", border: "none", cursor: "pointer", color: T.sub, fontSize: 10, padding: 0 }}>
+                        {showKeys[conn.id] ? "hide" : "show"}
+                      </button>
+                      <button onClick={() => { navigator.clipboard.writeText(conn.anonKey); toast({ title: "Key copied" }); }} style={{ background: "none", border: "none", cursor: "pointer", color: T.sub, padding: 0 }}>
+                        <Copy size={10} />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -324,12 +322,138 @@ export default function AdminDatabaseManager() {
         })}
       </div>
 
-      <ConfirmActionDialog open={!!confirmSwitch} onOpenChange={o => !o && setConfirmSwitch(null)} onConfirm={() => confirmSwitch && switchActive(confirmSwitch)}
-        title={`Switch to ${confirmSwitch?.name}`} description={`This will change the active database connection. All new operations will use ${confirmSwitch?.name}. The current active connection will be deactivated.`}
-        confirmLabel="Switch Database" variant="warning" />
-      <ConfirmActionDialog open={!!confirmDelete} onOpenChange={o => !o && setConfirmDelete(null)} onConfirm={() => confirmDelete && deleteConn(confirmDelete)}
-        title="Delete Connection" description={`Remove "${confirmDelete?.name}" from the connection list? This cannot be undone.`}
-        confirmLabel="Delete" variant="danger" mode="type" typeToConfirm="DELETE" />
+      {/* Add / Edit Modal */}
+      <Dialog open={modalOpen} onOpenChange={open => { if (!open) closeModal(); }}>
+        <DialogContent style={{ background: themeKey === "black" ? "#0f0f23" : "#fff", border: `1px solid ${A1}44`, borderRadius: 18, maxWidth: 520, padding: "28px 28px 24px" }}>
+          <DialogHeader>
+            <DialogTitle style={{ color: T.text, fontSize: 17, fontWeight: 800, display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Database size={16} color="#fff" />
+              </div>
+              {editing ? "Edit Connection" : "New Database Connection"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 8 }}>
+            {/* Name + Provider */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 11, color: T.sub, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.5px" }}>Connection Name *</label>
+                <Input
+                  value={form.name}
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="e.g. Primary DB"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: T.sub, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.5px" }}>Provider</label>
+                <select
+                  value={form.provider}
+                  onChange={e => setForm(f => ({ ...f, provider: e.target.value as DbConnection["provider"] }))}
+                  style={selectStyle}
+                >
+                  <option value="supabase">⚡ Supabase</option>
+                  <option value="postgresql">🐘 PostgreSQL</option>
+                  <option value="mysql">🐬 MySQL</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Project URL */}
+            <div>
+              <label style={{ fontSize: 11, color: T.sub, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.5px" }}>Project URL *</label>
+              <Input
+                value={form.projectUrl}
+                onChange={e => setForm(f => ({ ...f, projectUrl: e.target.value }))}
+                placeholder="https://your-project.supabase.co"
+                style={inputStyle}
+              />
+            </div>
+
+            {/* API Key */}
+            <div>
+              <label style={{ fontSize: 11, color: T.sub, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.5px" }}>API Key / Anon Key</label>
+              <Input
+                type="password"
+                value={form.anonKey}
+                onChange={e => setForm(f => ({ ...f, anonKey: e.target.value }))}
+                placeholder="eyJhbGci..."
+                style={inputStyle}
+              />
+            </div>
+
+            {/* DB Name + Environment */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 11, color: T.sub, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.5px" }}>Database Name</label>
+                <Input
+                  value={form.dbName}
+                  onChange={e => setForm(f => ({ ...f, dbName: e.target.value }))}
+                  placeholder="postgres"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: T.sub, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.5px" }}>Environment</label>
+                <select
+                  value={form.environment}
+                  onChange={e => setForm(f => ({ ...f, environment: e.target.value as DbConnection["environment"] }))}
+                  style={selectStyle}
+                >
+                  <option value="production">Production</option>
+                  <option value="staging">Staging</option>
+                  <option value="testing">Testing</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div>
+              <label style={{ fontSize: 11, color: T.sub, fontWeight: 700, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.5px" }}>Notes (optional)</label>
+              <Input
+                value={form.notes}
+                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                placeholder="Optional description"
+                style={inputStyle}
+              />
+            </div>
+
+            {/* Buttons */}
+            <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+              <button
+                onClick={saveForm}
+                style={{ flex: 1, padding: "11px 20px", borderRadius: 11, background: `linear-gradient(135deg,${A1},${A2})`, border: "none", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", boxShadow: `0 4px 14px ${A1}44` }}
+              >
+                {editing ? "Save Changes" : "Add Connection"}
+              </button>
+              <button
+                onClick={closeModal}
+                style={{ padding: "11px 18px", borderRadius: 11, background: T.input, border: `1px solid ${T.border}`, color: T.sub, fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmActionDialog
+        open={!!confirmSwitch}
+        onOpenChange={o => !o && setConfirmSwitch(null)}
+        onConfirm={() => confirmSwitch && switchActive(confirmSwitch)}
+        title={`Switch to ${confirmSwitch?.name}`}
+        description={`This will change the active database connection. All new operations will use ${confirmSwitch?.name}. The current active connection will be deactivated.`}
+        confirmLabel="Switch Database" variant="warning"
+      />
+      <ConfirmActionDialog
+        open={!!confirmDelete}
+        onOpenChange={o => !o && setConfirmDelete(null)}
+        onConfirm={() => confirmDelete && deleteConn(confirmDelete)}
+        title="Delete Connection"
+        description={`Remove "${confirmDelete?.name}" from the connection list? This cannot be undone.`}
+        confirmLabel="Delete" variant="danger" mode="type" typeToConfirm="DELETE"
+      />
     </div>
   );
 }
