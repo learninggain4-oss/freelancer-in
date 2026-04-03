@@ -72,6 +72,9 @@ export const useSupportChat = (conversationId: string | undefined) => {
   });
 
   // ── Real-time: append/update/remove messages directly in cache ──────
+  // NOTE: We intentionally do NOT pass server-side row filters because
+  // Supabase Realtime with RLS can silently drop events from other users
+  // (e.g. admin replying). We filter by conversation_id client-side instead.
   useEffect(() => {
     if (!conversationId) return;
 
@@ -83,13 +86,14 @@ export const useSupportChat = (conversationId: string | undefined) => {
           event: "INSERT",
           schema: "public",
           table: "support_messages",
-          filter: `conversation_id=eq.${conversationId}`,
         },
         async (payload) => {
-          const newMsg = await fetchSingleMessage(payload.new.id);
+          // Client-side filter: only handle messages for this conversation
+          if ((payload.new as any).conversation_id !== conversationId) return;
+          const newMsg = await fetchSingleMessage((payload.new as any).id);
           if (!newMsg) return;
           queryClient.setQueryData<SupportMessage[]>(QK, (prev = []) => {
-            // Remove any optimistic placeholder with same temp id, then append
+            // Remove any optimistic placeholder with same content+sender, then append
             const withoutOptimistic = prev.filter(
               (m) => !m._optimistic || m.content !== newMsg.content || m.sender_id !== newMsg.sender_id
             );
@@ -105,10 +109,10 @@ export const useSupportChat = (conversationId: string | undefined) => {
           event: "UPDATE",
           schema: "public",
           table: "support_messages",
-          filter: `conversation_id=eq.${conversationId}`,
         },
         async (payload) => {
-          const updated = await fetchSingleMessage(payload.new.id);
+          if ((payload.new as any).conversation_id !== conversationId) return;
+          const updated = await fetchSingleMessage((payload.new as any).id);
           if (!updated) return;
           queryClient.setQueryData<SupportMessage[]>(QK, (prev = []) =>
             prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m))
@@ -121,11 +125,12 @@ export const useSupportChat = (conversationId: string | undefined) => {
           event: "DELETE",
           schema: "public",
           table: "support_messages",
-          filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
+          // For DELETE, old row data may not include conversation_id without REPLICA IDENTITY FULL
+          // So we attempt removal by id regardless — it's a no-op if not in cache
           queryClient.setQueryData<SupportMessage[]>(QK, (prev = []) =>
-            prev.filter((m) => m.id !== payload.old.id)
+            prev.filter((m) => m.id !== (payload.old as any).id)
           );
         }
       )
@@ -137,7 +142,6 @@ export const useSupportChat = (conversationId: string | undefined) => {
           table: "support_message_reactions",
         },
         () => {
-          // Only refetch reactions — lightweight
           queryClient.invalidateQueries({ queryKey: QK });
         }
       )
