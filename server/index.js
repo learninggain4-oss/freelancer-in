@@ -13,6 +13,14 @@ const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// Super admin email list — users who can perform destructive admin actions
+const SUPER_ADMIN_EMAILS = (process.env.SUPER_ADMIN_EMAILS || "freeandin9@gmail.com")
+  .split(",").map(e => e.trim().toLowerCase());
+
+function isSuperAdmin(userEmail) {
+  return SUPER_ADMIN_EMAILS.includes((userEmail || "").toLowerCase());
+}
+
 function getAdminClient() {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error("Supabase service role key not configured");
@@ -1101,17 +1109,11 @@ app.delete("/functions/v1/support-delete-conversation", async (req, res) => {
     const { conversationId } = req.body;
     if (!conversationId) return res.status(400).json({ error: "conversationId required" });
 
-    const supabase = getAdminClient();
-
-    // Verify caller is admin
-    const { data: callerProfile } = await supabase
-      .from("profiles")
-      .select("user_type")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (callerProfile?.user_type !== "super_admin") {
+    if (!isSuperAdmin(user.email)) {
       return res.status(403).json({ error: "Super admin only" });
     }
+
+    const supabase = getAdminClient();
 
     // Verify conversation exists
     const { data: conv, error: fetchErr } = await supabase

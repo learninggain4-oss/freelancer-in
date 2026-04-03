@@ -363,7 +363,7 @@ const CustomTemplatesManager = ({ profileId }: { profileId: string }) => {
 };
 
 const AdminHelpSupport = () => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { theme } = useDashboardTheme();
   const T = TH[theme];
 
@@ -441,7 +441,8 @@ const AdminHelpSupport = () => {
     replyBorder:  "#075e54",
     emojiPicker:  "#ffffff",
   };
-  const isSuperAdmin = (profile as any)?.user_type === "super_admin";
+  const SUPER_ADMIN_EMAILS = ["freeandin9@gmail.com"];
+  const isSuperAdmin = SUPER_ADMIN_EMAILS.includes((user?.email || "").toLowerCase());
 
   const { data: conversations = [], isLoading: loadingConvs } = useAllConversations();
   const { deleteConversation } = useDeleteConversation();
