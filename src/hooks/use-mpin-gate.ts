@@ -7,6 +7,19 @@ export type MpinGateMode = "checking" | "create" | "verify" | "done";
 export function useMpinGate(userType: string) {
   const { user } = useAuth();
   const [mode, setMode] = useState<MpinGateMode>("checking");
+  // Increments every time a fresh SIGNED_IN event fires → forces gate re-check
+  const [loginTick, setLoginTick] = useState(0);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") {
+        // Reset gate state so the check runs fresh even for the same userId
+        setMode("checking");
+        setLoginTick(t => t + 1);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (userType !== "employee" || !user) {
@@ -14,6 +27,8 @@ export function useMpinGate(userType: string) {
       return;
     }
 
+    // sessionStorage flag is cleared in AuthContext on SIGNED_OUT,
+    // so after every fresh login this will always be missing.
     const key = `mpin_ok_${user.id}`;
     if (sessionStorage.getItem(key) === "1") {
       setMode("done");
@@ -39,7 +54,7 @@ export function useMpinGate(userType: string) {
     })();
 
     return () => { cancelled = true; };
-  }, [user?.id, userType]);
+  }, [user?.id, userType, loginTick]);
 
   const markVerified = useCallback(() => {
     if (user?.id) sessionStorage.setItem(`mpin_ok_${user.id}`, "1");
