@@ -236,7 +236,7 @@ const HelpSupport = () => {
       if (!agentSenderId) return null;
       const { data } = await supabase
         .from("profiles")
-        .select("avatar_url, full_name")
+        .select("profile_photo_path, full_name")
         .eq("id", agentSenderId)
         .maybeSingle();
       return data ?? null;
