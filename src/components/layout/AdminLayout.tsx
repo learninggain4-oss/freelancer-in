@@ -440,7 +440,7 @@ const AdminLayout = () => {
   useClickOutside(quickRef,   () => setQuickOpen(false));
   useClickOutside(searchRef,  () => { if (!searchQ) setSearchOpen(false); });
 
-  const tok = T[theme];
+  const tok = T[theme as keyof typeof T] ?? T.black;
   const css = buildCss(tok);
 
   const isLight = theme === "white";
