@@ -697,8 +697,8 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 /* ─────────────────────── Scroll-triggered reveal ─────────────────────── */
-const Reveal = ({ children, className = "", delay = 0, direction = "up" }: {
-  children: React.ReactNode; className?: string; delay?: number; direction?: "up"|"left"|"right";
+const Reveal = ({ children, className = "", delay = 0, direction = "up", style: extraStyle }: {
+  children: React.ReactNode; className?: string; delay?: number; direction?: "up"|"left"|"right"; style?: React.CSSProperties;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -710,7 +710,7 @@ const Reveal = ({ children, className = "", delay = 0, direction = "up" }: {
   }, []);
   const from = direction === "left" ? "translateX(-40px)" : direction === "right" ? "translateX(40px)" : "translateY(40px)";
   return (
-    <div ref={ref} className={className} style={{ opacity: visible ? 1 : 0, transform: visible ? "none" : from, transition: `opacity .7s ease ${delay}ms, transform .7s ease ${delay}ms` }}>
+    <div ref={ref} className={className} style={{ opacity: visible ? 1 : 0, transform: visible ? "none" : from, transition: `opacity .7s ease ${delay}ms, transform .7s ease ${delay}ms`, ...extraStyle }}>
       {children}
     </div>
   );
@@ -2780,7 +2780,7 @@ const NewsletterSection = () => {
                   onChange={e => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   className="w-full rounded-xl pl-11 pr-4 py-3.5 text-sm text-white placeholder-white/30 outline-none focus:ring-2 transition-all"
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", focusRingColor: "var(--t-a1)" }}
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}
                   onFocus={e => (e.currentTarget.style.borderColor = "rgba(var(--t-a1-rgb),0.5)")}
                   onBlur={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)")}
                 />
@@ -4927,7 +4927,7 @@ const FounderStorySection = () => (
             <div className="h-32" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.3), rgba(var(--t-a2-rgb),0.3))" }} />
             {/* Avatar */}
             <div className="relative -mt-12 flex justify-center">
-              <div className="flex h-24 w-24 items-center justify-center rounded-3xl text-3xl font-black text-white shadow-2xl ring-4" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", ringColor: "var(--t-bg)" }}>AK</div>
+              <div className="flex h-24 w-24 items-center justify-center rounded-3xl text-3xl font-black text-white shadow-2xl ring-4 ring-[var(--t-bg)]" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>AK</div>
             </div>
             <div className="p-6 pt-4 text-center">
               <h3 className="text-xl font-black text-white mb-0.5">Anil Kumar</h3>
