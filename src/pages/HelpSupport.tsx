@@ -471,7 +471,7 @@ const HelpSupport = () => {
             <span style={{ color: "#fff", fontWeight: 800, fontSize: 14 }}>FI</span>
           </div>
           <div style={{ flex: 1 }}>
-            <p style={{ fontWeight: 700, fontSize: 14, color: T.text, margin: 0 }}>Freelancer India Support</p>
+            <p style={{ fontWeight: 700, fontSize: 14, color: T.text, margin: 0 }}>Flexpay Support (24/7)</p>
             <p style={{ fontSize: 10, color: "#4ade80", margin: 0, fontWeight: 600 }}>
               {typing ? "typing..." : "online"}
             </p>
