@@ -326,13 +326,24 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
   const navigate = useNavigate();
 
   const { mode: mpinMode, markVerified } = useMpinGate(userType);
+
+  // Track whether the PIN was just CREATED this session (i.e., brand-new user)
+  // Security Questions + TOTP setup are only required for new users.
+  const [mpinJustCreated, setMpinJustCreated] = useState(false);
+  const handleMpinVerified = useCallback(() => {
+    if (mpinMode === "create") setMpinJustCreated(true);
+    markVerified();
+  }, [mpinMode, markVerified]);
+
+  // Security Questions — only triggered for new users (mode was "create")
   const { showQuestions, sqGatePassed, markQuestionsDone } = useSecurityQuestionsGate(
-    userType === "employee" && mpinMode === "done",
+    userType === "employee" && mpinJustCreated && mpinMode === "done",
     user?.id ?? undefined,
   );
 
+  // TOTP setup — only triggered for new users, after security questions
   const { totpMode, markTotpDone } = useTotpGate(
-    userType === "employee" && sqGatePassed,
+    userType === "employee" && mpinJustCreated && sqGatePassed,
     user?.id ?? undefined,
   );
 
@@ -578,7 +589,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
       )}
 
       {userType === "employee" && (mpinMode === "create" || mpinMode === "verify") && (
-        <MPinGateModal mode={mpinMode} theme={theme} onVerified={markVerified} />
+        <MPinGateModal mode={mpinMode} theme={theme} onVerified={handleMpinVerified} />
       )}
 
       {userType === "employee" && mpinMode === "done" && showQuestions && (
