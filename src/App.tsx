@@ -25,6 +25,11 @@ const EmployeeRequests = lazy(() => import("./pages/employee/EmployeeRequests"))
 const EmployeeWallet = lazy(() => import("./pages/employee/EmployeeWallet"));
 const EmployeeAttendance = lazy(() => import("./pages/employee/EmployeeAttendance"));
 const EmployeeProfile = lazy(() => import("./pages/employee/EmployeeProfile"));
+const EmployeeBids = lazy(() => import("./pages/employee/EmployeeBids"));
+const EmployeeEarnings = lazy(() => import("./pages/employee/EmployeeEarnings"));
+const EmployeeReviews = lazy(() => import("./pages/employee/EmployeeReviews"));
+const EmployeeBadges = lazy(() => import("./pages/employee/EmployeeBadges"));
+const EmployeePortfolio = lazy(() => import("./pages/employee/EmployeePortfolio"));
 const ClientDashboard = lazy(() => import("./pages/client/ClientDashboard"));
 const ClientWallet = lazy(() => import("./pages/client/ClientWallet"));
 const ClientProjects = lazy(() => import("./pages/client/ClientProjects"));
@@ -258,6 +263,11 @@ const AppContent = () => {
               <Route path="wallet/qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
+              <Route path="bids" element={<EmployeeBids />} />
+              <Route path="earnings" element={<EmployeeEarnings />} />
+              <Route path="reviews" element={<EmployeeReviews />} />
+              <Route path="badges" element={<EmployeeBadges />} />
+              <Route path="portfolio" element={<EmployeePortfolio />} />
               <Route path="profile" element={<EmployeeProfile />} />
               <Route path="profile/personal" element={<ProfilePersonalInfo />} />
               <Route path="profile/professional" element={<ProfileProfessional />} />

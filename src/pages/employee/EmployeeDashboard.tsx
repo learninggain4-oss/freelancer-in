@@ -203,11 +203,13 @@ const EmployeeDashboard = () => {
 
   const quickActions = [
     { icon: Briefcase,       label: "Find Jobs",   to: "/employee/projects",          grad: "rgba(99,102,241,.18)",  color: "#a5b4fc" },
-    { icon: FileText,        label: "Proposals",   to: "/employee/requests",          grad: "rgba(139,92,246,.18)",  color: "#c4b5fd" },
-    { icon: ArrowDownToLine, label: "Withdraw",    to: "/employee/wallet",            grad: "rgba(34,197,94,.15)",   color: "#4ade80" },
-    { icon: Upload,          label: "Documents",   to: "/employee/profile",           grad: "rgba(245,158,11,.15)",  color: "#fbbf24" },
+    { icon: FileText,        label: "My Bids",     to: "/employee/bids",              grad: "rgba(139,92,246,.18)",  color: "#c4b5fd" },
+    { icon: ArrowDownToLine, label: "Earnings",    to: "/employee/earnings",          grad: "rgba(34,197,94,.15)",   color: "#4ade80" },
+    { icon: Star,            label: "Reviews",     to: "/employee/reviews",           grad: "rgba(245,158,11,.15)",  color: "#fbbf24" },
+    { icon: ShieldCheck,     label: "Badges",      to: "/employee/badges",            grad: "rgba(20,184,166,.15)",  color: "#2dd4bf" },
+    { icon: Upload,          label: "Portfolio",   to: "/employee/portfolio",         grad: "rgba(251,113,133,.15)", color: "#fb7185" },
     { icon: HeadphonesIcon,  label: "Support",     to: "/employee/help-support",      grad: "rgba(239,68,68,.13)",   color: "#f87171" },
-    { icon: Gift,            label: "Get Free",    to: "/employee/get-free",          grad: "rgba(20,184,166,.15)",  color: "#2dd4bf" },
+    { icon: Gift,            label: "Get Free",    to: "/employee/get-free",          grad: "rgba(96,165,250,.15)",  color: "#60a5fa" },
   ];
 
   const summaryStats = [
