@@ -182,7 +182,7 @@ const AdminJobs = () => {
                   <div>
                     <h3 className="text-lg font-bold" style={{ color: T.text }}>{p.name}</h3>
                     <p className="text-xs font-mono" style={{ color: T.sub }}>
-                      {p.order_id} • {p.client?.full_name?.[0] || "Client"} ({p.client?.user_code?.[0] || ""})
+                      {p.order_id} • {p.employer?.full_name?.[0] || "Employer"} ({p.employer?.user_code?.[0] || ""})
                       {p.category?.name ? ` • ${p.category.name}` : ""}
                     </p>
                   </div>

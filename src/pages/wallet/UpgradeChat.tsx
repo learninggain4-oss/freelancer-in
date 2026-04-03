@@ -497,7 +497,7 @@ const UpgradeChat = () => {
           ? replaceTemplateVars(dbBooked.message_text, { day: dayName, date: dateStr, time: timeSlot })
           : t.bookingConfirmed(dayName, dateStr, timeSlot);
         addBotMessageWithTyping(bookedMsg, undefined, () => {
-          // Start monitoring appointment time (client-side)
+          // Start monitoring appointment time (employer-side)
           const timer = setTimeout(() => {
             setStep("appointment_active");
             const dbReminder = getDbMessage("appointment_reminder", lang);

@@ -117,7 +117,7 @@ const InquiryCard = ({ project: p, onApply, isPending, T }: { project: any; onAp
           {[
             { icon: IndianRupee, label: `₹${Number(p.amount).toLocaleString("en-IN")}`, sub: "Project Budget", color: "#4ade80" },
             { icon: Calendar, label: p.end_date ?? "Unlimited", sub: "Submission Goal", color: "#fbbf24" },
-            { icon: User, label: p.client?.full_name?.[0] ?? "Elite Client", sub: "Posted By", color: "#60a5fa" },
+            { icon: User, label: p.employer?.full_name?.[0] ?? "Elite Employer", sub: "Posted By", color: "#60a5fa" },
             { icon: FileText, label: `₹${Number(p.validation_fees).toLocaleString("en-IN")}`, sub: "Validation Fee", color: "#f87171" },
           ].map((info, idx) => (
             <div key={idx} style={{ background: T.nav, borderColor: T.border }} className="flex items-center gap-3 rounded-2xl p-3 border group/item hover:border-[#6366f1]/50 transition-colors">

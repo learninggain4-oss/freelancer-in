@@ -44,7 +44,7 @@ ${AUTH_CSS}
 .step-dot-pending { background:rgba(255,255,255,.04); }
 `;
 
-interface RegistrationFormProps { userType: "employee" | "client"; }
+interface RegistrationFormProps { userType: "employee" | "employer"; }
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: currentYear - 1969 }, (_, i) => String(currentYear - i));

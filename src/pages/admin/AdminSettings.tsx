@@ -63,8 +63,8 @@ const AdminSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
 
-  // Client payment sharing per-client state
-  const [clients, setClients] = useState<ClientPaymentRow[]>([]);
+  // Employer payment sharing per-employer state
+  const [employers, setClients] = useState<ClientPaymentRow[]>([]);
   const [clientSearch, setClientSearch] = useState("");
   const [selectedClientIds, setSelectedClientIds] = useState<Set<string>>(new Set());
   const [clientsLoading, setClientsLoading] = useState(false);
@@ -219,7 +219,7 @@ const AdminSettings = () => {
 
   const handleBulkToggle = async (enable: boolean) => {
     if (selectedClientIds.size === 0) {
-      toast({ title: "No clients selected", variant: "destructive" });
+      toast({ title: "No employers selected", variant: "destructive" });
       return;
     }
     setUpdatingClients(true);
@@ -232,27 +232,27 @@ const AdminSettings = () => {
     if (error) {
       toast({ title: "Failed to update", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Updated", description: `${ids.length} client(s) payment sharing ${enable ? "enabled" : "disabled"}` });
+      toast({ title: "Updated", description: `${ids.length} employer(s) payment sharing ${enable ? "enabled" : "disabled"}` });
       setSelectedClientIds(new Set());
       fetchClients();
     }
   };
 
-  const handleSingleToggle = async (client: ClientPaymentRow) => {
-    const newVal = !client.payment_sharing_enabled;
+  const handleSingleToggle = async (employer: ClientPaymentRow) => {
+    const newVal = !employer.payment_sharing_enabled;
     // Optimistic update
-    setClients((prev) => prev.map((c) => c.id === client.id ? { ...c, payment_sharing_enabled: newVal } : c));
+    setClients((prev) => prev.map((c) => c.id === employer.id ? { ...c, payment_sharing_enabled: newVal } : c));
     const { error } = await supabase
       .from("profiles")
       .update({ payment_sharing_enabled: newVal })
       .eq("id", client.id);
     if (error) {
-      setClients((prev) => prev.map((c) => c.id === client.id ? { ...c, payment_sharing_enabled: !newVal } : c));
+      setClients((prev) => prev.map((c) => c.id === employer.id ? { ...c, payment_sharing_enabled: !newVal } : c));
       toast({ title: "Failed", description: error.message, variant: "destructive" });
     }
   };
 
-  const filteredClients = clients.filter((c) => {
+  const filteredClients = employers.filter((c) => {
     if (!clientSearch.trim()) return true;
     const q = clientSearch.toLowerCase();
     return (
@@ -540,26 +540,26 @@ const AdminSettings = () => {
           </CardContent>
         </Card>
 
-        {/* Client Payment Details Sharing */}
+        {/* Employer Payment Details Sharing */}
         <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
           <CardHeader className="pb-3 border-b" style={{ borderColor: T.border }}>
             <CardTitle className="flex items-center gap-2 text-lg" style={{ color: T.text }}>
               <CreditCard className="h-5 w-5 text-[#6366f1]" />
-              Client Payment Details Sharing
+              Employer Payment Details Sharing
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 pt-4">
             {/* Global toggle */}
             <div className="space-y-4">
               <p className="text-sm" style={{ color: T.sub }}>
-                Global toggle: When disabled, no client can share payment details regardless of individual settings.
+                Global toggle: When disabled, no employer can share payment details regardless of individual settings.
               </p>
               <div className="flex items-center justify-between rounded-xl p-4 transition-all" style={{ background: T.input, border: `1px solid ${T.border}` }}>
-                <Label htmlFor="client-sharing-toggle" className="text-sm font-semibold" style={{ color: T.text }}>
-                  Allow clients to share payment details (Global)
+                <Label htmlFor="employer-sharing-toggle" className="text-sm font-semibold" style={{ color: T.text }}>
+                  Allow employers to share payment details (Global)
                 </Label>
                 <Switch
-                  id="client-sharing-toggle"
+                  id="employer-sharing-toggle"
                   checked={clientPaymentSharing}
                   disabled={saving === "client_payment_sharing"}
                   onCheckedChange={async (checked) => {
@@ -582,18 +582,18 @@ const AdminSettings = () => {
               </div>
             </div>
 
-            {/* Per-client controls */}
+            {/* Per-employer controls */}
             <div className="space-y-4 rounded-xl p-4" style={{ background: theme === "black" ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", border: `1px solid ${T.border}` }}>
-              <h4 className="text-sm font-bold uppercase tracking-wider" style={{ color: T.text }}>Per-Client Payment Sharing</h4>
+              <h4 className="text-sm font-bold uppercase tracking-wider" style={{ color: T.text }}>Per-Employer Payment Sharing</h4>
               <p className="text-xs" style={{ color: T.sub }}>
-                Enable or disable sharing for specific clients. Global setting must be ON for these to take effect.
+                Enable or disable sharing for specific employers. Global setting must be ON for these to take effect.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: T.sub }} />
                   <Input
-                    placeholder="Search clients..."
+                    placeholder="Search employers..."
                     value={clientSearch}
                     onChange={(e) => setClientSearch(e.target.value)}
                     className="pl-9 h-10 rounded-lg"
@@ -627,7 +627,7 @@ const AdminSettings = () => {
                   {clientsLoading ? (
                     <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-[#6366f1]" /></div>
                   ) : filteredClients.length === 0 ? (
-                    <div className="py-8 text-center text-sm" style={{ color: T.sub }}>No clients found</div>
+                    <div className="py-8 text-center text-sm" style={{ color: T.sub }}>No employers found</div>
                   ) : (
                     <table className="w-full text-left text-sm border-collapse">
                       <thead style={{ background: T.nav, color: T.sub }}>
@@ -853,11 +853,11 @@ const AdminSettings = () => {
                 </Button>
               </div>
 
-              {/* Client Code */}
+              {/* Employer Code */}
               <div className="space-y-4">
                 <h4 className="font-bold flex items-center gap-2" style={{ color: T.text }}>
                   <div className="h-1.5 w-1.5 rounded-full bg-[#a78bfa]" />
-                  Client Code Settings
+                  Employer Code Settings
                 </h4>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
@@ -904,12 +904,12 @@ const AdminSettings = () => {
                         supabase.from("app_settings").upsert({ key: "client_code_include_month", value: String(cltIncludeMonth) }, { onConflict: "key" }),
                         supabase.from("app_settings").upsert({ key: "client_code_separator", value: cltSeparator }, { onConflict: "key" }),
                       ]);
-                      toast({ title: "Client settings saved" });
+                      toast({ title: "Employer settings saved" });
                     } finally { setSaving(null); }
                   }}
                   disabled={saving === "clt_code"}
                 >
-                  Save Client Config
+                  Save Employer Config
                 </Button>
               </div>
             </div>

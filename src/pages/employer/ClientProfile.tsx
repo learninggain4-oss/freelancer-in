@@ -117,7 +117,7 @@ const ClientProfile = () => {
 
   const isVerified = aadhaarStatus === "verified";
   const walletNumber = (profile as any)?.wallet_number ?? "—";
-  const fullName = Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Client";
+  const fullName = Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Employer";
   const userCode = Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—";
 
   // Profile completion: 9 criteria
@@ -145,16 +145,16 @@ const ClientProfile = () => {
   };
 
   const sections = [
-    { icon: User, label: "Personal Information", path: "/client/profile/personal", color: "text-primary", desc: "Name, gender, DOB & more" },
-    { icon: Briefcase, label: "Professional", path: "/client/profile/professional", color: "text-accent", desc: "Education & background" },
-    { icon: Landmark, label: "Bank Details", path: "/client/profile/bank-details", color: "text-warning", desc: "Account & IFSC details" },
-    { icon: Building2, label: "Work Experience", path: "/client/profile/work-experience", color: "text-secondary", desc: "Past roles & certificates" },
-    { icon: Briefcase, label: "Services", path: "/client/profile/services", color: "text-primary", desc: "Service preferences" },
-    { icon: AlertCircle, label: "Emergency Contacts", path: "/client/profile/emergency-contacts", color: "text-destructive", desc: "Safety contacts" },
+    { icon: User, label: "Personal Information", path: "/employer/profile/personal", color: "text-primary", desc: "Name, gender, DOB & more" },
+    { icon: Briefcase, label: "Professional", path: "/employer/profile/professional", color: "text-accent", desc: "Education & background" },
+    { icon: Landmark, label: "Bank Details", path: "/employer/profile/bank-details", color: "text-warning", desc: "Account & IFSC details" },
+    { icon: Building2, label: "Work Experience", path: "/employer/profile/work-experience", color: "text-secondary", desc: "Past roles & certificates" },
+    { icon: Briefcase, label: "Services", path: "/employer/profile/services", color: "text-primary", desc: "Service preferences" },
+    { icon: AlertCircle, label: "Emergency Contacts", path: "/employer/profile/emergency-contacts", color: "text-destructive", desc: "Safety contacts" },
     {
       icon: ShieldCheck,
       label: "Self Real Name Verification",
-      path: "/client/profile/aadhaar-verification",
+      path: "/employer/profile/aadhaar-verification",
       color: "text-accent",
       desc: "Identity verification",
       badge: aadhaarStatus,
@@ -162,7 +162,7 @@ const ClientProfile = () => {
     {
       icon: Landmark,
       label: "Self Bank Verification",
-      path: "/client/profile/bank-verification",
+      path: "/employer/profile/bank-verification",
       color: "text-primary",
       desc: "Bank account verification",
       badge: bankVerifStatus,

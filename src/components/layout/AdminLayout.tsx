@@ -231,7 +231,7 @@ const navSections = [
   { title: "User Management", items: [
     { label: "All Users",     icon: Users,    path: "/admin/users" },
     { label: "Freelancers",     icon: UserCheck,path: "/admin/freelancers" },
-    { label: "Clients",       icon: Building2,path: "/admin/clients" },
+    { label: "Employers",       icon: Building2,path: "/admin/employers" },
     { label: "Profile Edits", icon: Edit,     path: "/admin/profile-edits" },
     { label: "Sessions",      icon: Monitor,  path: "/admin/sessions" },
     { label: "Online Status", icon: Wifi,     path: "/admin/online-status" },

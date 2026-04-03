@@ -43,7 +43,7 @@ const ClientProjects = () => {
   const queryClient = useQueryClient();
 
   const { data: myProjects = [], isLoading: loadingProjects } = useQuery({
-    queryKey: ["client-projects", profile?.id, search],
+    queryKey: ["employer-projects", profile?.id, search],
     queryFn: async () => {
       if (!profile?.id) return [];
       let query = supabase
@@ -60,7 +60,7 @@ const ClientProjects = () => {
   });
 
   const { data: requests = [], isLoading: loadingRequests } = useQuery({
-    queryKey: ["client-applications", profile?.id],
+    queryKey: ["employer-applications", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
       const { data, error } = await supabase
@@ -74,7 +74,7 @@ const ClientProjects = () => {
   });
 
   const { data: submissions = [], isLoading: loadingSubs } = useQuery({
-    queryKey: ["client-submissions", profile?.id],
+    queryKey: ["employer-submissions", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
       const { data, error } = await supabase
@@ -210,7 +210,7 @@ const ClientProjects = () => {
                           size="sm" 
                           variant="outline" 
                           className="flex-1 h-10 rounded-xl font-bold border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10" 
-                          onClick={() => navigate(`/client/projects/create?edit=${p.id}`)}
+                          onClick={() => navigate(`/employer/projects/create?edit=${p.id}`)}
                         >
                           <Pencil className="mr-2 h-4 w-4" /> Edit Job
                         </Button>
@@ -238,7 +238,7 @@ const ClientProjects = () => {
                         size="sm" 
                         variant="outline" 
                         className="w-full h-11 rounded-2xl font-bold bg-indigo-500/10 border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20" 
-                        onClick={() => navigate(`/client/projects/chat/${p.id}`)}
+                        onClick={() => navigate(`/employer/projects/chat/${p.id}`)}
                       >
                         <MessageSquare className="mr-2 h-4 w-4" /> Validation Chat
                       </Button>

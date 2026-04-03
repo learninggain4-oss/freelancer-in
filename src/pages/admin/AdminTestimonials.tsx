@@ -240,7 +240,7 @@ const AdminTestimonials = () => {
               <MessageSquareQuote className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">What Clients Say</h1>
+              <h1 className="text-3xl font-bold text-white">What Employers Say</h1>
               <p className="text-white/70">Manage testimonials displayed on the landing page</p>
             </div>
           </div>
@@ -314,7 +314,7 @@ const AdminTestimonials = () => {
               <Textarea 
                 value={form.quote} 
                 onChange={(e) => setForm({ ...form, quote: e.target.value })} 
-                placeholder="What the client said about your services..." 
+                placeholder="What the employer said about your services..." 
                 rows={4} 
                 style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
                 className="resize-none"
@@ -365,7 +365,7 @@ const AdminTestimonials = () => {
       ) : testimonials.length === 0 ? (
         <Card style={{ background: T.card, border: `1px solid ${T.border}` }}>
           <CardContent className="py-16 text-center" style={{ color: T.sub }}>
-            No testimonials yet. Add your first one to showcase client satisfaction!
+            No testimonials yet. Add your first one to showcase employer satisfaction!
           </CardContent>
         </Card>
       ) : (

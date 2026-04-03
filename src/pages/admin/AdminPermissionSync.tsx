@@ -17,7 +17,7 @@ interface RoleCache{id:string;role:string;users:number;cacheAge:number;syncStatu
 
 const seedCaches=():RoleCache[]=>[
   {id:"rc1",role:"admin",users:3,cacheAge:45,syncStatus:"synced",lastSync:new Date(Date.now()-2700000).toISOString(),pendingChanges:0},
-  {id:"rc2",role:"client",users:4200,cacheAge:840,syncStatus:"stale",lastSync:new Date(Date.now()-50400000).toISOString(),pendingChanges:12},
+  {id:"rc2",role:"employer",users:4200,cacheAge:840,syncStatus:"stale",lastSync:new Date(Date.now()-50400000).toISOString(),pendingChanges:12},
   {id:"rc3",role:"freelancer",users:8560,cacheAge:720,syncStatus:"stale",lastSync:new Date(Date.now()-43200000).toISOString(),pendingChanges:34},
   {id:"rc4",role:"moderator",users:8,cacheAge:90,syncStatus:"synced",lastSync:new Date(Date.now()-5400000).toISOString(),pendingChanges:0},
 ];

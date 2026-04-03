@@ -41,7 +41,7 @@ const RequestWithdrawal = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const basePath = window.location.pathname.includes("/client/") ? "/client" : "/freelancer";
+  const basePath = window.location.pathname.includes("/employer/") ? "/employer" : "/freelancer";
 
   const savedBank = profile?.bank_account_number;
   const savedIfsc = profile?.bank_ifsc_code;

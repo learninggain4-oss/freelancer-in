@@ -135,7 +135,7 @@ const BUILT_IN_CATEGORIES = [
     label: "📋 Projects & Jobs",
     shortcut: "/project",
     templates: [
-      "Your project application has been received. The client will review it shortly.",
+      "Your project application has been received. The employer will review it shortly.",
       "Please upload your submission files through the Projects tab.",
       "The project status has been updated. Please check your dashboard.",
     ],

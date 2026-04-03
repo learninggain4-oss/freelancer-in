@@ -5,14 +5,14 @@ import { DashboardTheme } from "@/hooks/use-dashboard-theme";
 const A1 = "#6366f1";
 
 interface BottomTabBarProps {
-  userType: "employee" | "client";
+  userType: "employee" | "employer";
   onMenuClick: () => void;
   theme?: DashboardTheme;
 }
 
 const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarProps) => {
   const location = useLocation();
-  const base = userType === "employee" ? "/employee" : "/client";
+  const base = userType === "employee" ? "/employee" : "/employer";
 
   const isDark   = theme === "black" || theme === "wb";
   const isWarm   = theme === "warm";

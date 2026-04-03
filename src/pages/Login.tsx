@@ -519,7 +519,7 @@ const Login = () => {
               { target: 12400, suffix: "+", label: "Active Freelancers", icon: Users, color: A1 },
               { target: 38000, suffix: "+", label: "Projects Completed", icon: CheckCircle, color: "#22c55e" },
               { target: 500, suffix: "+ Cr", label: "Total Earnings Paid", icon: CreditCard, color: "#f59e0b" },
-              { target: 98, suffix: "%", label: "Client Satisfaction", icon: Star, color: "#f43f5e" },
+              { target: 98, suffix: "%", label: "Employer Satisfaction", icon: Star, color: "#f43f5e" },
             ].map(({ target, suffix, label, icon: Icon, color }, i) => (
               <div key={label} style={{ animation: `countUp .8s ease both`, animationDelay: `${i * .15}s` }}>
                 <div style={{ width: 56, height: 56, borderRadius: 16, background: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", boxShadow: `0 0 24px ${color}33` }}>
@@ -543,17 +543,17 @@ const Login = () => {
         <div style={{ overflow: "hidden" }}>
           <div className="testimonial-track">
             {[
-              { name: "Priya Sharma", role: "UI/UX Designer, Mumbai", text: "Found 3 long-term clients in my first week. Payments are always on time!", rating: 5 },
+              { name: "Priya Sharma", role: "UI/UX Designer, Mumbai", text: "Found 3 long-term employers in my first week. Payments are always on time!", rating: 5 },
               { name: "Rahul Verma", role: "Full Stack Dev, Bangalore", text: "The platform's project management tools are incredible. Revenue doubled in 3 months.", rating: 5 },
               { name: "Anita Patel", role: "Content Writer, Ahmedabad", text: "Love how seamless everything is — from proposal to payment. Highly recommend!", rating: 5 },
-              { name: "Vikram Singh", role: "Digital Marketer, Delhi", text: "Best freelance platform in India. Verified clients and instant payments are a game-changer.", rating: 5 },
+              { name: "Vikram Singh", role: "Digital Marketer, Delhi", text: "Best freelance platform in India. Verified employers and instant payments are a game-changer.", rating: 5 },
               { name: "Sneha Nair", role: "Graphic Designer, Kochi", text: "I was skeptical at first, but the quality of projects here is unmatched. 10/10!", rating: 5 },
               { name: "Arjun Mehta", role: "Data Analyst, Pune", text: "Secured projects worth ₹5L in my first month. The support team is amazing too.", rating: 5 },
               // Duplicated for infinite scroll
-              { name: "Priya Sharma", role: "UI/UX Designer, Mumbai", text: "Found 3 long-term clients in my first week. Payments are always on time!", rating: 5 },
+              { name: "Priya Sharma", role: "UI/UX Designer, Mumbai", text: "Found 3 long-term employers in my first week. Payments are always on time!", rating: 5 },
               { name: "Rahul Verma", role: "Full Stack Dev, Bangalore", text: "The platform's project management tools are incredible. Revenue doubled in 3 months.", rating: 5 },
               { name: "Anita Patel", role: "Content Writer, Ahmedabad", text: "Love how seamless everything is — from proposal to payment. Highly recommend!", rating: 5 },
-              { name: "Vikram Singh", role: "Digital Marketer, Delhi", text: "Best freelance platform in India. Verified clients and instant payments are a game-changer.", rating: 5 },
+              { name: "Vikram Singh", role: "Digital Marketer, Delhi", text: "Best freelance platform in India. Verified employers and instant payments are a game-changer.", rating: 5 },
               { name: "Sneha Nair", role: "Graphic Designer, Kochi", text: "I was skeptical at first, but the quality of projects here is unmatched. 10/10!", rating: 5 },
               { name: "Arjun Mehta", role: "Data Analyst, Pune", text: "Secured projects worth ₹5L in my first month. The support team is amazing too.", rating: 5 },
             ].map((t, i) => <TestiCard key={i} {...t} />)}
@@ -571,7 +571,7 @@ const Login = () => {
             { q: "How long does KYC verification take?", a: "Aadhaar-based KYC is typically verified within 2–4 hours. Bank account verification via penny drop takes about 30 minutes." },
             { q: "What fees does the platform charge?", a: "We charge a transparent 5% platform fee on completed projects. There are no hidden fees, no subscription charges, and no withdrawal fees." },
             { q: "Can I work as both a freelancer and an employer?", a: "Yes! You can post projects as an employer and also take on work as a freelancer — just switch roles from your profile settings." },
-            { q: "What if I have a dispute with a client or freelancer?", a: "Our dispute resolution team reviews evidence from both sides and typically resolves cases within 48 hours. Funds are held in escrow until the dispute is settled." },
+            { q: "What if I have a dispute with a employer or freelancer?", a: "Our dispute resolution team reviews evidence from both sides and typically resolves cases within 48 hours. Funds are held in escrow until the dispute is settled." },
           ].map((item) => <FAQItem key={item.q} {...item} />)}
         </div>
       </section>
@@ -590,7 +590,7 @@ const Login = () => {
             <Link to="/register/employee" style={{ padding: "14px 32px", borderRadius: 14, background: `linear-gradient(135deg,${A1},${A2})`, color: "white", fontWeight: 700, textDecoration: "none", display: "flex", alignItems: "center", gap: 8, boxShadow: `0 8px 24px rgba(99,102,241,.4)` }}>
               Join as Freelancer <ArrowRight size={16} />
             </Link>
-            <Link to="/register/client" style={{ padding: "14px 32px", borderRadius: 14, border: "1px solid rgba(255,255,255,.2)", color: "white", fontWeight: 700, textDecoration: "none", background: "rgba(255,255,255,.06)", backdropFilter: "blur(8px)" }}>
+            <Link to="/register/employer" style={{ padding: "14px 32px", borderRadius: 14, border: "1px solid rgba(255,255,255,.2)", color: "white", fontWeight: 700, textDecoration: "none", background: "rgba(255,255,255,.06)", backdropFilter: "blur(8px)" }}>
               Hire Talent
             </Link>
           </div>
@@ -610,7 +610,7 @@ const Login = () => {
                 <span style={{ fontWeight: 800, fontSize: 18, color: "white" }}>Freelancer<span style={{ color: A1 }}>.in</span></span>
               </div>
               <p style={{ color: "rgba(255,255,255,.4)", fontSize: 13, lineHeight: 1.7, maxWidth: 260, marginBottom: 20 }}>
-                India's most trusted platform connecting skilled freelancers with quality clients.
+                India's most trusted platform connecting skilled freelancers with quality employers.
               </p>
               <div style={{ display: "flex", gap: 12 }}>
                 {[Twitter, Linkedin, Instagram, Github].map((Icon, i) => (

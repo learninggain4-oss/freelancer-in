@@ -496,9 +496,9 @@ const EmployeeDashboard = () => {
             </button>
           </div>
           {[
-            { title: "Website Redesign", client: "TechCorp Ltd", budget: "₹24,000", status: "Active",    statusColor: clrGreen, deadline: "Dec 28" },
-            { title: "Mobile App UI",   client: "StartupXYZ",   budget: "₹38,000", status: "Pending",   statusColor: clrAmber, deadline: "Jan 05" },
-            { title: "Logo Design",     client: "BrandCo",      budget: "₹8,000",  status: "Completed", statusColor: accentIcon, deadline: "Dec 20" },
+            { title: "Website Redesign", employer: "TechCorp Ltd", budget: "₹24,000", status: "Active",    statusColor: clrGreen, deadline: "Dec 28" },
+            { title: "Mobile App UI",   employer: "StartupXYZ",   budget: "₹38,000", status: "Pending",   statusColor: clrAmber, deadline: "Jan 05" },
+            { title: "Logo Design",     employer: "BrandCo",      budget: "₹8,000",  status: "Completed", statusColor: accentIcon, deadline: "Dec 20" },
           ].map((job, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 10px", borderRadius: 12, transition: "background .15s" }}
               onMouseEnter={e => (e.currentTarget.style.background = tok.rowHover)}
@@ -508,7 +508,7 @@ const EmployeeDashboard = () => {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 13, fontWeight: 700, color: tok.text, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{job.title}</p>
-                <p style={{ fontSize: 10.5, color: tok.sub, margin: "1px 0 0" }}>{job.client} · {job.budget} · Due {job.deadline}</p>
+                <p style={{ fontSize: 10.5, color: tok.sub, margin: "1px 0 0" }}>{job.employer} · {job.budget} · Due {job.deadline}</p>
               </div>
               <span style={{ fontSize: 10, fontWeight: 700, color: job.statusColor, background: `${job.statusColor}15`, borderRadius: 20, padding: "2px 8px", flexShrink: 0 }}>
                 {job.status}

@@ -12,12 +12,12 @@ const TH = {
 };
 
 const MOCK_REVIEWS = [
-  { id: "r1", client: "Arjun K.",      company: "TechCorp Pvt Ltd",       rating: 5, date: "Mar 28, 2026", project: "React Dashboard Development",    comment: "Exceptional work! Delivered ahead of schedule with clean, well-documented code. Would definitely hire again. Very professional and responsive throughout.", avatar: "AK" },
-  { id: "r2", client: "Priya M.",      company: "Wellness Brand",          rating: 5, date: "Mar 20, 2026", project: "Logo Design & Brand Identity",    comment: "Creative, modern designs that perfectly captured our brand. Made revisions quickly. Highly recommended!", avatar: "PM" },
-  { id: "r3", client: "Rahul S.",      company: "FoodieApp",               rating: 4, date: "Mar 10, 2026", project: "Flutter Food Delivery App",       comment: "Great technical skills and good communication. Minor delay in one milestone but overall a great experience.", avatar: "RS" },
-  { id: "r4", client: "Meera R.",      company: "EduTech Solutions",       rating: 5, date: "Feb 28, 2026", project: "Content Writing — AI/ML Blog",    comment: "Outstanding writing quality! Articles were well-researched, SEO-optimized and delivered on time. Will work with again.", avatar: "MR" },
-  { id: "r5", client: "Suresh N.",     company: "RetailChain India",       rating: 4, date: "Feb 15, 2026", project: "Tableau Analytics Dashboard",     comment: "Solid Tableau skills and good understanding of business requirements. Dashboard is exactly what we needed.", avatar: "SN" },
-  { id: "r6", client: "Kavitha L.",    company: "StartupX",                rating: 5, date: "Jan 30, 2026", project: "WordPress E-commerce Setup",      comment: "Fast, professional, and went above and beyond. The store looks amazing and is performing well.", avatar: "KL" },
+  { id: "r1", employer: "Arjun K.",      company: "TechCorp Pvt Ltd",       rating: 5, date: "Mar 28, 2026", project: "React Dashboard Development",    comment: "Exceptional work! Delivered ahead of schedule with clean, well-documented code. Would definitely hire again. Very professional and responsive throughout.", avatar: "AK" },
+  { id: "r2", employer: "Priya M.",      company: "Wellness Brand",          rating: 5, date: "Mar 20, 2026", project: "Logo Design & Brand Identity",    comment: "Creative, modern designs that perfectly captured our brand. Made revisions quickly. Highly recommended!", avatar: "PM" },
+  { id: "r3", employer: "Rahul S.",      company: "FoodieApp",               rating: 4, date: "Mar 10, 2026", project: "Flutter Food Delivery App",       comment: "Great technical skills and good communication. Minor delay in one milestone but overall a great experience.", avatar: "RS" },
+  { id: "r4", employer: "Meera R.",      company: "EduTech Solutions",       rating: 5, date: "Feb 28, 2026", project: "Content Writing — AI/ML Blog",    comment: "Outstanding writing quality! Articles were well-researched, SEO-optimized and delivered on time. Will work with again.", avatar: "MR" },
+  { id: "r5", employer: "Suresh N.",     company: "RetailChain India",       rating: 4, date: "Feb 15, 2026", project: "Tableau Analytics Dashboard",     comment: "Solid Tableau skills and good understanding of business requirements. Dashboard is exactly what we needed.", avatar: "SN" },
+  { id: "r6", employer: "Kavitha L.",    company: "StartupX",                rating: 5, date: "Jan 30, 2026", project: "WordPress E-commerce Setup",      comment: "Fast, professional, and went above and beyond. The store looks amazing and is performing well.", avatar: "KL" },
 ];
 
 const RATING_DIST = [
@@ -47,7 +47,7 @@ export default function EmployeeReviews() {
   const [filter, setFilter] = useState(0);
 
   const filtered = MOCK_REVIEWS.filter(r => {
-    const matchSearch = r.client.toLowerCase().includes(search.toLowerCase()) || r.project.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = r.employer.toLowerCase().includes(search.toLowerCase()) || r.project.toLowerCase().includes(search.toLowerCase());
     const matchRating = filter === 0 || r.rating === filter;
     return matchSearch && matchRating;
   });
@@ -59,7 +59,7 @@ export default function EmployeeReviews() {
     <div className="min-h-screen pb-10" style={{ background: T.bg, color: T.text }}>
       <div className="px-4 sm:px-6 pt-6 pb-4">
         <h1 className="text-xl font-black" style={{ color: T.text }}>Reviews Received</h1>
-        <p className="text-xs mt-0.5" style={{ color: T.sub }}>What clients say about your work</p>
+        <p className="text-xs mt-0.5" style={{ color: T.sub }}>What employers say about your work</p>
       </div>
 
       {/* Rating Summary */}
@@ -130,7 +130,7 @@ export default function EmployeeReviews() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="text-sm font-bold" style={{ color: T.text }}>{r.client}</p>
+                    <p className="text-sm font-bold" style={{ color: T.text }}>{r.employer}</p>
                     <p className="text-[10px]" style={{ color: T.sub }}>{r.company}</p>
                   </div>
                   <div className="text-right shrink-0">

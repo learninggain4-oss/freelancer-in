@@ -41,12 +41,12 @@ const AdminClients = () => {
   const { theme, themeKey } = useDashboardTheme();
   const T = TH[themeKey];
   const navigate = useNavigate();
-  const [clients, setClients] = useState<ClientRow[]>([]);
+  const [employers, setClients] = useState<ClientRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [projectCounts, setProjectCounts] = useState<Record<string, number>>({});
-  const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock" | "delete"; client: ClientRow } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock" | "delete"; employer: ClientRow } | null>(null);
   const [processing, setProcessing] = useState(false);
 
   const fetchData = async () => {
@@ -73,9 +73,9 @@ const AdminClients = () => {
 
   useEffect(() => { fetchData(); }, []);
 
-  const handleToggleBlock = async (client: ClientRow) => {
+  const handleToggleBlock = async (employer: ClientRow) => {
     setProcessing(true);
-    const newDisabled = !client.is_disabled;
+    const newDisabled = !employer.is_disabled;
     const { error } = await supabase
       .from("profiles")
       .update({ is_disabled: newDisabled, disabled_reason: newDisabled ? "Blocked by admin" : null })
@@ -85,36 +85,36 @@ const AdminClients = () => {
     if (error) {
       toast.error("Failed to update status");
     } else {
-      toast.success(newDisabled ? "Client blocked" : "Client unblocked");
+      toast.success(newDisabled ? "Employer blocked" : "Employer unblocked");
       fetchData();
     }
   };
 
-  const handlePermanentDelete = async (client: ClientRow) => {
+  const handlePermanentDelete = async (employer: ClientRow) => {
     setProcessing(true);
     const { data, error } = await supabase.functions.invoke("admin-user-management", {
-      body: { action: "permanent_delete", profile_id: client.id },
+      body: { action: "permanent_delete", profile_id: employer.id },
     });
     setProcessing(false);
     setConfirmAction(null);
     if (error || data?.error) {
       toast.error(data?.error || error?.message || "Delete failed");
     } else {
-      toast.success("Client permanently deleted");
+      toast.success("Employer permanently deleted");
       fetchData();
     }
   };
 
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    if (!q) return clients;
-    return clients.filter((c) => {
+    if (!q) return employers;
+    return employers.filter((c) => {
       const name = (c.full_name?.[0] || "").toLowerCase();
       const code = (c.user_code?.[0] || "").toLowerCase();
       const email = (c.email || "").toLowerCase();
       return name.includes(q) || code.includes(q) || email.includes(q);
     });
-  }, [clients, searchQuery]);
+  }, [employers, searchQuery]);
 
   useEffect(() => { setCurrentPage(1); }, [searchQuery]);
 
@@ -122,8 +122,8 @@ const AdminClients = () => {
   const page = Math.min(currentPage, totalPages);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const totalBalance = clients.reduce((s, c) => s + Number(c.available_balance), 0);
-  const activeCount = clients.filter((c) => c.approval_status === "approved" && !c.is_disabled).length;
+  const totalBalance = employers.reduce((s, c) => s + Number(c.available_balance), 0);
+  const activeCount = employers.filter((c) => c.approval_status === "approved" && !c.is_disabled).length;
   const totalProjects = Object.values(projectCounts).reduce((s, v) => s + v, 0);
 
   const statusBadge = (c: ClientRow) => {
@@ -148,8 +148,8 @@ const AdminClients = () => {
               <Building className="h-8 w-8" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold tracking-tight">Clients</h2>
-              <p className="text-indigo-100 opacity-80">Manage platform clients and their projects</p>
+              <h2 className="text-3xl font-bold tracking-tight">Employers</h2>
+              <p className="text-indigo-100 opacity-80">Manage platform employers and their projects</p>
             </div>
           </div>
         </div>
@@ -161,12 +161,12 @@ const AdminClients = () => {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className="border-none backdrop-blur-md" style={{ background: T.card }}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium" style={{ color: T.sub }}>Total Clients</CardTitle>
+            <CardTitle className="text-sm font-medium" style={{ color: T.sub }}>Total Employers</CardTitle>
             <Users className="h-5 w-5 text-indigo-400" />
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold" style={{ color: T.text }}>
-              {clients.length} 
+              {employers.length} 
               <span className="text-sm font-normal ml-2" style={{ color: T.sub }}>({activeCount} active)</span>
             </p>
           </CardContent>
@@ -240,7 +240,7 @@ const AdminClients = () => {
               </TableRow>
             ) : paginated.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-8 text-center" style={{ color: T.sub }}>No clients found</TableCell>
+                <TableCell colSpan={7} className="py-8 text-center" style={{ color: T.sub }}>No employers found</TableCell>
               </TableRow>
             ) : (
               paginated.map((c) => (
@@ -267,7 +267,7 @@ const AdminClients = () => {
                         variant="ghost"
                         title={c.is_disabled ? "Unblock" : "Block"}
                         className={c.is_disabled ? "text-accent hover:text-accent hover:bg-white/10" : "text-warning hover:text-warning hover:bg-white/10"}
-                        onClick={() => setConfirmAction({ type: c.is_disabled ? "unblock" : "block", client: c })}
+                        onClick={() => setConfirmAction({ type: c.is_disabled ? "unblock" : "block", employer: c })}
                       >
                         {c.is_disabled ? <ShieldCheck className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
                       </Button>
@@ -276,7 +276,7 @@ const AdminClients = () => {
                         variant="ghost"
                         title="Delete Permanently"
                         className="text-destructive hover:text-destructive hover:bg-white/10"
-                        onClick={() => setConfirmAction({ type: "delete", client: c })}
+                        onClick={() => setConfirmAction({ type: "delete", employer: c })}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -326,17 +326,17 @@ const AdminClients = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>
               {confirmAction?.type === "delete"
-                ? "Permanently Delete Client?"
+                ? "Permanently Delete Employer?"
                 : confirmAction?.type === "block"
-                ? "Block Client?"
-                : "Unblock Client?"}
+                ? "Block Employer?"
+                : "Unblock Employer?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirmAction?.type === "delete"
-                ? `This will permanently delete "${confirmAction.client.full_name?.[0]}" and all their data. This CANNOT be undone.`
+                ? `This will permanently delete "${confirmAction.employer.full_name?.[0]}" and all their data. This CANNOT be undone.`
                 : confirmAction?.type === "block"
-                ? `This will block "${confirmAction?.client.full_name?.[0]}" from logging in. You can unblock them later.`
-                : `This will re-enable login access for "${confirmAction?.client.full_name?.[0]}".`}
+                ? `This will block "${confirmAction?.employer.full_name?.[0]}" from logging in. You can unblock them later.`
+                : `This will re-enable login access for "${confirmAction?.employer.full_name?.[0]}".`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -346,8 +346,8 @@ const AdminClients = () => {
               className={confirmAction?.type === "delete" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
               onClick={() => {
                 if (!confirmAction) return;
-                if (confirmAction.type === "delete") handlePermanentDelete(confirmAction.client);
-                else handleToggleBlock(confirmAction.client);
+                if (confirmAction.type === "delete") handlePermanentDelete(confirmAction.employer);
+                else handleToggleBlock(confirmAction.employer);
               }}
             >
               {processing ? "Processing…" : confirmAction?.type === "delete" ? "Delete" : confirmAction?.type === "block" ? "Block" : "Unblock"}

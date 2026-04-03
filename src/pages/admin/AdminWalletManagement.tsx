@@ -116,7 +116,7 @@ const AdminWalletManagement = () => {
   const [showClearedTx, setShowClearedTx] = useState(false);
   const [showClearedW, setShowClearedW] = useState(false);
 
-  const [userTab, setUserTab] = useState<"freelancer" | "client">("freelancer");
+  const [userTab, setUserTab] = useState<"freelancer" | "employer">("freelancer");
 
   // Fetch all users
   const { data: allUsers = [], isLoading: loadingUsers } = useQuery({
@@ -395,10 +395,10 @@ const AdminWalletManagement = () => {
               </div>
               <h3 className="text-lg font-bold" style={{ color: T.text }}>Select User</h3>
             </div>
-            <Tabs value={userTab} onValueChange={(v) => setUserTab(v as "freelancer" | "client")} className="w-[300px]">
+            <Tabs value={userTab} onValueChange={(v) => setUserTab(v as "freelancer" | "employer")} className="w-[300px]">
               <TabsList className="w-full h-10 bg-transparent border p-0 gap-1 rounded-xl" style={{ borderColor: T.border }}>
                 <TabsTrigger value="freelancer" className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white" style={{ color: T.sub }}>Freelancers</TabsTrigger>
-                <TabsTrigger value="client" className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white" style={{ color: T.sub }}>Clients</TabsTrigger>
+                <TabsTrigger value="employer" className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white" style={{ color: T.sub }}>Employers</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>

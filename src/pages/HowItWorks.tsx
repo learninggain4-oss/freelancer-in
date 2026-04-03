@@ -14,10 +14,10 @@ const FREELANCER_STEPS = [
   { icon: Users,         n: "01", title: "Create Your Profile",       desc: "Sign up free. Add your skills, portfolio, work experience, and profile photo. A complete profile gets 4× more views.", tip: "Add at least 3 portfolio samples", color: "#6366f1" },
   { icon: Award,         n: "02", title: "Get Verified (Optional)",    desc: "Complete a skill test and ID verification to earn your Verified badge. Verified freelancers earn 3× more projects.", tip: "Takes about 30 minutes", color: "#3b82f6" },
   { icon: Search,        n: "03", title: "Browse & Bid on Projects",   desc: "Browse 1,000+ live projects. Filter by category, budget, and deadline. Place a bid with your proposal and price.", tip: "Personalise each proposal", color: "#f59e0b" },
-  { icon: MessageCircle, n: "04", title: "Win & Discuss",              desc: "Client reviews proposals and picks you. Chat directly in the platform. Clarify scope, share files, agree on milestones.", tip: "Respond within 1 hour for best results", color: "#ec4899" },
-  { icon: Zap,           n: "05", title: "Complete Milestones",        desc: "Work through agreed milestones. Submit deliverables. Client reviews and approves each stage before releasing payment.", tip: "Always deliver before the deadline", color: "#34d399" },
-  { icon: Wallet,        n: "06", title: "Get Paid & Earn Reviews",    desc: "Payment is released from escrow to your wallet. Withdraw via UPI or bank. Rate your client and get a review.", tip: "A 5★ review brings more clients", color: "#a855f7" },
-  { icon: Star,          n: "07", title: "Build Your Reputation",      desc: "With each project, your profile score grows. Earn badges, climb the leaderboard, and unlock better clients and higher rates.", tip: "Aim for Top Rated within 12 months", color: "#fbbf24" },
+  { icon: MessageCircle, n: "04", title: "Win & Discuss",              desc: "Employer reviews proposals and picks you. Chat directly in the platform. Clarify scope, share files, agree on milestones.", tip: "Respond within 1 hour for best results", color: "#ec4899" },
+  { icon: Zap,           n: "05", title: "Complete Milestones",        desc: "Work through agreed milestones. Submit deliverables. Employer reviews and approves each stage before releasing payment.", tip: "Always deliver before the deadline", color: "#34d399" },
+  { icon: Wallet,        n: "06", title: "Get Paid & Earn Reviews",    desc: "Payment is released from escrow to your wallet. Withdraw via UPI or bank. Rate your employer and get a review.", tip: "A 5★ review brings more employers", color: "#a855f7" },
+  { icon: Star,          n: "07", title: "Build Your Reputation",      desc: "With each project, your profile score grows. Earn badges, climb the leaderboard, and unlock better employers and higher rates.", tip: "Aim for Top Rated within 12 months", color: "#fbbf24" },
 ];
 
 const CLIENT_STEPS = [
@@ -26,20 +26,20 @@ const CLIENT_STEPS = [
   { icon: MessageCircle, n: "03", title: "Interview & Select",  desc: "Chat with shortlisted freelancers. Ask questions, request samples. Select the best fit and agree on project details.", tip: "Good communication = better results", color: "#f59e0b" },
   { icon: Shield,    n: "04", title: "Fund Escrow",             desc: "Deposit payment into our secure escrow. Your money is protected — the freelancer cannot access it until you approve the work.", tip: "Escrow protects both parties", color: "#ec4899" },
   { icon: Zap,       n: "05", title: "Receive Deliverables",    desc: "Freelancer submits work via the platform. Review it carefully. Request revisions if needed — most plans include 2 free revision rounds.", tip: "Use the revision feature freely", color: "#34d399" },
-  { icon: CheckCircle, n: "06", title: "Approve & Release",    desc: "Satisfied with the work? Approve it and payment is instantly released. Leave a review to help other clients find great talent.", tip: "Honest reviews help the community", color: "#a855f7" },
+  { icon: CheckCircle, n: "06", title: "Approve & Release",    desc: "Satisfied with the work? Approve it and payment is instantly released. Leave a review to help other employers find great talent.", tip: "Honest reviews help the community", color: "#a855f7" },
 ];
 
 const TIPS = [
   { icon: "💡", title: "Complete your profile 100%", desc: "Freelancers with complete profiles get 4× more project invitations." },
   { icon: "⚡", title: "Respond fast", desc: "Freelancers who respond within 1 hour win 60% more projects." },
-  { icon: "📋", title: "Write specific proposals", desc: "Generic bids are ignored. Address the client's exact problem." },
+  { icon: "📋", title: "Write specific proposals", desc: "Generic bids are ignored. Address the employer's exact problem." },
   { icon: "🎯", title: "Start with smaller projects", desc: "Build your first 5 reviews with smaller projects, then target bigger ones." },
   { icon: "🛡️", title: "Get verified", desc: "Verified freelancers earn 3× more than unverified ones." },
-  { icon: "💬", title: "Communicate proactively", desc: "Update clients before they ask. This earns you 5★ communication ratings." },
+  { icon: "💬", title: "Communicate proactively", desc: "Update employers before they ask. This earns you 5★ communication ratings." },
 ];
 
 export default function HowItWorks() {
-  const [tab, setTab] = useState<"freelancer" | "client">("freelancer");
+  const [tab, setTab] = useState<"freelancer" | "employer">("freelancer");
 
   useEffect(() => {
     const id = (localStorage.getItem("fi-theme") || "midnight") as string;
@@ -54,7 +54,7 @@ export default function HowItWorks() {
     document.body.style.background = t.bg;
     document.title = "How It Works | Freelancer India | Start Freelancing in Minutes";
     const desc = document.querySelector('meta[name="description"]');
-    if (desc) desc.setAttribute("content", "Learn how Freelancer India works. Create your profile, browse projects, bid, get hired, and get paid via UPI — all in one platform. Step-by-step guide for freelancers and clients.");
+    if (desc) desc.setAttribute("content", "Learn how Freelancer India works. Create your profile, browse projects, bid, get hired, and get paid via UPI — all in one platform. Step-by-step guide for freelancers and employers.");
     return () => {
       document.title = "Freelancer India — Hire Top Indian Freelancers | UPI Payments | ₹0 Commission (3 Months)";
       document.body.style.background = "";
@@ -88,10 +88,10 @@ export default function HowItWorks() {
           <h1 className="text-5xl sm:text-6xl font-black text-white mb-4 leading-tight">
             How It <span style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Works</span>
           </h1>
-          <p className="text-white/55 text-lg mb-8">A step-by-step guide for freelancers and clients on the Freelancer India platform.</p>
+          <p className="text-white/55 text-lg mb-8">A step-by-step guide for freelancers and employers on the Freelancer India platform.</p>
           {/* Tab selector */}
           <div className="inline-flex rounded-2xl p-1 gap-1" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
-            {(["freelancer", "client"] as const).map(t => (
+            {(["freelancer", "employer"] as const).map(t => (
               <button key={t} onClick={() => setTab(t)} className="rounded-xl px-7 py-2.5 text-sm font-semibold transition-all capitalize" style={{ background: tab === t ? "rgba(var(--t-a1-rgb),0.2)" : "transparent", color: tab === t ? "var(--t-a1)" : "rgba(255,255,255,0.5)", border: tab === t ? "1px solid rgba(var(--t-a1-rgb),0.35)" : "1px solid transparent" }}>
                 I'm a {t}
               </button>
@@ -161,7 +161,7 @@ export default function HowItWorks() {
               ["< 2hrs", "First proposals received"],
               ["₹0", "Cost to post a project"],
               ["48hrs", "Average project start"],
-              ["4.8★", "Average client satisfaction"],
+              ["4.8★", "Average employer satisfaction"],
             ].map(([v, l]) => (
               <div key={l} className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <div className="text-2xl font-black mb-1" style={{ color: "var(--t-a1)" }}>{v}</div>

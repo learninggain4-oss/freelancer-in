@@ -626,7 +626,7 @@ const features = [
 ];
 
 const steps = [
-  { step: "01", title: "Create Account", description: "Sign up as freelancer or client with quick WhatsApp verification.", icon: Users,     color: "from-violet-600 to-purple-700" },
+  { step: "01", title: "Create Account", description: "Sign up as freelancer or employer with quick WhatsApp verification.", icon: Users,     color: "from-violet-600 to-purple-700" },
   { step: "02", title: "Find Projects",  description: "Browse available jobs or post your project requirements.", icon: Search,    color: "from-blue-600 to-cyan-700" },
   { step: "03", title: "Collaborate",    description: "Work together with real-time chat and milestone tracking.", icon: MessageCircle, color: "from-emerald-600 to-teal-700" },
   { step: "04", title: "Get Paid",       description: "Receive secure payments instantly to your UPI or bank account.", icon: CreditCard,  color: "from-rose-600 to-pink-700" },
@@ -676,7 +676,7 @@ const stats = [
 const trustedCompanies = ["TCS","Infosys","Wipro","HCL Tech","Tech Mahindra","Accenture","Cognizant","Flipkart","Razorpay","Zoho"];
 
 const faqs = [
-  { q: "How does the verification process work?", a: "Every user undergoes a WhatsApp number verification and admin review before being approved. This ensures all freelancers and clients are genuine." },
+  { q: "How does the verification process work?", a: "Every user undergoes a WhatsApp number verification and admin review before being approved. This ensures all freelancers and employers are genuine." },
   { q: "What payment methods are supported?", a: "We support all major UPI apps (GPay, PhonePe, Paytm), direct bank transfers (NEFT/IMPS), and our integrated wallet system for instant payments." },
   { q: "Is there a fee to join the platform?", a: "Basic registration is free. We offer different wallet tiers with enhanced features and limits. You only pay when you upgrade your wallet plan." },
   { q: "How are disputes resolved?", a: "Our admin team mediates disputes through the in-app support chat. We hold payments in escrow until project validation is complete, protecting both parties." },
@@ -1675,7 +1675,7 @@ const RegisterModal = ({ open, onClose }: { open: boolean; onClose: () => void }
               <p className="text-sm text-white/50 mt-0.5">{t.registerModal.freelancerDesc}</p>
             </div>
           </Link>
-          <Link to="/register/client" onClick={onClose} className="group relative flex items-center gap-4 rounded-2xl p-5 text-left transition-all duration-300 hover:scale-[1.02]" style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)" }}>
+          <Link to="/register/employer" onClick={onClose} className="group relative flex items-center gap-4 rounded-2xl p-5 text-left transition-all duration-300 hover:scale-[1.02]" style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)" }}>
             <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: "linear-gradient(135deg, rgba(52,211,153,0.12), rgba(16,185,129,0.08))" }} />
             <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg,#10b981,#059669)", boxShadow: "0 8px 20px rgba(16,185,129,0.3)" }}>
               <Users className="h-6 w-6 text-white" />
@@ -1982,7 +1982,7 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
               </div>
             </MagneticWrapper>
             <MagneticWrapper>
-              <Link to="/register/client">
+              <Link to="/register/employer">
                 <button className="flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-base font-semibold text-white/80 hover:text-white transition-all w-full sm:w-auto" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)" }}>
                   <Users className="h-5 w-5" />
                   {t.hero.joinEmployer}
@@ -2236,7 +2236,7 @@ const StatsSection = () => {
   const statItems = [
     { value: "500",  suffix: "+",   label: t.stats.labels.freelancers, prefix: "" },
     { value: "10",   suffix: "L+",  label: t.stats.labels.projects,    prefix: "₹" },
-    { value: "99",   suffix: "%",   label: t.stats.labels.clients,     prefix: "" },
+    { value: "99",   suffix: "%",   label: t.stats.labels.employers,     prefix: "" },
     { value: "2700", suffix: "+",   label: t.stats.labels.paid,        prefix: "" },
   ];
   return (
@@ -2377,7 +2377,7 @@ const FeaturedFreelancersSection = () => {
             </h2>
             <p className="text-white/50">Verified professionals ready to bring your project to life.</p>
           </div>
-          <Link to="/register/client" className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white/70 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+          <Link to="/register/employer" className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white/70 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
             Browse All <ArrowRight className="h-4 w-4" />
           </Link>
         </Reveal>
@@ -2432,7 +2432,7 @@ const FeaturedFreelancersSection = () => {
                     <span className="text-sm font-black" style={{ color: f.color }}>{f.rate}</span>
                   </div>
                   {/* Hire button */}
-                  <Link to="/register/client">
+                  <Link to="/register/employer">
                     <button
                       className="mt-4 w-full rounded-xl py-2.5 text-sm font-semibold text-white transition-all duration-300 hover:scale-[1.02]"
                       style={{ background: hovered === i ? `linear-gradient(135deg, ${f.color}cc, ${f.color}88)` : "rgba(255,255,255,0.06)", border: hovered === i ? "none" : "1px solid rgba(255,255,255,0.1)" }}
@@ -2476,7 +2476,7 @@ const LiveProjectsStrip = () => (
           <h2 className="text-4xl sm:text-5xl font-black text-white mb-2">
             Browse <span className="gradient-text">Open Projects</span>
           </h2>
-          <p className="text-white/50">Fresh projects posted by clients — bid before others do.</p>
+          <p className="text-white/50">Fresh projects posted by employers — bid before others do.</p>
         </div>
         <Link to="/projects" className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white/70 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
           View All Projects <ArrowRight className="h-4 w-4" />
@@ -2534,7 +2534,7 @@ const SUCCESS_STORIES = [
     name: "Priya Nair",
     role: "UI/UX Designer",
     location: "Kochi, Kerala",
-    client: "TechStartup Pvt Ltd",
+    employer: "TechStartup Pvt Ltd",
     project: "Mobile App Redesign",
     earned: "₹1,20,000",
     period: "3 months",
@@ -2547,7 +2547,7 @@ const SUCCESS_STORIES = [
     name: "Arjun Sharma",
     role: "Full-Stack Developer",
     location: "Bengaluru, Karnataka",
-    client: "RetailChain India",
+    employer: "RetailChain India",
     project: "E-Commerce Platform",
     earned: "₹2,50,000",
     period: "5 months",
@@ -2560,7 +2560,7 @@ const SUCCESS_STORIES = [
     name: "Meera Pillai",
     role: "Content Strategist",
     location: "Chennai, Tamil Nadu",
-    client: "FinTech Corp",
+    employer: "FinTech Corp",
     project: "SEO Content Campaign",
     earned: "₹75,000",
     period: "2 months",
@@ -2636,7 +2636,7 @@ const SuccessStoriesSection = () => {
               <div className="rounded-2xl p-4 mb-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <div className="text-xs text-white/40 mb-1 uppercase tracking-widest">Project</div>
                 <div className="font-bold text-white mb-0.5">{s.project}</div>
-                <div className="text-xs text-white/50">Client: {s.client}</div>
+                <div className="text-xs text-white/50">Employer: {s.employer}</div>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="rounded-xl p-4 text-center" style={{ background: `${s.color}10`, border: `1px solid ${s.color}25` }}>
@@ -2740,7 +2740,7 @@ const BLOG_POSTS = [
     tag: "Earning Guide",
     tagColor: "#a78bfa",
     title: "How to Earn ₹1 Lakh/Month as a Freelancer in India",
-    excerpt: "A step-by-step guide to building a sustainable freelance income — from profile optimization to client retention.",
+    excerpt: "A step-by-step guide to building a sustainable freelance income — from profile optimization to employer retention.",
     readTime: "6 min read",
     date: "Mar 28, 2026",
     emoji: "💰",
@@ -2749,13 +2749,13 @@ const BLOG_POSTS = [
     tag: "Tips & Tricks",
     tagColor: "#60a5fa",
     title: "Top 10 Mistakes Freelancers Make on Their Profiles",
-    excerpt: "Avoid these common pitfalls to win more bids, build trust, and land premium clients faster.",
+    excerpt: "Avoid these common pitfalls to win more bids, build trust, and land premium employers faster.",
     readTime: "4 min read",
     date: "Mar 22, 2026",
     emoji: "🎯",
   },
   {
-    tag: "Client Guide",
+    tag: "Employer Guide",
     tagColor: "#34d399",
     title: "How to Write a Project Brief That Attracts Top Talent",
     excerpt: "Clear briefs = better proposals. Learn what information freelancers need to deliver excellent results.",
@@ -3036,7 +3036,7 @@ const EarningsCalculatorSection = () => {
                 <div className="flex justify-between text-[10px] text-white/25 mt-1"><span>5 hrs</span><span>Part-time</span><span>Full-time</span><span>50 hrs</span></div>
               </div>
               <div className="rounded-xl p-3 text-xs text-white/35 leading-relaxed" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                Estimate based on current market rates for India. Actual earnings vary by profile quality, client reviews, and availability.
+                Estimate based on current market rates for India. Actual earnings vary by profile quality, employer reviews, and availability.
               </div>
             </div>
           </Reveal>
@@ -3175,7 +3175,7 @@ const DemoVideoSection = () => {
           <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
             See It in <span className="gradient-text">Action</span>
           </h2>
-          <p className="text-white/50 max-w-md mx-auto">Watch how freelancers and clients connect on Freelancer India in under 60 seconds.</p>
+          <p className="text-white/50 max-w-md mx-auto">Watch how freelancers and employers connect on Freelancer India in under 60 seconds.</p>
         </Reveal>
         <Reveal>
           <div className="relative rounded-3xl overflow-hidden cursor-pointer group" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.15), rgba(var(--t-a2-rgb),0.15))", border: "1px solid rgba(var(--t-a1-rgb),0.25)", aspectRatio: "16/9" }} onClick={() => setPlaying(true)}>
@@ -3300,7 +3300,7 @@ const IndiaCoverageSection = () => (
         <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
           Working Across <span className="gradient-text">All of India</span>
         </h2>
-        <p className="text-white/50 max-w-md mx-auto">Freelancers and clients from every state, every language, every industry — all on one platform.</p>
+        <p className="text-white/50 max-w-md mx-auto">Freelancers and employers from every state, every language, every industry — all on one platform.</p>
       </Reveal>
       <div className="grid lg:grid-cols-2 gap-12 items-center">
         {/* Stats */}
@@ -3345,7 +3345,7 @@ const IndiaCoverageSection = () => (
 const VERIFY_STEPS = [
   { icon: FileText,    title: "Complete Profile",    desc: "Add your skills, experience, portfolio, and education details." },
   { icon: Code,        title: "Take Skill Test",     desc: "Pass a 15-min online assessment specific to your expertise area." },
-  { icon: Star,        title: "Earn 3+ Reviews",     desc: "Complete 3 projects with 4★+ client rating and positive feedback." },
+  { icon: Star,        title: "Earn 3+ Reviews",     desc: "Complete 3 projects with 4★+ employer rating and positive feedback." },
   { icon: Shield,      title: "ID Verification",     desc: "Upload Aadhaar or PAN for identity verification — takes 24 hours." },
 ];
 const SkillVerificationSection = () => (
@@ -3359,7 +3359,7 @@ const SkillVerificationSection = () => (
         <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
           Earn Your <span className="gradient-text">Verified Badge</span>
         </h2>
-        <p className="text-white/50 max-w-md mx-auto">Verified freelancers earn 3× more. Stand out to premium clients who trust only verified talent.</p>
+        <p className="text-white/50 max-w-md mx-auto">Verified freelancers earn 3× more. Stand out to premium employers who trust only verified talent.</p>
       </Reveal>
       <div className="grid lg:grid-cols-2 gap-12 items-center">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -3385,12 +3385,12 @@ const SkillVerificationSection = () => (
             </div>
             <h3 className="text-xl font-black text-white mb-2">Verified Pro</h3>
             <p className="text-white/50 text-sm mb-6 leading-relaxed">
-              Clients filter specifically for Verified freelancers. Your profile gets a gold badge, priority search placement, and trust signals that convert.
+              Employers filter specifically for Verified freelancers. Your profile gets a gold badge, priority search placement, and trust signals that convert.
             </p>
             {[
               { stat: "3×", label: "More project invitations" },
               { stat: "40%", label: "Higher average project value" },
-              { stat: "85%", label: "Client conversion rate" },
+              { stat: "85%", label: "Employer conversion rate" },
             ].map(s => (
               <div key={s.label} className="flex items-center justify-between py-2.5" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                 <span className="text-xs text-white/45">{s.label}</span>
@@ -3537,7 +3537,7 @@ const LiveActivityToast = () => {
   );
 };
 
-/* ─────────────────────── Client Logos / Companies Hiring ─────────────────────── */
+/* ─────────────────────── Employer Logos / Companies Hiring ─────────────────────── */
 const COMPANIES = [
   { name: "TechCraft",     sector: "Software",    bg: "#6366f1", abbr: "TC" },
   { name: "GrowthBox",     sector: "Marketing",   bg: "#ec4899", abbr: "GB" },
@@ -3579,7 +3579,7 @@ const ClientLogosSection = () => (
         ))}
       </div>
       <Reveal className="mt-8 flex flex-wrap justify-center gap-6 text-center">
-        {[["500+","Businesses"],["12","Industries"],["₹5Cr+","Paid out"],["4.9★","Client Rating"]].map(([v, l]) => (
+        {[["500+","Businesses"],["12","Industries"],["₹5Cr+","Paid out"],["4.9★","Employer Rating"]].map(([v, l]) => (
           <div key={l}><div className="text-xl font-black" style={{ color: "var(--t-a1)" }}>{v}</div><div className="text-xs text-white/35">{l}</div></div>
         ))}
       </Reveal>
@@ -3647,9 +3647,9 @@ const CAREER_STAGES = [
   { level: "Rising",     icon: "📈", months: "3–9 months",  earnings: "₹15K–35K/mo", color: "#3b82f6", badge: "5+ reviews",
     perks: ["Priority listing", "Featured in search", "Dedicated chat", "Skill badge"] },
   { level: "Expert",     icon: "⚡", months: "9–18 months", earnings: "₹35K–80K/mo", color: "#f59e0b", badge: "Verified Expert",
-    perks: ["Top search rank", "Client invitations", "Lower commission", "Expert badge"] },
+    perks: ["Top search rank", "Employer invitations", "Lower commission", "Expert badge"] },
   { level: "Top Rated",  icon: "🏆", months: "18+ months",  earnings: "₹80K–2L+/mo", color: "#ec4899", badge: "Top Rated Pro",
-    perks: ["Featured homepage", "Premium clients only", "5% commission", "Personal manager"] },
+    perks: ["Featured homepage", "Premium employers only", "5% commission", "Personal manager"] },
 ];
 const CareerPathSection = () => (
   <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
@@ -3907,7 +3907,7 @@ const CommunitySection = () => (
   </section>
 );
 
-/* ─────────────────────── Client Onboarding Section ─────────────────────── */
+/* ─────────────────────── Employer Onboarding Section ─────────────────────── */
 const CLIENT_STEPS = [
   { step: "01", icon: FileText,  title: "Post Your Project",    desc: "Describe your project, set your budget and deadline. It takes under 3 minutes.", color: "#6366f1" },
   { step: "02", icon: Users,     title: "Review Proposals",     desc: "Receive bids from verified freelancers within hours. Browse profiles, portfolios, and ratings.", color: "#3b82f6" },
@@ -3917,7 +3917,7 @@ const CLIENT_STEPS = [
 const CLIENT_BENEFITS = [
   "No payment until work is approved", "Verified freelancers only",
   "Dedicated account manager for ₹50K+ projects", "Free dispute resolution",
-  "GST invoice for every payment", "24/7 client support in your language",
+  "GST invoice for every payment", "24/7 employer support in your language",
 ];
 const ClientOnboardingSection = () => (
   <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
@@ -3925,7 +3925,7 @@ const ClientOnboardingSection = () => (
     <div className="mx-auto max-w-6xl">
       <Reveal className="text-center mb-14">
         <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-blue-300" style={{ background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.25)" }}>
-          <Building className="h-3.5 w-3.5" /> For Clients
+          <Building className="h-3.5 w-3.5" /> For Employers
         </div>
         <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
           Hire Top Talent <span className="gradient-text">in Hours</span>
@@ -3950,7 +3950,7 @@ const ClientOnboardingSection = () => (
         <div className="rounded-3xl p-6 md:p-8" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
           <div className="grid md:grid-cols-2 gap-6 items-center">
             <div>
-              <h3 className="text-xl font-black text-white mb-4">Why Clients Choose Us</h3>
+              <h3 className="text-xl font-black text-white mb-4">Why Employers Choose Us</h3>
               <ul className="space-y-2.5">
                 {CLIENT_BENEFITS.map(b => (
                   <li key={b} className="flex items-center gap-2.5 text-sm text-white/65">
@@ -3981,8 +3981,8 @@ const CONTRACT_TYPES = [
   { name: "Freelance Service Agreement", icon: FileText, desc: "Standard contract for any freelance project. Covers scope, payment, and IP rights." },
   { name: "Fixed-Price Project Contract", icon: FileCheck, desc: "Clear deliverables, milestones, and payment terms for one-time projects." },
   { name: "Retainer Agreement",          icon: Clock,     desc: "Ongoing work contract with monthly billing and defined hours/deliverables." },
-  { name: "NDA / Confidentiality",       icon: Lock,      desc: "Protect client data and project details with a legally valid NDA template." },
-  { name: "IP Transfer Agreement",       icon: Scale,     desc: "Clearly transfer intellectual property rights from freelancer to client." },
+  { name: "NDA / Confidentiality",       icon: Lock,      desc: "Protect employer data and project details with a legally valid NDA template." },
+  { name: "IP Transfer Agreement",       icon: Scale,     desc: "Clearly transfer intellectual property rights from freelancer to employer." },
   { name: "Dispute Resolution Clause",   icon: Shield,    desc: "Add a binding arbitration clause to any contract for faster dispute resolution." },
 ];
 const LegalContractsSection = () => (
@@ -4030,10 +4030,10 @@ const LegalContractsSection = () => (
 
 /* ─────────────────────── Escrow Flow Visual ─────────────────────── */
 const ESCROW_STEPS = [
-  { icon: FileText, label: "Project Agreed",  desc: "Client and freelancer agree on scope, timeline, and price.", color: "#6366f1", arrow: true  },
-  { icon: Lock,     label: "Client Deposits", desc: "Client funds the escrow wallet. Money is secure, not yet released.", color: "#3b82f6", arrow: true  },
-  { icon: Code,     label: "Work Delivered",  desc: "Freelancer completes work and submits for client review.", color: "#f59e0b", arrow: true  },
-  { icon: CheckCircle, label: "Client Approves", desc: "Client reviews and approves. Only then is payment released.", color: "#34d399", arrow: true  },
+  { icon: FileText, label: "Project Agreed",  desc: "Employer and freelancer agree on scope, timeline, and price.", color: "#6366f1", arrow: true  },
+  { icon: Lock,     label: "Employer Deposits", desc: "Employer funds the escrow wallet. Money is secure, not yet released.", color: "#3b82f6", arrow: true  },
+  { icon: Code,     label: "Work Delivered",  desc: "Freelancer completes work and submits for employer review.", color: "#f59e0b", arrow: true  },
+  { icon: CheckCircle, label: "Employer Approves", desc: "Employer reviews and approves. Only then is payment released.", color: "#34d399", arrow: true  },
   { icon: Wallet,   label: "You Get Paid",   desc: "Funds instantly credited to freelancer wallet. Withdraw anytime.", color: "#ec4899", arrow: false },
 ];
 const EscrowFlowSection = () => (
@@ -4213,8 +4213,8 @@ const ProjectBriefGenerator = () => {
 
 /* ─────────────────────── Milestone Payment Section ─────────────────────── */
 const MILESTONES = [
-  { pct: 30, label: "Kickoff Payment",   when: "On project start",         icon: Zap,         color: "#6366f1", desc: "Client deposits 30% upfront. Funds locked in escrow. Freelancer begins work with confidence." },
-  { pct: 40, label: "Midpoint Release",  when: "After midpoint delivery",  icon: CheckCircle, color: "#3b82f6", desc: "Client reviews mid-delivery and approves. 40% released from escrow to freelancer wallet." },
+  { pct: 30, label: "Kickoff Payment",   when: "On project start",         icon: Zap,         color: "#6366f1", desc: "Employer deposits 30% upfront. Funds locked in escrow. Freelancer begins work with confidence." },
+  { pct: 40, label: "Midpoint Release",  when: "After midpoint delivery",  icon: CheckCircle, color: "#3b82f6", desc: "Employer reviews mid-delivery and approves. 40% released from escrow to freelancer wallet." },
   { pct: 30, label: "Final Payment",     when: "On project completion",    icon: Trophy,      color: "#34d399", desc: "Final deliverable approved. Remaining 30% released. Project marked complete. Rating exchanged." },
 ];
 const MilestonePaymentSection = () => (
@@ -4274,7 +4274,7 @@ const MilestonePaymentSection = () => (
       </Reveal>
       <Reveal className="mt-6 grid sm:grid-cols-2 gap-4">
         {[
-          { title: "Clients are protected",    desc: "You only pay each milestone after approving the work. Never lose money on unfinished projects.", color: "#3b82f6", icon: Shield },
+          { title: "Employers are protected",    desc: "You only pay each milestone after approving the work. Never lose money on unfinished projects.", color: "#3b82f6", icon: Shield },
           { title: "Freelancers are protected", desc: "Start working with milestone funds already in escrow. No more working and waiting to get paid.", color: "#34d399", icon: Lock },
         ].map(c => (
           <div key={c.title} className="flex items-start gap-3 rounded-2xl p-4" style={{ background: `${c.color}0d`, border: `1px solid ${c.color}25` }}>
@@ -4295,9 +4295,9 @@ const MilestonePaymentSection = () => (
 /* ─────────────────────── Badge System ─────────────────────── */
 const BADGES = [
   { icon: "⭐", name: "Rising Star",       color: "#fbbf24", glow: "rgba(251,191,36,0.3)",   desc: "Earned by new freelancers who complete 3+ projects with 4★+ rating in the first 60 days.", how: "3 projects · 4★+ rating" },
-  { icon: "⚡", name: "Quick Responder",   color: "#6366f1", glow: "rgba(99,102,241,0.3)",    desc: "Responds to client messages within 1 hour on average. Clients love fast communicators.", how: "< 1hr response time" },
+  { icon: "⚡", name: "Quick Responder",   color: "#6366f1", glow: "rgba(99,102,241,0.3)",    desc: "Responds to employer messages within 1 hour on average. Employers love fast communicators.", how: "< 1hr response time" },
   { icon: "🎯", name: "On Time",           color: "#34d399", glow: "rgba(52,211,153,0.3)",    desc: "Delivered 95%+ of projects before the agreed deadline. Reliability made visible.", how: "95%+ on-time delivery" },
-  { icon: "💬", name: "Top Communicator", color: "#ec4899", glow: "rgba(236,72,153,0.3)",    desc: "Consistently receives 5★ communication ratings from clients across multiple projects.", how: "5★ communication" },
+  { icon: "💬", name: "Top Communicator", color: "#ec4899", glow: "rgba(236,72,153,0.3)",    desc: "Consistently receives 5★ communication ratings from employers across multiple projects.", how: "5★ communication" },
   { icon: "🔥", name: "Hot Streak",        color: "#f97316", glow: "rgba(249,115,22,0.3)",    desc: "Completed 5+ projects in 30 days without a single dispute or refund request.", how: "5 projects in 30 days" },
   { icon: "🏆", name: "Top Rated Pro",     color: "#a855f7", glow: "rgba(168,85,247,0.35)",   desc: "Platform's highest honour. Given to the top 1% of freelancers based on all performance metrics.", how: "Top 1% overall" },
   { icon: "🛡️", name: "Verified Expert",  color: "#3b82f6", glow: "rgba(59,130,246,0.3)",    desc: "Completed skills test, ID verification, and has 10+ completed projects with 4.8★+ average.", how: "Skill test + 10 projects" },
@@ -4314,7 +4314,7 @@ const BadgeSystemSection = () => (
         <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
           Earn Badges, <span className="gradient-text">Stand Out</span>
         </h2>
-        <p className="text-white/50 max-w-md mx-auto">Badges appear on your profile and help clients instantly identify your strengths. The more you earn, the more you win.</p>
+        <p className="text-white/50 max-w-md mx-auto">Badges appear on your profile and help employers instantly identify your strengths. The more you earn, the more you win.</p>
       </Reveal>
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {BADGES.map((b, i) => (
@@ -4336,7 +4336,7 @@ const BadgeSystemSection = () => (
       </div>
       <Reveal className="mt-10 rounded-3xl p-6 md:p-8 text-center" style={{ background: "linear-gradient(135deg, rgba(251,191,36,0.08), rgba(var(--t-a1-rgb),0.1))", border: "1px solid rgba(251,191,36,0.2)" }}>
         <p className="text-base font-black text-white mb-2">Profiles with 3+ badges get <span className="text-amber-400">2.5× more views</span></p>
-        <p className="text-white/40 text-sm mb-5">Badges are displayed prominently on your profile and in search results. Clients filter by badge type.</p>
+        <p className="text-white/40 text-sm mb-5">Badges are displayed prominently on your profile and in search results. Employers filter by badge type.</p>
         <Link to="/register/employee">
           <button className="inline-flex items-center gap-2 rounded-2xl px-7 py-3 text-sm font-semibold text-white hover:scale-105 transition-all" style={{ background: "linear-gradient(135deg, #fbbf24, var(--t-a1))", boxShadow: "0 0 24px rgba(251,191,36,0.3)" }}>
             <Award className="h-4 w-4" /> Start Earning Badges
@@ -4355,7 +4355,7 @@ const APP_SCREENS = [
     items: [
       { label: "Earnings Today", value: "₹4,200", sub: "+12% from yesterday", bar: 72 },
       { label: "Active Projects", value: "3", sub: "2 due this week" },
-      { label: "Unread Messages", value: "7", sub: "From 4 clients" },
+      { label: "Unread Messages", value: "7", sub: "From 4 employers" },
     ],
   },
   {
@@ -4466,10 +4466,10 @@ const MobileAppScreensSection = () => {
               <h3 className="text-xl font-black text-white mb-6">Everything you need, in your pocket</h3>
               {[
                 { icon: Briefcase,     title: "Browse & Bid on Projects",     desc: "See new projects the moment they're posted. Place bids in under 30 seconds.",    color: "#6366f1" },
-                { icon: MessageCircle, title: "Real-time Client Chat",        desc: "Chat, share files, send voice notes, and manage projects — no email needed.",    color: "#ec4899" },
+                { icon: MessageCircle, title: "Real-time Employer Chat",        desc: "Chat, share files, send voice notes, and manage projects — no email needed.",    color: "#ec4899" },
                 { icon: Wallet,        title: "Instant Earnings Dashboard",   desc: "Track earnings by day, week, or month. One tap to request a withdrawal.",        color: "#34d399" },
                 { icon: Bell,          title: "Smart Job Alerts",            desc: "Get notified instantly when a project matching your skills is posted.",            color: "#f59e0b" },
-                { icon: Star,          title: "Profile & Reviews",            desc: "View and respond to client reviews. Update portfolio on the go.",                  color: "#3b82f6" },
+                { icon: Star,          title: "Profile & Reviews",            desc: "View and respond to employer reviews. Update portfolio on the go.",                  color: "#3b82f6" },
               ].map((f, i) => (
                 <div key={f.title} className="flex items-start gap-3 rounded-2xl p-3.5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `${f.color}18` }}>
@@ -4525,7 +4525,7 @@ const CTASection = () => {
                   <Briefcase className="h-4 w-4" /> {t.cta.joinFreelancer} <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </RippleBtn>
               </Link>
-              <Link to="/register/client">
+              <Link to="/register/employer">
                 <RippleBtn className="magnetic-btn flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-base font-semibold text-white/80 hover:text-white w-full sm:w-auto" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)" }}>
                   <Users className="h-4 w-4" /> {t.cta.joinEmployer}
                 </RippleBtn>
@@ -4733,7 +4733,7 @@ const PaymentSafetySection = () => (
 /* ─────────────────────── App Download Section ─────────────────────── */
 const APP_FEATURES = [
   { icon: Briefcase,     text: "Track all your projects in real-time" },
-  { icon: MessageCircle, text: "Live chat with clients & freelancers" },
+  { icon: MessageCircle, text: "Live chat with employers & freelancers" },
   { icon: CreditCard,    text: "Instant payment notifications & wallet" },
   { icon: Zap,           text: "Smart job alerts tailored to your skills" },
 ];
@@ -5023,12 +5023,12 @@ const FounderStorySection = () => (
         {/* Story text */}
         <Reveal delay={150} className="space-y-5">
           <blockquote className="text-lg font-semibold text-white/80 italic border-l-2 pl-4" style={{ borderColor: "var(--t-a1)" }}>
-            "I spent 10 years freelancing on international platforms. I watched them take 20% of everything I earned. I watched Indian freelancers — brilliant, talented people — lose clients to poor conversion rates because payment was complicated. I got angry enough to do something about it."
+            "I spent 10 years freelancing on international platforms. I watched them take 20% of everything I earned. I watched Indian freelancers — brilliant, talented people — lose employers to poor conversion rates because payment was complicated. I got angry enough to do something about it."
           </blockquote>
           <div className="space-y-4 text-sm text-white/55 leading-relaxed">
             <p>In 2023, after his third time being double-charged by a foreign platform with zero customer support, <strong className="text-white/80">Anil Kumar quit his side hustle on those platforms forever</strong> and started building Freelancer India from a rented desk in Trivandrum's startup district.</p>
             <p>The mission was simple: <strong className="text-white/80">an Indian platform, built for Indian realities</strong> — UPI payments, GST invoicing, INR wallets, Hindi and regional language support, and commissions that don't punish success.</p>
-            <p>Today, Freelancer India serves 40,000+ users across 28 states. Every feature is built from feedback from Indian freelancers and the clients who hire them.</p>
+            <p>Today, Freelancer India serves 40,000+ users across 28 states. Every feature is built from feedback from Indian freelancers and the employers who hire them.</p>
           </div>
           <div className="flex flex-wrap gap-3">
             {[

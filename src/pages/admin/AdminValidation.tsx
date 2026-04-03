@@ -465,7 +465,7 @@ const AdminValidation = () => {
                   <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-5 space-y-4">
                     {!showShareForm ? (
                       <div className="text-center space-y-3 py-2">
-                        <p className="text-xs opacity-60">Clients need payment credentials. Share them manually?</p>
+                        <p className="text-xs opacity-60">Employers need payment credentials. Share them manually?</p>
                         <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2 px-8" onClick={() => setShowShareForm(true)}>
                           <Send className="h-3.5 w-3.5" /> Start Sharing Details
                         </Button>
@@ -521,7 +521,7 @@ const AdminValidation = () => {
                           disabled={adminSharing || adminShareTypes.length === 0}
                         >
                           {adminSharing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-                          Push Details to Client
+                          Push Details to Employer
                         </Button>
                       </div>
                     )}

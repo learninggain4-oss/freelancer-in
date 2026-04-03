@@ -30,7 +30,7 @@ const WalletTypes = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const basePath = location.pathname.startsWith("/client") ? "/client" : "/freelancer";
+  const basePath = location.pathname.startsWith("/employer") ? "/employer" : "/freelancer";
 
   const { data: walletTypes = [], isLoading } = useQuery({
     queryKey: ["wallet-types"],

@@ -76,7 +76,7 @@ const PRICING_FAQS = [
   { q: "Can I switch plans at any time?", a: "Yes. You can upgrade or downgrade your plan at any time from your dashboard. Upgrades take effect immediately; downgrades apply at the next billing cycle." },
   { q: "What payment methods are accepted for Pro/Business?", a: "We accept UPI, Razorpay, all Indian debit/credit cards, net banking, and EMI options. Your plan is auto-renewed monthly." },
   { q: "Is there a refund policy?", a: "If you upgrade to Pro or Business and don't win any projects in the first 30 days, we offer a full refund — no questions asked." },
-  { q: "Do clients pay any commission?", a: "Clients pay a 3% service fee on the project amount released. This covers escrow management, payment processing, and dispute resolution." },
+  { q: "Do employers pay any commission?", a: "Employers pay a 3% service fee on the project amount released. This covers escrow management, payment processing, and dispute resolution." },
 ];
 
 const COMMISSION_EXAMPLES = [

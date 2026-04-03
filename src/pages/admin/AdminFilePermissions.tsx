@@ -13,7 +13,7 @@ interface AccessLog{id:string;file:string;user:string;action:string;ip:string;at
 const seedRules=():FileRule[]=>[
   {id:"fr1",bucket:"user-avatars",visibility:"public",roles:[],allowedOps:["read","write"],signedUrlExpiry:3600,changeApprovalRequired:false,lastModified:new Date(Date.now()-86400000).toISOString()},
   {id:"fr2",bucket:"kyc-documents",visibility:"private",roles:["admin","moderator"],allowedOps:["read"],signedUrlExpiry:300,changeApprovalRequired:true,lastModified:new Date(Date.now()-172800000).toISOString()},
-  {id:"fr3",bucket:"invoice-pdfs",visibility:"role-based",roles:["admin","client","freelancer"],allowedOps:["read"],signedUrlExpiry:3600,changeApprovalRequired:false,lastModified:new Date(Date.now()-604800000).toISOString()},
+  {id:"fr3",bucket:"invoice-pdfs",visibility:"role-based",roles:["admin","employer","freelancer"],allowedOps:["read"],signedUrlExpiry:3600,changeApprovalRequired:false,lastModified:new Date(Date.now()-604800000).toISOString()},
 ];
 const seedLogs=():AccessLog[]=>[
   {id:"al1",file:"kyc_rahul_2024.pdf",user:"Admin A",action:"read",ip:"192.168.1.5",at:new Date(Date.now()-1800000).toISOString(),allowed:true},

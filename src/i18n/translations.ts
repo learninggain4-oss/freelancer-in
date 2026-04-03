@@ -45,7 +45,7 @@ export type Translations = {
   stats: {
     heading: string;
     sub: string;
-    labels: { freelancers: string; projects: string; clients: string; paid: string };
+    labels: { freelancers: string; projects: string; employers: string; paid: string };
   };
   cta: {
     heading: string;
@@ -95,21 +95,21 @@ export const translations: Record<LangCode, Translations> = {
     nav: { register: "Register", login: "Login", install: "Install" },
     hero: {
       line1: "Connect.", line2: "Collaborate.", line3: "Get Paid.",
-      subtitle: "The all-in-one platform connecting skilled freelancers with clients in India. Manage projects, chat in real-time, and receive payments securely.",
+      subtitle: "The all-in-one platform connecting skilled freelancers with employers in India. Manage projects, chat in real-time, and receive payments securely.",
       joinFreelancer: "Join as Freelancer", joinEmployer: "Join as Employer",
       trustBadge: "Trusted by 500+ professionals across India",
     },
     features: {
       heading: "Everything you need",
-      subheading: "The tools & features that make Freelancer-in the best platform for Indian freelancers and clients.",
+      subheading: "The tools & features that make Freelancer-in the best platform for Indian freelancers and employers.",
       items: [
         { title: "Smart Matching", desc: "AI-powered job matching connects you with the perfect opportunities based on your skills and experience." },
         { title: "Secure Payments", desc: "Escrow-based payment system ensures you get paid on time, every time. No more payment disputes." },
         { title: "Real-time Chat", desc: "Built-in messaging with file sharing, video calls, and project management tools." },
-        { title: "Portfolio Builder", desc: "Showcase your work with our beautiful portfolio builder. Attract more clients with stunning profiles." },
-        { title: "Analytics Dashboard", desc: "Track your earnings, project success rates, and client satisfaction with detailed analytics." },
+        { title: "Portfolio Builder", desc: "Showcase your work with our beautiful portfolio builder. Attract more employers with stunning profiles." },
+        { title: "Analytics Dashboard", desc: "Track your earnings, project success rates, and employer satisfaction with detailed analytics." },
         { title: "Mobile First", desc: "Work from anywhere with our feature-rich mobile app. Manage projects on the go." },
-        { title: "Verified Badges", desc: "Build trust with clients through our verification system. Stand out from the competition." },
+        { title: "Verified Badges", desc: "Build trust with employers through our verification system. Stand out from the competition." },
         { title: "24/7 Support", desc: "Our dedicated support team is available around the clock to help you with any issues." },
       ],
     },
@@ -117,7 +117,7 @@ export const translations: Record<LangCode, Translations> = {
       heading: "How it works",
       sub: "Get started in minutes",
       steps: [
-        { title: "Create your profile", desc: "Sign up and showcase your skills, portfolio, and experience to attract the right clients." },
+        { title: "Create your profile", desc: "Sign up and showcase your skills, portfolio, and experience to attract the right employers." },
         { title: "Find or post work", desc: "Browse thousands of projects or post your job requirements and receive proposals." },
         { title: "Collaborate & deliver", desc: "Work seamlessly with built-in tools, milestones, and real-time communication." },
         { title: "Get paid securely", desc: "Receive payments directly to your bank account through our secure escrow system." },
@@ -127,7 +127,7 @@ export const translations: Record<LangCode, Translations> = {
     stats: {
       heading: "Numbers that speak",
       sub: "Trusted by India's top professionals",
-      labels: { freelancers: "Active Freelancers", projects: "Projects Completed", clients: "Happy Clients", paid: "Total Paid Out" },
+      labels: { freelancers: "Active Freelancers", projects: "Projects Completed", employers: "Happy Employers", paid: "Total Paid Out" },
     },
     cta: {
       heading: "Ready to get started?", sub: "Join thousands of professionals already using Freelancer-in.",
@@ -138,7 +138,7 @@ export const translations: Record<LangCode, Translations> = {
       items: [
         { q: "Is Freelancer-in free to use?", a: "Yes, basic registration is free. We take a small commission only on successful projects." },
         { q: "How do payments work?", a: "Payments are held in escrow until work is approved. Both parties are protected at all times." },
-        { q: "Can I work with clients outside India?", a: "Absolutely! While focused on India, our platform supports global collaboration." },
+        { q: "Can I work with employers outside India?", a: "Absolutely! While focused on India, our platform supports global collaboration." },
         { q: "How is my data protected?", a: "We use industry-standard encryption and never sell your personal data to third parties." },
         { q: "What skills can I offer?", a: "Any digital or professional skill — from web development and design to writing, marketing, and beyond." },
       ],
@@ -192,7 +192,7 @@ export const translations: Record<LangCode, Translations> = {
     services: { heading: "शीर्ष सेवा श्रेणियां", sub: "हर उद्योग में हजारों अवसर खोजें" },
     stats: {
       heading: "बोलते हैं ये आंकड़े", sub: "भारत के शीर्ष पेशेवरों का भरोसा",
-      labels: { freelancers: "सक्रिय फ्रीलांसर", projects: "पूर्ण प्रोजेक्ट", clients: "संतुष्ट क्लाइंट", paid: "कुल भुगतान" },
+      labels: { freelancers: "सक्रिय फ्रीलांसर", projects: "पूर्ण प्रोजेक्ट", employers: "संतुष्ट क्लाइंट", paid: "कुल भुगतान" },
     },
     cta: {
       heading: "शुरू करने के लिए तैयार हैं?", sub: "हजारों पेशेवरों के साथ जुड़ें जो पहले से Freelancer-in उपयोग कर रहे हैं।",
@@ -257,7 +257,7 @@ export const translations: Record<LangCode, Translations> = {
     services: { heading: "اعلیٰ سروس کیٹیگریز", sub: "ہر صنعت میں ہزاروں مواقع دریافت کریں" },
     stats: {
       heading: "بولتے ہیں یہ اعداد و شمار", sub: "ہندوستان کے اعلیٰ پیشہ ور افراد کا اعتماد",
-      labels: { freelancers: "فعال فری لانسرز", projects: "مکمل پراجیکٹس", clients: "خوش کلائنٹس", paid: "کل ادائیگی" },
+      labels: { freelancers: "فعال فری لانسرز", projects: "مکمل پراجیکٹس", employers: "خوش کلائنٹس", paid: "کل ادائیگی" },
     },
     cta: {
       heading: "شروع کرنے کے لیے تیار ہیں؟", sub: "ہزاروں پیشہ ور افراد کے ساتھ جڑیں جو پہلے سے Freelancer-in استعمال کر رہے ہیں۔",
@@ -322,7 +322,7 @@ export const translations: Record<LangCode, Translations> = {
     services: { heading: "أهم فئات الخدمات", sub: "استكشف آلاف الفرص عبر كل الصناعات" },
     stats: {
       heading: "أرقام تتحدث", sub: "موثوق به من قبل أفضل المحترفين في الهند",
-      labels: { freelancers: "مستقلون نشطون", projects: "مشاريع مكتملة", clients: "عملاء سعداء", paid: "إجمالي المدفوعات" },
+      labels: { freelancers: "مستقلون نشطون", projects: "مشاريع مكتملة", employers: "عملاء سعداء", paid: "إجمالي المدفوعات" },
     },
     cta: {
       heading: "هل أنت مستعد للبدء؟", sub: "انضم إلى آلاف المحترفين الذين يستخدمون Freelancer-in بالفعل.",
@@ -387,7 +387,7 @@ export const translations: Record<LangCode, Translations> = {
     services: { heading: "മുൻനിര സേവന വിഭാഗങ്ങൾ", sub: "എല്ലാ വ്യവസായങ്ങളിലും ആയിരക്കണക്കിന് അവസരങ്ങൾ" },
     stats: {
       heading: "സംഖ്യകൾ സംസാരിക്കുന്നു", sub: "ഇന്ത്യയിലെ മികച്ച പ്രൊഫഷണലുകൾ വിശ്വസിക്കുന്നു",
-      labels: { freelancers: "സജീവ ഫ്രീലാൻസർമാർ", projects: "പൂർത്തിയായ പ്രോജക്ടുകൾ", clients: "സന്തുഷ്ടരായ ക്ലയൻ്റുകൾ", paid: "ആകെ പേയ്മൻ്റ്" },
+      labels: { freelancers: "സജീവ ഫ്രീലാൻസർമാർ", projects: "പൂർത്തിയായ പ്രോജക്ടുകൾ", employers: "സന്തുഷ്ടരായ ക്ലയൻ്റുകൾ", paid: "ആകെ പേയ്മൻ്റ്" },
     },
     cta: {
       heading: "ആരംഭിക്കാൻ തയ്യാറോ?", sub: "ഇതിനകം Freelancer-in ഉപയോഗിക്കുന്ന ആയിരക്കണക്കിന് പ്രൊഫഷണലുകളോടൊപ്പം ചേരുക.",
@@ -452,7 +452,7 @@ export const translations: Record<LangCode, Translations> = {
     services: { heading: "Categorías de servicios principales", sub: "Explora miles de oportunidades en cada industria" },
     stats: {
       heading: "Números que hablan", sub: "Confiado por los mejores profesionales de India",
-      labels: { freelancers: "Freelancers activos", projects: "Proyectos completados", clients: "Clientes satisfechos", paid: "Total pagado" },
+      labels: { freelancers: "Freelancers activos", projects: "Proyectos completados", employers: "Clientes satisfechos", paid: "Total pagado" },
     },
     cta: {
       heading: "¿Listo para empezar?", sub: "Únete a miles de profesionales que ya usan Freelancer-in.",
@@ -517,7 +517,7 @@ export const translations: Record<LangCode, Translations> = {
     services: { heading: "Top-Dienstleistungskategorien", sub: "Entdecke Tausende von Möglichkeiten in jeder Branche" },
     stats: {
       heading: "Zahlen, die sprechen", sub: "Vertraut von Indiens Top-Fachleuten",
-      labels: { freelancers: "Aktive Freelancer", projects: "Abgeschlossene Projekte", clients: "Zufriedene Kunden", paid: "Gesamtauszahlung" },
+      labels: { freelancers: "Aktive Freelancer", projects: "Abgeschlossene Projekte", employers: "Zufriedene Kunden", paid: "Gesamtauszahlung" },
     },
     cta: {
       heading: "Bereit loszulegen?", sub: "Schließe dich Tausenden von Fachleuten an, die Freelancer-in bereits nutzen.",
@@ -582,7 +582,7 @@ export const translations: Record<LangCode, Translations> = {
     services: { heading: "சிறந்த சேவை வகைகள்", sub: "ஒவ்வொரு தொழிலிலும் ஆயிரக்கணக்கான வாய்ப்புகளை ஆராயுங்கள்" },
     stats: {
       heading: "பேசும் எண்கள்", sub: "இந்தியாவின் சிறந்த நிபுணர்களின் நம்பிக்கை",
-      labels: { freelancers: "செயலில் உள்ள ஃப்ரீலான்சர்கள்", projects: "முடிக்கப்பட்ட திட்டங்கள்", clients: "மகிழ்ச்சியான வாடிக்கையாளர்கள்", paid: "மொத்த கட்டணம்" },
+      labels: { freelancers: "செயலில் உள்ள ஃப்ரீலான்சர்கள்", projects: "முடிக்கப்பட்ட திட்டங்கள்", employers: "மகிழ்ச்சியான வாடிக்கையாளர்கள்", paid: "மொத்த கட்டணம்" },
     },
     cta: {
       heading: "தொடங்க தயாரா?", sub: "ஏற்கனவே Freelancer-in பயன்படுத்தும் ஆயிரக்கணக்கான நிபுணர்களுடன் சேருங்கள்.",

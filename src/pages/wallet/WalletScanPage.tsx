@@ -26,7 +26,7 @@ const WalletScanPage = () => {
     hasNavigated.current = true;
     await stopScanner();
     toast.success(`Wallet found: ${cleaned}`);
-    const basePath = window.location.pathname.includes("/client/") ? "/client/wallet" : "/freelancer/wallet";
+    const basePath = window.location.pathname.includes("/employer/") ? "/employer/wallet" : "/freelancer/wallet";
     navigate(basePath, { state: { scannedWallet: cleaned } });
   };
 

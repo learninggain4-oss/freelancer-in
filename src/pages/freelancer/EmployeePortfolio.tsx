@@ -76,7 +76,7 @@ export default function EmployeePortfolio() {
       <div className="px-4 sm:px-6 pt-6 pb-4 flex items-start justify-between">
         <div>
           <h1 className="text-xl font-black" style={{ color: T.text }}>Portfolio</h1>
-          <p className="text-xs mt-0.5" style={{ color: T.sub }}>Showcase your best work to clients</p>
+          <p className="text-xs mt-0.5" style={{ color: T.sub }}>Showcase your best work to employers</p>
         </div>
         <button onClick={() => { resetForm(); setShowForm(true); }} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", boxShadow: "0 0 16px rgba(99,102,241,.35)" }}>
           <Plus className="h-3.5 w-3.5" /> Add Project

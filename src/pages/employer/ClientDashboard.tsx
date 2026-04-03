@@ -120,7 +120,7 @@ const ClientDashboard = () => {
   }, [profile?.id, queryClient, refreshProfile]);
 
   const { data: activeCount = 0 } = useQuery({
-    queryKey: ["client-active-projects", profile?.id],
+    queryKey: ["employer-active-projects", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return 0;
       const { count, error } = await supabase.from("projects").select("*", { count: "exact", head: true }).eq("client_id", profile.id).in("status", ["open", "in_progress"]);
@@ -131,7 +131,7 @@ const ClientDashboard = () => {
   });
 
   const { data: completedCount = 0 } = useQuery({
-    queryKey: ["client-completed-projects", profile?.id],
+    queryKey: ["employer-completed-projects", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return 0;
       const { count, error } = await supabase.from("projects").select("*", { count: "exact", head: true }).eq("client_id", profile.id).eq("status", "completed");
@@ -142,7 +142,7 @@ const ClientDashboard = () => {
   });
 
   const { data: totalJobsPosted = 0 } = useQuery({
-    queryKey: ["client-total-jobs", profile?.id],
+    queryKey: ["employer-total-jobs", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return 0;
       const { count, error } = await supabase.from("projects").select("*", { count: "exact", head: true }).eq("client_id", profile.id);
@@ -153,7 +153,7 @@ const ClientDashboard = () => {
   });
 
   const { data: recentRequests = [], isLoading } = useQuery({
-    queryKey: ["client-recent-requests", profile?.id],
+    queryKey: ["employer-recent-requests", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
       const { data, error } = await supabase.from("project_applications").select("*, employee:employee_id(full_name), project:project_id(name, client_id)").order("applied_at", { ascending: false }).limit(5);
@@ -164,7 +164,7 @@ const ClientDashboard = () => {
   });
 
   const { data: spendingTotal = 0 } = useQuery({
-    queryKey: ["client-spending-total", profile?.id],
+    queryKey: ["employer-spending-total", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return 0;
       const { data, error } = await supabase.from("transactions").select("amount").eq("profile_id", profile.id).eq("type", "debit");
@@ -192,12 +192,12 @@ const ClientDashboard = () => {
   ];
 
   const quickActions = [
-    { icon: Plus,            label: "Post Job",   to: "/client/projects/create",  grad: "rgba(99,102,241,.18)", color: "#a5b4fc" },
-    { icon: Users,           label: "Hire Now",   to: "/client/projects",          grad: "rgba(34,197,94,.15)",  color: "#4ade80" },
-    { icon: MessageSquare,   label: "Messages",   to: "/client/help-support",      grad: "rgba(139,92,246,.18)", color: "#c4b5fd" },
-    { icon: Wallet,          label: "Pay Now",    to: "/client/wallet",            grad: "rgba(245,158,11,.15)", color: "#fbbf24" },
-    { icon: HeadphonesIcon,  label: "Support",    to: "/client/help-support",      grad: "rgba(239,68,68,.13)",  color: "#f87171" },
-    { icon: Star,            label: "Upgrade",    to: "/client/wallet-types",      grad: "rgba(20,184,166,.15)", color: "#2dd4bf" },
+    { icon: Plus,            label: "Post Job",   to: "/employer/projects/create",  grad: "rgba(99,102,241,.18)", color: "#a5b4fc" },
+    { icon: Users,           label: "Hire Now",   to: "/employer/projects",          grad: "rgba(34,197,94,.15)",  color: "#4ade80" },
+    { icon: MessageSquare,   label: "Messages",   to: "/employer/help-support",      grad: "rgba(139,92,246,.18)", color: "#c4b5fd" },
+    { icon: Wallet,          label: "Pay Now",    to: "/employer/wallet",            grad: "rgba(245,158,11,.15)", color: "#fbbf24" },
+    { icon: HeadphonesIcon,  label: "Support",    to: "/employer/help-support",      grad: "rgba(239,68,68,.13)",  color: "#f87171" },
+    { icon: Star,            label: "Upgrade",    to: "/employer/wallet-types",      grad: "rgba(20,184,166,.15)", color: "#2dd4bf" },
   ];
 
   const card: React.CSSProperties = {
@@ -253,7 +253,7 @@ const ClientDashboard = () => {
 
         {/* ── Wallet Card ── */}
         <WalletCard
-          name={Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Client"}
+          name={Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Employer"}
           userCode={Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—"}
           walletNumber={profile?.wallet_number}
           availableBalance={profile?.available_balance ?? 0}

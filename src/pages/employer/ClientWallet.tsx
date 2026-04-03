@@ -97,7 +97,7 @@ const ClientWallet = () => {
       {/* Wallet Card Section */}
       <div className="animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
         <WalletCard
-          name={Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Client"}
+          name={Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Employer"}
           userCode={Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—"}
           walletNumber={profile?.wallet_number}
           availableBalance={profile?.available_balance ?? 0}

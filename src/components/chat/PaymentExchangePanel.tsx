@@ -238,7 +238,7 @@ const PaymentExchangePanel = ({
   });
 
   const { data: clientSharingEnabled = true } = useQuery({
-    queryKey: ["client-payment-sharing-setting"],
+    queryKey: ["employer-payment-sharing-setting"],
     queryFn: async () => {
       const { data } = await supabase
         .from("app_settings")
@@ -490,7 +490,7 @@ const PaymentExchangePanel = ({
       if (clientReceiptFile) {
         const { path, name } = await uploadFile(
           clientReceiptFile,
-          "client-receipt"
+          "employer-receipt"
         );
         info.client_receipt_path = path;
         info.client_receipt_name = name;
@@ -566,7 +566,7 @@ const PaymentExchangePanel = ({
             </div>
           )}
 
-          {/* =================== INITIATE (Client) =================== */}
+          {/* =================== INITIATE (Employer) =================== */}
           {canInitiate && !showInitForm && (
             <Button
               size="sm"
@@ -736,7 +736,7 @@ const PaymentExchangePanel = ({
             </>
           )}
 
-          {/* =================== METHOD_SELECTED: Client sees phone + shares details =================== */}
+          {/* =================== METHOD_SELECTED: Employer sees phone + shares details =================== */}
           {status === "method_selected" && (
             <>
               {/* Auto Matching Countdown */}
@@ -755,7 +755,7 @@ const PaymentExchangePanel = ({
                 })()}
               </div>
 
-              {/* Freelancer phone visible to client */}
+              {/* Freelancer phone visible to employer */}
               {confirmation?.phone_number && (
                 <div className="text-xs bg-muted/50 rounded p-2 space-y-1">
                   <p className="font-medium text-foreground">
@@ -926,7 +926,7 @@ const PaymentExchangePanel = ({
                 })()}
               </div>
 
-              {/* Warning message from client */}
+              {/* Warning message from employer */}
               {clientInfo?.share_warning && (
                 <div className="flex items-start gap-1.5 text-xs bg-warning/10 border border-warning/30 rounded p-2">
                   <AlertTriangle className="h-3.5 w-3.5 text-warning shrink-0 mt-0.5" />
@@ -1172,7 +1172,7 @@ const PaymentExchangePanel = ({
                 </div>
               ) : (
                 <>
-                  {/* Client sees phone number */}
+                  {/* Employer sees phone number */}
                   {confirmation?.phone_number && (
                     <div className="text-xs bg-muted/50 rounded p-2 space-y-1">
                       <p className="font-medium text-foreground">Freelancer Payment App Phone:</p>
@@ -1190,7 +1190,7 @@ const PaymentExchangePanel = ({
             </>
           )}
 
-          {/* =================== OTP_SUBMITTED: Client verifies =================== */}
+          {/* =================== OTP_SUBMITTED: Employer verifies =================== */}
           {status === "otp_submitted" && (
             <>
               {/* Send OTP Countdown + Auto Checking Countdown */}
@@ -1336,7 +1336,7 @@ const PaymentExchangePanel = ({
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  Waiting for client to verify payment…
+                  Waiting for employer to verify payment…
                 </p>
               )}
             </>

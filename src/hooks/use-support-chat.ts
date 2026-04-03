@@ -92,7 +92,7 @@ export const useSupportChat = (conversationId: string | undefined) => {
       })
       .subscribe();
 
-    // ── Channel 2: postgres_changes (no row filter — client-side filter instead) ──
+    // ── Channel 2: postgres_changes (no row filter — employer-side filter instead) ──
     const pgChannel = supabase
       .channel(`pg:conv:${conversationId}`)
       .on(

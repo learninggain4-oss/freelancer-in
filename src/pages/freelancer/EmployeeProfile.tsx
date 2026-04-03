@@ -263,7 +263,7 @@ const EmployeeProfile = () => {
           </div>
           {completion < 100 ? (
             <p style={{ color: T.sub }} className="mt-4 text-[11px] leading-relaxed">
-              Unlock your full potential! Complete all sections to earn rewards and gain higher visibility among clients.
+              Unlock your full potential! Complete all sections to earn rewards and gain higher visibility among employers.
             </p>
           ) : (
             <p className="mt-4 text-[11px] font-bold flex items-center gap-1.5" style={{ color: clrGreen }}>

@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 interface AppLayoutProps {
-  userType: "employee" | "client";
+  userType: "employee" | "employer";
 }
 
 const A1 = "#6366f1";
@@ -299,12 +299,12 @@ const SEARCH_ITEMS = {
     { label: "Reviews",       icon: Star,            path: "/freelancer/review" },
     { label: "Get Free",      icon: Gift,            path: "/freelancer/get-free" },
   ],
-  client: [
-    { label: "Dashboard",    icon: LayoutDashboard, path: "/client/dashboard" },
-    { label: "My Jobs",      icon: Briefcase,       path: "/client/projects" },
-    { label: "Attendance",   icon: ClipboardCheck,  path: "/client/attendance" },
-    { label: "My Wallet",    icon: Wallet,          path: "/client/wallet" },
-    { label: "Help & Support",icon: CircleHelp,     path: "/client/help-support" },
+  employer: [
+    { label: "Dashboard",    icon: LayoutDashboard, path: "/employer/dashboard" },
+    { label: "My Jobs",      icon: Briefcase,       path: "/employer/projects" },
+    { label: "Attendance",   icon: ClipboardCheck,  path: "/employer/attendance" },
+    { label: "My Wallet",    icon: Wallet,          path: "/employer/wallet" },
+    { label: "Help & Support",icon: CircleHelp,     path: "/employer/help-support" },
   ],
 };
 
@@ -359,7 +359,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
   const isWarm   = theme === "warm";
   const isForest = theme === "forest";
   const isOcean  = theme === "ocean";
-  const basePath = userType === "employee" ? "/employee" : "/client";
+  const basePath = userType === "employee" ? "/employee" : "/employer";
 
   const { data: walletProfile } = useQuery({
     queryKey: ["app-layout-wallet", user?.id],
@@ -432,7 +432,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
                 Freelancer<span style={{ color: A1 }}>.</span>in
               </p>
               <p style={{ fontSize: 8.5, color: tok.logoSub, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, margin: 0 }}>
-                {userType === "employee" ? "Freelancer Portal" : "Client Portal"}
+                {userType === "employee" ? "Freelancer Portal" : "Employer Portal"}
               </p>
             </div>
           </div>
@@ -487,7 +487,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
               </span>
             </button>
 
-            {/* CTA: Withdraw (freelancer) or Post Job (client) */}
+            {/* CTA: Withdraw (freelancer) or Post Job (employer) */}
             {userType === "employee" ? (
               <button onClick={() => navigate(`${basePath}/wallet`)}
                 className="hidden md:flex"
@@ -544,7 +544,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
                       </div>
                       <div>
                         <p style={{ fontWeight: 700, fontSize: 13, color: tok.mainText, margin: 0 }}>{typeof userName === "string" ? userName : Array.isArray(userName) ? userName[0] : "User"}</p>
-                        <p style={{ fontSize: 10.5, color: tok.mainSub, margin: 0, textTransform: "capitalize" }}>{userType === "employee" ? "Freelancer Account" : "Client Account"}</p>
+                        <p style={{ fontSize: 10.5, color: tok.mainSub, margin: 0, textTransform: "capitalize" }}>{userType === "employee" ? "Freelancer Account" : "Employer Account"}</p>
                       </div>
                     </div>
                   </div>

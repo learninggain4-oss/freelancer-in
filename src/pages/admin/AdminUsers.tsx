@@ -398,7 +398,7 @@ const AdminUsers = () => {
           <SelectContent style={{ background: T.card, borderColor: T.border }}>
             <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="freelancer">Freelancer</SelectItem>
-            <SelectItem value="client">Employer</SelectItem>
+            <SelectItem value="employer">Employer</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -517,7 +517,7 @@ const AdminUsers = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="freelancer">Freelancer</SelectItem>
-                  <SelectItem value="client">Employer</SelectItem>
+                  <SelectItem value="employer">Employer</SelectItem>
                 </SelectContent>
               </Select>
             </div>

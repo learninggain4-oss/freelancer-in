@@ -17,7 +17,7 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
 const EmployeeRegister = lazy(() => import("./pages/register/FreelancerRegister"));
-const ClientRegister = lazy(() => import("./pages/register/ClientRegister"));
+const ClientRegister = lazy(() => import("./pages/register/EmployerRegister"));
 const VerificationPending = lazy(() => import("./pages/VerificationPending"));
 const EmployeeDashboard = lazy(() => import("./pages/freelancer/EmployeeDashboard"));
 const EmployeeProjects = lazy(() => import("./pages/freelancer/EmployeeProjects"));
@@ -30,13 +30,13 @@ const EmployeeEarnings = lazy(() => import("./pages/freelancer/EmployeeEarnings"
 const EmployeeReviews = lazy(() => import("./pages/freelancer/EmployeeReviews"));
 const EmployeeBadges = lazy(() => import("./pages/freelancer/EmployeeBadges"));
 const EmployeePortfolio = lazy(() => import("./pages/freelancer/EmployeePortfolio"));
-const ClientDashboard = lazy(() => import("./pages/client/ClientDashboard"));
-const ClientWallet = lazy(() => import("./pages/client/ClientWallet"));
-const ClientProjects = lazy(() => import("./pages/client/ClientProjects"));
-const CreateProject = lazy(() => import("./pages/client/CreateProject"));
-const ClientWithdrawals = lazy(() => import("./pages/client/ClientWithdrawals"));
-const ClientProfile = lazy(() => import("./pages/client/ClientProfile"));
-const ClientAttendance = lazy(() => import("./pages/client/ClientAttendance"));
+const ClientDashboard = lazy(() => import("./pages/employer/ClientDashboard"));
+const ClientWallet = lazy(() => import("./pages/employer/ClientWallet"));
+const ClientProjects = lazy(() => import("./pages/employer/ClientProjects"));
+const CreateProject = lazy(() => import("./pages/employer/CreateProject"));
+const ClientWithdrawals = lazy(() => import("./pages/employer/ClientWithdrawals"));
+const ClientProfile = lazy(() => import("./pages/employer/ClientProfile"));
+const ClientAttendance = lazy(() => import("./pages/employer/ClientAttendance"));
 const ChatRoom = lazy(() => import("./components/chat/ChatRoom"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
@@ -231,7 +231,7 @@ const AppContent = () => {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/register/employee" element={<EmployeeRegister />} />
-            <Route path="/register/client" element={<ClientRegister />} />
+            <Route path="/register/employer" element={<ClientRegister />} />
             <Route path="/verification-pending" element={<VerificationPending />} />
             <Route path="/install" element={<InstallApp />} />
             <Route path="/categories" element={<Categories />} />
@@ -290,12 +290,12 @@ const AppContent = () => {
               <Route path="wallet/upgrade-chat/:requestId" element={<UpgradeChat />} />
             </Route>
 
-            {/* Client Routes */}
+            {/* Employer Routes */}
             <Route
               path="/client"
               element={
                 <ProtectedRoute>
-                  <AppLayout userType="client" />
+                  <AppLayout userType="employer" />
                 </ProtectedRoute>
               }
             >
@@ -345,7 +345,7 @@ const AppContent = () => {
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="freelancers" element={<AdminEmployees />} />
-              <Route path="clients" element={<AdminClients />} />
+              <Route path="employers" element={<AdminClients />} />
               <Route path="withdrawals" element={<AdminWithdrawals />} />
               <Route path="verifications" element={<AdminVerifications />} />
               <Route path="bank-verifications" element={<AdminBankVerifications />} />

@@ -33,7 +33,7 @@ const ClientWithdrawals = () => {
   const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
 
   const { data: withdrawals = [], isLoading } = useQuery({
-    queryKey: ["client-withdrawals", profile?.id],
+    queryKey: ["employer-withdrawals", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
       const { data, error } = await supabase

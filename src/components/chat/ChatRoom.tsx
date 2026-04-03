@@ -191,7 +191,7 @@ const ChatRoom = () => {
           </div>
         </div>
 
-        {/* Validation controls for client */}
+        {/* Validation controls for employer */}
         <ProjectValidationControls
           projectId={projectId!}
           projectStatus={projectData?.status ?? ""}

@@ -25,7 +25,7 @@ interface WalletTypeBadgeProps {
 const WalletTypeBadge = ({ balance, compact = false }: WalletTypeBadgeProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const basePath = location.pathname.startsWith("/client") ? "/client" : "/freelancer";
+  const basePath = location.pathname.startsWith("/employer") ? "/employer" : "/freelancer";
 
   const { data: walletTypes = [] } = useQuery({
     queryKey: ["wallet-types-active"],

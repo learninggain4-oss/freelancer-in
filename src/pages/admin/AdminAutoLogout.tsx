@@ -11,7 +11,7 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface LogoutEvent{id:string;user:string;role:string;reason:string;idleMins:number;at:string;}
 const seedEvents=():LogoutEvent[]=>[
   {id:"le1",user:"user_182",role:"Freelancer",reason:"Idle timeout",idleMins:30,at:new Date(Date.now()-3600000).toISOString()},
-  {id:"le2",user:"user_510",role:"Client",reason:"Idle timeout",idleMins:30,at:new Date(Date.now()-7200000).toISOString()},
+  {id:"le2",user:"user_510",role:"Employer",reason:"Idle timeout",idleMins:30,at:new Date(Date.now()-7200000).toISOString()},
   {id:"le3",user:"admin@freelancer.in",role:"Admin",reason:"Forced logout",idleMins:0,at:new Date(Date.now()-86400000).toISOString()},
 ];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}

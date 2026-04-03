@@ -112,10 +112,10 @@ const REVENUE_DATA = [
 ];
 
 const USER_GROWTH = [
-  { week: "W1", freelancers: 12, clients: 8 },
-  { week: "W2", freelancers: 18, clients: 14 },
-  { week: "W3", freelancers: 24, clients: 20 },
-  { week: "W4", freelancers: 31, clients: 26 },
+  { week: "W1", freelancers: 12, employers: 8 },
+  { week: "W2", freelancers: 18, employers: 14 },
+  { week: "W3", freelancers: 24, employers: 20 },
+  { week: "W4", freelancers: 31, employers: 26 },
 ];
 
 const FRAUD_RISK = [
@@ -275,7 +275,7 @@ const AdminDashboard = () => {
   const topCards = [
     { label: "Total Users",      value: stats.totalUsers || 2847,      icon: Users,        color: "#a5b4fc", bg: "rgba(99,102,241,.14)",  trend: "+12%", up: true,  path: "/admin/users" },
     { label: "Active Users",     value: stats.activeUsers || 2100,     icon: Activity,     color: "#4ade80", bg: "rgba(34,197,94,.12)",   trend: "+8%",  up: true,  path: "/admin/sessions" },
-    { label: "Total Clients",    value: stats.totalClients || 342,     icon: Building2,    color: "#c4b5fd", bg: "rgba(139,92,246,.12)",  trend: "+5%",  up: true,  path: "/admin/clients" },
+    { label: "Total Employers",    value: stats.totalClients || 342,     icon: Building2,    color: "#c4b5fd", bg: "rgba(139,92,246,.12)",  trend: "+5%",  up: true,  path: "/admin/employers" },
     { label: "Freelancers",      value: stats.totalEmployees || 2505,  icon: UserCheck,    color: "#a5b4fc", bg: "rgba(99,102,241,.14)",  trend: "+15%", up: true,  path: "/admin/freelancers" },
     { label: "Total Jobs",       value: stats.totalJobs || 1284,       icon: Briefcase,    color: "#4ade80", bg: "rgba(34,197,94,.12)",   trend: "+22%", up: true,  path: "/admin/jobs" },
     { label: "Total Revenue",    value: totalRev > 0 ? fmt(totalRev) : "₹14.6L", icon: IndianRupee, color: "#4ade80", bg: "rgba(34,197,94,.12)", trend: "+18%", up: true, path: "/admin/wallet-management" },
@@ -416,7 +416,7 @@ const AdminDashboard = () => {
                 <YAxis tick={{ fontSize: 9, fill: tok.chartAxis }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={{ ...tok.chartTip, borderRadius: 12, fontSize: 11 }} />
                 <Bar dataKey="freelancers" fill={A1} radius={[4, 4, 0, 0]} name="Freelancers" />
-                <Bar dataKey="clients" fill="#4ade80" radius={[4, 4, 0, 0]} name="Clients" />
+                <Bar dataKey="employers" fill="#4ade80" radius={[4, 4, 0, 0]} name="Employers" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -427,7 +427,7 @@ const AdminDashboard = () => {
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <div style={{ width: 8, height: 8, borderRadius: 2, background: "#4ade80" }} />
-              <span style={{ fontSize: 10, color: tok.cardSub }}>Clients</span>
+              <span style={{ fontSize: 10, color: tok.cardSub }}>Employers</span>
             </div>
           </div>
         </div>

@@ -256,14 +256,14 @@ const Categories = () => {
               <Sparkles style={{ width: 12, height: 12 }} /> Get Started Today
             </div>
             <h3 style={{ fontSize: "clamp(20px,4vw,30px)", fontWeight: 800, margin: "10px 0 8px" }}>Can't find what you're looking for?</h3>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", margin: "0 0 28px" }}>Join our platform and connect with clients or hire top talent across India</p>
+            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", margin: "0 0 28px" }}>Join our platform and connect with employers or hire top talent across India</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
               <Link to="/register/employee">
                 <button className="cat-btn-primary">
                   <Briefcase style={{ width: 15, height: 15 }} /> Join as Freelancer
                 </button>
               </Link>
-              <Link to="/register/client">
+              <Link to="/register/employer">
                 <button className="cat-btn-outline">
                   <Users style={{ width: 15, height: 15 }} /> Post a Custom Job
                 </button>

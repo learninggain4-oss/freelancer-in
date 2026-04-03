@@ -19,7 +19,7 @@ const seedRoles=():Role[]=>[
 const seedChanges=():RoleChange[]=>[
   {id:"rc1",user:"user_512",fromRole:"Support",toRole:"Admin",requestedBy:"Admin B",status:"pending",at:new Date(Date.now()-3600000).toISOString(),suspicious:true},
   {id:"rc2",user:"user_288",fromRole:"Freelancer",toRole:"Moderator",requestedBy:"Super Admin",status:"approved",at:new Date(Date.now()-86400000).toISOString(),suspicious:false},
-  {id:"rc3",user:"user_901",fromRole:"Client",toRole:"Admin",requestedBy:"Admin A",status:"rejected",at:new Date(Date.now()-172800000).toISOString(),suspicious:true},
+  {id:"rc3",user:"user_901",fromRole:"Employer",toRole:"Admin",requestedBy:"Admin A",status:"rejected",at:new Date(Date.now()-172800000).toISOString(),suspicious:true},
 ];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 

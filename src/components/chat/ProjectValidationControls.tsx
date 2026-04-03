@@ -192,13 +192,13 @@ const ProjectValidationControls = ({
       <div className="flex items-center gap-2 border-b bg-muted/50 px-4 py-2">
         <Clock className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-medium text-muted-foreground">
-          Step {stepInfo.step}/4: {stepInfo.label} — Awaiting Client Action
+          Step {stepInfo.step}/4: {stepInfo.label} — Awaiting Employer Action
         </span>
       </div>
     );
   }
 
-  // === Client action buttons ===
+  // === Employer action buttons ===
   const stepInfo = STEP_LABELS[projectStatus];
   if (!stepInfo) return null;
 
@@ -263,7 +263,7 @@ const ProjectValidationControls = ({
           .from("projects")
           .update({
             status: "cancelled" as any,
-            remarks: rejectReason || "Rejected by client",
+            remarks: rejectReason || "Rejected by employer",
           })
           .eq("id", projectId);
         if (error) throw error;

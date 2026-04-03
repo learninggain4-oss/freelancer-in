@@ -63,7 +63,7 @@ const GetFree = () => {
     } catch { toast({ title: "Failed to copy", variant: "destructive" }); }
   };
 
-  const handleShare = async (type: "employee" | "client") => {
+  const handleShare = async (type: "employee" | "employer") => {
     const label = type === "employee" ? "Freelancer" : "Employer";
     const link = `${window.location.origin}/register/${type}?ref=${referralCode}`;
     const text = `Join Freelancer as a ${label} using my referral code: ${referralCode}\nSign up at ${link}`;
@@ -136,8 +136,8 @@ const GetFree = () => {
                 <Button variant="outline" className="gap-1.5 rounded-xl h-11" onClick={() => handleShare("freelancer")}>
                   <Share2 className="h-4 w-4" /> As Freelancer
                 </Button>
-                <Button variant="outline" className="gap-1.5 rounded-xl h-11" onClick={() => handleShare("client")}>
-                  <Share2 className="h-4 w-4" /> As Client
+                <Button variant="outline" className="gap-1.5 rounded-xl h-11" onClick={() => handleShare("employer")}>
+                  <Share2 className="h-4 w-4" /> As Employer
                 </Button>
               </div>
             </CardContent>

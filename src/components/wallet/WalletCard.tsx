@@ -80,7 +80,7 @@ const WalletCard = ({
     }
   };
 
-  const basePath = window.location.pathname.includes("/client/") ? "/client" : "/freelancer";
+  const basePath = window.location.pathname.includes("/employer/") ? "/employer" : "/freelancer";
 
   return (
     <div

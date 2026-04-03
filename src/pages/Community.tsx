@@ -28,9 +28,9 @@ const SKILL_GROUPS = [
 const WEBINARS = [
   { title: "How to Price Your Freelance Services in 2026",   date: "Apr 10, 2026", time: "7:00 PM IST", lang: "English",   speaker: "Rahul M., Top Rated Dev",     attendees: 340 },
   { title: "GST Filing for Freelancers — Step by Step",      date: "Apr 13, 2026", time: "6:30 PM IST", lang: "Hindi",     speaker: "Priya CA, Tax Expert",        attendees: 520 },
-  { title: "Building a Portfolio That Wins Clients",          date: "Apr 16, 2026", time: "8:00 PM IST", lang: "English",   speaker: "Sneha R., UI/UX Designer",    attendees: 280 },
+  { title: "Building a Portfolio That Wins Employers",          date: "Apr 16, 2026", time: "8:00 PM IST", lang: "English",   speaker: "Sneha R., UI/UX Designer",    attendees: 280 },
   { title: "Malayalam Freelancers: ആദ്യ Project എങ്ങനെ?",   date: "Apr 19, 2026", time: "7:30 PM IST", lang: "Malayalam", speaker: "Arun P., Kerala Dev",         attendees: 190 },
-  { title: "Client Communication Masterclass",               date: "Apr 22, 2026", time: "7:00 PM IST", lang: "English",   speaker: "Meera N., Top Communicator",  attendees: 410 },
+  { title: "Employer Communication Masterclass",               date: "Apr 22, 2026", time: "7:00 PM IST", lang: "English",   speaker: "Meera N., Top Communicator",  attendees: 410 },
 ];
 
 const MEETUPS = [

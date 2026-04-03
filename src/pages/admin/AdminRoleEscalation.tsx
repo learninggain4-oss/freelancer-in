@@ -15,7 +15,7 @@ const REQUESTS = [
   { id:"r3", user:"Dev Patel", from:"admin", to:"superadmin", reason:"Taking over site operations", status:"rejected", time:"3 days ago" },
 ];
 
-const ROLES = ["user","freelancer","client","moderator","admin","superadmin"];
+const ROLES = ["user","freelancer","employer","moderator","admin","superadmin"];
 
 export default function AdminRoleEscalation() {
   const { theme, themeKey } = useDashboardTheme();
