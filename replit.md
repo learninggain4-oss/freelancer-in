@@ -1,5 +1,19 @@
 # Freelancer-in (Migrated to Replit)
 
+## Freelancer Dashboard Pages (as of April 2026)
+- `/employee/dashboard` — Main dashboard with wallet card, stats, quick-actions
+- `/employee/projects` — Browse & bid on projects
+- `/employee/bids` — Bids tracker + proposal templates
+- `/employee/earnings` — Earnings chart (area/bar), invoice generator, transaction history
+- `/employee/reviews` — Client reviews with rating distribution + search/filter
+- `/employee/badges` — Skill test quiz flow (5 Q preview), earn verified badges
+- `/employee/portfolio` — Portfolio CRUD (add/edit/delete) with category filter
+- `/employee/requests` — Submitted proposals tracker
+- `/employee/wallet` — Wallet, withdrawals, QR, scan
+- `/employee/attendance` — Attendance management
+- `/employee/profile` — Profile + sub-pages (personal, professional, bank, work-exp, services)
+
+
 ## Project Overview
 A freelancer marketplace app ("Freelancer-in") connecting freelancers (employees) with clients for project collaboration. Built with React + TypeScript + Vite frontend, with an Express.js API server that replaces all Supabase Edge Functions. Auth, database, storage, and realtime are still provided by the existing Supabase project.
 
