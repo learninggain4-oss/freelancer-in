@@ -506,7 +506,7 @@ const HelpSupport = () => {
               <div style={{ background: "rgba(251,191,36,.1)", border: "1px solid rgba(251,191,36,.3)", borderRadius: 10, padding: "10px 13px", marginBottom: 20, display: "flex", alignItems: "flex-start", gap: 8 }}>
                 <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>⚠️</span>
                 <p style={{ fontSize: 12, color: "#fbbf24", margin: 0, lineHeight: 1.55, fontWeight: 500 }}>
-                  ഈ ചാറ്റ് ഒരിക്കൽ ഡിലീറ്റ് ചെയ്‌താൽ ഒരു ആവശ്യഘട്ടത്തിലും വീണ്ടെടുക്കാൻ സാധിക്കില്ല. ഡിലീറ്റ് ചെയ്യുന്നതിന് മുൻപ് ഒന്ന് ആലോചിക്കുക.
+                  Once deleted, this chat cannot be recovered under any circumstances. Please think carefully before proceeding.
                 </p>
               </div>
               <div style={{ display: "flex", gap: 10 }}>
