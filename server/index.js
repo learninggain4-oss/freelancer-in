@@ -1457,7 +1457,30 @@ app.post("/functions/v1/mpin-reset", async (req, res) => {
   }
 });
 
-// POST /functions/v1/mpin-verify — verify M-Pin
+// GET /functions/v1/mpin-status — check if account is currently blocked
+app.get("/functions/v1/mpin-status", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const adminAuth = getAdminClient().auth.admin;
+    const { data: { user: u }, error } = await adminAuth.getUserById(user.id);
+    if (error || !u) return res.status(404).json({ error: "User not found" });
+
+    const blockedUntil = u.app_metadata?.mpin_blocked_until;
+    if (blockedUntil && new Date(blockedUntil) > new Date()) {
+      return res.json({ blocked: true, blockedUntil, attemptsLeft: 0 });
+    }
+
+    const failedAttempts = u.app_metadata?.mpin_failed_attempts || 0;
+    const attemptsLeft = Math.max(0, 3 - failedAttempts);
+    res.json({ blocked: false, attemptsLeft });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /functions/v1/mpin-verify — verify M-Pin (with lockout after 3 failed attempts)
 app.post("/functions/v1/mpin-verify", async (req, res) => {
   try {
     const user = await getUserFromToken(req.headers.authorization);
@@ -1471,11 +1494,40 @@ app.post("/functions/v1/mpin-verify", async (req, res) => {
     const { data: { user: u }, error } = await adminAuth.getUserById(user.id);
     if (error || !u) return res.status(404).json({ error: "User not found" });
 
+    // Check if currently blocked
+    const blockedUntil = u.app_metadata?.mpin_blocked_until;
+    if (blockedUntil && new Date(blockedUntil) > new Date()) {
+      return res.status(429).json({ blocked: true, blockedUntil, attemptsLeft: 0 });
+    }
+
     const expected = u.app_metadata?.mpin_hash;
     if (!expected) return res.status(400).json({ error: "No PIN set", hasPin: false });
 
     const valid = hashMpin(pin, user.id) === expected;
-    res.json({ valid });
+
+    if (valid) {
+      // Reset failed attempts on success
+      await adminAuth.updateUserById(user.id, {
+        app_metadata: { mpin_failed_attempts: 0, mpin_blocked_until: null },
+      });
+      return res.json({ valid: true, attemptsLeft: 3 });
+    }
+
+    // Wrong PIN — increment counter
+    const failedAttempts = (u.app_metadata?.mpin_failed_attempts || 0) + 1;
+    const newMeta = { mpin_failed_attempts: failedAttempts };
+
+    if (failedAttempts >= 3) {
+      // Block for 15 minutes
+      const until = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+      newMeta.mpin_blocked_until = until;
+      await adminAuth.updateUserById(user.id, { app_metadata: newMeta });
+      return res.status(429).json({ valid: false, blocked: true, blockedUntil: until, attemptsLeft: 0 });
+    }
+
+    await adminAuth.updateUserById(user.id, { app_metadata: newMeta });
+    const attemptsLeft = 3 - failedAttempts;
+    res.json({ valid: false, attemptsLeft });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

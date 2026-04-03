@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Shield, Delete, ArrowRight, Check, Eye, EyeOff, RefreshCw,
   AlertCircle, Smartphone, ShieldQuestion, KeyRound, ChevronLeft,
-  CheckCircle2,
+  CheckCircle2, LockKeyhole, Clock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardTheme } from "@/hooks/use-dashboard-theme";
@@ -86,6 +86,12 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
   const [masked, setMasked]     = useState(true);
   const [shake, setShake]       = useState(false);
 
+  /* ── Lockout state ────────────────────────────────────────────── */
+  const [blocked, setBlocked]           = useState(false);
+  const [blockedUntil, setBlockedUntil] = useState<Date|null>(null);
+  const [attemptsLeft, setAttemptsLeft] = useState(3);
+  const [timeLeft, setTimeLeft]         = useState(0); // seconds
+
   /* ── Forgot flow state ────────────────────────────────────────── */
   const [forgot, setForgot]             = useState(false);
   const [forgotStep, setForgotStep]     = useState<ForgotStep>("loading");
@@ -105,6 +111,45 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
   const totpRefs   = useRef<(HTMLInputElement|null)[]>([]);
 
   useEffect(() => { injectCSS(); }, []);
+
+  // On mount — check if account is currently blocked
+  useEffect(() => {
+    if (mode !== "verify") return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch("/functions/v1/mpin-status", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+        if (json.blocked && json.blockedUntil) {
+          const until = new Date(json.blockedUntil);
+          if (until > new Date()) {
+            setBlocked(true);
+            setBlockedUntil(until);
+            setAttemptsLeft(0);
+            setTimeLeft(Math.ceil((until.getTime() - Date.now()) / 1000));
+            return;
+          }
+        }
+        setAttemptsLeft(json.attemptsLeft ?? 3);
+      } catch { /* ignore */ }
+    })();
+  }, [mode]);
+
+  // Countdown timer for blocked state
+  useEffect(() => {
+    if (!blocked || !blockedUntil) return;
+    const tick = () => {
+      const secs = Math.ceil((blockedUntil.getTime() - Date.now()) / 1000);
+      if (secs <= 0) { setBlocked(false); setBlockedUntil(null); setAttemptsLeft(3); setTimeLeft(0); }
+      else setTimeLeft(secs);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [blocked, blockedUntil]);
+
   useEffect(() => {
     if (!forgot) setTimeout(() => hiddenRef.current?.focus(), 300);
   }, [step, forgot]);
@@ -284,7 +329,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
   };
 
   const handleProceed = useCallback(async () => {
-    if (pin.length < PIN_LEN || loading) return;
+    if (pin.length < PIN_LEN || loading || blocked) return;
     if (mode === "create") {
       if (step === "enter") { setFirstPin(pin); setPin(""); setStep("confirm"); return; }
       if (pin !== firstPin) {
@@ -301,17 +346,36 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
         body: JSON.stringify({ pin }),
       });
       const json = await res.json();
+
+      // Locked out
+      if (json.blocked && json.blockedUntil) {
+        const until = new Date(json.blockedUntil);
+        setBlocked(true); setBlockedUntil(until); setAttemptsLeft(0);
+        setTimeLeft(Math.ceil((until.getTime() - Date.now()) / 1000));
+        setPin(""); return;
+      }
+
       if (!res.ok) throw new Error(json.error || "Error");
+
       if (mode === "verify" && !json.valid) {
-        setError("Incorrect M-Pin. Please try again.");
+        const left = json.attemptsLeft ?? (attemptsLeft - 1);
+        setAttemptsLeft(left);
+        const msg = left === 1
+          ? "Incorrect M-Pin — 1 attempt remaining before your account is locked!"
+          : left === 0
+          ? "Account locked. Too many incorrect attempts."
+          : `Incorrect M-Pin — ${left} attempts remaining.`;
+        setError(msg);
         triggerShake(setShake); setPin(""); return;
       }
+
+      setAttemptsLeft(3);
       onVerified();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Server error");
       triggerShake(setShake); setPin("");
     } finally { setLoading(false); }
-  }, [pin, mode, step, firstPin, loading, onVerified]);
+  }, [pin, mode, step, firstPin, loading, blocked, attemptsLeft, onVerified]);
 
   useEffect(() => {
     if (mode === "verify" && pin.length === PIN_LEN && !loading && !forgot) handleProceed();
@@ -352,7 +416,9 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
 
         {/* ── Header ──────────────────────────────────────────── */}
         <div style={{
-          background: forgot && forgotStep === "success"
+          background: blocked
+            ? "linear-gradient(135deg,#dc2626,#b91c1c)"
+            : forgot && forgotStep === "success"
             ? "linear-gradient(135deg,#16a34a,#15803d)"
             : forgot ? "linear-gradient(135deg,#f59e0b,#d97706)"
             : hdr,
@@ -364,7 +430,8 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
               display:"flex", alignItems:"center", justifyContent:"center",
               boxShadow:"0 4px 14px rgba(0,0,0,.2)", flexShrink:0,
             }}>
-              {forgot && forgotStep === "success"  ? <CheckCircle2 size={22} color="white" />
+              {blocked ? <LockKeyhole size={22} color="white" />
+                : forgot && forgotStep === "success"  ? <CheckCircle2 size={22} color="white" />
                 : forgot && forgotStep === "totp"  ? <Smartphone size={22} color="white" />
                 : forgot && forgotStep === "sq"    ? <ShieldQuestion size={22} color="white" />
                 : forgot ? <KeyRound size={22} color="white" />
@@ -372,10 +439,14 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
             </div>
             <div>
               <p style={{margin:0, fontWeight:800, fontSize:17, color:"white", letterSpacing:"-.3px"}}>
-                {forgot ? forgotTitle : mode === "create" ? (step === "enter" ? "Create M-Pin" : "Confirm M-Pin") : "Enter M-Pin"}
+                {blocked ? "Account Temporarily Locked"
+                  : forgot ? forgotTitle
+                  : mode === "create" ? (step === "enter" ? "Create M-Pin" : "Confirm M-Pin")
+                  : "Enter M-Pin"}
               </p>
               <p style={{margin:"3px 0 0", fontSize:12, color:"rgba(255,255,255,.8)"}}>
-                {forgot && forgotStep === "choice"        ? "Choose an identity verification method"
+                {blocked ? "Too many incorrect attempts"
+                  : forgot && forgotStep === "choice"        ? "Choose an identity verification method"
                   : forgot && forgotStep === "totp"       ? "Enter the 6-digit code from your authenticator app"
                   : forgot && forgotStep === "sq"         ? "Answer your security questions"
                   : forgot && forgotStep === "new-pin-enter"   ? "Choose a new 4-digit PIN"
@@ -403,6 +474,60 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
 
         {/* ── Body ─────────────────────────────────────────────── */}
         <div style={{flex:1, overflowY:"auto"}}>
+
+          {/* ══ BLOCKED SCREEN ═══════════════════════════════════ */}
+          {blocked && !forgot && (() => {
+            const mins = Math.floor(timeLeft / 60);
+            const secs = timeLeft % 60;
+            return (
+              <div style={{padding:"24px 22px 28px", textAlign:"center", animation:"mpinSlideIn .3s ease"}}>
+                <div style={{
+                  width:72, height:72, borderRadius:"50%",
+                  background:"rgba(220,38,38,.1)", border:"2px solid rgba(220,38,38,.25)",
+                  display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px",
+                }}>
+                  <LockKeyhole size={32} color="#dc2626"/>
+                </div>
+
+                <p style={{margin:"0 0 6px", fontWeight:800, fontSize:15.5, color:textC}}>
+                  Account Temporarily Locked
+                </p>
+                <p style={{margin:"0 0 22px", fontSize:13, color:subC, lineHeight:1.6}}>
+                  You've entered an incorrect M-Pin 3 times.<br/>Your account will unlock automatically.
+                </p>
+
+                {/* Countdown */}
+                <div style={{
+                  display:"inline-flex", alignItems:"center", gap:8,
+                  padding:"12px 24px", borderRadius:16,
+                  background: isDark ? "#1e293b" : "#fef2f2",
+                  border:"1.5px solid rgba(220,38,38,.2)",
+                  marginBottom:20,
+                }}>
+                  <Clock size={18} color="#dc2626"/>
+                  <span style={{fontFamily:"monospace", fontWeight:800, fontSize:22, color:"#dc2626", letterSpacing:2}}>
+                    {String(mins).padStart(2,"0")}:{String(secs).padStart(2,"0")}
+                  </span>
+                </div>
+
+                <p style={{margin:"0 0 18px", fontSize:12, color:subC}}>
+                  Unlocks in {mins > 0 ? `${mins} min ${secs} sec` : `${secs} seconds`}
+                </p>
+
+                <div style={{borderTop:`1px solid ${borderC}`, paddingTop:16}}>
+                  <p style={{margin:"0 0 10px", fontSize:12.5, color:subC}}>Don't remember your M-Pin?</p>
+                  <button onClick={openForgot}
+                    style={{
+                      height:40, padding:"0 20px", borderRadius:11, border:`1.5px solid ${accent}`,
+                      background:"transparent", color:accent, cursor:"pointer",
+                      fontSize:13, fontWeight:700, fontFamily:"inherit",
+                    }}>
+                    Reset via Identity Verification
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ══ FORGOT FLOW ══════════════════════════════════════ */}
           {forgot ? (
@@ -647,7 +772,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
               )}
             </div>
 
-          ) : (
+          ) : !blocked ? (
             /* ══ NORMAL PIN FLOW ════════════════════════════════ */
             <div style={{padding:"22px 22px 26px", animation:"mpinSlideUp .25s ease"}}>
               {/* PIN dots */}
@@ -671,10 +796,25 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
                 })}
               </div>
 
-              {/* Error */}
-              <div style={{minHeight:18,textAlign:"center",marginBottom:14}}>
-                {error && <p style={{margin:0,fontSize:12.5,color:"#ef4444",fontWeight:600}}>{error}</p>}
-              </div>
+              {/* Attempt warning / error */}
+              {error ? (
+                <div style={{
+                  display:"flex", alignItems:"flex-start", gap:7,
+                  padding:"9px 12px", borderRadius:11, marginBottom:12,
+                  background: attemptsLeft === 1
+                    ? "rgba(220,38,38,.1)" : "rgba(234,88,12,.08)",
+                  border: `1px solid ${attemptsLeft === 1
+                    ? "rgba(220,38,38,.3)" : "rgba(234,88,12,.25)"}`,
+                }}>
+                  <AlertCircle size={14} color={attemptsLeft===1?"#dc2626":"#ea580c"} style={{flexShrink:0,marginTop:1}}/>
+                  <p style={{margin:0, fontSize:12.5, fontWeight:600, lineHeight:1.5,
+                    color: attemptsLeft === 1 ? "#dc2626" : "#ea580c"}}>
+                    {error}
+                  </p>
+                </div>
+              ) : (
+                <div style={{height:18, marginBottom:12}}/>
+              )}
 
               {/* Numpad */}
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:9}}>
@@ -742,7 +882,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
                 </div>
               )}
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
