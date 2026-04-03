@@ -26,8 +26,8 @@ const prioColor = (p: string) => p==="critical"?"#f87171":p==="high"?"#f97316":p
 const statusColor = (s: string) => s==="new"?"#60a5fa":s==="investigating"?"#fbbf24":s==="resolved"?"#4ade80":"#94a3b8";
 
 export default function AdminFraudAlerts() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [alerts, setAlerts] = useState(INIT_ALERTS);
   const [filterPrio, setFilterPrio] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");

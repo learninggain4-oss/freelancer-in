@@ -68,8 +68,8 @@ const defaultForm: Omit<AutoResponse, "id" | "created_at" | "updated_at"> = {
 
 const AdminAutoResponses = () => {
   const queryClient = useQueryClient();
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "enabled" | "disabled">("all");
   const [editDialog, setEditDialog] = useState<{ open: boolean; data: any | null }>({ open: false, data: null });

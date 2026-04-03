@@ -30,8 +30,8 @@ const DEFAULT_TEMPLATES = {
 type ChannelConfig = { enabled:boolean; priorities:string[]; template:string; retryOnFail:boolean };
 
 export default function AdminFraudNotifications() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [configs, setConfigs] = useState<Record<string, ChannelConfig>>({
     email:    { enabled:true,  priorities:["high","critical"], template:DEFAULT_TEMPLATES.email,    retryOnFail:true },
     sms:      { enabled:true,  priorities:["critical"],        template:DEFAULT_TEMPLATES.sms,      retryOnFail:true },

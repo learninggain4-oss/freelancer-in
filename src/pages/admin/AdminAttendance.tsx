@@ -40,8 +40,8 @@ const TH = {
 };
 
 const AdminAttendance = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [userTypeFilter, setUserTypeFilter] = useState<string>("all");

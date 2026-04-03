@@ -25,8 +25,8 @@ const ACTION_OPTS = ["Auto Block User","Auto Freeze Account","Auto Flag Payment"
 const TRIGGER_OPTS = ["Risk score ≥ 90","Risk score ≥ 70","Risk score ≥ 50","Failed login ≥ 5","Failed login ≥ 10","Duplicate payment detected","Login from new country","Payment from blocked IP","IP change ≥ 3","VPN detected"];
 
 export default function AdminFraudAutomation() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [actions, setActions] = useState(INIT_ACTIONS);
   const [globalEnabled, setGlobalEnabled] = useState(true);
   const [editAction, setEditAction] = useState<AutoAction|null>(null);

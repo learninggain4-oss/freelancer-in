@@ -42,8 +42,8 @@ const lvlColor = (l: string) => l==="critical"?"#f87171":l==="high"?"#f97316":l=
 const lvlBg   = (l: string) => l==="critical"?"rgba(248,113,113,.12)":l==="high"?"rgba(249,115,22,.12)":l==="medium"?"rgba(251,191,36,.12)":"rgba(74,222,128,.12)";
 
 export default function AdminFraudDashboard() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [detectionActive, setDetectionActive] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

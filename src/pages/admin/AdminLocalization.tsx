@@ -17,7 +17,7 @@ const seed=():Language[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminLocalization(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[languages,setLanguages]=useState(()=>load("admin_localization_v1",seed));
   const[checking,setChecking]=useState(false);
   const[testCode,setTestCode]=useState("Hello, welcome!");

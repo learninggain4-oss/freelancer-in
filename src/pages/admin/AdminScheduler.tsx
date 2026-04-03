@@ -56,8 +56,8 @@ function parseCron(expr:string): string {
 }
 
 export default function AdminScheduler() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

@@ -19,7 +19,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={healthy:"#4ade80",degraded:"#fbbf24",down:"#f87171"};
 
 export default function AdminExternalApiMonitor(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[services,setServices]=useState(()=>load("admin_ext_api_v1",seed));
   const[checking,setChecking]=useState<string|null>(null);
 

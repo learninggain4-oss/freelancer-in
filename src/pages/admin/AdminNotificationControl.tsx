@@ -17,8 +17,8 @@ const CHANNELS = [
 ];
 
 export default function AdminNotificationControl() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [freqLimit, setFreqLimit] = useState(10);
   const [cooldown, setCooldown] = useState(5);

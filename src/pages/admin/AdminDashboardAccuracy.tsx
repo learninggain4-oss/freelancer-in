@@ -19,8 +19,8 @@ const METRICS = [
 ];
 
 export default function AdminDashboardAccuracy() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [refreshing, setRefreshing] = useState<string|null>(null);
   const [recalculating, setRecalculating] = useState(false);

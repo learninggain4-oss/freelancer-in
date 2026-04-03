@@ -64,6 +64,20 @@ const TH = {
     alertBdr: "rgba(0,0,0,.06)",
     timelineLine: "rgba(0,0,0,.08)",
   },
+  warm: {
+    cardBg:   "#fffdf7", cardBdr: "rgba(180,83,9,.1)",
+    text:     "#1c1a17", sub: "#78716c",
+    rowHover: "rgba(180,83,9,.05)", pullFg: "rgba(120,113,108,.5)",
+    chartTip: { background: "#fffdf7", border: "1px solid rgba(180,83,9,.15)", color: "#1c1a17" },
+    chartAxis:"#a8a29e",
+    emptyBg:  "#fef3c7", emptyFg: "#a8a29e",
+    emptySub: "#a8a29e",
+    badgeBg:  "#fef3c7", badgeFg: "#78716c",
+    sectionIconBg: (color: string) => `${color}18`,
+    alertBg: "#fffdf7",
+    alertBdr: "rgba(180,83,9,.08)",
+    timelineLine: "rgba(180,83,9,.1)",
+  },
 };
 
 const MOCK_ALERTS = [

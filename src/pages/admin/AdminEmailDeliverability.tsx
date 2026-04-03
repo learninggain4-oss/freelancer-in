@@ -16,8 +16,8 @@ const PROVIDERS = [
 ];
 
 export default function AdminEmailDeliverability() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<null|"pass">(null);
   const [activeTab, setActiveTab] = useState<"providers"|"config"|"logs">("providers");

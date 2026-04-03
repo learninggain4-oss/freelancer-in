@@ -27,7 +27,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={online:"#4ade80",degraded:"#fbbf24",offline:"#f87171"};
 
 export default function AdminNetworkMonitor(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[endpoints,setEndpoints]=useState<NetEndpoint[]>(()=>load("admin_network_v1",seedEndpoints));
   const[pinging,setPinging]=useState<string|null>(null);

@@ -20,7 +20,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={fresh:"#4ade80",stale:"#fbbf24",expired:"#f87171"};
 
 export default function AdminCacheManagement(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[modules,setModules]=useState(()=>load("admin_cache_v1",seed));
   const[clearing,setClearing]=useState<string|null>(null);
   const[ttl,setTtl]=useState<Record<string,number>>(()=>Object.fromEntries(seed().map(m=>[m.id,m.ttlMins])));

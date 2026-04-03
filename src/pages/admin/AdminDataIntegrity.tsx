@@ -19,8 +19,8 @@ const RELATIONSHIPS = [
 ];
 
 export default function AdminDataIntegrity() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [validating, setValidating] = useState(false);
   const [lastCheck, setLastCheck] = useState("2 hrs ago");

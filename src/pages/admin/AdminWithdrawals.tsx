@@ -35,8 +35,8 @@ type Withdrawal = {
 };
 
 const AdminWithdrawals = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Withdrawal | null>(null);

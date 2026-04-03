@@ -18,8 +18,8 @@ const TRANSACTIONS = [
 ];
 
 export default function AdminTransactionControl() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"protection"|"transactions"|"logs">("protection");

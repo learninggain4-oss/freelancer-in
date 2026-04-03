@@ -18,7 +18,7 @@ const seed=():FeatureFlag[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminFeatureFlags(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[flags,setFlags]=useState(()=>load("admin_feature_flags_v1",seed));
   const[rolling,setRolling]=useState<string|null>(null);
 

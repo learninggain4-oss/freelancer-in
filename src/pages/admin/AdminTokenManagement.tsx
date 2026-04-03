@@ -26,7 +26,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={healthy:"#4ade80",warning:"#fbbf24",critical:"#f87171"};
 
 export default function AdminTokenManagement(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tokens,setTokens]=useState<TokenType[]>(()=>load("admin_token_mgmt_v1",seedTokens));
   const[rotating,setRotating]=useState<string|null>(null);

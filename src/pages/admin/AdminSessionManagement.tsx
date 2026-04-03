@@ -17,8 +17,8 @@ const SESSIONS = [
 ];
 
 export default function AdminSessionManagement() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [sessions, setSessions] = useState(SESSIONS);
   const [timeout, setTimeoutDuration] = useState(30);

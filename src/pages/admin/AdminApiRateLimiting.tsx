@@ -23,8 +23,8 @@ const ENDPOINTS = [
 ];
 
 export default function AdminApiRateLimiting() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [userLimit, setUserLimit] = useState(100);
   const [ipLimit, setIpLimit] = useState(200);

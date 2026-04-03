@@ -25,8 +25,8 @@ const LOGS = [
 ];
 
 export default function AdminCleanupSafety() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [rules, setRules] = useState(RULES);
   const [previewRule, setPreviewRule] = useState<string|null>(null);

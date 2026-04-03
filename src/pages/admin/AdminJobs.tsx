@@ -30,8 +30,8 @@ const statusColor: Record<string, string> = {
 };
 
 const AdminJobs = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [viewProject, setViewProject] = useState<any>(null);

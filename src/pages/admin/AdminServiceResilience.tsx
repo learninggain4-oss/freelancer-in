@@ -32,8 +32,8 @@ function load<T>(key:string,seed:()=>T[]): T[] {
 const statusColor = { healthy:"#4ade80", degraded:"#fbbf24", offline:"#f87171", unknown:"#94a3b8" };
 
 export default function AdminServiceResilience() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

@@ -18,7 +18,7 @@ const seed=():DeleteGroup[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminSoftDeleteCleanup(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[groups,setGroups]=useState(()=>load("admin_soft_del_v1",seed));
   const[cleaning,setCleaning]=useState<string|null>(null);
   const[cleaningAll,setCleaningAll]=useState(false);

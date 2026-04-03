@@ -19,7 +19,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={valid:"#4ade80",expiring:"#fbbf24",expired:"#f87171"};
 
 export default function AdminSslMonitor(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[certs,setCerts]=useState(()=>load("admin_ssl_v1",seed));
   const[renewing,setRenewing]=useState<string|null>(null);
 

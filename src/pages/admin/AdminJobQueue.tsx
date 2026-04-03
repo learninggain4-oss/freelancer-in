@@ -44,8 +44,8 @@ const statusColor: Record<string,string> = { queued:"#94a3b8", running:A1, compl
 const prioColor = { high:"#f87171", normal:A1, low:"#94a3b8" };
 
 export default function AdminJobQueue() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

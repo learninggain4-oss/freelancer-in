@@ -71,8 +71,8 @@ const statusColor = { live: "#4ade80", "rolled-back": "#f87171", staged: "#fbbf2
 const catColor: Record<string, string> = { Feature: "#a5b4fc", Fix: "#4ade80", Security: "#f87171", Performance: "#fbbf24", Breaking: "#fb923c" };
 
 export default function AdminVersionControl() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

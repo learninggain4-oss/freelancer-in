@@ -21,7 +21,7 @@ const sColor={pass:"#4ade80",warn:"#fbbf24",fail:"#f87171"};
 const sevColor={critical:"#f87171",high:"#fb923c",medium:"#fbbf24",low:"#4ade80"};
 
 export default function AdminComprehensiveAudit(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[items,setItems]=useState(()=>load("admin_comp_audit_v1",seed));
   const[running,setRunning]=useState(false);
   const[filter,setFilter]=useState<"all"|"pass"|"warn"|"fail">("all");

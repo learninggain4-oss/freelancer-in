@@ -26,7 +26,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={synced:"#4ade80",syncing:"#a5b4fc",delayed:"#fbbf24",error:"#f87171"};
 
 export default function AdminDataSync(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[jobs,setJobs]=useState<SyncJob[]>(()=>load("admin_data_sync_v1",seedJobs));
   const[syncing,setSyncing]=useState<string|null>(null);

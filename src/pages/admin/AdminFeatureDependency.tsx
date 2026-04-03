@@ -25,8 +25,8 @@ const LOGS = [
 ];
 
 export default function AdminFeatureDependency() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [features, setFeatures] = useState(FEATURES);
   const [selectedFeature, setSelectedFeature] = useState<string|null>(null);

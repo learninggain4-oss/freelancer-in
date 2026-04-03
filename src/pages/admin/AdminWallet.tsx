@@ -22,8 +22,8 @@ const TH = {
 };
 
 const AdminWallet = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [addAmount, setAddAmount] = useState("");

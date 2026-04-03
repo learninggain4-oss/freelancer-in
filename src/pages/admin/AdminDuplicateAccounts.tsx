@@ -17,7 +17,7 @@ const seed=():DuplicateGroup[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminDuplicateAccounts(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[groups,setGroups]=useState(()=>load("admin_dup_accounts_v1",seed));
   const[scanning,setScanning]=useState(false);
   const[acting,setActing]=useState<string|null>(null);

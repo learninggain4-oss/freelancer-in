@@ -19,7 +19,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={active:"#4ade80",expiring:"#fbbf24",expired:"#f87171",rotated:"#a5b4fc"};
 
 export default function AdminEncryptionKeys(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[keys,setKeys]=useState(()=>load("admin_enc_keys_v1",seed));
   const[rotating,setRotating]=useState<string|null>(null);
 

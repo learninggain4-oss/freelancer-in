@@ -19,8 +19,8 @@ const TH = {
 
 const AdminServiceManagement = () => {
   const qc = useQueryClient();
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [newCatName, setNewCatName] = useState("");
   const [editCatId, setEditCatId] = useState<string | null>(null);
   const [editCatName, setEditCatName] = useState("");

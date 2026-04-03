@@ -32,7 +32,7 @@ const sColor={critical:"#f87171",high:"#fb923c",medium:"#fbbf24",low:"#94a3b8"};
 const pColor={pending:"#fbbf24",scheduled:"#a5b4fc",applying:"#6366f1",applied:"#4ade80",failed:"#f87171"};
 
 export default function AdminSecurityPatch(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"patches"|"vulns">("patches");
   const[patches,setPatches]=useState<Patch[]>(()=>load("admin_sec_patch_v1",seedPatches));

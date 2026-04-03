@@ -17,8 +17,8 @@ const DEVICES = [
 ];
 
 export default function AdminSessionSync() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [devices, setDevices] = useState(DEVICES);
   const [syncing, setSyncing] = useState<string|null>(null);

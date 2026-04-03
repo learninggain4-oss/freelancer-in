@@ -19,8 +19,8 @@ const INTEGRATIONS = [
 ];
 
 export default function AdminApiMonitor() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<"integrations"|"health"|"logs">("integrations");
 

@@ -17,7 +17,7 @@ const seedEvents=():LogoutEvent[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminAutoLogout(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[events]=useState(()=>load("admin_auto_logout_v1",seedEvents));
   const[config,setConfig]=useState({enabled:true,idleTimeoutMins:30,adminTimeoutMins:60,forceLogoutOnSuspicion:true});
   const[testing,setTesting]=useState(false);

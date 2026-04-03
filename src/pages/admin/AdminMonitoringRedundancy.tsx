@@ -27,7 +27,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={active:"#4ade80",standby:"#94a3b8",failed:"#f87171",recovering:"#fbbf24"};
 
 export default function AdminMonitoringRedundancy(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[services,setServices]=useState<MonitoringService[]>(()=>load("admin_mon_redundancy_v1",seedServices));
   const[activating,setActivating]=useState<string|null>(null);

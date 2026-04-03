@@ -23,7 +23,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const impactColor={high:"#f87171",medium:"#fbbf24",low:"#4ade80"};
 
 export default function AdminDbIndexing(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[indexes,setIndexes]=useState(()=>load("admin_db_idx_v1",seedIdx));
   const[slowQ]=useState(()=>load("admin_slow_q_v1",seedSlowQ));
   const[creating,setCreating]=useState<string|null>(null);

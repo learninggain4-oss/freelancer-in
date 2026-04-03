@@ -80,8 +80,8 @@ function load<T>(key: string, seed: () => T[]): T[] {
 const defaultSettings: SecuritySettings = { mfaRequired: false, deviceBinding: true, ipChangeAlert: true, maxSessions: 3, sessionTimeoutMin: 30, forceLogoutOnIpChange: false };
 
 export default function AdminSessionSecurity() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

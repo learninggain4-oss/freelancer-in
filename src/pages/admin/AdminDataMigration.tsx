@@ -19,8 +19,8 @@ const MIGRATIONS = [
 ];
 
 export default function AdminDataMigration() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [previewId, setPreviewId] = useState<string|null>(null);
   const [dryRunId, setDryRunId] = useState<string|null>(null);

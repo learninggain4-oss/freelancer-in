@@ -22,8 +22,8 @@ const TH = {
 const AdminProfileEdits = () => {
   const { profile: adminProfile } = useAuth();
   const queryClient = useQueryClient();
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
 
   const { data: requests = [], isLoading } = useQuery({

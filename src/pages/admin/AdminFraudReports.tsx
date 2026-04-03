@@ -46,8 +46,8 @@ const MONTHLY = [
 ];
 
 export default function AdminFraudReports() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [period, setPeriod] = useState<"daily"|"weekly"|"monthly">("daily");
   const [exportFmt, setExportFmt] = useState("pdf");
 

@@ -61,8 +61,8 @@ function load<T>(key: string, def: T[]): T[] {
 }
 
 export default function AdminDataPrivacy() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

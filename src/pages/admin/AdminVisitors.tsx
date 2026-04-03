@@ -54,8 +54,8 @@ const DeviceIcon = ({ type }: { type: string | null }) => {
 };
 
 const AdminVisitors = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const pageSize = 50;

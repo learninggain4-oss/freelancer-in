@@ -42,8 +42,8 @@ function load<T>(key:string,seed:()=>T[]): T[] {
 const roleColor: Record<string,string> = { super_admin:"#f87171", admin:"#a5b4fc", moderator:"#4ade80", support:"#fbbf24" };
 
 export default function AdminSessionManager() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

@@ -23,8 +23,8 @@ const TH = {
 
 const AdminRecoveryRequests = () => {
   const { profile } = useAuth();
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [loading, setLoading] = useState<string | null>(null);

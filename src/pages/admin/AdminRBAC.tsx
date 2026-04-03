@@ -50,8 +50,8 @@ function getRoleOverrides(): Record<string, Role> {
 }
 
 export default function AdminRBAC() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

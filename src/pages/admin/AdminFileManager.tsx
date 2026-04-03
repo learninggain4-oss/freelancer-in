@@ -44,8 +44,8 @@ const statusColor: Record<string,string> = { clean:"#4ade80", quarantined:"#fbbf
 const statusLabel: Record<string,string> = { clean:"CLEAN", quarantined:"QUARANTINED", blocked:"BLOCKED", pending_scan:"SCANNING" };
 
 export default function AdminFileManager() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

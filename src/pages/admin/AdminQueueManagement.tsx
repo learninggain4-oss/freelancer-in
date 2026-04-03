@@ -18,8 +18,8 @@ const QUEUES = [
 ];
 
 export default function AdminQueueManagement() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [queues, setQueues] = useState(QUEUES);
   const [restarting, setRestarting] = useState<string|null>(null);

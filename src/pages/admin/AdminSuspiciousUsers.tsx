@@ -24,8 +24,8 @@ const lvlColor = (l: string) => l==="critical"?"#f87171":l==="high"?"#f97316":l=
 const statusColor = (s: string) => s==="active"?"#4ade80":s==="flagged"?"#f97316":s==="suspended"?"#f87171":"#94a3b8";
 
 export default function AdminSuspiciousUsers() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [users, setUsers] = useState(USERS);
   const [search, setSearch] = useState("");
   const [filterLevel, setFilterLevel] = useState("all");

@@ -21,8 +21,8 @@ const TH = {
 const PAGE_SIZE = 15;
 
 const AdminReferrals = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 

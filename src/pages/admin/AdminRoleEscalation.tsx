@@ -18,8 +18,8 @@ const REQUESTS = [
 const ROLES = ["user","freelancer","client","moderator","admin","superadmin"];
 
 export default function AdminRoleEscalation() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [requests, setRequests] = useState(REQUESTS);
   const [activeTab, setActiveTab] = useState<"requests"|"matrix"|"logs">("requests");
 

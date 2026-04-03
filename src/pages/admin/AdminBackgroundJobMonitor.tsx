@@ -19,8 +19,8 @@ const JOBS = [
 ];
 
 export default function AdminBackgroundJobMonitor() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [jobs, setJobs] = useState(JOBS);
   const [retrying, setRetrying] = useState<string|null>(null);

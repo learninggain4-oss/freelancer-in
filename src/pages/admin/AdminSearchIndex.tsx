@@ -18,8 +18,8 @@ const INDEXES = [
 ];
 
 export default function AdminSearchIndex() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [rebuilding, setRebuilding] = useState<string|null>(null);
   const [searchEnabled, setSearchEnabled] = useState(true);

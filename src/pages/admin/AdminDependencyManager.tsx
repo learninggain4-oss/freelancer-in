@@ -18,7 +18,7 @@ const seed=():Dependency[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminDependencyManager(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[deps,setDeps]=useState(()=>load("admin_deps_v1",seed));
   const[checking,setChecking]=useState(false);
   const[approving,setApproving]=useState<string|null>(null);

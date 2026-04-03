@@ -18,7 +18,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={compatible:"#4ade80",incompatible:"#f87171",unknown:"#94a3b8"};
 
 export default function AdminRestoreVersionControl(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[backups]=useState(()=>load("admin_restore_v1",seed));
   const[restoring,setRestoring]=useState<string|null>(null);
   const[checking,setChecking]=useState<string|null>(null);

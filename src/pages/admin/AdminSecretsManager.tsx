@@ -40,8 +40,8 @@ const sensColor = { critical:"#f87171", high:"#fb923c", medium:"#fbbf24" };
 const statusColor = { active:"#4ade80", expired:"#f87171", needs_rotation:"#fbbf24" };
 
 export default function AdminSecretsManager() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

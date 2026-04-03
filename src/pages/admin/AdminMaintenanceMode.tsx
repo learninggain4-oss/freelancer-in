@@ -17,7 +17,7 @@ const seedLogs=():MaintLog[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminMaintenanceMode(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[enabled,setEnabled]=useState(false);
   const[logs,setLogs]=useState(()=>load("admin_maint_logs_v1",seedLogs));
   const[toggling,setToggling]=useState(false);

@@ -24,7 +24,7 @@ const seedChanges=():RoleChange[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminRbacSecurity(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[roles]=useState(()=>load("admin_rbac_roles_v1",seedRoles));
   const[changes,setChanges]=useState(()=>load("admin_rbac_changes_v1",seedChanges));
   const[acting,setActing]=useState<string|null>(null);

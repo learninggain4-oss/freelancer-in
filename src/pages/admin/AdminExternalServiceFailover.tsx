@@ -19,7 +19,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={"primary-active":"#4ade80","backup-active":"#fbbf24","both-down":"#f87171"};
 
 export default function AdminExternalServiceFailover(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[services,setServices]=useState(()=>load("admin_ext_failover_v1",seed));
   const[switching,setSwitching]=useState<string|null>(null);
 

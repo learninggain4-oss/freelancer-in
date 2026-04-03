@@ -364,8 +364,8 @@ const CustomTemplatesManager = ({ profileId }: { profileId: string }) => {
 
 const AdminHelpSupport = () => {
   const { profile, user } = useAuth();
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   // WhatsApp-style color palette mapped to dark / light theme
   const WA = theme === "black" ? {

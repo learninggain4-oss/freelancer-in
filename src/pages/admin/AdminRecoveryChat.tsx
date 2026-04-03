@@ -35,8 +35,8 @@ const TH = {
 
 const AdminRecoveryChat = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [searchParams] = useSearchParams();
   const roomId = searchParams.get("room");
   const navigate = useNavigate();

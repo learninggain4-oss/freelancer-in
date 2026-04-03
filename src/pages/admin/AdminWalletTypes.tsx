@@ -75,8 +75,8 @@ const defaultForm: WalletTypeForm = {
 };
 
 const AdminWalletTypes = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const queryClient = useQueryClient();
   const [showCleared, setShowCleared] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);

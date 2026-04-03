@@ -17,7 +17,7 @@ const seed=():Session[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminSecureSessionMgr(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[sessions,setSessions]=useState(()=>load("admin_secure_sess_v1",seed));
   const[revoking,setRevoking]=useState<string|null>(null);
   const[expiryMins,setExpiryMins]=useState(60);

@@ -18,8 +18,8 @@ const JOBS = [
 ];
 
 export default function AdminJobScheduler() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [jobs, setJobs] = useState(JOBS);
   const [running, setRunning] = useState<string|null>(null);
   const [activeTab, setActiveTab] = useState<"jobs"|"config"|"logs">("jobs");

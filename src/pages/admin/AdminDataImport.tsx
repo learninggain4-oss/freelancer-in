@@ -23,7 +23,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={pending:"#94a3b8",validating:"#a5b4fc",ready:"#fbbf24",importing:"#6366f1",done:"#4ade80",failed:"#f87171",rolled_back:"#fb923c"};
 
 export default function AdminDataImport(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[jobs,setJobs]=useState<ImportJob[]>(()=>load("admin_data_import_v1",seedJobs));
   const[processing,setProcessing]=useState<string|null>(null);

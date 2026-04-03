@@ -18,8 +18,8 @@ const ALERTS = [
 ];
 
 export default function AdminAlertVisibility() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [alerts, setAlerts] = useState(ALERTS);
   const [activeTab, setActiveTab] = useState<"alerts"|"channels"|"escalation">("alerts");

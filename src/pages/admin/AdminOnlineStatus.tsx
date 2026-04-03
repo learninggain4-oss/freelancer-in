@@ -23,8 +23,8 @@ const PAGE_SIZE = 15;
 const ONLINE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
 
 const AdminOnlineStatus = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "online" | "offline">("all");
   const [page, setPage] = useState(1);

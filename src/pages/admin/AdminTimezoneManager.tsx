@@ -25,8 +25,8 @@ const LOGS = [
 ];
 
 export default function AdminTimezoneManager() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [systemTz, setSystemTz] = useState("Asia/Kolkata (IST, UTC+5:30)");
   const [fallbackTz, setFallbackTz] = useState("UTC");

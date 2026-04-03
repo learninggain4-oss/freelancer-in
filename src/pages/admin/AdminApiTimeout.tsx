@@ -19,7 +19,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={healthy:"#4ade80",slow:"#fbbf24","timing-out":"#f87171"};
 
 export default function AdminApiTimeout(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[configs,setConfigs]=useState(()=>load("admin_api_timeout_v1",seed));
   const[testing,setTesting]=useState<string|null>(null);
 

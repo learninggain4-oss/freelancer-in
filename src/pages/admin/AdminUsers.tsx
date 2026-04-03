@@ -31,8 +31,8 @@ const TH = {
 const PAGE_SIZE = 15;
 
 const AdminUsers = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const navigate = useNavigate();
   const [profiles, setProfiles] = useState<FullProfile[]>([]);
   const [loading, setLoading] = useState(true);

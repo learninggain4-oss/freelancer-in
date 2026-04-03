@@ -23,8 +23,8 @@ const LOGS = [
 const TYPES = ["all","admin","user","finance","system","security"];
 
 export default function AdminAuditLogs() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");

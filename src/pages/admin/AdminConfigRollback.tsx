@@ -24,7 +24,7 @@ const seedVersions=():ConfigVersion[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminConfigRollback(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[versions,setVersions]=useState<ConfigVersion[]>(()=>load("admin_config_rollback_v1",seedVersions));
   const[rolling,setRolling]=useState<string|null>(null);

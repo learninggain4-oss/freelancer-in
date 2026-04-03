@@ -49,7 +49,7 @@ function CircularBar({pct,color,size=90,label}:{pct:number;color:string;size?:nu
 }
 
 export default function AdminSystemResources(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
   const{toast}=useToast();
   const[metrics,setMetrics]=useState<ResourceMetric[]>(genMetrics);
   const[alerts]=useState<Alert[]>(()=>load("admin_sys_res_alerts_v1",seedAlerts));

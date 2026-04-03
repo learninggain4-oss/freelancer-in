@@ -18,8 +18,8 @@ const GROUPS = [
 ];
 
 export default function AdminSmartAlertManager() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [groups, setGroups] = useState(GROUPS);
   const [maxPerHour, setMaxPerHour] = useState(20);

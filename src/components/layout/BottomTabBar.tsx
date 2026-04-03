@@ -14,15 +14,23 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
   const location = useLocation();
   const base = userType === "employee" ? "/employee" : "/client";
 
-  // Per-theme colours
   const isDark  = theme === "black" || theme === "wb";
-  const barBg   = theme === "black" ? "rgba(7,7,20,.95)" : theme === "wb" ? "rgba(10,10,28,.97)" : "rgba(255,255,255,.97)";
-  const barBdr  = isDark ? "rgba(255,255,255,.07)"     : "rgba(0,0,0,.09)";
-  const activeC = isDark ? "#a5b4fc" : "#4f46e5";
-  const inactC  = isDark ? "rgba(255,255,255,.32)"     : "#9ca3af";
-  const activePill = isDark ? "rgba(99,102,241,.2)"    : "rgba(99,102,241,.12)";
-  const labelActive = isDark ? "#a5b4fc"               : "#4f46e5";
-  const labelInact  = isDark ? "rgba(255,255,255,.28)" : "#9ca3af";
+  const isWarm  = theme === "warm";
+
+  const barBg = theme === "black"
+    ? "rgba(7,7,20,.95)"
+    : theme === "wb"
+    ? "rgba(10,10,28,.97)"
+    : isWarm
+    ? "rgba(254,246,228,.97)"
+    : "rgba(255,255,255,.97)";
+
+  const barBdr    = isDark ? "rgba(255,255,255,.07)"      : isWarm ? "rgba(180,83,9,.12)"    : "rgba(0,0,0,.09)";
+  const activeC   = isDark ? "#a5b4fc"                    : isWarm ? "#d97706"                : "#4f46e5";
+  const inactC    = isDark ? "rgba(255,255,255,.32)"      : isWarm ? "rgba(120,113,108,.55)"  : "#9ca3af";
+  const activePill = isDark ? "rgba(99,102,241,.2)"       : isWarm ? "rgba(217,119,6,.15)"    : "rgba(99,102,241,.12)";
+  const labelActive = isDark ? "#a5b4fc"                  : isWarm ? "#d97706"                : "#4f46e5";
+  const labelInact  = isDark ? "rgba(255,255,255,.28)"    : isWarm ? "rgba(120,113,108,.5)"   : "#9ca3af";
 
   const tabs = userType === "employee"
     ? [
@@ -47,7 +55,7 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
       background: barBg,
       borderTop: `1px solid ${barBdr}`,
       backdropFilter: "blur(24px)",
-      boxShadow: isDark ? "0 -8px 32px rgba(0,0,0,.4)" : "0 -4px 20px rgba(0,0,0,.08)",
+      boxShadow: isDark ? "0 -8px 32px rgba(0,0,0,.4)" : isWarm ? "0 -4px 20px rgba(180,83,9,.08)" : "0 -4px 20px rgba(0,0,0,.08)",
     }}>
       <div style={{ display: "flex", alignItems: "center", height: 64, maxWidth: 600, margin: "0 auto", padding: "0 4px" }}>
         {tabs.map(tab => {
@@ -70,7 +78,6 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
           );
         })}
 
-        {/* Menu */}
         <button onClick={onMenuClick}
           style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "6px 4px", background: "none", border: "none", cursor: "pointer" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 28, borderRadius: 8 }}>

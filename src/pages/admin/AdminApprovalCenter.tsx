@@ -61,8 +61,8 @@ const statusColor = { pending: "#fbbf24", approved: "#4ade80", rejected: "#f8717
 const catColor: Record<string, string> = { Financial: "#a5b4fc", Security: "#f87171", "User Management": "#4ade80", System: "#fbbf24", Data: "#fb923c" };
 
 export default function AdminApprovalCenter() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

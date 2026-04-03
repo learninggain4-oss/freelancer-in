@@ -43,8 +43,8 @@ function addConfigEntry(by: string, key: string, change: string) {
 }
 
 export default function AdminSafetyCenter() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { signOut, profile } = useAuth();
   const navigate = useNavigate();
   const { logAction, getLogs } = useAdminAudit();

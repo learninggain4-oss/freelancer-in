@@ -55,8 +55,8 @@ function load<T>(key:string, seed:()=>T[]): T[] {
 const statusColor = { queued:"#fbbf24", processing:A1, done:"#4ade80", retrying:"#fb923c", failed:"#f87171", success:"#4ade80", active:"#f87171", resolved:"#94a3b8" };
 
 export default function AdminRateLimiting() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

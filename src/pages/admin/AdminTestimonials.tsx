@@ -36,8 +36,8 @@ const BUCKET = "company-logos";
 const AdminTestimonials = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
 

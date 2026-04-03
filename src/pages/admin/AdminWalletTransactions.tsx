@@ -52,8 +52,8 @@ const typeBadgeVariant = (type: string) => {
 };
 
 const AdminWalletTransactions = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [page, setPage] = useState(1);

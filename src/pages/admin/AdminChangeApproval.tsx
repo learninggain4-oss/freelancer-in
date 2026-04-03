@@ -28,7 +28,7 @@ const sColor={pending:"#fbbf24",approved:"#4ade80",rejected:"#f87171",rolled_bac
 const riskColor={low:"#4ade80",medium:"#fbbf24",high:"#f87171"};
 
 export default function AdminChangeApproval(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"pending"|"history">("pending");
   const[changes,setChanges]=useState<ChangeRequest[]>(()=>load("admin_change_approval_v1",seedChanges));

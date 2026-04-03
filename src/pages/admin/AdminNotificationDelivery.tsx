@@ -27,7 +27,7 @@ const sColor={healthy:"#4ade80",degraded:"#fbbf24",down:"#f87171"};
 const typeIcon={email:Mail,sms:MessageSquare,push:Bell};
 
 export default function AdminNotificationDelivery(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[channels,setChannels]=useState<Channel[]>(()=>load("admin_notif_delivery_v1",seedChannels));
   const[retrying,setRetrying]=useState<string|null>(null);

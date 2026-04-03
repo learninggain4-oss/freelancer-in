@@ -38,8 +38,8 @@ type Countdown = {
 
 const AdminCountdowns = () => {
   const qc = useQueryClient();
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDuration, setNewDuration] = useState("10");

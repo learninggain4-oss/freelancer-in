@@ -33,8 +33,8 @@ const statusColor: Record<string,string> = { preview:A1, pending_approval:"#fbbf
 const riskColor = { low:"#4ade80", medium:"#fbbf24", high:"#f87171" };
 
 export default function AdminBulkOperations() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

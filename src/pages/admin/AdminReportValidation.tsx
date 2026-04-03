@@ -18,7 +18,7 @@ const seed=():Report[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminReportValidation(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[reports,setReports]=useState(()=>load("admin_report_val_v1",seed));
   const[regenerating,setRegenerating]=useState<string|null>(null);
 

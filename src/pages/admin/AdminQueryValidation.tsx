@@ -15,7 +15,7 @@ const seed=():DataSet[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminQueryValidation(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[datasets,setDatasets]=useState(()=>load("admin_query_val_v1",seed));
   const[validating,setValidating]=useState<string|null>(null);
 

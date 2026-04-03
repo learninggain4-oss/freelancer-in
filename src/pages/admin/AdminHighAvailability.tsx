@@ -34,8 +34,8 @@ const RECOVERY: RecoveryStep[] = [
 ];
 
 export default function AdminHighAvailability() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

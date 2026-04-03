@@ -26,8 +26,8 @@ const LOGS = [
 ];
 
 export default function AdminExportControl() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [selectedFormat, setSelectedFormat] = useState("csv");
   const [encoding, setEncoding] = useState("utf8");

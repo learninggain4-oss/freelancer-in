@@ -49,8 +49,8 @@ function load<T>(key:string,seed:()=>T[]): T[] {
 const statusColor: Record<string,string> = { queued:"#94a3b8", sending:A1, delivered:"#4ade80", failed:"#f87171", cooldown:"#fbbf24" };
 
 export default function AdminNotificationCenter() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

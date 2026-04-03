@@ -76,8 +76,8 @@ type RegistrationMeta = {
 const AdminProfileEdit = () => {
   const { profileId } = useParams<{ profileId: string }>();
   const navigate = useNavigate();
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<ProfileData | null>(null);

@@ -38,8 +38,8 @@ type PaymentMethod = {
 const BUCKET = "payment-method-logos";
 
 const AdminPaymentMethods = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const qc = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");

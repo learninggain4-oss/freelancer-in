@@ -34,8 +34,8 @@ const THRESHOLDS = [
 ];
 
 export default function AdminFraudRules() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [rules, setRules] = useState(INIT_RULES);
   const [thresholds, setThresholds] = useState(THRESHOLDS);
   const [tab, setTab] = useState<"rules"|"thresholds"|"simulation">("rules");

@@ -65,8 +65,8 @@ const envColor = { production: "#f87171", staging: "#fbbf24", testing: "#4ade80"
 const providerIcon = { supabase: "⚡", postgresql: "🐘", mysql: "🐬" };
 
 export default function AdminDatabaseManager() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

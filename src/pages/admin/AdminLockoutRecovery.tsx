@@ -28,7 +28,7 @@ const seedRecoveryLogs=():RecoveryLog[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminLockoutRecovery(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"locked"|"logs">("locked");
   const[locked,setLocked]=useState<LockedAdmin[]>(()=>load("admin_lockout_v1",seedLocked));

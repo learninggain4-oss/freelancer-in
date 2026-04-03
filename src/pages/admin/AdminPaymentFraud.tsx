@@ -36,8 +36,8 @@ const statusColor = (s: string) => s==="fraud"?"#f87171":s==="suspicious"?"#f973
 const typeLabel = (t: string) => ({ duplicate:"Duplicate", unusual_amount:"Unusual Amount", rapid_attempt:"Rapid Attempt", refund_abuse:"Refund Abuse", location_mismatch:"Location Mismatch", failed_pattern:"Failed Pattern", chargeback:"Chargeback" }[t] || t);
 
 export default function AdminPaymentFraud() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [payments, setPayments] = useState(PAYMENTS);
   const [filter, setFilter] = useState("all");
   const [actionMsg, setActionMsg] = useState("");

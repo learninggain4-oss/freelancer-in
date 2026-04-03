@@ -30,8 +30,8 @@ type ClientPaymentRow = {
 
 const AdminSettings = () => {
   const { toast } = useToast();
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [countdownHours, setCountdownHours] = useState("");
   const [maxBankAttempts, setMaxBankAttempts] = useState("");
   const [signupBonus, setSignupBonus] = useState("");

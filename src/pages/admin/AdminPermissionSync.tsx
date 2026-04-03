@@ -26,7 +26,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={synced:"#4ade80",stale:"#fbbf24",syncing:"#a5b4fc"};
 
 export default function AdminPermissionSync(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[caches,setCaches]=useState<RoleCache[]>(()=>load("admin_perm_sync_v1",seedCaches));
   const[syncing,setSyncing]=useState<string|null>(null);

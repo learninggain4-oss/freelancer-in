@@ -19,7 +19,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={compliant:"#4ade80","needs-review":"#fbbf24","non-compliant":"#f87171"};
 
 export default function AdminComplianceManager(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[policies,setPolicies]=useState(()=>load("admin_compliance_v1",seed));
   const[reviewing,setReviewing]=useState<string|null>(null);
 

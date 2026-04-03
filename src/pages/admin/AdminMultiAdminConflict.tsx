@@ -21,7 +21,7 @@ const seedEvents=():ChangeEvent[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminMultiAdminConflict(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[locks,setLocks]=useState(()=>load("admin_locks_v1",seedLocks));
   const[events,setEvents]=useState(()=>load("admin_conflict_events_v1",seedEvents));
   const[releasing,setReleasing]=useState<string|null>(null);

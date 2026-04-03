@@ -16,8 +16,8 @@ const GATEWAYS = [
 ];
 
 export default function AdminGatewayFailover() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [gateways, setGateways] = useState(GATEWAYS);
   const [failoverEnabled, setFailoverEnabled] = useState(true);

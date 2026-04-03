@@ -10,8 +10,8 @@ const TH = {
 };
 
 export default function AdminSessionExpiry() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [cookieExpiry, setCookieExpiry] = useState(60);
   const [serverExpiry, setServerExpiry] = useState(60);

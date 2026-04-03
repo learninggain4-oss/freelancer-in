@@ -25,7 +25,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={ok:"#4ade80",warning:"#fbbf24",full:"#f87171"};
 
 export default function AdminLogManagement(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[stores,setStores]=useState<LogStore[]>(()=>load("admin_log_mgmt_v1",seedStores));
   const[rotating,setRotating]=useState<string|null>(null);

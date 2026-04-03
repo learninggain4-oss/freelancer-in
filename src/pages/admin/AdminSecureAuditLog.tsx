@@ -18,7 +18,7 @@ const seed=():AuditEntry[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminSecureAuditLog(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[entries]=useState(()=>load("admin_secure_audit_v1",seed));
   const[verifying,setVerifying]=useState(false);
   const[search,setSearch]=useState("");

@@ -19,8 +19,8 @@ const TOGGLES = [
 ];
 
 export default function AdminFeatureToggleConflict() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [toggles, setToggles] = useState(TOGGLES);
   const [testing, setTesting] = useState<string|null>(null);

@@ -51,8 +51,8 @@ function load<T>(key:string,seed:()=>T[]): T[] {
 const statusColor = { healthy:"#4ade80", stale:"#fbbf24", failed:"#f87171" };
 
 export default function AdminCacheManager() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

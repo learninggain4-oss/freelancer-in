@@ -24,7 +24,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 function safeFmt(raw:string|undefined,fmt:string,fallback="—"):string{try{if(!raw)return fallback;const d=new Date(raw);if(isNaN(d.getTime()))return fallback;return format(d,fmt);}catch{return fallback;}}
 
 export default function AdminTimeSyncSystem(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[servers,setServers]=useState<NTPServer[]>(()=>load("admin_ntp_v1",seedServers));
   const[now,setNow]=useState(new Date());

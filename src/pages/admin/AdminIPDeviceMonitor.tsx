@@ -31,8 +31,8 @@ const DEVICE_RECORDS: DeviceRecord[] = [
 const statusColor = (s: string) => s==="blocked"||s==="blacklisted"?"#f87171":s==="suspicious"?"#f97316":s==="whitelisted"?"#4ade80":"#94a3b8";
 
 export default function AdminIPDeviceMonitor() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [tab, setTab] = useState<"ip"|"device">("ip");
   const [ipRecords, setIpRecords] = useState(IP_RECORDS);
   const [devices, setDevices] = useState(DEVICE_RECORDS);

@@ -18,7 +18,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sevColor={low:"#4ade80",medium:"#fbbf24",high:"#f87171"};
 
 export default function AdminCsrfProtection(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[events]=useState(()=>load("admin_csrf_v1",seedEvents));
   const[config,setConfig]=useState({tokenRotation:true,originValidation:true,middlewareEnabled:true,rotationIntervalMins:30,allowedOrigins:"https://freelancer.in"});
   const[rotating,setRotating]=useState(false);

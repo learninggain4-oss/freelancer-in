@@ -32,7 +32,7 @@ const sColor={ready:"#4ade80",activating:"#a5b4fc",not_ready:"#f87171"};
 const prColor={critical:"#f87171",high:"#fb923c",medium:"#fbbf24"};
 
 export default function AdminDisasterRecovery(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"plans"|"logs">("plans");
   const[plans,setPlans]=useState<RecoveryPlan[]>(()=>load("admin_dr_plans_v1",seedPlans));

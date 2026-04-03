@@ -28,8 +28,8 @@ const TH = {
 };
 
 const AdminIpBlocking = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [newIp, setNewIp] = useState("");
   const [reason, setReason] = useState("");
   const [search, setSearch] = useState("");

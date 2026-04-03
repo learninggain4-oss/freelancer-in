@@ -38,8 +38,8 @@ const RESTRICTION_OPTS = [
 const blockTypeColor = (t: string) => t==="permanent"?"#f87171":t==="temporary"?"#fbbf24":t==="freeze"?"#60a5fa":"#4ade80";
 
 export default function AdminAccountRestrictions() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [users, setUsers] = useState(USERS);
   const [selected, setSelected] = useState<RestrictedUser|null>(null);
   const [actionPanel, setActionPanel] = useState<string|null>(null);

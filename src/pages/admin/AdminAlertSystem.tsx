@@ -56,8 +56,8 @@ const sevBg    = { critical: "rgba(248,113,113,.1)", high: "rgba(251,146,60,.1)"
 const chanIcon: Record<string, React.ElementType> = { email: Mail, sms: MessageSquare, push: Smartphone, webhook: Globe };
 
 export default function AdminAlertSystem() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

@@ -18,7 +18,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={valid:"#4ade80",corrupted:"#f87171",recovering:"#fbbf24"};
 
 export default function AdminFileUploadValidation(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[uploads,setUploads]=useState(()=>load("admin_file_upload_v1",seed));
   const[recovering,setRecovering]=useState<string|null>(null);
   const[rules,setRules]=useState({maxSizeMB:50,checksumEnabled:true,retryEnabled:true});

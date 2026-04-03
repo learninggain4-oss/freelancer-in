@@ -39,8 +39,8 @@ const audienceColor: Record<string, string> = {
 };
 
 const AdminAnnouncements = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<any>(null);

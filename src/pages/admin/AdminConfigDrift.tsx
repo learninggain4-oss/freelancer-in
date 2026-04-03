@@ -19,7 +19,7 @@ const seed=():ConfigItem[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminConfigDrift(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[configs,setConfigs]=useState(()=>load("admin_config_drift_v1",seed));
   const[syncing,setSyncing]=useState<string|null>(null);
   const[syncAll,setSyncAll]=useState(false);

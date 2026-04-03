@@ -22,7 +22,7 @@ const seedLogs=():AccessLog[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminFilePermissions(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[rules,setRules]=useState(()=>load("admin_file_perm_v1",seedRules));
   const[logs]=useState(()=>load("admin_file_access_logs_v1",seedLogs));
   const[tab,setTab]=useState<"rules"|"logs">("rules");

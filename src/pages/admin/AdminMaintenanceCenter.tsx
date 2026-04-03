@@ -52,8 +52,8 @@ function load<T>(key: string, seed: ()=>T[]): T[] {
 const riskColor = { safe:"#4ade80", medium:"#fbbf24", high:"#f87171" };
 
 export default function AdminMaintenanceCenter() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

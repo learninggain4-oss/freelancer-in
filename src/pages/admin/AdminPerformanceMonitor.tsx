@@ -19,8 +19,8 @@ const ACTIONS = [
 ];
 
 export default function AdminPerformanceMonitor() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [activeTab, setActiveTab] = useState<"actions"|"alerts"|"logs">("actions");
   const [retrying, setRetrying] = useState<string|null>(null);
 

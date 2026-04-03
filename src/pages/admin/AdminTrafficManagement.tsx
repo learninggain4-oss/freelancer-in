@@ -10,7 +10,7 @@ const BARS=20;
 function genBar(rps:number){return Math.max(5,Math.min(100,Math.round(rps/20+Math.random()*15)));}
 
 export default function AdminTrafficManagement(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[rps,setRps]=useState(820);
   const[bars,setBars]=useState<number[]>(Array(BARS).fill(0).map(()=>genBar(820)));
   const[config,setConfig]=useState({rateLimit:1000,autoScaling:true,loadBalancing:true,ddosProtection:true,maxConcurrent:5000});

@@ -29,8 +29,8 @@ const statusColor = (s: string) => s==="open"?"#60a5fa":s==="investigating"?"#fb
 const prioColor = (p: string) => p==="critical"?"#f87171":p==="high"?"#f97316":p==="medium"?"#fbbf24":"#4ade80";
 
 export default function AdminFraudCases() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [cases, setCases] = useState(CASES);
   const [selected, setSelected] = useState<FraudCase|null>(CASES[0]);
   const [noteInput, setNoteInput] = useState("");

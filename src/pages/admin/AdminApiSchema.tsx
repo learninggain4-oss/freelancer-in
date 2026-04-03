@@ -19,7 +19,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={ok:"#4ade80",warning:"#fbbf24",breaking:"#f87171"};
 
 export default function AdminApiSchema(){
-  const{theme}=useDashboardTheme();const T=TH[theme];const{toast}=useToast();
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
   const[endpoints,setEndpoints]=useState(()=>load("admin_api_schema_v1",seed));
   const[checking,setChecking]=useState(false);
 

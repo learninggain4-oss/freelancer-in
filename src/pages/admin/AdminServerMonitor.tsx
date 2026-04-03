@@ -32,8 +32,8 @@ function fmtBytes(bytes: number): string {
 }
 
 export default function AdminServerMonitor() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
   const [uptime, setUptime] = useState(getUptime);

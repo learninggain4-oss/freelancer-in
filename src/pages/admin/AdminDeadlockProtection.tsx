@@ -30,7 +30,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={running:"#4ade80",waiting:"#fbbf24",deadlock:"#f87171",resolved:"#94a3b8"};
 
 export default function AdminDeadlockProtection(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"locks"|"history">("locks");
   const[locks,setLocks]=useState<LockEntry[]>(()=>load("admin_locks_v1",seedLocks));

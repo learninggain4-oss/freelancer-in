@@ -17,8 +17,8 @@ const CAMPAIGNS = [
 ];
 
 export default function AdminBulkNotification() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [retrying, setRetrying] = useState<string|null>(null);
   const [activeTab, setActiveTab] = useState<"campaigns"|"metrics"|"queue">("campaigns");

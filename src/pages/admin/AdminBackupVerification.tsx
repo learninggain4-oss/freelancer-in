@@ -27,7 +27,7 @@ const sColor={verified:"#4ade80",unverified:"#fbbf24",corrupt:"#f87171",testing:
 const tColor={full:A1,incremental:"#4ade80",snapshot:"#fbbf24"};
 
 export default function AdminBackupVerification(){
-  const{theme}=useDashboardTheme();const T=TH[theme];
+  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[backups,setBackups]=useState<Backup[]>(()=>load("admin_backup_verify_v1",seedBackups));
   const[verifying,setVerifying]=useState<string|null>(null);

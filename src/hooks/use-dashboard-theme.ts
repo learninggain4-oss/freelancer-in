@@ -1,21 +1,18 @@
 import { useState, useEffect } from "react";
 
-export type DashboardTheme = "black" | "white" | "wb";
+export type DashboardTheme = "black" | "white" | "wb" | "warm";
+export type DashboardThemeKey = "black" | "white" | "wb";
 
 const STORAGE_KEY = "dashboard_theme";
 
-// Apply immediately at module load so there's no flash-of-light-mode on startup
 ;(() => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    // Default theme is "black"; apply dark unless user explicitly chose white/wb
     if (!saved || saved === "black") document.documentElement.classList.add("dark");
     else document.documentElement.classList.remove("dark");
   } catch {}
 })();
 
-/** Apply / remove the Tailwind `dark` class on <html> so that all shadcn
- *  CSS variables (background, foreground, input, border, …) switch correctly. */
 function applyDarkClass(t: DashboardTheme) {
   if (t === "black") {
     document.documentElement.classList.add("dark");
@@ -24,19 +21,24 @@ function applyDarkClass(t: DashboardTheme) {
   }
 }
 
+export function resolveThemeKey(t: DashboardTheme): DashboardThemeKey {
+  return t === "warm" ? "white" : t;
+}
+
 export function useDashboardTheme() {
   const [theme, setThemeState] = useState<DashboardTheme>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved === "black" || saved === "white" || saved === "wb") return saved;
+      if (saved === "black" || saved === "white" || saved === "wb" || saved === "warm") return saved;
     } catch {}
     return "black";
   });
 
-  // Apply dark class on initial mount and whenever theme changes
   useEffect(() => {
     applyDarkClass(theme);
   }, [theme]);
+
+  const themeKey: DashboardThemeKey = resolveThemeKey(theme);
 
   const setTheme = (t: DashboardTheme) => {
     setThemeState(t);
@@ -44,5 +46,5 @@ export function useDashboardTheme() {
     try { localStorage.setItem(STORAGE_KEY, t); } catch {}
   };
 
-  return { theme, setTheme };
+  return { theme, themeKey, setTheme };
 }

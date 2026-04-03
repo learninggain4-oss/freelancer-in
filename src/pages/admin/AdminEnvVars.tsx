@@ -48,8 +48,8 @@ const BLANK: { name: string; value: string; description: string; environment: "a
 const envBadge: Record<string, { color: string; bg: string }> = { all: { color: "#a5b4fc", bg: "rgba(99,102,241,.12)" }, production: { color: "#f87171", bg: "rgba(248,113,113,.12)" }, staging: { color: "#fbbf24", bg: "rgba(251,191,36,.12)" }, testing: { color: "#4ade80", bg: "rgba(74,222,128,.12)" } };
 
 export default function AdminEnvVars() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 

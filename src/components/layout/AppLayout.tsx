@@ -133,6 +133,43 @@ const T = {
     shadowLg:   "0 8px 32px rgba(0,0,0,.10)",
     shadowXl:   "0 12px 40px rgba(0,0,0,.11)",
   },
+  warm: {
+    shell:      "#fef6e4",
+    header:     "rgba(254,246,228,.97)",
+    headerBdr:  "rgba(180,83,9,.12)",
+    logo:       "#1c1a17",
+    logoSub:    "rgba(120,113,108,.6)",
+    mainBg:     "#fef6e4",
+    mainText:   "#1c1a17",
+    mainSub:    "#78716c",
+    cardBg:     "#fffdf7",
+    cardBdr:    "rgba(180,83,9,.1)",
+    mutedBg:    "#fef3c7",
+    inputBg:    "#fffdf7",
+    inputBdr:   "rgba(180,83,9,.18)",
+    inputFg:    "#1c1a17",
+    inputPh:    "rgba(120,113,108,.55)",
+    accent:     "#d97706",
+    green:      "#16a34a",
+    orange:     "#b45309",
+    red:        "#dc2626",
+    orbA:       "rgba(217,119,6,.1)",
+    orbB:       "rgba(245,158,11,.07)",
+    gridLine:   "rgba(180,83,9,.018)",
+    hoverRow:   "rgba(180,83,9,.05)",
+    iconBtn:    "rgba(180,83,9,.08)",
+    iconBtnHov: "rgba(180,83,9,.14)",
+    dropBg:     "#fffdf7",
+    dropBdr:    "rgba(180,83,9,.12)",
+    searchBg:   "rgba(180,83,9,.07)",
+    searchBdr:  "rgba(180,83,9,.14)",
+    footerBg:   "rgba(254,246,228,.97)",
+    footerBdr:  "rgba(180,83,9,.1)",
+    shadowSm:   "0 2px 12px rgba(180,83,9,.08)",
+    shadowMd:   "0 4px 20px rgba(180,83,9,.1)",
+    shadowLg:   "0 8px 32px rgba(180,83,9,.12)",
+    shadowXl:   "0 12px 40px rgba(180,83,9,.14)",
+  },
 };
 
 function buildCss(t: typeof T.black): string {
@@ -216,6 +253,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
   const tok = T[theme];
   const css = buildCss(tok);
   const isHeaderDark = theme === "black" || theme === "wb";
+  const isWarm = theme === "warm";
   const basePath = userType === "employee" ? "/employee" : "/client";
 
   const { data: walletProfile } = useQuery({
@@ -251,9 +289,9 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
 
   const iconBtnStyle: React.CSSProperties = {
     width: 34, height: 34, borderRadius: 9, background: tok.iconBtn,
-    border: `1px solid ${isHeaderDark ? "rgba(255,255,255,.08)" : "rgba(0,0,0,.07)"}`,
+    border: `1px solid ${isHeaderDark ? "rgba(255,255,255,.08)" : isWarm ? "rgba(180,83,9,.14)" : "rgba(0,0,0,.07)"}`,
     display: "flex", alignItems: "center", justifyContent: "center",
-    cursor: "pointer", color: isHeaderDark ? "rgba(255,255,255,.5)" : "#6b7280",
+    cursor: "pointer", color: isHeaderDark ? "rgba(255,255,255,.5)" : isWarm ? "#78716c" : "#6b7280",
     transition: "all .15s", flexShrink: 0,
   };
 
@@ -298,7 +336,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
           <div ref={searchRef} style={{ flex: 1, maxWidth: 340, position: "relative", margin: "0 4px" }}>
             {searchOpen ? (
               <div style={{ display: "flex", alignItems: "center", gap: 7, background: tok.searchBg, border: `1px solid ${A1}55`, borderRadius: 10, padding: "0 11px", height: 34 }}>
-                <Search size={12} color={isHeaderDark ? "rgba(255,255,255,.4)" : "#9ca3af"} />
+                <Search size={12} color={isHeaderDark ? "rgba(255,255,255,.4)" : isWarm ? "rgba(120,113,108,.6)" : "#9ca3af"} />
                 <input autoFocus value={searchQ} onChange={e => setSearchQ(e.target.value)}
                   placeholder="Search features..."
                   style={{ flex: 1, background: "none", border: "none", outline: "none", color: isHeaderDark ? "rgba(255,255,255,.9)" : "#0d0d24", fontSize: 12.5 }} />
@@ -338,8 +376,8 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
               style={{ alignItems: "center", gap: 7, padding: "5px 10px", borderRadius: 10, background: `${A1}15`, border: `1px solid ${A1}30`, cursor: "pointer", height: 34 }}
               onMouseEnter={e => (e.currentTarget.style.background = `${A1}25`)}
               onMouseLeave={e => (e.currentTarget.style.background = `${A1}15`)}>
-              <IndianRupee size={12} color={isHeaderDark ? "#a5b4fc" : "#4f46e5"} />
-              <span style={{ fontSize: 12.5, fontWeight: 800, color: isHeaderDark ? "#a5b4fc" : "#4f46e5" }}>
+              <IndianRupee size={12} color={isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : "#4f46e5"} />
+              <span style={{ fontSize: 12.5, fontWeight: 800, color: isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : "#4f46e5" }}>
                 {walletBalance.toLocaleString("en-IN")}
               </span>
             </button>

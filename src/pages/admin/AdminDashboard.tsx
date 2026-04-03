@@ -174,8 +174,8 @@ const BACKUP_HISTORY = [
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { theme } = useDashboardTheme();
-  const tok = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const tok = TH[themeKey];
 
   const [stats, setStats] = useState({
     totalUsers: 0, pendingApprovals: 0, approvedUsers: 0,

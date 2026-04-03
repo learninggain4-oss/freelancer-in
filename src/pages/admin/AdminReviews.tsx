@@ -26,8 +26,8 @@ const TH = {
 
 const AdminReviews = () => {
   const queryClient = useQueryClient();
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [search, setSearch] = useState("");
   const [showCleared, setShowCleared] = useState(false);
   const [respondingId, setRespondingId] = useState<string | null>(null);

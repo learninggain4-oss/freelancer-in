@@ -27,8 +27,8 @@ type StatusFilter = "all" | "pending" | "approved" | "rejected";
 const AdminWalletUpgrades = () => {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
-  const { theme } = useDashboardTheme();
-  const tok = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const tok = TH[themeKey];
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
   const [rejectDialog, setRejectDialog] = useState<{ id: string; open: boolean }>({ id: "", open: false });
@@ -269,8 +269,8 @@ const AdminUpgradeChatPanel = ({
 }: {
   requestId: string; request: any; onBack: () => void; profileId: string;
 }) => {
-  const { theme } = useDashboardTheme();
-  const tok = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const tok = TH[themeKey];
   const { messages, isLoading, sendMessage } = useUpgradeChat(requestId);
   const [newMessage, setNewMessage] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);

@@ -18,8 +18,8 @@ const PATHS = [
 ];
 
 export default function AdminFilePathManagement() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [scanning, setScanning] = useState(false);
   const [search, setSearch] = useState("");

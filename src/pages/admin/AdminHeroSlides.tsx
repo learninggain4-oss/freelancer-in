@@ -30,8 +30,8 @@ interface HeroSlide {
 
 const AdminHeroSlides = () => {
   const queryClient = useQueryClient();
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState({ title: "", subtitle: "", is_active: true });

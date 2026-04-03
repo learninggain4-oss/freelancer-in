@@ -45,8 +45,8 @@ interface ConversationMetric {
 }
 
 const AdminSupportReporting = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [dateFrom, setDateFrom] = useState(
     format(subDays(new Date(), 30), "yyyy-MM-dd")
   );

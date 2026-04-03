@@ -158,8 +158,8 @@ function isDuplicate(
 
 const AdminTimeSlotManagement = () => {
   const queryClient = useQueryClient();
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const [slotDialog, setSlotDialog] = useState<{ open: boolean; form: SlotForm | null }>({
     open: false,

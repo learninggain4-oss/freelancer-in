@@ -31,8 +31,8 @@ function loadBackups(): Backup[] {
 const BACKUP_TABLES = ["profiles", "withdrawals", "recovery_requests", "aadhaar_verifications", "bank_verifications", "jobs", "attendance_records", "wallet_transactions", "ip_blocks", "announcements"];
 
 export default function AdminBackups() {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 
