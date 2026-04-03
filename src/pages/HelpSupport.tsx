@@ -502,7 +502,13 @@ const HelpSupport = () => {
                 <Trash2 size={22} style={{ color: "#f87171" }} />
               </div>
               <p style={{ fontWeight: 800, fontSize: 16, color: T.text, textAlign: "center", margin: "0 0 8px" }}>Clear Chat History?</p>
-              <p style={{ fontSize: 13, color: T.sub, textAlign: "center", margin: "0 0 20px", lineHeight: 1.5 }}>All messages in this conversation will be permanently deleted. This cannot be undone.</p>
+              <p style={{ fontSize: 13, color: T.sub, textAlign: "center", margin: "0 0 12px", lineHeight: 1.5 }}>All messages in this conversation will be permanently deleted. This cannot be undone.</p>
+              <div style={{ background: "rgba(251,191,36,.1)", border: "1px solid rgba(251,191,36,.3)", borderRadius: 10, padding: "10px 13px", marginBottom: 20, display: "flex", alignItems: "flex-start", gap: 8 }}>
+                <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>⚠️</span>
+                <p style={{ fontSize: 12, color: "#fbbf24", margin: 0, lineHeight: 1.55, fontWeight: 500 }}>
+                  ഈ ചാറ്റ് ഒരിക്കൽ ഡിലീറ്റ് ചെയ്‌താൽ ഒരു ആവശ്യഘട്ടത്തിലും വീണ്ടെടുക്കാൻ സാധിക്കില്ല. ഡിലീറ്റ് ചെയ്യുന്നതിന് മുൻപ് ഒന്ന് ആലോചിക്കുക.
+                </p>
+              </div>
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => setConfirmClear(false)} style={{ flex: 1, padding: "11px", borderRadius: 12, border: `1px solid ${T.ctxBorder}`, background: "none", cursor: "pointer", color: T.sub, fontSize: 13, fontWeight: 600 }}>Cancel</button>
                 <button onClick={handleClearHistory} style={{ flex: 1, padding: "11px", borderRadius: 12, border: "none", background: "linear-gradient(135deg,#ef4444,#dc2626)", cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 700 }}>Clear All</button>
