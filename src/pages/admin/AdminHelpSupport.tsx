@@ -861,9 +861,16 @@ const AdminHelpSupport = () => {
             <ArrowLeft size={20} style={{ color: WA.headerText }} />
           </button>
           {/* Avatar */}
-          <div style={{ width: 40, height: 40, borderRadius: "50%", background: WA.avatarBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: "2px solid rgba(255,255,255,.15)" }}>
-            <span style={{ fontWeight: 700, fontSize: 16, color: theme === "black" ? "#e9edef" : "#fff" }}>{userName.charAt(0).toUpperCase()}</span>
-          </div>
+          {(() => {
+            const photo = (selectedConv as any).user?.profile_photo_path;
+            return photo ? (
+              <img src={photo} alt={userName} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "2px solid rgba(255,255,255,.2)" }} />
+            ) : (
+              <div style={{ width: 40, height: 40, borderRadius: "50%", background: WA.avatarBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: "2px solid rgba(255,255,255,.15)" }}>
+                <span style={{ fontWeight: 700, fontSize: 16, color: theme === "black" ? "#e9edef" : "#fff" }}>{userName.charAt(0).toUpperCase()}</span>
+              </div>
+            );
+          })()}
           {/* Name + status */}
           <div style={{ flex: 1, cursor: "pointer" }}>
             <p style={{ fontWeight: 600, fontSize: 15, color: WA.headerText, margin: 0, lineHeight: 1.2 }}>{userName}</p>
@@ -1390,14 +1397,22 @@ const AdminHelpSupport = () => {
                 onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = WA.convItem; }}
               >
                 {/* Circular avatar with online dot */}
-                <div style={{ position: "relative", flexShrink: 0 }}>
-                  <div style={{ width: 50, height: 50, borderRadius: "50%", background: avatarBg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ fontWeight: 700, fontSize: 20, color: "#fff" }}>{initial}</span>
-                  </div>
-                  {isOnline && (
-                    <span style={{ position: "absolute", bottom: 2, right: 2, width: 12, height: 12, borderRadius: "50%", background: "#25d366", border: `2px solid ${WA.convItem}` }} />
-                  )}
-                </div>
+                {(() => {
+                  const photo = (conv as any).user?.profile_photo_path;
+                  return (
+                    <div style={{ position: "relative", flexShrink: 0 }}>
+                      {photo ? (
+                        <img src={photo} alt={userName} style={{ width: 50, height: 50, borderRadius: "50%", objectFit: "cover", display: "block" }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget.nextSibling as HTMLElement).style.display = "flex"; }} />
+                      ) : null}
+                      <div style={{ width: 50, height: 50, borderRadius: "50%", background: avatarBg, display: photo ? "none" : "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ fontWeight: 700, fontSize: 20, color: "#fff" }}>{initial}</span>
+                      </div>
+                      {isOnline && (
+                        <span style={{ position: "absolute", bottom: 2, right: 2, width: 12, height: 12, borderRadius: "50%", background: "#25d366", border: `2px solid ${WA.convItem}` }} />
+                      )}
+                    </div>
+                  );
+                })()}
 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
