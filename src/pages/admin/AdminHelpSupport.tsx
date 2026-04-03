@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSupportChat, useAllConversations } from "@/hooks/use-support-chat";
+import { useSupportChat, useAllConversations, useDeleteConversation } from "@/hooks/use-support-chat";
 import { useCustomQuickReplies } from "@/hooks/use-custom-quick-replies";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -442,7 +442,21 @@ const AdminHelpSupport = () => {
     emojiPicker:  "#ffffff",
   };
   const { data: conversations = [], isLoading: loadingConvs } = useAllConversations();
+  const { deleteConversation } = useDeleteConversation();
+  const [confirmDeleteConvId, setConfirmDeleteConvId] = useState<string | null>(null);
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
+
+  const handleDeleteConversation = async (convId: string) => {
+    try {
+      await deleteConversation(convId);
+      if (selectedConvId === convId) setSelectedConvId(null);
+      toast.success("Conversation deleted");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setConfirmDeleteConvId(null);
+    }
+  };
   const { messages, isLoading: loadingMessages, sendMessage, deleteMessage, clearHistory, toggleReaction } = useSupportChat(selectedConvId ?? undefined);
   const { customReplies, customCategories } = useCustomQuickReplies();
   const [newMessage, setNewMessage] = useState("");
@@ -806,6 +820,33 @@ const AdminHelpSupport = () => {
           </div>
         )}
 
+        {/* ── Confirm delete conversation dialog (from chat header) ── */}
+        {confirmDeleteConvId && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center" }}
+            onClick={() => setConfirmDeleteConvId(null)}>
+            <div style={{ background: WA.ctxMenu, border: `1px solid ${WA.ctxBorder}`, borderRadius: 16, padding: 28, maxWidth: 340, width: "90%", boxShadow: "0 16px 48px rgba(0,0,0,.4)" }}
+              onClick={e => e.stopPropagation()}>
+              <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(239,68,68,.12)", border: "1px solid rgba(239,68,68,.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                <Trash2 size={22} style={{ color: "#ef4444" }} />
+              </div>
+              <p style={{ fontWeight: 700, fontSize: 16, color: WA.incomingText, marginBottom: 8, textAlign: "center" }}>Delete Conversation?</p>
+              <p style={{ fontSize: 13, color: WA.subText, marginBottom: 24, textAlign: "center", lineHeight: 1.5 }}>
+                All messages will be permanently deleted. The user can still send new messages after deletion.
+              </p>
+              <div style={{ display: "flex", gap: 12 }}>
+                <button onClick={() => setConfirmDeleteConvId(null)}
+                  style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: `1px solid ${WA.ctxBorder}`, background: "transparent", color: WA.incomingText, cursor: "pointer", fontWeight: 600, fontSize: 14 }}>
+                  Cancel
+                </button>
+                <button onClick={() => handleDeleteConversation(confirmDeleteConvId)}
+                  style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "none", background: "#ef4444", color: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 14 }}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── Confirm clear dialog ── */}
         {confirmClear && (
           <div style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setConfirmClear(false)}>
@@ -897,12 +938,15 @@ const AdminHelpSupport = () => {
               <MoreVertical size={20} style={{ color: WA.headerText }} />
             </button>
             {showHeaderMenu && (
-              <div onClick={e => e.stopPropagation()} style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, minWidth: 190, background: WA.ctxMenu, border: `1px solid ${WA.ctxBorder}`, borderRadius: 10, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,.3)", zIndex: 50 }}>
+              <div onClick={e => e.stopPropagation()} style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, minWidth: 200, background: WA.ctxMenu, border: `1px solid ${WA.ctxBorder}`, borderRadius: 10, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,.3)", zIndex: 50 }}>
                 <button onClick={() => { setShowHeaderMenu(false); setSearchOpen(s => !s); setSearchQuery(""); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", background: "none", border: "none", cursor: "pointer", color: WA.incomingText, fontSize: 13.5, fontWeight: 500, borderBottom: `1px solid ${WA.ctxBorder}` }}>
                   <Search size={16} style={{ color: WA.subText }} /> Search
                 </button>
-                <button onClick={() => { setShowHeaderMenu(false); setConfirmClear(true); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", background: "none", border: "none", cursor: "pointer", color: "#f87171", fontSize: 13.5, fontWeight: 500 }}>
-                  <Trash2 size={16} style={{ color: "#f87171" }} /> Clear History
+                <button onClick={() => { setShowHeaderMenu(false); setConfirmClear(true); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", background: "none", border: "none", cursor: "pointer", color: "#f87171", fontSize: 13.5, fontWeight: 500, borderBottom: `1px solid ${WA.ctxBorder}` }}>
+                  <Trash2 size={16} style={{ color: "#f87171" }} /> Clear Messages
+                </button>
+                <button onClick={() => { setShowHeaderMenu(false); setConfirmDeleteConvId(selectedConvId!); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: 13.5, fontWeight: 600 }}>
+                  <Trash2 size={16} style={{ color: "#ef4444" }} /> Delete Conversation
                 </button>
               </div>
             )}
@@ -1316,6 +1360,33 @@ const AdminHelpSupport = () => {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0, height: "calc(100vh - 8rem)", marginTop: -8, borderRadius: 12, overflow: "hidden", boxShadow: "0 8px 40px rgba(0,0,0,.25)", background: WA.convBg }}>
 
+      {/* ── Confirm delete conversation dialog ── */}
+      {confirmDeleteConvId && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={() => setConfirmDeleteConvId(null)}>
+          <div style={{ background: WA.ctxMenu, border: `1px solid ${WA.ctxBorder}`, borderRadius: 16, padding: 28, maxWidth: 340, width: "90%", boxShadow: "0 16px 48px rgba(0,0,0,.4)" }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(239,68,68,.12)", border: "1px solid rgba(239,68,68,.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <Trash2 size={22} style={{ color: "#ef4444" }} />
+            </div>
+            <p style={{ fontWeight: 700, fontSize: 16, color: WA.incomingText, marginBottom: 8, textAlign: "center" }}>Delete Conversation?</p>
+            <p style={{ fontSize: 13, color: WA.subText, marginBottom: 24, textAlign: "center", lineHeight: 1.5 }}>
+              All messages will be permanently deleted. The user can still send new messages after deletion.
+            </p>
+            <div style={{ display: "flex", gap: 12 }}>
+              <button onClick={() => setConfirmDeleteConvId(null)}
+                style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: `1px solid ${WA.ctxBorder}`, background: "transparent", color: WA.incomingText, cursor: "pointer", fontWeight: 600, fontSize: 14 }}>
+                Cancel
+              </button>
+              <button onClick={() => handleDeleteConversation(confirmDeleteConvId)}
+                style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "none", background: "#ef4444", color: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 14 }}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Conversations header ── */}
       <div style={{ background: WA.header, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1432,6 +1503,17 @@ const AdminHelpSupport = () => {
                     )}
                   </div>
                 </div>
+
+                {/* Delete button — visible on hover */}
+                <button
+                  onClick={e => { e.stopPropagation(); setConfirmDeleteConvId(conv.id); }}
+                  title="Delete conversation"
+                  style={{ flexShrink: 0, width: 32, height: 32, borderRadius: "50%", background: "rgba(239,68,68,.1)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity .15s" }}
+                  onMouseEnter={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.background = "rgba(239,68,68,.18)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = "0"; e.currentTarget.style.background = "rgba(239,68,68,.1)"; }}
+                >
+                  <Trash2 size={15} style={{ color: "#ef4444" }} />
+                </button>
               </div>
             );
           })

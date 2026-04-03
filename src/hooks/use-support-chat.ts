@@ -321,6 +321,30 @@ export const useMyConversation = () => {
 };
 
 /** Admin: list all support conversations with user info and last message */
+export const useDeleteConversation = () => {
+  const queryClient = useQueryClient();
+  const AQK = ["admin-support-conversations"];
+
+  const deleteConversation = async (conversationId: string) => {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token ?? "";
+    const res = await fetch("/functions/v1/support-delete-conversation", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ conversationId }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "Delete failed");
+    // Optimistically remove from cache
+    queryClient.setQueryData(AQK, (old: any[]) =>
+      (old || []).filter((c: any) => c.id !== conversationId)
+    );
+    queryClient.invalidateQueries({ queryKey: AQK });
+  };
+
+  return { deleteConversation };
+};
+
 export const useAllConversations = () => {
   const queryClient = useQueryClient();
   const AQK = ["admin-support-conversations"];

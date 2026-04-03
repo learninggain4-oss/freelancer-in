@@ -1092,6 +1092,48 @@ app.delete("/functions/v1/support-clear-history", async (req, res) => {
   }
 });
 
+// ── Delete entire support conversation (admin only) ──────────────────
+app.delete("/functions/v1/support-delete-conversation", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const { conversationId } = req.body;
+    if (!conversationId) return res.status(400).json({ error: "conversationId required" });
+
+    const supabase = getAdminClient();
+
+    // Verify caller is admin
+    const { data: callerProfile } = await supabase
+      .from("profiles")
+      .select("user_type")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (callerProfile?.user_type !== "admin") {
+      return res.status(403).json({ error: "Admin only" });
+    }
+
+    // Verify conversation exists
+    const { data: conv, error: fetchErr } = await supabase
+      .from("support_conversations")
+      .select("id")
+      .eq("id", conversationId)
+      .maybeSingle();
+    if (fetchErr || !conv) return res.status(404).json({ error: "Conversation not found" });
+
+    // Delete conversation — messages cascade-delete via FK ON DELETE CASCADE
+    const { error } = await supabase
+      .from("support_conversations")
+      .delete()
+      .eq("id", conversationId);
+    if (error) return res.status(500).json({ error: error.message });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`API server running on port ${PORT}`);
 });
