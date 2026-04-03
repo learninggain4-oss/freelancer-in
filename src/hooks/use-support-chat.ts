@@ -344,7 +344,7 @@ export const useAllConversations = () => {
       const { data, error } = await supabase
         .from("support_conversations")
         .select("*, user:user_id(full_name, user_type, user_code, email)")
-        .order("updated_at", { ascending: false });
+        .order("created_at", { ascending: true });
       if (error) throw error;
 
       const enriched = await Promise.all(
