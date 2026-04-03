@@ -1188,6 +1188,24 @@ app.post("/functions/v1/mpin-set", async (req, res) => {
   }
 });
 
+// POST /functions/v1/mpin-reset — clear M-Pin (user authenticated, logs out after)
+app.post("/functions/v1/mpin-reset", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const adminAuth = getAdminClient().auth.admin;
+    const { error } = await adminAuth.updateUserById(user.id, {
+      app_metadata: { mpin_hash: null },
+    });
+    if (error) return res.status(500).json({ error: error.message });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /functions/v1/mpin-verify — verify M-Pin
 app.post("/functions/v1/mpin-verify", async (req, res) => {
   try {
