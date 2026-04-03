@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import BottomTabBar from "./BottomTabBar";
 import SideDrawer from "./SideDrawer";
+import FlexpaySupportWidget from "./FlexpaySupportWidget";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import ThemeToggle from "./ThemeToggle";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
@@ -554,6 +555,10 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
 
       <BottomTabBar userType={userType} onMenuClick={() => setDrawerOpen(true)} theme={theme} />
       <SideDrawer open={drawerOpen} onOpenChange={setDrawerOpen} theme={theme} />
+
+      {userType === "employee" && user?.id && profile?.id && (
+        <FlexpaySupportWidget theme={theme} userId={user.id} profileId={profile.id} />
+      )}
     </div>
   );
 };
