@@ -202,6 +202,7 @@ const HelpSupport = () => {
       await sendMessage(msgWithReply);
       setNewMessage("");
       setReplyTo(null);
+      if (inputRef.current) { inputRef.current.style.height = "auto"; }
       setShowEmoji(false);
       setTimeout(() => scrollToBottom(), 100);
     } catch (e: any) { toast.error(e.message); }
@@ -222,8 +223,8 @@ const HelpSupport = () => {
     e.target.value = "";
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  const handleKeyDown = (_e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Enter adds a new line (WhatsApp-style). Send only via Send button.
   };
 
   const openCtxMenu = (e: React.MouseEvent | React.TouchEvent, msg: any) => {
@@ -713,11 +714,15 @@ const HelpSupport = () => {
                 <textarea
                   ref={inputRef}
                   value={newMessage}
-                  onChange={e => setNewMessage(e.target.value)}
+                  onChange={e => {
+                    setNewMessage(e.target.value);
+                    e.target.style.height = "auto";
+                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+                  }}
                   onKeyDown={handleKeyDown}
                   placeholder="Type a message…"
                   rows={1}
-                  style={{ flex: 1, background: "none", border: "none", outline: "none", color: T.text, fontSize: 13.5, resize: "none", lineHeight: 1.4, maxHeight: 100, overflowY: "auto", scrollbarWidth: "none", fontFamily: "inherit" }}
+                  style={{ flex: 1, background: "none", border: "none", outline: "none", color: T.text, fontSize: 13.5, resize: "none", lineHeight: 1.5, maxHeight: 120, overflowY: "auto", scrollbarWidth: "none", fontFamily: "inherit" }}
                 />
               </div>
 
