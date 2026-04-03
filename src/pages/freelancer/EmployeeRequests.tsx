@@ -36,7 +36,7 @@ const EmployeeRequests = () => {
   const T = TH[theme];
 
   const { data: requests = [], isLoading } = useQuery({
-    queryKey: ["employee-requests", profile?.id],
+    queryKey: ["freelancer-requests", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
       const { data, error } = await supabase
@@ -138,7 +138,7 @@ const EmployeeRequests = () => {
                         <Button size="sm" 
                           style={{ background: "rgba(99,102,241,0.1)", color: T.badgeFg, borderColor: "rgba(99,102,241,0.2)" }}
                           className="h-9 text-[10px] font-black uppercase tracking-widest gap-2 rounded-xl border hover:bg-white/[0.05]"
-                          onClick={() => navigate(`/employee/projects/chat/${r.project_id}`)}>
+                          onClick={() => navigate(`/freelancer/projects/chat/${r.project_id}`)}>
                           <MessageSquare className="h-3.5 w-3.5" /> Terminal
                           <ChevronRight className="h-3.5 w-3.5" />
                         </Button>

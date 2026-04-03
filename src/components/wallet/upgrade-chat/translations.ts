@@ -39,7 +39,7 @@ export const translations: Record<Lang, TranslationSet> = {
       { key: "change_lang", label: "🌐 I want to change language" },
     ],
     upgradeMsg: (name, currentType, requestedType, price, features) =>
-      `📋 *Wallet Upgrade Details*\n\n👤 Employee: ${name}\n💼 Current Wallet: ${currentType}\n🎯 Selected Wallet: ${requestedType}\n💰 Wallet Price: ${price}\n\n✨ *Features:*\n${features.map(f => `  • ${f}`).join("\n")}\n\n---\n\nDear ${name},\n\nTo upgrade your wallet plan, a payment is required.\nThe wallet plan you have selected is *${requestedType}*.\nThe price of this wallet plan is *${price}*.\nTherefore, the total amount you need to pay for the upgrade is *${price}*.\n\nKindly complete the payment to proceed with the upgrade.\nThank you for your cooperation. 🙏`,
+      `📋 *Wallet Upgrade Details*\n\n👤 Freelancer: ${name}\n💼 Current Wallet: ${currentType}\n🎯 Selected Wallet: ${requestedType}\n💰 Wallet Price: ${price}\n\n✨ *Features:*\n${features.map(f => `  • ${f}`).join("\n")}\n\n---\n\nDear ${name},\n\nTo upgrade your wallet plan, a payment is required.\nThe wallet plan you have selected is *${requestedType}*.\nThe price of this wallet plan is *${price}*.\nTherefore, the total amount you need to pay for the upgrade is *${price}*.\n\nKindly complete the payment to proceed with the upgrade.\nThank you for your cooperation. 🙏`,
     payOptions: (price) => [
       { key: "pay", label: `💳 Pay (${price})` },
       { key: "cancel", label: `❌ Cancel Pay (${price})` },

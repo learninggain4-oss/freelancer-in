@@ -136,7 +136,7 @@ const EmployeeWallet = () => {
         maxBalance={profile?.available_balance ?? 0}
         onSuccess={() => {
           refreshProfile();
-          queryClient.invalidateQueries({ queryKey: ["employee-transactions"] });
+          queryClient.invalidateQueries({ queryKey: ["freelancer-transactions"] });
         }}
       />
     </div>

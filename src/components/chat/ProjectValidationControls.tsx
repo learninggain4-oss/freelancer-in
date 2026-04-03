@@ -19,7 +19,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-/** Employee view for cancelled projects - shows Help - Recovery Money button */
+/** Freelancer view for cancelled projects - shows Help - Recovery Money button */
 const CancelledEmployeeView = ({ projectId }: { projectId: string }) => {
   const { profile } = useAuth();
   const navigate = useNavigate();
@@ -76,7 +76,7 @@ const CancelledEmployeeView = ({ projectId }: { projectId: string }) => {
       if (roomErr) throw roomErr;
 
       toast.success("Recovery request submitted. Customer Service will assist you.");
-      navigate(`/employee/projects/support-chat/${projectId}?room=${room.id}`);
+      navigate(`/freelancer/projects/support-chat/${projectId}?room=${room.id}`);
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -93,7 +93,7 @@ const CancelledEmployeeView = ({ projectId }: { projectId: string }) => {
       .eq("type", "support")
       .maybeSingle();
     if (room) {
-      navigate(`/employee/projects/support-chat/${projectId}?room=${room.id}`);
+      navigate(`/freelancer/projects/support-chat/${projectId}?room=${room.id}`);
     }
   };
 
@@ -184,7 +184,7 @@ const ProjectValidationControls = ({
     );
   }
 
-  // === Employee sees status banners only ===
+  // === Freelancer sees status banners only ===
   if (!isClient) {
     const stepInfo = STEP_LABELS[projectStatus];
     if (!stepInfo) return null;
@@ -287,17 +287,17 @@ const ProjectValidationControls = ({
     job_confirmed: {
       icon: <CreditCard className="h-3 w-3" />,
       text: "Payment Process",
-      description: "The validation fees will be deducted from your wallet and held for the employee.",
+      description: "The validation fees will be deducted from your wallet and held for the freelancer.",
     },
     payment_processing: {
       icon: <BadgeCheck className="h-3 w-3" />,
       text: "Validation Confirm",
-      description: "The budget amount will be deducted from your wallet and held for the employee.",
+      description: "The budget amount will be deducted from your wallet and held for the freelancer.",
     },
     validation: {
       icon: <CheckCircle className="h-3 w-3" />,
       text: "Final Confirm",
-      description: "The total held amount (validation fees + budget) will be released to the employee's available balance. This cannot be undone.",
+      description: "The total held amount (validation fees + budget) will be released to the freelancer's available balance. This cannot be undone.",
     },
   };
 

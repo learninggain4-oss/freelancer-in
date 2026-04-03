@@ -20,13 +20,13 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
 const WithdrawalHistory = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const isEmployee = profile?.user_type === "employee";
+  const isFreelancer = profile?.user_type === "employee";
 
   const { data: withdrawals = [], isLoading } = useQuery({
     queryKey: ["all-withdrawals", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
-      if (isEmployee) {
+      if (isFreelancer) {
         const { data, error } = await supabase
           .from("withdrawals")
           .select("id, employee_id, amount, method, status, review_notes, reviewed_at, requested_at, order_id")
@@ -38,7 +38,7 @@ const WithdrawalHistory = () => {
       } else {
         const { data, error } = await supabase
           .from("withdrawals")
-          .select("id, employee_id, amount, method, status, review_notes, reviewed_at, requested_at, order_id, employee:employee_id(full_name, user_code)")
+          .select("id, employee_id, amount, method, status, review_notes, reviewed_at, requested_at, order_id, freelancer:employee_id(full_name, user_code)")
           .order("requested_at", { ascending: false })
           .limit(100);
         if (error) throw error;
@@ -48,7 +48,7 @@ const WithdrawalHistory = () => {
     enabled: !!profile?.id,
   });
 
-  const getEmployeeName = (emp: any) => {
+  const getFreelancerName = (emp: any) => {
     if (!emp) return "Freelancer";
     return Array.isArray(emp.full_name) ? emp.full_name.join(" ") : emp.full_name;
   };
@@ -71,8 +71,8 @@ const WithdrawalHistory = () => {
               <div key={w.id} className="space-y-2 rounded-lg border p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    {!isEmployee && (
-                      <p className="text-sm font-medium text-foreground">{getEmployeeName(w.employee)}</p>
+                    {!isFreelancer && (
+                      <p className="text-sm font-medium text-foreground">{getFreelancerName(w.freelancer)}</p>
                     )}
                     <p className="text-sm font-medium text-foreground">₹{Number(w.amount).toLocaleString("en-IN")}</p>
                     <p className="text-xs text-muted-foreground">{w.method} • {new Date(w.requested_at).toLocaleDateString()}</p>

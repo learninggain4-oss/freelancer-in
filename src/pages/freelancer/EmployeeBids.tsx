@@ -66,7 +66,7 @@ export default function EmployeeBids() {
   const [addingTpl, setAddingTpl]     = useState(false);
 
   const { data: bidsData = [], isLoading } = useQuery({
-    queryKey: ["employee-bids", profile?.id],
+    queryKey: ["freelancer-bids", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
       const { data, error } = await supabase

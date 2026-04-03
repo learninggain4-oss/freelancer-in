@@ -133,7 +133,7 @@ const GetFree = () => {
                 </Button>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" className="gap-1.5 rounded-xl h-11" onClick={() => handleShare("employee")}>
+                <Button variant="outline" className="gap-1.5 rounded-xl h-11" onClick={() => handleShare("freelancer")}>
                   <Share2 className="h-4 w-4" /> As Freelancer
                 </Button>
                 <Button variant="outline" className="gap-1.5 rounded-xl h-11" onClick={() => handleShare("client")}>

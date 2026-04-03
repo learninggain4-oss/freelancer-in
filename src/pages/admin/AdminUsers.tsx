@@ -47,7 +47,7 @@ const AdminUsers = () => {
   const [actionProcessing, setActionProcessing] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteType, setInviteType] = useState<string>("employee");
+  const [inviteType, setInviteType] = useState<string>("freelancer");
   const [inviteProcessing, setInviteProcessing] = useState(false);
 
   const fetchProfiles = async () => {
@@ -138,7 +138,7 @@ const AdminUsers = () => {
       toast.success(data?.message || "Invite sent successfully");
       setInviteOpen(false);
       setInviteEmail("");
-      setInviteType("employee");
+      setInviteType("freelancer");
       fetchProfiles();
     }
   };
@@ -397,7 +397,7 @@ const AdminUsers = () => {
           </SelectTrigger>
           <SelectContent style={{ background: T.card, borderColor: T.border }}>
             <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="employee">Freelancer</SelectItem>
+            <SelectItem value="freelancer">Freelancer</SelectItem>
             <SelectItem value="client">Employer</SelectItem>
           </SelectContent>
         </Select>
@@ -516,7 +516,7 @@ const AdminUsers = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="employee">Freelancer</SelectItem>
+                  <SelectItem value="freelancer">Freelancer</SelectItem>
                   <SelectItem value="client">Employer</SelectItem>
                 </SelectContent>
               </Select>

@@ -144,10 +144,10 @@ const EmployeeDashboard = () => {
   const handleRefresh = useCallback(async () => {
     await Promise.all([
       refreshProfile(),
-      queryClient.invalidateQueries({ queryKey: ["employee-transactions", profile?.id] }),
-      queryClient.invalidateQueries({ queryKey: ["employee-earnings-chart", profile?.id] }),
-      queryClient.invalidateQueries({ queryKey: ["employee-active-projects", profile?.id] }),
-      queryClient.invalidateQueries({ queryKey: ["employee-completed-projects", profile?.id] }),
+      queryClient.invalidateQueries({ queryKey: ["freelancer-transactions", profile?.id] }),
+      queryClient.invalidateQueries({ queryKey: ["freelancer-earnings-chart", profile?.id] }),
+      queryClient.invalidateQueries({ queryKey: ["freelancer-active-projects", profile?.id] }),
+      queryClient.invalidateQueries({ queryKey: ["freelancer-completed-projects", profile?.id] }),
     ]);
   }, [profile?.id, queryClient, refreshProfile]);
 
@@ -157,20 +157,20 @@ const EmployeeDashboard = () => {
     if (!profile?.id) return;
     const channel = supabase.channel("emp-dashboard-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "transactions", filter: `profile_id=eq.${profile.id}` }, () => {
-        queryClient.invalidateQueries({ queryKey: ["employee-transactions", profile.id] });
-        queryClient.invalidateQueries({ queryKey: ["employee-earnings-chart", profile.id] });
+        queryClient.invalidateQueries({ queryKey: ["freelancer-transactions", profile.id] });
+        queryClient.invalidateQueries({ queryKey: ["freelancer-earnings-chart", profile.id] });
         refreshProfile();
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "project_applications", filter: `employee_id=eq.${profile.id}` }, () => {
-        queryClient.invalidateQueries({ queryKey: ["employee-active-projects", profile.id] });
-        queryClient.invalidateQueries({ queryKey: ["employee-completed-projects", profile.id] });
+        queryClient.invalidateQueries({ queryKey: ["freelancer-active-projects", profile.id] });
+        queryClient.invalidateQueries({ queryKey: ["freelancer-completed-projects", profile.id] });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [profile?.id, queryClient, refreshProfile]);
 
   const { data: transactions = [], isLoading } = useQuery({
-    queryKey: ["employee-transactions", profile?.id],
+    queryKey: ["freelancer-transactions", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
       const { data, error } = await supabase.from("transactions").select("*").eq("profile_id", profile.id).order("created_at", { ascending: false }).limit(6);
@@ -181,7 +181,7 @@ const EmployeeDashboard = () => {
   });
 
   const { data: chartData = [] } = useQuery({
-    queryKey: ["employee-earnings-chart", profile?.id],
+    queryKey: ["freelancer-earnings-chart", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
       const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
@@ -196,7 +196,7 @@ const EmployeeDashboard = () => {
   });
 
   const { data: activeCount = 0 } = useQuery({
-    queryKey: ["employee-active-projects", profile?.id],
+    queryKey: ["freelancer-active-projects", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return 0;
       const { count, error } = await supabase.from("project_applications").select("id", { count: "exact", head: true }).eq("employee_id", profile.id).eq("status", "approved");
@@ -207,7 +207,7 @@ const EmployeeDashboard = () => {
   });
 
   const { data: completedCount = 0 } = useQuery({
-    queryKey: ["employee-completed-projects", profile?.id],
+    queryKey: ["freelancer-completed-projects", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return 0;
       const { count, error } = await supabase.from("project_applications").select("id", { count: "exact", head: true }).eq("employee_id", profile.id).eq("status", "approved");
@@ -218,7 +218,7 @@ const EmployeeDashboard = () => {
   });
 
   const { data: withdrawCount = 0 } = useQuery({
-    queryKey: ["employee-withdraw-count", profile?.id],
+    queryKey: ["freelancer-withdraw-count", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return 0;
       const { count, error } = await supabase.from("transactions").select("id", { count: "exact", head: true }).eq("profile_id", profile.id).eq("type", "debit");
@@ -251,14 +251,14 @@ const EmployeeDashboard = () => {
   const clrRed   = isDarkTheme ? "#f87171" : "#dc2626";
 
   const quickActions = [
-    { icon: Briefcase,       label: "Find Jobs",   to: "/employee/projects",          grad: "rgba(99,102,241,.18)",  color: accentIcon },
-    { icon: FileText,        label: "My Bids",     to: "/employee/bids",              grad: "rgba(139,92,246,.18)",  color: violetIcon },
-    { icon: ArrowDownToLine, label: "Earnings",    to: "/employee/earnings",          grad: "rgba(34,197,94,.15)",   color: isDarkTheme ? "#4ade80" : "#16a34a" },
-    { icon: Star,            label: "Reviews",     to: "/employee/reviews",           grad: "rgba(245,158,11,.15)",  color: isDarkTheme ? "#fbbf24" : "#d97706" },
-    { icon: ShieldCheck,     label: "Badges",      to: "/employee/badges",            grad: "rgba(20,184,166,.15)",  color: isDarkTheme ? "#2dd4bf" : "#0d9488" },
-    { icon: Upload,          label: "Portfolio",   to: "/employee/portfolio",         grad: "rgba(251,113,133,.15)", color: isDarkTheme ? "#fb7185" : "#e11d48" },
-    { icon: HeadphonesIcon,  label: "Support",     to: "/employee/help-support",      grad: "rgba(239,68,68,.13)",   color: isDarkTheme ? "#f87171" : "#dc2626" },
-    { icon: Gift,            label: "Get Free",    to: "/employee/get-free",          grad: "rgba(96,165,250,.15)",  color: isDarkTheme ? "#60a5fa" : "#2563eb" },
+    { icon: Briefcase,       label: "Find Jobs",   to: "/freelancer/projects",          grad: "rgba(99,102,241,.18)",  color: accentIcon },
+    { icon: FileText,        label: "My Bids",     to: "/freelancer/bids",              grad: "rgba(139,92,246,.18)",  color: violetIcon },
+    { icon: ArrowDownToLine, label: "Earnings",    to: "/freelancer/earnings",          grad: "rgba(34,197,94,.15)",   color: isDarkTheme ? "#4ade80" : "#16a34a" },
+    { icon: Star,            label: "Reviews",     to: "/freelancer/reviews",           grad: "rgba(245,158,11,.15)",  color: isDarkTheme ? "#fbbf24" : "#d97706" },
+    { icon: ShieldCheck,     label: "Badges",      to: "/freelancer/badges",            grad: "rgba(20,184,166,.15)",  color: isDarkTheme ? "#2dd4bf" : "#0d9488" },
+    { icon: Upload,          label: "Portfolio",   to: "/freelancer/portfolio",         grad: "rgba(251,113,133,.15)", color: isDarkTheme ? "#fb7185" : "#e11d48" },
+    { icon: HeadphonesIcon,  label: "Support",     to: "/freelancer/help-support",      grad: "rgba(239,68,68,.13)",   color: isDarkTheme ? "#f87171" : "#dc2626" },
+    { icon: Gift,            label: "Get Free",    to: "/freelancer/get-free",          grad: "rgba(96,165,250,.15)",  color: isDarkTheme ? "#60a5fa" : "#2563eb" },
   ];
 
   const summaryStats = [

@@ -197,7 +197,7 @@ const EmployeeProjects = () => {
   const toggleMySkills = () => { setMySkillsActive((prev) => !prev); setCategoryFilter("all"); };
 
   const { data: inquiries = [], isLoading: loadingInquiries } = useQuery({
-    queryKey: ["employee-inquiries", search, categoryFilter, mySkillsActive, mySkillCategoryIds],
+    queryKey: ["freelancer-inquiries", search, categoryFilter, mySkillsActive, mySkillCategoryIds],
     queryFn: async () => {
       let query = supabase.from("projects")
         .select("*, client:client_id(full_name), category:category_id(name)")
@@ -217,7 +217,7 @@ const EmployeeProjects = () => {
       const { error } = await supabase.from("project_applications").insert({ project_id: projectId, employee_id: profile.id });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Application submitted!"); setConfirmProject(null); queryClient.invalidateQueries({ queryKey: ["employee-requests"] }); },
+    onSuccess: () => { toast.success("Application submitted!"); setConfirmProject(null); queryClient.invalidateQueries({ queryKey: ["freelancer-requests"] }); },
     onError: (e: any) => { toast.error(e.message); setConfirmProject(null); },
   });
 

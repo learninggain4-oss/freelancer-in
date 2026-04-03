@@ -23,7 +23,7 @@ const ProfileServices = () => {
   const [form, setForm] = useState({ service_title: "", category_id: "", hourly_rate: "0", minimum_budget: "0" });
 
   const { data: services = [] } = useQuery({
-    queryKey: ["employee-services", profile?.id],
+    queryKey: ["freelancer-services", profile?.id],
     enabled: !!profile?.id,
     queryFn: async () => {
       const { data } = await supabase
@@ -81,7 +81,7 @@ const ProfileServices = () => {
     onSuccess: () => {
       toast.success(editingId ? "Updated." : "Added.");
       resetForm();
-      queryClient.invalidateQueries({ queryKey: ["employee-services"] });
+      queryClient.invalidateQueries({ queryKey: ["freelancer-services"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -93,7 +93,7 @@ const ProfileServices = () => {
     },
     onSuccess: () => {
       toast.success("Deleted.");
-      queryClient.invalidateQueries({ queryKey: ["employee-services"] });
+      queryClient.invalidateQueries({ queryKey: ["freelancer-services"] });
     },
     onError: (e: any) => toast.error(e.message),
   });

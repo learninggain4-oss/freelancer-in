@@ -793,7 +793,7 @@ const AdminSettings = () => {
           </CardHeader>
           <CardContent className="space-y-8 pt-4">
             <div className="grid gap-8 md:grid-cols-2">
-              {/* Employee Code */}
+              {/* Freelancer Code */}
               <div className="space-y-4">
                 <h4 className="font-bold flex items-center gap-2" style={{ color: T.text }}>
                   <div className="h-1.5 w-1.5 rounded-full bg-[#6366f1]" />

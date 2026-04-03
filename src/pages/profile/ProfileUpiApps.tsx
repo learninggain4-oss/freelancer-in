@@ -48,7 +48,7 @@ const ProfileUpiApps = () => {
   });
 
   const { data: savedApps = [], isLoading: loadingSaved } = useQuery({
-    queryKey: ["employee-payment-apps", profile?.id],
+    queryKey: ["freelancer-payment-apps", profile?.id],
     enabled: !!profile?.id,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -104,7 +104,7 @@ const ProfileUpiApps = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["employee-payment-apps"] });
+      queryClient.invalidateQueries({ queryKey: ["freelancer-payment-apps"] });
       toast.success("Payment app saved");
     },
     onError: () => toast.error("Failed to save"),
@@ -121,7 +121,7 @@ const ProfileUpiApps = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["employee-payment-apps"] });
+      queryClient.invalidateQueries({ queryKey: ["freelancer-payment-apps"] });
       toast.success("Payment app removed");
     },
     onError: () => toast.error("Failed to remove"),

@@ -38,7 +38,7 @@ const ClientWithdrawals = () => {
       if (!profile?.id) return [];
       const { data, error } = await supabase
         .from("withdrawals")
-        .select("id, employee_id, amount, method, status, review_notes, reviewed_at, reviewed_by, requested_at, order_id, employee:employee_id(full_name, user_code)")
+        .select("id, employee_id, amount, method, status, review_notes, reviewed_at, reviewed_by, requested_at, order_id, freelancer:employee_id(full_name, user_code)")
         .order("requested_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -80,7 +80,7 @@ const ClientWithdrawals = () => {
         </div>
         <div>
           <h1 className="text-2xl font-black tracking-tight" style={{ color: T.text }}>Withdrawals</h1>
-          <p className="text-xs font-medium" style={{ color: T.sub }}>Review employee payment requests</p>
+          <p className="text-xs font-medium" style={{ color: T.sub }}>Review freelancer payment requests</p>
         </div>
       </div>
 
@@ -100,14 +100,14 @@ const ClientWithdrawals = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 font-black text-indigo-400 border border-white/5">
-                      {getEmployeeName(w.employee).charAt(0)}
+                      {getEmployeeName(w.freelancer).charAt(0)}
                     </div>
                     <div>
                       <p className="text-sm font-bold tracking-tight" style={{ color: T.text }}>
-                        {getEmployeeName(w.employee)}
+                        {getEmployeeName(w.freelancer)}
                       </p>
                       <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>
-                        {Array.isArray(w.employee?.user_code) ? w.employee.user_code.join("") : w.employee?.user_code} • {w.method}
+                        {Array.isArray(w.freelancer?.user_code) ? w.freelancer.user_code.join("") : w.freelancer?.user_code} • {w.method}
                       </p>
                     </div>
                   </div>
@@ -174,10 +174,10 @@ const ClientWithdrawals = () => {
               <div key={w.id} className="flex items-center justify-between rounded-2xl p-4 transition-all hover:bg-white/5" style={{ background: T.input, border: `1px solid ${T.border}` }}>
                 <div className="flex items-center gap-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-xs font-black" style={{ color: T.sub }}>
-                    {getEmployeeName(w.employee).charAt(0)}
+                    {getEmployeeName(w.freelancer).charAt(0)}
                   </div>
                   <div>
-                    <p className="text-sm font-bold tracking-tight" style={{ color: T.text }}>{getEmployeeName(w.employee)}</p>
+                    <p className="text-sm font-bold tracking-tight" style={{ color: T.text }}>{getEmployeeName(w.freelancer)}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs font-black text-indigo-400/80">₹{Number(w.amount).toLocaleString("en-IN")}</span>
                       <span className="text-[10px] font-bold opacity-40 uppercase tracking-tighter">• {new Date(w.requested_at).toLocaleDateString()}</span>

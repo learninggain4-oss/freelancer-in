@@ -65,7 +65,7 @@ const ClientProjects = () => {
       if (!profile?.id) return [];
       const { data, error } = await supabase
         .from("project_applications")
-        .select("*, employee:employee_id(full_name, user_code, work_experience), project:project_id(name, client_id)")
+        .select("*, freelancer:employee_id(full_name, user_code, work_experience), project:project_id(name, client_id)")
         .order("applied_at", { ascending: false });
       if (error) throw error;
       return (data ?? []).filter((r: any) => r.project?.client_id === profile.id);
@@ -79,7 +79,7 @@ const ClientProjects = () => {
       if (!profile?.id) return [];
       const { data, error } = await supabase
         .from("project_submissions")
-        .select("*, employee:employee_id(full_name), project:project_id(name, client_id)")
+        .select("*, freelancer:employee_id(full_name), project:project_id(name, client_id)")
         .order("submitted_at", { ascending: false });
       if (error) throw error;
       return (data ?? []).filter((s: any) => s.project?.client_id === profile.id);
@@ -267,11 +267,11 @@ const ClientProjects = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className="h-12 w-12 rounded-2xl flex items-center justify-center text-lg font-black" style={{ background: T.input, color: T.text, border: `1px solid ${T.border}` }}>
-                        {r.employee?.full_name?.charAt(0) || 'E'}
+                        {r.freelancer?.full_name?.charAt(0) || 'E'}
                       </div>
                       <div>
-                        <h3 className="text-base font-bold tracking-tight" style={{ color: T.text }}>{r.employee?.full_name ?? "Freelancer"}</h3>
-                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>{r.employee?.user_code} • {r.employee?.work_experience ?? "Fresh"}</p>
+                        <h3 className="text-base font-bold tracking-tight" style={{ color: T.text }}>{r.freelancer?.full_name ?? "Freelancer"}</h3>
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>{r.freelancer?.user_code} • {r.freelancer?.work_experience ?? "Fresh"}</p>
                       </div>
                     </div>
                     <Badge 
@@ -328,7 +328,7 @@ const ClientProjects = () => {
                   <div className="space-y-1">
                     <h3 className="text-base font-bold tracking-tight" style={{ color: T.text }}>{s.project?.name ?? "Job"}</h3>
                     <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>
-                      Submitted by <span className="text-indigo-400">{s.employee?.full_name}</span> • {new Date(s.submitted_at).toLocaleDateString()}
+                      Submitted by <span className="text-indigo-400">{s.freelancer?.full_name}</span> • {new Date(s.submitted_at).toLocaleDateString()}
                     </p>
                   </div>
                   <Badge className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 px-3 py-1 font-black uppercase tracking-widest text-[9px] rounded-lg">

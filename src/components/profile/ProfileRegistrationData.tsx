@@ -39,7 +39,7 @@ const ProfileRegistrationData = ({ profileId }: Props) => {
   });
 
   const { data: services = [] } = useQuery({
-    queryKey: ["employee-services", profileId],
+    queryKey: ["freelancer-services", profileId],
     enabled: !!profileId,
     queryFn: async () => {
       const { data } = await supabase

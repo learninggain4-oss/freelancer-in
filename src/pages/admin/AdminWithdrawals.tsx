@@ -30,7 +30,7 @@ type Withdrawal = {
   upi_id: string | null; bank_account_number: string | null;
   bank_ifsc_code: string | null; bank_holder_name: string | null;
   is_cleared?: boolean; order_id?: string | null;
-  employee?: { full_name: string[]; user_code: string[]; email: string };
+  freelancer?: { full_name: string[]; user_code: string[]; email: string };
   bankVerified?: boolean;
 };
 
@@ -59,7 +59,7 @@ const AdminWithdrawals = () => {
       const { data: bankVerifs } = await supabase.from("bank_verifications").select("profile_id, status").in("profile_id", employeeIds);
       const profileMap = new Map((profiles || []).map(p => [p.id, p]));
       const bankVerifMap = new Map((bankVerifs || []).map(b => [b.profile_id, b.status === "verified"]));
-      setWithdrawals(wData.map(w => ({ ...w, employee: profileMap.get(w.employee_id) as any, bankVerified: bankVerifMap.get(w.employee_id) ?? false })));
+      setWithdrawals(wData.map(w => ({ ...w, freelancer: profileMap.get(w.employee_id) as any, bankVerified: bankVerifMap.get(w.employee_id) ?? false })));
     } else {
       setWithdrawals([]);
     }
@@ -147,12 +147,12 @@ const AdminWithdrawals = () => {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full font-bold text-xs" style={{ background: T.nav, color: T.text }}>
-                        {(w.employee?.full_name?.[0] || "?")[0]}
+                        {(w.freelancer?.full_name?.[0] || "?")[0]}
                       </div>
                       <div>
-                        <p className="text-sm font-medium" style={{ color: T.text }}>{w.employee?.full_name?.[0] || "—"}</p>
+                        <p className="text-sm font-medium" style={{ color: T.text }}>{w.freelancer?.full_name?.[0] || "—"}</p>
                         <div className="flex items-center gap-1">
-                          <p className="text-xs" style={{ color: T.sub }}>{w.employee?.user_code?.[0]}</p>
+                          <p className="text-xs" style={{ color: T.sub }}>{w.freelancer?.user_code?.[0]}</p>
                           {w.bankVerified ? <BadgeCheck className="h-3 w-3 text-green-400" /> : <span className="rounded bg-amber-500/10 px-1 text-[9px] font-medium text-amber-500">Unverified</span>}
                         </div>
                       </div>
@@ -279,7 +279,7 @@ const AdminWithdrawals = () => {
             <Landmark className="h-8 w-8" />
           </div>
           <h2 className="text-3xl font-bold tracking-tight">Withdrawal Management</h2>
-          <p className="mt-2 text-indigo-100">Review and process employee fund withdrawal requests with precision.</p>
+          <p className="mt-2 text-indigo-100">Review and process freelancer fund withdrawal requests with precision.</p>
         </div>
         <div className="absolute -right-10 -top-10 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -bottom-10 -left-10 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
@@ -337,7 +337,7 @@ const AdminWithdrawals = () => {
           <DialogHeader>
             <DialogTitle style={{ color: T.text }}>{actionType === "approve" ? "Approve Withdrawal" : "Reject Withdrawal"}</DialogTitle>
             <DialogDescription style={{ color: T.sub }}>
-              <span className="font-bold text-indigo-400">₹{Number(selected?.amount).toLocaleString()}</span> via {selected?.method} — {selected?.employee?.full_name?.[0]}
+              <span className="font-bold text-indigo-400">₹{Number(selected?.amount).toLocaleString()}</span> via {selected?.method} — {selected?.freelancer?.full_name?.[0]}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

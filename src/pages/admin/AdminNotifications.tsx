@@ -48,7 +48,7 @@ const AdminNotifications = () => {
   // Send push notification form state
   const [pushTitle, setPushTitle] = useState("");
   const [pushMessage, setPushMessage] = useState("");
-  const [pushTarget, setPushTarget] = useState<"all" | "employees" | "clients" | "individual">("all");
+  const [pushTarget, setPushTarget] = useState<"all" | "freelancers" | "clients" | "individual">("all");
   const [pushUserId, setPushUserId] = useState("");
   const [pushType, setPushType] = useState("info");
 
@@ -120,7 +120,7 @@ const AdminNotifications = () => {
           body: { action: "push_to_all", title: pushTitle, message: pushMessage, type: pushType },
         });
       } else {
-        // employees or clients
+        // freelancers or clients
         const targetUsers = allUsers.filter(u => u.user_type === (pushTarget === "employees" ? "employee" : "client"));
         for (const u of targetUsers) {
           await supabase.from("notifications").insert({
@@ -250,7 +250,7 @@ const AdminNotifications = () => {
                 </SelectTrigger>
                 <SelectContent style={{ background: T.card, borderColor: T.border, color: T.text }}>
                   <SelectItem value="all"><div className="flex items-center gap-2"><Users className="h-3.5 w-3.5" /> All Users</div></SelectItem>
-                  <SelectItem value="employees"><div className="flex items-center gap-2"><User className="h-3.5 w-3.5" /> Freelancers Only</div></SelectItem>
+                  <SelectItem value="freelancers"><div className="flex items-center gap-2"><User className="h-3.5 w-3.5" /> Freelancers Only</div></SelectItem>
                   <SelectItem value="clients"><div className="flex items-center gap-2"><User className="h-3.5 w-3.5" /> Clients Only</div></SelectItem>
                   <SelectItem value="individual"><div className="flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5" /> Individual User</div></SelectItem>
                 </SelectContent>

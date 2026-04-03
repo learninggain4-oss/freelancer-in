@@ -112,10 +112,10 @@ const REVENUE_DATA = [
 ];
 
 const USER_GROWTH = [
-  { week: "W1", employees: 12, clients: 8 },
-  { week: "W2", employees: 18, clients: 14 },
-  { week: "W3", employees: 24, clients: 20 },
-  { week: "W4", employees: 31, clients: 26 },
+  { week: "W1", freelancers: 12, clients: 8 },
+  { week: "W2", freelancers: 18, clients: 14 },
+  { week: "W3", freelancers: 24, clients: 20 },
+  { week: "W4", freelancers: 31, clients: 26 },
 ];
 
 const FRAUD_RISK = [
@@ -149,7 +149,7 @@ const SECURITY_EVENTS = [
 ];
 
 const ACTIVITY_TIMELINE = [
-  { icon: UserPlus,    color: "#4ade80", bg: "rgba(34,197,94,.15)",   label: "New employee registered",       detail: "Ravi Kumar · Kochi, Kerala",        time: "5 min ago" },
+  { icon: UserPlus,    color: "#4ade80", bg: "rgba(34,197,94,.15)",   label: "New freelancer registered",       detail: "Ravi Kumar · Kochi, Kerala",        time: "5 min ago" },
   { icon: CreditCard,  color: "#f87171", bg: "rgba(239,68,68,.15)",   label: "Withdrawal request",            detail: "₹8,400 · user_4920",               time: "18 min ago" },
   { icon: ShieldAlert, color: "#fbbf24", bg: "rgba(245,158,11,.15)",  label: "Fraud alert triggered",         detail: "Risk score 81 — user_1193",        time: "45 min ago" },
   { icon: CheckCircle2,color: "#4ade80", bg: "rgba(34,197,94,.15)",   label: "Aadhaar verification approved", detail: "user_2847 verified",               time: "1 hr ago" },
@@ -276,7 +276,7 @@ const AdminDashboard = () => {
     { label: "Total Users",      value: stats.totalUsers || 2847,      icon: Users,        color: "#a5b4fc", bg: "rgba(99,102,241,.14)",  trend: "+12%", up: true,  path: "/admin/users" },
     { label: "Active Users",     value: stats.activeUsers || 2100,     icon: Activity,     color: "#4ade80", bg: "rgba(34,197,94,.12)",   trend: "+8%",  up: true,  path: "/admin/sessions" },
     { label: "Total Clients",    value: stats.totalClients || 342,     icon: Building2,    color: "#c4b5fd", bg: "rgba(139,92,246,.12)",  trend: "+5%",  up: true,  path: "/admin/clients" },
-    { label: "Freelancers",      value: stats.totalEmployees || 2505,  icon: UserCheck,    color: "#a5b4fc", bg: "rgba(99,102,241,.14)",  trend: "+15%", up: true,  path: "/admin/employees" },
+    { label: "Freelancers",      value: stats.totalEmployees || 2505,  icon: UserCheck,    color: "#a5b4fc", bg: "rgba(99,102,241,.14)",  trend: "+15%", up: true,  path: "/admin/freelancers" },
     { label: "Total Jobs",       value: stats.totalJobs || 1284,       icon: Briefcase,    color: "#4ade80", bg: "rgba(34,197,94,.12)",   trend: "+22%", up: true,  path: "/admin/jobs" },
     { label: "Total Revenue",    value: totalRev > 0 ? fmt(totalRev) : "₹14.6L", icon: IndianRupee, color: "#4ade80", bg: "rgba(34,197,94,.12)", trend: "+18%", up: true, path: "/admin/wallet-management" },
     { label: "Pending Payments", value: stats.pendingWithdrawals || 18,icon: Clock,        color: "#fbbf24", bg: "rgba(245,158,11,.14)",  trend: "Hold", up: false, path: "/admin/withdrawals",    urgent: (stats.pendingWithdrawals || 0) > 0 },
@@ -415,7 +415,7 @@ const AdminDashboard = () => {
                 <XAxis dataKey="week" tick={{ fontSize: 10, fill: tok.chartAxis }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 9, fill: tok.chartAxis }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={{ ...tok.chartTip, borderRadius: 12, fontSize: 11 }} />
-                <Bar dataKey="employees" fill={A1} radius={[4, 4, 0, 0]} name="Freelancers" />
+                <Bar dataKey="freelancers" fill={A1} radius={[4, 4, 0, 0]} name="Freelancers" />
                 <Bar dataKey="clients" fill="#4ade80" radius={[4, 4, 0, 0]} name="Clients" />
               </BarChart>
             </ResponsiveContainer>

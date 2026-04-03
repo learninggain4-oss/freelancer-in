@@ -66,7 +66,7 @@ const AdminRecoveryChat = () => {
     enabled: !!roomId,
   });
 
-  // Fetch recovery request with employee & project details
+  // Fetch recovery request with freelancer & project details
   const { data: recoveryRequest } = useQuery({
     queryKey: ["recovery-request-detail", chatRoom?.recovery_request_id],
     queryFn: async () => {
@@ -75,7 +75,7 @@ const AdminRecoveryChat = () => {
         .from("recovery_requests")
         .select(`
           *,
-          employee:profiles!recovery_requests_employee_id_fkey(id, full_name, user_code, hold_balance, available_balance),
+          freelancer:profiles!recovery_requests_employee_id_fkey(id, full_name, user_code, hold_balance, available_balance),
           project:projects!recovery_requests_project_id_fkey(id, name, amount, validation_fees, status)
         `)
         .eq("id", chatRoom.recovery_request_id)
@@ -161,7 +161,7 @@ const AdminRecoveryChat = () => {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Operation failed");
 
-      toast.success(`₹${json.released_amount?.toLocaleString("en-IN") || ""} released to employee's available balance.`);
+      toast.success(`₹${json.released_amount?.toLocaleString("en-IN") || ""} released to freelancer's available balance.`);
       queryClient.invalidateQueries({ queryKey: ["recovery-request-detail"] });
       queryClient.invalidateQueries({ queryKey: ["admin-recovery-requests"] });
     } catch (e: any) {
@@ -203,7 +203,7 @@ const AdminRecoveryChat = () => {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Operation failed");
 
-      toast.success(`₹${json.held_amount?.toLocaleString("en-IN") || ""} moved to employee's hold balance.`);
+      toast.success(`₹${json.held_amount?.toLocaleString("en-IN") || ""} moved to freelancer's hold balance.`);
       queryClient.invalidateQueries({ queryKey: ["recovery-request-detail"] });
       queryClient.invalidateQueries({ queryKey: ["admin-recovery-requests"] });
     } catch (e: any) {
@@ -258,8 +258,8 @@ const AdminRecoveryChat = () => {
     );
   }
 
-  const employeeName = recoveryRequest?.employee?.full_name?.[0] || "Unknown Employee";
-  const employeeCode = recoveryRequest?.employee?.user_code?.[0] || "";
+  const employeeName = recoveryRequest?.freelancer?.full_name?.[0] || "Unknown Freelancer";
+  const employeeCode = recoveryRequest?.freelancer?.user_code?.[0] || "";
   const heldAmount = Number(recoveryRequest?.held_amount || 0);
   const requestStatus = recoveryRequest?.status || "pending";
 
@@ -343,7 +343,7 @@ const AdminRecoveryChat = () => {
 
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: T.sub }}>Hold Balance</p>
-              <p className="text-sm font-semibold" style={{ color: T.text }}>₹{Number(recoveryRequest.employee?.hold_balance || 0).toLocaleString("en-IN")}</p>
+              <p className="text-sm font-semibold" style={{ color: T.text }}>₹{Number(recoveryRequest.freelancer?.hold_balance || 0).toLocaleString("en-IN")}</p>
             </div>
           </div>
 
@@ -351,7 +351,7 @@ const AdminRecoveryChat = () => {
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: T.sub }}>Decision Notes</Label>
               <Textarea
-                placeholder="Admin notes for the employee..."
+                placeholder="Admin notes for the freelancer..."
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
                 className="text-sm rounded-2xl border-none min-h-[80px]"
@@ -371,7 +371,7 @@ const AdminRecoveryChat = () => {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Release ₹{heldAmount.toLocaleString("en-IN")} to {employeeName}?</AlertDialogTitle>
                     <AlertDialogDescription style={{ color: T.sub }}>
-                      This will transfer the held amount to the employee's available balance.
+                      This will transfer the held amount to the freelancer's available balance.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -392,7 +392,7 @@ const AdminRecoveryChat = () => {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Hold balance for {employeeName}?</AlertDialogTitle>
                     <AlertDialogDescription style={{ color: T.sub }}>
-                      This will move ₹{heldAmount.toLocaleString("en-IN")} from the employee's available balance back to hold.
+                      This will move ₹{heldAmount.toLocaleString("en-IN")} from the freelancer's available balance back to hold.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

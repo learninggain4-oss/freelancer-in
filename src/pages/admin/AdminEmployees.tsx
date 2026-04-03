@@ -41,13 +41,13 @@ const AdminEmployees = () => {
   const { theme, themeKey } = useDashboardTheme();
   const T = TH[themeKey];
   const navigate = useNavigate();
-  const [employees, setEmployees] = useState<EmployeeRow[]>([]);
+  const [freelancers, setEmployees] = useState<EmployeeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [projectCounts, setProjectCounts] = useState<Record<string, number>>({});
   const [withdrawalCounts, setWithdrawalCounts] = useState<Record<string, number>>({});
-  const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock" | "delete"; employee: EmployeeRow } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock" | "delete"; freelancer: EmployeeRow } | null>(null);
   const [processing, setProcessing] = useState(false);
 
   const fetchData = async () => {
@@ -83,9 +83,9 @@ const AdminEmployees = () => {
 
   useEffect(() => { fetchData(); }, []);
 
-  const handleToggleBlock = async (employee: EmployeeRow) => {
+  const handleToggleBlock = async (freelancer: EmployeeRow) => {
     setProcessing(true);
-    const newDisabled = !employee.is_disabled;
+    const newDisabled = !freelancer.is_disabled;
     const { error } = await supabase
       .from("profiles")
       .update({ is_disabled: newDisabled, disabled_reason: newDisabled ? "Blocked by admin" : null })
@@ -100,10 +100,10 @@ const AdminEmployees = () => {
     }
   };
 
-  const handlePermanentDelete = async (employee: EmployeeRow) => {
+  const handlePermanentDelete = async (freelancer: EmployeeRow) => {
     setProcessing(true);
     const { data, error } = await supabase.functions.invoke("admin-user-management", {
-      body: { action: "permanent_delete", profile_id: employee.id },
+      body: { action: "permanent_delete", profile_id: freelancer.id },
     });
     setProcessing(false);
     setConfirmAction(null);
@@ -117,14 +117,14 @@ const AdminEmployees = () => {
 
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    if (!q) return employees;
-    return employees.filter((e) => {
+    if (!q) return freelancers;
+    return freelancers.filter((e) => {
       const name = (e.full_name?.[0] || "").toLowerCase();
       const code = (e.user_code?.[0] || "").toLowerCase();
       const email = (e.email || "").toLowerCase();
       return name.includes(q) || code.includes(q) || email.includes(q);
     });
-  }, [employees, searchQuery]);
+  }, [freelancers, searchQuery]);
 
   useEffect(() => { setCurrentPage(1); }, [searchQuery]);
 
@@ -132,8 +132,8 @@ const AdminEmployees = () => {
   const page = Math.min(currentPage, totalPages);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const totalBalance = employees.reduce((s, e) => s + Number(e.available_balance), 0);
-  const activeCount = employees.filter((e) => e.approval_status === "approved" && !e.is_disabled).length;
+  const totalBalance = freelancers.reduce((s, e) => s + Number(e.available_balance), 0);
+  const activeCount = freelancers.filter((e) => e.approval_status === "approved" && !e.is_disabled).length;
   const pendingWd = Object.values(withdrawalCounts).reduce((s, v) => s + v, 0);
 
   const statusBadge = (e: EmployeeRow) => {
@@ -176,7 +176,7 @@ const AdminEmployees = () => {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold" style={{ color: T.text }}>
-              {employees.length} 
+              {freelancers.length} 
               <span className="text-sm font-normal ml-2" style={{ color: T.sub }}>({activeCount} active)</span>
             </p>
           </CardContent>
@@ -250,7 +250,7 @@ const AdminEmployees = () => {
               </TableRow>
             ) : paginated.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-8 text-center" style={{ color: T.sub }}>No employees found</TableCell>
+                <TableCell colSpan={7} className="py-8 text-center" style={{ color: T.sub }}>No freelancers found</TableCell>
               </TableRow>
             ) : (
               paginated.map((e) => (
@@ -277,7 +277,7 @@ const AdminEmployees = () => {
                         variant="ghost"
                         title={e.is_disabled ? "Unblock" : "Block"}
                         className={e.is_disabled ? "text-accent hover:text-accent hover:bg-white/10" : "text-warning hover:text-warning hover:bg-white/10"}
-                        onClick={() => setConfirmAction({ type: e.is_disabled ? "unblock" : "block", employee: e })}
+                        onClick={() => setConfirmAction({ type: e.is_disabled ? "unblock" : "block", freelancer: e })}
                       >
                         {e.is_disabled ? <ShieldCheck className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
                       </Button>
@@ -286,7 +286,7 @@ const AdminEmployees = () => {
                         variant="ghost"
                         title="Delete Permanently"
                         className="text-destructive hover:text-destructive hover:bg-white/10"
-                        onClick={() => setConfirmAction({ type: "delete", employee: e })}
+                        onClick={() => setConfirmAction({ type: "delete", freelancer: e })}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -343,10 +343,10 @@ const AdminEmployees = () => {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirmAction?.type === "delete"
-                ? `This will permanently delete "${confirmAction.employee.full_name?.[0]}" and all their data. This CANNOT be undone.`
+                ? `This will permanently delete "${confirmAction.freelancer.full_name?.[0]}" and all their data. This CANNOT be undone.`
                 : confirmAction?.type === "block"
-                ? `This will block "${confirmAction?.employee.full_name?.[0]}" from logging in. You can unblock them later.`
-                : `This will re-enable login access for "${confirmAction?.employee.full_name?.[0]}".`}
+                ? `This will block "${confirmAction?.freelancer.full_name?.[0]}" from logging in. You can unblock them later.`
+                : `This will re-enable login access for "${confirmAction?.freelancer.full_name?.[0]}".`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -356,8 +356,8 @@ const AdminEmployees = () => {
               className={confirmAction?.type === "delete" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
               onClick={() => {
                 if (!confirmAction) return;
-                if (confirmAction.type === "delete") handlePermanentDelete(confirmAction.employee);
-                else handleToggleBlock(confirmAction.employee);
+                if (confirmAction.type === "delete") handlePermanentDelete(confirmAction.freelancer);
+                else handleToggleBlock(confirmAction.freelancer);
               }}
             >
               {processing ? "Processing…" : confirmAction?.type === "delete" ? "Delete" : confirmAction?.type === "block" ? "Block" : "Unblock"}

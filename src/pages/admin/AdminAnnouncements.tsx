@@ -28,13 +28,13 @@ const TH = {
 
 const audienceLabel: Record<string, string> = {
   everyone: "Everyone",
-  employees: "Freelancers Only",
+  freelancers: "Freelancers Only",
   clients: "Clients Only",
 };
 
 const audienceColor: Record<string, string> = {
   everyone: "bg-primary/10 text-primary",
-  employees: "bg-accent/10 text-accent",
+  freelancers: "bg-accent/10 text-accent",
   clients: "bg-warning/10 text-warning",
 };
 
@@ -128,7 +128,7 @@ const AdminAnnouncements = () => {
             </div>
             <h1 className="text-3xl font-bold">Announcements</h1>
             <p className="text-indigo-100/80 text-sm mt-1">
-              Send popup messages to employees, clients, or everyone globally.
+              Send popup messages to freelancers, clients, or everyone globally.
             </p>
           </div>
           <div className="flex gap-3">

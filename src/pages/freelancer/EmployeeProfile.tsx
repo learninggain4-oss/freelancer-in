@@ -140,17 +140,17 @@ const EmployeeProfile = () => {
   };
 
   const sections = [
-    { icon: User, label: "Personal Information", path: "/employee/profile/personal", color: "#6366f1", desc: "Name, gender, DOB & more" },
-    { icon: Briefcase, label: "Professional", path: "/employee/profile/professional", color: "#8b5cf6", desc: "Education & background" },
-    { icon: Landmark, label: "Bank Details", path: "/employee/profile/bank-details", color: "#fbbf24", desc: "Account & IFSC details" },
-    { icon: CreditCard, label: "UPI Payment Apps", path: "/employee/profile/upi-apps", color: "#a78bfa", desc: "Manage UPI apps" },
-    { icon: Building2, label: "Work Experience", path: "/employee/profile/work-experience", color: "#60a5fa", desc: "Past roles & certificates" },
-    { icon: Star, label: "Services", path: "/employee/profile/services", color: "#4ade80", desc: `${servicesCount ?? 0} services listed` },
-    { icon: AlertCircle, label: "Emergency Contacts", path: "/employee/profile/emergency-contacts", color: "#f87171", desc: "Safety contacts" },
+    { icon: User, label: "Personal Information", path: "/freelancer/profile/personal", color: "#6366f1", desc: "Name, gender, DOB & more" },
+    { icon: Briefcase, label: "Professional", path: "/freelancer/profile/professional", color: "#8b5cf6", desc: "Education & background" },
+    { icon: Landmark, label: "Bank Details", path: "/freelancer/profile/bank-details", color: "#fbbf24", desc: "Account & IFSC details" },
+    { icon: CreditCard, label: "UPI Payment Apps", path: "/freelancer/profile/upi-apps", color: "#a78bfa", desc: "Manage UPI apps" },
+    { icon: Building2, label: "Work Experience", path: "/freelancer/profile/work-experience", color: "#60a5fa", desc: "Past roles & certificates" },
+    { icon: Star, label: "Services", path: "/freelancer/profile/services", color: "#4ade80", desc: `${servicesCount ?? 0} services listed` },
+    { icon: AlertCircle, label: "Emergency Contacts", path: "/freelancer/profile/emergency-contacts", color: "#f87171", desc: "Safety contacts" },
     {
       icon: ShieldCheck,
       label: "Self Real Name Verification",
-      path: "/employee/profile/aadhaar-verification",
+      path: "/freelancer/profile/aadhaar-verification",
       color: "#8b5cf6",
       desc: "Identity verification",
       badge: aadhaarStatus,
@@ -158,7 +158,7 @@ const EmployeeProfile = () => {
     {
       icon: Shield,
       label: "Self Bank Verification",
-      path: "/employee/profile/bank-verification",
+      path: "/freelancer/profile/bank-verification",
       color: "#6366f1",
       desc: "Bank account verification",
       badge: bankVerifStatus,

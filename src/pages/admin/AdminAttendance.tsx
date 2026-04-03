@@ -170,7 +170,7 @@ const AdminAttendance = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-white">Attendance Checker</h1>
-            <p className="text-white/80 font-medium">Monitor attendance records for employees and clients</p>
+            <p className="text-white/80 font-medium">Monitor attendance records for freelancers and clients</p>
           </div>
         </div>
       </div>
@@ -225,7 +225,7 @@ const AdminAttendance = () => {
               </SelectTrigger>
               <SelectContent style={{ background: theme === 'black' ? '#1a1a2e' : '#fff', borderColor: T.border }}>
                 <SelectItem value="all">All Users</SelectItem>
-                <SelectItem value="employee">Freelancers</SelectItem>
+                <SelectItem value="freelancer">Freelancers</SelectItem>
                 <SelectItem value="client">Clients</SelectItem>
               </SelectContent>
             </Select>

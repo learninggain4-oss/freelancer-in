@@ -287,17 +287,17 @@ function buildCss(t: typeof T.black): string {
 }
 
 const SEARCH_ITEMS = {
-  employee: [
-    { label: "Dashboard",     icon: LayoutDashboard, path: "/employee/dashboard" },
-    { label: "My Jobs",       icon: Briefcase,       path: "/employee/projects" },
-    { label: "Attendance",    icon: ClipboardCheck,  path: "/employee/attendance" },
-    { label: "My Wallet",     icon: Wallet,          path: "/employee/wallet" },
-    { label: "Transactions",  icon: FileText,        path: "/employee/wallet/transactions" },
-    { label: "Withdrawals",   icon: ArrowUpRight,    path: "/employee/wallet/withdrawals" },
-    { label: "Notifications", icon: Bell,            path: "/employee/notification-settings" },
-    { label: "Help & Support",icon: CircleHelp,      path: "/employee/help-support" },
-    { label: "Reviews",       icon: Star,            path: "/employee/review" },
-    { label: "Get Free",      icon: Gift,            path: "/employee/get-free" },
+  freelancer: [
+    { label: "Dashboard",     icon: LayoutDashboard, path: "/freelancer/dashboard" },
+    { label: "My Jobs",       icon: Briefcase,       path: "/freelancer/projects" },
+    { label: "Attendance",    icon: ClipboardCheck,  path: "/freelancer/attendance" },
+    { label: "My Wallet",     icon: Wallet,          path: "/freelancer/wallet" },
+    { label: "Transactions",  icon: FileText,        path: "/freelancer/wallet/transactions" },
+    { label: "Withdrawals",   icon: ArrowUpRight,    path: "/freelancer/wallet/withdrawals" },
+    { label: "Notifications", icon: Bell,            path: "/freelancer/notification-settings" },
+    { label: "Help & Support",icon: CircleHelp,      path: "/freelancer/help-support" },
+    { label: "Reviews",       icon: Star,            path: "/freelancer/review" },
+    { label: "Get Free",      icon: Gift,            path: "/freelancer/get-free" },
   ],
   client: [
     { label: "Dashboard",    icon: LayoutDashboard, path: "/client/dashboard" },
@@ -487,7 +487,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
               </span>
             </button>
 
-            {/* CTA: Withdraw (employee) or Post Job (client) */}
+            {/* CTA: Withdraw (freelancer) or Post Job (client) */}
             {userType === "employee" ? (
               <button onClick={() => navigate(`${basePath}/wallet`)}
                 className="hidden md:flex"

@@ -16,20 +16,20 @@ const Login = lazy(() => import("./pages/Login"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
-const EmployeeRegister = lazy(() => import("./pages/register/EmployeeRegister"));
+const EmployeeRegister = lazy(() => import("./pages/register/FreelancerRegister"));
 const ClientRegister = lazy(() => import("./pages/register/ClientRegister"));
 const VerificationPending = lazy(() => import("./pages/VerificationPending"));
-const EmployeeDashboard = lazy(() => import("./pages/employee/EmployeeDashboard"));
-const EmployeeProjects = lazy(() => import("./pages/employee/EmployeeProjects"));
-const EmployeeRequests = lazy(() => import("./pages/employee/EmployeeRequests"));
-const EmployeeWallet = lazy(() => import("./pages/employee/EmployeeWallet"));
-const EmployeeAttendance = lazy(() => import("./pages/employee/EmployeeAttendance"));
-const EmployeeProfile = lazy(() => import("./pages/employee/EmployeeProfile"));
-const EmployeeBids = lazy(() => import("./pages/employee/EmployeeBids"));
-const EmployeeEarnings = lazy(() => import("./pages/employee/EmployeeEarnings"));
-const EmployeeReviews = lazy(() => import("./pages/employee/EmployeeReviews"));
-const EmployeeBadges = lazy(() => import("./pages/employee/EmployeeBadges"));
-const EmployeePortfolio = lazy(() => import("./pages/employee/EmployeePortfolio"));
+const EmployeeDashboard = lazy(() => import("./pages/freelancer/EmployeeDashboard"));
+const EmployeeProjects = lazy(() => import("./pages/freelancer/EmployeeProjects"));
+const EmployeeRequests = lazy(() => import("./pages/freelancer/EmployeeRequests"));
+const EmployeeWallet = lazy(() => import("./pages/freelancer/EmployeeWallet"));
+const EmployeeAttendance = lazy(() => import("./pages/freelancer/EmployeeAttendance"));
+const EmployeeProfile = lazy(() => import("./pages/freelancer/EmployeeProfile"));
+const EmployeeBids = lazy(() => import("./pages/freelancer/EmployeeBids"));
+const EmployeeEarnings = lazy(() => import("./pages/freelancer/EmployeeEarnings"));
+const EmployeeReviews = lazy(() => import("./pages/freelancer/EmployeeReviews"));
+const EmployeeBadges = lazy(() => import("./pages/freelancer/EmployeeBadges"));
+const EmployeePortfolio = lazy(() => import("./pages/freelancer/EmployeePortfolio"));
 const ClientDashboard = lazy(() => import("./pages/client/ClientDashboard"));
 const ClientWallet = lazy(() => import("./pages/client/ClientWallet"));
 const ClientProjects = lazy(() => import("./pages/client/ClientProjects"));
@@ -64,7 +64,7 @@ const NotificationSettings = lazy(() => import("./pages/NotificationSettings"));
 const GetFree = lazy(() => import("./pages/GetFree"));
 const GetCoins = lazy(() => import("./pages/GetCoins"));
 const AppPage = lazy(() => import("./pages/AppPage"));
-const EmployeeSupportChat = lazy(() => import("./pages/employee/EmployeeSupportChat"));
+const EmployeeSupportChat = lazy(() => import("./pages/freelancer/EmployeeSupportChat"));
 const HelpSupport = lazy(() => import("./pages/HelpSupport"));
 const AdminHelpSupport = lazy(() => import("./pages/admin/AdminHelpSupport"));
 const AdminSupportReporting = lazy(() => import("./pages/admin/AdminSupportReporting"));
@@ -242,12 +242,12 @@ const AppContent = () => {
             <Route path="/complete-profile" element={<CompleteProfile />} />
             <Route path="/legal/:slug" element={<LegalDocument />} />
 
-            {/* Employee Routes */}
+            {/* Freelancer Routes */}
             <Route
               path="/employee"
               element={
                 <ProtectedRoute>
-                  <AppLayout userType="employee" />
+                  <AppLayout userType="freelancer" />
                 </ProtectedRoute>
               }
             >
@@ -344,7 +344,7 @@ const AppContent = () => {
             >
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
-              <Route path="employees" element={<AdminEmployees />} />
+              <Route path="freelancers" element={<AdminEmployees />} />
               <Route path="clients" element={<AdminClients />} />
               <Route path="withdrawals" element={<AdminWithdrawals />} />
               <Route path="verifications" element={<AdminVerifications />} />

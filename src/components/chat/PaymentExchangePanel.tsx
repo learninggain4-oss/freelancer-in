@@ -639,7 +639,7 @@ const PaymentExchangePanel = ({
                   <Textarea
                     value={prWarning}
                     onChange={(e) => setPrWarning(e.target.value)}
-                    placeholder="Enter warning message for the employee..."
+                    placeholder="Enter warning message for the freelancer..."
                     className="text-sm min-h-[50px] mt-1"
                   />
                 )}
@@ -674,7 +674,7 @@ const PaymentExchangePanel = ({
             </p>
           )}
 
-          {/* =================== INITIATED: Employee selects method + phone =================== */}
+          {/* =================== INITIATED: Freelancer selects method + phone =================== */}
           {status === "initiated" && (
             <>
               {clientInfo?.warning && (
@@ -730,7 +730,7 @@ const PaymentExchangePanel = ({
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  Waiting for employee to select a payment method…
+                  Waiting for freelancer to select a payment method…
                 </p>
               )}
             </>
@@ -755,7 +755,7 @@ const PaymentExchangePanel = ({
                 })()}
               </div>
 
-              {/* Employee phone visible to client */}
+              {/* Freelancer phone visible to client */}
               {confirmation?.phone_number && (
                 <div className="text-xs bg-muted/50 rounded p-2 space-y-1">
                   <p className="font-medium text-foreground">
@@ -907,7 +907,7 @@ const PaymentExchangePanel = ({
             </>
           )}
 
-          {/* =================== DETAILS_SHARED: Employee submits proof =================== */}
+          {/* =================== DETAILS_SHARED: Freelancer submits proof =================== */}
           {status === "details_shared" && (
             <>
               {/* Auto Payment Remaining Countdown */}
@@ -1056,13 +1056,13 @@ const PaymentExchangePanel = ({
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  Waiting for employee to submit payment proof…
+                  Waiting for freelancer to submit payment proof…
                 </p>
               )}
             </>
           )}
 
-          {/* =================== PROOF_SUBMITTED: Employee enters OTP =================== */}
+          {/* =================== PROOF_SUBMITTED: Freelancer enters OTP =================== */}
           {status === "proof_submitted" && (
             <>
               {/* Show proof to both */}
@@ -1183,7 +1183,7 @@ const PaymentExchangePanel = ({
                     </div>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    Waiting for employee to send OTP…
+                    Waiting for freelancer to send OTP…
                   </p>
                 </>
               )}

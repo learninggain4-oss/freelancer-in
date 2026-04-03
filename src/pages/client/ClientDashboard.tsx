@@ -449,7 +449,7 @@ const ClientDashboard = () => {
             ) : recentRequests.length > 0 ? (
               recentRequests.map((r: any) => {
                 const st = statusStyle[r.status] || statusStyle.pending;
-                const name = Array.isArray(r.employee?.full_name) ? r.employee.full_name.join(" ") : r.employee?.full_name ?? "Freelancer";
+                const name = Array.isArray(r.freelancer?.full_name) ? r.freelancer.full_name.join(" ") : r.freelancer?.full_name ?? "Freelancer";
                 return (
                   <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 10px", borderRadius: 12, transition: "background .15s" }}
                     onMouseEnter={e => (e.currentTarget.style.background = tok.rowHover)}

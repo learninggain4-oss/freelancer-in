@@ -38,7 +38,7 @@ const AdminRecoveryRequests = () => {
     queryFn: async () => {
       let query = supabase
         .from("recovery_requests")
-        .select(`*, project:project_id(id, name, amount, validation_fees, status, assigned_employee_id), employee:employee_id(id, full_name, user_code, hold_balance, available_balance)`)
+        .select(`*, project:project_id(id, name, amount, validation_fees, status, assigned_employee_id), freelancer:employee_id(id, full_name, user_code, hold_balance, available_balance)`)
         .order("created_at", { ascending: false });
       if (!showCleared) query = query.eq("is_cleared", false);
       const { data, error } = await query;
@@ -101,7 +101,7 @@ const AdminRecoveryRequests = () => {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Operation failed");
-      toast.success("Held balance released to employee's available balance.");
+      toast.success("Held balance released to freelancer's available balance.");
       queryClient.invalidateQueries({ queryKey: ["admin-recovery-requests"] });
     } catch (e: any) { toast.error(e.message); } finally { setLoading(null); }
   };
@@ -153,7 +153,7 @@ const AdminRecoveryRequests = () => {
             </div>
             <h1 className="text-3xl font-bold">Recovery Requests</h1>
             <p className="text-amber-100/80 text-sm mt-1">
-              Manage employee requests to recover held balances from rejected projects.
+              Manage freelancer requests to recover held balances from rejected projects.
             </p>
           </div>
           <div 
@@ -213,7 +213,7 @@ const AdminRecoveryRequests = () => {
                       )}
                     </div>
                     <p className="text-sm" style={{ color: T.sub }}>
-                      Freelancer: <span className="font-semibold" style={{ color: T.text }}>{req.employee?.full_name?.[0] || "Unknown"}</span> ({req.employee?.user_code?.[0]})
+                      Freelancer: <span className="font-semibold" style={{ color: T.text }}>{req.freelancer?.full_name?.[0] || "Unknown"}</span> ({req.freelancer?.user_code?.[0]})
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -224,7 +224,7 @@ const AdminRecoveryRequests = () => {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                   {[
                     { label: "Held Amount", value: req.held_amount, icon: IndianRupee, color: "#f87171", isCurrency: true },
-                    { label: "Hold Balance", value: req.employee?.hold_balance || 0, icon: History, color: "#6366f1", isCurrency: true },
+                    { label: "Hold Balance", value: req.freelancer?.hold_balance || 0, icon: History, color: "#6366f1", isCurrency: true },
                     { label: "Validation Fees", value: req.project?.validation_fees || 0, icon: ShieldAlert, color: "#fbbf24", isCurrency: true },
                     { label: "Project Budget", value: req.project?.amount || 0, icon: IndianRupee, color: "#22c55e", isCurrency: true },
                   ].map((stat, i) => (
@@ -304,7 +304,7 @@ const AdminRecoveryRequests = () => {
                       <div className="space-y-2">
                         <Label className="text-xs font-bold uppercase tracking-wider" style={{ color: T.sub }}>Decision Notes</Label>
                         <Textarea 
-                          placeholder="Admin notes for the employee..." 
+                          placeholder="Admin notes for the freelancer..." 
                           value={adminNotes[req.id] || ""}
                           onChange={(e) => setAdminNotes((prev) => ({ ...prev, [req.id]: e.target.value }))}
                           className="rounded-2xl border-none min-h-[80px]" 

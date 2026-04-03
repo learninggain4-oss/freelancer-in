@@ -529,7 +529,7 @@ const UpgradeChat = () => {
     }
   }, [lang, step, request, requestedWallet, profile, addBotMessageWithTyping, addUserMessage, getDayOptions, getTimeOptions, selectedDay, requestId, answeredMessages, markMessageAnswered, getDbMessage, replaceTemplateVars]);
 
-  // Check if employee sends message during appointment_active to confirm
+  // Check if freelancer sends message during appointment_active to confirm
   useEffect(() => {
     if (step !== "appointment_active") return;
     const employeeMessages = realtimeMessages.filter(msg =>
@@ -562,13 +562,13 @@ const UpgradeChat = () => {
     }
   }, [realtimeMessages, step, profile?.id, appointmentTimerId, lang, addBotMessageWithTyping, requestId]);
 
-  // Employee real-time messages (for display below bot messages in sequence)
+  // Freelancer real-time messages (for display below bot messages in sequence)
   const employeeRtMessages = realtimeMessages.filter(msg => {
     if (msg.content.startsWith(BOT_PREFIX) || msg.content.startsWith(SYSTEM_PREFIX)) return false;
     return msg.sender_id === profile?.id;
   });
 
-  // Merge admin + employee realtime messages in chronological order for display after bot messages
+  // Merge admin + freelancer realtime messages in chronological order for display after bot messages
   const allRealtimeMessages = realtimeMessages
     .filter(msg => !msg.content.startsWith(BOT_PREFIX) && !msg.content.startsWith(SYSTEM_PREFIX))
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
@@ -735,7 +735,7 @@ const UpgradeChat = () => {
             <TypingAnimation label="Flexpay" />
           )}
 
-          {/* Realtime messages (admin + employee) in chronological order */}
+          {/* Realtime messages (admin + freelancer) in chronological order */}
           {allRealtimeMessages.map((msg) => {
             const isMine = msg.sender_id === profile?.id;
             return (

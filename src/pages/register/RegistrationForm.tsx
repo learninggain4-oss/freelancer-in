@@ -77,7 +77,7 @@ const stepConfig = [
 const inp: React.CSSProperties = { background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", color: "white", borderRadius: 10 };
 
 const RegistrationForm = ({ userType }: RegistrationFormProps) => {
-  const isEmployee = userType === "employee";
+  const isFreelancer = userType === "employee";
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -222,7 +222,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 14px", borderRadius: 20, background: `${stepColor}18`, border: `1px solid ${stepColor}35`, marginBottom: 16 }}>
             <StepIcon size={13} color={stepColor} />
             <span style={{ fontSize: 11, fontWeight: 700, color: stepColor, letterSpacing: 1.5, textTransform: "uppercase" }}>
-              {isEmployee ? "Freelancer" : "Employer"} Registration
+              {isFreelancer ? "Freelancer" : "Employer"} Registration
             </span>
           </div>
           <h1 style={{ fontSize: 28, fontWeight: 900, color: "white", marginBottom: 6, letterSpacing: "-0.5px" }}>

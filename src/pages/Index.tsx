@@ -626,7 +626,7 @@ const features = [
 ];
 
 const steps = [
-  { step: "01", title: "Create Account", description: "Sign up as employee or client with quick WhatsApp verification.", icon: Users,     color: "from-violet-600 to-purple-700" },
+  { step: "01", title: "Create Account", description: "Sign up as freelancer or client with quick WhatsApp verification.", icon: Users,     color: "from-violet-600 to-purple-700" },
   { step: "02", title: "Find Projects",  description: "Browse available jobs or post your project requirements.", icon: Search,    color: "from-blue-600 to-cyan-700" },
   { step: "03", title: "Collaborate",    description: "Work together with real-time chat and milestone tracking.", icon: MessageCircle, color: "from-emerald-600 to-teal-700" },
   { step: "04", title: "Get Paid",       description: "Receive secure payments instantly to your UPI or bank account.", icon: CreditCard,  color: "from-rose-600 to-pink-700" },
@@ -680,7 +680,7 @@ const faqs = [
   { q: "What payment methods are supported?", a: "We support all major UPI apps (GPay, PhonePe, Paytm), direct bank transfers (NEFT/IMPS), and our integrated wallet system for instant payments." },
   { q: "Is there a fee to join the platform?", a: "Basic registration is free. We offer different wallet tiers with enhanced features and limits. You only pay when you upgrade your wallet plan." },
   { q: "How are disputes resolved?", a: "Our admin team mediates disputes through the in-app support chat. We hold payments in escrow until project validation is complete, protecting both parties." },
-  { q: "Can I work on multiple projects simultaneously?", a: "Yes! Employees can manage multiple projects. Our dashboard gives you a clear overview of all active projects, deadlines, and earnings." },
+  { q: "Can I work on multiple projects simultaneously?", a: "Yes! Freelancers can manage multiple projects. Our dashboard gives you a clear overview of all active projects, deadlines, and earnings." },
   { q: "How do I withdraw my earnings?", a: "Go to your Wallet section, set up your UPI ID or bank account, and request a withdrawal. Transfers are typically processed within 24 hours." },
 ];
 

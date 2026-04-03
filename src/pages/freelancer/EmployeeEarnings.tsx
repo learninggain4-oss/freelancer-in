@@ -51,7 +51,7 @@ export default function EmployeeEarnings() {
   const [showInvoice, setShowInvoice]     = useState(false);
 
   const { data: txns = [], isLoading } = useQuery({
-    queryKey: ["employee-earnings-txns", profile?.id],
+    queryKey: ["freelancer-earnings-txns", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
       const { data, error } = await supabase.from("transactions").select("*").eq("profile_id", profile.id).order("created_at", { ascending: false }).limit(20);

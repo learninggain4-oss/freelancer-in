@@ -41,7 +41,7 @@ const RequestWithdrawal = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const basePath = window.location.pathname.includes("/client/") ? "/client" : "/employee";
+  const basePath = window.location.pathname.includes("/client/") ? "/client" : "/freelancer";
 
   const savedBank = profile?.bank_account_number;
   const savedIfsc = profile?.bank_ifsc_code;
@@ -89,7 +89,7 @@ const RequestWithdrawal = () => {
   const hasWithdrawalPassword = passwordStatus?.has_password ?? false;
 
   const { data: upiApps } = useQuery({
-    queryKey: ["employee-upi-apps", profile?.id],
+    queryKey: ["freelancer-upi-apps", profile?.id],
     enabled: !!profile?.id,
     queryFn: async () => {
       const { data } = await supabase
@@ -197,8 +197,8 @@ const RequestWithdrawal = () => {
       setShowPasswordDialog(false);
       setWithdrawalPassword("");
       refreshProfile();
-      queryClient.invalidateQueries({ queryKey: ["employee-withdrawals"] });
-      queryClient.invalidateQueries({ queryKey: ["employee-transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["freelancer-withdrawals"] });
+      queryClient.invalidateQueries({ queryKey: ["freelancer-transactions"] });
     },
     onError: (e: any) => toast.error(e.message),
   });

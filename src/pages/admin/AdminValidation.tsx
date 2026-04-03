@@ -53,7 +53,7 @@ type PaymentConfirmation = {
   created_at: string;
   updated_at: string;
   project?: { name: string; client_id: string; status: string };
-  employee?: { full_name: string[]; user_code: string[] };
+  freelancer?: { full_name: string[]; user_code: string[] };
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -88,7 +88,7 @@ const AdminValidation = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("payment_confirmations")
-        .select("*, project:project_id(name, client_id, status), employee:employee_id(full_name, user_code)")
+        .select("*, project:project_id(name, client_id, status), freelancer:employee_id(full_name, user_code)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as PaymentConfirmation[];
@@ -180,7 +180,7 @@ const AdminValidation = () => {
     if (statusFilter !== "all" && c.status !== statusFilter) return false;
     if (search) {
       const term = search.toLowerCase();
-      const empName = (c.employee as any)?.full_name?.[0]?.toLowerCase() || "";
+      const empName = (c.freelancer as any)?.full_name?.[0]?.toLowerCase() || "";
       const projName = (c.project as any)?.name?.toLowerCase() || "";
       const utr = c.utr_number?.toLowerCase() || "";
       return empName.includes(term) || projName.includes(term) || utr.includes(term);
@@ -241,7 +241,7 @@ const AdminValidation = () => {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by employee, project, or UTR..."
+              placeholder="Search by freelancer, project, or UTR..."
               className="pl-10 h-12 border-none transition-all focus-visible:ring-1 focus-visible:ring-indigo-500/50"
               style={{ backgroundColor: T.input, color: T.text }}
             />
@@ -317,8 +317,8 @@ const AdminValidation = () => {
                         {(c.project as any)?.name || "Unknown Project"}
                       </p>
                       <p className="text-xs opacity-50 truncate" style={{ color: T.text }}>
-                        {(c.employee as any)?.full_name?.[0] || "Unknown"} •{" "}
-                        <span className="font-mono">{(c.employee as any)?.user_code?.[0] || ""}</span>
+                        {(c.freelancer as any)?.full_name?.[0] || "Unknown"} •{" "}
+                        <span className="font-mono">{(c.freelancer as any)?.user_code?.[0] || ""}</span>
                       </p>
                     </div>
 
@@ -391,7 +391,7 @@ const AdminValidation = () => {
                           </div>
                           <div className="flex flex-col">
                              <span className="text-[10px] opacity-40 uppercase">Freelancer</span>
-                             <span className="font-bold">{(selected.employee as any)?.full_name?.[0] || "Unknown"} <span className="opacity-30 font-mono text-xs">({(selected.employee as any)?.user_code?.[0]})</span></span>
+                             <span className="font-bold">{(selected.freelancer as any)?.full_name?.[0] || "Unknown"} <span className="opacity-30 font-mono text-xs">({(selected.freelancer as any)?.user_code?.[0]})</span></span>
                           </div>
                        </div>
                     </div>

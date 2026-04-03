@@ -63,7 +63,7 @@ const AnnouncementForm = ({ editingAnnouncement, onClose }: AnnouncementFormProp
     }
   }, [editingAnnouncement]);
 
-  const userType = target === "employees" ? "employee" : target === "clients" ? "client" : null;
+  const userType = target === "freelancers" ? "freelancer" : target === "clients" ? "client" : null;
 
   const { data: users = [] } = useQuery({
     queryKey: ["announcement-users", userType],
@@ -183,7 +183,7 @@ const AnnouncementForm = ({ editingAnnouncement, onClose }: AnnouncementFormProp
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="everyone">Everyone</SelectItem>
-              <SelectItem value="employees">Freelancers Only</SelectItem>
+              <SelectItem value="freelancers">Freelancers Only</SelectItem>
               <SelectItem value="clients">Clients Only</SelectItem>
             </SelectContent>
           </Select>
@@ -193,7 +193,7 @@ const AnnouncementForm = ({ editingAnnouncement, onClose }: AnnouncementFormProp
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              Select {target === "employees" ? "Employees" : "Clients"}
+              Select {target === "freelancers" ? "Freelancers" : "Clients"}
             </Label>
             <div className="flex items-center gap-2 pb-1">
               <Checkbox
@@ -202,13 +202,13 @@ const AnnouncementForm = ({ editingAnnouncement, onClose }: AnnouncementFormProp
                 onCheckedChange={(checked) => handleSelectAll(checked === true)}
               />
               <label htmlFor="select-all-users-form" className="text-sm font-medium cursor-pointer">
-                All {target === "employees" ? "Employees" : "Clients"}
+                All {target === "freelancers" ? "Freelancers" : "Clients"}
               </label>
             </div>
             {!selectAll && (
               <>
                 <Input
-                  placeholder={`Search ${target === "employees" ? "employees" : "clients"}...`}
+                  placeholder={`Search ${target === "freelancers" ? "freelancers" : "clients"}...`}
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
                   className="mb-2"

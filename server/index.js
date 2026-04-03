@@ -916,8 +916,8 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
           if (!recovery_request_id || !amount || amount <= 0) throw new Error("Missing recovery_request_id or invalid amount");
           const { data: recReq } = await supabase.from("recovery_requests").select("*, employee:profiles!recovery_requests_employee_id_fkey(id, available_balance, hold_balance, user_id)").eq("id", recovery_request_id).single();
           if (!recReq) throw new Error("Recovery request not found");
-          const emp = recReq.employee;
-          if (!emp) throw new Error("Employee not found");
+          const emp = recReq.freelancer;
+          if (!emp) throw new Error("Freelancer not found");
           if (action === "admin_hold_balance") {
             const holdAmount = Math.min(amount, Number(emp.available_balance));
             await supabase.from("profiles").update({ available_balance: Number(emp.available_balance) - holdAmount, hold_balance: Number(emp.hold_balance) + holdAmount }).eq("id", emp.id);

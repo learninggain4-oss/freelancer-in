@@ -28,7 +28,7 @@ const PLANS = [
       { name: "Dedicated manager", val: false },
       { name: "API access", val: false },
     ],
-    cta: "Get Started Free", ctaLink: "/register/employee",
+    cta: "Get Started Free", ctaLink: "/register/freelancer",
   },
   {
     name: "Pro", price: "₹499", sub: "per month", commission: "8%",
@@ -47,7 +47,7 @@ const PLANS = [
       { name: "Dedicated manager", val: false },
       { name: "API access", val: false },
     ],
-    cta: "Go Pro", ctaLink: "/register/employee",
+    cta: "Go Pro", ctaLink: "/register/freelancer",
   },
   {
     name: "Business", price: "₹1,499", sub: "per month", commission: "5%",
@@ -66,7 +66,7 @@ const PLANS = [
       { name: "Dedicated manager", val: true },
       { name: "API access", val: true },
     ],
-    cta: "Go Business", ctaLink: "/register/employee",
+    cta: "Go Business", ctaLink: "/register/freelancer",
   },
 ];
 

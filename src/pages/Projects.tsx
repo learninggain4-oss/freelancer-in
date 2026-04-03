@@ -111,7 +111,7 @@ const PROJECT_TITLES: [string, string, string][] = [
   ["Help Desk Agent — SaaS Product", "Support", "₹11,000"],
   ["Spreadsheet Automation with Macros", "Data Entry", "₹6,500"],
   ["Telugu to English — 20 Documents", "Translation", "₹5,500"],
-  ["Payroll Processing — 50 Employees", "Finance", "₹8,500"],
+  ["Payroll Processing — 50 Freelancers", "Finance", "₹8,500"],
   ["Freelance Service Agreement", "Legal", "₹4,500"],
   ["TypeScript Refactor — Legacy Codebase", "Development", "₹30,000"],
   ["Motion Graphics — App Launch", "Design", "₹12,000"],
