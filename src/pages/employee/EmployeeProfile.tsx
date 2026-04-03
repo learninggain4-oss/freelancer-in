@@ -29,6 +29,9 @@ const EmployeeProfile = () => {
   const [copied, setCopied] = useState(false);
   const { theme } = useDashboardTheme();
   const T = TH[theme];
+  const isDark = theme === "black";
+  const clrGreen = isDark ? "#4ade80" : "#16a34a";
+  const clrAmber = isDark ? "#fbbf24" : "#b45309";
 
   const { data: aadhaarStatus } = useQuery({
     queryKey: ["aadhaar-status", profile?.id],
@@ -166,7 +169,7 @@ const EmployeeProfile = () => {
     return "secondary";
   };
 
-  const completionColor = completion >= 80 ? "#4ade80" : completion >= 50 ? "#fbbf24" : "#f87171";
+  const completionColor = completion >= 80 ? clrGreen : completion >= 50 ? clrAmber : (isDark ? "#f87171" : "#dc2626");
 
   return (
     <div style={{ background: T.bg, minHeight: "100vh", color: T.text }} className="space-y-5 p-4 pb-24">
@@ -188,7 +191,7 @@ const EmployeeProfile = () => {
               </Badge>
               <Badge style={{ 
                 background: profile?.approval_status === "approved" ? "rgba(74,222,128,.15)" : "rgba(251,191,36,.15)",
-                color: profile?.approval_status === "approved" ? "#4ade80" : "#fbbf24",
+                color: profile?.approval_status === "approved" ? clrGreen : clrAmber,
                 borderColor: profile?.approval_status === "approved" ? "rgba(74,222,128,.2)" : "rgba(251,191,36,.2)"
               }} className="text-[10px] capitalize font-bold px-3 py-1 border">
                 {profile?.approval_status ?? "pending"}
@@ -260,7 +263,7 @@ const EmployeeProfile = () => {
               Unlock your full potential! Complete all sections to earn rewards and gain higher visibility among clients.
             </p>
           ) : (
-            <p className="mt-4 text-[11px] text-[#4ade80] font-bold flex items-center gap-1.5">
+            <p className="mt-4 text-[11px] font-bold flex items-center gap-1.5" style={{ color: clrGreen }}>
               <BadgeCheck className="h-3.5 w-3.5" /> Congratulations! Your profile is elite.
             </p>
           )}
@@ -270,9 +273,9 @@ const EmployeeProfile = () => {
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Services", value: servicesCount ?? 0, color: "#6366f1" },
-          { label: "KYC", value: isVerified ? "Elite" : "Basic", color: "#8b5cf6" },
-          { label: "Coins", value: profile?.coin_balance ?? 0, color: "#fbbf24" },
+          { label: "Services", value: servicesCount ?? 0, color: isDark ? "#818cf8" : "#4f46e5" },
+          { label: "KYC", value: isVerified ? "Elite" : "Basic", color: isDark ? "#c4b5fd" : "#7c3aed" },
+          { label: "Coins", value: profile?.coin_balance ?? 0, color: clrAmber },
         ].map((stat, i) => (
           <Card key={i} style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }} className="border shadow-xl">
             <CardContent className="flex flex-col items-center p-4">
@@ -305,7 +308,7 @@ const EmployeeProfile = () => {
                 {section.badge && (
                   <Badge style={{ 
                     background: section.badge === 'verified' ? 'rgba(74,222,128,.1)' : 'rgba(251,191,36,.1)',
-                    color: section.badge === 'verified' ? '#4ade80' : '#fbbf24',
+                    color: section.badge === 'verified' ? clrGreen : clrAmber,
                     borderColor: section.badge === 'verified' ? 'rgba(74,222,128,.2)' : 'rgba(251,191,36,.2)'
                   }} className="text-[9px] capitalize px-2 py-0 border">
                     {section.badge}

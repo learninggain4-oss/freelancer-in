@@ -204,6 +204,9 @@ const EmployeeDashboard = () => {
   const isDarkTheme = theme === "black";
   const accentIcon  = isDarkTheme ? "#a5b4fc" : "#4f46e5";
   const violetIcon  = isDarkTheme ? "#c4b5fd" : "#7c3aed";
+  const clrGreen = isDarkTheme ? "#4ade80" : "#16a34a";
+  const clrAmber = isDarkTheme ? "#fbbf24" : "#b45309";
+  const clrRed   = isDarkTheme ? "#f87171" : "#dc2626";
 
   const quickActions = [
     { icon: Briefcase,       label: "Find Jobs",   to: "/employee/projects",          grad: "rgba(99,102,241,.18)",  color: accentIcon },
@@ -256,7 +259,7 @@ const EmployeeDashboard = () => {
             <h2 style={{ margin: 0, fontSize: 23, fontWeight: 900, color: tok.text, letterSpacing: "-0.5px" }}>{typeof firstName === "string" ? firstName : "there"} 👋</h2>
             <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 11px", borderRadius: 20, background: "rgba(34,197,94,.12)", border: "1px solid rgba(34,197,94,.2)" }}>
               <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80" }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#4ade80" }}>Online</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: clrGreen }}>Online</span>
             </div>
           </div>
         </div>
@@ -293,7 +296,7 @@ const EmployeeDashboard = () => {
                   <p style={{ fontWeight: 900, color: tok.text, fontSize: 15, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.value}</p>
                   <p style={{ fontSize: 10, color: tok.sub, fontWeight: 600, margin: "1px 0 0", lineHeight: 1.2 }}>{s.label}</p>
                 </div>
-                <span style={{ fontSize: 9.5, fontWeight: 700, color: s.trendUp ? "#4ade80" : "#fbbf24", background: s.trendUp ? "rgba(34,197,94,.12)" : "rgba(245,158,11,.12)", borderRadius: 20, padding: "1px 6px", flexShrink: 0 }}>
+                <span style={{ fontSize: 9.5, fontWeight: 700, color: s.trendUp ? clrGreen : clrAmber, background: s.trendUp ? "rgba(34,197,94,.12)" : "rgba(245,158,11,.12)", borderRadius: 20, padding: "1px 6px", flexShrink: 0 }}>
                   {s.trend}
                 </span>
               </div>
@@ -392,10 +395,10 @@ const EmployeeDashboard = () => {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10, marginBottom: 12 }}>
             {[
-              { label: "Available",  value: `₹${availBal.toLocaleString("en-IN")}`,  color: "#4ade80", bg: "rgba(34,197,94,.1)" },
-              { label: "On Hold",    value: `₹${holdBal.toLocaleString("en-IN")}`,   color: "#fbbf24", bg: "rgba(245,158,11,.1)" },
+              { label: "Available",  value: `₹${availBal.toLocaleString("en-IN")}`,  color: clrGreen,  bg: "rgba(34,197,94,.1)" },
+              { label: "On Hold",    value: `₹${holdBal.toLocaleString("en-IN")}`,   color: clrAmber,  bg: "rgba(245,158,11,.1)" },
               { label: "7-Day Earned",value:`₹${totalEarnings.toLocaleString("en-IN")}`,color:accentIcon,bg:"rgba(99,102,241,.1)"},
-              { label: "Withdrawals",value: withdrawCount + " requests",              color: "#f87171", bg: "rgba(239,68,68,.1)" },
+              { label: "Withdrawals",value: withdrawCount + " requests",              color: clrRed,    bg: "rgba(239,68,68,.1)" },
             ].map(w => (
               <div key={w.label} style={{ padding: "12px", borderRadius: 12, background: w.bg, border: `1px solid ${w.color}20` }}>
                 <p style={{ fontSize: 14, fontWeight: 900, color: w.color, margin: 0 }}>{w.value}</p>
@@ -419,7 +422,7 @@ const EmployeeDashboard = () => {
               </div>
               <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Alerts & Notifications</span>
             </div>
-            <span style={{ fontSize: 10, background: "rgba(239,68,68,.12)", color: "#f87171", borderRadius: 20, padding: "1px 8px", fontWeight: 700 }}>
+            <span style={{ fontSize: 10, background: "rgba(239,68,68,.12)", color: clrRed, borderRadius: 20, padding: "1px 8px", fontWeight: 700 }}>
               {MOCK_ALERTS.length} new
             </span>
           </div>
@@ -451,8 +454,8 @@ const EmployeeDashboard = () => {
             </button>
           </div>
           {[
-            { title: "Website Redesign", client: "TechCorp Ltd", budget: "₹24,000", status: "Active",    statusColor: "#4ade80", deadline: "Dec 28" },
-            { title: "Mobile App UI",   client: "StartupXYZ",   budget: "₹38,000", status: "Pending",   statusColor: "#fbbf24", deadline: "Jan 05" },
+            { title: "Website Redesign", client: "TechCorp Ltd", budget: "₹24,000", status: "Active",    statusColor: clrGreen, deadline: "Dec 28" },
+            { title: "Mobile App UI",   client: "StartupXYZ",   budget: "₹38,000", status: "Pending",   statusColor: clrAmber, deadline: "Jan 05" },
             { title: "Logo Design",     client: "BrandCo",      budget: "₹8,000",  status: "Completed", statusColor: accentIcon, deadline: "Dec 20" },
           ].map((job, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 10px", borderRadius: 12, transition: "background .15s" }}
@@ -501,7 +504,7 @@ const EmployeeDashboard = () => {
                     <p style={{ fontSize: 12.5, fontWeight: 600, color: tok.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>{tx.description}</p>
                     <p style={{ fontSize: 10.5, color: tok.sub, margin: "1px 0 0" }}>{new Date(tx.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: tx.type === "credit" ? "#4ade80" : "#f87171" }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: tx.type === "credit" ? clrGreen : clrRed }}>
                     {tx.type === "credit" ? "+" : "−"}₹{Number(tx.amount).toLocaleString("en-IN")}
                   </span>
                 </div>

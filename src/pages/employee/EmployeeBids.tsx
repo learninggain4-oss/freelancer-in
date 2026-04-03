@@ -17,14 +17,14 @@ const TH = {
   wb:    { bg: "#f0f4ff", card: "#ffffff", border: "rgba(0,0,0,.08)", text: "#1e293b", sub: "#64748b", input: "#f8fafc", muted: "#f1f5f9" },
 };
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ComponentType<any> }> = {
-  pending:      { label: "Pending",     color: "#fbbf24", bg: "rgba(251,191,36,.15)",  icon: Clock },
-  shortlisted:  { label: "Shortlisted", color: "#60a5fa", bg: "rgba(96,165,250,.15)",  icon: TrendingUp },
-  approved:     { label: "Won",         color: "#4ade80", bg: "rgba(74,222,128,.15)",  icon: Trophy },
-  rejected:     { label: "Rejected",    color: "#f87171", bg: "rgba(248,113,113,.15)", icon: XCircle },
-  job_confirmed:{ label: "Confirmed",   color: "#a78bfa", bg: "rgba(167,139,250,.15)", icon: CheckCircle },
-  completed:    { label: "Completed",   color: "#4ade80", bg: "rgba(74,222,128,.15)",  icon: CheckCircle },
-};
+const getStatusConfig = (isDark: boolean): Record<string, { label: string; color: string; bg: string; icon: React.ComponentType<any> }> => ({
+  pending:      { label: "Pending",     color: isDark ? "#fbbf24" : "#b45309", bg: "rgba(251,191,36,.15)",  icon: Clock },
+  shortlisted:  { label: "Shortlisted", color: isDark ? "#60a5fa" : "#2563eb", bg: "rgba(96,165,250,.15)",  icon: TrendingUp },
+  approved:     { label: "Won",         color: isDark ? "#4ade80" : "#16a34a", bg: "rgba(74,222,128,.15)",  icon: Trophy },
+  rejected:     { label: "Rejected",    color: isDark ? "#f87171" : "#dc2626", bg: "rgba(248,113,113,.15)", icon: XCircle },
+  job_confirmed:{ label: "Confirmed",   color: isDark ? "#a78bfa" : "#7c3aed", bg: "rgba(167,139,250,.15)", icon: CheckCircle },
+  completed:    { label: "Completed",   color: isDark ? "#4ade80" : "#16a34a", bg: "rgba(74,222,128,.15)",  icon: CheckCircle },
+});
 
 const DEFAULT_TEMPLATES = [
   { id: "1", name: "React Developer Pitch", text: "Hi, I'm a React developer with 4+ years of experience building scalable web applications. I've reviewed your requirements and I'm confident I can deliver a high-quality solution within your timeline. I work with clean, maintainable code and provide regular progress updates.\n\nLet's discuss the project further!" },
@@ -47,6 +47,12 @@ export default function EmployeeBids() {
   const { profile } = useAuth();
   const { theme } = useDashboardTheme();
   const T = TH[theme];
+  const isDark = theme === "black";
+  const STATUS_CONFIG = getStatusConfig(isDark);
+  const clrGreen = isDark ? "#4ade80" : "#16a34a";
+  const clrAmber = isDark ? "#fbbf24" : "#b45309";
+  const clrPurple = isDark ? "#a78bfa" : "#7c3aed";
+  const clrIndigo = isDark ? "#818cf8" : "#4f46e5";
 
   const [search, setSearch]       = useState("");
   const [statusFilter, setStatus] = useState("all");
@@ -116,7 +122,7 @@ export default function EmployeeBids() {
           <button
             onClick={() => setShowT(v => !v)}
             className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all"
-            style={{ background: showTemplates ? "rgba(99,102,241,.2)" : T.card, border: `1px solid ${showTemplates ? "rgba(99,102,241,.4)" : T.border}`, color: showTemplates ? "#a78bfa" : T.sub }}
+            style={{ background: showTemplates ? "rgba(99,102,241,.2)" : T.card, border: `1px solid ${showTemplates ? "rgba(99,102,241,.4)" : T.border}`, color: showTemplates ? clrPurple : T.sub }}
           >
             <FileText className="h-3.5 w-3.5" /> Proposal Templates
           </button>
@@ -127,10 +133,10 @@ export default function EmployeeBids() {
       <div className="px-4 sm:px-6 mb-5">
         <div className="grid grid-cols-4 gap-3">
           {[
-            { label: "Total Bids",    value: stats.total,       color: "#6366f1", icon: Send },
-            { label: "Won",           value: stats.won,         color: "#4ade80", icon: Trophy },
-            { label: "Pending",       value: stats.pending,     color: "#fbbf24", icon: Clock },
-            { label: "Success Rate",  value: `${stats.successRate}%`, color: "#a78bfa", icon: Target },
+            { label: "Total Bids",    value: stats.total,       color: clrIndigo, icon: Send },
+            { label: "Won",           value: stats.won,         color: clrGreen,  icon: Trophy },
+            { label: "Pending",       value: stats.pending,     color: clrAmber,  icon: Clock },
+            { label: "Success Rate",  value: `${stats.successRate}%`, color: clrPurple, icon: Target },
           ].map(s => {
             const Icon = s.icon;
             return (
@@ -154,7 +160,7 @@ export default function EmployeeBids() {
           <div className="rounded-2xl p-4" style={card}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold" style={{ color: T.text }}>Proposal Templates</h3>
-              <button onClick={() => setAddingTpl(v => !v)} className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ background: "rgba(99,102,241,.15)", color: "#a78bfa", border: "1px solid rgba(99,102,241,.3)" }}>
+              <button onClick={() => setAddingTpl(v => !v)} className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ background: "rgba(99,102,241,.15)", color: clrPurple, border: "1px solid rgba(99,102,241,.3)" }}>
                 <Plus className="h-3 w-3" /> Add Template
               </button>
             </div>
@@ -229,7 +235,7 @@ export default function EmployeeBids() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-[10px] font-semibold rounded-md px-2 py-0.5" style={{ background: "rgba(99,102,241,.15)", color: "#a78bfa" }}>{bid.category}</span>
+                    <span className="text-[10px] font-semibold rounded-md px-2 py-0.5" style={{ background: "rgba(99,102,241,.15)", color: clrPurple }}>{bid.category}</span>
                     <span className="flex items-center gap-1 text-[10px] rounded-md px-2 py-0.5 font-semibold" style={{ background: cfg.bg, color: cfg.color }}>
                       <Icon className="h-2.5 w-2.5" /> {cfg.label}
                     </span>

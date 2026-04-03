@@ -36,6 +36,10 @@ const StarRow = ({ rating, size = 14 }: { rating: number; size?: number }) => (
 export default function EmployeeReviews() {
   const { theme } = useDashboardTheme();
   const T = TH[theme];
+  const isDark = theme === "black";
+  const clrAmber  = isDark ? "#fbbf24" : "#b45309";
+  const clrGreen  = isDark ? "#4ade80" : "#16a34a";
+  const clrPurple = isDark ? "#a78bfa" : "#7c3aed";
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState(0);
 
@@ -60,7 +64,7 @@ export default function EmployeeReviews() {
         <div className="rounded-2xl p-5" style={card}>
           <div className="flex gap-6 items-center">
             <div className="text-center shrink-0">
-              <p className="text-5xl font-black" style={{ color: "#fbbf24" }}>{avgRating}</p>
+              <p className="text-5xl font-black" style={{ color: clrAmber }}>{avgRating}</p>
               <StarRow rating={Math.round(Number(avgRating))} size={16} />
               <p className="text-[10px] mt-1" style={{ color: T.sub }}>{MOCK_REVIEWS.length} reviews</p>
             </div>
@@ -78,8 +82,8 @@ export default function EmployeeReviews() {
             </div>
             <div className="hidden sm:flex flex-col gap-3">
               {[
-                { label: "5-Star Reviews", value: "4", icon: Award,     color: "#fbbf24" },
-                { label: "Recommended",    value: "100%", icon: ThumbsUp, color: "#4ade80" },
+                { label: "5-Star Reviews", value: "4", icon: Award,     color: clrAmber },
+                { label: "Recommended",    value: "100%", icon: ThumbsUp, color: clrGreen },
               ].map(s => {
                 const Icon = s.icon;
                 return (
@@ -105,7 +109,7 @@ export default function EmployeeReviews() {
         </div>
         <div className="flex gap-1.5 shrink-0">
           {[0,5,4,3].map(r => (
-            <button key={r} onClick={() => setFilter(r)} className="rounded-xl px-3 py-2 text-[10px] font-semibold transition-all" style={{ background: filter === r ? "rgba(251,191,36,.2)" : T.card, border: `1px solid ${filter === r ? "rgba(251,191,36,.4)" : T.border}`, color: filter === r ? "#fbbf24" : T.sub }}>
+            <button key={r} onClick={() => setFilter(r)} className="rounded-xl px-3 py-2 text-[10px] font-semibold transition-all" style={{ background: filter === r ? "rgba(251,191,36,.2)" : T.card, border: `1px solid ${filter === r ? "rgba(251,191,36,.4)" : T.border}`, color: filter === r ? clrAmber : T.sub }}>
               {r === 0 ? "All" : `${r}★`}
             </button>
           ))}
@@ -133,7 +137,7 @@ export default function EmployeeReviews() {
                 </div>
               </div>
             </div>
-            <div className="mb-2 rounded-lg px-2 py-0.5 inline-flex items-center gap-1.5 text-[10px] font-semibold" style={{ background: "rgba(99,102,241,.12)", color: "#a78bfa" }}>
+            <div className="mb-2 rounded-lg px-2 py-0.5 inline-flex items-center gap-1.5 text-[10px] font-semibold" style={{ background: "rgba(99,102,241,.12)", color: clrPurple }}>
               <MessageSquare className="h-2.5 w-2.5" /> {r.project}
             </div>
             <p className="text-xs leading-relaxed" style={{ color: T.sub }}>"{r.comment}"</p>

@@ -44,6 +44,10 @@ const SAMPLE_QUESTIONS: Record<string, { q: string; options: string[]; correct: 
 export default function EmployeeBadges() {
   const { theme } = useDashboardTheme();
   const T = TH[theme];
+  const isDark = theme === "black";
+  const clrGreen  = isDark ? "#4ade80" : "#16a34a";
+  const clrPurple = isDark ? "#a78bfa" : "#7c3aed";
+  const clrIndigo = isDark ? "#818cf8" : "#4f46e5";
 
   const [activeTest, setActiveTest]   = useState<string | null>(null);
   const [currentQ, setCurrentQ]       = useState(0);
@@ -94,7 +98,7 @@ export default function EmployeeBadges() {
               {passed ? <Trophy className="h-10 w-10 text-emerald-400" /> : <Target className="h-10 w-10 text-red-400" />}
             </div>
             <h2 className="text-xl font-black mb-1" style={{ color: T.text }}>{passed ? "Badge Earned! 🎉" : "Better Luck Next Time"}</h2>
-            <p className="text-3xl font-black my-3" style={{ color: passed ? "#4ade80" : "#f87171" }}>{score}%</p>
+            <p className="text-3xl font-black my-3" style={{ color: passed ? (theme === "black" ? "#4ade80" : "#16a34a") : (theme === "black" ? "#f87171" : "#dc2626") }}>{score}%</p>
             <p className="text-sm mb-6" style={{ color: T.sub }}>{passed ? `You've earned the "${skill.name}" verified badge!` : `You need 60% to pass. Your score: ${score}%`}</p>
             {passed && (
               <div className="rounded-2xl p-4 mb-4" style={{ background: `${skill.color}12`, border: `1px solid ${skill.color}30` }}>
@@ -163,9 +167,9 @@ export default function EmployeeBadges() {
       {/* Stats */}
       <div className="px-4 sm:px-6 mb-5 grid grid-cols-3 gap-3">
         {[
-          { label: "Earned",    value: earned.length,     color: "#4ade80", icon: Award },
-          { label: "Available", value: available.length,  color: "#6366f1", icon: Zap },
-          { label: "Total",     value: SKILL_TESTS.length,color: "#a78bfa", icon: Trophy },
+          { label: "Earned",    value: earned.length,     color: clrGreen,  icon: Award },
+          { label: "Available", value: available.length,  color: clrIndigo, icon: Zap },
+          { label: "Total",     value: SKILL_TESTS.length,color: clrPurple, icon: Trophy },
         ].map(s => {
           const Icon = s.icon;
           return (

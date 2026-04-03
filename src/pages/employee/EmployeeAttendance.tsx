@@ -44,6 +44,9 @@ const EmployeeAttendance = () => {
   const [showCheckOutDialog, setShowCheckOutDialog] = useState(false);
   const { theme } = useDashboardTheme();
   const T = TH[theme];
+  const isDark = theme === "black";
+  const clrGreen = isDark ? "#4ade80" : "#16a34a";
+  const clrAmber = isDark ? "#fbbf24" : "#b45309";
 
   const today = new Date();
   const todayStr = format(today, "yyyy-MM-dd");
@@ -183,7 +186,7 @@ const EmployeeAttendance = () => {
                 </div>
                 <div>
                   <p style={{ color: T.text }} className="text-[10px] font-black uppercase tracking-[0.2em]">Active Session</p>
-                  <p style={{ color: "#4ade80" }} className="text-lg font-black">{format(new Date(todayRecord.check_in_at), "hh:mm a")}</p>
+                  <p style={{ color: clrGreen }} className="text-lg font-black">{format(new Date(todayRecord.check_in_at), "hh:mm a")}</p>
                 </div>
               </div>
               <Button
@@ -216,7 +219,7 @@ const EmployeeAttendance = () => {
                 </div>
               </div>
               <div style={{ background: "rgba(74,222,128,0.1)", borderColor: "rgba(74,222,128,0.2)" }} className="flex items-center justify-between rounded-2xl p-4 border backdrop-blur-md">
-                <Badge style={{ background: "rgba(74,222,128,0.2)", color: "#4ade80", borderColor: "rgba(74,222,128,0.3)" }} className="font-black text-[10px] uppercase tracking-widest px-3 py-1 border">
+                <Badge style={{ background: "rgba(74,222,128,0.2)", color: clrGreen, borderColor: "rgba(74,222,128,0.3)" }} className="font-black text-[10px] uppercase tracking-widest px-3 py-1 border">
                   ✅ Mission Complete
                 </Badge>
                 {formatDuration(todayRecord.check_in_at, todayRecord.check_out_at) && (
@@ -233,9 +236,9 @@ const EmployeeAttendance = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-4">
         {[
-          { icon: CalendarDays, value: totalPresent, label: "Present", color: "#4ade80", bg: "rgba(74,222,128,0.1)", border: "rgba(74,222,128,0.2)" },
-          { icon: Clock, value: totalHalfDay, label: "Half Day", color: "#fbbf24", bg: "rgba(251,191,36,0.1)", border: "rgba(251,191,36,0.2)" },
-          { icon: Flame, value: streak, label: "Streak", color: "#f87171", bg: "rgba(248,113,113,0.1)", border: "rgba(248,113,113,0.2)" },
+          { icon: CalendarDays, value: totalPresent, label: "Present", color: clrGreen, bg: "rgba(74,222,128,0.1)", border: "rgba(74,222,128,0.2)" },
+          { icon: Clock, value: totalHalfDay, label: "Half Day", color: clrAmber, bg: "rgba(251,191,36,0.1)", border: "rgba(251,191,36,0.2)" },
+          { icon: Flame, value: streak, label: "Streak", color: isDark ? "#f87171" : "#dc2626", bg: "rgba(248,113,113,0.1)", border: "rgba(248,113,113,0.2)" },
           { icon: TrendingUp, value: `${attendanceRate}%`, label: "Rate", color: "#6366f1", bg: "rgba(99,102,241,0.1)", border: "rgba(99,102,241,0.2)" },
         ].map((stat) => (
           <Card key={stat.label} style={{ background: T.card, borderColor: stat.border, backdropFilter: "blur(12px)" }} className="border shadow-xl overflow-hidden">
@@ -305,7 +308,7 @@ const EmployeeAttendance = () => {
                   <div className="flex items-center gap-3 pt-2">
                     <Badge style={{ 
                       background: selectedRecord.check_out_at ? "rgba(74,222,128,0.15)" : "rgba(251,191,36,0.15)",
-                      color: selectedRecord.check_out_at ? "#4ade80" : "#fbbf24",
+                      color: selectedRecord.check_out_at ? clrGreen : clrAmber,
                       borderColor: selectedRecord.check_out_at ? "rgba(74,222,128,0.3)" : "rgba(251,191,36,0.3)"
                     }} className="text-[9px] font-black uppercase tracking-widest px-3 py-1 border">
                       {selectedRecord.check_out_at ? "✅ Present" : "⏳ Half Day"}

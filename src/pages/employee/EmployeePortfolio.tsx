@@ -31,6 +31,10 @@ type Item = typeof INITIAL_ITEMS[0];
 export default function EmployeePortfolio() {
   const { theme } = useDashboardTheme();
   const T = TH[theme];
+  const isDark = theme === "black";
+  const clrGreen  = isDark ? "#4ade80" : "#16a34a";
+  const clrPurple = isDark ? "#a78bfa" : "#7c3aed";
+  const clrIndigo = isDark ? "#818cf8" : "#4f46e5";
   const [items, setItems]         = useState<Item[]>(INITIAL_ITEMS);
   const [showForm, setShowForm]   = useState(false);
   const [editId, setEditId]       = useState<string | null>(null);
@@ -79,9 +83,9 @@ export default function EmployeePortfolio() {
       {/* Stats */}
       <div className="px-4 sm:px-6 mb-5 grid grid-cols-3 gap-3">
         {[
-          { label: "Total Projects", value: items.length,                                      color: "#6366f1" },
-          { label: "With Live Links", value: items.filter(i => i.link).length,                 color: "#4ade80" },
-          { label: "Categories",     value: new Set(items.map(i => i.category)).size,          color: "#a78bfa" },
+          { label: "Total Projects", value: items.length,                                      color: clrIndigo },
+          { label: "With Live Links", value: items.filter(i => i.link).length,                 color: clrGreen },
+          { label: "Categories",     value: new Set(items.map(i => i.category)).size,          color: clrPurple },
         ].map(s => (
           <div key={s.label} className="rounded-2xl p-3 text-center" style={card}>
             <p className="text-2xl font-black mb-0.5" style={{ color: s.color }}>{s.value}</p>
