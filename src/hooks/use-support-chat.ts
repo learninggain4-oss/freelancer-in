@@ -200,6 +200,63 @@ export const useSupportChat = (conversationId: string | undefined) => {
     [conversationId, profile?.id, queryClient] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
+  // ── Delete single message (optimistic + API) ────────────────────────
+  const deleteMessage = useCallback(
+    async (messageId: string, senderId: string) => {
+      if (!profile?.id) return;
+      if (senderId !== profile.id) throw new Error("You can only delete your own messages");
+
+      // Optimistically remove from cache immediately
+      queryClient.setQueryData<SupportMessage[]>(QK, (prev = []) =>
+        prev.filter((m) => m.id !== messageId)
+      );
+
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token ?? "";
+        const res = await fetch("/functions/v1/support-delete-message", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ messageId }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Delete failed");
+      } catch (err: any) {
+        // Restore on failure by refetching
+        queryClient.invalidateQueries({ queryKey: QK });
+        throw err;
+      }
+    },
+    [profile?.id, queryClient] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  // ── Clear all messages in conversation (optimistic + API) ──────────
+  const clearHistory = useCallback(
+    async (conversationId: string) => {
+      if (!profile?.id) return;
+
+      // Optimistically clear cache immediately
+      queryClient.setQueryData<SupportMessage[]>(QK, []);
+
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token ?? "";
+        const res = await fetch("/functions/v1/support-clear-history", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ conversationId }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Clear failed");
+      } catch (err: any) {
+        // Restore on failure by refetching
+        queryClient.invalidateQueries({ queryKey: QK });
+        throw err;
+      }
+    },
+    [profile?.id, queryClient] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
   // ── Reactions ───────────────────────────────────────────────────────
   const toggleReaction = useCallback(
     async (messageId: string, emoji: string) => {
@@ -225,7 +282,7 @@ export const useSupportChat = (conversationId: string | undefined) => {
     [profile?.id]
   );
 
-  return { messages, isLoading, sendMessage, toggleReaction };
+  return { messages, isLoading, sendMessage, deleteMessage, clearHistory, toggleReaction };
 };
 
 /** Get or create a support conversation for the current user */

@@ -127,7 +127,7 @@ const HelpSupport = () => {
   const T = TH[theme];
 
   const { data: conversation, isLoading: loadingConv } = useMyConversation();
-  const { messages, isLoading: loadingMessages, sendMessage, toggleReaction } = useSupportChat(conversation?.id);
+  const { messages, isLoading: loadingMessages, sendMessage, deleteMessage, clearHistory, toggleReaction } = useSupportChat(conversation?.id);
 
   const [newMessage, setNewMessage]         = useState("");
   const [searchQuery, setSearchQuery]       = useState("");
@@ -229,40 +229,20 @@ const HelpSupport = () => {
 
   const copyMsg = (msg: any) => { navigator.clipboard.writeText(msg.content); toast.success("Copied!"); setCtxMsg(null); };
 
-  const getAuthToken = async () => {
-    const { data } = await supabase.auth.getSession();
-    return data.session?.access_token ?? "";
-  };
-
   const deleteMsg = async (msg: any) => {
     setCtxMsg(null);
-    if (msg.sender_id !== profile?.id) { toast.error("You can only delete your own messages"); return; }
     try {
-      const token = await getAuthToken();
-      const res = await fetch("/functions/v1/support-delete-message", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ messageId: msg.id }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Delete failed");
+      await deleteMessage(msg.id, msg.sender_id);
       toast.success("Message deleted");
     } catch (e: any) { toast.error(e.message || "Failed to delete message"); }
   };
 
-  const clearHistory = async () => {
+  const handleClearHistory = async () => {
     setConfirmClear(false);
     setShowHeaderMenu(false);
     if (!conversation?.id) return;
     try {
-      const token = await getAuthToken();
-      const res = await fetch("/functions/v1/support-clear-history", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ conversationId: conversation.id }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Clear failed");
+      await clearHistory(conversation.id);
       toast.success("Chat history cleared");
     } catch (e: any) { toast.error(e.message || "Failed to clear history"); }
   };
@@ -525,7 +505,7 @@ const HelpSupport = () => {
               <p style={{ fontSize: 13, color: T.sub, textAlign: "center", margin: "0 0 20px", lineHeight: 1.5 }}>All messages in this conversation will be permanently deleted. This cannot be undone.</p>
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => setConfirmClear(false)} style={{ flex: 1, padding: "11px", borderRadius: 12, border: `1px solid ${T.ctxBorder}`, background: "none", cursor: "pointer", color: T.sub, fontSize: 13, fontWeight: 600 }}>Cancel</button>
-                <button onClick={clearHistory} style={{ flex: 1, padding: "11px", borderRadius: 12, border: "none", background: "linear-gradient(135deg,#ef4444,#dc2626)", cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 700 }}>Clear All</button>
+                <button onClick={handleClearHistory} style={{ flex: 1, padding: "11px", borderRadius: 12, border: "none", background: "linear-gradient(135deg,#ef4444,#dc2626)", cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 700 }}>Clear All</button>
               </div>
             </div>
           </div>
