@@ -284,11 +284,11 @@ const HelpSupport = () => {
   // ── CHAT VIEW (Messages Tab) ──────────────────────────────────────
   if (activeTab === "messages") {
     return (
-      <div className="flex flex-col" style={{ height: "100%", minHeight: 0, background: T.bg, position: "relative" }}
+      <div className="flex flex-col" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 70, zIndex: 40, background: T.bg }}
         onClick={() => { setCtxMsg(null); setShowReactionFor(null); setShowHeaderMenu(false); }}>
 
         {/* ── Header ── */}
-        <div style={{ background: T.header, borderBottom: `1px solid ${T.headerBorder}`, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, position: "sticky", top: 0, zIndex: 20, backdropFilter: "blur(16px)" }}>
+        <div style={{ background: T.header, borderBottom: `1px solid ${T.headerBorder}`, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, zIndex: 20, backdropFilter: "blur(16px)" }}>
           <button onClick={() => setActiveTab("dashboard")} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 8, display: "flex", alignItems: "center" }}>
             <ArrowLeft size={18} style={{ color: T.sub }} />
           </button>
@@ -326,7 +326,7 @@ const HelpSupport = () => {
 
         {/* Search bar */}
         {searchOpen && (
-          <div style={{ background: T.header, borderBottom: `1px solid ${T.headerBorder}`, padding: "8px 14px", display: "flex", gap: 8, alignItems: "center", flexShrink: 0, position: "sticky", top: 61, zIndex: 19, backdropFilter: "blur(16px)" }}>
+          <div style={{ background: T.header, borderBottom: `1px solid ${T.headerBorder}`, padding: "8px 14px", display: "flex", gap: 8, alignItems: "center", flexShrink: 0, zIndex: 19, backdropFilter: "blur(16px)" }}>
             <Search size={14} style={{ color: T.sub, flexShrink: 0 }} />
             <input autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search in conversation..." style={{ flex: 1, background: "none", border: "none", outline: "none", color: T.text, fontSize: 13 }} />
@@ -560,7 +560,7 @@ const HelpSupport = () => {
         )}
 
         {/* ── Input Bar ── */}
-        <div style={{ background: T.inputBar, borderTop: `1px solid ${T.headerBorder}`, padding: "8px 10px", display: "flex", alignItems: "flex-end", gap: 8, flexShrink: 0, position: "sticky", bottom: 0, zIndex: 20, backdropFilter: "blur(16px)" }}>
+        <div style={{ background: T.inputBar, borderTop: `1px solid ${T.headerBorder}`, padding: "8px 10px", display: "flex", alignItems: "flex-end", gap: 8, flexShrink: 0, zIndex: 20, backdropFilter: "blur(16px)" }}>
           <button onClick={() => setShowEmoji(s => !s)}
             style={{ background: showEmoji ? "rgba(99,102,241,.2)" : "none", border: "none", cursor: "pointer", padding: 8, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <Smile size={20} style={{ color: showEmoji ? "#6366f1" : T.sub }} />
