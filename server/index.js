@@ -1188,6 +1188,55 @@ app.post("/functions/v1/mpin-set", async (req, res) => {
   }
 });
 
+// GET /functions/v1/security-questions-status — check if user has answered security questions
+app.get("/functions/v1/security-questions-status", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const adminAuth = getAdminClient().auth.admin;
+    const { data: { user: u }, error } = await adminAuth.getUserById(user.id);
+    if (error || !u) return res.status(404).json({ error: "User not found" });
+
+    const done = !!u.app_metadata?.security_questions_done;
+    res.json({ done });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /functions/v1/security-questions-save — save hashed answers and mark done
+app.post("/functions/v1/security-questions-save", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const { answers } = req.body;
+    if (!Array.isArray(answers) || answers.length !== 10)
+      return res.status(400).json({ error: "Must provide exactly 10 answers" });
+
+    // Hash each answer: SHA-256(lowercased_trimmed_answer:userId:sq-idx)
+    const hashes = answers.map((ans, idx) => {
+      const raw = String(ans || "").toLowerCase().trim();
+      if (!raw) throw new Error(`Answer ${idx + 1} is empty`);
+      return crypto.createHash("sha256").update(`${raw}:${user.id}:sq-${idx}`).digest("hex");
+    });
+
+    const adminAuth = getAdminClient().auth.admin;
+    const { error } = await adminAuth.updateUserById(user.id, {
+      app_metadata: {
+        security_questions_done: true,
+        security_answers: hashes,
+      },
+    });
+    if (error) return res.status(500).json({ error: error.message });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /functions/v1/mpin-reset — clear M-Pin (user authenticated, logs out after)
 app.post("/functions/v1/mpin-reset", async (req, res) => {
   try {

@@ -4,7 +4,9 @@ import BottomTabBar from "./BottomTabBar";
 import SideDrawer from "./SideDrawer";
 import FlexpaySupportWidget from "./FlexpaySupportWidget";
 import MPinGateModal from "@/components/auth/MPinGateModal";
+import SecurityQuestionsModal from "@/components/auth/SecurityQuestionsModal";
 import { useMpinGate } from "@/hooks/use-mpin-gate";
+import { useSecurityQuestionsGate } from "@/hooks/use-security-questions-gate";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import ThemeToggle from "./ThemeToggle";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
@@ -322,6 +324,10 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
   const navigate = useNavigate();
 
   const { mode: mpinMode, markVerified } = useMpinGate(userType);
+  const { showQuestions, markQuestionsDone } = useSecurityQuestionsGate(
+    userType === "employee" && mpinMode === "done",
+    user?.id ?? undefined,
+  );
 
   const profileRef = useRef<HTMLDivElement>(null);
   const searchRef  = useRef<HTMLDivElement>(null);
@@ -566,6 +572,10 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
 
       {userType === "employee" && (mpinMode === "create" || mpinMode === "verify") && (
         <MPinGateModal mode={mpinMode} theme={theme} onVerified={markVerified} />
+      )}
+
+      {userType === "employee" && mpinMode === "done" && showQuestions && (
+        <SecurityQuestionsModal theme={theme} onDone={markQuestionsDone} />
       )}
     </div>
   );
