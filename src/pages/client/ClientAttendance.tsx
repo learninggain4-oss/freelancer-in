@@ -34,8 +34,8 @@ interface AttendanceRecord {
 }
 
 const ClientAttendance = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { profile } = useAuth();
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
   const [monthRecords, setMonthRecords] = useState<AttendanceRecord[]>([]);

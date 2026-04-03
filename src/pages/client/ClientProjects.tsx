@@ -35,8 +35,8 @@ const statusColor: Record<string, string> = {
 };
 
 const ClientProjects = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
   const { profile } = useAuth();

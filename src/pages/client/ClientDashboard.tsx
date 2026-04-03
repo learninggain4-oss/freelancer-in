@@ -90,8 +90,8 @@ const ClientDashboard = () => {
   const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { theme } = useDashboardTheme();
-  const tok = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const tok = TH[themeKey];
   const [chartTab, setChartTab] = useState<"spending" | "jobs">("spending");
 
   const handleRefresh = useCallback(async () => {

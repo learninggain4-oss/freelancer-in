@@ -26,8 +26,8 @@ interface DocFile {
 }
 
 const CreateProject = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("edit");

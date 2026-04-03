@@ -177,8 +177,8 @@ function VoicePlayer({ filePath, isMe, subColor }: { filePath: string; isMe: boo
 
 const HelpSupport = () => {
   const { profile } = useAuth();
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
 
   const { data: conversation, isLoading: loadingConv } = useMyConversation();
   const { messages, isLoading: loadingMessages, sendMessage, deleteMessage, clearHistory, toggleReaction } = useSupportChat(conversation?.id);

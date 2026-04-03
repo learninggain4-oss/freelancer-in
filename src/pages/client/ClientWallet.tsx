@@ -30,8 +30,8 @@ const TH = {
 };
 
 const ClientWallet = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { profile, refreshProfile } = useAuth();
   const [addAmount, setAddAmount] = useState("");
   const [showTransfer, setShowTransfer] = useState(false);

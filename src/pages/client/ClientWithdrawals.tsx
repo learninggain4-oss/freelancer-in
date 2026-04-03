@@ -26,8 +26,8 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
 };
 
 const ClientWithdrawals = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { profile, refreshProfile } = useAuth();
   const queryClient = useQueryClient();
   const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});

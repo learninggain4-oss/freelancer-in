@@ -23,8 +23,8 @@ const TH = {
 };
 
 const ClientProfile = () => {
-  const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const { theme, themeKey } = useDashboardTheme();
+  const T = TH[themeKey];
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
