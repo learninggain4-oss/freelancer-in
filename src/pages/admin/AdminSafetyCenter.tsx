@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
   Shield, ShieldCheck, ShieldAlert, Activity, Database, Server, Clock, Lock, Unlock,
@@ -47,6 +48,7 @@ export default function AdminSafetyCenter() {
   const T = TH[themeKey];
   const { signOut, profile } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { logAction, getLogs } = useAdminAudit();
   const { toast } = useToast();
 
@@ -67,6 +69,14 @@ export default function AdminSafetyCenter() {
       setDbStatus(error ? "offline" : "online");
     } catch { setDbStatus("offline"); }
   }, []);
+
+  const handleRefresh = useCallback(async () => {
+    await checkDb();
+    await queryClient.invalidateQueries({ queryKey: ["safety-sessions"] });
+    await queryClient.invalidateQueries({ queryKey: ["safety-ip-blocks"] });
+    await queryClient.invalidateQueries({ queryKey: ["safety-pending-wd"] });
+    toast({ title: "System health refreshed", description: "All metrics have been updated." });
+  }, [checkDb, queryClient, toast]);
 
   useEffect(() => { checkDb(); }, [checkDb]);
 
@@ -158,8 +168,8 @@ export default function AdminSafetyCenter() {
                 <span style={{ fontSize: 11, color: "#fbbf24", fontWeight: 700 }}>MAINTENANCE</span>
               </div>
             )}
-            <button onClick={checkDb} style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 10, background: T.card, border: `1px solid ${T.border}`, color: T.sub, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-              <RefreshCw size={13} /> Refresh
+            <button onClick={handleRefresh} style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 10, background: T.card, border: `1px solid ${T.border}`, color: T.sub, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+              <RefreshCw size={13} className={dbStatus === "checking" ? "animate-spin" : ""} /> Refresh
             </button>
           </div>
         </div>
@@ -279,7 +289,7 @@ export default function AdminSafetyCenter() {
               return (
                 <button key={action.type} disabled={action.disabled}
                   onClick={() => {
-                    if (action.type === "refresh") { checkDb(); toast({ title: "Health check running…" }); }
+                    if (action.type === "refresh") { handleRefresh(); }
                     else setConfirmModal({ open: true, type: action.type });
                   }}
                   style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 11, background: `${action.color}0a`, border: `1px solid ${action.color}25`, cursor: action.disabled ? "not-allowed" : "pointer", opacity: action.disabled ? .4 : 1, textAlign: "left" }}>

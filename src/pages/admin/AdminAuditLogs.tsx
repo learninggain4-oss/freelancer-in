@@ -9,16 +9,7 @@ const TH = {
   wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc" },
 };
 
-const LOGS = [
-  { id:1, action:"User role changed", actor:"superadmin@site.com", target:"user_482", type:"admin", severity:"high", time:"2 min ago", ip:"103.45.12.8" },
-  { id:2, action:"Withdrawal approved", actor:"admin@site.com", target:"txn_9234", type:"finance", severity:"medium", time:"15 min ago", ip:"103.45.12.9" },
-  { id:3, action:"User banned", actor:"admin@site.com", target:"user_291", type:"user", severity:"high", time:"1 hr ago", ip:"103.45.12.9" },
-  { id:4, action:"Settings updated", actor:"manager@site.com", target:"system_config", type:"admin", severity:"medium", time:"3 hrs ago", ip:"192.168.1.1" },
-  { id:5, action:"Export generated", actor:"manager@site.com", target:"report_q1", type:"system", severity:"low", time:"5 hrs ago", ip:"192.168.1.1" },
-  { id:6, action:"Password reset (admin)", actor:"superadmin@site.com", target:"user_103", type:"user", severity:"high", time:"Yesterday", ip:"103.45.12.8" },
-  { id:7, action:"API key created", actor:"dev@site.com", target:"api_key_44", type:"security", severity:"high", time:"Yesterday", ip:"10.0.0.5" },
-  { id:8, action:"Cache cleared", actor:"admin@site.com", target:"cache_all", type:"system", severity:"low", time:"2 days ago", ip:"103.45.12.9" },
-];
+const LOGS: { id:number; action:string; actor:string; target:string; type:string; severity:string; time:string; ip:string }[] = [];
 
 const TYPES = ["all","admin","user","finance","system","security"];
 
