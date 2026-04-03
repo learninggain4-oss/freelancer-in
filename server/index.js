@@ -1188,6 +1188,28 @@ app.post("/functions/v1/mpin-set", async (req, res) => {
   }
 });
 
+// POST /functions/v1/mpin-forgot-send — send OTP to user's registered email (uses Supabase email OTP)
+app.post("/functions/v1/mpin-forgot-send", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const email = user.email;
+    if (!email) return res.status(400).json({ error: "No email on account" });
+
+    const anonClient = getAnonClient();
+    const { error } = await anonClient.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: false },
+    });
+    if (error) return res.status(500).json({ error: error.message });
+
+    res.json({ success: true, email });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /functions/v1/mpin-reset — clear M-Pin (user authenticated, logs out after)
 app.post("/functions/v1/mpin-reset", async (req, res) => {
   try {
