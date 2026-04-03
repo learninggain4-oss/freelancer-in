@@ -646,42 +646,92 @@ const HelpSupport = () => {
         )}
 
         {/* ── Mic Permission Denied Dialog ── */}
-        {showMicDenied && (
-          <div onClick={() => setShowMicDenied(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: T.ctxMenu, border: `1px solid ${T.ctxBorder}`, borderRadius: 20, padding: 24, maxWidth: 320, width: "100%", boxShadow: "0 16px 48px rgba(0,0,0,.4)" }}>
-              <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(239,68,68,.12)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
-                <Mic size={24} style={{ color: "#ef4444" }} />
-              </div>
-              <p style={{ fontWeight: 800, fontSize: 16, color: T.text, textAlign: "center", margin: "0 0 8px" }}>Microphone Access Denied</p>
-              <p style={{ fontSize: 13, color: T.sub, textAlign: "center", margin: "0 0 16px", lineHeight: 1.55 }}>
-                Voice recording needs microphone permission. To enable it:
-              </p>
-              <div style={{ background: T.replyBg, border: `1px solid ${T.replyBorder}20`, borderRadius: 12, padding: "12px 14px", marginBottom: 20 }}>
-                {[
-                  { n: "1", text: 'Click the 🔒 lock icon in your browser\'s address bar' },
-                  { n: "2", text: 'Select "Site settings" or "Permissions"' },
-                  { n: "3", text: 'Set Microphone → Allow' },
-                  { n: "4", text: 'Reload the page and try again' },
-                ].map(s => (
-                  <div key={s.n} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: s.n === "4" ? 0 : 8 }}>
-                    <span style={{ width: 20, height: 20, borderRadius: "50%", background: "#6366f1", color: "#fff", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{s.n}</span>
-                    <span style={{ fontSize: 12.5, color: T.text, lineHeight: 1.5 }}>{s.text}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => setShowMicDenied(false)}
-                  style={{ flex: 1, padding: "11px", borderRadius: 12, border: `1px solid ${T.ctxBorder}`, background: "none", cursor: "pointer", color: T.sub, fontSize: 13, fontWeight: 600 }}>
-                  Dismiss
-                </button>
-                <button onClick={() => { setShowMicDenied(false); setTimeout(startRecording, 200); }}
-                  style={{ flex: 1, padding: "11px", borderRadius: 12, border: "none", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 700 }}>
-                  Try Again
-                </button>
+        {showMicDenied && (() => {
+          const ua = navigator.userAgent;
+          const isIOS = /iPhone|iPad|iPod/i.test(ua);
+          const isAndroid = /Android/i.test(ua);
+          const isPWA = (isIOS && (navigator as any).standalone === true)
+                     || (!isIOS && window.matchMedia("(display-mode: standalone)").matches);
+
+          type Step = { n: string; text: string };
+          let platform = "";
+          let steps: Step[] = [];
+
+          if (isIOS && isPWA) {
+            platform = "iPhone / iPad (App)";
+            steps = [
+              { n: "1", text: "iPhone-ൽ Settings app തുറക്കുക" },
+              { n: "2", text: "Privacy & Security → Microphone tap ചെയ്യുക" },
+              { n: "3", text: "Freelancer India app-ന് അടുത്ത് toggle ON ചെയ്യുക" },
+              { n: "4", text: "App-ലേക്ക് തിരിച്ചു വന്ന് Try Again tap ചെയ്യുക" },
+            ];
+          } else if (isIOS) {
+            platform = "iPhone / iPad (Safari)";
+            steps = [
+              { n: "1", text: "iPhone Settings app തുറക്കുക" },
+              { n: "2", text: "Safari → Microphone tap ചെയ്യുക" },
+              { n: "3", text: "\"Ask\" അല്ലെങ്കിൽ \"Allow\" select ചെയ്യുക" },
+              { n: "4", text: "Safari-ലേക്ക് തിരിച്ചു വന്ന് page reload ചെയ്ത് Try Again tap ചെയ്യുക" },
+            ];
+          } else if (isAndroid && isPWA) {
+            platform = "Android (App)";
+            steps = [
+              { n: "1", text: "Phone-ൽ Settings app തുറക്കുക" },
+              { n: "2", text: "Apps → Freelancer India search ചെയ്യുക" },
+              { n: "3", text: "Permissions → Microphone → Allow tap ചെയ്യുക" },
+              { n: "4", text: "App-ലേക്ക് തിരിച്ചു വന്ന് Try Again tap ചെയ്യുക" },
+            ];
+          } else if (isAndroid) {
+            platform = "Android (Chrome)";
+            steps = [
+              { n: "1", text: "Address bar-ൽ 🔒 icon tap ചെയ്യുക" },
+              { n: "2", text: "\"Permissions\" tap ചെയ്യുക" },
+              { n: "3", text: "Microphone → Allow select ചെയ്യുക" },
+              { n: "4", text: "Page refresh ചെയ്ത് Try Again tap ചെയ്യുക" },
+            ];
+          } else {
+            platform = "Desktop Browser";
+            steps = [
+              { n: "1", text: "Address bar-ൽ 🔒 lock icon click ചെയ്യുക" },
+              { n: "2", text: "\"Site settings\" അല്ലെങ്കിൽ \"Permissions\" select ചെയ്യുക" },
+              { n: "3", text: "Microphone → Allow set ചെയ്യുക" },
+              { n: "4", text: "Page reload ചെയ്ത് Try Again click ചെയ്യുക" },
+            ];
+          }
+
+          return (
+            <div onClick={() => setShowMicDenied(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+              <div onClick={e => e.stopPropagation()} style={{ background: T.ctxMenu, border: `1px solid ${T.ctxBorder}`, borderRadius: 20, padding: 24, maxWidth: 340, width: "100%", boxShadow: "0 16px 48px rgba(0,0,0,.4)" }}>
+                <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(239,68,68,.12)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                  <Mic size={24} style={{ color: "#ef4444" }} />
+                </div>
+                <p style={{ fontWeight: 800, fontSize: 16, color: T.text, textAlign: "center", margin: "0 0 4px" }}>Microphone Access Denied</p>
+                <p style={{ fontSize: 11, color: "#6366f1", textAlign: "center", fontWeight: 600, margin: "0 0 12px", letterSpacing: 0.3 }}>{platform}</p>
+                <p style={{ fontSize: 13, color: T.sub, textAlign: "center", margin: "0 0 14px", lineHeight: 1.55 }}>
+                  Voice recording enable ചെയ്യാൻ ഈ steps follow ചെയ്യുക:
+                </p>
+                <div style={{ background: T.replyBg, border: `1px solid ${T.replyBorder}20`, borderRadius: 12, padding: "12px 14px", marginBottom: 20 }}>
+                  {steps.map((s, idx) => (
+                    <div key={s.n} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: idx < steps.length - 1 ? 10 : 0 }}>
+                      <span style={{ width: 22, height: 22, borderRadius: "50%", background: "#6366f1", color: "#fff", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>{s.n}</span>
+                      <span style={{ fontSize: 12.5, color: T.text, lineHeight: 1.55 }}>{s.text}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={() => setShowMicDenied(false)}
+                    style={{ flex: 1, padding: "11px", borderRadius: 12, border: `1px solid ${T.ctxBorder}`, background: "none", cursor: "pointer", color: T.sub, fontSize: 13, fontWeight: 600 }}>
+                    Dismiss
+                  </button>
+                  <button onClick={() => { setShowMicDenied(false); setTimeout(startRecording, 300); }}
+                    style={{ flex: 1, padding: "11px", borderRadius: 12, border: "none", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 700 }}>
+                    Try Again
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ── Emoji Picker ── */}
         {showEmoji && (
