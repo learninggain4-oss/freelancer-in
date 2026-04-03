@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
-  Send, ArrowLeft, MessageCircle, Search, X, Zap, ChevronRight, Eye,
-  BarChart3, Plus, Trash2, Edit2, Check, Settings2, MoreVertical,
-  Smile, Paperclip, Mic, Camera, CornerUpLeft, Copy, Play, Pause, Square,
+  Send, ArrowLeft, MessageCircle, Search, X, Zap, ChevronRight, ChevronDown, Eye,
+  BarChart3, Plus, Trash2, Edit2, Check, CheckCheck, Settings2, MoreVertical,
+  Smile, Paperclip, Mic, Camera, CornerUpLeft, Copy, Play, Pause,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,19 @@ function fmtDur(secs: number) {
   const m = Math.floor(secs / 60);
   const s = secs % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function formatDateLabel(dateStr: string) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = Math.floor((now.getTime() - d.getTime()) / 86400000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Yesterday";
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function isSameDay(a: string, b: string) {
+  return new Date(a).toDateString() === new Date(b).toDateString();
 }
 
 function AdminVoicePlayer({ src, isMe, subColor }: { src: string; isMe: boolean; subColor: string }) {
@@ -369,23 +382,29 @@ const AdminHelpSupport = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showManage, setShowManage] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef  = useRef<HTMLTextAreaElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // WhatsApp features state
-  const [showHeaderMenu, setShowHeaderMenu]   = useState(false);
-  const [confirmClear, setConfirmClear]       = useState(false);
-  const [ctxMsg, setCtxMsg]                   = useState<any>(null);
-  const [ctxPos, setCtxPos]                   = useState({ x: 0, y: 0 });
-  const [replyTo, setReplyTo]                 = useState<any>(null);
-  const [showEmoji, setShowEmoji]             = useState(false);
-  const [isRecording, setIsRecording]         = useState(false);
-  const [recordingTime, setRecordingTime]     = useState(0);
-  const [showMicDenied, setShowMicDenied]     = useState(false);
-  const [showCamDenied, setShowCamDenied]     = useState(false);
-  const [showCamera, setShowCamera]           = useState(false);
-  const [facingMode, setFacingMode]           = useState<"environment"|"user">("environment");
-  const [cameraReady, setCameraReady]         = useState(false);
-  const [voiceUrls, setVoiceUrls]             = useState<Record<string, string>>({});
+  const [showHeaderMenu, setShowHeaderMenu]     = useState(false);
+  const [confirmClear, setConfirmClear]         = useState(false);
+  const [ctxMsg, setCtxMsg]                     = useState<any>(null);
+  const [ctxPos, setCtxPos]                     = useState({ x: 0, y: 0 });
+  const [replyTo, setReplyTo]                   = useState<any>(null);
+  const [showEmoji, setShowEmoji]               = useState(false);
+  const [isRecording, setIsRecording]           = useState(false);
+  const [recordingTime, setRecordingTime]       = useState(0);
+  const [showMicDenied, setShowMicDenied]       = useState(false);
+  const [showCamDenied, setShowCamDenied]       = useState(false);
+  const [showCamera, setShowCamera]             = useState(false);
+  const [facingMode, setFacingMode]             = useState<"environment"|"user">("environment");
+  const [cameraReady, setCameraReady]           = useState(false);
+  const [voiceUrls, setVoiceUrls]               = useState<Record<string, string>>({});
+  const [photoUrls, setPhotoUrls]               = useState<Record<string, string>>({});
+  const [showScrollBtn, setShowScrollBtn]       = useState(false);
+  const [showReactionFor, setShowReactionFor]   = useState<string | null>(null);
+  const [typing, setTyping]                     = useState(false);
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fileRef            = useRef<HTMLInputElement>(null);
   const mediaRecorderRef   = useRef<MediaRecorder | null>(null);
@@ -466,6 +485,43 @@ const AdminHelpSupport = () => {
     });
   }, [messages]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Resolve photo signed URLs
+  useEffect(() => {
+    const photoMsgs = messages.filter(m => m.file_path && m.file_name === "photo.jpg");
+    photoMsgs.forEach(async m => {
+      if (m.file_path && !photoUrls[m.id]) {
+        const { data } = await supabase.storage.from("support-files").createSignedUrl(m.file_path, 3600);
+        if (data?.signedUrl) setPhotoUrls(prev => ({ ...prev, [m.id]: data.signedUrl }));
+      }
+    });
+  }, [messages]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Scroll to bottom on new messages
+  const scrollToBottom = useCallback((smooth = true) => {
+    bottomRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
+  }, []);
+
+  useEffect(() => {
+    if (!searchOpen) scrollToBottom(false);
+  }, [messages.length, searchOpen, scrollToBottom]);
+
+  // Scroll watcher for scroll-to-bottom button
+  const handleMsgScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setShowScrollBtn(el.scrollHeight - el.scrollTop - el.clientHeight > 120);
+  };
+
+  // Typing simulation — show "typing..." after user sends a message
+  useEffect(() => {
+    if (messages.length > 0 && selectedConvId) {
+      const last = messages[messages.length - 1];
+      if (last.sender_id !== profile?.id) {
+        setTyping(false);
+      }
+    }
+  }, [messages, selectedConvId, profile?.id]);
+
   // Camera stream management
   useEffect(() => {
     if (!showCamera) { cameraStreamRef.current?.getTracks().forEach(t => t.stop()); setCameraReady(false); return; }
@@ -496,6 +552,11 @@ const AdminHelpSupport = () => {
       setQuickRepliesOpen(false);
       setPreviewTemplate(null);
       if (inputRef.current) inputRef.current.style.height = "44px";
+      // Simulate user typing response
+      setTyping(true);
+      if (typingTimer.current) clearTimeout(typingTimer.current);
+      typingTimer.current = setTimeout(() => setTyping(false), 3000);
+      setTimeout(() => scrollToBottom(), 100);
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -539,28 +600,36 @@ const AdminHelpSupport = () => {
       recordingStreamRef.current = stream;
       cancelledRef.current = false;
       audioChunksRef.current = [];
-      const mr = new MediaRecorder(stream);
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/ogg";
+      const mr = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mr;
       mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
       mr.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
         if (cancelledRef.current) { setRecordingTime(0); return; }
-        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        const path = `support/${selectedConvId}/${Date.now()}.webm`;
-        const { error } = await supabase.storage.from("support-files").upload(path, blob);
+        const ext = mimeType.includes("webm") ? "webm" : "ogg";
+        const blob = new Blob(audioChunksRef.current, { type: mimeType });
+        if (blob.size < 500) { setRecordingTime(0); return; }
+        const path = `support/${selectedConvId}/${Date.now()}.${ext}`;
+        const { error } = await supabase.storage.from("support-files").upload(path, blob, { contentType: mimeType });
         if (error) { toast.error("Voice upload failed"); setRecordingTime(0); return; }
-        await handleSend("", path, "voice.webm");
+        await handleSend("", path, `voice.${ext}`);
         setRecordingTime(0);
       };
-      mr.start();
+      mr.start(100);
       setIsRecording(true);
       setRecordingTime(0);
       recordingTimerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
-    } catch { setShowMicDenied(true); }
+    } catch (err: any) {
+      const denied = err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError";
+      if (denied) setShowMicDenied(true);
+      else toast.error("Could not access microphone");
+    }
   };
 
   const stopRecording = (cancel = false) => {
     cancelledRef.current = cancel;
+    recordingStreamRef.current?.getTracks().forEach(t => t.stop());
     mediaRecorderRef.current?.stop();
     if (recordingTimerRef.current) { clearInterval(recordingTimerRef.current); recordingTimerRef.current = null; }
     setIsRecording(false);
@@ -648,7 +717,7 @@ const AdminHelpSupport = () => {
     const userType = (selectedConv as any).user?.user_type || "";
 
     return (
-      <div className="flex flex-col h-[calc(100vh-8rem)] -mt-2" onClick={() => { setCtxMsg(null); setShowHeaderMenu(false); setShowEmoji(false); }}>
+      <div className="flex flex-col h-[calc(100vh-8rem)] -mt-2" onClick={() => { setCtxMsg(null); setShowHeaderMenu(false); setShowEmoji(false); setShowReactionFor(null); }}>
         {/* ── Camera overlay ── */}
         {showCamera && (
           <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#000", display: "flex", flexDirection: "column" }}>
@@ -723,7 +792,9 @@ const AdminHelpSupport = () => {
           </button>
           <div style={{ flex: 1 }}>
             <p style={{ fontWeight: 700, fontSize: 14, color: T.text, margin: 0 }}>{userName}</p>
-            <p style={{ fontSize: 11, color: T.sub, margin: 0, textTransform: "capitalize" }}>{userType} · {getUserCode(selectedConv)}</p>
+            <p style={{ fontSize: 11, color: typing ? "#4ade80" : T.sub, margin: 0, textTransform: "capitalize" }}>
+              {typing ? "typing…" : `${userType} · ${getUserCode(selectedConv)}`}
+            </p>
           </div>
           <button onClick={() => { setSearchOpen(s => !s); setSearchQuery(""); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 8 }}>
             <Search size={17} style={{ color: T.sub }} />
@@ -754,21 +825,34 @@ const AdminHelpSupport = () => {
         )}
 
         {/* ── Messages ── */}
-        <ScrollArea className="flex-1 p-4" style={{ background: theme === "black" ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.2)" }}>
+        <div
+          ref={scrollRef}
+          onScroll={handleMsgScroll}
+          style={{ flex: 1, overflowY: "auto", padding: "12px 16px", background: theme === "black" ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.2)", position: "relative" }}
+        >
+          {/* Reaction emoji picker popup */}
+          {showReactionFor && (
+            <div onClick={e => e.stopPropagation()} style={{ position: "fixed", bottom: 200, right: 24, zIndex: 8500, background: T.card, border: `1px solid ${T.border}`, borderRadius: 20, padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 6, maxWidth: 280, boxShadow: "0 8px 32px rgba(0,0,0,.3)" }}>
+              {ADMIN_EMOJIS.slice(0, 16).map(e => (
+                <button key={e} onClick={() => { toggleReaction(showReactionFor, e); setShowReactionFor(null); }} style={{ fontSize: 20, background: "none", border: "none", cursor: "pointer", borderRadius: 8, padding: 4, lineHeight: 1 }}>{e}</button>
+              ))}
+            </div>
+          )}
+
           {loadingMessages ? (
             <div className="space-y-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-3/4 rounded-2xl" style={{ background: T.border }} />)}</div>
           ) : filteredMessages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full py-12">
-              <MessageCircle className="h-12 w-12 mb-4 opacity-20" style={{ color: T.text }} />
-              <p className="text-sm" style={{ color: T.sub }}>{searchQuery ? "No messages match your search." : "No messages yet. Start the conversation!"}</p>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: "48px 0" }}>
+              <MessageCircle style={{ width: 48, height: 48, marginBottom: 16, opacity: 0.2, color: T.text }} />
+              <p style={{ fontSize: 13, color: T.sub }}>{searchQuery ? "No messages match your search." : "No messages yet. Start the conversation!"}</p>
             </div>
           ) : (
-            <div className="space-y-1 pb-4">
-              {filteredMessages.map((msg) => {
+            <div style={{ display: "flex", flexDirection: "column", gap: 2, paddingBottom: 8 }}>
+              {filteredMessages.map((msg, idx) => {
                 const isMine = msg.sender_id === profile?.id;
                 const isVoice = msg.file_name?.startsWith("voice.");
                 const isPhoto = msg.file_name === "photo.jpg";
-                const isFile = msg.file_path && !isVoice && !isPhoto;
+                const isFile  = !!msg.file_path && !isVoice && !isPhoto;
                 const reactions = msg.reactions || [];
                 const grouped = reactions.reduce<Record<string, {count:number;hasMe:boolean}>>((acc, r) => {
                   if (!acc[r.emoji]) acc[r.emoji] = { count: 0, hasMe: false };
@@ -776,40 +860,72 @@ const AdminHelpSupport = () => {
                   if (r.user_id === profile?.id) acc[r.emoji].hasMe = true;
                   return acc;
                 }, {});
+                const showDate = idx === 0 || !isSameDay(filteredMessages[idx - 1].created_at, msg.created_at);
 
                 return (
-                  <div key={msg.id} style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start", marginBottom: 4 }}>
-                    <div style={{ maxWidth: "72%" }}>
-                      <div
-                        onContextMenu={e => { e.preventDefault(); setCtxMsg(msg); setCtxPos({ x: e.clientX, y: e.clientY }); }}
-                        style={{ background: isMine ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : T.card, borderRadius: isMine ? "18px 18px 4px 18px" : "18px 18px 18px 4px", padding: "10px 14px", border: isMine ? "none" : `1px solid ${T.border}`, cursor: "context-menu" }}
-                      >
-                        <p style={{ fontSize: 10, fontWeight: 600, color: isMine ? "rgba(255,255,255,.6)" : T.sub, marginBottom: 4 }}>{isMine ? "You (Admin)" : userName}</p>
-                        {isVoice && voiceUrls[msg.id] ? (
-                          <AdminVoicePlayer src={voiceUrls[msg.id]} isMe={isMine} subColor={T.sub} />
-                        ) : isPhoto && msg.file_path ? (
-                          <img src={`https://your-supabase-url/storage/v1/object/public/support-files/${msg.file_path}`} alt="Photo" style={{ maxWidth: 200, borderRadius: 12, display: "block" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                        ) : isFile ? (
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <Paperclip size={14} style={{ color: isMine ? "rgba(255,255,255,.7)" : T.sub }} />
-                            <span style={{ fontSize: 13, color: isMine ? "#fff" : T.text }}>{msg.file_name}</span>
-                          </div>
-                        ) : (
-                          <p style={{ fontSize: 13, color: isMine ? "#fff" : T.text, whiteSpace: "pre-wrap", margin: 0 }}>{msg.content}</p>
-                        )}
-                        <p style={{ fontSize: 10, color: isMine ? "rgba(255,255,255,.5)" : T.sub, marginTop: 4, textAlign: isMine ? "right" : "left" }}>
-                          {new Date(msg.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}
-                        </p>
+                  <div key={msg.id}>
+                    {/* ── Date separator ── */}
+                    {showDate && (
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", margin: "12px 0 8px" }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: T.sub, background: theme === "black" ? "rgba(255,255,255,.07)" : "rgba(0,0,0,.07)", padding: "3px 12px", borderRadius: 20 }}>
+                          {formatDateLabel(msg.created_at)}
+                        </span>
                       </div>
-                      {Object.keys(grouped).length > 0 && (
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4, justifyContent: isMine ? "flex-end" : "flex-start" }}>
-                          {Object.entries(grouped).map(([emoji, { count, hasMe }]) => (
-                            <button key={emoji} onClick={() => toggleReaction(msg.id, emoji)} style={{ display: "inline-flex", alignItems: "center", gap: 3, borderRadius: 20, border: hasMe ? "1px solid rgba(99,102,241,.5)" : `1px solid ${T.border}`, background: hasMe ? "rgba(99,102,241,.1)" : "transparent", padding: "2px 8px", fontSize: 12, cursor: "pointer", color: T.text }}>
-                              {emoji}<span style={{ fontSize: 10, color: T.sub }}>{count}</span>
-                            </button>
-                          ))}
+                    )}
+
+                    <div style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start", marginBottom: 2 }}>
+                      <div style={{ maxWidth: "72%" }}>
+                        <div
+                          onContextMenu={e => { e.preventDefault(); setCtxMsg(msg); setCtxPos({ x: e.clientX, y: e.clientY }); setShowReactionFor(null); }}
+                          style={{ background: isMine ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : T.card, borderRadius: isMine ? "18px 18px 4px 18px" : "18px 18px 18px 4px", padding: "10px 14px", border: isMine ? "none" : `1px solid ${T.border}`, cursor: "context-menu" }}
+                        >
+                          <p style={{ fontSize: 10, fontWeight: 600, color: isMine ? "rgba(255,255,255,.6)" : T.sub, marginBottom: 4 }}>{isMine ? "You (Admin)" : userName}</p>
+
+                          {isVoice && voiceUrls[msg.id] ? (
+                            <AdminVoicePlayer src={voiceUrls[msg.id]} isMe={isMine} subColor={T.sub} />
+                          ) : isPhoto ? (
+                            photoUrls[msg.id]
+                              ? <img src={photoUrls[msg.id]} alt="Photo" style={{ maxWidth: 200, borderRadius: 12, display: "block" }} />
+                              : <div style={{ width: 200, height: 130, borderRadius: 12, background: "rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ width: 24, height: 24, border: "2px solid rgba(255,255,255,.5)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} /></div>
+                          ) : isFile ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <Paperclip size={14} style={{ color: isMine ? "rgba(255,255,255,.7)" : T.sub }} />
+                              <span style={{ fontSize: 13, color: isMine ? "#fff" : T.text }}>{msg.file_name}</span>
+                            </div>
+                          ) : (
+                            <p style={{ fontSize: 13, color: isMine ? "#fff" : T.text, whiteSpace: "pre-wrap", margin: 0, lineHeight: 1.5 }}>{msg.content}</p>
+                          )}
+
+                          {/* Timestamp + read receipt */}
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: isMine ? "flex-end" : "flex-start", gap: 4, marginTop: 5 }}>
+                            <span style={{ fontSize: 10, color: isMine ? "rgba(255,255,255,.5)" : T.sub }}>
+                              {new Date(msg.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                            </span>
+                            {isMine && (
+                              msg.is_read
+                                ? <CheckCheck size={13} style={{ color: "#60a5fa" }} />
+                                : <Check size={13} style={{ color: "rgba(255,255,255,.45)" }} />
+                            )}
+                          </div>
                         </div>
-                      )}
+
+                        {/* Reaction row */}
+                        {Object.keys(grouped).length > 0 && (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4, justifyContent: isMine ? "flex-end" : "flex-start" }}>
+                            {Object.entries(grouped).map(([emoji, { count, hasMe }]) => (
+                              <button key={emoji} onClick={() => toggleReaction(msg.id, emoji)} style={{ display: "inline-flex", alignItems: "center", gap: 3, borderRadius: 20, border: hasMe ? "1px solid rgba(99,102,241,.5)" : `1px solid ${T.border}`, background: hasMe ? "rgba(99,102,241,.1)" : "transparent", padding: "2px 8px", fontSize: 12, cursor: "pointer", color: T.text }}>
+                                {emoji}<span style={{ fontSize: 10, color: T.sub }}>{count}</span>
+                              </button>
+                            ))}
+                            <button onClick={e => { e.stopPropagation(); setShowReactionFor(showReactionFor === msg.id ? null : msg.id); }} style={{ display: "inline-flex", alignItems: "center", gap: 2, borderRadius: 20, border: `1px solid ${T.border}`, background: "transparent", padding: "2px 8px", fontSize: 12, cursor: "pointer", color: T.sub }}>+</button>
+                          </div>
+                        )}
+                        {Object.keys(grouped).length === 0 && (
+                          <div style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start", marginTop: 2 }}>
+                            <button onClick={e => { e.stopPropagation(); setShowReactionFor(showReactionFor === msg.id ? null : msg.id); }} style={{ opacity: 0, transition: "opacity .2s", fontSize: 13, background: "none", border: "none", cursor: "pointer", color: T.sub, padding: "0 4px" }} onMouseEnter={e => (e.currentTarget.style.opacity = "1")} onMouseLeave={e => (e.currentTarget.style.opacity = "0")}>😊 +</button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -817,7 +933,14 @@ const AdminHelpSupport = () => {
               <div ref={bottomRef} />
             </div>
           )}
-        </ScrollArea>
+
+          {/* Scroll to bottom button */}
+          {showScrollBtn && (
+            <button onClick={() => scrollToBottom()} style={{ position: "sticky", bottom: 12, float: "right", width: 36, height: 36, borderRadius: "50%", background: T.card, border: `1px solid ${T.border}`, boxShadow: "0 4px 16px rgba(0,0,0,.25)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 10 }}>
+              <ChevronDown size={18} style={{ color: T.sub }} />
+            </button>
+          )}
+        </div>
 
         {/* ── Template preview banner ── */}
         {previewTemplate && (
@@ -999,16 +1122,22 @@ const AdminHelpSupport = () => {
 
         {/* ── Voice recording UI ── */}
         {isRecording && (
-          <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, background: T.card, borderTop: `1px solid ${T.border}` }}>
-            <button onClick={() => stopRecording(true)} style={{ background: "none", border: "none", cursor: "pointer" }}><X size={20} style={{ color: "#f87171" }} /></button>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 3, flex: 1 }}>
-              {[4,7,11,8,14,10,6,13,9,12,7].map((h, i) => (
-                <div key={i} style={{ width: 3, height: `${h}px`, borderRadius: 2, background: "#6366f1", animation: `voice-bar 0.8s ease-in-out ${i * 0.08}s infinite alternate` }} />
-              ))}
+          <div style={{ padding: "10px 14px", borderTop: `1px solid ${T.border}`, background: T.card, display: "flex", alignItems: "center", gap: 10 }}>
+            <button onClick={() => stopRecording(true)} style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(239,68,68,.12)", border: "1.5px solid rgba(239,68,68,.35)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <X size={17} style={{ color: "#ef4444" }} />
+            </button>
+            <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, background: T.input, border: "1.5px solid rgba(239,68,68,.35)", borderRadius: 22, padding: "8px 14px" }}>
+              <span style={{ animation: "rec-pulse 1.1s ease-in-out infinite", display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#ef4444", flexShrink: 0 }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#ef4444", minWidth: 38, fontVariantNumeric: "tabular-nums" }}>{fmtDur(recordingTime)}</span>
+              <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: 2, height: 22, overflow: "hidden" }}>
+                {Array.from({ length: 18 }).map((_, i) => (
+                  <div key={i} style={{ width: 3, borderRadius: 2, background: "rgba(239,68,68,.65)", animation: `voice-bar ${0.5 + (i % 7) * 0.09}s ease-in-out infinite alternate`, flexShrink: 0 }} />
+                ))}
+              </div>
+              <span style={{ fontSize: 11, color: T.sub, whiteSpace: "nowrap" }}>← Slide to cancel</span>
             </div>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#f87171", minWidth: 36 }}>{fmtDur(recordingTime)}</span>
-            <button onClick={() => stopRecording(false)} style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Send size={16} style={{ color: "#fff" }} />
+            <button onClick={() => stopRecording(false)} style={{ width: 42, height: 42, borderRadius: "50%", background: "linear-gradient(135deg,#ef4444,#dc2626)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 12px rgba(239,68,68,.45)" }}>
+              <Send size={17} style={{ color: "#fff", transform: "translateX(1px)" }} />
             </button>
           </div>
         )}
@@ -1070,7 +1199,12 @@ const AdminHelpSupport = () => {
             </div>
           </div>
         )}
-        <style>{`@keyframes voice-bar{from{transform:scaleY(0.4)}to{transform:scaleY(1.2)}} @keyframes spin{to{transform:rotate(360deg)}}`}</style>
+        <style>{`
+          @keyframes voice-bar { from { height: 4px; } to { height: 18px; } }
+          @keyframes rec-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.35;transform:scale(.7)} }
+          @keyframes spin { to { transform: rotate(360deg); } }
+          @keyframes typing-bounce { 0%,60%,100%{transform:translateY(0);opacity:.4} 30%{transform:translateY(-5px);opacity:1} }
+        `}</style>
       </div>
     );
   }
