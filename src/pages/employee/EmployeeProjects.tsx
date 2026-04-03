@@ -84,7 +84,7 @@ const InquiryCard = ({ project: p, onApply, isPending, T }: { project: any; onAp
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <span style={{ color: T.sub }} className="text-[10px] font-black uppercase tracking-widest">{p.order_id}</span>
                 {p.category?.name && (
-                  <Badge style={{ background: "rgba(99,102,241,0.1)", color: "#a5b4fc", borderColor: "rgba(99,102,241,0.2)" }} variant="outline" className="text-[10px] h-5 px-2 py-0 border">
+                  <Badge style={{ background: "rgba(99,102,241,0.1)", color: T.badgeFg, borderColor: "rgba(99,102,241,0.25)" }} variant="outline" className="text-[10px] h-5 px-2 py-0 border">
                     <Tag className="h-3 w-3 mr-1" /> {p.category.name}
                   </Badge>
                 )}

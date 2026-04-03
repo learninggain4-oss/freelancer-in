@@ -18,9 +18,9 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
   const isDark  = theme === "black" || theme === "wb";
   const barBg   = theme === "black" ? "rgba(7,7,20,.95)" : theme === "wb" ? "rgba(10,10,28,.97)" : "rgba(255,255,255,.97)";
   const barBdr  = isDark ? "rgba(255,255,255,.07)"     : "rgba(0,0,0,.09)";
-  const activeC = "#a5b4fc";
+  const activeC = isDark ? "#a5b4fc" : "#4f46e5";
   const inactC  = isDark ? "rgba(255,255,255,.32)"     : "#9ca3af";
-  const activePill = isDark ? "rgba(99,102,241,.2)"    : "rgba(99,102,241,.1)";
+  const activePill = isDark ? "rgba(99,102,241,.2)"    : "rgba(99,102,241,.12)";
   const labelActive = isDark ? "#a5b4fc"               : "#4f46e5";
   const labelInact  = isDark ? "rgba(255,255,255,.28)" : "#9ca3af";
 

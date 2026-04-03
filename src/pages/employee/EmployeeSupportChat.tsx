@@ -110,19 +110,25 @@ const EmployeeSupportChat = () => {
 
   /* ── Loading ── */
   if (loadingRoom) {
+    const isDark = theme === "black";
     return (
       <div style={{ background: WA.bgColor, display: "flex", flexDirection: "column", height: "calc(100vh - 5rem)" }}>
         <div style={{ background: WA.headerBg, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14 }}>
-          <Skeleton style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,.15)" }} />
+          <Skeleton style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,.25)" }} />
           <div style={{ flex: 1 }}>
-            <Skeleton style={{ width: 120, height: 14, borderRadius: 8, background: "rgba(255,255,255,.15)", marginBottom: 6 }} />
-            <Skeleton style={{ width: 60, height: 10, borderRadius: 8, background: "rgba(255,255,255,.1)" }} />
+            <Skeleton style={{ width: 120, height: 14, borderRadius: 8, background: "rgba(255,255,255,.25)", marginBottom: 6 }} />
+            <Skeleton style={{ width: 60, height: 10, borderRadius: 8, background: "rgba(255,255,255,.18)" }} />
           </div>
         </div>
         <div style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 12 }}>
           {[0,1,2].map(i => (
             <div key={i} style={{ display: "flex", justifyContent: i % 2 === 0 ? "flex-start" : "flex-end" }}>
-              <Skeleton style={{ width: `${i % 2 === 0 ? 65 : 45}%`, height: 52, borderRadius: 12, background: i % 2 === 0 ? "rgba(255,255,255,.06)" : "rgba(0,168,132,.12)" }} />
+              <Skeleton style={{
+                width: `${i % 2 === 0 ? 65 : 45}%`, height: 52, borderRadius: 12,
+                background: i % 2 === 0
+                  ? (isDark ? "rgba(255,255,255,.08)" : "rgba(0,0,0,.07)")
+                  : "rgba(0,168,132,.18)"
+              }} />
             </div>
           ))}
         </div>

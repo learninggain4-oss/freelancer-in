@@ -54,6 +54,10 @@ const T = {
     searchBdr:  "rgba(255,255,255,.1)",
     footerBg:   "rgba(7,7,20,.92)",
     footerBdr:  "rgba(255,255,255,.07)",
+    shadowSm:   "0 2px 12px rgba(0,0,0,.4)",
+    shadowMd:   "0 4px 20px rgba(0,0,0,.5)",
+    shadowLg:   "0 8px 32px rgba(0,0,0,.55)",
+    shadowXl:   "0 12px 40px rgba(0,0,0,.6)",
   },
   white: {
     shell:      "#f0f4ff",
@@ -65,10 +69,10 @@ const T = {
     mainText:   "#0d0d24",
     mainSub:    "#6b7280",
     cardBg:     "#ffffff",
-    cardBdr:    "rgba(0,0,0,.08)",
+    cardBdr:    "rgba(0,0,0,.07)",
     mutedBg:    "#f1f5f9",
     inputBg:    "#ffffff",
-    inputBdr:   "rgba(0,0,0,.1)",
+    inputBdr:   "rgba(0,0,0,.12)",
     inputFg:    "#0d0d24",
     inputPh:    "#9ca3af",
     accent:     "#4f46e5",
@@ -87,6 +91,10 @@ const T = {
     searchBdr:  "rgba(0,0,0,.09)",
     footerBg:   "rgba(255,255,255,.95)",
     footerBdr:  "rgba(0,0,0,.07)",
+    shadowSm:   "0 2px 12px rgba(0,0,0,.07)",
+    shadowMd:   "0 4px 20px rgba(0,0,0,.09)",
+    shadowLg:   "0 8px 32px rgba(0,0,0,.10)",
+    shadowXl:   "0 12px 40px rgba(0,0,0,.11)",
   },
   wb: {
     shell:      "#f0f4ff",
@@ -98,10 +106,10 @@ const T = {
     mainText:   "#0d0d24",
     mainSub:    "#6b7280",
     cardBg:     "#ffffff",
-    cardBdr:    "rgba(0,0,0,.08)",
+    cardBdr:    "rgba(0,0,0,.07)",
     mutedBg:    "#f1f5f9",
     inputBg:    "#ffffff",
-    inputBdr:   "rgba(0,0,0,.1)",
+    inputBdr:   "rgba(0,0,0,.12)",
     inputFg:    "#0d0d24",
     inputPh:    "#9ca3af",
     accent:     "#4f46e5",
@@ -120,6 +128,10 @@ const T = {
     searchBdr:  "rgba(255,255,255,.12)",
     footerBg:   "rgba(255,255,255,.95)",
     footerBdr:  "rgba(0,0,0,.07)",
+    shadowSm:   "0 2px 12px rgba(0,0,0,.07)",
+    shadowMd:   "0 4px 20px rgba(0,0,0,.09)",
+    shadowLg:   "0 8px 32px rgba(0,0,0,.10)",
+    shadowXl:   "0 12px 40px rgba(0,0,0,.11)",
   },
 };
 
@@ -142,7 +154,11 @@ function buildCss(t: typeof T.black): string {
 .app-main-dark .text-accent { color:${t.green} !important; }
 .app-main-dark .text-destructive { color:${t.red} !important; }
 .app-main-dark .text-warning { color:${t.orange} !important; }
-.app-main-dark .shadow-sm { box-shadow:0 4px 20px rgba(0,0,0,.12) !important; }
+.app-main-dark .shadow-sm { box-shadow:${t.shadowSm} !important; }
+.app-main-dark .shadow-md { box-shadow:${t.shadowMd} !important; }
+.app-main-dark .shadow-lg { box-shadow:${t.shadowLg} !important; }
+.app-main-dark .shadow-xl { box-shadow:${t.shadowXl} !important; }
+.app-main-dark .shadow-2xl { box-shadow:${t.shadowXl} !important; }
 .app-main-dark input,.app-main-dark select,.app-main-dark textarea { background:${t.inputBg} !important; border:1px solid ${t.inputBdr} !important; color:${t.inputFg} !important; }
 .app-main-dark input::placeholder,.app-main-dark textarea::placeholder { color:${t.inputPh} !important; }
 .app-main-dark table { color:${t.mainText} !important; }
@@ -322,8 +338,8 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
               style={{ alignItems: "center", gap: 7, padding: "5px 10px", borderRadius: 10, background: `${A1}15`, border: `1px solid ${A1}30`, cursor: "pointer", height: 34 }}
               onMouseEnter={e => (e.currentTarget.style.background = `${A1}25`)}
               onMouseLeave={e => (e.currentTarget.style.background = `${A1}15`)}>
-              <IndianRupee size={12} color="#a5b4fc" />
-              <span style={{ fontSize: 12.5, fontWeight: 800, color: "#a5b4fc" }}>
+              <IndianRupee size={12} color={isHeaderDark ? "#a5b4fc" : "#4f46e5"} />
+              <span style={{ fontSize: 12.5, fontWeight: 800, color: isHeaderDark ? "#a5b4fc" : "#4f46e5" }}>
                 {walletBalance.toLocaleString("en-IN")}
               </span>
             </button>

@@ -75,7 +75,7 @@ const MOCK_ALERTS = [
 
 const MOCK_TIMELINE = [
   { icon: IndianRupee, color: "#4ade80", bg: "rgba(34,197,94,.15)", label: "Payment received", detail: "₹2,400 credited to wallet", time: "Today, 10:30 AM" },
-  { icon: CheckCircle, color: "#a5b4fc", bg: "rgba(99,102,241,.15)", label: "Job completed", detail: "Website Redesign — TechCorp", time: "Yesterday, 5:00 PM" },
+  { icon: CheckCircle, color: "#818cf8", bg: "rgba(99,102,241,.15)", label: "Job completed", detail: "Website Redesign — TechCorp", time: "Yesterday, 5:00 PM" },
   { icon: UserCheck,   color: "#fbbf24", bg: "rgba(245,158,11,.15)", label: "Proposal accepted", detail: "Mobile App Development", time: "2 days ago" },
   { icon: ShieldCheck, color: "#4ade80", bg: "rgba(34,197,94,.15)", label: "Verification completed", detail: "Aadhaar verification approved", time: "3 days ago" },
   { icon: Star,        color: "#fbbf24", bg: "rgba(245,158,11,.15)", label: "Rating received", detail: "⭐⭐⭐⭐⭐ from TechCorp", time: "4 days ago" },
@@ -201,33 +201,37 @@ const EmployeeDashboard = () => {
     boxShadow: theme !== "black" ? "0 2px 8px rgba(0,0,0,.06)" : "none",
   };
 
+  const isDarkTheme = theme === "black";
+  const accentIcon  = isDarkTheme ? "#a5b4fc" : "#4f46e5";
+  const violetIcon  = isDarkTheme ? "#c4b5fd" : "#7c3aed";
+
   const quickActions = [
-    { icon: Briefcase,       label: "Find Jobs",   to: "/employee/projects",          grad: "rgba(99,102,241,.18)",  color: "#a5b4fc" },
-    { icon: FileText,        label: "My Bids",     to: "/employee/bids",              grad: "rgba(139,92,246,.18)",  color: "#c4b5fd" },
-    { icon: ArrowDownToLine, label: "Earnings",    to: "/employee/earnings",          grad: "rgba(34,197,94,.15)",   color: "#4ade80" },
-    { icon: Star,            label: "Reviews",     to: "/employee/reviews",           grad: "rgba(245,158,11,.15)",  color: "#fbbf24" },
-    { icon: ShieldCheck,     label: "Badges",      to: "/employee/badges",            grad: "rgba(20,184,166,.15)",  color: "#2dd4bf" },
-    { icon: Upload,          label: "Portfolio",   to: "/employee/portfolio",         grad: "rgba(251,113,133,.15)", color: "#fb7185" },
-    { icon: HeadphonesIcon,  label: "Support",     to: "/employee/help-support",      grad: "rgba(239,68,68,.13)",   color: "#f87171" },
-    { icon: Gift,            label: "Get Free",    to: "/employee/get-free",          grad: "rgba(96,165,250,.15)",  color: "#60a5fa" },
+    { icon: Briefcase,       label: "Find Jobs",   to: "/employee/projects",          grad: "rgba(99,102,241,.18)",  color: accentIcon },
+    { icon: FileText,        label: "My Bids",     to: "/employee/bids",              grad: "rgba(139,92,246,.18)",  color: violetIcon },
+    { icon: ArrowDownToLine, label: "Earnings",    to: "/employee/earnings",          grad: "rgba(34,197,94,.15)",   color: isDarkTheme ? "#4ade80" : "#16a34a" },
+    { icon: Star,            label: "Reviews",     to: "/employee/reviews",           grad: "rgba(245,158,11,.15)",  color: isDarkTheme ? "#fbbf24" : "#d97706" },
+    { icon: ShieldCheck,     label: "Badges",      to: "/employee/badges",            grad: "rgba(20,184,166,.15)",  color: isDarkTheme ? "#2dd4bf" : "#0d9488" },
+    { icon: Upload,          label: "Portfolio",   to: "/employee/portfolio",         grad: "rgba(251,113,133,.15)", color: isDarkTheme ? "#fb7185" : "#e11d48" },
+    { icon: HeadphonesIcon,  label: "Support",     to: "/employee/help-support",      grad: "rgba(239,68,68,.13)",   color: isDarkTheme ? "#f87171" : "#dc2626" },
+    { icon: Gift,            label: "Get Free",    to: "/employee/get-free",          grad: "rgba(96,165,250,.15)",  color: isDarkTheme ? "#60a5fa" : "#2563eb" },
   ];
 
   const summaryStats = [
-    { icon: CircleDollarSign, label: "Total Earnings",   value: `₹${totalAll.toLocaleString("en-IN")}`,    color: "#4ade80",  bg: "rgba(34,197,94,.14)",   trend: "+12%",  trendUp: true },
-    { icon: Wallet,           label: "Available Balance",value: `₹${availBal.toLocaleString("en-IN")}`,    color: "#a5b4fc",  bg: "rgba(99,102,241,.14)",  trend: "Ready", trendUp: true },
-    { icon: Clock,            label: "Pending Payments", value: `₹${holdBal.toLocaleString("en-IN")}`,     color: "#fbbf24",  bg: "rgba(245,158,11,.14)",  trend: "Hold",  trendUp: false },
-    { icon: CheckCircle,      label: "Completed Jobs",   value: completedCount,                              color: "#4ade80",  bg: "rgba(34,197,94,.12)",   trend: "+2",    trendUp: true },
-    { icon: Briefcase,        label: "Active Jobs",      value: activeCount,                                 color: "#a5b4fc",  bg: "rgba(99,102,241,.12)",  trend: "Live",  trendUp: true },
-    { icon: Target,           label: "Success Rate",     value: `${successRate}%`,                           color: "#2dd4bf",  bg: "rgba(20,184,166,.12)",  trend: "Good",  trendUp: true },
-    { icon: Star,             label: "Employer Rating",    value: "4.9 ★",                                     color: "#fbbf24",  bg: "rgba(245,158,11,.12)",  trend: "Top",   trendUp: true },
-    { icon: ArrowUpRight,     label: "Withdrawals",      value: withdrawCount,                               color: "#f87171",  bg: "rgba(239,68,68,.12)",   trend: "Total", trendUp: false },
+    { icon: CircleDollarSign, label: "Total Earnings",   value: `₹${totalAll.toLocaleString("en-IN")}`,    color: isDarkTheme ? "#4ade80" : "#16a34a",  bg: "rgba(34,197,94,.14)",   trend: "+12%",  trendUp: true },
+    { icon: Wallet,           label: "Available Balance",value: `₹${availBal.toLocaleString("en-IN")}`,    color: accentIcon,                            bg: "rgba(99,102,241,.14)",  trend: "Ready", trendUp: true },
+    { icon: Clock,            label: "Pending Payments", value: `₹${holdBal.toLocaleString("en-IN")}`,     color: isDarkTheme ? "#fbbf24" : "#d97706",   bg: "rgba(245,158,11,.14)",  trend: "Hold",  trendUp: false },
+    { icon: CheckCircle,      label: "Completed Jobs",   value: completedCount,                              color: isDarkTheme ? "#4ade80" : "#16a34a",  bg: "rgba(34,197,94,.12)",   trend: "+2",    trendUp: true },
+    { icon: Briefcase,        label: "Active Jobs",      value: activeCount,                                 color: accentIcon,                            bg: "rgba(99,102,241,.12)",  trend: "Live",  trendUp: true },
+    { icon: Target,           label: "Success Rate",     value: `${successRate}%`,                           color: isDarkTheme ? "#2dd4bf" : "#0d9488",  bg: "rgba(20,184,166,.12)",  trend: "Good",  trendUp: true },
+    { icon: Star,             label: "Employer Rating",  value: "4.9 ★",                                    color: isDarkTheme ? "#fbbf24" : "#d97706",  bg: "rgba(245,158,11,.12)",  trend: "Top",   trendUp: true },
+    { icon: ArrowUpRight,     label: "Withdrawals",      value: withdrawCount,                               color: isDarkTheme ? "#f87171" : "#dc2626",  bg: "rgba(239,68,68,.12)",   trend: "Total", trendUp: false },
   ];
 
   const alertIcon = (type: string) => {
     if (type === "success") return <CheckCircle size={13} color="#4ade80" />;
     if (type === "warning") return <AlertTriangle size={13} color="#fbbf24" />;
     if (type === "error")   return <XCircle size={13} color="#f87171" />;
-    return <Info size={13} color="#a5b4fc" />;
+    return <Info size={13} color={accentIcon} />;
   };
 
   return (
@@ -274,7 +278,7 @@ const EmployeeDashboard = () => {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 12 }}>
             <div style={{ width: 24, height: 24, borderRadius: 7, background: "rgba(99,102,241,.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <BarChart3 size={12} color="#a5b4fc" />
+              <BarChart3 size={12} color={accentIcon} />
             </div>
             <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Dashboard Summary</span>
           </div>
@@ -301,7 +305,7 @@ const EmployeeDashboard = () => {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 12 }}>
             <div style={{ width: 24, height: 24, borderRadius: 7, background: "rgba(139,92,246,.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Zap size={12} color="#c4b5fd" />
+              <Zap size={12} color={violetIcon} />
             </div>
             <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Quick Actions</span>
           </div>
@@ -326,14 +330,14 @@ const EmployeeDashboard = () => {
             <div style={{ display: "flex", gap: 6 }}>
               {["earnings", "jobs"].map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab as "earnings" | "jobs")}
-                  style={{ padding: "5px 12px", borderRadius: 8, background: activeTab === tab ? `${A1}20` : "none", border: activeTab === tab ? `1px solid ${A1}40` : "1px solid transparent", color: activeTab === tab ? "#a5b4fc" : tok.sub, fontSize: 11.5, fontWeight: 700, cursor: "pointer", textTransform: "capitalize" }}>
+                  style={{ padding: "5px 12px", borderRadius: 8, background: activeTab === tab ? `${A1}20` : "none", border: activeTab === tab ? `1px solid ${A1}40` : "1px solid transparent", color: activeTab === tab ? accentIcon : tok.sub, fontSize: 11.5, fontWeight: 700, cursor: "pointer", textTransform: "capitalize" }}>
                   {tab === "earnings" ? "Earnings" : "Jobs"}
                 </button>
               ))}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <TrendingUp size={12} color="#a5b4fc" />
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#4ade80" }}>
+              <TrendingUp size={12} color={accentIcon} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: isDarkTheme ? "#4ade80" : "#16a34a" }}>
                 +₹{totalEarnings.toLocaleString("en-IN")} this week
               </span>
             </div>
@@ -377,12 +381,12 @@ const EmployeeDashboard = () => {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 26, height: 26, borderRadius: 8, background: "rgba(99,102,241,.14)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Wallet size={12} color="#a5b4fc" />
+                <Wallet size={12} color={accentIcon} />
               </div>
               <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Payment Summary</span>
             </div>
             <button onClick={() => navigate("/employee/wallet")}
-              style={{ display: "flex", alignItems: "center", gap: 3, color: "#a5b4fc", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+              style={{ display: "flex", alignItems: "center", gap: 3, color: accentIcon, background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
               Wallet <ChevronRight size={12} />
             </button>
           </div>
@@ -390,7 +394,7 @@ const EmployeeDashboard = () => {
             {[
               { label: "Available",  value: `₹${availBal.toLocaleString("en-IN")}`,  color: "#4ade80", bg: "rgba(34,197,94,.1)" },
               { label: "On Hold",    value: `₹${holdBal.toLocaleString("en-IN")}`,   color: "#fbbf24", bg: "rgba(245,158,11,.1)" },
-              { label: "7-Day Earned",value:`₹${totalEarnings.toLocaleString("en-IN")}`,color:"#a5b4fc",bg:"rgba(99,102,241,.1)"},
+              { label: "7-Day Earned",value:`₹${totalEarnings.toLocaleString("en-IN")}`,color:accentIcon,bg:"rgba(99,102,241,.1)"},
               { label: "Withdrawals",value: withdrawCount + " requests",              color: "#f87171", bg: "rgba(239,68,68,.1)" },
             ].map(w => (
               <div key={w.label} style={{ padding: "12px", borderRadius: 12, background: w.bg, border: `1px solid ${w.color}20` }}>
@@ -437,25 +441,25 @@ const EmployeeDashboard = () => {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 26, height: 26, borderRadius: 8, background: "rgba(139,92,246,.14)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Briefcase size={12} color="#c4b5fd" />
+                <Briefcase size={12} color={violetIcon} />
               </div>
               <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Recent Jobs</span>
             </div>
             <button onClick={() => navigate("/employee/projects")}
-              style={{ display: "flex", alignItems: "center", gap: 3, color: "#a5b4fc", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+              style={{ display: "flex", alignItems: "center", gap: 3, color: accentIcon, background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
               View All <ChevronRight size={12} />
             </button>
           </div>
           {[
             { title: "Website Redesign", client: "TechCorp Ltd", budget: "₹24,000", status: "Active",    statusColor: "#4ade80", deadline: "Dec 28" },
             { title: "Mobile App UI",   client: "StartupXYZ",   budget: "₹38,000", status: "Pending",   statusColor: "#fbbf24", deadline: "Jan 05" },
-            { title: "Logo Design",     client: "BrandCo",      budget: "₹8,000",  status: "Completed", statusColor: "#a5b4fc", deadline: "Dec 20" },
+            { title: "Logo Design",     client: "BrandCo",      budget: "₹8,000",  status: "Completed", statusColor: accentIcon, deadline: "Dec 20" },
           ].map((job, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 10px", borderRadius: 12, transition: "background .15s" }}
               onMouseEnter={e => (e.currentTarget.style.background = tok.rowHover)}
               onMouseLeave={e => (e.currentTarget.style.background = "none")}>
               <div style={{ width: 36, height: 36, borderRadius: 11, background: `${A1}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Briefcase size={15} color="#a5b4fc" />
+                <Briefcase size={15} color={accentIcon} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 13, fontWeight: 700, color: tok.text, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{job.title}</p>
@@ -478,7 +482,7 @@ const EmployeeDashboard = () => {
               <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Transactions</span>
             </div>
             <button onClick={() => navigate("/employee/wallet")}
-              style={{ display: "flex", alignItems: "center", gap: 3, color: "#a5b4fc", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+              style={{ display: "flex", alignItems: "center", gap: 3, color: accentIcon, background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
               View All <ChevronRight size={12} />
             </button>
           </div>

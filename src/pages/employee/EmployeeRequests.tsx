@@ -133,7 +133,7 @@ const EmployeeRequests = () => {
                       </Badge>
                       {r.status === "approved" && (
                         <Button size="sm" 
-                          style={{ background: "rgba(99,102,241,0.1)", color: "#a5b4fc", borderColor: "rgba(99,102,241,0.2)" }}
+                          style={{ background: "rgba(99,102,241,0.1)", color: T.badgeFg, borderColor: "rgba(99,102,241,0.2)" }}
                           className="h-9 text-[10px] font-black uppercase tracking-widest gap-2 rounded-xl border hover:bg-white/[0.05]"
                           onClick={() => navigate(`/employee/projects/chat/${r.project_id}`)}>
                           <MessageSquare className="h-3.5 w-3.5" /> Terminal
