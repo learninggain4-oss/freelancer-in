@@ -1024,6 +1024,66 @@ if (SUPABASE_SERVICE_ROLE_KEY) {
 
 app.get("/health", (_, res) => res.json({ ok: true }));
 
+// ─── Support chat: delete single message ───
+app.delete("/functions/v1/support-delete-message", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const { messageId } = req.body;
+    if (!messageId) return res.status(400).json({ error: "messageId required" });
+
+    const supabase = getAdminClient();
+
+    // Verify the message belongs to this user
+    const { data: msg, error: fetchErr } = await supabase
+      .from("support_messages")
+      .select("id, sender_id")
+      .eq("id", messageId)
+      .maybeSingle();
+
+    if (fetchErr || !msg) return res.status(404).json({ error: "Message not found" });
+    if (msg.sender_id !== user.id) return res.status(403).json({ error: "Cannot delete another user's message" });
+
+    const { error } = await supabase.from("support_messages").delete().eq("id", messageId);
+    if (error) return res.status(500).json({ error: error.message });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Support chat: clear all messages in a conversation ───
+app.delete("/functions/v1/support-clear-history", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const { conversationId } = req.body;
+    if (!conversationId) return res.status(400).json({ error: "conversationId required" });
+
+    const supabase = getAdminClient();
+
+    // Verify the conversation belongs to this user
+    const { data: conv, error: fetchErr } = await supabase
+      .from("support_conversations")
+      .select("id, user_id")
+      .eq("id", conversationId)
+      .maybeSingle();
+
+    if (fetchErr || !conv) return res.status(404).json({ error: "Conversation not found" });
+    if (conv.user_id !== user.id) return res.status(403).json({ error: "Not your conversation" });
+
+    const { error } = await supabase.from("support_messages").delete().eq("conversation_id", conversationId);
+    if (error) return res.status(500).json({ error: error.message });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`API server running on port ${PORT}`);
 });

@@ -229,21 +229,42 @@ const HelpSupport = () => {
 
   const copyMsg = (msg: any) => { navigator.clipboard.writeText(msg.content); toast.success("Copied!"); setCtxMsg(null); };
 
+  const getAuthToken = async () => {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? "";
+  };
+
   const deleteMsg = async (msg: any) => {
     setCtxMsg(null);
     if (msg.sender_id !== profile?.id) { toast.error("You can only delete your own messages"); return; }
-    const { error } = await supabase.from("support_messages").delete().eq("id", msg.id);
-    if (error) toast.error("Failed to delete message");
-    else toast.success("Message deleted");
+    try {
+      const token = await getAuthToken();
+      const res = await fetch("/functions/v1/support-delete-message", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ messageId: msg.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Delete failed");
+      toast.success("Message deleted");
+    } catch (e: any) { toast.error(e.message || "Failed to delete message"); }
   };
 
   const clearHistory = async () => {
     setConfirmClear(false);
     setShowHeaderMenu(false);
     if (!conversation?.id) return;
-    const { error } = await supabase.from("support_messages").delete().eq("conversation_id", conversation.id);
-    if (error) toast.error("Failed to clear history");
-    else toast.success("Chat history cleared");
+    try {
+      const token = await getAuthToken();
+      const res = await fetch("/functions/v1/support-clear-history", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ conversationId: conversation.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Clear failed");
+      toast.success("Chat history cleared");
+    } catch (e: any) { toast.error(e.message || "Failed to clear history"); }
   };
 
   const filteredMessages = searchQuery
