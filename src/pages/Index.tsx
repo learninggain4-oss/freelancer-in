@@ -2780,7 +2780,7 @@ const NewsletterSection = () => {
                   onChange={e => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   className="w-full rounded-xl pl-11 pr-4 py-3.5 text-sm text-white placeholder-white/30 outline-none focus:ring-2 transition-all"
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", focusRingColor: "var(--t-a1)" }}
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}
                   onFocus={e => (e.currentTarget.style.borderColor = "rgba(var(--t-a1-rgb),0.5)")}
                   onBlur={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)")}
                 />
