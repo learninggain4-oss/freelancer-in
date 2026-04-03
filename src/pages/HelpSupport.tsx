@@ -207,6 +207,7 @@ const HelpSupport = () => {
   const inputRef           = useRef<HTMLTextAreaElement>(null);
   const fileRef            = useRef<HTMLInputElement>(null);
   const typingTimer        = useRef<any>(null);
+  const typingBroadcastTimer = useRef<any>(null);
   const mediaRecorderRef   = useRef<MediaRecorder | null>(null);
   const audioChunksRef     = useRef<Blob[]>([]);
   const recordingTimerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -1046,6 +1047,16 @@ const HelpSupport = () => {
                     setNewMessage(e.target.value);
                     e.target.style.height = "auto";
                     e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+                    // Broadcast typing event to admin
+                    if (conversation?.id) {
+                      supabase.channel(`bc:conv:${conversation.id}`)
+                        .send({ type: "broadcast", event: "typing", payload: { isTyping: true } });
+                      if (typingBroadcastTimer.current) clearTimeout(typingBroadcastTimer.current);
+                      typingBroadcastTimer.current = setTimeout(() => {
+                        supabase.channel(`bc:conv:${conversation.id}`)
+                          .send({ type: "broadcast", event: "typing", payload: { isTyping: false } });
+                      }, 2000);
+                    }
                   }}
                   onKeyDown={handleKeyDown}
                   placeholder="Type a message…"

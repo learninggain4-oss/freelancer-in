@@ -498,6 +498,8 @@ const AdminHelpSupport = () => {
   const [showReactionFor, setShowReactionFor]   = useState<string | null>(null);
   const [typing, setTyping]                     = useState(false);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [userTyping, setUserTyping]             = useState(false);
+  const userTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fileRef            = useRef<HTMLInputElement>(null);
   const mediaRecorderRef   = useRef<MediaRecorder | null>(null);
@@ -599,6 +601,29 @@ const AdminHelpSupport = () => {
     if (!el) return;
     setShowScrollBtn(el.scrollHeight - el.scrollTop - el.clientHeight > 120);
   };
+
+  // Listen for real user typing events via broadcast channel
+  useEffect(() => {
+    if (!selectedConvId) { setUserTyping(false); return; }
+    const ch = supabase
+      .channel(`bc:conv:${selectedConvId}`)
+      .on("broadcast", { event: "typing" }, ({ payload }) => {
+        if (payload?.isTyping) {
+          setUserTyping(true);
+          if (userTypingTimer.current) clearTimeout(userTypingTimer.current);
+          userTypingTimer.current = setTimeout(() => setUserTyping(false), 3000);
+        } else {
+          if (userTypingTimer.current) clearTimeout(userTypingTimer.current);
+          setUserTyping(false);
+        }
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+      setUserTyping(false);
+      if (userTypingTimer.current) clearTimeout(userTypingTimer.current);
+    };
+  }, [selectedConvId]);
 
   // Typing simulation — show "typing..." after user sends a message
   useEffect(() => {
@@ -1093,6 +1118,20 @@ const AdminHelpSupport = () => {
                   </div>
                 );
               })}
+              {/* ── User typing indicator (WhatsApp animated dots) ── */}
+              {userTyping && (
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 6, padding: "4px 14px 8px" }}>
+                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: WA.incoming, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 12, fontWeight: 700, color: WA.incomingText }}>
+                    {(getUserDisplayName(selectedConv!)).charAt(0).toUpperCase()}
+                  </div>
+                  <div style={{ background: WA.incoming, borderRadius: "18px 18px 18px 4px", padding: "10px 16px", display: "flex", alignItems: "center", gap: 4, boxShadow: "0 1px 3px rgba(0,0,0,.12)" }}>
+                    <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: WA.subText, animation: "typingDot 1.2s ease-in-out infinite", animationDelay: "0ms" }} />
+                    <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: WA.subText, animation: "typingDot 1.2s ease-in-out infinite", animationDelay: "200ms" }} />
+                    <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: WA.subText, animation: "typingDot 1.2s ease-in-out infinite", animationDelay: "400ms" }} />
+                  </div>
+                </div>
+              )}
+
               <div ref={bottomRef} />
             </div>
           )}
@@ -1357,6 +1396,7 @@ const AdminHelpSupport = () => {
           @keyframes rec-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.35;transform:scale(.7)} }
           @keyframes spin { to { transform: rotate(360deg); } }
           @keyframes typing-bounce { 0%,60%,100%{transform:translateY(0);opacity:.4} 30%{transform:translateY(-5px);opacity:1} }
+          @keyframes typingDot { 0%,60%,100%{transform:translateY(0);opacity:.35} 30%{transform:translateY(-5px);opacity:1} }
         `}</style>
       </div>
     );
