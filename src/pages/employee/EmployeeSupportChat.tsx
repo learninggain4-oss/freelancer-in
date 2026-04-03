@@ -1,23 +1,44 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Send, MessageSquareText, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ArrowLeft, Send, Smile, CheckCheck, Check, Shield, Mic } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRealtimeMessages } from "@/hooks/use-realtime-messages";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import MessageBubble from "@/components/chat/MessageBubble";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 
-const TH = {
-  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
-  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
-  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+/* ─────────────── WhatsApp palette ─────────────── */
+const getWA = (dark: boolean) => ({
+  bgColor:      dark ? "#0b141a" : "#efeae2",
+  bgPattern:    dark
+    ? "radial-gradient(circle, rgba(255,255,255,.03) 1px, transparent 1px)"
+    : "radial-gradient(circle, rgba(0,0,0,.07) 1px, transparent 1px)",
+  headerBg:     dark ? "#202c33" : "#075e54",
+  headerText:   "#fff",
+  headerSub:    "rgba(255,255,255,.72)",
+  incoming:     dark ? "#202c33" : "#fff",
+  incomingText: dark ? "#e9edef" : "#111b21",
+  outgoing:     dark ? "#005c4b" : "#d9fdd3",
+  outgoingText: dark ? "#e9edef" : "#111b21",
+  inputBg:      dark ? "#202c33" : "#fff",
+  inputText:    dark ? "#d1d7db" : "#111b21",
+  inputBarBg:   dark ? "#111b21" : "#f0f2f5",
+  subText:      dark ? "#8696a0" : "#667781",
+  tickBlue:     "#53bdeb",
+  tickGrey:     dark ? "#8696a0" : "#b0bec5",
+  border:       dark ? "rgba(134,150,160,.12)" : "rgba(0,0,0,.08)",
+  emojiBtn:     dark ? "#8696a0" : "#54656f",
+  sendBtn:      "#00a884",
+  avatarBg:     dark ? "#2a3942" : "#dfe5e7",
+});
+
+const EMOJIS = ["😊","😂","❤️","👍","🙏","😭","🔥","✅","💯","😍","🤔","👏","🎉","😅","💪","🙌","😎","🤝","💬","⭐"];
+
+const fmt = (iso: string) => {
+  const d = new Date(iso);
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 };
 
 const EmployeeSupportChat = () => {
@@ -27,10 +48,11 @@ const EmployeeSupportChat = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const [newMessage, setNewMessage] = useState("");
+  const [showEmoji, setShowEmoji] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { theme } = useDashboardTheme();
-  const T = TH[theme];
+  const WA = getWA(theme === "black");
 
   const { data: chatRoom, isLoading: loadingRoom } = useQuery({
     queryKey: ["support-chat-room", roomId],
@@ -52,21 +74,17 @@ const EmployeeSupportChat = () => {
     messages,
     isLoading: loadingMessages,
     sendMessage,
-    editMessage,
-    deleteMessage,
-    toggleReaction,
   } = useRealtimeMessages(chatRoom?.id);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Auto-resize textarea
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, 160) + "px";
+    el.style.height = Math.min(el.scrollHeight, 120) + "px";
   }, [newMessage]);
 
   const handleSend = async () => {
@@ -76,135 +94,223 @@ const EmployeeSupportChat = () => {
         await sendMessage(content);
         setNewMessage("");
         if (textareaRef.current) textareaRef.current.style.height = "auto";
+        setShowEmoji(false);
       } catch (e: any) {
         toast.error(e.message);
       }
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  /* ── Loading ── */
   if (loadingRoom) {
     return (
-      <div style={{ background: T.bg }} className="flex h-full flex-col items-center justify-center gap-6 p-6">
-        <div style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(139,92,246,0.1) 100%)" }} className="h-24 w-24 rounded-[2rem] animate-pulse flex items-center justify-center shadow-2xl border border-white/5">
-          <MessageSquareText className="h-10 w-10 text-[#6366f1]/50" />
+      <div style={{ background: WA.bgColor, display: "flex", flexDirection: "column", height: "calc(100vh - 5rem)" }}>
+        <div style={{ background: WA.headerBg, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14 }}>
+          <Skeleton style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,.15)" }} />
+          <div style={{ flex: 1 }}>
+            <Skeleton style={{ width: 120, height: 14, borderRadius: 8, background: "rgba(255,255,255,.15)", marginBottom: 6 }} />
+            <Skeleton style={{ width: 60, height: 10, borderRadius: 8, background: "rgba(255,255,255,.1)" }} />
+          </div>
         </div>
-        <Skeleton style={{ background: T.card }} className="h-4 w-48 rounded-full" />
+        <div style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 12 }}>
+          {[0,1,2].map(i => (
+            <div key={i} style={{ display: "flex", justifyContent: i % 2 === 0 ? "flex-start" : "flex-end" }}>
+              <Skeleton style={{ width: `${i % 2 === 0 ? 65 : 45}%`, height: 52, borderRadius: 12, background: i % 2 === 0 ? "rgba(255,255,255,.06)" : "rgba(0,168,132,.12)" }} />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
+  /* ── No room ── */
   if (!chatRoom) {
     return (
-      <div style={{ background: T.bg }} className="flex h-full flex-col items-center justify-center gap-6 p-6">
-        <div style={{ background: T.card, borderColor: T.border }} className="h-24 w-24 rounded-[2rem] border flex items-center justify-center shadow-2xl">
-          <MessageSquareText style={{ color: T.sub }} className="h-10 w-10 opacity-30" />
+      <div style={{ background: WA.bgColor, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "calc(100vh - 5rem)", gap: 16, padding: 24 }}>
+        <div style={{ width: 80, height: 80, borderRadius: "50%", background: WA.incoming, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(0,0,0,.2)" }}>
+          <Shield size={36} style={{ color: WA.subText }} />
         </div>
-        <div className="text-center">
-          <p style={{ color: T.text }} className="text-lg font-black uppercase tracking-widest">Signal Lost</p>
-          <p style={{ color: T.sub }} className="text-xs font-bold mt-2 opacity-60">Support channel not detected.</p>
-        </div>
-        <Button style={{ background: T.card, borderColor: T.border, color: T.text }} variant="outline" size="lg" onClick={() => navigate(-1)} className="gap-3 rounded-2xl border-2 font-black uppercase tracking-widest text-xs px-8">
-          <ArrowLeft className="h-5 w-5" /> Retreat
-        </Button>
+        <p style={{ color: WA.incomingText, fontWeight: 700, fontSize: 17, margin: 0 }}>Support Chat Unavailable</p>
+        <p style={{ color: WA.subText, fontSize: 13, textAlign: "center", margin: 0 }}>No support channel found for this project.</p>
+        <button onClick={() => navigate(-1)}
+          style={{ marginTop: 8, padding: "10px 28px", borderRadius: 24, border: "none", background: WA.sendBtn, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+          Go Back
+        </button>
       </div>
     );
   }
 
+  const myId = profile?.id || "";
+
+  /* ─────────── Main Chat UI ─────────── */
   return (
-    <div style={{ background: T.bg, color: T.text }} className="flex h-[calc(100vh-5rem)] flex-col overflow-hidden">
-      {/* Header — glassmorphism */}
-      <div style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(20px)" }} className="relative z-10 border-b shadow-2xl">
-        <div className="flex items-center gap-4 px-4 py-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            style={{ background: T.nav, color: T.text }}
-            className="h-11 w-11 rounded-2xl hover:bg-white/5 active:scale-95 transition-all"
-          >
-            <ArrowLeft className="h-6 w-6" />
-          </Button>
-          <div className="flex-1">
-            <h2 style={{ color: T.text }} className="text-lg font-black uppercase tracking-tight">Command Support</h2>
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#4ade80] animate-pulse shadow-[0_0_8px_#4ade80]" />
-              <span style={{ color: "#4ade80" }} className="text-[10px] font-black uppercase tracking-[0.2em]">Operational</span>
-            </div>
-          </div>
-          <div style={{ background: "rgba(99,102,241,0.1)", color: "#a5b4fc", borderColor: "rgba(99,102,241,0.2)" }} className="flex items-center gap-2 rounded-xl px-4 py-2 border shadow-lg">
-             <ShieldCheck className="h-4 w-4" />
-             <span className="text-[10px] font-black uppercase tracking-widest">Secure</span>
-          </div>
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 5rem)", background: WA.bgColor, overflow: "hidden" }}>
+
+      {/* ── Header ── */}
+      <div style={{ background: WA.headerBg, display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,0,0,.25)" }}>
+        <button onClick={() => navigate(-1)}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", color: "#fff" }}>
+          <ArrowLeft size={22} />
+        </button>
+        {/* Avatar */}
+        <div style={{ width: 40, height: 40, borderRadius: "50%", background: WA.avatarBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+          <Shield size={20} style={{ color: WA.headerBg }} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: WA.headerText, lineHeight: 1.2 }}>Support Team</p>
+          <p style={{ margin: 0, fontSize: 12, color: WA.headerSub, display: "flex", alignItems: "center", gap: 4 }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", display: "inline-block" }} />
+            Online
+          </p>
         </div>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 relative">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.08)_0%,transparent_75%)] pointer-events-none" />
-        <div className="relative px-4 py-6">
-          {loadingMessages ? (
-            <div className="space-y-6">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className={cn("flex", i % 2 === 0 ? "justify-start" : "justify-end")}>
-                  <Skeleton style={{ background: T.card }} className={cn("h-16 rounded-3xl border border-white/5", i % 2 === 0 ? "w-3/4" : "w-1/2")} />
+      {/* ── Chat area ── */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "12px 8px 8px", backgroundImage: WA.bgPattern, backgroundSize: "20px 20px" }}>
+        {loadingMessages ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "8px 4px" }}>
+            {[0,1,2,3].map(i => (
+              <div key={i} style={{ display: "flex", justifyContent: i % 2 === 0 ? "flex-start" : "flex-end" }}>
+                <Skeleton style={{ width: `${i % 2 === 0 ? 55 : 40}%`, height: 48, borderRadius: 10, background: "rgba(128,128,128,.18)" }} />
+              </div>
+            ))}
+          </div>
+        ) : messages.length === 0 ? (
+          /* Empty state */
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 12, padding: 24 }}>
+            <div style={{ background: WA.incoming, borderRadius: 16, padding: "12px 20px", maxWidth: 280, boxShadow: "0 1px 2px rgba(0,0,0,.15)", textAlign: "center" }}>
+              <div style={{ width: 48, height: 48, borderRadius: "50%", background: theme === "black" ? "rgba(0,168,132,.15)" : "rgba(7,94,84,.08)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}>
+                <Shield size={22} style={{ color: WA.sendBtn }} />
+              </div>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: WA.incomingText }}>Support Chat</p>
+              <p style={{ margin: "6px 0 0", fontSize: 12.5, color: WA.subText, lineHeight: 1.55 }}>
+                Describe your issue and our team will assist you shortly.
+              </p>
+            </div>
+          </div>
+        ) : (
+          /* Messages */
+          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {messages.map((msg: any) => {
+              const isMe = msg.sender_id === myId;
+              return (
+                <div key={msg.id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start", padding: "2px 6px" }}>
+                  <div style={{
+                    maxWidth: "72%",
+                    background: isMe ? WA.outgoing : WA.incoming,
+                    color: isMe ? WA.outgoingText : WA.incomingText,
+                    borderRadius: isMe ? "12px 2px 12px 12px" : "2px 12px 12px 12px",
+                    padding: "8px 12px 6px",
+                    boxShadow: "0 1px 2px rgba(0,0,0,.13)",
+                    position: "relative",
+                  }}>
+                    {/* Sender name for incoming */}
+                    {!isMe && (
+                      <p style={{ margin: "0 0 3px", fontSize: 12, fontWeight: 700, color: WA.sendBtn }}>Support Team</p>
+                    )}
+                    {/* Message text */}
+                    <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
+                      {msg.content}
+                    </p>
+                    {/* Time + tick row */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4, marginTop: 3 }}>
+                      <span style={{ fontSize: 11, color: WA.subText }}>
+                        {fmt(msg.created_at)}
+                      </span>
+                      {isMe && (
+                        msg.is_read
+                          ? <CheckCheck size={14} style={{ color: WA.tickBlue }} />
+                          : <CheckCheck size={14} style={{ color: WA.tickGrey }} />
+                      )}
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 gap-6">
-              <div style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(139,92,246,0.1) 100%)" }} className="h-32 w-32 rounded-[3rem] flex items-center justify-center shadow-2xl border border-white/5">
-                <ShieldCheck className="h-14 w-14 text-[#6366f1]/40" />
-              </div>
-              <div className="text-center px-8">
-                <p style={{ color: T.text }} className="text-xl font-black uppercase tracking-widest leading-tight">Terminal Ready</p>
-                <p style={{ color: T.sub }} className="text-xs font-bold mt-3 opacity-60 leading-relaxed uppercase tracking-tighter">Commanders are standing by. Describe your objective or report issues here.</p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {messages.map((msg) => (
-                <MessageBubble
-                  key={msg.id}
-                  message={msg}
-                  currentUserId={profile?.id || ""}
-                  onEdit={editMessage}
-                  onDelete={deleteMessage}
-                  onReaction={toggleReaction}
-                  onReply={() => {}}
-                  senderDisplayName={
-                    msg.sender_id !== profile?.id ? "Command Center" : undefined
-                  }
-                />
-              ))}
-              <div ref={bottomRef} />
-            </div>
+              );
+            })}
+            <div ref={bottomRef} />
+          </div>
+        )}
+      </div>
+
+      {/* ── Emoji picker ── */}
+      {showEmoji && (
+        <div style={{ background: WA.inputBarBg, borderTop: `1px solid ${WA.border}`, padding: "10px 12px", flexShrink: 0 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: 4 }}>
+            {EMOJIS.map(e => (
+              <button key={e} onClick={() => setNewMessage(m => m + e)}
+                style={{ fontSize: 22, background: "none", border: "none", cursor: "pointer", padding: "4px", borderRadius: 6, lineHeight: 1, textAlign: "center" }}>
+                {e}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Input bar ── */}
+      <div style={{ background: WA.inputBarBg, padding: "8px 10px 10px", flexShrink: 0, display: "flex", alignItems: "flex-end", gap: 8 }}>
+        {/* Text input pill */}
+        <div style={{ flex: 1, background: WA.inputBg, borderRadius: 26, display: "flex", alignItems: "flex-end", padding: "6px 8px 6px 14px", boxShadow: "0 1px 3px rgba(0,0,0,.12)", minHeight: 44 }}>
+          {/* Emoji toggle */}
+          <button onClick={() => setShowEmoji(v => !v)}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 6px 4px 0", color: WA.emojiBtn, flexShrink: 0, lineHeight: 0 }}>
+            <Smile size={22} />
+          </button>
+          {/* Textarea */}
+          <textarea
+            ref={textareaRef}
+            value={newMessage}
+            onChange={e => {
+              setNewMessage(e.target.value);
+              e.target.style.height = "auto";
+              e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a message"
+            rows={1}
+            style={{
+              flex: 1,
+              background: "none",
+              border: "none",
+              outline: "none",
+              resize: "none",
+              color: WA.inputText,
+              fontSize: 15,
+              lineHeight: 1.5,
+              padding: "2px 0",
+              fontFamily: "inherit",
+              maxHeight: 120,
+              overflowY: "auto",
+            }}
+          />
+          {/* Mic when empty */}
+          {!newMessage && (
+            <button style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0 4px 6px", color: WA.emojiBtn, flexShrink: 0, lineHeight: 0 }}>
+              <Mic size={22} />
+            </button>
           )}
         </div>
-      </ScrollArea>
-
-      {/* Input — large textarea */}
-      <div style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(20px)" }} className="border-t p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
-        <div className="flex items-end gap-3 max-w-5xl mx-auto">
-          <div className="flex-1 relative group">
-            <Textarea
-              ref={textareaRef}
-              placeholder="Transmit status report..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              style={{ background: T.input, color: T.text, borderColor: T.border }}
-              className="min-h-[64px] max-h-[160px] resize-none rounded-2xl border-2 px-5 py-4 text-sm font-medium leading-relaxed focus-visible:ring-[#6366f1]/30 transition-all placeholder:opacity-30 shadow-inner"
-            />
-          </div>
-          <Button
-            size="icon"
-            onClick={handleSend}
-            disabled={!newMessage.trim()}
-            style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" }}
-            className="h-14 w-14 rounded-2xl text-white shadow-xl shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all duration-300 active:scale-90 disabled:opacity-30 disabled:shadow-none shrink-0 border-0"
-          >
-            <Send className="h-6 w-6" />
-          </Button>
-        </div>
+        {/* Send button */}
+        <button
+          onClick={handleSend}
+          disabled={!newMessage.trim()}
+          style={{
+            width: 46, height: 46, borderRadius: "50%", border: "none",
+            background: newMessage.trim() ? WA.sendBtn : WA.sendBtn,
+            color: "#fff", cursor: newMessage.trim() ? "pointer" : "default",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0, boxShadow: "0 2px 8px rgba(0,168,132,.4)",
+            opacity: newMessage.trim() ? 1 : 0.7,
+            transition: "opacity .15s",
+          }}>
+          <Send size={20} style={{ marginLeft: 2 }} />
+        </button>
       </div>
     </div>
   );
