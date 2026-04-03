@@ -1188,8 +1188,7 @@ app.post("/functions/v1/mpin-set", async (req, res) => {
   }
 });
 
-// POST /functions/v1/mpin-forgot-send — clear M-Pin hash so user can reset after email verification
-// NOTE: email OTP is sent directly from the browser Supabase client (not from server)
+// POST /functions/v1/mpin-forgot-send — generate 6-digit OTP, clear mpin_hash, send email via Resend
 app.post("/functions/v1/mpin-forgot-send", async (req, res) => {
   try {
     const user = await getUserFromToken(req.headers.authorization);
@@ -1198,14 +1197,95 @@ app.post("/functions/v1/mpin-forgot-send", async (req, res) => {
     const email = user.email;
     if (!email) return res.status(400).json({ error: "No email on account" });
 
-    // Clear the PIN hash so the user can create a new one after email verification
+    const RESEND_API_KEY = process.env.RESEND_API_KEY;
+    if (!RESEND_API_KEY) return res.status(503).json({ error: "Email service not configured. Please contact support." });
+
+    // Generate 6-digit OTP
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const otpHash = crypto.createHash("sha256").update(`${otp}:${user.id}:mpin-otp`).digest("hex");
+    const otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    // Clear mpin_hash and store OTP in app_metadata
     const adminAuth = getAdminClient().auth.admin;
-    const { error } = await adminAuth.updateUserById(user.id, {
-      app_metadata: { mpin_hash: null },
+    const { error: updateErr } = await adminAuth.updateUserById(user.id, {
+      app_metadata: {
+        mpin_hash: null,
+        mpin_otp_hash: otpHash,
+        mpin_otp_expiry: otpExpiry,
+      },
     });
-    if (error) return res.status(500).json({ error: error.message });
+    if (updateErr) return res.status(500).json({ error: updateErr.message });
+
+    // Send OTP email via Resend
+    const emailRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "Freelancer India <onboarding@resend.dev>",
+        to: [email],
+        subject: "Your M-Pin Reset Code",
+        html: `
+          <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:40px 24px;background:#ffffff;">
+            <div style="margin-bottom:28px;">
+              <h1 style="margin:0;font-size:22px;font-weight:800;color:#0f172a;">M-Pin Reset</h1>
+              <p style="margin:8px 0 0;color:#64748b;font-size:14px;">Freelancer India — Security Verification</p>
+            </div>
+            <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 24px;">
+              Use the code below to reset your M-Pin. This code expires in <strong>10 minutes</strong>.
+            </p>
+            <div style="background:#f8fafc;border:2px solid #e2e8f0;border-radius:16px;padding:28px 24px;text-align:center;margin-bottom:28px;">
+              <p style="margin:0 0 6px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">Verification Code</p>
+              <p style="margin:0;font-size:48px;font-weight:900;letter-spacing:10px;color:#0f172a;font-family:'Courier New',monospace;">${otp}</p>
+            </div>
+            <p style="color:#94a3b8;font-size:13px;line-height:1.6;margin:0;">
+              If you did not request this, you can safely ignore this email. Your M-Pin has not been changed.
+            </p>
+          </div>
+        `,
+      }),
+    });
+
+    if (!emailRes.ok) {
+      const emailErr = await emailRes.json().catch(() => ({}));
+      return res.status(500).json({ error: emailErr.message || "Failed to send OTP email" });
+    }
 
     res.json({ success: true, email });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /functions/v1/mpin-forgot-verify-otp — verify the 6-digit OTP and allow new PIN
+app.post("/functions/v1/mpin-forgot-verify-otp", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const { otp } = req.body;
+    if (!otp || !/^\d{6}$/.test(String(otp)))
+      return res.status(400).json({ error: "OTP must be 6 digits" });
+
+    const adminAuth = getAdminClient().auth.admin;
+    const { data: { user: u }, error } = await adminAuth.getUserById(user.id);
+    if (error || !u) return res.status(404).json({ error: "User not found" });
+
+    const { mpin_otp_hash, mpin_otp_expiry } = u.app_metadata || {};
+    if (!mpin_otp_hash) return res.status(400).json({ error: "No OTP request found. Please request a new code." });
+    if (Date.now() > Number(mpin_otp_expiry)) return res.status(400).json({ error: "OTP has expired. Please request a new code." });
+
+    const expectedHash = crypto.createHash("sha256").update(`${otp}:${user.id}:mpin-otp`).digest("hex");
+    if (expectedHash !== mpin_otp_hash) return res.status(400).json({ error: "Incorrect code. Please try again." });
+
+    // Clear OTP fields
+    await adminAuth.updateUserById(user.id, {
+      app_metadata: { mpin_otp_hash: null, mpin_otp_expiry: null },
+    });
+
+    res.json({ verified: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

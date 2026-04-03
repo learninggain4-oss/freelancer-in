@@ -227,25 +227,13 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
     setSendingOtp(true);
     setOtpError("");
     try {
-      // Step 1: Clear the M-Pin hash on server (so magic-link flow also works)
       const token = await getToken();
       const res = await fetch("/functions/v1/mpin-forgot-send", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Server error");
-
-      // Step 2: Send OTP email directly from browser (server-side signInWithOtp doesn't work reliably)
-      const { error: otpErr } = await supabase.auth.signInWithOtp({
-        email: userEmail,
-        options: {
-          shouldCreateUser: false,
-          emailRedirectTo: window.location.origin,
-        },
-      });
-      if (otpErr) throw new Error(otpErr.message);
-
+      if (!res.ok) throw new Error(json.error || "Could not send OTP");
       setOtpSent(true);
       setForgotStep("otp");
     } catch (err: unknown) {
@@ -257,27 +245,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
 
   const handleVerifyOtp = async () => {
     if (otpVal.length !== OTP_LEN || verifyingOtp) return;
-    setVerifyingOtp(true);
-    setOtpError("");
-    try {
-      const { data, error: verifyErr } = await supabase.auth.verifyOtp({
-        email: userEmail,
-        token: otpVal,
-        type: "email",
-      });
-      if (verifyErr || !data.session) throw new Error(verifyErr?.message || "Invalid or expired OTP");
-      setPin("");
-      setFirstPin("");
-      setStep("enter");
-      setError("");
-      setForgotStep("newpin");
-    } catch (err: unknown) {
-      setOtpError(err instanceof Error ? err.message : "Invalid OTP");
-      setOtpVal("");
-      otpRef.current?.focus();
-    } finally {
-      setVerifyingOtp(false);
-    }
+    await doVerifyOtp(otpVal);
   };
 
   const cancelForgot = () => {
@@ -458,17 +426,6 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
             <p style={{ margin: "0 0 14px", fontSize: 13.5, fontWeight: 700, color: textC, textAlign: "center", wordBreak: "break-all" }}>
               {userEmail}
             </p>
-            <div style={{
-              background: isDark ? "rgba(2,132,199,.1)" : "#eff6ff",
-              border: `1px solid ${isDark ? "rgba(2,132,199,.25)" : "#bfdbfe"}`,
-              borderRadius: 10, padding: "10px 14px", marginBottom: 18,
-              fontSize: 12, color: isDark ? "#93c5fd" : "#1d4ed8", lineHeight: 1.55,
-            }}>
-              <strong>Option 1:</strong> Enter the 6-digit code from the email below.<br />
-              <strong>Option 2:</strong> Click the link in the email — you'll be signed in automatically and the M-Pin screen will update.<br />
-              <span style={{ opacity: .75 }}>Check spam/junk folder if email not received.</span>
-            </div>
-
             <div style={{ marginBottom: 6 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: subC, letterSpacing: ".5px", textTransform: "uppercase" }}>
                 Enter 6-digit OTP
@@ -484,10 +441,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
                   setOtpVal(v);
                   setOtpError("");
                   if (v.length === OTP_LEN) {
-                    setTimeout(() => {
-                      setOtpVal(v);
-                      handleVerifyOtpImmediate(v);
-                    }, 0);
+                    setTimeout(() => doVerifyOtp(v), 0);
                   }
                 }}
                 placeholder="••••••"
@@ -515,7 +469,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
               <button
-                onClick={() => handleVerifyOtpImmediate(otpVal)}
+                onClick={() => doVerifyOtp(otpVal)}
                 disabled={otpVal.length !== OTP_LEN || verifyingOtp}
                 style={{
                   height: 50, borderRadius: 14, border: "none",
@@ -820,24 +774,30 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
     </div>
   );
 
-  function handleVerifyOtpImmediate(val: string) {
+  async function doVerifyOtp(val: string) {
     if (val.length !== OTP_LEN || verifyingOtp) return;
     setVerifyingOtp(true);
     setOtpError("");
-    supabase.auth.verifyOtp({ email: userEmail, token: val, type: "email" })
-      .then(({ data, error: verifyErr }) => {
-        if (verifyErr || !data.session) throw new Error(verifyErr?.message || "Invalid or expired OTP");
-        setPin("");
-        setFirstPin("");
-        setStep("enter");
-        setError("");
-        setForgotStep("newpin");
-      })
-      .catch((err: unknown) => {
-        setOtpError(err instanceof Error ? err.message : "Invalid OTP");
-        setOtpVal("");
-        otpRef.current?.focus();
-      })
-      .finally(() => setVerifyingOtp(false));
+    try {
+      const token = await getToken();
+      const res = await fetch("/functions/v1/mpin-forgot-verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ otp: val }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Verification failed");
+      setPin("");
+      setFirstPin("");
+      setStep("enter");
+      setError("");
+      setForgotStep("newpin");
+    } catch (err: unknown) {
+      setOtpError(err instanceof Error ? err.message : "Invalid OTP");
+      setOtpVal("");
+      otpRef.current?.focus();
+    } finally {
+      setVerifyingOtp(false);
+    }
   }
 }
