@@ -21,7 +21,7 @@ const HelpSupport = () => {
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("messages");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { data: faqs = [] } = useQuery({
