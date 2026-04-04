@@ -75,3 +75,4 @@ VITE_SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOi
 VITE_SUPABASE_PROJECT_ID = "maysttckdfnnzvfeujaj"
 SERVER_PORT = "3001"
 WEB_APP_URL = "https://0161f598-fc68-49fe-8d08-eb49e86bbfa6-00-2kb0qe2y3d0hd.spock.replit.dev"
+SUPER_ADMIN_EMAILS = "freeandin9@gmail.com"
