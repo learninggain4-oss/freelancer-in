@@ -114,46 +114,45 @@ export default function EmployeeBids() {
   const card: React.CSSProperties = { background: T.card, border: `1px solid ${T.border}`, borderRadius: 16 };
 
   return (
-    <div className="min-h-screen pb-10" style={{ background: T.bg, color: T.text }}>
-      {/* Header */}
-      <div className="px-4 sm:px-6 pt-6 pb-4">
-        <div className="flex items-center justify-between mb-1">
-          <div>
-            <h1 className="text-xl font-black" style={{ color: T.text }}>My Bids</h1>
-            <p className="text-xs mt-0.5" style={{ color: T.sub }}>Track all your project proposals</p>
-          </div>
-          <button
-            onClick={() => setShowT(v => !v)}
-            className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all"
-            style={{ background: showTemplates ? "rgba(99,102,241,.2)" : T.card, border: `1px solid ${showTemplates ? "rgba(99,102,241,.4)" : T.border}`, color: showTemplates ? clrPurple : T.sub }}
-          >
-            <FileText className="h-3.5 w-3.5" /> Proposal Templates
-          </button>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="px-4 sm:px-6 mb-5">
-        <div className="grid grid-cols-4 gap-3">
-          {[
-            { label: "Total Bids",    value: stats.total,       color: clrIndigo, icon: Send },
-            { label: "Won",           value: stats.won,         color: clrGreen,  icon: Trophy },
-            { label: "Pending",       value: stats.pending,     color: clrAmber,  icon: Clock },
-            { label: "Success Rate",  value: `${stats.successRate}%`, color: clrPurple, icon: Target },
-          ].map(s => {
-            const Icon = s.icon;
-            return (
-              <div key={s.label} className="rounded-2xl p-3 sm:p-4" style={card}>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ background: `${s.color}18` }}>
-                    <Icon className="h-3.5 w-3.5" style={{ color: s.color }} />
-                  </div>
+    <div className="min-h-screen pb-24" style={{ background: T.bg, color: T.text }}>
+      {/* Gradient Hero */}
+      <div className="px-4 sm:px-6 pt-6 mb-5">
+        <div style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #0ea5e9 100%)" }} className="relative overflow-hidden rounded-3xl p-6 shadow-2xl">
+          <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl" style={{ background: "rgba(255,255,255,.08)" }} />
+          <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full blur-3xl" style={{ background: "rgba(255,255,255,.04)" }} />
+          <div className="relative z-10">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl shadow-xl" style={{ background: "rgba(255,255,255,.2)", backdropFilter: "blur(12px)" }}>
+                  <Send className="h-7 w-7" style={{ color: "white" }} />
                 </div>
-                <p className="text-lg sm:text-2xl font-black" style={{ color: s.color }}>{s.value}</p>
-                <p className="text-[10px] mt-0.5" style={{ color: T.sub }}>{s.label}</p>
+                <div>
+                  <h1 className="text-2xl font-black tracking-tight" style={{ color: "white" }}>My Bids</h1>
+                  <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,.75)" }}>Track your proposals</p>
+                </div>
               </div>
-            );
-          })}
+              <button
+                onClick={() => setShowT(v => !v)}
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-[10px] font-semibold transition-all shrink-0"
+                style={{ background: showTemplates ? "rgba(255,255,255,.3)" : "rgba(255,255,255,.15)", border: "1px solid rgba(255,255,255,.25)", color: "white" }}
+              >
+                <FileText className="h-3.5 w-3.5" /> Templates
+              </button>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+              {[
+                { label: "Total Bids",  value: stats.total },
+                { label: "Won",         value: stats.won },
+                { label: "Pending",     value: stats.pending },
+                { label: "Success %",   value: `${stats.successRate}%` },
+              ].map(s => (
+                <div key={s.label} className="shrink-0 rounded-2xl px-4 py-2.5 min-w-[72px]" style={{ background: "rgba(255,255,255,.15)", backdropFilter: "blur(8px)" }}>
+                  <p className="text-xl font-black" style={{ color: "white" }}>{s.value}</p>
+                  <p className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,.7)" }}>{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 

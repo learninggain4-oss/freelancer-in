@@ -56,14 +56,47 @@ export default function EmployeeReviews() {
   const card: React.CSSProperties = { background: T.card, border: `1px solid ${T.border}`, borderRadius: 16 };
 
   return (
-    <div className="min-h-screen pb-10" style={{ background: T.bg, color: T.text }}>
-      <div className="px-4 sm:px-6 pt-6 pb-4">
-        <h1 className="text-xl font-black" style={{ color: T.text }}>Reviews Received</h1>
-        <p className="text-xs mt-0.5" style={{ color: T.sub }}>What employers say about your work</p>
+    <div className="min-h-screen pb-24" style={{ background: T.bg, color: T.text }}>
+      {/* Gradient Hero */}
+      <div className="px-4 sm:px-6 pt-6 mb-5">
+        <div style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #0ea5e9 100%)" }} className="relative overflow-hidden rounded-3xl p-6 shadow-2xl">
+          <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl" style={{ background: "rgba(255,255,255,.08)" }} />
+          <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full blur-3xl" style={{ background: "rgba(255,255,255,.04)" }} />
+          <div className="relative z-10">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl shadow-xl" style={{ background: "rgba(255,255,255,.2)", backdropFilter: "blur(12px)" }}>
+                <Star className="h-7 w-7" style={{ color: "white", fill: "rgba(255,255,255,.5)" }} />
+              </div>
+              <div>
+                <h1 className="text-2xl font-black tracking-tight" style={{ color: "white" }}>Reviews Received</h1>
+                <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,.75)" }}>What employers say about you</p>
+              </div>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+              {[
+                { label: "Avg Rating",    value: avgRating },
+                { label: "Total Reviews", value: MOCK_REVIEWS.length },
+                { label: "5-Star",        value: MOCK_REVIEWS.filter(r => r.rating === 5).length },
+                { label: "Recommended",   value: "100%" },
+              ].map(s => (
+                <div key={s.label} className="shrink-0 rounded-2xl px-4 py-2.5 min-w-[72px]" style={{ background: "rgba(255,255,255,.15)", backdropFilter: "blur(8px)" }}>
+                  <p className="text-xl font-black" style={{ color: "white" }}>{s.value}</p>
+                  <p className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,.7)" }}>{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Rating Summary */}
       <div className="px-4 sm:px-6 mb-5">
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="h-6 w-6 rounded-lg flex items-center justify-center" style={{ background: "rgba(251,191,36,.15)" }}>
+            <TrendingUp className="h-3.5 w-3.5" style={{ color: "#f59e0b" }} />
+          </div>
+          <h3 className="text-sm font-black" style={{ color: T.text }}>Rating Breakdown</h3>
+        </div>
         <div className="rounded-2xl p-5" style={card}>
           <div className="flex gap-6 items-center">
             <div className="text-center shrink-0">
@@ -120,6 +153,16 @@ export default function EmployeeReviews() {
       </div>
 
       {/* Reviews */}
+      <div className="px-4 sm:px-6 mb-3">
+        <div className="flex items-center gap-2.5">
+          <div className="h-6 w-6 rounded-lg flex items-center justify-center" style={{ background: "rgba(99,102,241,.15)" }}>
+            <MessageSquare className="h-3.5 w-3.5" style={{ color: "#6366f1" }} />
+          </div>
+          <h3 className="text-sm font-black" style={{ color: T.text }}>
+            {filtered.length} Review{filtered.length !== 1 ? "s" : ""}
+          </h3>
+        </div>
+      </div>
       <div className="px-4 sm:px-6 space-y-3">
         {filtered.map((r, i) => (
           <div key={r.id} className="rounded-2xl p-4 transition-all duration-200" style={{ ...card, animationDelay: `${i * 50}ms` }}>

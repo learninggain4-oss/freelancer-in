@@ -3,7 +3,7 @@ import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import {
   ShieldCheck, Zap, Lock, CheckCircle, Clock, Star, Award,
   Code, Palette, BarChart3, Globe, Megaphone, PenTool, Cpu,
-  ChevronRight, Trophy, Target,
+  ChevronRight, Trophy, Target, Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -161,36 +161,47 @@ export default function EmployeeBadges() {
   }
 
   return (
-    <div className="min-h-screen pb-10" style={{ background: T.bg, color: T.text }}>
-      <div className="px-4 sm:px-6 pt-6 pb-4">
-        <h1 className="text-xl font-black" style={{ color: T.text }}>Skill Badges</h1>
-        <p className="text-xs mt-0.5" style={{ color: T.sub }}>Take tests to earn verified skill badges</p>
-      </div>
-
-      {/* Stats */}
-      <div className="px-4 sm:px-6 mb-5 grid grid-cols-3 gap-3">
-        {[
-          { label: "Earned",    value: earned.length,     color: clrGreen,  icon: Award },
-          { label: "Available", value: available.length,  color: clrIndigo, icon: Zap },
-          { label: "Total",     value: SKILL_TESTS.length,color: clrPurple, icon: Trophy },
-        ].map(s => {
-          const Icon = s.icon;
-          return (
-            <div key={s.label} className="rounded-2xl p-3" style={card}>
-              <Icon className="h-4 w-4 mb-1.5" style={{ color: s.color }} />
-              <p className="text-xl font-black" style={{ color: s.color }}>{s.value}</p>
-              <p className="text-[10px]" style={{ color: T.sub }}>{s.label}</p>
+    <div className="min-h-screen pb-24" style={{ background: T.bg, color: T.text }}>
+      {/* Gradient Hero */}
+      <div className="px-4 sm:px-6 pt-6 mb-5">
+        <div style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #0ea5e9 100%)" }} className="relative overflow-hidden rounded-3xl p-6 shadow-2xl">
+          <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl" style={{ background: "rgba(255,255,255,.08)" }} />
+          <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full blur-3xl" style={{ background: "rgba(255,255,255,.04)" }} />
+          <div className="relative z-10">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl shadow-xl" style={{ background: "rgba(255,255,255,.2)", backdropFilter: "blur(12px)" }}>
+                <Sparkles className="h-7 w-7" style={{ color: "white" }} />
+              </div>
+              <div>
+                <h1 className="text-2xl font-black tracking-tight" style={{ color: "white" }}>Skill Badges</h1>
+                <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,.75)" }}>Earn verified skill certificates</p>
+              </div>
             </div>
-          );
-        })}
+            <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+              {[
+                { label: "Badges Earned", value: earned.length },
+                { label: "Available",     value: available.length },
+                { label: "Total Tests",   value: SKILL_TESTS.length },
+              ].map(s => (
+                <div key={s.label} className="shrink-0 rounded-2xl px-4 py-2.5 min-w-[80px]" style={{ background: "rgba(255,255,255,.15)", backdropFilter: "blur(8px)" }}>
+                  <p className="text-2xl font-black" style={{ color: "white" }}>{s.value}</p>
+                  <p className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,.7)" }}>{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Earned Badges */}
       {earned.length > 0 && (
         <div className="px-4 sm:px-6 mb-6">
-          <h3 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: T.text }}>
-            <ShieldCheck className="h-4 w-4 text-emerald-400" /> Verified Badges
-          </h3>
+          <div className="flex items-center gap-2.5 mb-3">
+            <div className="h-6 w-6 rounded-lg flex items-center justify-center" style={{ background: "rgba(74,222,128,.15)" }}>
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+            </div>
+            <h3 className="text-sm font-black" style={{ color: T.text }}>Verified Badges</h3>
+          </div>
           <div className="flex flex-wrap gap-3">
             {earned.map(s => {
               const Icon = s.icon;
@@ -216,9 +227,12 @@ export default function EmployeeBadges() {
 
       {/* Available Tests */}
       <div className="px-4 sm:px-6">
-        <h3 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: T.text }}>
-          <Lock className="h-4 w-4" style={{ color: T.sub }} /> Take a Test
-        </h3>
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="h-6 w-6 rounded-lg flex items-center justify-center" style={{ background: "rgba(99,102,241,.15)" }}>
+            <Lock className="h-3.5 w-3.5" style={{ color: "#6366f1" }} />
+          </div>
+          <h3 className="text-sm font-black" style={{ color: T.text }}>Take a Test</h3>
+        </div>
         <div className="space-y-3">
           {available.map((s, i) => {
             const Icon = s.icon;

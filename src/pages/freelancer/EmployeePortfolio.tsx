@@ -76,29 +76,45 @@ export default function EmployeePortfolio() {
   const card: React.CSSProperties = { background: T.card, border: `1px solid ${T.border}`, borderRadius: 16 };
 
   return (
-    <div className="min-h-screen pb-10" style={{ background: T.bg, color: T.text }}>
-      <div className="px-4 sm:px-6 pt-6 pb-4 flex items-start justify-between">
-        <div>
-          <h1 className="text-xl font-black" style={{ color: T.text }}>Portfolio</h1>
-          <p className="text-xs mt-0.5" style={{ color: T.sub }}>Showcase your best work to employers</p>
-        </div>
-        <button onClick={() => { resetForm(); setShowForm(true); }} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", boxShadow: "0 0 16px rgba(99,102,241,.35)" }}>
-          <Plus className="h-3.5 w-3.5" /> Add Project
-        </button>
-      </div>
-
-      {/* Stats */}
-      <div className="px-4 sm:px-6 mb-5 grid grid-cols-3 gap-3">
-        {[
-          { label: "Total Projects", value: items.length,                                      color: clrIndigo },
-          { label: "With Live Links", value: items.filter(i => i.link).length,                 color: clrGreen },
-          { label: "Categories",     value: new Set(items.map(i => i.category)).size,          color: clrPurple },
-        ].map(s => (
-          <div key={s.label} className="rounded-2xl p-3 text-center" style={card}>
-            <p className="text-2xl font-black mb-0.5" style={{ color: s.color }}>{s.value}</p>
-            <p className="text-[10px]" style={{ color: T.sub }}>{s.label}</p>
+    <div className="min-h-screen pb-24" style={{ background: T.bg, color: T.text }}>
+      {/* Gradient Hero */}
+      <div className="px-4 sm:px-6 pt-6 mb-5">
+        <div style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #0ea5e9 100%)" }} className="relative overflow-hidden rounded-3xl p-6 shadow-2xl">
+          <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl" style={{ background: "rgba(255,255,255,.08)" }} />
+          <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full blur-3xl" style={{ background: "rgba(255,255,255,.04)" }} />
+          <div className="relative z-10">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl shadow-xl" style={{ background: "rgba(255,255,255,.2)", backdropFilter: "blur(12px)" }}>
+                  <Upload className="h-7 w-7" style={{ color: "white" }} />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-black tracking-tight" style={{ color: "white" }}>My Portfolio</h1>
+                  <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,.75)" }}>Showcase your best work</p>
+                </div>
+              </div>
+              <button
+                onClick={() => { resetForm(); setShowForm(true); }}
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-[10px] font-semibold transition-all shrink-0"
+                style={{ background: "rgba(255,255,255,.2)", border: "1px solid rgba(255,255,255,.3)", color: "white" }}
+              >
+                <Plus className="h-3.5 w-3.5" /> Add Project
+              </button>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+              {[
+                { label: "Projects",    value: items.length },
+                { label: "Live Links",  value: items.filter(i => i.link).length },
+                { label: "Categories",  value: new Set(items.map(i => i.category)).size },
+              ].map(s => (
+                <div key={s.label} className="shrink-0 rounded-2xl px-4 py-2.5 min-w-[80px]" style={{ background: "rgba(255,255,255,.15)", backdropFilter: "blur(8px)" }}>
+                  <p className="text-2xl font-black" style={{ color: "white" }}>{s.value}</p>
+                  <p className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,.7)" }}>{s.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        ))}
+        </div>
       </div>
 
       {/* Add/Edit Form */}
