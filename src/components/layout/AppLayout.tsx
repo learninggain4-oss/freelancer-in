@@ -271,6 +271,10 @@ function buildCss(t: typeof T.black): string {
 .app-main-dark .text-accent { color:${t.green} !important; }
 .app-main-dark .text-destructive { color:${t.red} !important; }
 .app-main-dark .text-warning { color:${t.orange} !important; }
+.app-main-dark .text-secondary-foreground { color:${t.mainText} !important; }
+.app-main-dark .bg-secondary { background:${t.mutedBg} !important; }
+.app-main-dark .bg-secondary\\/10 { background:${t.mutedBg}55 !important; }
+.app-main-dark .bg-secondary\\/20 { background:${t.mutedBg}88 !important; }
 .app-main-dark .shadow-sm { box-shadow:${t.shadowSm} !important; }
 .app-main-dark .shadow-md { box-shadow:${t.shadowMd} !important; }
 .app-main-dark .shadow-lg { box-shadow:${t.shadowLg} !important; }

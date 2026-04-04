@@ -15,7 +15,7 @@ const typeConfig: Record<string, { icon: React.ElementType; classes: string; lab
   success: { icon: Megaphone, classes: "bg-accent/10 text-accent", label: "Announcement" },
   warning: { icon: AlertTriangle, classes: "bg-warning/10 text-warning", label: "Alert" },
   error: { icon: AlertTriangle, classes: "bg-destructive/10 text-destructive", label: "Alert" },
-  chat: { icon: MessageCircle, classes: "bg-secondary/10 text-secondary-foreground", label: "Chat" },
+  chat: { icon: MessageCircle, classes: "bg-secondary/20 text-secondary-foreground", label: "Chat" },
 };
 
 function getDateGroup(dateStr: string): string {
