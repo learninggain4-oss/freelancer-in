@@ -23,6 +23,10 @@ const CAT_COLORS: Record<string, string> = {
   Web: "#60a5fa", Design: "#a78bfa", App: "#4ade80", Video: "#f472b6", Content: "#fbbf24", Other: "#94a3b8",
 };
 
+const CAT_TEXT_COLORS: Record<string, string> = {
+  Web: "#2563eb", Design: "#7c3aed", App: "#16a34a", Video: "#be185d", Content: "#b45309", Other: "#475569",
+};
+
 const INITIAL_ITEMS = [
   { id: "p1", title: "React E-commerce Dashboard",     category: "Web",     desc: "Full-stack dashboard with analytics, inventory management, and UPI payments integration.", link: "https://github.com", image: "", tags: ["React", "TypeScript", "Supabase"] },
   { id: "p2", title: "Wellness Brand Identity",         category: "Design",  desc: "Complete brand package including logo, color palette, typography, and social media templates.", link: "", image: "", tags: ["Figma", "Adobe XD", "Branding"] },
@@ -143,9 +147,10 @@ export default function EmployeePortfolio() {
       <div className="px-4 sm:px-6 mb-5 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
         {CATEGORIES.map(c => {
           const color = CAT_COLORS[c] ?? "#6366f1";
+          const textColor = isDark ? color : (CAT_TEXT_COLORS[c] ?? color);
           const active = filter === c;
           return (
-            <button key={c} onClick={() => setFilter(c)} className="shrink-0 rounded-xl px-3 py-1.5 text-[10px] font-semibold transition-all" style={{ background: active ? `${color}20` : T.card, border: `1px solid ${active ? color + "50" : T.border}`, color: active ? color : T.sub, boxShadow: active ? `0 0 12px ${color}35` : "none" }}>
+            <button key={c} onClick={() => setFilter(c)} className="shrink-0 rounded-xl px-3 py-1.5 text-[10px] font-semibold transition-all" style={{ background: active ? `${color}20` : T.card, border: `1px solid ${active ? color + "50" : T.border}`, color: active ? textColor : T.sub, boxShadow: active ? `0 0 12px ${color}35` : "none" }}>
               {c}
             </button>
           );
@@ -157,6 +162,7 @@ export default function EmployeePortfolio() {
         {filtered.map((item, i) => {
           const Icon = CAT_ICONS[item.category] ?? Image;
           const color = CAT_COLORS[item.category] ?? "#6366f1";
+          const itemTextColor = isDark ? color : (CAT_TEXT_COLORS[item.category] ?? color);
           return (
             <div key={item.id} className="rounded-2xl overflow-hidden group transition-all duration-200 hover:scale-[1.02] hover:-translate-y-1" style={card}>
               <div className="h-32 flex items-center justify-center" style={{ background: `${color}10`, borderBottom: `1px solid ${T.border}` }}>
@@ -165,7 +171,7 @@ export default function EmployeePortfolio() {
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div>
-                    <span className="text-[9px] font-bold rounded-md px-1.5 py-0.5 mb-1 inline-block" style={{ background: `${color}15`, color }}>{item.category}</span>
+                    <span className="text-[9px] font-bold rounded-md px-1.5 py-0.5 mb-1 inline-block" style={{ background: `${color}15`, color: itemTextColor }}>{item.category}</span>
                     <h3 className="text-sm font-bold leading-snug" style={{ color: T.text }}>{item.title}</h3>
                   </div>
                   <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">

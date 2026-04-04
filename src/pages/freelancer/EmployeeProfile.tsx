@@ -142,11 +142,11 @@ const EmployeeProfile = () => {
   const sections = [
     { icon: User, label: "Personal Information", path: "/freelancer/profile/personal", color: "#6366f1", desc: "Name, gender, DOB & more" },
     { icon: Briefcase, label: "Professional", path: "/freelancer/profile/professional", color: "#8b5cf6", desc: "Education & background" },
-    { icon: Landmark, label: "Bank Details", path: "/freelancer/profile/bank-details", color: "#fbbf24", desc: "Account & IFSC details" },
-    { icon: CreditCard, label: "UPI Payment Apps", path: "/freelancer/profile/upi-apps", color: "#a78bfa", desc: "Manage UPI apps" },
-    { icon: Building2, label: "Work Experience", path: "/freelancer/profile/work-experience", color: "#60a5fa", desc: "Past roles & certificates" },
-    { icon: Star, label: "Services", path: "/freelancer/profile/services", color: "#4ade80", desc: `${servicesCount ?? 0} services listed` },
-    { icon: AlertCircle, label: "Emergency Contacts", path: "/freelancer/profile/emergency-contacts", color: "#f87171", desc: "Safety contacts" },
+    { icon: Landmark, label: "Bank Details", path: "/freelancer/profile/bank-details", color: isDark ? "#fbbf24" : "#b45309", desc: "Account & IFSC details" },
+    { icon: CreditCard, label: "UPI Payment Apps", path: "/freelancer/profile/upi-apps", color: isDark ? "#a78bfa" : "#7c3aed", desc: "Manage UPI apps" },
+    { icon: Building2, label: "Work Experience", path: "/freelancer/profile/work-experience", color: isDark ? "#60a5fa" : "#2563eb", desc: "Past roles & certificates" },
+    { icon: Star, label: "Services", path: "/freelancer/profile/services", color: isDark ? "#4ade80" : "#16a34a", desc: `${servicesCount ?? 0} services listed` },
+    { icon: AlertCircle, label: "Emergency Contacts", path: "/freelancer/profile/emergency-contacts", color: isDark ? "#f87171" : "#dc2626", desc: "Safety contacts" },
     {
       icon: ShieldCheck,
       label: "Self Real Name Verification",

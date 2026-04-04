@@ -200,7 +200,7 @@ export default function EmployeeBadges() {
                     <Icon className="h-4 w-4" style={{ color: s.color }} />
                   </div>
                   <div>
-                    <p className="text-xs font-bold" style={{ color: s.color }}>{s.name}</p>
+                    <p className="text-xs font-bold" style={{ color: isDark ? s.color : T.text }}>{s.name}</p>
                     <div className="flex items-center gap-1">
                       <CheckCircle className="h-2.5 w-2.5 text-emerald-400" />
                       <span className="text-[10px] text-emerald-400">Verified</span>
@@ -222,7 +222,7 @@ export default function EmployeeBadges() {
         <div className="space-y-3">
           {available.map((s, i) => {
             const Icon = s.icon;
-            const levelColor = s.level === "Beginner" ? "#4ade80" : s.level === "Intermediate" ? "#fbbf24" : "#f87171";
+            const levelColor = s.level === "Beginner" ? (isDark ? "#4ade80" : "#16a34a") : s.level === "Intermediate" ? (isDark ? "#fbbf24" : "#b45309") : (isDark ? "#f87171" : "#dc2626");
             return (
               <div key={s.id} className="rounded-2xl p-4 flex items-center gap-4 transition-all duration-200 hover:scale-[1.005]" style={{ ...card, animationDelay: `${i * 50}ms` }}>
                 <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${s.color}18` }}>

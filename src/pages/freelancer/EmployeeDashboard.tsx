@@ -275,9 +275,9 @@ const EmployeeDashboard = () => {
   ];
 
   const alertIcon = (type: string) => {
-    if (type === "success") return <CheckCircle size={13} color="#4ade80" />;
-    if (type === "warning") return <AlertTriangle size={13} color="#fbbf24" />;
-    if (type === "error")   return <XCircle size={13} color="#f87171" />;
+    if (type === "success") return <CheckCircle size={13} color={clrGreen} />;
+    if (type === "warning") return <AlertTriangle size={13} color={clrAmber} />;
+    if (type === "error")   return <XCircle size={13} color={clrRed} />;
     return <Info size={13} color={accentIcon} />;
   };
 
@@ -296,7 +296,7 @@ const EmployeeDashboard = () => {
         {/* ── Greeting ── */}
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <Sparkles size={15} style={{ color: "#fbbf24" }} />
+            <Sparkles size={15} style={{ color: clrAmber }} />
             <p style={{ fontSize: 12.5, color: tok.sub, fontWeight: 500, margin: 0 }}>{greeting}</p>
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
@@ -462,7 +462,7 @@ const EmployeeDashboard = () => {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 26, height: 26, borderRadius: 8, background: "rgba(239,68,68,.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Bell size={12} color="#f87171" />
+                <Bell size={12} color={clrRed} />
               </div>
               <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Alerts & Notifications</span>
             </div>
@@ -524,7 +524,7 @@ const EmployeeDashboard = () => {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 26, height: 26, borderRadius: 8, background: "rgba(34,197,94,.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <CalendarDays size={12} color="#4ade80" />
+                <CalendarDays size={12} color={clrGreen} />
               </div>
               <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Transactions</span>
             </div>
@@ -542,7 +542,7 @@ const EmployeeDashboard = () => {
                   onMouseEnter={e => (e.currentTarget.style.background = tok.rowHover)}
                   onMouseLeave={e => (e.currentTarget.style.background = "none")}>
                   <div style={{ width: 36, height: 36, borderRadius: 11, background: tx.type === "credit" ? "rgba(34,197,94,.12)" : "rgba(239,68,68,.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    {tx.type === "credit" ? <ArrowDownRight size={15} style={{ color: "#4ade80" }} /> : <ArrowUpRight size={15} style={{ color: "#f87171" }} />}
+                    {tx.type === "credit" ? <ArrowDownRight size={15} style={{ color: clrGreen }} /> : <ArrowUpRight size={15} style={{ color: clrRed }} />}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 12.5, fontWeight: 600, color: tok.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>{tx.description}</p>
@@ -569,7 +569,7 @@ const EmployeeDashboard = () => {
         <div style={{ ...card, padding: "16px 16px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
             <div style={{ width: 26, height: 26, borderRadius: 8, background: "rgba(245,158,11,.14)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Activity size={12} color="#fbbf24" />
+              <Activity size={12} color={clrAmber} />
             </div>
             <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Activity Timeline</span>
           </div>

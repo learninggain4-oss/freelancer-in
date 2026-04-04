@@ -23,11 +23,11 @@ const TH = {
   ocean: { bg:"#f0f9ff", card:"#ffffff", border:"rgba(14,165,233,.1)", text:"#0c4a6e", sub:"#4b83a3", input:"#ffffff", nav:"#e0f2fe", badge:"rgba(14,165,233,.1)", badgeFg:"#0369a1" },
 };
 
-const statusConfig: Record<string, { color: string; bg: string; border: string; icon: any; label: string }> = {
-  pending: { color: "#fbbf24", bg: "rgba(251,191,36,0.15)", border: "rgba(251,191,36,0.3)", icon: Clock, label: "Awaiting" },
-  approved: { color: "#4ade80", bg: "rgba(74,222,128,0.15)", border: "rgba(74,222,128,0.3)", icon: CheckCircle2, label: "Secured" },
-  rejected: { color: "#f87171", bg: "rgba(248,113,113,0.15)", border: "rgba(248,113,113,0.3)", icon: XCircle, label: "Closed" },
-};
+const getStatusConfig = (isDark: boolean): Record<string, { color: string; bg: string; border: string; icon: any; label: string }> => ({
+  pending:  { color: isDark ? "#fbbf24" : "#b45309", bg: isDark ? "rgba(251,191,36,0.15)" : "rgba(180,83,9,0.1)",   border: isDark ? "rgba(251,191,36,0.3)" : "rgba(180,83,9,0.25)",   icon: Clock,        label: "Awaiting" },
+  approved: { color: isDark ? "#4ade80" : "#16a34a", bg: isDark ? "rgba(74,222,128,0.15)" : "rgba(22,163,74,0.1)",  border: isDark ? "rgba(74,222,128,0.3)" : "rgba(22,163,74,0.25)",  icon: CheckCircle2, label: "Secured"  },
+  rejected: { color: isDark ? "#f87171" : "#dc2626", bg: isDark ? "rgba(248,113,113,0.15)": "rgba(220,38,38,0.1)",  border: isDark ? "rgba(248,113,113,0.3)": "rgba(220,38,38,0.25)",  icon: XCircle,      label: "Closed"   },
+});
 
 const EmployeeRequests = () => {
   const { profile } = useAuth();
@@ -36,6 +36,8 @@ const EmployeeRequests = () => {
   const base = pathname.startsWith("/freelancer") ? "/freelancer" : "/employee";
   const { theme } = useDashboardTheme();
   const T = TH[theme];
+  const isDark = theme === "black";
+  const statusConfig = getStatusConfig(isDark);
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["freelancer-requests", profile?.id],
@@ -125,7 +127,7 @@ const EmployeeRequests = () => {
                             <Clock className="h-3 w-3 opacity-70" /> {format(new Date(r.applied_at), "dd MMM yyyy")}
                           </p>
                           {r.project?.amount && (
-                            <p style={{ color: "#4ade80" }} className="text-xs font-black">
+                            <p style={{ color: isDark ? "#4ade80" : "#16a34a" }} className="text-xs font-black">
                               STAKE: ₹{Number(r.project.amount).toLocaleString("en-IN")}
                             </p>
                           )}

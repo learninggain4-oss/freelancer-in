@@ -30,32 +30,39 @@ const TH = {
 };
 
 const statusColor: Record<string, string> = {
-  open: "rgba(99,102,241,0.2)",
-  pending: "rgba(251,191,36,0.2)",
-  approved: "rgba(74,222,128,0.2)",
-  rejected: "rgba(248,113,113,0.2)",
-  in_progress: "rgba(96,165,250,0.2)",
-  job_confirmed: "rgba(167,139,250,0.2)",
-  payment_processing: "rgba(251,191,36,0.2)",
-  validation: "rgba(251,191,36,0.2)",
-  completed: "rgba(74,222,128,0.2)",
-  cancelled: "rgba(248,113,113,0.2)",
+  open: "rgba(99,102,241,0.15)",
+  pending: "rgba(180,83,9,0.12)",
+  approved: "rgba(22,163,74,0.12)",
+  rejected: "rgba(220,38,38,0.12)",
+  in_progress: "rgba(37,99,235,0.12)",
+  job_confirmed: "rgba(124,58,237,0.12)",
+  payment_processing: "rgba(180,83,9,0.12)",
+  validation: "rgba(180,83,9,0.12)",
+  completed: "rgba(22,163,74,0.12)",
+  cancelled: "rgba(220,38,38,0.12)",
 };
 
-const statusText: Record<string, string> = {
-  open: "#6366f1",
-  pending: "#fbbf24",
-  approved: "#4ade80",
-  rejected: "#f87171",
-  in_progress: "#60a5fa",
-  job_confirmed: "#a78bfa",
-  payment_processing: "#fbbf24",
-  validation: "#fbbf24",
-  completed: "#4ade80",
-  cancelled: "#f87171",
-};
+const getStatusText = (isDark: boolean): Record<string, string> => ({
+  open:               isDark ? "#818cf8" : "#4338ca",
+  pending:            isDark ? "#fbbf24" : "#b45309",
+  approved:           isDark ? "#4ade80" : "#16a34a",
+  rejected:           isDark ? "#f87171" : "#dc2626",
+  in_progress:        isDark ? "#60a5fa" : "#2563eb",
+  job_confirmed:      isDark ? "#a78bfa" : "#7c3aed",
+  payment_processing: isDark ? "#fbbf24" : "#b45309",
+  validation:         isDark ? "#fbbf24" : "#b45309",
+  completed:          isDark ? "#4ade80" : "#16a34a",
+  cancelled:          isDark ? "#f87171" : "#dc2626",
+});
 
-const InquiryCard = ({ project: p, onApply, isPending, T }: { project: any; onApply: () => void; isPending: boolean; T: any }) => {
+const getInfoColors = (isDark: boolean) => ({
+  budget:     isDark ? "#4ade80" : "#16a34a",
+  date:       isDark ? "#fbbf24" : "#b45309",
+  employer:   isDark ? "#60a5fa" : "#2563eb",
+  validation: isDark ? "#f87171" : "#dc2626",
+});
+
+const InquiryCard = ({ project: p, onApply, isPending, T, isDark }: { project: any; onApply: () => void; isPending: boolean; T: any; isDark: boolean }) => {
   const { data: docs = [] } = useQuery({
     queryKey: ["project-docs", p.id],
     queryFn: async () => {
@@ -69,8 +76,10 @@ const InquiryCard = ({ project: p, onApply, isPending, T }: { project: any; onAp
     if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   };
 
-  const sColor = statusColor[p.status] || "rgba(148,163,184,0.2)";
-  const sText = statusText[p.status] || "#94a3b8";
+  const statusTextMap = getStatusText(isDark);
+  const infoColors = getInfoColors(isDark);
+  const sColor = statusColor[p.status] || (isDark ? "rgba(148,163,184,0.2)" : "rgba(100,116,139,0.12)");
+  const sText = statusTextMap[p.status] || (isDark ? "#94a3b8" : "#475569");
 
   return (
     <Card style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }} className="overflow-hidden border shadow-xl hover:shadow-2xl transition-all group relative">
@@ -115,10 +124,10 @@ const InquiryCard = ({ project: p, onApply, isPending, T }: { project: any; onAp
         {/* Info Grid */}
         <div className="grid grid-cols-2 gap-3">
           {[
-            { icon: IndianRupee, label: `₹${Number(p.amount).toLocaleString("en-IN")}`, sub: "Project Budget", color: "#4ade80" },
-            { icon: Calendar, label: p.end_date ?? "Unlimited", sub: "Submission Goal", color: "#fbbf24" },
-            { icon: User, label: p.employer?.full_name?.[0] ?? "Elite Employer", sub: "Posted By", color: "#60a5fa" },
-            { icon: FileText, label: `₹${Number(p.validation_fees).toLocaleString("en-IN")}`, sub: "Validation Fee", color: "#f87171" },
+            { icon: IndianRupee, label: `₹${Number(p.amount).toLocaleString("en-IN")}`, sub: "Project Budget", color: infoColors.budget },
+            { icon: Calendar, label: p.end_date ?? "Unlimited", sub: "Submission Goal", color: infoColors.date },
+            { icon: User, label: p.employer?.full_name?.[0] ?? "Elite Employer", sub: "Posted By", color: infoColors.employer },
+            { icon: FileText, label: `₹${Number(p.validation_fees).toLocaleString("en-IN")}`, sub: "Validation Fee", color: infoColors.validation },
           ].map((info, idx) => (
             <div key={idx} style={{ background: T.nav, borderColor: T.border }} className="flex items-center gap-3 rounded-2xl p-3 border group/item hover:border-[#6366f1]/50 transition-colors">
               <div style={{ background: info.color + "15" }} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
@@ -173,6 +182,7 @@ const EmployeeProjects = () => {
   const queryClient = useQueryClient();
   const { theme } = useDashboardTheme();
   const T = TH[theme];
+  const isDark = theme === "black";
 
   const { data: categories = [] } = useQuery({
     queryKey: ["service-categories"],
@@ -288,7 +298,7 @@ const EmployeeProjects = () => {
           Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} style={{ background: T.card }} className="h-64 w-full rounded-3xl opacity-50" />)
         ) : inquiries.length > 0 ? (
           inquiries.map((p: any) => (
-            <InquiryCard key={p.id} project={p} onApply={() => setConfirmProject(p)} isPending={applyMutation.isPending} T={T} />
+            <InquiryCard key={p.id} project={p} onApply={() => setConfirmProject(p)} isPending={applyMutation.isPending} T={T} isDark={isDark} />
           ))
         ) : (
           <div className="flex flex-col items-center justify-center py-24 text-center">
