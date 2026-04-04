@@ -27,11 +27,7 @@ const CAT_TEXT_COLORS: Record<string, string> = {
   Web: "#2563eb", Design: "#7c3aed", App: "#16a34a", Video: "#be185d", Content: "#b45309", Other: "#475569",
 };
 
-const INITIAL_ITEMS = [
-  { id: "p1", title: "React E-commerce Dashboard",     category: "Web",     desc: "Full-stack dashboard with analytics, inventory management, and UPI payments integration.", link: "https://github.com", image: "", tags: ["React", "TypeScript", "Supabase"] },
-  { id: "p2", title: "Wellness Brand Identity",         category: "Design",  desc: "Complete brand package including logo, color palette, typography, and social media templates.", link: "", image: "", tags: ["Figma", "Adobe XD", "Branding"] },
-  { id: "p3", title: "Food Delivery Flutter App",       category: "App",     desc: "Cross-platform mobile app with real-time order tracking, payment gateway, and push notifications.", link: "https://play.google.com", image: "", tags: ["Flutter", "Firebase", "Maps API"] },
-];
+const INITIAL_ITEMS: { id: string; title: string; category: string; desc: string; link: string; image: string; tags: string[] }[] = [];
 
 type Item = typeof INITIAL_ITEMS[0];
 
