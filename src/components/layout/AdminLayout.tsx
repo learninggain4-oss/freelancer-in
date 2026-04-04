@@ -19,6 +19,7 @@ import {
   Search, MessageSquare, Plus, ChevronDown, ChevronRight,
   User, Languages, PanelRightOpen, PanelRightClose,
   CheckCircle2, Info, XCircle, Maximize2, ChevronsLeft, ChevronsRight,
+  Mail,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ThemeToggle from "./ThemeToggle";
@@ -231,8 +232,9 @@ const navSections = [
   { title: "User Management", items: [
     { label: "All Users",     icon: Users,    path: "/admin/users" },
     { label: "Admins",        icon: Crown,    path: "/admin/admins" },
-    { label: "Freelancers",     icon: UserCheck,path: "/admin/freelancers" },
-    { label: "Employers",       icon: Building2,path: "/admin/employers" },
+    { label: "Invite Users",  icon: Mail,     path: "/admin/invite" },
+    { label: "Freelancers",   icon: UserCheck,path: "/admin/freelancers" },
+    { label: "Employers",     icon: Building2,path: "/admin/employers" },
     { label: "Profile Edits", icon: Edit,     path: "/admin/profile-edits" },
     { label: "Sessions",      icon: Monitor,  path: "/admin/sessions" },
     { label: "Online Status", icon: Wifi,     path: "/admin/online-status" },

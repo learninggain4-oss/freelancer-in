@@ -687,6 +687,76 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
   }
 });
 
+// ─── /functions/v1/admin-invite — send invitations & list invite history ───
+app.post("/functions/v1/admin-invite", async (req, res) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
+    const user = await getUserFromToken(authHeader);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const adminClient = getAdminClient();
+    const { data: roleCheck } = await adminClient.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+    if (!roleCheck) return res.status(403).json({ error: "Admin access required" });
+
+    const { action, emails, user_type } = req.body;
+
+    if (action === "bulk_invite") {
+      if (!emails?.length) return res.status(400).json({ error: "emails array required" });
+      if (!user_type) return res.status(400).json({ error: "user_type required" });
+
+      const results = [];
+      for (const email of emails) {
+        const trimmed = email.trim().toLowerCase();
+        if (!trimmed || !trimmed.includes("@")) {
+          results.push({ email: trimmed, success: false, error: "Invalid email" });
+          continue;
+        }
+        try {
+          const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(trimmed);
+          if (inviteErr) {
+            results.push({ email: trimmed, success: false, error: inviteErr.message });
+            continue;
+          }
+          const invitedUserId = inviteData?.user?.id;
+          if (invitedUserId) {
+            await adminClient.from("profiles").insert({
+              user_id: invitedUserId,
+              email: trimmed,
+              full_name: [trimmed.split("@")[0].toUpperCase()],
+              user_code: ["PENDING"],
+              user_type,
+              approval_status: "approved",
+              approved_at: new Date().toISOString(),
+              referral_code: invitedUserId.substring(0, 8).toUpperCase(),
+            }).catch(() => {});
+          }
+          results.push({ email: trimmed, success: true });
+        } catch (e) {
+          results.push({ email: trimmed, success: false, error: e.message });
+        }
+      }
+      return res.json({ results });
+    }
+
+    if (action === "history") {
+      // Return users who were invited (user_code = PENDING means not yet completed registration)
+      const { data: invited } = await adminClient
+        .from("profiles")
+        .select("id, email, user_type, approval_status, created_at, full_name, user_code")
+        .contains("user_code", ["PENDING"])
+        .order("created_at", { ascending: false })
+        .limit(100);
+      return res.json({ invited: invited || [] });
+    }
+
+    return res.status(400).json({ error: "Unknown action" });
+  } catch (err) {
+    console.error("admin-invite error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── /functions/v1/admin-list — list all admin users (super admin only) ───
 app.get("/functions/v1/admin-list", async (req, res) => {
   try {
