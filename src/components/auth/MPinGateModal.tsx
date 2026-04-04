@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardTheme } from "@/hooks/use-dashboard-theme";
+import { readFunctionJson } from "@/lib/function-response";
 
 interface Props {
   mode: "create" | "verify";
@@ -121,9 +122,10 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
         const res = await fetch("/functions/v1/mpin-status", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const text = await res.text();
-        let json: any;
-        try { json = JSON.parse(text); } catch { return; }
+        const json = await readFunctionJson<{ blocked?: boolean; blockedUntil?: string; attemptsLeft?: number }>(
+          res,
+          "M-Pin is not available right now.",
+        );
         if (json.blocked && json.blockedUntil) {
           const until = new Date(json.blockedUntil);
           if (until > new Date()) {
@@ -188,7 +190,10 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
       const res = await fetch("/functions/v1/forgot-mpin-options", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const json = await res.json();
+      const json = await readFunctionJson<{ hasTotp?: boolean; hasSq?: boolean; sqQuestions?: { idx: number; question: string }[] }>(
+        res,
+        "M-Pin recovery is not available right now.",
+      );
       setHasTotp(!!json.hasTotp);
       setHasSq(!!json.hasSq);
       setSqOptions(json.sqQuestions || []);
@@ -239,7 +244,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
         headers: { "Content-Type":"application/json", Authorization:`Bearer ${token}` },
         body: JSON.stringify({ token: totpStr }),
       });
-      const json = await res.json();
+      const json = await readFunctionJson<{ valid?: boolean }>(res, "M-Pin recovery is not available right now.");
       if (!res.ok || !json.valid) throw new Error("Incorrect code. Please try again.");
       setForgotStep("new-pin-enter");
     } catch (err: unknown) {
@@ -265,7 +270,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
         headers: { "Content-Type":"application/json", Authorization:`Bearer ${token}` },
         body: JSON.stringify({ answers }),
       });
-      const json = await res.json();
+      const json = await readFunctionJson<{ valid?: boolean }>(res, "M-Pin recovery is not available right now.");
       if (!res.ok || !json.valid) throw new Error("One or more answers are incorrect. Please try again.");
       setForgotStep("new-pin-enter");
     } catch (err: unknown) {
@@ -303,8 +308,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
               headers: { "Content-Type":"application/json", Authorization:`Bearer ${token}` },
               body: JSON.stringify({ pin: newPin }),
             });
-            const json = await res.json();
-            if (!res.ok) throw new Error(json.error || "Failed to set PIN");
+            await readFunctionJson(res, "M-Pin is not available right now.");
             setForgotStep("success");
             setTimeout(onVerified, 1600);
           } catch (err: unknown) {
@@ -347,7 +351,12 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
         headers: { "Content-Type":"application/json", Authorization:`Bearer ${token}` },
         body: JSON.stringify({ pin }),
       });
-      const json = await res.json();
+      const json = await readFunctionJson<{
+        blocked?: boolean;
+        blockedUntil?: string;
+        valid?: boolean;
+        attemptsLeft?: number;
+      }>(res, "M-Pin is not available right now.");
 
       // Locked out
       if (json.blocked && json.blockedUntil) {
@@ -356,8 +365,6 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
         setTimeLeft(Math.ceil((until.getTime() - Date.now()) / 1000));
         setPin(""); return;
       }
-
-      if (!res.ok) throw new Error(json.error || "Error");
 
       if (mode === "verify" && !json.valid) {
         const left = json.attemptsLeft ?? (attemptsLeft - 1);

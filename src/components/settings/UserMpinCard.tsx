@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { KeyRound, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { isFunctionUnavailableError, readFunctionJson } from "@/lib/function-response";
 
 async function serverFetch(path: string, body?: object) {
   const { data: { session } } = await supabase.auth.getSession();
@@ -18,12 +19,11 @@ async function serverFetch(path: string, body?: object) {
     },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
-  const data = await res.json();
-  if (!res.ok || data?.error) throw new Error(data?.error || "Request failed");
-  return data;
+  return readFunctionJson(res, "M-Pin is not available right now.");
 }
 
 type Step = "idle" | "verify_current" | "enter_new" | "confirm_new";
+type MpinStatus = { hasPin: boolean; unavailable?: boolean };
 
 const PinInput = ({ value, onChange, placeholder = "••••", disabled }: {
   value: string;
@@ -55,8 +55,15 @@ const UserMpinCard = () => {
   const { data: status, isLoading } = useQuery({
     queryKey: ["user-mpin-status"],
     queryFn: async () => {
-      const data = await serverFetch("/functions/v1/mpin-status");
-      return data as { hasPin: boolean };
+      try {
+        const data = await serverFetch("/functions/v1/mpin-status");
+        return data as MpinStatus;
+      } catch (error) {
+        if (isFunctionUnavailableError(error)) {
+          return { hasPin: false, unavailable: true } satisfies MpinStatus;
+        }
+        throw error;
+      }
     },
   });
 
@@ -68,6 +75,10 @@ const UserMpinCard = () => {
   };
 
   const handleStart = () => {
+    if (status?.unavailable) {
+      toast.error("M-Pin is not available right now.");
+      return;
+    }
     if (status?.hasPin) {
       setStep("verify_current");
     } else {
@@ -119,6 +130,7 @@ const UserMpinCard = () => {
   }
 
   const hasPin = status?.hasPin ?? false;
+  const unavailable = status?.unavailable ?? false;
 
   return (
     <Card>
@@ -138,11 +150,13 @@ const UserMpinCard = () => {
         {step === "idle" && (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              {hasPin
+              {unavailable
+                ? "M-Pin is temporarily unavailable right now."
+                : hasPin
                 ? "Your M-Pin is set. You can change it at any time by verifying your current PIN first."
                 : "Create a 4-digit M-Pin to secure your account. You'll be asked for this PIN every time you log in."}
             </p>
-            <Button onClick={handleStart}>
+            <Button onClick={handleStart} disabled={unavailable}>
               <KeyRound className="mr-2 h-4 w-4" />
               {hasPin ? "Change M-Pin" : "Create M-Pin"}
             </Button>

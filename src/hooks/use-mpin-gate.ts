@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { isFunctionUnavailableError, readFunctionJson } from "@/lib/function-response";
 
 export type MpinGateMode = "checking" | "create" | "verify" | "done";
 
@@ -46,12 +47,11 @@ export function useMpinGate(_userType?: string) {
         const res = await fetch("/functions/v1/mpin-status", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const text = await res.text();
-        let json: any;
-        try { json = JSON.parse(text); } catch { if (!cancelled) setMode("create"); return; }
+        const json = await readFunctionJson<{ hasPin?: boolean }>(res, "M-Pin is not available right now.");
         if (!cancelled) setMode(json.hasPin ? "verify" : "create");
-      } catch {
-        if (!cancelled) setMode("create");
+      } catch (error) {
+        if (cancelled) return;
+        setMode(isFunctionUnavailableError(error) ? "done" : "create");
       }
     })();
 
