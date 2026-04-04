@@ -206,6 +206,22 @@ const EmployeeDashboard = () => {
     enabled: !!profile?.id,
   });
 
+  const { data: recentJobs = [], isLoading: jobsLoading } = useQuery({
+    queryKey: ["freelancer-recent-jobs", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data, error } = await supabase
+        .from("project_applications")
+        .select("*, project:projects!project_applications_project_id_fkey(name, amount, status, end_date, client:profiles!projects_client_id_fkey(full_name))")
+        .eq("employee_id", profile.id)
+        .order("applied_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!profile?.id,
+  });
+
   const totalEarnings   = useMemo(() => chartData.reduce((s, d) => s + d.amount, 0), [chartData]);
   const displayChartData = chartData;
   const greeting = useMemo(() => { const h = new Date().getHours(); return h < 12 ? "Good Morning" : h < 17 ? "Good Afternoon" : "Good Evening"; }, []);
@@ -481,26 +497,50 @@ const EmployeeDashboard = () => {
               View All <ChevronRight size={12} />
             </button>
           </div>
-          {[
-            { title: "Website Redesign", employer: "TechCorp Ltd", budget: "₹24,000", status: "Active",    statusColor: clrGreen, deadline: "Dec 28" },
-            { title: "Mobile App UI",   employer: "StartupXYZ",   budget: "₹38,000", status: "Pending",   statusColor: clrAmber, deadline: "Jan 05" },
-            { title: "Logo Design",     employer: "BrandCo",      budget: "₹8,000",  status: "Completed", statusColor: accentIcon, deadline: "Dec 20" },
-          ].map((job, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 10px", borderRadius: 12, transition: "background .15s" }}
-              onMouseEnter={e => (e.currentTarget.style.background = tok.rowHover)}
-              onMouseLeave={e => (e.currentTarget.style.background = "none")}>
-              <div style={{ width: 36, height: 36, borderRadius: 11, background: `${A1}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Briefcase size={15} color={accentIcon} />
+          {jobsLoading ? (
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-xl mb-1" />)
+          ) : recentJobs.length === 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "24px 0", textAlign: "center" }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: tok.emptyBg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
+                <Briefcase size={20} style={{ color: tok.emptyFg }} />
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: tok.text, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{job.title}</p>
-                <p style={{ fontSize: 10.5, color: tok.sub, margin: "1px 0 0" }}>{job.employer} · {job.budget} · Due {job.deadline}</p>
-              </div>
-              <span style={{ fontSize: 10, fontWeight: 700, color: job.statusColor, background: `${job.statusColor}15`, borderRadius: 20, padding: "2px 8px", flexShrink: 0 }}>
-                {job.status}
-              </span>
+              <p style={{ fontSize: 13, fontWeight: 600, color: tok.sub, margin: 0 }}>No jobs yet</p>
+              <p style={{ fontSize: 11, color: tok.emptySub, marginTop: 4 }}>Applied projects will appear here</p>
             </div>
-          ))}
+          ) : (
+            recentJobs.map((app: any, i: number) => {
+              const proj = app.project ?? {};
+              const title = proj.name ?? "Project";
+              const clientName = Array.isArray(proj.client?.full_name) ? proj.client.full_name[0] : (proj.client?.full_name ?? "Employer");
+              const budget = proj.amount ? `₹${Number(proj.amount).toLocaleString("en-IN")}` : "—";
+              const deadline = proj.end_date ? new Date(proj.end_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "—";
+              const appStatus = app.status;
+              const projStatus = proj.status;
+              let statusLabel = "Pending";
+              let statusColor = clrAmber;
+              if (appStatus === "rejected") { statusLabel = "Rejected"; statusColor = clrRed; }
+              else if (appStatus === "approved") {
+                if (projStatus === "completed") { statusLabel = "Completed"; statusColor = accentIcon; }
+                else { statusLabel = "Active"; statusColor = clrGreen; }
+              }
+              return (
+                <div key={app.id} style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 10px", borderRadius: 12, transition: "background .15s" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = tok.rowHover)}
+                  onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                  <div style={{ width: 36, height: 36, borderRadius: 11, background: `${A1}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Briefcase size={15} color={accentIcon} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: tok.text, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</p>
+                    <p style={{ fontSize: 10.5, color: tok.sub, margin: "1px 0 0" }}>{clientName} · {budget}{deadline !== "—" ? ` · Due ${deadline}` : ""}</p>
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: statusColor, background: `${statusColor}15`, borderRadius: 20, padding: "2px 8px", flexShrink: 0 }}>
+                    {statusLabel}
+                  </span>
+                </div>
+              );
+            })
+          )}
         </div>
 
         {/* ── Recent Transactions ── */}
