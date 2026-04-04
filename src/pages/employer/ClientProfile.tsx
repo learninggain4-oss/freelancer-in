@@ -233,8 +233,8 @@ const ClientProfile = () => {
       </Card>
 
       {/* Wallet Number Card */}
-      <Card className="border-0 bg-gradient-to-r from-indigo-600/90 to-purple-600/90 text-white shadow-xl backdrop-blur-md">
-        <CardContent className="flex items-center justify-between p-5">
+      <Card className="border-0 bg-gradient-to-r from-indigo-600/90 to-purple-600/90 shadow-xl backdrop-blur-md">
+        <CardContent className="flex items-center justify-between p-5" style={{ color: "white" }}>
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md">
               <Wallet className="h-6 w-6" />

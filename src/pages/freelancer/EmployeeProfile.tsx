@@ -220,8 +220,8 @@ const EmployeeProfile = () => {
       </Card>
 
       {/* Wallet Number Card */}
-      <Card style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)", borderColor: "transparent" }} className="border-0 text-white shadow-xl">
-        <CardContent className="flex items-center justify-between p-5">
+      <Card style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)", borderColor: "transparent" }} className="border-0 shadow-xl">
+        <CardContent className="flex items-center justify-between p-5" style={{ color: "white" }}>
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md">
               <Wallet className="h-6 w-6" />
