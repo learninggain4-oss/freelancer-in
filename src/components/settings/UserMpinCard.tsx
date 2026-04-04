@@ -8,7 +8,7 @@ import { KeyRound, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { isFunctionUnavailableError, readFunctionJson } from "@/lib/function-response";
 
-async function serverFetch(path: string, body?: object) {
+async function serverFetch<T>(path: string, body?: object): Promise<T> {
   const { data: { session } } = await supabase.auth.getSession();
   const method = body !== undefined ? "POST" : "GET";
   const res = await fetch(path, {
@@ -19,7 +19,7 @@ async function serverFetch(path: string, body?: object) {
     },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
-  return readFunctionJson(res, "M-Pin is not available right now.");
+  return readFunctionJson<T>(res, "M-Pin is not available right now.");
 }
 
 type Step = "idle" | "verify_current" | "enter_new" | "confirm_new";
@@ -56,8 +56,7 @@ const UserMpinCard = () => {
     queryKey: ["user-mpin-status"],
     queryFn: async () => {
       try {
-        const data = await serverFetch("/functions/v1/mpin-status");
-        return data as MpinStatus;
+        return await serverFetch<MpinStatus>("/functions/v1/mpin-status");
       } catch (error) {
         if (isFunctionUnavailableError(error)) {
           return { hasPin: false, unavailable: true } satisfies MpinStatus;
@@ -90,7 +89,7 @@ const UserMpinCard = () => {
     if (currentPin.length < 4) { toast.error("Enter your current PIN"); return; }
     setLoading(true);
     try {
-      const data = await serverFetch("/functions/v1/mpin-verify", { pin: currentPin });
+      const data = await serverFetch<{ valid: boolean }>("/functions/v1/mpin-verify", { pin: currentPin });
       if (data.valid) {
         setStep("enter_new");
       } else {
@@ -108,7 +107,7 @@ const UserMpinCard = () => {
     if (newPin !== confirmPin) { toast.error("PINs do not match"); return; }
     setLoading(true);
     try {
-      await serverFetch("/functions/v1/mpin-set", { pin: newPin });
+      await serverFetch<{ success?: boolean }>("/functions/v1/mpin-set", { pin: newPin });
       toast.success(status?.hasPin ? "M-Pin changed successfully!" : "M-Pin created successfully!");
       reset();
       queryClient.invalidateQueries({ queryKey: ["user-mpin-status"] });
