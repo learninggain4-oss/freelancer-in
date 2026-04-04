@@ -8,7 +8,7 @@ import {
   Activity, ArrowUpRight, ArrowDownRight, CalendarDays,
   CircleDollarSign, Star, CheckCircle, Clock, Bell,
   ShieldCheck, Target, BarChart3, Upload, HeadphonesIcon,
-  Gift, Zap, XCircle, Info, AlertTriangle, UserCheck,
+  Gift, Zap, XCircle, Info, AlertTriangle,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -115,13 +115,6 @@ const MOCK_ALERTS = [
   { type: "info",    msg: "Account verification reminder", time: "3 hr ago" },
 ];
 
-const MOCK_TIMELINE = [
-  { icon: IndianRupee, color: "#4ade80", bg: "rgba(34,197,94,.15)", label: "Payment received", detail: "₹2,400 credited to wallet", time: "Today, 10:30 AM" },
-  { icon: CheckCircle, color: "#818cf8", bg: "rgba(99,102,241,.15)", label: "Job completed", detail: "Website Redesign — TechCorp", time: "Yesterday, 5:00 PM" },
-  { icon: UserCheck,   color: "#fbbf24", bg: "rgba(245,158,11,.15)", label: "Proposal accepted", detail: "Mobile App Development", time: "2 days ago" },
-  { icon: ShieldCheck, color: "#4ade80", bg: "rgba(34,197,94,.15)", label: "Verification completed", detail: "Aadhaar verification approved", time: "3 days ago" },
-  { icon: Star,        color: "#fbbf24", bg: "rgba(245,158,11,.15)", label: "Rating received", detail: "⭐⭐⭐⭐⭐ from TechCorp", time: "4 days ago" },
-];
 
 const WEEKLY_DATA = [
   { day: "Mon", amount: 1200 },
@@ -590,21 +583,40 @@ const EmployeeDashboard = () => {
             </div>
             <span style={{ fontWeight: 800, fontSize: 13, color: tok.text }}>Activity Timeline</span>
           </div>
-          <div style={{ position: "relative", paddingLeft: 28 }}>
-            <div style={{ position: "absolute", left: 10, top: 0, bottom: 0, width: 1, background: tok.timelineLine }} />
-            {MOCK_TIMELINE.map((event, i) => (
-              <div key={i} style={{ position: "relative", paddingBottom: i < MOCK_TIMELINE.length - 1 ? 18 : 0 }}>
-                <div style={{ position: "absolute", left: -24, top: 2, width: 28, height: 28, borderRadius: 9, background: event.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <event.icon size={13} style={{ color: event.color }} />
-                </div>
-                <div>
-                  <p style={{ fontSize: 12.5, fontWeight: 700, color: tok.text, margin: 0 }}>{event.label}</p>
-                  <p style={{ fontSize: 11, color: tok.sub, margin: "2px 0 1px" }}>{event.detail}</p>
-                  <p style={{ fontSize: 10, color: tok.sub, opacity: 0.6, margin: 0 }}>{event.time}</p>
-                </div>
+          {transactions.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "20px 0" }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: tok.emptyBg, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}>
+                <Activity size={20} color={tok.sub} style={{ opacity: 0.4 }} />
               </div>
-            ))}
-          </div>
+              <p style={{ fontSize: 12, fontWeight: 700, color: tok.text, margin: 0 }}>No activity yet</p>
+              <p style={{ fontSize: 11, color: tok.sub, margin: "4px 0 0", opacity: 0.7 }}>Your transactions will appear here</p>
+            </div>
+          ) : (
+            <div style={{ position: "relative", paddingLeft: 28 }}>
+              <div style={{ position: "absolute", left: 10, top: 0, bottom: 0, width: 1, background: tok.timelineLine }} />
+              {transactions.slice(0, 6).map((t: any, i: number) => {
+                const isCredit = t.type === "credit";
+                const TIcon = isCredit ? IndianRupee : ArrowDownToLine;
+                const color  = isCredit ? "#4ade80" : "#f87171";
+                const bg     = isCredit ? "rgba(34,197,94,.15)" : "rgba(248,113,113,.15)";
+                const label  = isCredit ? "Payment received" : "Amount withdrawn";
+                const detail = `₹${Number(t.amount).toLocaleString("en-IN")}${t.description ? ` — ${t.description}` : ""}`;
+                const time   = new Date(t.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+                return (
+                  <div key={t.id ?? i} style={{ position: "relative", paddingBottom: i < Math.min(transactions.length, 6) - 1 ? 18 : 0 }}>
+                    <div style={{ position: "absolute", left: -24, top: 2, width: 28, height: 28, borderRadius: 9, background: bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <TIcon size={13} style={{ color }} />
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 12.5, fontWeight: 700, color: tok.text, margin: 0 }}>{label}</p>
+                      <p style={{ fontSize: 11, color: tok.sub, margin: "2px 0 1px" }}>{detail}</p>
+                      <p style={{ fontSize: 10, color: tok.sub, opacity: 0.6, margin: 0 }}>{time}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
       </div>
