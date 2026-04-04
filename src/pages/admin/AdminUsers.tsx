@@ -16,7 +16,7 @@ import {
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { CheckCircle, XCircle, Eye, Search, X, ChevronLeft, ChevronRight, Pencil, ShieldOff, ShieldCheck, Trash2, UserPlus, Users } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Search, X, ChevronLeft, ChevronRight, Pencil, ShieldOff, ShieldCheck, Trash2, UserPlus, Users, KeyRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import UserDetailDialog, { type FullProfile } from "@/components/admin/UserDetailDialog";
@@ -43,7 +43,7 @@ const AdminUsers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock" | "delete"; user: FullProfile } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock" | "delete" | "reset_mpin"; user: FullProfile } | null>(null);
   const [actionProcessing, setActionProcessing] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -122,6 +122,20 @@ const AdminUsers = () => {
     } else {
       toast.success("User permanently deleted");
       fetchProfiles();
+    }
+  };
+
+  const handleResetMpin = async (user: FullProfile) => {
+    setActionProcessing(true);
+    const { data, error } = await supabase.functions.invoke("admin-user-management", {
+      body: { action: "reset_mpin", profile_id: user.id },
+    });
+    setActionProcessing(false);
+    setConfirmAction(null);
+    if (error || data?.error) {
+      toast.error(data?.error || error?.message || "M-Pin reset failed");
+    } else {
+      toast.success(`M-Pin reset for ${user.full_name?.[0] || user.email}. They will be prompted to create a new PIN on next login.`);
     }
   };
 
@@ -261,6 +275,16 @@ const AdminUsers = () => {
                           onClick={() => setConfirmAction({ type: (u as any).is_disabled ? "unblock" : "block", user: u })}
                         >
                           {(u as any).is_disabled ? <ShieldCheck className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title="Reset M-Pin"
+                          className="hover:bg-white/10"
+                          style={{ color: "#a78bfa" }}
+                          onClick={() => setConfirmAction({ type: "reset_mpin", user: u })}
+                        >
+                          <KeyRound className="h-4 w-4" />
                         </Button>
                         <Button
                           size="icon"
@@ -453,7 +477,7 @@ const AdminUsers = () => {
         onClose={handleClose}
       />
 
-      {/* Block/Delete Confirm Dialog */}
+      {/* Block / Delete / Reset M-Pin Confirm Dialog */}
       <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -462,6 +486,8 @@ const AdminUsers = () => {
                 ? "Permanently Delete User?"
                 : confirmAction?.type === "block"
                 ? "Block User?"
+                : confirmAction?.type === "reset_mpin"
+                ? "Reset M-Pin?"
                 : "Unblock User?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -469,6 +495,8 @@ const AdminUsers = () => {
                 ? `This will permanently delete "${confirmAction.user.full_name?.[0]}" and all their data. This CANNOT be undone.`
                 : confirmAction?.type === "block"
                 ? `This will block "${confirmAction?.user.full_name?.[0]}" from logging in. You can unblock them later.`
+                : confirmAction?.type === "reset_mpin"
+                ? `This will clear the M-Pin for "${confirmAction?.user.full_name?.[0] || confirmAction?.user.email}". They will be asked to create a new 4-digit PIN on their next login.`
                 : `This will re-enable login access for "${confirmAction?.user.full_name?.[0]}".`}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -476,14 +504,29 @@ const AdminUsers = () => {
             <AlertDialogCancel disabled={actionProcessing}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               disabled={actionProcessing}
-              className={confirmAction?.type === "delete" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+              className={
+                confirmAction?.type === "delete"
+                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  : confirmAction?.type === "reset_mpin"
+                  ? "bg-violet-600 text-white hover:bg-violet-700"
+                  : ""
+              }
               onClick={() => {
                 if (!confirmAction) return;
                 if (confirmAction.type === "delete") handlePermanentDelete(confirmAction.user);
+                else if (confirmAction.type === "reset_mpin") handleResetMpin(confirmAction.user);
                 else handleToggleBlock(confirmAction.user);
               }}
             >
-              {actionProcessing ? "Processing…" : confirmAction?.type === "delete" ? "Delete" : confirmAction?.type === "block" ? "Block" : "Unblock"}
+              {actionProcessing
+                ? "Processing…"
+                : confirmAction?.type === "delete"
+                ? "Delete"
+                : confirmAction?.type === "reset_mpin"
+                ? "Reset M-Pin"
+                : confirmAction?.type === "block"
+                ? "Block"
+                : "Unblock"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

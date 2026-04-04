@@ -654,6 +654,21 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
       return res.json({ success: true, message: `Invite sent to ${email}` });
     }
 
+    if (action === "reset_mpin") {
+      let targetUserId = user_id;
+      if (!targetUserId && profile_id) {
+        const { data: p } = await adminClient.from("profiles").select("user_id").eq("id", profile_id).single();
+        if (!p?.user_id) return res.status(404).json({ error: "User not found" });
+        targetUserId = p.user_id;
+      }
+      if (!targetUserId) return res.status(400).json({ error: "user_id or profile_id required" });
+      const { error: updateErr } = await adminClient.auth.admin.updateUserById(targetUserId, {
+        app_metadata: { mpin_hash: null, mpin_failed_attempts: 0, mpin_blocked_until: null },
+      });
+      if (updateErr) return res.status(500).json({ error: updateErr.message });
+      return res.json({ success: true, message: "M-Pin reset successfully. User will be prompted to create a new PIN on next login." });
+    }
+
     return res.status(400).json({ error: "Unknown action" });
   } catch (err) {
     console.error("admin-user-management error:", err);
