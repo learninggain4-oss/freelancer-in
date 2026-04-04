@@ -46,7 +46,9 @@ export function useMpinGate(_userType?: string) {
         const res = await fetch("/functions/v1/mpin-status", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const json = await res.json();
+        const text = await res.text();
+        let json: any;
+        try { json = JSON.parse(text); } catch { if (!cancelled) setMode("create"); return; }
         if (!cancelled) setMode(json.hasPin ? "verify" : "create");
       } catch {
         if (!cancelled) setMode("create");
