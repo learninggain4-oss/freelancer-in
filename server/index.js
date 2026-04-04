@@ -1257,9 +1257,10 @@ app.delete("/functions/v1/support-delete-message", async (req, res) => {
     if (fetchErr || !msg) return res.status(404).json({ error: "Message not found" });
 
     // Allow admins to delete any message
-    const { data: callerProfile } = await supabase.from("profiles").select("user_type").eq("user_id", user.id).maybeSingle();
+    // sender_id in messages = profile.id (profile row UUID), NOT auth user.id
+    const { data: callerProfile } = await supabase.from("profiles").select("id, user_type").eq("user_id", user.id).maybeSingle();
     const isAdmin = callerProfile?.user_type === "admin";
-    if (!isAdmin && msg.sender_id !== user.id) return res.status(403).json({ error: "Cannot delete another user's message" });
+    if (!isAdmin && msg.sender_id !== callerProfile?.id) return res.status(403).json({ error: "Cannot delete another user's message" });
 
     const { error } = await supabase.from("support_messages").delete().eq("id", messageId);
     if (error) return res.status(500).json({ error: error.message });
