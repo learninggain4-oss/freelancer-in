@@ -291,20 +291,55 @@ const EmployeeDashboard = () => {
         </div>
       </div>
 
-      <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: 18, paddingBottom: 32 }}>
+      <div style={{ padding: "16px 16px 32px", display: "flex", flexDirection: "column", gap: 14 }}>
 
-        {/* ── Greeting ── */}
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <Sparkles size={15} style={{ color: clrAmber }} />
-            <p style={{ fontSize: 12.5, color: tok.sub, fontWeight: 500, margin: 0 }}>{greeting}</p>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
-            <h2 style={{ margin: 0, fontSize: 23, fontWeight: 900, color: tok.text, letterSpacing: "-0.5px" }}>{typeof firstName === "string" ? firstName : "there"} 👋</h2>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 11px", borderRadius: 20, background: "rgba(34,197,94,.12)", border: "1px solid rgba(34,197,94,.2)" }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80" }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: clrGreen }}>Online</span>
+        {/* ── HERO SECTION ── */}
+        <div style={{
+          background: `linear-gradient(135deg, ${A1} 0%, ${A2} 55%, #0ea5e9 100%)`,
+          borderRadius: 24, padding: "20px 20px 22px",
+          position: "relative", overflow: "hidden",
+          boxShadow: "0 10px 40px rgba(99,102,241,.38)",
+        }}>
+          <div style={{ position: "absolute", top: -50, right: -30, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,.07)", filter: "blur(30px)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", bottom: -40, left: -20, width: 140, height: 140, borderRadius: "50%", background: "rgba(255,255,255,.05)", pointerEvents: "none" }} />
+
+          {/* Top row */}
+          <div style={{ position: "relative", display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
+                <Sparkles size={11} style={{ color: "rgba(255,255,255,.7)" }} />
+                <p style={{ color: "rgba(255,255,255,.7)", fontSize: 12, fontWeight: 600, margin: 0 }}>{greeting}</p>
+              </div>
+              <h2 style={{ color: "white", fontSize: 22, fontWeight: 900, margin: 0, letterSpacing: "-0.5px" }}>
+                Hi, {(typeof firstName === "string" ? firstName : "there").split(" ")[0]} 👋
+              </h2>
             </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,.18)", backdropFilter: "blur(10px)", borderRadius: 20, padding: "5px 12px", border: "1px solid rgba(255,255,255,.15)", flexShrink: 0 }}>
+              <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 8px #4ade80" }} />
+              <span style={{ color: "white", fontSize: 11, fontWeight: 700 }}>Online</span>
+            </div>
+          </div>
+
+          {/* Earnings display */}
+          <div style={{ position: "relative", marginBottom: 16 }}>
+            <p style={{ color: "rgba(255,255,255,.6)", fontSize: 10.5, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.2 }}>Total Earnings</p>
+            <p style={{ color: "white", fontSize: 32, fontWeight: 900, margin: "4px 0 0", letterSpacing: "-1.5px", lineHeight: 1 }}>
+              ₹{totalAll.toLocaleString("en-IN")}
+            </p>
+          </div>
+
+          {/* 3 mini stat chips */}
+          <div style={{ position: "relative", display: "flex", gap: 8 }}>
+            {[
+              { label: "Available", value: `₹${availBal.toLocaleString("en-IN")}` },
+              { label: "On Hold",   value: `₹${holdBal.toLocaleString("en-IN")}` },
+              { label: "Jobs Done", value: String(completedCount) },
+            ].map(chip => (
+              <div key={chip.label} style={{ flex: 1, background: "rgba(255,255,255,.13)", backdropFilter: "blur(10px)", borderRadius: 14, padding: "10px 10px", border: "1px solid rgba(255,255,255,.1)" }}>
+                <p style={{ color: "rgba(255,255,255,.65)", fontSize: 9.5, margin: 0, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 700 }}>{chip.label}</p>
+                <p style={{ color: "white", fontSize: 13, fontWeight: 900, margin: "3px 0 0", letterSpacing: "-0.3px" }}>{chip.value}</p>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -316,56 +351,64 @@ const EmployeeDashboard = () => {
           availableBalance={profile?.available_balance ?? 0}
           holdBalance={profile?.hold_balance ?? 0}
           walletActive={(profile as any)?.wallet_active ?? true}
+          onTransfer={() => {}}
+          onWithdraw={() => navigate(`${base}/wallet/withdraw`)}
         />
 
         {/* ── Wallet Type Badge ── */}
         <WalletTypeBadge balance={profile?.available_balance ?? 0} />
 
-        {/* ── 8 Summary Stats ── */}
+        {/* ── Withdraw CTA ── */}
+        <button onClick={() => navigate(`${base}/wallet`)}
+          style={{ width: "100%", padding: "13px", borderRadius: 16, background: `linear-gradient(135deg,${A1},${A2})`, border: "none", color: "white", fontSize: 14, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 6px 20px rgba(99,102,241,.38)", transition: "opacity .2s" }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = ".9")}
+          onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+          <ArrowDownToLine size={16} />
+          Withdraw Money
+        </button>
+
+        {/* ── Quick Stats (horizontal scroll) ── */}
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 12 }}>
-            <div style={{ width: 24, height: 24, borderRadius: 7, background: "rgba(99,102,241,.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <BarChart3 size={12} color={accentIcon} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 22, height: 22, borderRadius: 7, background: "rgba(99,102,241,.13)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <BarChart3 size={11} color={accentIcon} />
+              </div>
+              <span style={{ fontWeight: 800, fontSize: 13, color: tok.text }}>Your Stats</span>
             </div>
-            <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Dashboard Summary</span>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
+          <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 6, msOverflowStyle: "none", scrollbarWidth: "none" } as React.CSSProperties}>
             {summaryStats.map(s => (
-              <div key={s.label} style={{ ...card, padding: "14px 14px", display: "flex", alignItems: "center", gap: 11, position: "relative", overflow: "hidden" }}>
-                <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at top right,${s.bg} 0%,transparent 70%)` }} />
-                <div style={{ width: 38, height: 38, borderRadius: 12, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
-                  <s.icon size={16} style={{ color: s.color }} />
+              <div key={s.label} style={{ flexShrink: 0, width: 112, ...card, padding: "13px 12px", position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", top: -8, right: -8, width: 44, height: 44, borderRadius: "50%", background: s.bg, opacity: 0.9 }} />
+                <div style={{ width: 30, height: 30, borderRadius: 9, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8, position: "relative" }}>
+                  <s.icon size={13} style={{ color: s.color }} />
                 </div>
-                <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
-                  <p style={{ fontWeight: 900, color: tok.text, fontSize: 15, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.value}</p>
-                  <p style={{ fontSize: 10, color: tok.sub, fontWeight: 600, margin: "1px 0 0", lineHeight: 1.2 }}>{s.label}</p>
-                </div>
-                <span style={{ fontSize: 9.5, fontWeight: 700, color: s.trendUp ? clrGreen : clrAmber, background: s.trendUp ? "rgba(34,197,94,.12)" : "rgba(245,158,11,.12)", borderRadius: 20, padding: "1px 6px", flexShrink: 0 }}>
-                  {s.trend}
-                </span>
+                <p style={{ fontWeight: 900, color: tok.text, fontSize: 14, margin: 0, position: "relative", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.value}</p>
+                <p style={{ fontSize: 9.5, color: tok.sub, fontWeight: 600, margin: "2px 0 0", lineHeight: 1.3, position: "relative" }}>{s.label}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* ── Quick Actions (6 buttons) ── */}
+        {/* ── Quick Actions (4-col grid) ── */}
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 12 }}>
-            <div style={{ width: 24, height: 24, borderRadius: 7, background: "rgba(139,92,246,.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Zap size={12} color={violetIcon} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+            <div style={{ width: 22, height: 22, borderRadius: 7, background: "rgba(139,92,246,.13)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Zap size={11} color={violetIcon} />
             </div>
-            <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Quick Actions</span>
+            <span style={{ fontWeight: 800, fontSize: 13, color: tok.text }}>Quick Actions</span>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
             {quickActions.map(action => (
               <button key={action.label} onClick={() => navigate(action.to)}
-                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7, padding: "14px 8px", borderRadius: 14, ...card, cursor: "pointer", transition: "all .2s" }}
-                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,.18)"; }}
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "13px 6px", borderRadius: 16, ...card, cursor: "pointer", transition: "transform .15s, box-shadow .15s", border: "1px solid transparent" }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,.12)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = theme !== "black" ? "0 2px 8px rgba(0,0,0,.06)" : "none"; }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: action.grad, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <action.icon size={17} style={{ color: action.color }} />
+                <div style={{ width: 38, height: 38, borderRadius: 12, background: action.grad, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <action.icon size={16} style={{ color: action.color }} />
                 </div>
-                <span style={{ fontSize: 10, fontWeight: 700, color: tok.sub, lineHeight: 1.1, textAlign: "center" }}>{action.label}</span>
+                <span style={{ fontSize: 9.5, fontWeight: 700, color: tok.sub, lineHeight: 1.2, textAlign: "center" }}>{action.label}</span>
               </button>
             ))}
           </div>
@@ -373,20 +416,28 @@ const EmployeeDashboard = () => {
 
         {/* ── Earnings / Jobs Chart tabs ── */}
         <div style={{ ...card, padding: "16px 16px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 22, height: 22, borderRadius: 7, background: "rgba(99,102,241,.13)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <TrendingUp size={11} color={accentIcon} />
+                </div>
+                <span style={{ fontWeight: 800, fontSize: 13, color: tok.text }}>Performance</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(34,197,94,.1)", borderRadius: 20, padding: "3px 9px", border: "1px solid rgba(34,197,94,.2)" }}>
+                <TrendingUp size={10} color={clrGreen} />
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: clrGreen }}>
+                  ₹{totalEarnings.toLocaleString("en-IN")} this week
+                </span>
+              </div>
+            </div>
             <div style={{ display: "flex", gap: 6 }}>
               {["earnings", "jobs"].map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab as "earnings" | "jobs")}
-                  style={{ padding: "5px 12px", borderRadius: 8, background: activeTab === tab ? `${A1}20` : "none", border: activeTab === tab ? `1px solid ${A1}40` : "1px solid transparent", color: activeTab === tab ? accentIcon : tok.sub, fontSize: 11.5, fontWeight: 700, cursor: "pointer", textTransform: "capitalize" }}>
+                  style={{ padding: "5px 14px", borderRadius: 8, background: activeTab === tab ? `linear-gradient(135deg,${A1}25,${A2}20)` : "none", border: activeTab === tab ? `1px solid ${A1}35` : `1px solid ${tok.cardBdr}`, color: activeTab === tab ? accentIcon : tok.sub, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>
                   {tab === "earnings" ? "Earnings" : "Jobs"}
                 </button>
               ))}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <TrendingUp size={12} color={accentIcon} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: isDarkTheme ? "#4ade80" : "#16a34a" }}>
-                +₹{totalEarnings.toLocaleString("en-IN")} this week
-              </span>
             </div>
           </div>
           <div style={{ height: 140 }}>
@@ -423,60 +474,26 @@ const EmployeeDashboard = () => {
           </div>
         </div>
 
-        {/* ── Wallet & Payment Summary Widget ── */}
-        <div style={{ ...card, padding: "16px 16px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 26, height: 26, borderRadius: 8, background: "rgba(99,102,241,.14)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Wallet size={12} color={accentIcon} />
-              </div>
-              <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Payment Summary</span>
-            </div>
-            <button onClick={() => navigate(`${base}/wallet`)}
-              style={{ display: "flex", alignItems: "center", gap: 3, color: accentIcon, background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
-              Wallet <ChevronRight size={12} />
-            </button>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10, marginBottom: 12 }}>
-            {[
-              { label: "Available",  value: `₹${availBal.toLocaleString("en-IN")}`,  color: clrGreen,  bg: "rgba(34,197,94,.1)" },
-              { label: "On Hold",    value: `₹${holdBal.toLocaleString("en-IN")}`,   color: clrAmber,  bg: "rgba(245,158,11,.1)" },
-              { label: "7-Day Earned",value:`₹${totalEarnings.toLocaleString("en-IN")}`,color:accentIcon,bg:"rgba(99,102,241,.1)"},
-              { label: "Withdrawals",value: withdrawCount + " requests",              color: clrRed,    bg: "rgba(239,68,68,.1)" },
-            ].map(w => (
-              <div key={w.label} style={{ padding: "12px", borderRadius: 12, background: w.bg, border: `1px solid ${w.color}20` }}>
-                <p style={{ fontSize: 14, fontWeight: 900, color: w.color, margin: 0 }}>{w.value}</p>
-                <p style={{ fontSize: 10.5, color: tok.sub, margin: "2px 0 0", fontWeight: 600 }}>{w.label}</p>
-              </div>
-            ))}
-          </div>
-          <button onClick={() => navigate(`${base}/wallet`)}
-            style={{ width: "100%", padding: "10px", borderRadius: 11, background: `linear-gradient(135deg,${A1},${A2})`, border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, boxShadow: "0 4px 14px rgba(99,102,241,.35)" }}>
-            <ArrowDownToLine size={15} />
-            Withdraw Money
-          </button>
-        </div>
-
         {/* ── Notifications & Alerts ── */}
         <div style={{ ...card, padding: "16px 16px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 26, height: 26, borderRadius: 8, background: "rgba(239,68,68,.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Bell size={12} color={clrRed} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 22, height: 22, borderRadius: 7, background: "rgba(239,68,68,.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Bell size={11} color={clrRed} />
               </div>
-              <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Alerts & Notifications</span>
+              <span style={{ fontWeight: 800, fontSize: 13, color: tok.text }}>Alerts</span>
             </div>
-            <span style={{ fontSize: 10, background: "rgba(239,68,68,.12)", color: clrRed, borderRadius: 20, padding: "1px 8px", fontWeight: 700 }}>
+            <span style={{ fontSize: 10, background: "rgba(239,68,68,.1)", color: clrRed, borderRadius: 20, padding: "2px 9px", fontWeight: 800, border: "1px solid rgba(239,68,68,.15)" }}>
               {MOCK_ALERTS.length} new
             </span>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
             {MOCK_ALERTS.map((a, i) => (
               <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 12px", borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
                 <div style={{ marginTop: 1, flexShrink: 0 }}>{alertIcon(a.type)}</div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 12.5, color: tok.text, margin: 0, fontWeight: 500 }}>{a.msg}</p>
-                  <p style={{ fontSize: 10.5, color: tok.sub, margin: "2px 0 0" }}>{a.time}</p>
+                  <p style={{ fontSize: 12.5, color: tok.text, margin: 0, fontWeight: 600 }}>{a.msg}</p>
+                  <p style={{ fontSize: 10, color: tok.sub, margin: "2px 0 0" }}>{a.time}</p>
                 </div>
               </div>
             ))}
@@ -485,15 +502,15 @@ const EmployeeDashboard = () => {
 
         {/* ── Recent Jobs ── */}
         <div style={{ ...card, padding: "16px 16px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 26, height: 26, borderRadius: 8, background: "rgba(139,92,246,.14)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Briefcase size={12} color={violetIcon} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 22, height: 22, borderRadius: 7, background: "rgba(139,92,246,.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Briefcase size={11} color={violetIcon} />
               </div>
-              <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Recent Jobs</span>
+              <span style={{ fontWeight: 800, fontSize: 13, color: tok.text }}>Recent Jobs</span>
             </div>
             <button onClick={() => navigate(`${base}/projects`)}
-              style={{ display: "flex", alignItems: "center", gap: 3, color: accentIcon, background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+              style={{ display: "flex", alignItems: "center", gap: 3, color: accentIcon, background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
               View All <ChevronRight size={12} />
             </button>
           </div>
@@ -521,15 +538,15 @@ const EmployeeDashboard = () => {
 
         {/* ── Recent Transactions ── */}
         <div style={{ ...card, padding: "16px 16px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 26, height: 26, borderRadius: 8, background: "rgba(34,197,94,.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <CalendarDays size={12} color={clrGreen} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 22, height: 22, borderRadius: 7, background: "rgba(34,197,94,.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <CalendarDays size={11} color={clrGreen} />
               </div>
-              <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Transactions</span>
+              <span style={{ fontWeight: 800, fontSize: 13, color: tok.text }}>Transactions</span>
             </div>
             <button onClick={() => navigate(`${base}/wallet`)}
-              style={{ display: "flex", alignItems: "center", gap: 3, color: accentIcon, background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+              style={{ display: "flex", alignItems: "center", gap: 3, color: accentIcon, background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
               View All <ChevronRight size={12} />
             </button>
           </div>
@@ -567,11 +584,11 @@ const EmployeeDashboard = () => {
 
         {/* ── Activity Timeline ── */}
         <div style={{ ...card, padding: "16px 16px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-            <div style={{ width: 26, height: 26, borderRadius: 8, background: "rgba(245,158,11,.14)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Activity size={12} color={clrAmber} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}>
+            <div style={{ width: 22, height: 22, borderRadius: 7, background: "rgba(245,158,11,.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Activity size={11} color={clrAmber} />
             </div>
-            <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Activity Timeline</span>
+            <span style={{ fontWeight: 800, fontSize: 13, color: tok.text }}>Activity Timeline</span>
           </div>
           <div style={{ position: "relative", paddingLeft: 28 }}>
             <div style={{ position: "absolute", left: 10, top: 0, bottom: 0, width: 1, background: tok.timelineLine }} />
