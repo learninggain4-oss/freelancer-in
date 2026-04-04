@@ -12,7 +12,9 @@ interface BottomTabBarProps {
 
 const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarProps) => {
   const location = useLocation();
-  const base = userType === "employee" ? "/employee" : "/employer";
+  const base = userType === "employer"
+    ? "/employer"
+    : location.pathname.startsWith("/freelancer") ? "/freelancer" : "/employee";
 
   const isDark   = theme === "black" || theme === "wb";
   const isWarm   = theme === "warm";

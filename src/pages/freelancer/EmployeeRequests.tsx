@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,8 @@ const statusConfig: Record<string, { color: string; bg: string; border: string; 
 const EmployeeRequests = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const base = pathname.startsWith("/freelancer") ? "/freelancer" : "/employee";
   const { theme } = useDashboardTheme();
   const T = TH[theme];
 
@@ -158,7 +160,7 @@ const EmployeeRequests = () => {
             <p style={{ color: T.sub }} className="text-xs font-bold mt-2 max-w-[280px] leading-relaxed opacity-70 uppercase tracking-tighter">
               You haven't initiated any requests. Explore the job catalog to begin operations.
             </p>
-            <Button style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" }} className="mt-8 gap-3 h-12 rounded-2xl font-black uppercase tracking-[0.15em] px-8 shadow-xl shadow-indigo-500/20 text-white" onClick={() => navigate("/employee/projects")}>
+            <Button style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" }} className="mt-8 gap-3 h-12 rounded-2xl font-black uppercase tracking-[0.15em] px-8 shadow-xl shadow-indigo-500/20 text-white" onClick={() => navigate(`${base}/projects`)}>
               <Send className="h-5 w-5" /> Explore Catalog
             </Button>
           </div>

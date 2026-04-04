@@ -32,6 +32,7 @@ const EmployeeWallet = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
+  const base = location.pathname.startsWith("/freelancer") ? "/freelancer" : "/employee";
   const { theme } = useDashboardTheme();
   const T = TH[theme];
 
@@ -78,7 +79,7 @@ const EmployeeWallet = () => {
           holdBalance={profile?.hold_balance ?? 0}
           walletActive={(profile as any)?.wallet_active ?? true}
           onTransfer={() => setShowTransfer(true)}
-          onWithdraw={() => navigate("/employee/wallet/withdraw")}
+          onWithdraw={() => navigate(`${base}/wallet/withdraw`)}
         />
       </div>
 
@@ -101,7 +102,7 @@ const EmployeeWallet = () => {
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-4 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
         <button
-          onClick={() => navigate("/employee/wallet/transactions")}
+          onClick={() => navigate(`${base}/wallet/transactions`)}
           style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }}
           className="group flex flex-col items-center justify-center gap-4 rounded-3xl p-6 border shadow-xl transition-all hover:bg-white/[0.02] hover:shadow-2xl active:scale-95"
         >
@@ -114,7 +115,7 @@ const EmployeeWallet = () => {
           </div>
         </button>
         <button
-          onClick={() => navigate("/employee/wallet/withdrawals")}
+          onClick={() => navigate(`${base}/wallet/withdrawals`)}
           style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }}
           className="group flex flex-col items-center justify-center gap-4 rounded-3xl p-6 border shadow-xl transition-all hover:bg-white/[0.02] hover:shadow-2xl active:scale-95"
         >

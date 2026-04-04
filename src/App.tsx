@@ -292,6 +292,54 @@ const AppContent = () => {
               <Route path="wallet/upgrade-chat/:requestId" element={<UpgradeChat />} />
             </Route>
 
+            {/* Freelancer Routes (alias for /employee — same pages, new brand name) */}
+            <Route
+              path="/freelancer"
+              element={
+                <ProtectedRoute>
+                  <AppLayout userType="employee" />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<EmployeeDashboard />} />
+              <Route path="attendance" element={<EmployeeAttendance />} />
+              <Route path="projects" element={<EmployeeProjects />} />
+              <Route path="requests" element={<EmployeeRequests />} />
+              <Route path="projects/chat/:projectId" element={<ChatRoom />} />
+              <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
+              <Route path="wallet" element={<EmployeeWallet />} />
+              <Route path="wallet/transactions" element={<TransactionHistory />} />
+              <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
+              <Route path="wallet/qr" element={<WalletQRPage />} />
+              <Route path="wallet/scan" element={<WalletScanPage />} />
+              <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
+              <Route path="bids" element={<EmployeeBids />} />
+              <Route path="earnings" element={<EmployeeEarnings />} />
+              <Route path="reviews" element={<EmployeeReviews />} />
+              <Route path="badges" element={<EmployeeBadges />} />
+              <Route path="portfolio" element={<EmployeePortfolio />} />
+              <Route path="profile" element={<EmployeeProfile />} />
+              <Route path="profile/personal" element={<ProfilePersonalInfo />} />
+              <Route path="profile/professional" element={<ProfileProfessional />} />
+              <Route path="profile/bank-details" element={<ProfileBankDetails />} />
+              <Route path="profile/work-experience" element={<ProfileWorkExperience />} />
+              <Route path="profile/services" element={<ProfileServices />} />
+              <Route path="profile/emergency-contacts" element={<ProfileEmergencyContacts />} />
+              <Route path="profile/aadhaar-verification" element={<ProfileAadhaarVerification />} />
+              <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
+              <Route path="profile/upi-apps" element={<ProfileUpiApps />} />
+              <Route path="settings" element={<AccountSettings />} />
+              <Route path="notification-settings" element={<NotificationSettings />} />
+              <Route path="get-free" element={<GetFree />} />
+              <Route path="get-coins" element={<GetCoins />} />
+              <Route path="app" element={<AppPage />} />
+              <Route path="help-support" element={<HelpSupport />} />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="review" element={<UserReview />} />
+              <Route path="wallet-types" element={<WalletTypes />} />
+              <Route path="wallet/upgrade-chat/:requestId" element={<UpgradeChat />} />
+            </Route>
+
             {/* Employer Routes */}
             <Route
               path="/employer"

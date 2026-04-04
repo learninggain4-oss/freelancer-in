@@ -4,7 +4,7 @@ import {
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { DashboardTheme } from "@/hooks/use-dashboard-theme";
 
 const A1 = "#6366f1";
@@ -19,6 +19,7 @@ interface SideDrawerProps {
 const SideDrawer = ({ open, onOpenChange, theme = "black" }: SideDrawerProps) => {
   const { signOut, profile } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   const isDark = theme === "black" || theme === "wb";
   const drawerBg    = isDark ? "#0d0d24"                    : "#ffffff";
@@ -31,7 +32,9 @@ const SideDrawer = ({ open, onOpenChange, theme = "black" }: SideDrawerProps) =>
   const nameFg      = isDark ? "white"                      : "#0d0d24";
   const iconBoxBg   = isDark ? "rgba(255,255,255,.06)"      : "#f1f5f9";
 
-  const basePath = profile?.user_type === "client" ? "/client" : "/employee";
+  const basePath = profile?.user_type === "client" ? "/employer"
+    : pathname.startsWith("/freelancer") ? "/freelancer"
+    : "/employee";
   const initials = (profile?.full_name?.[0] || "U").slice(0, 2).toUpperCase();
   const userType = profile?.user_type || "user";
   const userCode = Array.isArray(profile?.user_code) ? profile.user_code[0] : (profile?.user_code || "");

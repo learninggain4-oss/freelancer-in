@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import BottomTabBar from "./BottomTabBar";
 import SideDrawer from "./SideDrawer";
 import MPinGateModal from "@/components/auth/MPinGateModal";
@@ -358,7 +358,10 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
   const isWarm   = theme === "warm";
   const isForest = theme === "forest";
   const isOcean  = theme === "ocean";
-  const basePath = userType === "employee" ? "/employee" : "/employer";
+  const { pathname } = useLocation();
+  const basePath = pathname.startsWith("/freelancer") ? "/freelancer"
+    : pathname.startsWith("/employer") ? "/employer"
+    : "/employee";
 
   const { data: walletProfile } = useQuery({
     queryKey: ["app-layout-wallet", user?.id],

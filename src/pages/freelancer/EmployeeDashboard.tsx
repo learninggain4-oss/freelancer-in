@@ -10,7 +10,7 @@ import {
   ShieldCheck, Target, BarChart3, Upload, HeadphonesIcon,
   Gift, Zap, XCircle, Info, AlertTriangle, UserCheck,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -136,6 +136,8 @@ const WEEKLY_DATA = [
 const EmployeeDashboard = () => {
   const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const base = pathname.startsWith("/freelancer") ? "/freelancer" : "/employee";
   const queryClient = useQueryClient();
   const { theme } = useDashboardTheme();
   const tok = TH[theme];
@@ -430,7 +432,7 @@ const EmployeeDashboard = () => {
               </div>
               <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Payment Summary</span>
             </div>
-            <button onClick={() => navigate("/employee/wallet")}
+            <button onClick={() => navigate(`${base}/wallet`)}
               style={{ display: "flex", alignItems: "center", gap: 3, color: accentIcon, background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
               Wallet <ChevronRight size={12} />
             </button>
@@ -448,7 +450,7 @@ const EmployeeDashboard = () => {
               </div>
             ))}
           </div>
-          <button onClick={() => navigate("/employee/wallet")}
+          <button onClick={() => navigate(`${base}/wallet`)}
             style={{ width: "100%", padding: "10px", borderRadius: 11, background: `linear-gradient(135deg,${A1},${A2})`, border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, boxShadow: "0 4px 14px rgba(99,102,241,.35)" }}>
             <ArrowDownToLine size={15} />
             Withdraw Money
@@ -490,7 +492,7 @@ const EmployeeDashboard = () => {
               </div>
               <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Recent Jobs</span>
             </div>
-            <button onClick={() => navigate("/employee/projects")}
+            <button onClick={() => navigate(`${base}/projects`)}
               style={{ display: "flex", alignItems: "center", gap: 3, color: accentIcon, background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
               View All <ChevronRight size={12} />
             </button>
@@ -526,7 +528,7 @@ const EmployeeDashboard = () => {
               </div>
               <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Transactions</span>
             </div>
-            <button onClick={() => navigate("/employee/wallet")}
+            <button onClick={() => navigate(`${base}/wallet`)}
               style={{ display: "flex", alignItems: "center", gap: 3, color: accentIcon, background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
               View All <ChevronRight size={12} />
             </button>

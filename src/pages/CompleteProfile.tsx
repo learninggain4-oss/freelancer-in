@@ -135,9 +135,9 @@ const CompleteProfile = () => {
 
       // Navigate to appropriate dashboard
       if (profile?.user_type === "employee") {
-        navigate("/employee/dashboard", { replace: true });
+        navigate("/freelancer/dashboard", { replace: true });
       } else {
-        navigate("/client/dashboard", { replace: true });
+        navigate("/employer/dashboard", { replace: true });
       }
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
