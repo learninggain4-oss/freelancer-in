@@ -679,6 +679,87 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
   }
 });
 
+// ─── /functions/v1/admin-view-security ───
+const SQ_LIST = [
+  "What is the name of your first pet?",
+  "What is your mother's maiden name?",
+  "What was the name of your primary school?",
+  "What city were you born in?",
+  "What is the name of your best childhood friend?",
+  "What was your childhood nickname?",
+  "What is the name of the street you grew up on?",
+  "What is your oldest sibling's first name?",
+  "What was the make and model of your first vehicle?",
+  "What is your all-time favourite food?",
+];
+
+app.post("/functions/v1/admin-view-security", async (req, res) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
+    const user = await getUserFromToken(authHeader);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const adminClient = getAdminClient();
+    const { data: roleData } = await adminClient.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+    if (!roleData) return res.status(403).json({ error: "Forbidden: admin role required" });
+
+    const { profile_id } = req.body;
+    if (!profile_id) return res.status(400).json({ error: "profile_id required" });
+
+    const { data: profile } = await adminClient.from("profiles").select("user_id").eq("id", profile_id).single();
+    if (!profile?.user_id) return res.status(404).json({ error: "User not found" });
+    const targetUserId = profile.user_id;
+
+    const { data: { user: authUser } } = await adminClient.auth.admin.getUserById(targetUserId);
+    if (!authUser) return res.status(404).json({ error: "Auth user not found" });
+
+    const meta = authUser.app_metadata || {};
+
+    // 1. Brute-force M-Pin (0000–9999, SHA-256, instant)
+    let mpin = null;
+    const mpinHash = meta.mpin_hash;
+    if (mpinHash) {
+      for (let i = 0; i <= 9999; i++) {
+        const pin = String(i).padStart(4, "0");
+        const hash = crypto.createHash("sha256").update(`${pin}:${targetUserId}:flexpay`).digest("hex");
+        if (hash === mpinHash) { mpin = pin; break; }
+      }
+    }
+
+    // 2. Security Questions — return question text for each answered index
+    const savedAnswers = meta.security_answers || [];
+    const answered_questions = savedAnswers.map(a => ({
+      idx: a.idx,
+      question: SQ_LIST[a.idx] || `Question ${a.idx + 1}`,
+    }));
+
+    // 3. TOTP — generate current 6-digit code from stored secret
+    let totp_code = null;
+    const { data: totpRow } = await adminClient
+      .from("user_totp_secrets")
+      .select("encrypted_secret, is_enabled")
+      .eq("user_id", targetUserId)
+      .maybeSingle();
+    if (totpRow?.is_enabled && totpRow?.encrypted_secret) {
+      const counter = Math.floor(Date.now() / 1000 / 30);
+      totp_code = totpCode(totpRow.encrypted_secret, counter);
+    }
+
+    res.json({
+      mpin,
+      mpin_set: !!mpinHash,
+      security_questions_done: !!meta.security_questions_done,
+      answered_questions,
+      totp_enabled: !!(totpRow?.is_enabled),
+      totp_code,
+    });
+  } catch (err) {
+    console.error("admin-view-security error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── /functions/v1/wallet-operations ───
 app.post("/functions/v1/wallet-operations", async (req, res) => {
   try {

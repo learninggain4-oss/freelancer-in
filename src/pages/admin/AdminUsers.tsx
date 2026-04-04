@@ -16,7 +16,7 @@ import {
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { CheckCircle, XCircle, Eye, Search, X, ChevronLeft, ChevronRight, Pencil, ShieldOff, ShieldCheck, Trash2, UserPlus, Users, KeyRound } from "lucide-react";
+import { CheckCircle, XCircle, Eye, EyeOff, Copy, RefreshCw, Search, X, ChevronLeft, ChevronRight, Pencil, ShieldOff, ShieldCheck, Trash2, UserPlus, Users, KeyRound, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import UserDetailDialog, { type FullProfile } from "@/components/admin/UserDetailDialog";
@@ -50,6 +50,20 @@ const AdminUsers = () => {
   const [inviteType, setInviteType] = useState<string>("freelancer");
   const [inviteProcessing, setInviteProcessing] = useState(false);
 
+  const [viewSecurityUser, setViewSecurityUser] = useState<FullProfile | null>(null);
+  type SecurityData = {
+    mpin: string | null;
+    mpin_set: boolean;
+    security_questions_done: boolean;
+    answered_questions: { idx: number; question: string }[];
+    totp_enabled: boolean;
+    totp_code: string | null;
+  };
+  const [securityData, setSecurityData] = useState<SecurityData | null>(null);
+  const [securityLoading, setSecurityLoading] = useState(false);
+  const [showMpin, setShowMpin] = useState(false);
+  const [totpSecsLeft, setTotpSecsLeft] = useState(30);
+
   const fetchProfiles = async () => {
     setLoading(true);
     const { data } = await supabase
@@ -61,6 +75,64 @@ const AdminUsers = () => {
   };
 
   useEffect(() => { fetchProfiles(); }, []);
+
+  useEffect(() => {
+    if (!viewSecurityUser) return;
+    const tick = () => setTotpSecsLeft(30 - (Math.floor(Date.now() / 1000) % 30));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [viewSecurityUser]);
+
+  const handleViewSecurity = async (user: FullProfile) => {
+    setViewSecurityUser(user);
+    setSecurityData(null);
+    setSecurityLoading(true);
+    setShowMpin(false);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/functions/v1/admin-view-security", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ profile_id: user.id }),
+      });
+      const data = await res.json();
+      if (!res.ok || data?.error) {
+        toast.error(data?.error || "Failed to load security data");
+        setViewSecurityUser(null);
+      } else {
+        setSecurityData(data);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to load security data");
+      setViewSecurityUser(null);
+    } finally {
+      setSecurityLoading(false);
+    }
+  };
+
+  const handleRefreshTotp = async () => {
+    if (!viewSecurityUser) return;
+    setSecurityLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/functions/v1/admin-view-security", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ profile_id: viewSecurityUser.id }),
+      });
+      const data = await res.json();
+      if (res.ok && !data?.error) setSecurityData(data);
+    } catch { /* ignore */ } finally {
+      setSecurityLoading(false);
+    }
+  };
 
   const handleAction = async () => {
     if (!selectedUser || !actionType || actionType === "view") return;
@@ -291,12 +363,22 @@ const AdminUsers = () => {
                         <Button
                           size="icon"
                           variant="ghost"
-                          title="Reset M-Pin"
+                          title="Reset Security (M-Pin / SQ / TOTP)"
                           className="hover:bg-white/10"
                           style={{ color: "#a78bfa" }}
                           onClick={() => setConfirmAction({ type: "reset_mpin", user: u })}
                         >
                           <KeyRound className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title="View Security Details"
+                          className="hover:bg-white/10"
+                          style={{ color: "#34d399" }}
+                          onClick={() => handleViewSecurity(u)}
+                        >
+                          <Shield className="h-4 w-4" />
                         </Button>
                         <Button
                           size="icon"
@@ -584,6 +666,100 @@ const AdminUsers = () => {
             <Button onClick={handleInviteUser} disabled={inviteProcessing || !inviteEmail.trim()}>
               {inviteProcessing ? "Sending…" : "Send Invite"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Security View Dialog */}
+      <Dialog open={!!viewSecurityUser} onOpenChange={(open) => { if (!open) { setViewSecurityUser(null); setSecurityData(null); } }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-emerald-400" />
+              Security Details
+            </DialogTitle>
+            <DialogDescription>
+              {viewSecurityUser?.full_name?.[0] || viewSecurityUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+
+          {securityLoading && !securityData ? (
+            <div className="flex items-center justify-center py-10 text-muted-foreground">
+              <RefreshCw className="h-5 w-5 animate-spin mr-2" /> Loading…
+            </div>
+          ) : securityData ? (
+            <div className="space-y-5 py-2">
+
+              {/* M-Pin */}
+              <div className="rounded-lg border p-4 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">🔐 M-Pin</p>
+                {securityData.mpin_set ? (
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-2xl tracking-widest font-bold">
+                      {showMpin ? securityData.mpin ?? "••••" : "••••"}
+                    </span>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setShowMpin(v => !v)}>
+                      {showMpin ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                    {showMpin && securityData.mpin && (
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(securityData.mpin!); toast.success("M-Pin copied"); }}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Not set</p>
+                )}
+              </div>
+
+              {/* Security Questions */}
+              <div className="rounded-lg border p-4 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">🛡️ Security Questions</p>
+                {securityData.security_questions_done && securityData.answered_questions.length > 0 ? (
+                  <ul className="space-y-1">
+                    {securityData.answered_questions.map((q, i) => (
+                      <li key={q.idx} className="text-sm flex items-start gap-2">
+                        <span className="text-emerald-400 mt-0.5">✓</span>
+                        <span>{q.question}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Not set up</p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">* Answers are encrypted and cannot be viewed</p>
+              </div>
+
+              {/* Google Authenticator */}
+              <div className="rounded-lg border p-4 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">📱 Google Authenticator (Current Code)</p>
+                {securityData.totp_enabled && securityData.totp_code ? (
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-3xl tracking-[0.3em] font-bold text-emerald-400">
+                      {securityData.totp_code}
+                    </span>
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-xs text-muted-foreground">{totpSecsLeft}s</span>
+                      <div className="w-8 h-1 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-400 transition-all duration-1000" style={{ width: `${(totpSecsLeft / 30) * 100}%` }} />
+                      </div>
+                    </div>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleRefreshTotp} disabled={securityLoading}>
+                      <RefreshCw className={`h-4 w-4 ${securityLoading ? "animate-spin" : ""}`} />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(securityData.totp_code!); toast.success("TOTP code copied"); }}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Not set up</p>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setViewSecurityUser(null); setSecurityData(null); }}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
