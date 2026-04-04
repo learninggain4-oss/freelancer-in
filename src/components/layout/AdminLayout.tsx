@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ThemeToggle from "./ThemeToggle";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 
 const SESSION_TIMEOUT_KEY = "admin_session_timeout_min";
 const COLLAPSED_SECTIONS_KEY = "admin_collapsed_sections_v2";
@@ -427,7 +427,7 @@ const AdminLayout = () => {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { theme, setTheme } = useDashboardTheme();
+  const { theme, setTheme } = useAdminTheme();
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const warnRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
 
