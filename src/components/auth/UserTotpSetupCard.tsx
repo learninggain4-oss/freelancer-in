@@ -9,9 +9,25 @@ import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, ShieldOff, Loader2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 
+async function serverFetch(path: string, body?: object) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const method = body !== undefined ? "POST" : "GET";
+  const res = await fetch(path, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${session?.access_token}`,
+    },
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+  });
+  const data = await res.json();
+  if (!res.ok || data?.error) throw new Error(data?.error || "Request failed");
+  return data;
+}
+
 const UserTotpSetupCard = () => {
   const queryClient = useQueryClient();
-  const [setupData, setSetupData] = useState<{ secret: string; otpauth_url: string } | null>(null);
+  const [setupData, setSetupData] = useState<{ qrCodeDataUrl: string; formattedSecret: string; otpauthUrl: string } | null>(null);
   const [verifyCode, setVerifyCode] = useState("");
   const [disableCode, setDisableCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,23 +36,16 @@ const UserTotpSetupCard = () => {
   const { data: status, isLoading } = useQuery({
     queryKey: ["user-totp-status"],
     queryFn: async () => {
-      const res = await supabase.functions.invoke("user-totp", {
-        body: { action: "check_status" },
-      });
-      if (res.error) throw new Error(res.error.message);
-      return res.data as { is_enabled: boolean };
+      const data = await serverFetch("/functions/v1/totp-status");
+      return data as { setup: boolean };
     },
   });
 
   const handleSetup = async () => {
     setLoading(true);
     try {
-      const res = await supabase.functions.invoke("user-totp", {
-        body: { action: "setup" },
-      });
-      if (res.error) throw new Error(res.error.message);
-      if (res.data?.error) throw new Error(res.data.error);
-      setSetupData(res.data);
+      const data = await serverFetch("/functions/v1/totp-setup-init", {});
+      setSetupData(data);
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -51,12 +60,8 @@ const UserTotpSetupCard = () => {
     }
     setLoading(true);
     try {
-      const res = await supabase.functions.invoke("user-totp", {
-        body: { action: "enable", code: verifyCode },
-      });
-      if (res.error) throw new Error(res.error.message);
-      if (res.data?.error) throw new Error(res.data.error);
-      toast.success("2FA enabled successfully!");
+      await serverFetch("/functions/v1/totp-setup-verify", { token: verifyCode });
+      toast.success("Google Authenticator enabled successfully!");
       setSetupData(null);
       setVerifyCode("");
       queryClient.invalidateQueries({ queryKey: ["user-totp-status"] });
@@ -74,12 +79,8 @@ const UserTotpSetupCard = () => {
     }
     setLoading(true);
     try {
-      const res = await supabase.functions.invoke("user-totp", {
-        body: { action: "disable", code: disableCode },
-      });
-      if (res.error) throw new Error(res.error.message);
-      if (res.data?.error) throw new Error(res.data.error);
-      toast.success("2FA disabled");
+      await serverFetch("/functions/v1/totp-disable", { token: disableCode });
+      toast.success("Google Authenticator disabled");
       setDisableCode("");
       queryClient.invalidateQueries({ queryKey: ["user-totp-status"] });
     } catch (e: any) {
@@ -90,8 +91,8 @@ const UserTotpSetupCard = () => {
   };
 
   const copySecret = () => {
-    if (setupData?.secret) {
-      navigator.clipboard.writeText(setupData.secret);
+    if (setupData?.formattedSecret) {
+      navigator.clipboard.writeText(setupData.formattedSecret.replace(/\s/g, ""));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -107,14 +108,14 @@ const UserTotpSetupCard = () => {
     );
   }
 
-  const isEnabled = status?.is_enabled ?? false;
+  const isEnabled = status?.setup ?? false;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <ShieldCheck className="h-4 w-4" />
-          Two-Factor Authentication (2FA)
+          Google Authenticator (2FA)
           {isEnabled ? (
             <Badge variant="default" className="ml-2">Enabled</Badge>
           ) : (
@@ -126,11 +127,11 @@ const UserTotpSetupCard = () => {
         {!isEnabled && !setupData && (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Secure your account with Google Authenticator. You'll need to enter a 6-digit code when logging in.
+              Secure your account with Google Authenticator. You'll be asked for a 6-digit code when logging in.
             </p>
             <Button onClick={handleSetup} disabled={loading}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-              Set Up 2FA
+              Set Up Google Authenticator
             </Button>
           </div>
         )}
@@ -141,7 +142,7 @@ const UserTotpSetupCard = () => {
               <p className="text-sm font-medium">1. Scan this QR code with Google Authenticator:</p>
               <div className="flex justify-center rounded-lg border bg-white p-4">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(setupData.otpauth_url)}`}
+                  src={setupData.qrCodeDataUrl}
                   alt="TOTP QR Code"
                   className="h-48 w-48"
                 />
@@ -152,7 +153,7 @@ const UserTotpSetupCard = () => {
               <p className="text-sm font-medium">2. Or manually enter this secret key:</p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 rounded bg-muted px-3 py-2 text-xs font-mono break-all">
-                  {setupData.secret}
+                  {setupData.formattedSecret}
                 </code>
                 <Button variant="outline" size="icon" onClick={copySecret}>
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -181,10 +182,10 @@ const UserTotpSetupCard = () => {
         {isEnabled && (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              2FA is active. You'll be prompted for a verification code during login.
+              Google Authenticator is active. You'll be prompted for a verification code during login.
             </p>
             <div className="space-y-2">
-              <Label>Enter code to disable 2FA:</Label>
+              <Label>Enter your current code to disable:</Label>
               <div className="flex gap-2">
                 <Input
                   placeholder="000000"

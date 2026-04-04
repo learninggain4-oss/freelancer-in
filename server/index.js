@@ -662,13 +662,20 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
         targetUserId = p.user_id;
       }
       if (!targetUserId) return res.status(400).json({ error: "user_id or profile_id required" });
-      // Clear M-Pin + Security Questions from app_metadata
+      // Clear M-Pin + Security Questions + TOTP from app_metadata
       const { error: updateErr } = await adminClient.auth.admin.updateUserById(targetUserId, {
-        app_metadata: { mpin_hash: null, mpin_failed_attempts: 0, mpin_blocked_until: null, security_questions_done: false },
+        app_metadata: {
+          mpin_hash: null,
+          mpin_failed_attempts: 0,
+          mpin_blocked_until: null,
+          security_questions_done: false,
+          security_answers: [],
+          totp_secret: null,
+          totp_setup_done: false,
+          totp_pending_secret: null,
+        },
       });
       if (updateErr) return res.status(500).json({ error: updateErr.message });
-      // Also delete TOTP secrets so user must re-setup Google Authenticator
-      await adminClient.from("user_totp_secrets").delete().eq("user_id", targetUserId);
       return res.json({ success: true, message: "Full security reset done. User will be prompted to create M-Pin, Security Questions, and setup Google Auth on next login." });
     }
 
@@ -734,16 +741,13 @@ app.post("/functions/v1/admin-view-security", async (req, res) => {
       question: SQ_LIST[a.idx] || `Question ${a.idx + 1}`,
     }));
 
-    // 3. TOTP — generate current 6-digit code from stored secret
+    // 3. TOTP — generate current 6-digit code from app_metadata.totp_secret
     let totp_code = null;
-    const { data: totpRow } = await adminClient
-      .from("user_totp_secrets")
-      .select("encrypted_secret, is_enabled")
-      .eq("user_id", targetUserId)
-      .maybeSingle();
-    if (totpRow?.is_enabled && totpRow?.encrypted_secret) {
+    const totpSecret = meta.totp_secret;
+    const totpEnabled = !!meta.totp_setup_done && !!totpSecret;
+    if (totpEnabled) {
       const counter = Math.floor(Date.now() / 1000 / 30);
-      totp_code = totpCode(totpRow.encrypted_secret, counter);
+      totp_code = totpCode(totpSecret, counter);
     }
 
     res.json({
@@ -751,7 +755,7 @@ app.post("/functions/v1/admin-view-security", async (req, res) => {
       mpin_set: !!mpinHash,
       security_questions_done: !!meta.security_questions_done,
       answered_questions,
-      totp_enabled: !!(totpRow?.is_enabled),
+      totp_enabled: totpEnabled,
       totp_code,
     });
   } catch (err) {
@@ -1533,6 +1537,35 @@ app.post("/functions/v1/totp-verify", async (req, res) => {
 
     const valid = verifyTotp(token, secret);
     res.json({ valid });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /functions/v1/totp-disable — verify code then clear TOTP from app_metadata
+app.post("/functions/v1/totp-disable", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const { token } = req.body;
+    if (!token || !/^\d{6}$/.test(String(token)))
+      return res.status(400).json({ error: "Token must be 6 digits" });
+
+    const adminAuth = getAdminClient().auth.admin;
+    const { data: { user: u }, error } = await adminAuth.getUserById(user.id);
+    if (error || !u) return res.status(404).json({ error: "User not found" });
+
+    const secret = u.app_metadata?.totp_secret;
+    if (!secret) return res.status(400).json({ error: "Google Authenticator is not set up" });
+
+    const valid = verifyTotp(token, secret);
+    if (!valid) return res.status(400).json({ error: "Incorrect code. Please try again." });
+
+    await adminAuth.updateUserById(user.id, {
+      app_metadata: { totp_secret: null, totp_setup_done: false, totp_pending_secret: null },
+    });
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

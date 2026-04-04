@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserTotpSetupCard from "@/components/auth/UserTotpSetupCard";
+import UserMpinCard from "@/components/settings/UserMpinCard";
 import WithdrawalPasswordCard from "@/components/settings/WithdrawalPasswordCard";
 import { Settings, Shield, User, Mail, Fingerprint, Lock, ChevronRight } from "lucide-react";
 
@@ -39,6 +40,7 @@ const AccountSettings = () => {
 
         {/* Tab: Security */}
         <TabsContent value="security" className="space-y-4 mt-4">
+          <UserMpinCard />
           <UserTotpSetupCard />
           <WithdrawalPasswordCard />
         </TabsContent>
