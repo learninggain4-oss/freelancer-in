@@ -247,7 +247,7 @@ const AppContent = () => {
               path="/employee"
               element={
                 <ProtectedRoute>
-                  <AppLayout userType="freelancer" />
+                  <AppLayout userType="employee" />
                 </ProtectedRoute>
               }
             >
