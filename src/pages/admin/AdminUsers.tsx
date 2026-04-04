@@ -49,6 +49,7 @@ const AdminUsers = () => {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteType, setInviteType] = useState<string>("employee");
   const [inviteProcessing, setInviteProcessing] = useState(false);
+  const [adminEmailMap, setAdminEmailMap] = useState<Map<string, { isSuperAdmin: boolean }>>(new Map());
 
   const [viewSecurityUser, setViewSecurityUser] = useState<FullProfile | null>(null);
   type SecurityData = {
@@ -69,12 +70,38 @@ const AdminUsers = () => {
 
   const fetchProfiles = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled")
-      .order("created_at", { ascending: false });
+    const [{ data }, { data: { session } }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled")
+        .order("created_at", { ascending: false }),
+      supabase.auth.getSession(),
+    ]);
     setProfiles((data as FullProfile[]) || []);
+    // Fetch admin list to detect admin / super admin users
+    try {
+      const res = await fetch("/functions/v1/admin-list", {
+        headers: { "Authorization": `Bearer ${session?.access_token}` },
+      });
+      const adminData = await res.json();
+      const map = new Map<string, { isSuperAdmin: boolean }>();
+      (adminData.admins || []).forEach((a: { email: string; is_super_admin: boolean }) => {
+        if (a.email) map.set(a.email.toLowerCase(), { isSuperAdmin: a.is_super_admin });
+      });
+      setAdminEmailMap(map);
+    } catch { /* non-critical */ }
     setLoading(false);
+  };
+
+  const getUserTypeLabel = (email: string | null | undefined, userType: string | null | undefined): string => {
+    if (email) {
+      const adminInfo = adminEmailMap.get(email.toLowerCase());
+      if (adminInfo?.isSuperAdmin) return "Super Admin";
+      if (adminInfo) return "Admin";
+    }
+    if (userType === "employee") return "Freelancer";
+    if (userType === "client") return "Employer";
+    return userType || "—";
   };
 
   useEffect(() => { fetchProfiles(); }, []);
@@ -308,13 +335,24 @@ const AdminUsers = () => {
                     <TableCell className="font-medium" style={{ color: T.text }}>{u.full_name?.[0] || "—"}</TableCell>
                     <TableCell className="font-mono text-xs" style={{ color: T.sub }}>{u.user_code?.[0] || "—"}</TableCell>
                     <TableCell>
-                      <Badge 
-                        variant="secondary" 
-                        className="capitalize"
-                        style={{ background: T.nav, color: T.text }}
-                      >
-                        {u.user_type === "employee" ? "Freelancer" : u.user_type === "client" ? "Employer" : u.user_type || "—"}
-                      </Badge>
+                      {(() => {
+                        const label = getUserTypeLabel(u.email, u.user_type);
+                        const isSA = label === "Super Admin";
+                        const isAdmin = label === "Admin";
+                        return (
+                          <Badge
+                            variant="secondary"
+                            className="capitalize"
+                            style={{
+                              background: isSA ? "rgba(245,158,11,.15)" : isAdmin ? "rgba(99,102,241,.15)" : T.nav,
+                              color: isSA ? "#f59e0b" : isAdmin ? "#a5b4fc" : T.text,
+                              border: isSA ? "1px solid rgba(245,158,11,.3)" : isAdmin ? "1px solid rgba(99,102,241,.3)" : "none",
+                            }}
+                          >
+                            {isSA && "⭐ "}{label}
+                          </Badge>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="max-w-[160px] truncate text-sm" style={{ color: T.sub }}>{u.email}</TableCell>
                     <TableCell>{statusBadge(u.approval_status)}</TableCell>
