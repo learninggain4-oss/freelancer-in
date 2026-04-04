@@ -70,9 +70,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setTimeout(() => fetchProfile(session.user.id).catch(() => {}), 0);
         } else {
           setProfile(null);
-          // Clear all M-Pin session flags so the gate always shows on next login
+          // Clear all gate session flags so every gate re-checks on next login
           Object.keys(sessionStorage)
-            .filter(k => k.startsWith("mpin_ok_"))
+            .filter(k =>
+              k.startsWith("mpin_ok_") ||
+              k.startsWith("sq_done_") ||
+              k.startsWith("totp_ok_")
+            )
             .forEach(k => sessionStorage.removeItem(k));
         }
         setLoading(false);
