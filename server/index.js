@@ -697,35 +697,43 @@ app.get("/functions/v1/admin-list", async (req, res) => {
     if (!isSuperAdmin(user.email)) return res.status(403).json({ error: "Forbidden: super admin only" });
 
     const adminClient = getAdminClient();
-
-    // Get all admin user_ids
-    const { data: roles } = await adminClient.from("user_roles").select("user_id, id, created_at").eq("role", "admin");
-    if (!roles?.length) return res.json({ admins: [] });
-
-    const userIds = roles.map(r => r.user_id);
-
-    // Get profiles for those user_ids
-    const { data: profiles } = await adminClient.from("profiles").select("id, user_id, full_name, email, user_type, approval_status, is_disabled, created_at, mobile_number").in("user_id", userIds);
-
-    // Get last sign-in from auth admin
-    const adminDetails = await Promise.all(
-      userIds.map(async (uid) => {
-        try {
-          const { data: { user: u } } = await adminClient.auth.admin.getUserById(uid);
-          return { user_id: uid, last_sign_in: u?.last_sign_in_at ?? null, email: u?.email ?? null };
-        } catch { return { user_id: uid, last_sign_in: null, email: null }; }
-      })
-    );
-
     const superAdminEmails = (process.env.SUPER_ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
 
-    const admins = roles.map(role => {
-      const profile = profiles?.find(p => p.user_id === role.user_id);
-      const auth = adminDetails.find(a => a.user_id === role.user_id);
-      const email = profile?.email || auth?.email || "";
+    // Get all admin user_ids from user_roles table
+    const { data: roles } = await adminClient.from("user_roles").select("user_id, id, created_at").eq("role", "admin");
+    const rolesArr = roles || [];
+
+    // Also fetch super admin users by email (they may not have a user_roles entry)
+    const { data: { users: allAuthUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+    const superAuthUsers = (allAuthUsers || []).filter(u => superAdminEmails.includes((u.email || "").toLowerCase()));
+
+    // Merge: start with user_roles entries, then add super admins not already in list
+    const seenUserIds = new Set(rolesArr.map(r => r.user_id));
+    const extraSuperAdminEntries = superAuthUsers
+      .filter(u => !seenUserIds.has(u.id))
+      .map(u => ({ user_id: u.id, id: null, created_at: u.created_at }));
+
+    const allEntries = [
+      ...rolesArr.map(r => ({ user_id: r.user_id, role_id: r.id, role_created_at: r.created_at, from_roles: true })),
+      ...extraSuperAdminEntries.map(e => ({ user_id: e.user_id, role_id: null, role_created_at: e.created_at, from_roles: false })),
+    ];
+
+    if (!allEntries.length) return res.json({ admins: [] });
+
+    const allUserIds = allEntries.map(e => e.user_id);
+
+    // Get profiles for all user_ids
+    const { data: profiles } = await adminClient.from("profiles")
+      .select("id, user_id, full_name, email, user_type, approval_status, is_disabled, created_at, mobile_number")
+      .in("user_id", allUserIds);
+
+    const admins = allEntries.map(entry => {
+      const profile = profiles?.find(p => p.user_id === entry.user_id);
+      const authUser = (allAuthUsers || []).find(u => u.id === entry.user_id);
+      const email = profile?.email || authUser?.email || "";
       return {
-        role_id: role.id,
-        user_id: role.user_id,
+        role_id: entry.role_id,
+        user_id: entry.user_id,
         profile_id: profile?.id ?? null,
         full_name: profile?.full_name?.[0] ?? null,
         email,
@@ -733,8 +741,8 @@ app.get("/functions/v1/admin-list", async (req, res) => {
         approval_status: profile?.approval_status ?? null,
         is_disabled: profile?.is_disabled ?? false,
         mobile_number: profile?.mobile_number ?? null,
-        role_created_at: role.created_at,
-        last_sign_in: auth?.last_sign_in ?? null,
+        role_created_at: entry.role_created_at,
+        last_sign_in: authUser?.last_sign_in_at ?? null,
         is_super_admin: superAdminEmails.includes(email.toLowerCase()),
       };
     });
