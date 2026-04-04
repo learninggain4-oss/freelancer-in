@@ -729,23 +729,67 @@ const AdminUsers = () => {
               <div className="rounded-lg border p-4 space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">🛡️ Security Questions</p>
                 {securityData.security_questions_done && securityData.answered_questions.length > 0 ? (
-                  <ul className="space-y-3">
-                    {securityData.answered_questions.map((q) => (
-                      <li key={q.idx} className="text-sm space-y-0.5">
-                        <div className="flex items-start gap-2">
-                          <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
-                          <span className="font-medium">{q.question}</span>
-                        </div>
-                        {q.answer != null ? (
-                          <p className="ml-5 text-xs text-muted-foreground italic">
-                            Answer: <span className="font-mono text-foreground not-italic">{q.answer}</span>
-                          </p>
-                        ) : (
-                          <p className="ml-5 text-xs text-muted-foreground italic">Answer: (encrypted — set up before this update)</p>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    {/* If NO answers have plaintext — old account, show reset prompt */}
+                    {securityData.answered_questions.every(q => q.answer == null) ? (
+                      <div className="rounded-md bg-amber-500/10 border border-amber-500/20 p-3 space-y-2">
+                        <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                          Answers are encrypted (account set up before answer-visibility feature).
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Reset this user's security so they re-setup with visible answers, or have them use "Forgot PIN" — answers will be captured automatically during that flow.
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                          disabled={actionProcessing}
+                          onClick={async () => {
+                            if (!viewSecurityUser) return;
+                            setActionProcessing(true);
+                            try {
+                              const { data: { session } } = await supabase.auth.getSession();
+                              const r = await fetch("/functions/v1/admin-user-management", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` },
+                                body: JSON.stringify({ action: "reset_mpin", profile_id: viewSecurityUser.id }),
+                              });
+                              if (r.ok) {
+                                toast.success("Security reset done. User will re-setup on next login.");
+                                setViewSecurityUser(null);
+                                setSecurityData(null);
+                              } else {
+                                const d = await r.json();
+                                toast.error(d.error || "Reset failed");
+                              }
+                            } catch { toast.error("Reset failed"); }
+                            finally { setActionProcessing(false); }
+                          }}
+                        >
+                          {actionProcessing ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <ShieldOff className="h-3 w-3 mr-1" />}
+                          Reset Security Now
+                        </Button>
+                      </div>
+                    ) : (
+                      <ul className="space-y-3">
+                        {securityData.answered_questions.map((q) => (
+                          <li key={q.idx} className="text-sm space-y-0.5">
+                            <div className="flex items-start gap-2">
+                              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+                              <span className="font-medium">{q.question}</span>
+                            </div>
+                            {q.answer != null ? (
+                              <p className="ml-5 text-xs text-muted-foreground italic">
+                                Answer: <span className="font-mono text-foreground not-italic">{q.answer}</span>
+                              </p>
+                            ) : (
+                              <p className="ml-5 text-xs text-muted-foreground italic">Answer: (encrypted)</p>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
                 ) : (
                   <p className="text-sm text-muted-foreground italic">Not set up</p>
                 )}

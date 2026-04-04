@@ -670,6 +670,7 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
           mpin_blocked_until: null,
           security_questions_done: false,
           security_answers: [],
+          security_answers_plain: [],
           totp_secret: null,
           totp_setup_done: false,
           totp_pending_secret: null,
@@ -1378,6 +1379,22 @@ app.post("/functions/v1/forgot-mpin-verify-sq", async (req, res) => {
       const computed = crypto.createHash("sha256").update(`${raw}:${user.id}:sq-${idx}`).digest("hex");
       const saved = savedAnswers.find(a => a.idx === idx);
       if (!saved || computed !== saved.hash) { allCorrect = false; break; }
+    }
+
+    // If verification succeeded, opportunistically save plaintext answers so
+    // super admin can see them going forward (transparent migration for old accounts)
+    if (allCorrect) {
+      const existingPlain = u.app_metadata?.security_answers_plain || [];
+      // Merge: keep existing plain entries for indices not in this submission
+      const mergedPlain = [...existingPlain.filter(p => !answers.find(a => a.idx === p.idx))];
+      for (const { idx, answer } of answers) {
+        const raw = String(answer || "").toLowerCase().trim();
+        if (raw) mergedPlain.push({ idx, answer: raw });
+      }
+      // Fire-and-forget — don't block the response
+      adminAuth.updateUserById(user.id, {
+        app_metadata: { security_answers_plain: mergedPlain },
+      }).catch(() => {});
     }
 
     res.json({ valid: allCorrect });
