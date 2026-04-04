@@ -26,6 +26,7 @@ const PAGE_SIZE = 15;
 
 type ClientRow = {
   id: string;
+  user_id: string;
   full_name: string[];
   user_code: string[];
   email: string;
@@ -51,12 +52,22 @@ const AdminClients = () => {
 
   const fetchData = async () => {
     setLoading(true);
+
+    // Get admin user_ids to exclude them from the Employers list
+    const { data: adminRoles } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
+    const adminUserIds = (adminRoles || []).map((r: any) => r.user_id);
+
     const [{ data: cls }, { data: projs }] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("id, full_name, user_code, email, approval_status, available_balance, hold_balance, is_disabled, created_at, mobile_number")
-        .eq("user_type", "client")
-        .order("created_at", { ascending: false }),
+      (() => {
+        let q = supabase
+          .from("profiles")
+          .select("id, user_id, full_name, user_code, email, approval_status, available_balance, hold_balance, is_disabled, created_at, mobile_number")
+          .eq("user_type", "client")
+          .order("created_at", { ascending: false });
+        if (adminUserIds.length > 0)
+          q = q.not("user_id", "in", `(${adminUserIds.join(",")})`);
+        return q;
+      })(),
       supabase
         .from("projects")
         .select("client_id"),
