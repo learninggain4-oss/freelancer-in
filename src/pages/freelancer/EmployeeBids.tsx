@@ -35,16 +35,6 @@ const DEFAULT_TEMPLATES = [
   { id: "3", name: "Design Specialist",     text: "Hi there! I'm a UI/UX designer specializing in modern, user-centric interfaces. I use Figma for prototyping and deliver pixel-perfect designs. I'd love to bring your vision to life!" },
 ];
 
-const MOCK_BIDS = [
-  { id: "b1", title: "React Dashboard for Logistics Startup",  category: "Development", budget: "₹35,000", status: "approved",     bidAmount: "₹32,000", postedDate: "2 days ago", deadline: "3 weeks" },
-  { id: "b2", title: "Logo Design for Wellness Brand",          category: "Design",       budget: "₹6,500",  status: "pending",      bidAmount: "₹6,000",  postedDate: "4 days ago", deadline: "1 week"  },
-  { id: "b3", title: "Google Ads Campaign Management",          category: "Marketing",    budget: "₹18,000", status: "shortlisted",  bidAmount: "₹16,500", postedDate: "5 days ago", deadline: "1 month" },
-  { id: "b4", title: "Node.js REST API Development",            category: "Backend",      budget: "₹40,000", status: "rejected",     bidAmount: "₹38,000", postedDate: "1 week ago", deadline: "4 weeks" },
-  { id: "b5", title: "Flutter App for Food Delivery",           category: "Mobile",       budget: "₹65,000", status: "job_confirmed",bidAmount: "₹62,000", postedDate: "1 week ago", deadline: "6 weeks" },
-  { id: "b6", title: "WordPress E-commerce Setup + Theme",      category: "Web",          budget: "₹9,000",  status: "completed",    bidAmount: "₹8,500",  postedDate: "2 weeks ago",deadline: "2 weeks" },
-  { id: "b7", title: "Technical Blog Writing — AI/ML",          category: "Content",      budget: "₹15,000", status: "pending",      bidAmount: "₹14,000", postedDate: "3 days ago", deadline: "2 weeks" },
-  { id: "b8", title: "Tableau Dashboard for Retail Chain",      category: "Analytics",    budget: "₹19,000", status: "pending",      bidAmount: "₹18,000", postedDate: "1 day ago",  deadline: "3 weeks" },
-];
 
 export default function EmployeeBids() {
   const { profile } = useAuth();
@@ -80,16 +70,14 @@ export default function EmployeeBids() {
     enabled: !!profile?.id,
   });
 
-  const bids = bidsData.length > 0
-    ? bidsData.map((b: any) => ({
-        id: b.id, title: b.projects?.title ?? "Project",
-        category: b.projects?.category ?? "General",
-        budget: b.projects?.budget ?? "—",
-        status: b.status, bidAmount: "—",
-        postedDate: new Date(b.created_at).toLocaleDateString("en-IN"),
-        deadline: b.projects?.deadline ?? "—",
-      }))
-    : MOCK_BIDS;
+  const bids = bidsData.map((b: any) => ({
+    id: b.id, title: b.projects?.title ?? "Project",
+    category: b.projects?.category ?? "General",
+    budget: b.projects?.budget ?? "—",
+    status: b.status, bidAmount: "—",
+    postedDate: new Date(b.created_at).toLocaleDateString("en-IN"),
+    deadline: b.projects?.deadline ?? "—",
+  }));
 
   const filtered = bids.filter(b => {
     const matchSearch = b.title.toLowerCase().includes(search.toLowerCase()) || b.category.toLowerCase().includes(search.toLowerCase());
