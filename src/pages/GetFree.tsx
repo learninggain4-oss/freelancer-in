@@ -64,7 +64,7 @@ const GetFree = () => {
   };
 
   const handleShare = async (type: "freelancer" | "employer") => {
-    const label = type === "employee" ? "Freelancer" : "Employer";
+    const label = type === "freelancer" ? "Freelancer" : "Employer";
     const link = `${window.location.origin}/register/${type}?ref=${referralCode}`;
     const text = `Join Freelancer as a ${label} using my referral code: ${referralCode}\nSign up at ${link}`;
     if (navigator.share) {
