@@ -290,7 +290,7 @@ const AdminProfileEdit = () => {
               <span className="font-mono text-xs font-bold" style={{ color: "#a5b4fc" }}>{profile.user_code?.[0]}</span>
               <span className="text-xs opacity-30" style={{ color: T.text }}>•</span>
               <Badge variant="outline" className="capitalize text-[10px] font-bold border-[#6366f130] text-[#a5b4fc] bg-[#6366f105]">
-                {profile.user_type}
+                {profile.user_type === "employee" ? "Freelancer" : profile.user_type === "client" ? "Employer" : profile.user_type || "—"}
               </Badge>
               <Badge
                 variant="outline"

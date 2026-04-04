@@ -147,7 +147,7 @@ const AdminProfileEdits = () => {
                         </div>
                       </div>
                       <Badge variant="outline" className="w-fit uppercase text-[10px] font-bold tracking-tighter h-6 px-2" style={{ background: "rgba(99, 102, 241, 0.05)", color: "#a5b4fc", borderColor: "rgba(99, 102, 241, 0.2)" }}>
-                        {r.user_type}
+                        {r.user_type === "employee" ? "Freelancer" : r.user_type === "client" ? "Employer" : r.user_type || "—"}
                       </Badge>
                     </div>
 

@@ -188,7 +188,7 @@ const AdminOnlineStatus = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="capitalize border-white/10" style={{ color: T.sub }}>{u.user_type}</Badge>
+                            <Badge variant="outline" className="capitalize border-white/10" style={{ color: T.sub }}>{u.user_type === "employee" ? "Freelancer" : u.user_type === "client" ? "Employer" : u.user_type || "—"}</Badge>
                           </TableCell>
                           <TableCell>
                             <div className="text-sm opacity-80" style={{ color: T.text }}>{u.email}</div>

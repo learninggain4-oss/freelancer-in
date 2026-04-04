@@ -47,7 +47,7 @@ const AdminUsers = () => {
   const [actionProcessing, setActionProcessing] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteType, setInviteType] = useState<string>("freelancer");
+  const [inviteType, setInviteType] = useState<string>("employee");
   const [inviteProcessing, setInviteProcessing] = useState(false);
 
   const [viewSecurityUser, setViewSecurityUser] = useState<FullProfile | null>(null);
@@ -313,7 +313,7 @@ const AdminUsers = () => {
                         className="capitalize"
                         style={{ background: T.nav, color: T.text }}
                       >
-                        {u.user_type}
+                        {u.user_type === "employee" ? "Freelancer" : u.user_type === "client" ? "Employer" : u.user_type || "—"}
                       </Badge>
                     </TableCell>
                     <TableCell className="max-w-[160px] truncate text-sm" style={{ color: T.sub }}>{u.email}</TableCell>
@@ -522,8 +522,8 @@ const AdminUsers = () => {
           </SelectTrigger>
           <SelectContent style={{ background: T.card, borderColor: T.border }}>
             <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="freelancer">Freelancer</SelectItem>
-            <SelectItem value="employer">Employer</SelectItem>
+            <SelectItem value="employee">Freelancer</SelectItem>
+            <SelectItem value="client">Employer</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -660,8 +660,8 @@ const AdminUsers = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="freelancer">Freelancer</SelectItem>
-                  <SelectItem value="employer">Employer</SelectItem>
+                  <SelectItem value="employee">Freelancer</SelectItem>
+                  <SelectItem value="client">Employer</SelectItem>
                 </SelectContent>
               </Select>
             </div>

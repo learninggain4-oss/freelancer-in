@@ -254,7 +254,7 @@ const AdminVisitors = () => {
                             {visitor.profile ? (
                               <div className="flex flex-col gap-1">
                                 <Badge style={{ background: "rgba(99,102,241,0.15)", color: "#818cf8", borderColor: "transparent" }} className="text-[10px] w-fit">
-                                  {visitor.profile.user_type}
+                                  {visitor.profile.user_type === "employee" ? "Freelancer" : visitor.profile.user_type === "client" ? "Employer" : visitor.profile.user_type || "—"}
                                 </Badge>
                                 <span className="text-[10px] font-mono opacity-50" style={{ color: T.sub }}>{visitor.profile.user_code?.[0]}</span>
                               </div>

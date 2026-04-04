@@ -235,7 +235,7 @@ const AdminWallet = () => {
                     >
                       <div className="text-left">
                         <p className="font-bold" style={{ color: T.text }}>{u.full_name?.[0]}</p>
-                        <p className="text-xs" style={{ color: T.sub }}>{u.user_type}</p>
+                        <p className="text-xs" style={{ color: T.sub }}>{u.user_type === "employee" ? "Freelancer" : u.user_type === "client" ? "Employer" : u.user_type || "—"}</p>
                       </div>
                       <Badge variant="outline" className="border-indigo-500/30 text-indigo-400">{u.wallet_number}</Badge>
                     </button>

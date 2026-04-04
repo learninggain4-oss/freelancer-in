@@ -215,7 +215,7 @@ const AdminSessions = () => {
                         </TableCell>
                         <TableCell>
                           {u.user_type ? (
-                            <Badge variant="outline" className="capitalize border-white/10" style={{ color: T.sub }}>{u.user_type}</Badge>
+                            <Badge variant="outline" className="capitalize border-white/10" style={{ color: T.sub }}>{u.user_type === "employee" ? "Freelancer" : u.user_type === "client" ? "Employer" : u.user_type || "—"}</Badge>
                           ) : (
                             <span className="text-xs opacity-40" style={{ color: T.sub }}>—</span>
                           )}
