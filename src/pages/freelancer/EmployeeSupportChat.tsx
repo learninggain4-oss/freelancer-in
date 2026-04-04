@@ -362,8 +362,17 @@ const EmployeeSupportChat = () => {
   /* Delete */
   const handleDelete = useCallback(async (msgId: string) => {
     setContextMenu(null);
-    await supabase.from("messages").update({ is_deleted: true, content: "" }).eq("id", msgId);
-  }, []);
+    const { error } = await supabase
+      .from("messages")
+      .update({ is_deleted: true, content: "" })
+      .eq("id", msgId)
+      .eq("sender_id", myId);
+    if (error) {
+      toast.error("Could not delete message. Please try again.");
+    } else {
+      queryClient.invalidateQueries({ queryKey: ["wa-support-msgs", chatRoom?.id] });
+    }
+  }, [myId, chatRoom?.id, queryClient]);
 
   /* Edit */
   const handleEdit = useCallback(async () => {
