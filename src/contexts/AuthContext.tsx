@@ -11,6 +11,7 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  isAdmin: boolean;
   signUp: (email: string, password: string) => Promise<{ error: Error | null; data: any }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -24,7 +25,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const hasPromptedPushPermissionRef = useRef(false);
+
+  const checkAdminRole = async (userId: string) => {
+    const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" as const });
+    setIsAdmin(!!data);
+  };
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
@@ -68,8 +75,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           loginOneSignal(session.user.id);
           requestPushPermissionOnce();
           setTimeout(() => fetchProfile(session.user.id).catch(() => {}), 0);
+          checkAdminRole(session.user.id).catch(() => {});
         } else {
           setProfile(null);
+          setIsAdmin(false);
           // Clear all gate session flags so every gate re-checks on next login
           Object.keys(sessionStorage)
             .filter(k =>
@@ -90,6 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         loginOneSignal(session.user.id);
         requestPushPermissionOnce();
         fetchProfile(session.user.id).catch(() => {});
+        checkAdminRole(session.user.id).catch(() => {});
       }
       setLoading(false);
     });
@@ -145,7 +155,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, signUp, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, isAdmin, signUp, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, requiredApproval = true }: ProtectedRouteProps) => {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, isAdmin } = useAuth();
 
   if (loading) {
     return (
@@ -19,6 +19,9 @@ const ProtectedRoute = ({ children, requiredApproval = true }: ProtectedRoutePro
   }
 
   if (!user) return <Navigate to="/login" replace />;
+
+  // Admin/Super Admin users must only access the admin panel
+  if (isAdmin) return <Navigate to="/admin/dashboard" replace />;
 
   // Wait for profile to load
   if (!profile) {
