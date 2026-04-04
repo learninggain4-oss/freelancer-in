@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GraduationCap, Briefcase, Save, X, Edit, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const ProfileProfessional = () => {
   const { profile, refreshProfile } = useAuth();
@@ -16,7 +16,8 @@ const ProfileProfessional = () => {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
 
-  const base = profile?.user_type === "employee" ? "/employee" : "/client";
+  const { pathname } = useLocation();
+  const base = pathname.startsWith("/freelancer") ? "/freelancer" : pathname.startsWith("/employer") ? "/employer" : "/employee";
 
   const startEditing = () => {
     setForm({

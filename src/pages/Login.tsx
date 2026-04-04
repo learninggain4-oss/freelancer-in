@@ -182,7 +182,7 @@ const Login = () => {
   if (!authLoading && user && profile && isAdmin !== null) {
     if (isAdmin) return <Navigate to="/admin/dashboard" replace />;
     if (profile.approval_status !== "approved") return <Navigate to="/verification-pending" replace />;
-    const base = profile.user_type === "employee" ? "/employee" : "/client";
+    const base = profile.user_type === "employee" ? "/freelancer" : "/employer";
     return <Navigate to={`${base}/dashboard`} replace />;
   }
 
@@ -208,7 +208,7 @@ const Login = () => {
             if (totpRes.data?.is_enabled) { setPendingAdminNav(true); setShowTotpDialog(true); return; }
             navigate("/admin/dashboard", { replace: true });
           } else {
-            const base = prof.user_type === "employee" ? "/employee" : "/client";
+            const base = prof.user_type === "employee" ? "/freelancer" : "/employer";
             const dest = `${base}/dashboard`;
             const userTotpRes = await supabase.functions.invoke("user-totp", { body: { action: "check_status_by_id", user_id: session.user.id } });
             if (userTotpRes.data?.is_enabled) { setPendingUserNav(dest); setShowTotpDialog(true); return; }

@@ -1,13 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import AadhaarVerificationCard from "@/components/verification/AadhaarVerificationCard";
 
 const ProfileAadhaarVerification = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const base = profile?.user_type === "employee" ? "/employee" : "/client";
+  const { pathname } = useLocation();
+  const base = pathname.startsWith("/freelancer") ? "/freelancer" : pathname.startsWith("/employer") ? "/employer" : "/employee";
 
   return (
     <div className="space-y-4 p-4">

@@ -7,14 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, User, Phone, ArrowLeft, Plus, Save, X, Lock } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 
 const ProfileEmergencyContacts = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const base = profile?.user_type === "employee" ? "/employee" : "/client";
+  const { pathname } = useLocation();
+  const base = pathname.startsWith("/freelancer") ? "/freelancer" : pathname.startsWith("/employer") ? "/employer" : "/employee";
 
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ contact_name: "", relationship: "", contact_phone: "" });

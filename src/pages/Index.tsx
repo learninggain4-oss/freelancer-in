@@ -5125,7 +5125,7 @@ const Index = () => {
 
   if (!loading && user && profile) {
     if (profile.approval_status === "approved") {
-      return <Navigate to={`/${profile.user_type === "employee" ? "employee" : "client"}/dashboard`} replace />;
+      return <Navigate to={`/${profile.user_type === "employee" ? "freelancer" : "employer"}/dashboard`} replace />;
     }
     if (profile.approval_status === "pending" || profile.approval_status === "rejected") {
       return <Navigate to="/verification-pending" replace />;

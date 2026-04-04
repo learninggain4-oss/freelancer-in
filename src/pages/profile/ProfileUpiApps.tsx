@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Loader2, Phone, Smartphone } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -146,7 +146,8 @@ const ProfileUpiApps = () => {
     saveMutation.mutate({ methodId, phone: s.phone.trim() });
   };
 
-  const basePath = profile?.user_type === "client" ? "/client" : "/employee";
+  const { pathname } = useLocation();
+  const basePath = pathname.startsWith("/freelancer") ? "/freelancer" : pathname.startsWith("/employer") ? "/employer" : "/employee";
   const loading = loadingMethods || loadingSaved;
   const enabledCount = Object.values(localState).filter((s) => s.enabled).length;
 

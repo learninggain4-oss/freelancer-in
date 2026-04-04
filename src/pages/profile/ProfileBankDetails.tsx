@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Landmark, User, Save, X, ArrowLeft, Plus, Lock } from "lucide-react";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface Bank {
   id: string;
@@ -37,7 +37,8 @@ const ProfileBankDetails = () => {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
 
-  const base = profile?.user_type === "employee" ? "/employee" : "/client";
+  const { pathname } = useLocation();
+  const base = pathname.startsWith("/freelancer") ? "/freelancer" : pathname.startsWith("/employer") ? "/employer" : "/employee";
 
   const { data: banks = [] } = useQuery({
     queryKey: ["banks-list"],
