@@ -45,7 +45,11 @@ const ensureOneSignal = (): Promise<any> => {
             console.log("OneSignal initialized successfully");
           } catch (e: any) {
             if (!e?.message?.includes("already initialized")) {
-              throw e;
+              // Always wrap in a proper Error so window.onerror sees an Error instance
+              const err = e instanceof Error ? e : new Error(
+                typeof e === "string" ? e : (e?.message || "OneSignal init failed")
+              );
+              throw err;
             }
             console.log("OneSignal was already initialized");
           }
