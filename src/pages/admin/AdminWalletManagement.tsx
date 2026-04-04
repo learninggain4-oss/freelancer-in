@@ -38,6 +38,7 @@ const TH = {
 
 type Profile = {
   id: string;
+  user_id: string;
   full_name: string[];
   user_code: string[];
   email: string;
@@ -118,15 +119,28 @@ const AdminWalletManagement = () => {
 
   const [userTab, setUserTab] = useState<"freelancer" | "employer">("freelancer");
 
-  // Fetch all users
+  // Fetch all users (excluding admins)
   const { data: allUsers = [], isLoading: loadingUsers } = useQuery({
     queryKey: ["admin-wallet-all-users"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get admin user_ids to exclude them from the list
+      const { data: adminRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+      const adminUserIds = (adminRoles || []).map((r: any) => r.user_id);
+
+      let query = supabase
         .from("profiles")
-        .select("id, full_name, user_code, email, user_type, available_balance, hold_balance, wallet_number, wallet_active")
+        .select("id, user_id, full_name, user_code, email, user_type, available_balance, hold_balance, wallet_number, wallet_active")
         .in("user_type", ["employee", "client"])
         .order("created_at", { ascending: false });
+
+      if (adminUserIds.length > 0) {
+        query = query.not("user_id", "in", `(${adminUserIds.join(",")})`);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as Profile[];
     },
