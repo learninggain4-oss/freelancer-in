@@ -220,25 +220,26 @@ const EmployeeProfile = () => {
       </Card>
 
       {/* Wallet Number Card */}
-      <Card style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)", borderColor: "transparent" }} className="border-0 shadow-xl">
-        <CardContent className="flex items-center justify-between p-5" style={{ color: "white" }}>
+      <div style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)", color: "white", borderRadius: 16, boxShadow: "0 10px 40px rgba(99,102,241,.35)" }}>
+        <div className="flex items-center justify-between p-5">
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md">
               <Wallet className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-[10px] uppercase tracking-widest opacity-80 font-bold">Wallet ID</p>
-              <p className="font-mono text-lg font-bold tracking-[0.2em]">{walletNumber}</p>
+              <p style={{ color: "rgba(255,255,255,.75)" }} className="text-[10px] uppercase tracking-widest font-bold">Wallet ID</p>
+              <p style={{ color: "white" }} className="font-mono text-lg font-bold tracking-[0.2em]">{walletNumber}</p>
             </div>
           </div>
           <button
             onClick={handleCopyWallet}
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md transition-all hover:bg-white/30 active:scale-95"
+            style={{ color: "white" }}
           >
             {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
           </button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Profile Completion */}
       <Card style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }} className="border shadow-xl">
