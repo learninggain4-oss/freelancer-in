@@ -72,7 +72,7 @@ const AnnouncementForm = ({ editingAnnouncement, onClose }: AnnouncementFormProp
       const { data, error } = await supabase
         .from("profiles")
         .select("id, full_name, user_code, user_id")
-        .eq("user_type", userType)
+        .eq("user_type", userType === "employer" ? "client" : userType === "freelancer" ? "employee" : userType)
         .eq("approval_status", "approved")
         .order("full_name", { ascending: true });
       if (error) throw error;

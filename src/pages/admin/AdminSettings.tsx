@@ -245,7 +245,7 @@ const AdminSettings = () => {
     const { error } = await supabase
       .from("profiles")
       .update({ payment_sharing_enabled: newVal })
-      .eq("id", client.id);
+      .eq("id", employer.id);
     if (error) {
       setClients((prev) => prev.map((c) => c.id === employer.id ? { ...c, payment_sharing_enabled: !newVal } : c));
       toast({ title: "Failed", description: error.message, variant: "destructive" });

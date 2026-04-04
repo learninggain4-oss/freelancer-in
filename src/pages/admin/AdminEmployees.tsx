@@ -89,7 +89,7 @@ const AdminEmployees = () => {
     const { error } = await supabase
       .from("profiles")
       .update({ is_disabled: newDisabled, disabled_reason: newDisabled ? "Blocked by admin" : null })
-      .eq("id", employee.id);
+      .eq("id", freelancer.id);
     setProcessing(false);
     setConfirmAction(null);
     if (error) {
