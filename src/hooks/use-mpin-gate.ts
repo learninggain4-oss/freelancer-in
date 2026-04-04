@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export type MpinGateMode = "checking" | "create" | "verify" | "done";
 
-export function useMpinGate(userType: string) {
+export function useMpinGate(_userType?: string) {
   const { user } = useAuth();
   const [mode, setMode] = useState<MpinGateMode>("checking");
   // Increments every time a fresh SIGNED_IN event fires → forces gate re-check
@@ -22,7 +22,7 @@ export function useMpinGate(userType: string) {
   }, []);
 
   useEffect(() => {
-    if (userType !== "employee" || !user) {
+    if (!user) {
       setMode("done");
       return;
     }
@@ -54,7 +54,7 @@ export function useMpinGate(userType: string) {
     })();
 
     return () => { cancelled = true; };
-  }, [user?.id, userType, loginTick]);
+  }, [user?.id, loginTick]);
 
   const markVerified = useCallback(() => {
     if (user?.id) sessionStorage.setItem(`mpin_ok_${user.id}`, "1");

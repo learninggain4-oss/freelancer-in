@@ -337,13 +337,13 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
 
   // Security Questions — only triggered for new users (mode was "create")
   const { showQuestions, sqGatePassed, markQuestionsDone } = useSecurityQuestionsGate(
-    userType === "employee" && mpinJustCreated && mpinMode === "done",
+    mpinJustCreated && mpinMode === "done",
     user?.id ?? undefined,
   );
 
   // TOTP setup — only triggered for new users, after security questions
   const { totpMode, markTotpDone } = useTotpGate(
-    userType === "employee" && mpinJustCreated && sqGatePassed,
+    mpinJustCreated && sqGatePassed,
     user?.id ?? undefined,
   );
 
@@ -588,15 +588,15 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
         <FlexpaySupportWidget theme={theme} userId={user.id} profileId={profile.id} />
       )}
 
-      {userType === "employee" && (mpinMode === "create" || mpinMode === "verify") && (
+      {(mpinMode === "create" || mpinMode === "verify") && (
         <MPinGateModal mode={mpinMode} theme={theme} onVerified={handleMpinVerified} />
       )}
 
-      {userType === "employee" && mpinMode === "done" && showQuestions && (
+      {mpinMode === "done" && showQuestions && (
         <SecurityQuestionsModal theme={theme} onDone={markQuestionsDone} />
       )}
 
-      {userType === "employee" && sqGatePassed && (totpMode === "setup" || totpMode === "verify") && (
+      {sqGatePassed && (totpMode === "setup" || totpMode === "verify") && (
         <TotpGateModal mode={totpMode} theme={theme} onVerified={markTotpDone} />
       )}
     </div>
