@@ -121,7 +121,9 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
         const res = await fetch("/functions/v1/mpin-status", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const json = await res.json();
+        const text = await res.text();
+        let json: any;
+        try { json = JSON.parse(text); } catch { return; }
         if (json.blocked && json.blockedUntil) {
           const until = new Date(json.blockedUntil);
           if (until > new Date()) {
