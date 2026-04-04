@@ -662,11 +662,14 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
         targetUserId = p.user_id;
       }
       if (!targetUserId) return res.status(400).json({ error: "user_id or profile_id required" });
+      // Clear M-Pin + Security Questions from app_metadata
       const { error: updateErr } = await adminClient.auth.admin.updateUserById(targetUserId, {
-        app_metadata: { mpin_hash: null, mpin_failed_attempts: 0, mpin_blocked_until: null },
+        app_metadata: { mpin_hash: null, mpin_failed_attempts: 0, mpin_blocked_until: null, security_questions_done: false },
       });
       if (updateErr) return res.status(500).json({ error: updateErr.message });
-      return res.json({ success: true, message: "M-Pin reset successfully. User will be prompted to create a new PIN on next login." });
+      // Also delete TOTP secrets so user must re-setup Google Authenticator
+      await adminClient.from("user_totp_secrets").delete().eq("user_id", targetUserId);
+      return res.json({ success: true, message: "Full security reset done. User will be prompted to create M-Pin, Security Questions, and setup Google Auth on next login." });
     }
 
     return res.status(400).json({ error: "Unknown action" });

@@ -127,15 +127,27 @@ const AdminUsers = () => {
 
   const handleResetMpin = async (user: FullProfile) => {
     setActionProcessing(true);
-    const { data, error } = await supabase.functions.invoke("admin-user-management", {
-      body: { action: "reset_mpin", profile_id: user.id },
-    });
-    setActionProcessing(false);
-    setConfirmAction(null);
-    if (error || data?.error) {
-      toast.error(data?.error || error?.message || "M-Pin reset failed");
-    } else {
-      toast.success(`M-Pin reset for ${user.full_name?.[0] || user.email}. They will be prompted to create a new PIN on next login.`);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/functions/v1/admin-user-management", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ action: "reset_mpin", profile_id: user.id }),
+      });
+      const data = await res.json();
+      if (!res.ok || data?.error) {
+        toast.error(data?.error || "Security reset failed");
+      } else {
+        toast.success(`Security reset done for ${user.full_name?.[0] || user.email}. They will be prompted to set up M-Pin, Security Questions, and Google Auth on next login.`);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Security reset failed");
+    } finally {
+      setActionProcessing(false);
+      setConfirmAction(null);
     }
   };
 
@@ -487,7 +499,7 @@ const AdminUsers = () => {
                 : confirmAction?.type === "block"
                 ? "Block User?"
                 : confirmAction?.type === "reset_mpin"
-                ? "Reset M-Pin?"
+                ? "Full Security Reset?"
                 : "Unblock User?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -496,7 +508,7 @@ const AdminUsers = () => {
                 : confirmAction?.type === "block"
                 ? `This will block "${confirmAction?.user.full_name?.[0]}" from logging in. You can unblock them later.`
                 : confirmAction?.type === "reset_mpin"
-                ? `This will clear the M-Pin for "${confirmAction?.user.full_name?.[0] || confirmAction?.user.email}". They will be asked to create a new 4-digit PIN on their next login.`
+                ? `This will fully reset the security setup for "${confirmAction?.user.full_name?.[0] || confirmAction?.user.email}". On their next login they will be required to set up: M-Pin → Security Questions → Google Authenticator.`
                 : `This will re-enable login access for "${confirmAction?.user.full_name?.[0]}".`}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -523,7 +535,7 @@ const AdminUsers = () => {
                 : confirmAction?.type === "delete"
                 ? "Delete"
                 : confirmAction?.type === "reset_mpin"
-                ? "Reset M-Pin"
+                ? "Reset Security"
                 : confirmAction?.type === "block"
                 ? "Block"
                 : "Unblock"}
