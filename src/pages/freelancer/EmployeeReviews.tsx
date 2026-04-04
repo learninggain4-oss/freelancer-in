@@ -1,5 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Star, ThumbsUp, MessageSquare, Award, TrendingUp, Search } from "lucide-react";
 
 const TH = {
@@ -11,22 +15,6 @@ const TH = {
   ocean: { bg:"#f0f9ff", card:"#ffffff", border:"rgba(14,165,233,.1)", text:"#0c4a6e", sub:"#4b83a3", muted:"#e0f2fe", input:"#ffffff" },
 };
 
-const MOCK_REVIEWS = [
-  { id: "r1", employer: "Arjun K.",      company: "TechCorp Pvt Ltd",       rating: 5, date: "Mar 28, 2026", project: "React Dashboard Development",    comment: "Exceptional work! Delivered ahead of schedule with clean, well-documented code. Would definitely hire again. Very professional and responsive throughout.", avatar: "AK" },
-  { id: "r2", employer: "Priya M.",      company: "Wellness Brand",          rating: 5, date: "Mar 20, 2026", project: "Logo Design & Brand Identity",    comment: "Creative, modern designs that perfectly captured our brand. Made revisions quickly. Highly recommended!", avatar: "PM" },
-  { id: "r3", employer: "Rahul S.",      company: "FoodieApp",               rating: 4, date: "Mar 10, 2026", project: "Flutter Food Delivery App",       comment: "Great technical skills and good communication. Minor delay in one milestone but overall a great experience.", avatar: "RS" },
-  { id: "r4", employer: "Meera R.",      company: "EduTech Solutions",       rating: 5, date: "Feb 28, 2026", project: "Content Writing — AI/ML Blog",    comment: "Outstanding writing quality! Articles were well-researched, SEO-optimized and delivered on time. Will work with again.", avatar: "MR" },
-  { id: "r5", employer: "Suresh N.",     company: "RetailChain India",       rating: 4, date: "Feb 15, 2026", project: "Tableau Analytics Dashboard",     comment: "Solid Tableau skills and good understanding of business requirements. Dashboard is exactly what we needed.", avatar: "SN" },
-  { id: "r6", employer: "Kavitha L.",    company: "StartupX",                rating: 5, date: "Jan 30, 2026", project: "WordPress E-commerce Setup",      comment: "Fast, professional, and went above and beyond. The store looks amazing and is performing well.", avatar: "KL" },
-];
-
-const RATING_DIST = [
-  { stars: 5, count: 4, pct: 67 },
-  { stars: 4, count: 2, pct: 33 },
-  { stars: 3, count: 0, pct: 0  },
-  { stars: 2, count: 0, pct: 0  },
-  { stars: 1, count: 0, pct: 0  },
-];
 
 const StarRow = ({ rating, size = 14 }: { rating: number; size?: number }) => (
   <div className="flex gap-0.5">
@@ -37,6 +25,7 @@ const StarRow = ({ rating, size = 14 }: { rating: number; size?: number }) => (
 );
 
 export default function EmployeeReviews() {
+  const { profile } = useAuth();
   const { theme } = useDashboardTheme();
   const T = TH[theme];
   const isDark = theme === "black";
@@ -46,13 +35,38 @@ export default function EmployeeReviews() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState(0);
 
-  const filtered = MOCK_REVIEWS.filter(r => {
-    const matchSearch = r.employer.toLowerCase().includes(search.toLowerCase()) || r.project.toLowerCase().includes(search.toLowerCase());
-    const matchRating = filter === 0 || r.rating === filter;
-    return matchSearch && matchRating;
+  const { data: reviews = [], isLoading } = useQuery({
+    queryKey: ["freelancer-reviews", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("*, reviewer:profiles!reviews_reviewer_id_fkey(full_name), project:projects!reviews_project_id_fkey(title)")
+        .eq("reviewee_id", profile.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!profile?.id,
   });
 
-  const avgRating = (MOCK_REVIEWS.reduce((s, r) => s + r.rating, 0) / MOCK_REVIEWS.length).toFixed(1);
+  const filtered = useMemo(() => reviews.filter((r: any) => {
+    const reviewerName = Array.isArray(r.reviewer?.full_name) ? r.reviewer.full_name[0] : (r.reviewer?.full_name ?? "");
+    const projectTitle = r.project?.title ?? "";
+    const matchSearch = reviewerName.toLowerCase().includes(search.toLowerCase()) || projectTitle.toLowerCase().includes(search.toLowerCase());
+    const matchRating = filter === 0 || r.rating === filter;
+    return matchSearch && matchRating;
+  }), [reviews, search, filter]);
+
+  const avgRating = reviews.length > 0
+    ? (reviews.reduce((s: number, r: any) => s + r.rating, 0) / reviews.length).toFixed(1)
+    : "0.0";
+
+  const ratingDist = useMemo(() => [5, 4, 3, 2, 1].map(stars => {
+    const count = reviews.filter((r: any) => r.rating === stars).length;
+    const pct = reviews.length > 0 ? Math.round((count / reviews.length) * 100) : 0;
+    return { stars, count, pct };
+  }), [reviews]);
   const card: React.CSSProperties = { background: T.card, border: `1px solid ${T.border}`, borderRadius: 16 };
 
   return (
@@ -75,9 +89,9 @@ export default function EmployeeReviews() {
             <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
               {[
                 { label: "Avg Rating",    value: avgRating },
-                { label: "Total Reviews", value: MOCK_REVIEWS.length },
-                { label: "5-Star",        value: MOCK_REVIEWS.filter(r => r.rating === 5).length },
-                { label: "Recommended",   value: "100%" },
+                { label: "Total Reviews", value: reviews.length },
+                { label: "5-Star",        value: reviews.filter((r: any) => r.rating === 5).length },
+                { label: "Recommended",   value: reviews.length > 0 ? `${Math.round((reviews.filter((r: any) => r.rating >= 4).length / reviews.length) * 100)}%` : "—" },
               ].map(s => (
                 <div key={s.label} className="shrink-0 rounded-2xl px-4 py-2.5 min-w-[72px]" style={{ background: "rgba(255,255,255,.15)", backdropFilter: "blur(8px)" }}>
                   <p className="text-xl font-black" style={{ color: "white" }}>{s.value}</p>
@@ -102,10 +116,10 @@ export default function EmployeeReviews() {
             <div className="text-center shrink-0">
               <p className="text-5xl font-black" style={{ color: clrAmber }}>{avgRating}</p>
               <StarRow rating={Math.round(Number(avgRating))} size={16} />
-              <p className="text-[10px] mt-1" style={{ color: T.sub }}>{MOCK_REVIEWS.length} reviews</p>
+              <p className="text-[10px] mt-1" style={{ color: T.sub }}>{reviews.length} reviews</p>
             </div>
             <div className="flex-1 space-y-1.5">
-              {RATING_DIST.map(d => (
+              {ratingDist.map(d => (
                 <div key={d.stars} className="flex items-center gap-2">
                   <span className="text-[10px] w-5 text-right font-semibold" style={{ color: T.sub }}>{d.stars}</span>
                   <Star className="h-3 w-3 shrink-0" fill="#fbbf24" stroke="#fbbf24" />
@@ -118,8 +132,8 @@ export default function EmployeeReviews() {
             </div>
             <div className="hidden sm:flex flex-col gap-3">
               {[
-                { label: "5-Star Reviews", value: "4", icon: Award,     color: clrAmber },
-                { label: "Recommended",    value: "100%", icon: ThumbsUp, color: clrGreen },
+                { label: "5-Star Reviews", value: String(reviews.filter((r: any) => r.rating === 5).length), icon: Award,     color: clrAmber },
+                { label: "Recommended",    value: reviews.length > 0 ? `${Math.round((reviews.filter((r: any) => r.rating >= 4).length / reviews.length) * 100)}%` : "—", icon: ThumbsUp, color: clrGreen },
               ].map(s => {
                 const Icon = s.icon;
                 return (
@@ -164,36 +178,50 @@ export default function EmployeeReviews() {
         </div>
       </div>
       <div className="px-4 sm:px-6 space-y-3">
-        {filtered.map((r, i) => (
-          <div key={r.id} className="rounded-2xl p-4 transition-all duration-200" style={{ ...card, animationDelay: `${i * 50}ms` }}>
-            <div className="flex items-start gap-3 mb-3">
-              <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold text-white" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
-                {r.avatar}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-bold" style={{ color: T.text }}>{r.employer}</p>
-                    <p className="text-[10px]" style={{ color: T.sub }}>{r.company}</p>
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-32 rounded-2xl" />)
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16 rounded-2xl" style={card}>
+            <Star className="h-10 w-10 mx-auto mb-3 opacity-30" style={{ color: T.sub }} />
+            <p className="text-sm font-semibold" style={{ color: T.text }}>
+              {reviews.length === 0 ? "No reviews yet" : "No reviews found"}
+            </p>
+            <p className="text-[11px] mt-1" style={{ color: T.sub }}>
+              {reviews.length === 0 ? "Complete projects to receive your first review" : "Try adjusting your filters"}
+            </p>
+          </div>
+        ) : (
+          filtered.map((r: any, i: number) => {
+            const reviewerName = Array.isArray(r.reviewer?.full_name) ? r.reviewer.full_name[0] : (r.reviewer?.full_name ?? "Employer");
+            const projectTitle = r.project?.title ?? "Project";
+            const initials = reviewerName.split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase() || "E";
+            const dateStr = new Date(r.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+            return (
+              <div key={r.id} className="rounded-2xl p-4 transition-all duration-200" style={{ ...card, animationDelay: `${i * 50}ms` }}>
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold text-white" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
+                    {initials}
                   </div>
-                  <div className="text-right shrink-0">
-                    <StarRow rating={r.rating} size={12} />
-                    <p className="text-[10px] mt-0.5" style={{ color: T.sub }}>{r.date}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-bold" style={{ color: T.text }}>{reviewerName}</p>
+                        <p className="text-[10px]" style={{ color: T.sub }}>Employer</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <StarRow rating={r.rating} size={12} />
+                        <p className="text-[10px] mt-0.5" style={{ color: T.sub }}>{dateStr}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
+                <div className="mb-2 rounded-lg px-2 py-0.5 inline-flex items-center gap-1.5 text-[10px] font-semibold" style={{ background: "rgba(99,102,241,.12)", color: clrPurple }}>
+                  <MessageSquare className="h-2.5 w-2.5" /> {projectTitle}
+                </div>
+                {r.comment && <p className="text-xs leading-relaxed" style={{ color: T.sub }}>"{r.comment}"</p>}
               </div>
-            </div>
-            <div className="mb-2 rounded-lg px-2 py-0.5 inline-flex items-center gap-1.5 text-[10px] font-semibold" style={{ background: "rgba(99,102,241,.12)", color: clrPurple }}>
-              <MessageSquare className="h-2.5 w-2.5" /> {r.project}
-            </div>
-            <p className="text-xs leading-relaxed" style={{ color: T.sub }}>"{r.comment}"</p>
-          </div>
-        ))}
-        {filtered.length === 0 && (
-          <div className="text-center py-16 rounded-2xl" style={card}>
-            <Star className="h-10 w-10 mx-auto mb-3" style={{ color: T.sub }} />
-            <p className="text-sm font-semibold" style={{ color: T.text }}>No reviews found</p>
-          </div>
+            );
+          })
         )}
       </div>
     </div>

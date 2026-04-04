@@ -108,23 +108,6 @@ const TH = {
   },
 };
 
-const MOCK_ALERTS = [
-  { type: "success", msg: "Payment of ₹2,400 received", time: "2 min ago" },
-  { type: "info",    msg: "New job invitation from TechCorp", time: "15 min ago" },
-  { type: "warning", msg: "Job deadline in 2 days — Website Redesign", time: "1 hr ago" },
-  { type: "info",    msg: "Account verification reminder", time: "3 hr ago" },
-];
-
-
-const WEEKLY_DATA = [
-  { day: "Mon", amount: 1200 },
-  { day: "Tue", amount: 0 },
-  { day: "Wed", amount: 2400 },
-  { day: "Thu", amount: 800 },
-  { day: "Fri", amount: 3200 },
-  { day: "Sat", amount: 600 },
-  { day: "Sun", amount: 1800 },
-];
 
 const EmployeeDashboard = () => {
   const { profile, refreshProfile } = useAuth();
@@ -224,7 +207,7 @@ const EmployeeDashboard = () => {
   });
 
   const totalEarnings   = useMemo(() => chartData.reduce((s, d) => s + d.amount, 0), [chartData]);
-  const displayChartData = chartData.some(d => d.amount > 0) ? chartData : WEEKLY_DATA;
+  const displayChartData = chartData;
   const greeting = useMemo(() => { const h = new Date().getHours(); return h < 12 ? "Good Morning" : h < 17 ? "Good Afternoon" : "Good Evening"; }, []);
   const firstName = Array.isArray(profile?.full_name) ? profile.full_name[0] : (profile?.full_name ?? "there");
   const availBal  = profile?.available_balance ?? 0;
@@ -469,27 +452,18 @@ const EmployeeDashboard = () => {
 
         {/* ── Notifications & Alerts ── */}
         <div style={{ ...card, padding: "16px 16px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 22, height: 22, borderRadius: 7, background: "rgba(239,68,68,.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Bell size={11} color={clrRed} />
-              </div>
-              <span style={{ fontWeight: 800, fontSize: 13, color: tok.text }}>Alerts</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+            <div style={{ width: 22, height: 22, borderRadius: 7, background: "rgba(239,68,68,.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Bell size={11} color={clrRed} />
             </div>
-            <span style={{ fontSize: 10, background: "rgba(239,68,68,.1)", color: clrRed, borderRadius: 20, padding: "2px 9px", fontWeight: 800, border: "1px solid rgba(239,68,68,.15)" }}>
-              {MOCK_ALERTS.length} new
-            </span>
+            <span style={{ fontWeight: 800, fontSize: 13, color: tok.text }}>Alerts</span>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-            {MOCK_ALERTS.map((a, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 12px", borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
-                <div style={{ marginTop: 1, flexShrink: 0 }}>{alertIcon(a.type)}</div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 12.5, color: tok.text, margin: 0, fontWeight: 600 }}>{a.msg}</p>
-                  <p style={{ fontSize: 10, color: tok.sub, margin: "2px 0 0" }}>{a.time}</p>
-                </div>
-              </div>
-            ))}
+          <div style={{ textAlign: "center", padding: "12px 0" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: tok.emptyBg, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>
+              <Bell size={18} color={tok.sub} style={{ opacity: 0.4 }} />
+            </div>
+            <p style={{ fontSize: 12, fontWeight: 700, color: tok.text, margin: 0 }}>No alerts</p>
+            <p style={{ fontSize: 11, color: tok.sub, margin: "3px 0 0", opacity: 0.7 }}>You're all caught up!</p>
           </div>
         </div>
 
