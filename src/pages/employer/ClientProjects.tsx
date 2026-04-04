@@ -132,7 +132,7 @@ const ClientProjects = () => {
             </div>
             <Button 
               size="sm" 
-              onClick={() => navigate("/client/projects/create")}
+              onClick={() => navigate("/employer/projects/create")}
               className="rounded-xl bg-white text-indigo-700 hover:bg-white/90 shadow-lg font-bold"
             >
               <Plus className="mr-1.5 h-4 w-4" /> Create New

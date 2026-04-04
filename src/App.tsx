@@ -292,7 +292,7 @@ const AppContent = () => {
 
             {/* Employer Routes */}
             <Route
-              path="/client"
+              path="/employer"
               element={
                 <ProtectedRoute>
                   <AppLayout userType="employer" />

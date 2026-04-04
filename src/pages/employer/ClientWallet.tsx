@@ -128,7 +128,7 @@ const ClientWallet = () => {
       {/* Quick Actions Grid */}
       <div className="grid grid-cols-2 gap-4 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
         <button
-          onClick={() => navigate("/client/wallet/transactions")}
+          onClick={() => navigate("/employer/wallet/transactions")}
           className="group flex flex-col items-start gap-4 rounded-3xl p-5 shadow-xl transition-all active:scale-[0.98]"
           style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}
         >
@@ -145,7 +145,7 @@ const ClientWallet = () => {
         </button>
 
         <button
-          onClick={() => navigate("/client/wallet/withdrawals")}
+          onClick={() => navigate("/employer/wallet/withdrawals")}
           className="group flex flex-col items-start gap-4 rounded-3xl p-5 shadow-xl transition-all active:scale-[0.98]"
           style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}
         >

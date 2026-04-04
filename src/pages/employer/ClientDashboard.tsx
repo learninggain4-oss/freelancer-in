@@ -242,7 +242,7 @@ const ClientDashboard = () => {
             <h2 style={{ margin: 0, fontSize: 23, fontWeight: 900, color: tok.text, letterSpacing: "-0.5px" }}>
               {typeof firstName === "string" ? firstName : "there"} 👋
             </h2>
-            <button onClick={() => navigate("/client/projects/create")}
+            <button onClick={() => navigate("/employer/projects/create")}
               style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 11, background: `linear-gradient(135deg,${A1},${A2})`, border: "none", color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(99,102,241,.35)" }}
               onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")}
               onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
@@ -373,7 +373,7 @@ const ClientDashboard = () => {
               </div>
               <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Payments Summary</span>
             </div>
-            <button onClick={() => navigate("/client/wallet")}
+            <button onClick={() => navigate("/employer/wallet")}
               style={{ display: "flex", alignItems: "center", gap: 3, color: "#a5b4fc", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
               Wallet <ChevronRight size={12} />
             </button>
@@ -391,7 +391,7 @@ const ClientDashboard = () => {
               </div>
             ))}
           </div>
-          <button onClick={() => navigate("/client/wallet")}
+          <button onClick={() => navigate("/employer/wallet")}
             style={{ width: "100%", padding: "10px", borderRadius: 11, background: `linear-gradient(135deg,${A1},${A2})`, border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, boxShadow: "0 4px 14px rgba(99,102,241,.35)" }}>
             <ArrowDownToLine size={15} />
             Add Funds to Wallet
@@ -438,7 +438,7 @@ const ClientDashboard = () => {
               </div>
               <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Proposals Received</span>
             </div>
-            <button onClick={() => navigate("/client/projects")}
+            <button onClick={() => navigate("/employer/projects")}
               style={{ display: "flex", alignItems: "center", gap: 3, color: "#a5b4fc", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
               View All <ChevronRight size={12} />
             </button>
@@ -474,7 +474,7 @@ const ClientDashboard = () => {
                 </div>
                 <p style={{ fontSize: 13, fontWeight: 600, color: tok.sub, margin: 0 }}>No proposals yet</p>
                 <p style={{ fontSize: 11, color: tok.emptySub, marginTop: 4 }}>Post a job to start receiving proposals</p>
-                <button onClick={() => navigate("/client/projects/create")}
+                <button onClick={() => navigate("/employer/projects/create")}
                   style={{ marginTop: 12, padding: "7px 16px", borderRadius: 10, background: `${A1}15`, border: `1px solid ${A1}30`, color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                   Post a Job
                 </button>
@@ -492,7 +492,7 @@ const ClientDashboard = () => {
               </div>
               <span style={{ fontWeight: 700, fontSize: 13, color: tok.text }}>Recent Jobs</span>
             </div>
-            <button onClick={() => navigate("/client/projects")}
+            <button onClick={() => navigate("/employer/projects")}
               style={{ display: "flex", alignItems: "center", gap: 3, color: "#a5b4fc", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
               View All <ChevronRight size={12} />
             </button>

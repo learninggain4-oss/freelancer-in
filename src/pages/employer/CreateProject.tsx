@@ -222,7 +222,7 @@ const CreateProject = () => {
     onSuccess: (_, publishNow) => {
       toast.success(editId ? "Job updated!" : publishNow ? "Job published!" : "Job saved as draft!");
       queryClient.invalidateQueries({ queryKey: ["client-projects"] });
-      navigate("/client/projects");
+      navigate("/employer/projects");
     },
     onError: (e: any) => toast.error(e.message),
   });
