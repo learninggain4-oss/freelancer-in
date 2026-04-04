@@ -94,10 +94,15 @@ export const logoutOneSignal = () => {
   ensureOneSignal()
     .then(async (OneSignal) => {
       if (!OneSignal?.logout) return;
-      await OneSignal.logout();
-      loggedInExternalId = null;
+      try {
+        await OneSignal.logout();
+        loggedInExternalId = null;
+      } catch (e) {
+        // OneSignal SDK sometimes rejects with non-Error objects — suppress
+        console.warn("OneSignal logout failed:", e);
+      }
     })
-    .catch((e) => console.warn("OneSignal logout failed:", e));
+    .catch((e) => console.warn("OneSignal logout error:", e));
 };
 
 export const promptForPushPermission = () => {
