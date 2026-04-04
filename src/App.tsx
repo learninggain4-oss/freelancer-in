@@ -42,6 +42,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminAdmins = lazy(() => import("./pages/admin/AdminAdmins"));
 const AdminEmployees = lazy(() => import("./pages/admin/AdminEmployees"));
 const AdminClients = lazy(() => import("./pages/admin/AdminClients"));
 const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
@@ -344,6 +345,7 @@ const AppContent = () => {
             >
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
+              <Route path="admins" element={<AdminAdmins />} />
               <Route path="freelancers" element={<AdminEmployees />} />
               <Route path="employers" element={<AdminClients />} />
               <Route path="withdrawals" element={<AdminWithdrawals />} />

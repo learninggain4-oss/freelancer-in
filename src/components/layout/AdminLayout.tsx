@@ -230,6 +230,7 @@ const navSections = [
   ]},
   { title: "User Management", items: [
     { label: "All Users",     icon: Users,    path: "/admin/users" },
+    { label: "Admins",        icon: Crown,    path: "/admin/admins" },
     { label: "Freelancers",     icon: UserCheck,path: "/admin/freelancers" },
     { label: "Employers",       icon: Building2,path: "/admin/employers" },
     { label: "Profile Edits", icon: Edit,     path: "/admin/profile-edits" },

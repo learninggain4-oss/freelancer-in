@@ -687,6 +687,120 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
   }
 });
 
+// ─── /functions/v1/admin-list — list all admin users (super admin only) ───
+app.get("/functions/v1/admin-list", async (req, res) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
+    const user = await getUserFromToken(authHeader);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    if (!isSuperAdmin(user.email)) return res.status(403).json({ error: "Forbidden: super admin only" });
+
+    const adminClient = getAdminClient();
+
+    // Get all admin user_ids
+    const { data: roles } = await adminClient.from("user_roles").select("user_id, id, created_at").eq("role", "admin");
+    if (!roles?.length) return res.json({ admins: [] });
+
+    const userIds = roles.map(r => r.user_id);
+
+    // Get profiles for those user_ids
+    const { data: profiles } = await adminClient.from("profiles").select("id, user_id, full_name, email, user_type, approval_status, is_disabled, created_at, mobile_number").in("user_id", userIds);
+
+    // Get last sign-in from auth admin
+    const adminDetails = await Promise.all(
+      userIds.map(async (uid) => {
+        try {
+          const { data: { user: u } } = await adminClient.auth.admin.getUserById(uid);
+          return { user_id: uid, last_sign_in: u?.last_sign_in_at ?? null, email: u?.email ?? null };
+        } catch { return { user_id: uid, last_sign_in: null, email: null }; }
+      })
+    );
+
+    const superAdminEmails = (process.env.SUPER_ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+
+    const admins = roles.map(role => {
+      const profile = profiles?.find(p => p.user_id === role.user_id);
+      const auth = adminDetails.find(a => a.user_id === role.user_id);
+      const email = profile?.email || auth?.email || "";
+      return {
+        role_id: role.id,
+        user_id: role.user_id,
+        profile_id: profile?.id ?? null,
+        full_name: profile?.full_name?.[0] ?? null,
+        email,
+        user_type: profile?.user_type ?? null,
+        approval_status: profile?.approval_status ?? null,
+        is_disabled: profile?.is_disabled ?? false,
+        mobile_number: profile?.mobile_number ?? null,
+        role_created_at: role.created_at,
+        last_sign_in: auth?.last_sign_in ?? null,
+        is_super_admin: superAdminEmails.includes(email.toLowerCase()),
+      };
+    });
+
+    res.json({ admins });
+  } catch (err) {
+    console.error("admin-list error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── /functions/v1/admin-manage — grant/revoke admin role (super admin only) ───
+app.post("/functions/v1/admin-manage", async (req, res) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
+    const user = await getUserFromToken(authHeader);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    if (!isSuperAdmin(user.email)) return res.status(403).json({ error: "Forbidden: super admin only" });
+
+    const { action, target_email, profile_id, user_id: targetUserId } = req.body;
+    const adminClient = getAdminClient();
+
+    if (action === "grant") {
+      if (!target_email) return res.status(400).json({ error: "target_email required" });
+      // Find user by email
+      const { data: { users } } = await adminClient.auth.admin.listUsers();
+      const targetUser = users?.find(u => u.email?.toLowerCase() === target_email.toLowerCase());
+      if (!targetUser) return res.status(404).json({ error: "User not found with that email" });
+      // Check if already admin
+      const { data: existing } = await adminClient.from("user_roles").select("id").eq("user_id", targetUser.id).eq("role", "admin").maybeSingle();
+      if (existing) return res.status(400).json({ error: "User is already an admin" });
+      // Grant admin role
+      const { error } = await adminClient.from("user_roles").insert({ user_id: targetUser.id, role: "admin" });
+      if (error) return res.status(500).json({ error: error.message });
+      return res.json({ success: true, message: "Admin role granted" });
+    }
+
+    if (action === "revoke") {
+      if (!targetUserId) return res.status(400).json({ error: "user_id required" });
+      // Cannot revoke super admin
+      const { data: { user: targetUser } } = await adminClient.auth.admin.getUserById(targetUserId);
+      if (isSuperAdmin(targetUser?.email)) return res.status(403).json({ error: "Cannot revoke super admin role" });
+      const { error } = await adminClient.from("user_roles").delete().eq("user_id", targetUserId).eq("role", "admin");
+      if (error) return res.status(500).json({ error: error.message });
+      return res.json({ success: true, message: "Admin role revoked" });
+    }
+
+    if (action === "toggle_block") {
+      if (!profile_id) return res.status(400).json({ error: "profile_id required" });
+      const { data: profile } = await adminClient.from("profiles").select("is_disabled, user_id, email").eq("id", profile_id).single();
+      if (!profile) return res.status(404).json({ error: "Profile not found" });
+      if (isSuperAdmin(profile.email)) return res.status(403).json({ error: "Cannot block super admin" });
+      const newState = !profile.is_disabled;
+      const { error } = await adminClient.from("profiles").update({ is_disabled: newState }).eq("id", profile_id);
+      if (error) return res.status(500).json({ error: error.message });
+      return res.json({ success: true, is_disabled: newState });
+    }
+
+    return res.status(400).json({ error: "Unknown action" });
+  } catch (err) {
+    console.error("admin-manage error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── /functions/v1/admin-view-security ───
 const SQ_LIST = [
   "What is the name of your first pet?",
