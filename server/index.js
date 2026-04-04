@@ -670,7 +670,6 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
           mpin_blocked_until: null,
           security_questions_done: false,
           security_answers: [],
-          security_answers_plain: [],
           totp_secret: null,
           totp_setup_done: false,
           totp_pending_secret: null,
@@ -875,91 +874,6 @@ app.post("/functions/v1/admin-manage", async (req, res) => {
     return res.status(400).json({ error: "Unknown action" });
   } catch (err) {
     console.error("admin-manage error:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ─── /functions/v1/admin-view-security ───
-const SQ_LIST = [
-  "What is the name of your first pet?",
-  "What is your mother's maiden name?",
-  "What was the name of your primary school?",
-  "What city were you born in?",
-  "What is the name of your best childhood friend?",
-  "What was your childhood nickname?",
-  "What is the name of the street you grew up on?",
-  "What is your oldest sibling's first name?",
-  "What was the make and model of your first vehicle?",
-  "What is your all-time favourite food?",
-];
-
-app.post("/functions/v1/admin-view-security", async (req, res) => {
-  try {
-    const authHeader = req.headers["authorization"];
-    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
-    const user = await getUserFromToken(authHeader);
-    if (!user) return res.status(401).json({ error: "Unauthorized" });
-
-    const adminClient = getAdminClient();
-    // Require super admin — regular admins cannot view security secrets
-    if (!isSuperAdmin(user.email))
-      return res.status(403).json({ error: "Forbidden: super admin access required" });
-
-    const { profile_id } = req.body;
-    if (!profile_id) return res.status(400).json({ error: "profile_id required" });
-
-    const { data: profile } = await adminClient.from("profiles").select("user_id").eq("id", profile_id).single();
-    if (!profile?.user_id) return res.status(404).json({ error: "User not found" });
-    const targetUserId = profile.user_id;
-
-    const { data: { user: authUser } } = await adminClient.auth.admin.getUserById(targetUserId);
-    if (!authUser) return res.status(404).json({ error: "Auth user not found" });
-
-    const meta = authUser.app_metadata || {};
-
-    // 1. Brute-force M-Pin (0000–9999, SHA-256, instant)
-    let mpin = null;
-    const mpinHash = meta.mpin_hash;
-    if (mpinHash) {
-      for (let i = 0; i <= 9999; i++) {
-        const pin = String(i).padStart(4, "0");
-        const hash = crypto.createHash("sha256").update(`${pin}:${targetUserId}:flexpay`).digest("hex");
-        if (hash === mpinHash) { mpin = pin; break; }
-      }
-    }
-
-    // 2. Security Questions — return question + plaintext answer for each answered index
-    const savedAnswers = meta.security_answers || [];
-    const plainAnswers = meta.security_answers_plain || [];
-    const answered_questions = savedAnswers.map(a => {
-      const plain = plainAnswers.find(p => p.idx === a.idx);
-      return {
-        idx: a.idx,
-        question: SQ_LIST[a.idx] || `Question ${a.idx + 1}`,
-        answer: plain?.answer ?? null,
-      };
-    });
-
-    // 3. TOTP — generate current 6-digit code from app_metadata.totp_secret
-    let totp_code = null;
-    const totpSecret = meta.totp_secret;
-    const totpEnabled = !!meta.totp_setup_done && !!totpSecret;
-    if (totpEnabled) {
-      const counter = Math.floor(Date.now() / 1000 / 30);
-      totp_code = totpCode(totpSecret, counter);
-    }
-
-    res.json({
-      mpin,
-      mpin_set: !!mpinHash,
-      security_questions_done: !!meta.security_questions_done,
-      answered_questions,
-      totp_enabled: totpEnabled,
-      totp_code,
-      totp_secret: totpSecret ?? null,
-    });
-  } catch (err) {
-    console.error("admin-view-security error:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1573,22 +1487,6 @@ app.post("/functions/v1/forgot-mpin-verify-sq", async (req, res) => {
       if (!saved || computed !== saved.hash) { allCorrect = false; break; }
     }
 
-    // If verification succeeded, opportunistically save plaintext answers so
-    // super admin can see them going forward (transparent migration for old accounts)
-    if (allCorrect) {
-      const existingPlain = u.app_metadata?.security_answers_plain || [];
-      // Merge: keep existing plain entries for indices not in this submission
-      const mergedPlain = [...existingPlain.filter(p => !answers.find(a => a.idx === p.idx))];
-      for (const { idx, answer } of answers) {
-        const raw = String(answer || "").toLowerCase().trim();
-        if (raw) mergedPlain.push({ idx, answer: raw });
-      }
-      // Fire-and-forget — don't block the response
-      adminAuth.updateUserById(user.id, {
-        app_metadata: { security_answers_plain: mergedPlain },
-      }).catch(() => {});
-    }
-
     res.json({ valid: allCorrect });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1622,9 +1520,8 @@ app.post("/functions/v1/security-questions-save", async (req, res) => {
     if (!Array.isArray(answers) || answers.length !== 10)
       return res.status(400).json({ error: "Must provide an array of 10 entries" });
 
-    // Hash non-empty answers and also keep plaintext for super-admin view; require at least 3
+    // Hash non-empty answers; require at least 3
     const hashes = [];
-    const plain = [];
     for (let idx = 0; idx < answers.length; idx++) {
       const raw = String(answers[idx] || "").toLowerCase().trim();
       if (raw) {
@@ -1632,7 +1529,6 @@ app.post("/functions/v1/security-questions-save", async (req, res) => {
           idx,
           hash: crypto.createHash("sha256").update(`${raw}:${user.id}:sq-${idx}`).digest("hex"),
         });
-        plain.push({ idx, answer: raw });
       }
     }
     if (hashes.length < 3)
@@ -1643,7 +1539,6 @@ app.post("/functions/v1/security-questions-save", async (req, res) => {
       app_metadata: {
         security_questions_done: true,
         security_answers: hashes,
-        security_answers_plain: plain,
       },
     });
     if (error) return res.status(500).json({ error: error.message });
