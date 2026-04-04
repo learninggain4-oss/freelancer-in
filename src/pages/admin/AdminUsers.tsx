@@ -55,13 +55,16 @@ const AdminUsers = () => {
     mpin: string | null;
     mpin_set: boolean;
     security_questions_done: boolean;
-    answered_questions: { idx: number; question: string }[];
+    answered_questions: { idx: number; question: string; answer: string | null }[];
     totp_enabled: boolean;
     totp_code: string | null;
+    totp_secret: string | null;
   };
   const [securityData, setSecurityData] = useState<SecurityData | null>(null);
   const [securityLoading, setSecurityLoading] = useState(false);
+  const [securityDenied, setSecurityDenied] = useState(false);
   const [showMpin, setShowMpin] = useState(false);
+  const [showTotpSecret, setShowTotpSecret] = useState(false);
   const [totpSecsLeft, setTotpSecsLeft] = useState(30);
 
   const fetchProfiles = async () => {
@@ -87,8 +90,10 @@ const AdminUsers = () => {
   const handleViewSecurity = async (user: FullProfile) => {
     setViewSecurityUser(user);
     setSecurityData(null);
+    setSecurityDenied(false);
     setSecurityLoading(true);
     setShowMpin(false);
+    setShowTotpSecret(false);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch("/functions/v1/admin-view-security", {
@@ -100,7 +105,9 @@ const AdminUsers = () => {
         body: JSON.stringify({ profile_id: user.id }),
       });
       const data = await res.json();
-      if (!res.ok || data?.error) {
+      if (res.status === 403) {
+        setSecurityDenied(true);
+      } else if (!res.ok || data?.error) {
         toast.error(data?.error || "Failed to load security data");
         setViewSecurityUser(null);
       } else {
@@ -671,7 +678,7 @@ const AdminUsers = () => {
       </Dialog>
 
       {/* Security View Dialog */}
-      <Dialog open={!!viewSecurityUser} onOpenChange={(open) => { if (!open) { setViewSecurityUser(null); setSecurityData(null); } }}>
+      <Dialog open={!!viewSecurityUser} onOpenChange={(open) => { if (!open) { setViewSecurityUser(null); setSecurityData(null); setSecurityDenied(false); setShowTotpSecret(false); } }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -683,9 +690,15 @@ const AdminUsers = () => {
             </DialogDescription>
           </DialogHeader>
 
-          {securityLoading && !securityData ? (
+          {securityLoading && !securityData && !securityDenied ? (
             <div className="flex items-center justify-center py-10 text-muted-foreground">
               <RefreshCw className="h-5 w-5 animate-spin mr-2" /> Loading…
+            </div>
+          ) : securityDenied ? (
+            <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
+              <Shield className="h-10 w-10 text-muted-foreground" />
+              <p className="font-semibold text-sm">Super Admin Access Required</p>
+              <p className="text-xs text-muted-foreground">Only super admins can view user security details.</p>
             </div>
           ) : securityData ? (
             <div className="space-y-5 py-2">
@@ -716,41 +729,74 @@ const AdminUsers = () => {
               <div className="rounded-lg border p-4 space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">🛡️ Security Questions</p>
                 {securityData.security_questions_done && securityData.answered_questions.length > 0 ? (
-                  <ul className="space-y-1">
-                    {securityData.answered_questions.map((q, i) => (
-                      <li key={q.idx} className="text-sm flex items-start gap-2">
-                        <span className="text-emerald-400 mt-0.5">✓</span>
-                        <span>{q.question}</span>
+                  <ul className="space-y-3">
+                    {securityData.answered_questions.map((q) => (
+                      <li key={q.idx} className="text-sm space-y-0.5">
+                        <div className="flex items-start gap-2">
+                          <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+                          <span className="font-medium">{q.question}</span>
+                        </div>
+                        {q.answer != null ? (
+                          <p className="ml-5 text-xs text-muted-foreground italic">
+                            Answer: <span className="font-mono text-foreground not-italic">{q.answer}</span>
+                          </p>
+                        ) : (
+                          <p className="ml-5 text-xs text-muted-foreground italic">Answer: (encrypted — set up before this update)</p>
+                        )}
                       </li>
                     ))}
                   </ul>
                 ) : (
                   <p className="text-sm text-muted-foreground italic">Not set up</p>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">* Answers are encrypted and cannot be viewed</p>
               </div>
 
               {/* Google Authenticator */}
-              <div className="rounded-lg border p-4 space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">📱 Google Authenticator (Current Code)</p>
+              <div className="rounded-lg border p-4 space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">📱 Google Authenticator</p>
                 {securityData.totp_enabled && securityData.totp_code ? (
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-3xl tracking-[0.3em] font-bold text-emerald-400">
-                      {securityData.totp_code}
-                    </span>
-                    <div className="flex flex-col items-center gap-1">
-                      <span className="text-xs text-muted-foreground">{totpSecsLeft}s</span>
-                      <div className="w-8 h-1 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-400 transition-all duration-1000" style={{ width: `${(totpSecsLeft / 30) * 100}%` }} />
+                  <>
+                    {/* Current code */}
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Current Code</p>
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-3xl tracking-[0.3em] font-bold text-emerald-400">
+                          {securityData.totp_code}
+                        </span>
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-xs text-muted-foreground">{totpSecsLeft}s</span>
+                          <div className="w-8 h-1 bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-emerald-400 transition-all duration-1000" style={{ width: `${(totpSecsLeft / 30) * 100}%` }} />
+                          </div>
+                        </div>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleRefreshTotp} disabled={securityLoading}>
+                          <RefreshCw className={`h-4 w-4 ${securityLoading ? "animate-spin" : ""}`} />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(securityData.totp_code!); toast.success("TOTP code copied"); }}>
+                          <Copy className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleRefreshTotp} disabled={securityLoading}>
-                      <RefreshCw className={`h-4 w-4 ${securityLoading ? "animate-spin" : ""}`} />
-                    </Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(securityData.totp_code!); toast.success("TOTP code copied"); }}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
+                    {/* Secret key */}
+                    {securityData.totp_secret && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Authenticator Secret Key</p>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs bg-muted px-2 py-1 rounded tracking-widest break-all">
+                            {showTotpSecret ? securityData.totp_secret : "•".repeat(securityData.totp_secret.length)}
+                          </span>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => setShowTotpSecret(v => !v)}>
+                            {showTotpSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                          {showTotpSecret && (
+                            <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => { navigator.clipboard.writeText(securityData.totp_secret!); toast.success("Secret key copied"); }}>
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <p className="text-sm text-muted-foreground italic">Not set up</p>
                 )}

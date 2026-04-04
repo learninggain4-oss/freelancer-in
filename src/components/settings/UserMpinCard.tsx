@@ -34,10 +34,10 @@ const PinInput = ({ value, onChange, placeholder = "••••", disabled }: {
   <input
     type="password"
     inputMode="numeric"
-    maxLength={6}
+    maxLength={4}
     value={value}
     disabled={disabled}
-    onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 6))}
+    onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 4))}
     placeholder={placeholder}
     className="w-full rounded-lg border bg-background px-4 py-3 text-center font-mono text-2xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
     autoComplete="off"
@@ -93,7 +93,7 @@ const UserMpinCard = () => {
   };
 
   const handleSetPin = async () => {
-    if (newPin.length < 4) { toast.error("PIN must be at least 4 digits"); return; }
+    if (newPin.length !== 4) { toast.error("PIN must be exactly 4 digits"); return; }
     if (newPin !== confirmPin) { toast.error("PINs do not match"); return; }
     setLoading(true);
     try {
@@ -140,7 +140,7 @@ const UserMpinCard = () => {
             <p className="text-sm text-muted-foreground">
               {hasPin
                 ? "Your M-Pin is set. You can change it at any time by verifying your current PIN first."
-                : "Create a 4–6 digit M-Pin to secure your account. You'll be asked for this PIN every time you log in."}
+                : "Create a 4-digit M-Pin to secure your account. You'll be asked for this PIN every time you log in."}
             </p>
             <Button onClick={handleStart}>
               <KeyRound className="mr-2 h-4 w-4" />
@@ -164,11 +164,11 @@ const UserMpinCard = () => {
 
         {step === "enter_new" && (
           <div className="space-y-4">
-            <p className="text-sm font-medium text-muted-foreground">Enter a new 4–6 digit M-Pin:</p>
+            <p className="text-sm font-medium text-muted-foreground">Enter a new 4-digit M-Pin:</p>
             <PinInput value={newPin} onChange={setNewPin} placeholder="New PIN" disabled={loading} />
             <div className="flex gap-2">
               <Button variant="outline" onClick={reset} disabled={loading}>Cancel</Button>
-              <Button onClick={() => { if (newPin.length >= 4) setStep("confirm_new"); else toast.error("PIN must be at least 4 digits"); }} disabled={loading || newPin.length < 4} className="flex-1">
+              <Button onClick={() => { if (newPin.length === 4) setStep("confirm_new"); else toast.error("PIN must be exactly 4 digits"); }} disabled={loading || newPin.length !== 4} className="flex-1">
                 Continue
               </Button>
             </div>
@@ -181,7 +181,7 @@ const UserMpinCard = () => {
             <PinInput value={confirmPin} onChange={setConfirmPin} placeholder="Confirm PIN" disabled={loading} />
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => { setStep("enter_new"); setConfirmPin(""); }} disabled={loading}>Back</Button>
-              <Button onClick={handleSetPin} disabled={loading || confirmPin.length < 4} className="flex-1">
+              <Button onClick={handleSetPin} disabled={loading || confirmPin.length !== 4} className="flex-1">
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : hasPin ? "Change PIN" : "Save PIN"}
               </Button>
             </div>

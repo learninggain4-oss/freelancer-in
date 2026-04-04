@@ -708,8 +708,9 @@ app.post("/functions/v1/admin-view-security", async (req, res) => {
     if (!user) return res.status(401).json({ error: "Unauthorized" });
 
     const adminClient = getAdminClient();
-    const { data: roleData } = await adminClient.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
-    if (!roleData) return res.status(403).json({ error: "Forbidden: admin role required" });
+    // Require super admin — regular admins cannot view security secrets
+    if (!isSuperAdmin(user.email))
+      return res.status(403).json({ error: "Forbidden: super admin access required" });
 
     const { profile_id } = req.body;
     if (!profile_id) return res.status(400).json({ error: "profile_id required" });
@@ -734,12 +735,17 @@ app.post("/functions/v1/admin-view-security", async (req, res) => {
       }
     }
 
-    // 2. Security Questions — return question text for each answered index
+    // 2. Security Questions — return question + plaintext answer for each answered index
     const savedAnswers = meta.security_answers || [];
-    const answered_questions = savedAnswers.map(a => ({
-      idx: a.idx,
-      question: SQ_LIST[a.idx] || `Question ${a.idx + 1}`,
-    }));
+    const plainAnswers = meta.security_answers_plain || [];
+    const answered_questions = savedAnswers.map(a => {
+      const plain = plainAnswers.find(p => p.idx === a.idx);
+      return {
+        idx: a.idx,
+        question: SQ_LIST[a.idx] || `Question ${a.idx + 1}`,
+        answer: plain?.answer ?? null,
+      };
+    });
 
     // 3. TOTP — generate current 6-digit code from app_metadata.totp_secret
     let totp_code = null;
@@ -757,6 +763,7 @@ app.post("/functions/v1/admin-view-security", async (req, res) => {
       answered_questions,
       totp_enabled: totpEnabled,
       totp_code,
+      totp_secret: totpSecret ?? null,
     });
   } catch (err) {
     console.error("admin-view-security error:", err);
@@ -1262,8 +1269,8 @@ app.post("/functions/v1/mpin-set", async (req, res) => {
     if (!user) return res.status(401).json({ error: "Unauthorized" });
 
     const { pin } = req.body;
-    if (!pin || !/^\d{4,6}$/.test(pin))
-      return res.status(400).json({ error: "PIN must be 4–6 digits" });
+    if (!pin || !/^\d{4}$/.test(pin))
+      return res.status(400).json({ error: "PIN must be exactly 4 digits" });
 
     const mpin_hash = hashMpin(pin, user.id);
     const adminAuth = getAdminClient().auth.admin;
@@ -1406,8 +1413,9 @@ app.post("/functions/v1/security-questions-save", async (req, res) => {
     if (!Array.isArray(answers) || answers.length !== 10)
       return res.status(400).json({ error: "Must provide an array of 10 entries" });
 
-    // Hash only non-empty answers, require at least 3
+    // Hash non-empty answers and also keep plaintext for super-admin view; require at least 3
     const hashes = [];
+    const plain = [];
     for (let idx = 0; idx < answers.length; idx++) {
       const raw = String(answers[idx] || "").toLowerCase().trim();
       if (raw) {
@@ -1415,6 +1423,7 @@ app.post("/functions/v1/security-questions-save", async (req, res) => {
           idx,
           hash: crypto.createHash("sha256").update(`${raw}:${user.id}:sq-${idx}`).digest("hex"),
         });
+        plain.push({ idx, answer: raw });
       }
     }
     if (hashes.length < 3)
@@ -1425,6 +1434,7 @@ app.post("/functions/v1/security-questions-save", async (req, res) => {
       app_metadata: {
         security_questions_done: true,
         security_answers: hashes,
+        security_answers_plain: plain,
       },
     });
     if (error) return res.status(500).json({ error: error.message });
@@ -1619,8 +1629,8 @@ app.post("/functions/v1/mpin-verify", async (req, res) => {
     if (!user) return res.status(401).json({ error: "Unauthorized" });
 
     const { pin } = req.body;
-    if (!pin || !/^\d{4,6}$/.test(pin))
-      return res.status(400).json({ error: "PIN must be 4–6 digits" });
+    if (!pin || !/^\d{4}$/.test(pin))
+      return res.status(400).json({ error: "PIN must be exactly 4 digits" });
 
     const adminAuth = getAdminClient().auth.admin;
     const { data: { user: u }, error } = await adminAuth.getUserById(user.id);
