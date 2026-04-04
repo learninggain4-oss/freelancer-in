@@ -134,7 +134,8 @@ const AdminWalletManagement = () => {
   });
 
   const filteredUsers = allUsers.filter((u) => {
-    if (u.user_type !== userTab) return false;
+    const dbType = userTab === "freelancer" ? "employee" : "client";
+    if (u.user_type !== dbType) return false;
     if (search.length < 2) return true;
     const q = search.toLowerCase();
     return (
