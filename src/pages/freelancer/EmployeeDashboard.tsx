@@ -99,7 +99,7 @@ const TH = {
     chartTip: { background: "#ffffff", border: "1px solid rgba(14,165,233,.15)", color: "#0c4a6e" },
     chartAxis:"#4b83a3",
     emptyBg:  "#e0f2fe", emptyFg: "#4b83a3",
-    emptySub: "#7dd3fc",
+    emptySub: "#0369a1",
     badgeBg:  "#e0f2fe", badgeFg: "#4b83a3",
     sectionIconBg: (color: string) => `${color}18`,
     alertBg: "#f0f9ff",

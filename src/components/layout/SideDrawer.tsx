@@ -74,14 +74,13 @@ const SideDrawer = ({ open, onOpenChange, theme = "black" }: SideDrawerProps) =>
       <SheetContent side="right" style={{ width: 300, padding: 0, display: "flex", flexDirection: "column", background: drawerBg, border: `1px solid ${borderColor}` }}>
 
         {/* Profile Header */}
-        <div style={{ position: "relative", overflow: "hidden", padding: "24px 20px 20px" }}>
-          <div style={{ position: "absolute", inset: 0, background: `linear-gradient(135deg,rgba(99,102,241,.22) 0%,rgba(139,92,246,.12) 100%)`, zIndex: 0 }} />
-          <div style={{ position: "absolute", top: -20, right: -20, width: 100, height: 100, borderRadius: "50%", background: "rgba(99,102,241,.12)", filter: "blur(20px)", zIndex: 0 }} />
+        <div style={{ position: "relative", overflow: "hidden", padding: "24px 20px 20px", background: `linear-gradient(135deg,${A1} 0%,${A2} 100%)` }}>
+          <div style={{ position: "absolute", top: -20, right: -20, width: 100, height: 100, borderRadius: "50%", background: "rgba(255,255,255,.1)", filter: "blur(20px)", zIndex: 0 }} />
 
           <SheetHeader style={{ position: "relative", zIndex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               {/* Avatar */}
-              <div style={{ width: 52, height: 52, borderRadius: 16, background: `linear-gradient(135deg,${A1},${A2})`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 18, color: "white", border: "2px solid rgba(255,255,255,.2)", boxShadow: "0 8px 24px rgba(99,102,241,.4)", flexShrink: 0 }}>
+              <div style={{ width: 52, height: 52, borderRadius: 16, background: "rgba(255,255,255,.18)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 18, color: "white", border: "2px solid rgba(255,255,255,.3)", boxShadow: "0 8px 24px rgba(0,0,0,.2)", flexShrink: 0 }}>
                 {initials}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -90,11 +89,11 @@ const SideDrawer = ({ open, onOpenChange, theme = "black" }: SideDrawerProps) =>
                 </SheetTitle>
                 <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
                   {userCode && (
-                    <span style={{ padding: "2px 8px", borderRadius: 6, background: "rgba(255,255,255,.12)", border: "1px solid rgba(255,255,255,.18)", color: "rgba(255,255,255,.75)", fontSize: 10, fontWeight: 700 }}>
+                    <span style={{ padding: "2px 8px", borderRadius: 6, background: "rgba(255,255,255,.18)", border: "1px solid rgba(255,255,255,.3)", color: "white", fontSize: 10, fontWeight: 700 }}>
                       {userCode}
                     </span>
                   )}
-                  <span style={{ padding: "2px 8px", borderRadius: 6, background: "rgba(99,102,241,.22)", border: "1px solid rgba(99,102,241,.35)", color: "#c4b5fd", fontSize: 10, fontWeight: 700, textTransform: "capitalize" }}>
+                  <span style={{ padding: "2px 8px", borderRadius: 6, background: "rgba(255,255,255,.18)", border: "1px solid rgba(255,255,255,.3)", color: "white", fontSize: 10, fontWeight: 700, textTransform: "capitalize" }}>
                     {userType}
                   </span>
                 </div>
