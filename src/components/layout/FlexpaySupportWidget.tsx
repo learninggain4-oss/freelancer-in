@@ -7,12 +7,20 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardTheme } from "@/hooks/use-dashboard-theme";
 
+interface SupportReaction {
+  id: string;
+  message_id: string;
+  user_id: string;
+  emoji: string;
+}
+
 interface SupportMsg {
   id: string;
   content: string;
   sender_id: string;
   created_at: string;
   is_read: boolean;
+  reactions: SupportReaction[];
 }
 
 interface Props {
@@ -87,6 +95,8 @@ function injectCSS() {
 }
 .fp-msg-in  { animation: fpSlideUp .18s ease; }
 .fp-msg-out { animation: fpSlideUp .18s ease; }
+.fp-msg-in:hover .reaction-trigger,
+.fp-msg-out:hover .reaction-trigger { opacity: 1 !important; }
   `;
   document.head.appendChild(s);
 }
@@ -121,6 +131,7 @@ const FlexpaySupportWidget = ({ theme, userId, profileId }: Props) => {
   const [popPos, setPopPos]     = useState({ left: 0, top: 0 });
   const [dragging, setDragging] = useState(false);
   const [showTopics, setShowTopics] = useState(true);
+  const [pickerMsgId, setPickerMsgId] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
@@ -164,9 +175,21 @@ const FlexpaySupportWidget = ({ theme, userId, profileId }: Props) => {
       .select("id, content, sender_id, created_at, is_read")
       .eq("conversation_id", cid)
       .order("created_at", { ascending: true });
+    let reactions: SupportReaction[] = [];
+    if (data && data.length > 0) {
+      const ids = data.map((m: any) => m.id);
+      const { data: rxns } = await supabase
+        .from("support_message_reactions")
+        .select("*")
+        .in("message_id", ids);
+      reactions = (rxns || []) as SupportReaction[];
+    }
     if (data) {
-      setMsgs(data as SupportMsg[]);
-      if ((data as SupportMsg[]).length > 0) setShowTopics(false);
+      setMsgs(data.map((m: any) => ({
+        ...m,
+        reactions: reactions.filter(r => r.message_id === m.id),
+      })) as SupportMsg[]);
+      if (data.length > 0) setShowTopics(false);
     }
     setLoading(false);
   }, []);
@@ -192,13 +215,37 @@ const FlexpaySupportWidget = ({ theme, userId, profileId }: Props) => {
       .on("postgres_changes",
         { event: "INSERT", schema: "public", table: "support_messages", filter: `conversation_id=eq.${convId}` },
         (payload) => {
-          const m = payload.new as SupportMsg;
-          setMsgs(p => p.some(x => x.id === m.id) ? p : [...p, m]);
+          const m = payload.new as any;
+          setMsgs(p => p.some(x => x.id === m.id) ? p : [...p, { ...m, reactions: [] }]);
           setShowTopics(false);
           if (!openRef.current && m.sender_id !== userId) setUnread(c => c + 1);
         })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+
+    const rxnCh = supabase.channel(`fp-rxn-${convId}`)
+      .on("postgres_changes",
+        { event: "INSERT", schema: "public", table: "support_message_reactions" },
+        (payload) => {
+          const rxn = payload.new as SupportReaction;
+          setMsgs(prev => prev.map(m =>
+            m.id === rxn.message_id
+              ? { ...m, reactions: m.reactions.some(r => r.id === rxn.id) ? m.reactions : [...m.reactions, rxn] }
+              : m
+          ));
+        })
+      .on("postgres_changes",
+        { event: "DELETE", schema: "public", table: "support_message_reactions" },
+        (payload) => {
+          const rxn = payload.old as SupportReaction;
+          setMsgs(prev => prev.map(m =>
+            m.id === rxn.message_id
+              ? { ...m, reactions: m.reactions.filter(r => r.id !== rxn.id) }
+              : m
+          ));
+        })
+      .subscribe();
+
+    return () => { supabase.removeChannel(ch); supabase.removeChannel(rxnCh); };
   }, [convId, userId]);
 
   useEffect(() => {
@@ -229,13 +276,28 @@ const FlexpaySupportWidget = ({ theme, userId, profileId }: Props) => {
         .from("support_messages")
         .insert({ conversation_id: convId, content, sender_id: userId, is_read: false })
         .select("id, content, sender_id, created_at, is_read").single();
-      if (data) setMsgs(p => p.some(x => x.id === (data as SupportMsg).id) ? p : [...p, data as SupportMsg]);
+      if (data) setMsgs(p => p.some(x => x.id === (data as SupportMsg).id) ? p : [...p, { ...(data as SupportMsg), reactions: [] }]);
     } catch { setInput(content); } finally { setSending(false); }
   }, [input, convId, userId, sending]);
 
   const sendTopic = useCallback((label: string) => {
     send(label);
   }, [send]);
+
+  const QUICK_REACTIONS = ["👍", "❤️", "😊", "🎉", "😂", "🙏"];
+
+  const handleReaction = useCallback(async (msgId: string, emoji: string) => {
+    setPickerMsgId(null);
+    const msg = msgs.find(m => m.id === msgId);
+    if (!msg) return;
+    const existing = msg.reactions.find(r => r.user_id === userId && r.emoji === emoji);
+    if (existing) {
+      await supabase.from("support_message_reactions").delete().eq("id", existing.id);
+    } else {
+      await supabase.from("support_message_reactions")
+        .insert({ message_id: msgId, user_id: userId, emoji });
+    }
+  }, [msgs, userId]);
 
   /* ── Drag (floating button) ────────────────────────────────────── */
   const startDrag = useCallback((startX: number, startY: number, onToggle?: () => void) => {
@@ -338,45 +400,57 @@ const FlexpaySupportWidget = ({ theme, userId, profileId }: Props) => {
   );
 
   /* ── Shared: message thread ─────────────────────────────────────── */
+  /* WhatsApp palette for message bubbles */
+  const waBg     = isDark ? "#0b141a" : "#efeae2";
+  const waOut    = isDark ? "#005c4b" : "#d9fdd3";
+  const waIn     = isDark ? "#202c33" : "#ffffff";
+  const waTxt    = isDark ? "#e9edef" : "#111b21";
+  const waTime   = isDark ? "#8696a0" : "#667781";
+  const waTickR  = "#53bdeb";
+  const waTickG  = isDark ? "#8696a0" : "#b0bec5";
+
   const MessageThread = ({ big }: { big?: boolean }) => (
-    <div style={{
-      flex: 1, overflowY: "auto", padding: big ? "20px 24px 12px" : "14px 13px 8px",
-      display: "flex", flexDirection: "column", gap: big ? 12 : 10,
-      background: msgBg,
-      backgroundImage: isDark
-        ? "radial-gradient(circle,rgba(255,255,255,.02) 1px,transparent 1px)"
-        : "radial-gradient(circle,rgba(0,0,0,.025) 1px,transparent 1px)",
-      backgroundSize: "22px 22px",
-    }}>
-      {/* Welcome bubble */}
-      <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+    <div
+      onClick={() => setPickerMsgId(null)}
+      style={{
+        flex: 1, overflowY: "auto", padding: big ? "20px 24px 12px" : "14px 10px 8px",
+        display: "flex", flexDirection: "column", gap: big ? 4 : 3,
+        background: waBg,
+        backgroundImage: isDark
+          ? "radial-gradient(circle,rgba(255,255,255,.03) 1px,transparent 1px)"
+          : "radial-gradient(circle,rgba(0,0,0,.07) 1px,transparent 1px)",
+        backgroundSize: "20px 20px",
+      }}>
+      {/* Welcome bubble – incoming WA style */}
+      <div style={{ display: "flex", gap: 8, alignItems: "flex-end", padding: "4px 2px 2px" }}>
         <div style={{ width: big?34:28, height: big?34:28, borderRadius: "50%", background: hdr, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 2px 8px ${accent}50` }}>
           <Headphones size={big?15:13} color="white" />
         </div>
-        <div style={{ maxWidth: "78%", background: cardBg, borderRadius: "14px 14px 14px 2px", padding: big?"12px 16px":"10px 12px", boxShadow: "0 2px 8px rgba(0,0,0,.06)", border: `1px solid ${borderC}` }}>
-          <p style={{ margin: 0, fontSize: big?14:13, color: textC, lineHeight: 1.6 }}>
+        <div style={{ maxWidth: "78%", background: waIn, borderRadius: "2px 12px 12px 12px", padding: big?"10px 14px 8px":"8px 12px 6px", boxShadow: "0 1px 2px rgba(0,0,0,.13)" }}>
+          <p style={{ margin: "0 0 2px", fontSize: 12, fontWeight: 700, color: "#00a884" }}>Support Team</p>
+          <p style={{ margin: 0, fontSize: big?14:13, color: waTxt, lineHeight: 1.6 }}>
             👋 Hi! Welcome to <strong style={{ color: accent }}>Flexpay Support</strong>. We're here to help you 24/7. How can we assist you today?
           </p>
-          <p style={{ margin: "4px 0 0", fontSize: 10, color: subC }}>Flexpay Support · Now</p>
+          <p style={{ margin: "3px 0 0", fontSize: 10, color: waTime }}>Support Team · Now</p>
         </div>
       </div>
 
-      {/* Quick topic chips — shown only when conversation is fresh */}
+      {/* Quick topic chips */}
       {showTopics && !loading && (
         <div style={{ paddingLeft: big?42:36 }}>
-          <p style={{ margin: "2px 0 8px", fontSize: 11.5, color: subC }}>Choose a topic to get started:</p>
+          <p style={{ margin: "2px 0 8px", fontSize: 11.5, color: waTime }}>Choose a topic to get started:</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
             {QUICK_TOPICS.map(t => (
               <button key={t.label} onClick={() => sendTopic(t.label)}
                 style={{
                   display: "flex", alignItems: "center", gap: 5, padding: "6px 12px",
-                  borderRadius: 20, border: `1.5px solid ${borderC}`, background: cardBg,
-                  cursor: "pointer", fontSize: 12, fontWeight: 600, color: textC,
+                  borderRadius: 20, border: `1.5px solid ${borderC}`, background: waIn,
+                  cursor: "pointer", fontSize: 12, fontWeight: 600, color: waTxt,
                   fontFamily: "inherit", transition: "all .15s",
                   boxShadow: "0 1px 4px rgba(0,0,0,.06)",
                 }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor=accent; e.currentTarget.style.color=accent; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor=borderC; e.currentTarget.style.color=textC; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor=borderC; e.currentTarget.style.color=waTxt; }}
               >
                 <span>{t.icon}</span> {t.label} <ChevronRight size={11} />
               </button>
@@ -391,7 +465,7 @@ const FlexpaySupportWidget = ({ theme, userId, profileId }: Props) => {
           <div style={{ width: big?34:28, height: big?34:28, borderRadius: "50%", background: hdr, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <Headphones size={big?15:13} color="white" />
           </div>
-          <div style={{ background: cardBg, borderRadius: "14px 14px 14px 2px", padding: "12px 16px", border: `1px solid ${borderC}` }}>
+          <div style={{ background: waIn, borderRadius: "2px 12px 12px 12px", padding: "10px 14px", boxShadow: "0 1px 2px rgba(0,0,0,.13)" }}>
             <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
               {[0, 1, 2].map(i => (
                 <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: accent, animation: `fpDot 1.2s ease-in-out ${i * 0.2}s infinite` }} />
@@ -401,45 +475,151 @@ const FlexpaySupportWidget = ({ theme, userId, profileId }: Props) => {
         </div>
       )}
 
-      {/* Messages with date separators */}
+      {/* Messages with date separators + reactions */}
       {msgs.map((msg, idx) => {
-        const out      = msg.sender_id === userId;
+        const out       = msg.sender_id === userId;
         const dateLabel = getDateLabel(msgs, idx);
+        const reactions = msg.reactions || [];
+
+        // Group reactions by emoji
+        const grouped = reactions.reduce<Record<string, { count: number; hasMe: boolean; ids: string[] }>>((acc, r) => {
+          if (!acc[r.emoji]) acc[r.emoji] = { count: 0, hasMe: false, ids: [] };
+          acc[r.emoji].count++;
+          acc[r.emoji].ids.push(r.id);
+          if (r.user_id === userId) acc[r.emoji].hasMe = true;
+          return acc;
+        }, {});
+
+        const showPicker = pickerMsgId === msg.id;
+
         return (
           <div key={msg.id}>
             {dateLabel && (
-              <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0 8px" }}>
-                <div style={{ flex: 1, height: 1, background: borderC }} />
-                <span style={{ fontSize: 11, color: subC, fontWeight: 600, whiteSpace: "nowrap" }}>{dateLabel}</span>
-                <div style={{ flex: 1, height: 1, background: borderC }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 8px" }}>
+                <div style={{ flex: 1, height: 1, background: isDark ? "rgba(255,255,255,.12)" : "rgba(0,0,0,.12)" }} />
+                <span style={{ fontSize: 11, color: waTime, fontWeight: 600, whiteSpace: "nowrap",
+                  background: isDark ? "rgba(11,20,26,.9)" : "rgba(225,218,200,.9)",
+                  padding: "2px 10px", borderRadius: 10 }}>
+                  {dateLabel}
+                </span>
+                <div style={{ flex: 1, height: 1, background: isDark ? "rgba(255,255,255,.12)" : "rgba(0,0,0,.12)" }} />
               </div>
             )}
+
+            {/* Row: avatar + bubble group */}
             <div className={out ? "fp-msg-out" : "fp-msg-in"}
-              style={{ display: "flex", flexDirection: out ? "row-reverse" : "row", gap: 8, alignItems: "flex-end" }}>
+              style={{ display: "flex", flexDirection: out ? "row-reverse" : "row", gap: 6, alignItems: "flex-end", padding: "1px 4px", position: "relative" }}>
+
+              {/* Support avatar */}
               {!out && (
-                <div style={{ width: big?34:28, height: big?34:28, borderRadius: "50%", background: hdr, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <Headphones size={big?15:13} color="white" />
+                <div style={{ width: big?32:26, height: big?32:26, borderRadius: "50%", background: hdr, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 1px 4px ${accent}40` }}>
+                  <Headphones size={big?13:11} color="white" />
                 </div>
               )}
-              <div style={{
-                maxWidth: "76%",
-                background: out ? accent : cardBg,
-                borderRadius: out ? "14px 14px 2px 14px" : "14px 14px 14px 2px",
-                padding: big ? "11px 15px" : "10px 12px",
-                boxShadow: out ? `0 3px 12px ${accent}50` : "0 2px 8px rgba(0,0,0,.06)",
-                border: out ? "none" : `1px solid ${borderC}`,
-              }}>
-                <p style={{ margin: 0, fontSize: big?14:13, color: out ? "white" : textC, lineHeight: 1.6, wordBreak: "break-word" }}>
-                  {msg.content}
-                </p>
-                <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4, justifyContent: out ? "flex-end" : "flex-start" }}>
-                  <p style={{ margin: 0, fontSize: 10, color: out ? "rgba(255,255,255,.6)" : subC }}>
-                    {fmt(msg.created_at)}
-                  </p>
-                  {out && (
-                    <CheckCheck size={11} color={msg.is_read ? "#4ade80" : "rgba(255,255,255,.55)"} />
+
+              {/* Bubble column */}
+              <div style={{ maxWidth: "74%", display: "flex", flexDirection: "column", alignItems: out ? "flex-end" : "flex-start" }}>
+
+                {/* Emoji reaction picker — appears above bubble on hover */}
+                {showPicker && (
+                  <div onClick={e => e.stopPropagation()} style={{
+                    display: "flex", gap: 4, padding: "6px 8px",
+                    background: isDark ? "#1f2c33" : "#fff",
+                    borderRadius: 20, boxShadow: "0 4px 20px rgba(0,0,0,.22)",
+                    border: `1px solid ${borderC}`,
+                    marginBottom: 4, animation: "fpSlideUp .15s ease",
+                  }}>
+                    {QUICK_REACTIONS.map(e => (
+                      <button key={e} onClick={() => handleReaction(msg.id, e)}
+                        style={{
+                          fontSize: 20, background: "none", border: "none", cursor: "pointer",
+                          padding: "2px 4px", borderRadius: 8, lineHeight: 1,
+                          transition: "transform .1s",
+                        }}
+                        onMouseEnter={ev => (ev.currentTarget.style.transform="scale(1.3)")}
+                        onMouseLeave={ev => (ev.currentTarget.style.transform="scale(1)")}
+                      >
+                        {e}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Bubble */}
+                <div
+                  onContextMenu={e => { e.preventDefault(); setPickerMsgId(showPicker ? null : msg.id); }}
+                  onDoubleClick={() => setPickerMsgId(showPicker ? null : msg.id)}
+                  style={{
+                    background: out ? waOut : waIn,
+                    borderRadius: out ? "12px 2px 12px 12px" : "2px 12px 12px 12px",
+                    padding: big ? "9px 13px 6px" : "8px 11px 5px",
+                    boxShadow: "0 1px 2px rgba(0,0,0,.13)",
+                    cursor: "default",
+                    position: "relative",
+                  }}
+                >
+                  {!out && (
+                    <p style={{ margin: "0 0 2px", fontSize: 11.5, fontWeight: 700, color: "#00a884" }}>Support Team</p>
                   )}
+                  <p style={{ margin: 0, fontSize: big?14:13, color: waTxt, lineHeight: 1.55, wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
+                    {msg.content}
+                  </p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 3, justifyContent: "flex-end" }}>
+                    <span style={{ fontSize: 10, color: waTime }}>{fmt(msg.created_at)}</span>
+                    {out && (
+                      msg.is_read
+                        ? <CheckCheck size={13} style={{ color: waTickR }} />
+                        : <CheckCheck size={13} style={{ color: waTickG }} />
+                    )}
+                  </div>
+
+                  {/* Reaction trigger (smiley) on hover */}
+                  <button
+                    onClick={e => { e.stopPropagation(); setPickerMsgId(showPicker ? null : msg.id); }}
+                    title="React"
+                    style={{
+                      position: "absolute",
+                      bottom: -8,
+                      [out ? "left" : "right"]: -8,
+                      background: isDark ? "#1f2c33" : "#fff",
+                      border: `1px solid ${borderC}`,
+                      borderRadius: "50%",
+                      width: 22, height: 22,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,.15)",
+                      fontSize: 13, lineHeight: 1,
+                      opacity: showPicker ? 1 : 0,
+                      transition: "opacity .15s",
+                    }}
+                    className="reaction-trigger"
+                  >
+                    😊
+                  </button>
                 </div>
+
+                {/* Grouped reaction pills */}
+                {Object.keys(grouped).length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4, justifyContent: out ? "flex-end" : "flex-start" }}>
+                    {Object.entries(grouped).map(([emoji, { count, hasMe }]) => (
+                      <button key={emoji}
+                        onClick={() => handleReaction(msg.id, emoji)}
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: 3,
+                          padding: "2px 8px", borderRadius: 12,
+                          border: `1.5px solid ${hasMe ? "#00a884" : borderC}`,
+                          background: hasMe
+                            ? (isDark ? "rgba(0,168,132,.18)" : "rgba(0,168,132,.10)")
+                            : (isDark ? "rgba(255,255,255,.07)" : "rgba(255,255,255,.9)"),
+                          cursor: "pointer", fontSize: 13, fontWeight: 600,
+                          boxShadow: "0 1px 3px rgba(0,0,0,.1)",
+                          transition: "all .15s",
+                        }}>
+                        {emoji}
+                        <span style={{ fontSize: 11, color: waTime }}>{count}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -448,8 +628,8 @@ const FlexpaySupportWidget = ({ theme, userId, profileId }: Props) => {
 
       {!loading && msgs.length === 0 && !showTopics && (
         <div style={{ textAlign: "center", padding: "20px 0" }}>
-          <Wifi size={28} color={subC} style={{ opacity: .35, display: "block", margin: "0 auto 8px" }} />
-          <p style={{ margin: 0, fontSize: 12, color: subC, opacity: .7 }}>Start the conversation — we reply quickly!</p>
+          <Wifi size={28} color={waTime} style={{ opacity: .35, display: "block", margin: "0 auto 8px" }} />
+          <p style={{ margin: 0, fontSize: 12, color: waTime, opacity: .7 }}>Start the conversation — we reply quickly!</p>
         </div>
       )}
 
