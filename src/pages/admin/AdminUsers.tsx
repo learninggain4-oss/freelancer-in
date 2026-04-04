@@ -357,6 +357,11 @@ const AdminUsers = () => {
                     <TableCell className="max-w-[160px] truncate text-sm" style={{ color: T.sub }}>{u.email}</TableCell>
                     <TableCell>{statusBadge(u.approval_status)}</TableCell>
                     <TableCell className="text-right">
+                      {adminEmailMap.get(u.email?.toLowerCase() ?? "") ? (
+                        <span style={{ color: adminEmailMap.get(u.email?.toLowerCase() ?? "")?.isSuperAdmin ? "#f59e0b" : "#a5b4fc", fontSize: 11, fontWeight: 700, opacity: 0.7 }}>
+                          {adminEmailMap.get(u.email?.toLowerCase() ?? "")?.isSuperAdmin ? "⭐ Protected" : "🔒 Admin"}
+                        </span>
+                      ) : (
                       <div className="flex justify-end gap-1">
                         <Button 
                           size="icon" 
@@ -435,6 +440,7 @@ const AdminUsers = () => {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
