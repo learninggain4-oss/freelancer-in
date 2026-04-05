@@ -885,6 +885,67 @@ app.post("/functions/v1/admin-manage", async (req, res) => {
   }
 });
 
+// ─── /functions/v1/admin-view-security — super admin only ───────────────────
+app.post("/functions/v1/admin-view-security", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    if (!isSuperAdmin(user.email)) return res.status(403).json({ error: "Forbidden: super admin only" });
+
+    const { profile_id } = req.body;
+    if (!profile_id) return res.status(400).json({ error: "profile_id required" });
+
+    const adminClient = getAdminClient();
+
+    // Resolve profile → auth user_id
+    const { data: profile, error: profErr } = await adminClient
+      .from("profiles")
+      .select("user_id")
+      .eq("id", profile_id)
+      .single();
+    if (profErr || !profile) return res.status(404).json({ error: "Profile not found" });
+
+    const { data: { user: targetUser }, error: userErr } = await adminClient.auth.admin.getUserById(profile.user_id);
+    if (userErr || !targetUser) return res.status(404).json({ error: "Auth user not found" });
+
+    const meta = targetUser.app_metadata || {};
+
+    // ── M-Pin ──────────────────────────────────────────────────────────────
+    const mpin_set = !!meta.mpin_hash;
+
+    // ── Security Questions ─────────────────────────────────────────────────
+    const security_questions_done = !!meta.security_questions_done;
+    const storedAnswers = Array.isArray(meta.security_answers) ? meta.security_answers : [];
+    const answered_questions = storedAnswers.map(a => ({
+      idx: a.idx,
+      question: SQ_QUESTIONS[a.idx] || `Question ${a.idx + 1}`,
+      answer: a.answer ?? null, // plaintext stored only in forgot-flow; old accounts = null
+    }));
+
+    // ── TOTP ───────────────────────────────────────────────────────────────
+    const totp_enabled = !!meta.totp_setup_done && !!meta.totp_secret;
+    const totp_secret = meta.totp_secret || null;
+    let totp_code = null;
+    if (totp_enabled && totp_secret) {
+      const counter = Math.floor(Date.now() / 1000 / 30);
+      totp_code = totpCode(totp_secret, counter);
+    }
+
+    res.json({
+      mpin_set,
+      mpin: null, // hashed — cannot be reversed
+      security_questions_done,
+      answered_questions,
+      totp_enabled,
+      totp_code,
+      totp_secret,
+    });
+  } catch (err) {
+    console.error("admin-view-security error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── /functions/v1/wallet-operations ───
 app.post("/functions/v1/wallet-operations", async (req, res) => {
   try {
