@@ -371,6 +371,7 @@ const GlobalStyles = () => (
       100% { background-position: 0% 50%; }
     }
     .animated-headline {
+      color: white;
       background: linear-gradient(270deg, #fff 0%, #a78bfa 25%, #60a5fa 50%, #f0abfc 75%, #fff 100%);
       background-size: 300% 300%;
       -webkit-background-clip: text;
@@ -742,24 +743,13 @@ const AnimatedCounter = ({ value, prefix = "", suffix = "" }: { value: string; p
 const HeroDashboard = () => (
   <div className="relative w-full max-w-lg mx-auto select-none hero-dashboard" style={{ perspective: "1200px" }}>
 
-    {/* ── Orbit Ring 1 (outer) ── */}
+    {/* ── Orbit Ring 1 (outer) — very subtle ── */}
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ zIndex: 0 }}>
       <div className="orbit-cw-18 absolute" style={{
         width: "118%", height: "118%", borderRadius: "50%",
-        border: "1px dashed rgba(var(--t-a1-rgb),0.18)",
+        border: "1px dashed rgba(var(--t-a1-rgb),0.08)",
       }}>
-        {/* Orbit dot */}
-        <div style={{ position: "absolute", top: -4, left: "50%", transform: "translateX(-50%)", width: 8, height: 8, borderRadius: "50%", background: "var(--t-a1)", boxShadow: "0 0 10px var(--t-a1)" }} />
-      </div>
-    </div>
-
-    {/* ── Orbit Ring 2 (inner ccw) ── */}
-    <div className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ zIndex: 0 }}>
-      <div className="orbit-ccw-15 absolute" style={{
-        width: "88%", height: "88%", borderRadius: "50%",
-        border: "1px solid rgba(var(--t-a2-rgb),0.12)",
-      }}>
-        <div style={{ position: "absolute", bottom: -4, left: "50%", transform: "translateX(-50%)", width: 6, height: 6, borderRadius: "50%", background: "var(--t-a2)", boxShadow: "0 0 8px var(--t-a2)" }} />
+        <div style={{ position: "absolute", top: -3, left: "50%", transform: "translateX(-50%)", width: 6, height: 6, borderRadius: "50%", background: "var(--t-a1)", opacity: 0.5 }} />
       </div>
     </div>
 
@@ -1641,8 +1631,8 @@ const Orbs = () => (
     <div className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(var(--t-a2-rgb),0.35) 0%, transparent 70%)", filter: "blur(40px)" }} />
     <div className="pointer-events-none absolute top-1/3 -right-32 h-80 w-80 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(var(--t-a1-rgb),0.3) 0%, transparent 70%)", filter: "blur(40px)", animationDelay: "1.5s" }} />
     <div className="pointer-events-none absolute -bottom-20 left-1/4 h-72 w-72 rounded-full pulse-glow" style={{ background: "radial-gradient(circle, rgba(52,211,153,0.2) 0%, transparent 70%)", filter: "blur(40px)", animationDelay: "3s" }} />
-    {/* Morphing blob */}
-    <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 morph-blob opacity-[0.07]" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }} />
+    {/* Morphing blob — kept subtle, no dark circle */}
+    <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 morph-blob opacity-[0.03]" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", filter: "blur(20px)" }} />
   </>
 );
 
@@ -1963,7 +1953,7 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
 
           {/* Typewriter for professions */}
           <div className="text-xl sm:text-2xl lg:text-3xl font-bold mb-6" style={{ animation: "slide-up 0.7s ease 0.15s both" }}>
-            <TypewriterText />
+            <span className="text-white/60">for </span><TypewriterText />
           </div>
 
           <p className="text-base sm:text-lg text-white/60 leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0" style={{ animation: "slide-up 0.7s ease 0.2s both" }}>
