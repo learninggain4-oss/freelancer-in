@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { callEdgeFunction } from "@/lib/supabase-functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,17 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, ShieldOff, Loader2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 
-async function serverFetch(path: string, body?: object) {
+async function serverFetch(functionName: string, body?: object) {
   const { data: { session } } = await supabase.auth.getSession();
-  const method = body !== undefined ? "POST" : "GET";
-  const res = await fetch(path, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${session?.access_token}`,
-    },
-    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-  });
+  const token = session?.access_token;
+  const res = await callEdgeFunction(functionName, { body, token });
   const data = await res.json();
   if (!res.ok || data?.error) throw new Error(data?.error || "Request failed");
   return data;
@@ -36,7 +30,7 @@ const UserTotpSetupCard = () => {
   const { data: status, isLoading } = useQuery({
     queryKey: ["user-totp-status"],
     queryFn: async () => {
-      const data = await serverFetch("/functions/v1/totp-status");
+      const data = await serverFetch("totp-status");
       return data as { setup: boolean };
     },
   });
@@ -44,7 +38,7 @@ const UserTotpSetupCard = () => {
   const handleSetup = async () => {
     setLoading(true);
     try {
-      const data = await serverFetch("/functions/v1/totp-setup-init", {});
+      const data = await serverFetch("totp-setup-init", {});
       setSetupData(data);
     } catch (e: any) {
       toast.error(e.message);
@@ -60,7 +54,7 @@ const UserTotpSetupCard = () => {
     }
     setLoading(true);
     try {
-      await serverFetch("/functions/v1/totp-setup-verify", { token: verifyCode });
+      await serverFetch("totp-setup-verify", { token: verifyCode });
       toast.success("Google Authenticator enabled successfully!");
       setSetupData(null);
       setVerifyCode("");
@@ -79,7 +73,7 @@ const UserTotpSetupCard = () => {
     }
     setLoading(true);
     try {
-      await serverFetch("/functions/v1/totp-disable", { token: disableCode });
+      await serverFetch("totp-disable", { token: disableCode });
       toast.success("Google Authenticator disabled");
       setDisableCode("");
       queryClient.invalidateQueries({ queryKey: ["user-totp-status"] });

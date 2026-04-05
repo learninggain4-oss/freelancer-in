@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardTheme } from "@/hooks/use-dashboard-theme";
+import { callEdgeFunction } from "@/lib/supabase-functions";
 
 interface Props {
   mode: "setup" | "verify";
@@ -68,10 +69,7 @@ export default function TotpGateModal({ mode, theme, onVerified }: Props) {
     (async () => {
       try {
         const token = await getToken();
-        const res = await fetch("/functions/v1/totp-setup-init", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await callEdgeFunction("totp-setup-init", { token });
         const json = await res.json();
         if (!cancelled && json.qrCodeDataUrl) {
           setQrData({ qrCodeDataUrl: json.qrCodeDataUrl, formattedSecret: json.formattedSecret });
@@ -145,14 +143,8 @@ export default function TotpGateModal({ mode, theme, onVerified }: Props) {
     setError("");
     try {
       const token = await getToken();
-      const endpoint = step === "setup"
-        ? "/functions/v1/totp-setup-verify"
-        : "/functions/v1/totp-verify";
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ token: codeStr }),
-      });
+      const fnName = step === "setup" ? "totp-setup-verify" : "totp-verify";
+      const res = await callEdgeFunction(fnName, { body: { token: codeStr }, token });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Verification failed");
 

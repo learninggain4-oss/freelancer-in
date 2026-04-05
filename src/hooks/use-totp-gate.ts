@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { callEdgeFunction } from "@/lib/supabase-functions";
 
 export type TotpGateMode = "idle" | "checking" | "setup" | "verify" | "done";
 
@@ -9,7 +10,6 @@ export function useTotpGate(sqGatePassed: boolean, userId: string | undefined) {
   useEffect(() => {
     if (!sqGatePassed || !userId) { setMode("idle"); return; }
 
-    // Check session-level cache
     const sessionKey = `totp_ok_${userId}`;
     if (sessionStorage.getItem(sessionKey) === "1") {
       setMode("done");
@@ -25,9 +25,7 @@ export function useTotpGate(sqGatePassed: boolean, userId: string | undefined) {
         const token = session?.access_token;
         if (!token) { if (!cancelled) setMode("setup"); return; }
 
-        const res = await fetch("/functions/v1/totp-status", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await callEdgeFunction("totp-status", { token });
         const json = await res.json();
         if (cancelled) return;
         setMode(json.setup ? "verify" : "setup");

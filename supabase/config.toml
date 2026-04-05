@@ -53,3 +53,18 @@ verify_jwt = false
 
 [functions.admin-view-security]
 verify_jwt = false
+
+[functions.totp-status]
+verify_jwt = false
+
+[functions.totp-setup-init]
+verify_jwt = false
+
+[functions.totp-setup-verify]
+verify_jwt = false
+
+[functions.totp-verify]
+verify_jwt = false
+
+[functions.totp-disable]
+verify_jwt = false
