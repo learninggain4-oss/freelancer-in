@@ -60,10 +60,8 @@ const AdminSettings = () => {
   const [orderIdIncludeYear, setOrderIdIncludeYear] = useState(false);
   const [orderIdIncludeMonth, setOrderIdIncludeMonth] = useState(false);
   const [orderIdIncludeDate, setOrderIdIncludeDate] = useState(true);
-  const [socialTwitter, setSocialTwitter] = useState("https://twitter.com/freelancer_india");
-  const [socialLinkedin, setSocialLinkedin] = useState("https://linkedin.com/company/freelancer-india");
   const [socialInstagram, setSocialInstagram] = useState("https://instagram.com/official_freelancer_2026");
-  const [socialGithub, setSocialGithub] = useState("https://github.com/learninggain4-oss/freelancer-in");
+  const [socialWhatsapp, setSocialWhatsapp] = useState("https://chat.whatsapp.com/");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
 
@@ -120,10 +118,8 @@ const AdminSettings = () => {
           "withdrawal_order_id_include_year",
           "withdrawal_order_id_include_month",
           "withdrawal_order_id_include_date",
-          "social_twitter",
-          "social_linkedin",
           "social_instagram",
-          "social_github",
+          "social_whatsapp",
         ]);
       if (data) {
         for (const row of data) {
@@ -155,10 +151,8 @@ const AdminSettings = () => {
           if (row.key === "withdrawal_order_id_include_year") setOrderIdIncludeYear(row.value === "true");
           if (row.key === "withdrawal_order_id_include_month") setOrderIdIncludeMonth(row.value === "true");
           if (row.key === "withdrawal_order_id_include_date") setOrderIdIncludeDate(row.value !== "false");
-          if (row.key === "social_twitter")   setSocialTwitter(row.value);
-          if (row.key === "social_linkedin")  setSocialLinkedin(row.value);
           if (row.key === "social_instagram") setSocialInstagram(row.value);
-          if (row.key === "social_github")    setSocialGithub(row.value);
+          if (row.key === "social_whatsapp")  setSocialWhatsapp(row.value);
         }
       }
       setLoading(false);
@@ -939,10 +933,8 @@ const AdminSettings = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             {[
-              { key: "social_twitter",   label: "Twitter / X", icon: "𝕏", val: socialTwitter,   set: setSocialTwitter,   placeholder: "https://twitter.com/..." },
-              { key: "social_linkedin",  label: "LinkedIn",    icon: "in", val: socialLinkedin,  set: setSocialLinkedin,  placeholder: "https://linkedin.com/company/..." },
-              { key: "social_instagram", label: "Instagram",   icon: "📸", val: socialInstagram, set: setSocialInstagram, placeholder: "https://instagram.com/..." },
-              { key: "social_github",    label: "GitHub",      icon: "⌥", val: socialGithub,    set: setSocialGithub,    placeholder: "https://github.com/..." },
+              { key: "social_instagram", label: "Instagram",         icon: "📸", val: socialInstagram, set: setSocialInstagram, placeholder: "https://instagram.com/..." },
+              { key: "social_whatsapp",  label: "WhatsApp Community", icon: "💬", val: socialWhatsapp,  set: setSocialWhatsapp,  placeholder: "https://chat.whatsapp.com/..." },
             ].map(({ key, label, icon, val, set, placeholder }) => (
               <div key={key} className="flex items-center gap-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold text-white" style={{ background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.3)" }}>{icon}</div>

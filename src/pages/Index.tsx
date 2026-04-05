@@ -4581,15 +4581,20 @@ const FAQSection = () => {
 };
 
 /* ─────────────────────── Footer ─────────────────────── */
-type SocialLinks = { twitter: string; linkedin: string; instagram: string; github: string };
+type SocialLinks = { instagram: string; whatsapp: string };
+
+const WhatsAppIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.558 4.116 1.533 5.843L.057 23.492a.5.5 0 0 0 .614.614l5.764-1.461A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.687-.5-5.23-1.375l-.364-.213-3.777.958.975-3.667-.228-.376A10 10 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+  </svg>
+);
 
 const Footer = ({ socialLinks }: { socialLinks?: SocialLinks }) => {
   const { t } = useLang();
   const sl = socialLinks ?? {
-    twitter:   "https://twitter.com/freelancer_india",
-    linkedin:  "https://linkedin.com/company/freelancer-india",
     instagram: "https://instagram.com/official_freelancer_2026",
-    github:    "https://github.com/learninggain4-oss/freelancer-in",
+    whatsapp:  "https://chat.whatsapp.com/",
   };
   return (
     <footer className="relative py-16 px-4 sm:px-6 overflow-hidden" style={{ borderTop: "1px solid rgba(255,255,255,0.07)", background: "rgba(0,0,0,0.3)" }}>
@@ -4602,16 +4607,12 @@ const Footer = ({ socialLinks }: { socialLinks?: SocialLinks }) => {
             </div>
             <p className="text-sm text-white/40 leading-relaxed mb-5 max-w-xs">{t.footer.tagline}</p>
             <div className="flex gap-3">
-              {([
-                [Twitter,   sl.twitter],
-                [Linkedin,  sl.linkedin],
-                [Instagram, sl.instagram],
-                [Github,    sl.github],
-              ] as [typeof Twitter, string][]).map(([Icon, href], i) => (
-                <a key={i} href={href} target="_blank" rel="noopener noreferrer" className="social-icon flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-white/10" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <Icon className="h-3.5 w-3.5 text-white/50" />
-                </a>
-              ))}
+              <a href={sl.instagram} target="_blank" rel="noopener noreferrer" className="social-icon flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-white/10" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <Instagram className="h-3.5 w-3.5 text-white/50" />
+              </a>
+              <a href={sl.whatsapp} target="_blank" rel="noopener noreferrer" className="social-icon flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-white/10" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <WhatsAppIcon className="h-3.5 w-3.5 text-white/50" />
+              </a>
             </div>
           </div>
           <div>
@@ -5118,14 +5119,12 @@ const Index = () => {
   const { data: socialLinks } = useQuery({
     queryKey: ["landing-social-links"],
     queryFn: async () => {
-      const { data } = await supabase.from("app_settings").select("key, value").in("key", ["social_twitter", "social_linkedin", "social_instagram", "social_github"]);
+      const { data } = await supabase.from("app_settings").select("key, value").in("key", ["social_instagram", "social_whatsapp"]);
       const map: Record<string, string> = {};
       for (const row of data ?? []) map[row.key] = row.value;
       return {
-        twitter:   map["social_twitter"]   || "https://twitter.com/freelancer_india",
-        linkedin:  map["social_linkedin"]  || "https://linkedin.com/company/freelancer-india",
         instagram: map["social_instagram"] || "https://instagram.com/official_freelancer_2026",
-        github:    map["social_github"]    || "https://github.com/learninggain4-oss/freelancer-in",
+        whatsapp:  map["social_whatsapp"]  || "https://chat.whatsapp.com/",
       };
     },
     staleTime: 5 * 60 * 1000,
