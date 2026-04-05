@@ -69,8 +69,9 @@ export default function TotpGateModal({ mode, theme, onVerified }: Props) {
     (async () => {
       try {
         const token = await getToken();
-        const res = await callEdgeFunction("totp-setup-init", { token });
-        const json = await res.json();
+        const res = await callEdgeFunction("totp-setup-init", { method: "POST", body: {}, token });
+        let json: any = {};
+        try { json = await res.json(); } catch { /* non-JSON response */ }
         if (!cancelled && json.qrCodeDataUrl) {
           setQrData({ qrCodeDataUrl: json.qrCodeDataUrl, formattedSecret: json.formattedSecret });
         } else if (!cancelled) {
