@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { callEdgeFunction } from "@/lib/supabase-functions";
 
 type SqStatus = "idle" | "checking" | "show" | "passed";
 
@@ -24,9 +25,7 @@ export function useSecurityQuestionsGate(mpinDone: boolean, userId: string | und
         const token = session?.access_token;
         if (!token) { if (!cancelled) setStatus("show"); return; }
 
-        const res = await fetch("/functions/v1/security-questions-status", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await callEdgeFunction("security-questions-status", { token });
         const json = await res.json();
         if (cancelled) return;
         if (json.done) {

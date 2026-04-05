@@ -7,18 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { KeyRound, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { isFunctionUnavailableError, readFunctionJson } from "@/lib/function-response";
+import { callEdgeFunction } from "@/lib/supabase-functions";
 
-async function serverFetch<T>(path: string, body?: object): Promise<T> {
+async function serverFetch<T>(functionName: string, body?: object): Promise<T> {
   const { data: { session } } = await supabase.auth.getSession();
-  const method = body !== undefined ? "POST" : "GET";
-  const res = await fetch(path, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${session?.access_token}`,
-    },
-    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-  });
+  const token = session?.access_token;
+  const res = await callEdgeFunction(functionName, { body, token });
   return readFunctionJson<T>(res, "M-Pin is not available right now.");
 }
 
@@ -56,7 +50,7 @@ const UserMpinCard = () => {
     queryKey: ["user-mpin-status"],
     queryFn: async () => {
       try {
-        return await serverFetch<MpinStatus>("/functions/v1/mpin-status");
+        return await serverFetch<MpinStatus>("mpin-status");
       } catch (error) {
         if (isFunctionUnavailableError(error)) {
           return { hasPin: false, unavailable: true } satisfies MpinStatus;
@@ -89,7 +83,7 @@ const UserMpinCard = () => {
     if (currentPin.length < 4) { toast.error("Enter your current PIN"); return; }
     setLoading(true);
     try {
-      const data = await serverFetch<{ valid: boolean }>("/functions/v1/mpin-verify", { pin: currentPin });
+      const data = await serverFetch<{ valid: boolean }>("mpin-verify", { pin: currentPin });
       if (data.valid) {
         setStep("enter_new");
       } else {
@@ -107,7 +101,7 @@ const UserMpinCard = () => {
     if (newPin !== confirmPin) { toast.error("PINs do not match"); return; }
     setLoading(true);
     try {
-      await serverFetch<{ success?: boolean }>("/functions/v1/mpin-set", { pin: newPin });
+      await serverFetch<{ success?: boolean }>("mpin-set", { pin: newPin });
       toast.success(status?.hasPin ? "M-Pin changed successfully!" : "M-Pin created successfully!");
       reset();
       queryClient.invalidateQueries({ queryKey: ["user-mpin-status"] });

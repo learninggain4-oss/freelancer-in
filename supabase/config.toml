@@ -26,3 +26,27 @@ verify_jwt = false
 
 [functions.send-onesignal]
 verify_jwt = false
+
+[functions.mpin-status]
+verify_jwt = false
+
+[functions.mpin-set]
+verify_jwt = false
+
+[functions.mpin-verify]
+verify_jwt = false
+
+[functions.forgot-mpin-options]
+verify_jwt = false
+
+[functions.forgot-mpin-verify-totp]
+verify_jwt = false
+
+[functions.forgot-mpin-verify-sq]
+verify_jwt = false
+
+[functions.security-questions-status]
+verify_jwt = false
+
+[functions.security-questions-save]
+verify_jwt = false

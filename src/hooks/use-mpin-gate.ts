@@ -2,19 +2,18 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { isFunctionUnavailableError, readFunctionJson } from "@/lib/function-response";
+import { callEdgeFunction } from "@/lib/supabase-functions";
 
 export type MpinGateMode = "checking" | "create" | "verify" | "done";
 
 export function useMpinGate(_userType?: string) {
   const { user } = useAuth();
   const [mode, setMode] = useState<MpinGateMode>("checking");
-  // Increments every time a fresh SIGNED_IN event fires → forces gate re-check
   const [loginTick, setLoginTick] = useState(0);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN") {
-        // Reset gate state so the check runs fresh even for the same userId
         setMode("checking");
         setLoginTick(t => t + 1);
       }
@@ -28,8 +27,6 @@ export function useMpinGate(_userType?: string) {
       return;
     }
 
-    // sessionStorage flag is cleared in AuthContext on SIGNED_OUT,
-    // so after every fresh login this will always be missing.
     const key = `mpin_ok_${user.id}`;
     if (sessionStorage.getItem(key) === "1") {
       setMode("done");
@@ -44,9 +41,7 @@ export function useMpinGate(_userType?: string) {
         const token = session?.access_token;
         if (!token) { if (!cancelled) setMode("create"); return; }
 
-        const res = await fetch("/functions/v1/mpin-status", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await callEdgeFunction("mpin-status", { token });
         const json = await readFunctionJson<{ hasPin?: boolean }>(res, "M-Pin is not available right now.");
         if (!cancelled) setMode(json.hasPin ? "verify" : "create");
       } catch (error) {

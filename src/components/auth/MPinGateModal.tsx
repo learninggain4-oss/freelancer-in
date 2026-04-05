@@ -7,6 +7,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardTheme } from "@/hooks/use-dashboard-theme";
 import { isFunctionUnavailableError, readFunctionJson } from "@/lib/function-response";
+import { callEdgeFunction } from "@/lib/supabase-functions";
 
 interface Props {
   mode: "create" | "verify";
@@ -140,9 +141,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
     (async () => {
       try {
         const token = await getToken();
-        const res = await fetch("/functions/v1/mpin-status", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await callEdgeFunction("mpin-status", { token });
         const json = await readFunctionJson<{ blocked?: boolean; blockedUntil?: string; attemptsLeft?: number }>(
           res,
           "M-Pin is not available right now.",
@@ -208,9 +207,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
     setForgotError("");
     try {
       const token = await getToken();
-      const res = await fetch("/functions/v1/forgot-mpin-options", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await callEdgeFunction("forgot-mpin-options", { token });
       const json = await readFunctionJson<{ hasTotp?: boolean; hasSq?: boolean; sqQuestions?: { idx: number; question: string }[] }>(
         res,
         "M-Pin recovery is not available right now.",
@@ -260,11 +257,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
     setForgotLoading(true); setForgotError("");
     try {
       const token = await getToken();
-      const res = await fetch("/functions/v1/forgot-mpin-verify-totp", {
-        method: "POST",
-        headers: { "Content-Type":"application/json", Authorization:`Bearer ${token}` },
-        body: JSON.stringify({ token: totpStr }),
-      });
+      const res = await callEdgeFunction("forgot-mpin-verify-totp", { body: { token: totpStr }, token });
       const json = await readFunctionJson<{ valid?: boolean }>(res, "M-Pin recovery is not available right now.");
       if (!res.ok || !json.valid) throw new Error("Incorrect code. Please try again.");
       setForgotStep("new-pin-enter");
@@ -286,11 +279,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
     try {
       const token = await getToken();
       const answers = sqOptions.map((q, i) => ({ idx: q.idx, answer: sqAnswers[i] }));
-      const res = await fetch("/functions/v1/forgot-mpin-verify-sq", {
-        method: "POST",
-        headers: { "Content-Type":"application/json", Authorization:`Bearer ${token}` },
-        body: JSON.stringify({ answers }),
-      });
+      const res = await callEdgeFunction("forgot-mpin-verify-sq", { body: { answers }, token });
       const json = await readFunctionJson<{ valid?: boolean }>(res, "M-Pin recovery is not available right now.");
       if (!res.ok || !json.valid) throw new Error("One or more answers are incorrect. Please try again.");
       setForgotStep("new-pin-enter");
@@ -324,11 +313,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
           setForgotLoading(true);
           try {
             const token = await getToken();
-            const res = await fetch("/functions/v1/mpin-set", {
-              method: "POST",
-              headers: { "Content-Type":"application/json", Authorization:`Bearer ${token}` },
-              body: JSON.stringify({ pin: newPin }),
-            });
+            const res = await callEdgeFunction("mpin-set", { body: { pin: newPin }, token });
             await readFunctionJson(res, "M-Pin is not available right now.");
             setForgotStep("success");
             setTimeout(onVerified, 1600);
@@ -366,12 +351,8 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
     setLoading(true);
     try {
       const token = await getToken();
-      const endpoint = mode === "create" ? "/functions/v1/mpin-set" : "/functions/v1/mpin-verify";
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type":"application/json", Authorization:`Bearer ${token}` },
-        body: JSON.stringify({ pin }),
-      });
+      const fnName = mode === "create" ? "mpin-set" : "mpin-verify";
+      const res = await callEdgeFunction(fnName, { body: { pin }, token });
       const json = await readFunctionJson<{
         blocked?: boolean;
         blockedUntil?: string;
