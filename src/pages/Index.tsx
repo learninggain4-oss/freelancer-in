@@ -4581,8 +4581,16 @@ const FAQSection = () => {
 };
 
 /* ─────────────────────── Footer ─────────────────────── */
-const Footer = () => {
+type SocialLinks = { twitter: string; linkedin: string; instagram: string; github: string };
+
+const Footer = ({ socialLinks }: { socialLinks?: SocialLinks }) => {
   const { t } = useLang();
+  const sl = socialLinks ?? {
+    twitter:   "https://twitter.com/freelancer_india",
+    linkedin:  "https://linkedin.com/company/freelancer-india",
+    instagram: "https://instagram.com/official_freelancer_2026",
+    github:    "https://github.com/learninggain4-oss/freelancer-in",
+  };
   return (
     <footer className="relative py-16 px-4 sm:px-6 overflow-hidden" style={{ borderTop: "1px solid rgba(255,255,255,0.07)", background: "rgba(0,0,0,0.3)" }}>
       <div className="mx-auto max-w-7xl">
@@ -4595,11 +4603,11 @@ const Footer = () => {
             <p className="text-sm text-white/40 leading-relaxed mb-5 max-w-xs">{t.footer.tagline}</p>
             <div className="flex gap-3">
               {([
-                [Twitter,   "https://twitter.com/freelancer_india"],
-                [Linkedin,  "https://linkedin.com/company/freelancer-india"],
-                [Instagram, "https://instagram.com/freelancer.india"],
-                [Github,    "https://github.com/learninggain4-oss/freelancer-in"],
-              ] as const).map(([Icon, href], i) => (
+                [Twitter,   sl.twitter],
+                [Linkedin,  sl.linkedin],
+                [Instagram, sl.instagram],
+                [Github,    sl.github],
+              ] as [typeof Twitter, string][]).map(([Icon, href], i) => (
                 <a key={i} href={href} target="_blank" rel="noopener noreferrer" className="social-icon flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-white/10" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   <Icon className="h-3.5 w-3.5 text-white/50" />
                 </a>
@@ -5107,6 +5115,22 @@ const Index = () => {
     },
   });
 
+  const { data: socialLinks } = useQuery({
+    queryKey: ["landing-social-links"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_settings").select("key, value").in("key", ["social_twitter", "social_linkedin", "social_instagram", "social_github"]);
+      const map: Record<string, string> = {};
+      for (const row of data ?? []) map[row.key] = row.value;
+      return {
+        twitter:   map["social_twitter"]   || "https://twitter.com/freelancer_india",
+        linkedin:  map["social_linkedin"]  || "https://linkedin.com/company/freelancer-india",
+        instagram: map["social_instagram"] || "https://instagram.com/official_freelancer_2026",
+        github:    map["social_github"]    || "https://github.com/learninggain4-oss/freelancer-in",
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   useEffect(() => {
     setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
     if (window.matchMedia("(display-mode: standalone)").matches) setIsInstalled(true);
@@ -5332,7 +5356,7 @@ const Index = () => {
         </>)}
       </main>
 
-      <Footer />
+      <Footer socialLinks={socialLinks} />
 
 
       {/* Install Banner */}

@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Clock, Landmark, Gift, CreditCard, Search, X, Coins, CheckCircle, Briefcase, Calendar, Star, Users, Receipt, Settings } from "lucide-react";
+import { Loader2, Save, Clock, Landmark, Gift, CreditCard, Search, X, Coins, CheckCircle, Briefcase, Calendar, Star, Users, Receipt, Settings, Globe } from "lucide-react";
 import TotpSetupCard from "@/components/admin/TotpSetupCard";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { Badge } from "@/components/ui/badge";
@@ -60,6 +60,10 @@ const AdminSettings = () => {
   const [orderIdIncludeYear, setOrderIdIncludeYear] = useState(false);
   const [orderIdIncludeMonth, setOrderIdIncludeMonth] = useState(false);
   const [orderIdIncludeDate, setOrderIdIncludeDate] = useState(true);
+  const [socialTwitter, setSocialTwitter] = useState("https://twitter.com/freelancer_india");
+  const [socialLinkedin, setSocialLinkedin] = useState("https://linkedin.com/company/freelancer-india");
+  const [socialInstagram, setSocialInstagram] = useState("https://instagram.com/official_freelancer_2026");
+  const [socialGithub, setSocialGithub] = useState("https://github.com/learninggain4-oss/freelancer-in");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
 
@@ -116,6 +120,10 @@ const AdminSettings = () => {
           "withdrawal_order_id_include_year",
           "withdrawal_order_id_include_month",
           "withdrawal_order_id_include_date",
+          "social_twitter",
+          "social_linkedin",
+          "social_instagram",
+          "social_github",
         ]);
       if (data) {
         for (const row of data) {
@@ -147,6 +155,10 @@ const AdminSettings = () => {
           if (row.key === "withdrawal_order_id_include_year") setOrderIdIncludeYear(row.value === "true");
           if (row.key === "withdrawal_order_id_include_month") setOrderIdIncludeMonth(row.value === "true");
           if (row.key === "withdrawal_order_id_include_date") setOrderIdIncludeDate(row.value !== "false");
+          if (row.key === "social_twitter")   setSocialTwitter(row.value);
+          if (row.key === "social_linkedin")  setSocialLinkedin(row.value);
+          if (row.key === "social_instagram") setSocialInstagram(row.value);
+          if (row.key === "social_github")    setSocialGithub(row.value);
         }
       }
       setLoading(false);
@@ -915,6 +927,53 @@ const AdminSettings = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Social Media Links */}
+        <Card style={{ background: T.card, border: `1px solid ${T.border}` }}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2" style={{ color: T.text }}>
+              <Globe className="h-5 w-5 text-[#6366f1]" />
+              Social Media Links
+            </CardTitle>
+            <p className="text-sm" style={{ color: T.sub }}>These links appear in the landing page footer. Changes are reflected live for all visitors.</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {[
+              { key: "social_twitter",   label: "Twitter / X", icon: "𝕏", val: socialTwitter,   set: setSocialTwitter,   placeholder: "https://twitter.com/..." },
+              { key: "social_linkedin",  label: "LinkedIn",    icon: "in", val: socialLinkedin,  set: setSocialLinkedin,  placeholder: "https://linkedin.com/company/..." },
+              { key: "social_instagram", label: "Instagram",   icon: "📸", val: socialInstagram, set: setSocialInstagram, placeholder: "https://instagram.com/..." },
+              { key: "social_github",    label: "GitHub",      icon: "⌥", val: socialGithub,    set: setSocialGithub,    placeholder: "https://github.com/..." },
+            ].map(({ key, label, icon, val, set, placeholder }) => (
+              <div key={key} className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold text-white" style={{ background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.3)" }}>{icon}</div>
+                <div className="flex-1 space-y-1">
+                  <Label className="text-xs" style={{ color: T.sub }}>{label}</Label>
+                  <Input
+                    value={val}
+                    onChange={e => set(e.target.value)}
+                    placeholder={placeholder}
+                    style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  className="shrink-0 bg-[#6366f1] hover:bg-[#6366f1]/90"
+                  disabled={saving === key}
+                  onClick={async () => {
+                    setSaving(key);
+                    try {
+                      await supabase.from("app_settings").upsert({ key, value: val }, { onConflict: "key" });
+                      toast({ title: `${label} link saved` });
+                    } finally { setSaving(null); }
+                  }}
+                >
+                  {saving === key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
       </div>
     </div>
   );
