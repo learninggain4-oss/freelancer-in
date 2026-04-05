@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { callEdgeFunction } from "@/lib/supabase-functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,10 +95,10 @@ const AdminRecoveryRequests = () => {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
       if (!token) throw new Error("Not authenticated");
-      const res = await fetch(`/functions/v1/wallet-operations`, {
+      const res = await callEdgeFunction("wallet-operations", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "admin_release_held_balance", project_id: projectId, admin_notes: adminNotes[requestId] || "", recovery_request_id: requestId }),
+        body: { action: "admin_release_held_balance", project_id: projectId, admin_notes: adminNotes[requestId] || "", recovery_request_id: requestId },
+        token,
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Operation failed");

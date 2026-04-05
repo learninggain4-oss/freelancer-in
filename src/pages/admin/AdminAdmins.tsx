@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { callEdgeFunction } from "@/lib/supabase-functions";
 
 const TH = {
   black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
@@ -44,17 +45,10 @@ type AdminRow = {
   is_super_admin: boolean;
 };
 
-async function callServer(path: string, body?: object) {
+async function callAdmin(fnName: string, body?: object) {
   const { data: { session } } = await supabase.auth.getSession();
-  const method = body ? "POST" : "GET";
-  const res = await fetch(path, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${session?.access_token}`,
-    },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
+  const token = session?.access_token ?? "";
+  const res = await callEdgeFunction(fnName, body ? { method: "POST", body, token } : { method: "GET", token });
   const data = await res.json();
   if (!res.ok || data?.error) throw new Error(data?.error || "Request failed");
   return data;
@@ -82,7 +76,7 @@ const AdminAdmins = () => {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin-list"],
     queryFn: async () => {
-      const d = await callServer("/functions/v1/admin-list");
+      const d = await callAdmin("admin-list");
       return d.admins as AdminRow[];
     },
   });
@@ -106,7 +100,7 @@ const AdminAdmins = () => {
     if (!addEmail.trim()) return;
     setAddLoading(true);
     try {
-      await callServer("/functions/v1/admin-manage", { action: "grant", target_email: addEmail.trim() });
+      await callAdmin("admin-manage", { action: "grant", target_email: addEmail.trim() });
       toast.success("Admin role granted successfully");
       setAddOpen(false);
       setAddEmail("");
@@ -121,7 +115,7 @@ const AdminAdmins = () => {
   const handleRevoke = async (admin: AdminRow) => {
     setProcessing(true);
     try {
-      await callServer("/functions/v1/admin-manage", { action: "revoke", user_id: admin.user_id });
+      await callAdmin("admin-manage", { action: "revoke", user_id: admin.user_id });
       toast.success(`Admin role removed for ${admin.email}`);
       setConfirmRevoke(null);
       queryClient.invalidateQueries({ queryKey: ["admin-list"] });
@@ -136,7 +130,7 @@ const AdminAdmins = () => {
     if (!admin.profile_id) { toast.error("No profile found for this admin"); return; }
     setProcessing(true);
     try {
-      const d = await callServer("/functions/v1/admin-manage", { action: "toggle_block", profile_id: admin.profile_id });
+      const d = await callAdmin("admin-manage", { action: "toggle_block", profile_id: admin.profile_id });
       toast.success(d.is_disabled ? "Admin account blocked" : "Admin account unblocked");
       setConfirmBlock(null);
       queryClient.invalidateQueries({ queryKey: ["admin-list"] });

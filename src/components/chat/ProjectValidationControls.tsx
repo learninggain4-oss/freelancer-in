@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CheckCircle, XCircle, Loader2, ShieldCheck, CreditCard, Clock, ClipboardCheck, BadgeCheck, IndianRupee, LifeBuoy, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { callEdgeFunction } from "@/lib/supabase-functions";
 import { toast } from "sonner";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -206,18 +207,9 @@ const ProjectValidationControls = ({
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData?.session?.access_token;
     if (!token) throw new Error("Not authenticated");
-
-    const res = await fetch(
-      `/functions/v1/wallet-operations`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ action, project_id: projectId }),
-      }
-    );
+    const res = await callEdgeFunction("wallet-operations", {
+      method: "POST", body: { action, project_id: projectId }, token,
+    });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || "Operation failed");
     return json;
