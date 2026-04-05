@@ -176,7 +176,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       if (authError) throw authError;
       if (!authData.user) throw new Error("Registration failed");
       const userId = authData.user.id;
-      const { error: profileError } = await supabase.from("profiles").insert([{ user_id: userId, user_type: userType, full_name: [data.full_name.toUpperCase()], user_code: [], email: data.email, gender: data.gender, date_of_birth: data.date_of_birth, marital_status: data.marital_status, education_level: data.education_level, mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number, education_background: data.education_background || null, referred_by: referralCode.trim() || null, ...(isFreelancer ? { approval_status: "approved" } : {}) } as any]);
+      const { error: profileError } = await supabase.from("profiles").insert([{ user_id: userId, user_type: userType, full_name: [data.full_name.toUpperCase()], user_code: [], email: data.email, gender: data.gender, date_of_birth: data.date_of_birth, marital_status: data.marital_status, education_level: data.education_level, mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number, education_background: data.education_background || null, referred_by: referralCode.trim() || null, approval_status: "approved" } as any]);
       if (profileError) throw profileError;
       const profileId = userId;
       await supabase.from("registration_metadata" as any).insert([{ profile_id: profileId, ip_address: geoData.ip||null, city: geoData.city||null, region: geoData.region||null, country: geoData.country||null, latitude: geoData.lat||null, longitude: geoData.lon||null }] as any);
@@ -191,12 +191,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
         const { data: svcData } = await supabase.from("employee_services").insert({ profile_id: profileId, category_id: s.category_id, service_title: s.service_title, hourly_rate: Number(s.hourly_rate)||0, minimum_budget: Number(s.minimum_budget)||0 }).select("id").single();
         if (svcData && s.skill_ids.length > 0) await supabase.from("employee_skill_selections").insert(s.skill_ids.map(skillId => ({ employee_service_id: svcData.id, skill_id: skillId })));
       }
-      if (isFreelancer) {
-        setSubmitted(true);
-      } else {
-        toast({ title: "Registration successful!", description: "Your account is pending admin approval." });
-        navigate("/verification-pending");
-      }
+      setSubmitted(true);
     } catch (error: any) {
       toast({ title: "Registration failed", description: error.message, variant: "destructive" });
     } finally { setSubmitting(false); }
@@ -243,7 +238,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
             </div>
             <h2 style={{ fontSize: 26, fontWeight: 800, color: "#ffffff", margin: "0 0 8px" }}>Registration Successful!</h2>
             <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 14, margin: "0 0 24px", lineHeight: 1.6 }}>
-              Your Freelancer account has been created and activated. Welcome aboard!
+              Your {isFreelancer ? "Freelancer" : "Employer"} account has been created and activated. Welcome aboard!
             </p>
             <div style={{ padding: "14px 18px", borderRadius: 14, background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", marginBottom: 20 }}>
               <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, margin: 0 }}>
