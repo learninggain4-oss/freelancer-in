@@ -31,6 +31,15 @@ const TH = {
 
 const PAGE_SIZE = 15;
 
+async function getToken(): Promise<string> {
+  let { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    const { data } = await supabase.auth.refreshSession();
+    session = data.session;
+  }
+  return session?.access_token ?? "";
+}
+
 const AdminUsers = () => {
   const { theme, themeKey } = useDashboardTheme();
   const T = TH[themeKey];
@@ -71,17 +80,17 @@ const AdminUsers = () => {
 
   const fetchProfiles = async () => {
     setLoading(true);
-    const [{ data }, { data: { session } }] = await Promise.all([
+    const [{ data }, token] = await Promise.all([
       supabase
         .from("profiles")
         .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled")
         .order("created_at", { ascending: false }),
-      supabase.auth.getSession(),
+      getToken(),
     ]);
     setProfiles((data as FullProfile[]) || []);
     // Fetch admin list to detect admin / super admin users
     try {
-      const res = await callEdgeFunction("admin-list", { method: "GET", token: session?.access_token ?? "" });
+      const res = await callEdgeFunction("admin-list", { method: "GET", token });
       const adminData = await res.json();
       const map = new Map<string, { isSuperAdmin: boolean }>();
       (adminData.admins || []).forEach((a: { email: string; is_super_admin: boolean }) => {
@@ -121,10 +130,10 @@ const AdminUsers = () => {
     setShowMpin(false);
     setShowTotpSecret(false);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const token = await getToken();
       const res = await callEdgeFunction("admin-view-security", {
         body: { profile_id: user.id },
-        token: session?.access_token,
+        token,
       });
       const data = await res.json();
       if (res.status === 403) {
@@ -147,10 +156,10 @@ const AdminUsers = () => {
     if (!viewSecurityUser) return;
     setSecurityLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const token = await getToken();
       const res = await callEdgeFunction("admin-view-security", {
         body: { profile_id: viewSecurityUser.id },
-        token: session?.access_token,
+        token,
       });
       const data = await res.json();
       if (res.ok && !data?.error) setSecurityData(data);
@@ -225,8 +234,8 @@ const AdminUsers = () => {
   const handleResetMpin = async (user: FullProfile) => {
     setActionProcessing(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await callEdgeFunction("admin-user-management", { method: "POST", body: { action: "reset_mpin", profile_id: user.id }, token: session?.access_token ?? "" });
+      const token = await getToken();
+      const res = await callEdgeFunction("admin-user-management", { method: "POST", body: { action: "reset_mpin", profile_id: user.id }, token });
       const data = await res.json();
       if (!res.ok || data?.error) {
         toast.error(data?.error || "Security reset failed");
@@ -776,8 +785,8 @@ const AdminUsers = () => {
                             if (!viewSecurityUser) return;
                             setActionProcessing(true);
                             try {
-                              const { data: { session } } = await supabase.auth.getSession();
-                              const r = await callEdgeFunction("admin-user-management", { method: "POST", body: { action: "reset_mpin", profile_id: viewSecurityUser.id }, token: session?.access_token ?? "" });
+                              const token = await getToken();
+                              const r = await callEdgeFunction("admin-user-management", { method: "POST", body: { action: "reset_mpin", profile_id: viewSecurityUser.id }, token });
                               if (r.ok) {
                                 toast.success("Security reset done. User will re-setup on next login.");
                                 setViewSecurityUser(null);
