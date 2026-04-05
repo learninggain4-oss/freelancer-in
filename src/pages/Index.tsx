@@ -360,8 +360,14 @@ const GlobalStyles = () => (
     /* aurora blobs drift */
     @keyframes aurora-drift {
       0%   { transform: translate(0, 0) scale(1); }
-      30%  { transform: translate(50px, -35px) scale(1.12); }
-      65%  { transform: translate(-30px, 40px) scale(0.9); }
+      25%  { transform: translate(45px, -30px) scale(1.10); }
+      60%  { transform: translate(-25px, 38px) scale(0.92); }
+      100% { transform: translate(0, 0) scale(1); }
+    }
+    @keyframes aurora-drift-b {
+      0%   { transform: translate(0, 0) scale(1); }
+      30%  { transform: translate(-42px, 28px) scale(1.08); }
+      70%  { transform: translate(32px, -22px) scale(0.94); }
       100% { transform: translate(0, 0) scale(1); }
     }
     /* animated gradient headline */
@@ -1340,26 +1346,51 @@ const FloatingSkillTags = () => (
 
 /* ─────────────────────── Aurora Background ─────────────────────── */
 const AURORA_BLOBS = [
-  { w: 700, h: 700, top: "5%",  left: "-8%",  color: "rgba(99,102,241,0.07)",  dur: 9,  delay: 0 },
-  { w: 550, h: 550, top: "60%", right: "-6%", color: "rgba(139,92,246,0.06)",  dur: 11, delay: 2 },
-  { w: 400, h: 400, top: "35%", left: "35%",  color: "rgba(52,211,153,0.045)", dur: 13, delay: 4 },
-  { w: 350, h: 350, top: "80%", left: "15%",  color: "rgba(236,72,153,0.04)",  dur: 15, delay: 1 },
-  { w: 300, h: 300, top: "20%", right: "20%", color: "rgba(59,130,246,0.05)",  dur: 10, delay: 3 },
+  /* ── Top zone ── */
+  { w:"70vw", h:"70vw", top:"-18%", left:"-14%",  color:"rgba(var(--t-a1-rgb),0.12)", dur:20, delay:0,   anim:"aurora-drift"   },
+  { w:"58vw", h:"58vw", top:"-8%",  right:"-12%", color:"rgba(var(--t-a2-rgb),0.09)", dur:26, delay:3,   anim:"aurora-drift-b" },
+  { w:"38vw", h:"38vw", top:"12%",  left:"38%",   color:"rgba(59,130,246,0.06)",       dur:18, delay:7,   anim:"aurora-drift"   },
+  /* ── Mid-upper zone ── */
+  { w:"52vw", h:"52vw", top:"28%",  left:"-10%",  color:"rgba(var(--t-a2-rgb),0.08)", dur:24, delay:2,   anim:"aurora-drift-b" },
+  { w:"46vw", h:"46vw", top:"32%",  right:"-8%",  color:"rgba(var(--t-a1-rgb),0.07)", dur:30, delay:5,   anim:"aurora-drift"   },
+  { w:"36vw", h:"36vw", top:"42%",  left:"42%",   color:"rgba(52,211,153,0.05)",       dur:22, delay:9,   anim:"aurora-drift-b" },
+  /* ── Mid zone ── */
+  { w:"60vw", h:"60vw", top:"50%",  left:"18%",   color:"rgba(var(--t-a1-rgb),0.07)", dur:28, delay:1,   anim:"aurora-drift"   },
+  { w:"50vw", h:"50vw", top:"55%",  right:"-10%", color:"rgba(var(--t-a2-rgb),0.06)", dur:19, delay:6,   anim:"aurora-drift-b" },
+  /* ── Lower zone ── */
+  { w:"62vw", h:"62vw", top:"68%",  left:"-8%",   color:"rgba(var(--t-a2-rgb),0.09)", dur:25, delay:4,   anim:"aurora-drift"   },
+  { w:"54vw", h:"54vw", top:"72%",  right:"-6%",  color:"rgba(var(--t-a1-rgb),0.08)", dur:17, delay:8,   anim:"aurora-drift-b" },
+  { w:"42vw", h:"42vw", top:"78%",  left:"35%",   color:"rgba(236,72,153,0.05)",       dur:32, delay:2,   anim:"aurora-drift"   },
+  /* ── Bottom zone ── */
+  { w:"55vw", h:"55vw", top:"88%",  left:"-5%",   color:"rgba(var(--t-a1-rgb),0.08)", dur:21, delay:5,   anim:"aurora-drift-b" },
+  { w:"48vw", h:"48vw", top:"92%",  right:"-8%",  color:"rgba(var(--t-a2-rgb),0.07)", dur:27, delay:0,   anim:"aurora-drift"   },
 ];
+
 const AuroraBackground = () => (
   <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
+    {/* Global subtle grid */}
+    <div style={{
+      position: "absolute", inset: 0,
+      backgroundImage: "linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px)",
+      backgroundSize: "72px 72px",
+    }} />
+    {/* Aurora blobs — spread across all sections */}
     {AURORA_BLOBS.map((b, i) => (
       <div key={i} style={{
         position: "absolute",
         width: b.w, height: b.h,
         top: b.top, left: (b as any).left, right: (b as any).right,
         borderRadius: "50%",
-        background: `radial-gradient(circle, ${b.color} 0%, transparent 70%)`,
-        animation: `aurora-drift ${b.dur}s ease-in-out ${b.delay}s infinite`,
-        filter: "blur(40px)",
+        background: `radial-gradient(circle at 45% 45%, ${b.color} 0%, transparent 68%)`,
+        animation: `${b.anim} ${b.dur}s ease-in-out ${b.delay}s infinite`,
+        filter: "blur(55px)",
         willChange: "transform",
       }} />
     ))}
+    {/* Diagonal accent streaks */}
+    <div style={{ position:"absolute", top:"22%", left:"-5%", width:"110%", height:1, background:"linear-gradient(90deg, transparent 0%, rgba(var(--t-a1-rgb),0.04) 30%, rgba(var(--t-a2-rgb),0.06) 55%, transparent 100%)", transform:"rotate(-8deg)" }} />
+    <div style={{ position:"absolute", top:"55%", left:"-5%", width:"110%", height:1, background:"linear-gradient(90deg, transparent 0%, rgba(var(--t-a2-rgb),0.05) 40%, rgba(var(--t-a1-rgb),0.04) 65%, transparent 100%)", transform:"rotate(6deg)" }} />
+    <div style={{ position:"absolute", top:"80%", left:"-5%", width:"110%", height:1, background:"linear-gradient(90deg, transparent 0%, rgba(52,211,153,0.04) 35%, rgba(var(--t-a1-rgb),0.05) 60%, transparent 100%)", transform:"rotate(-5deg)" }} />
   </div>
 );
 
