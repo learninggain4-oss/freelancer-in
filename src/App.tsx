@@ -165,6 +165,10 @@ const Projects = lazy(() => import("./pages/Projects"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const Community = lazy(() => import("./pages/Community"));
+const About = lazy(() => import("./pages/About"));
+const Blog = lazy(() => import("./pages/Blog"));
+const Careers = lazy(() => import("./pages/Careers"));
+const ContactPage = lazy(() => import("./pages/Contact"));
 const TransactionHistory = lazy(() => import("./pages/wallet/TransactionHistory"));
 const WithdrawalHistory = lazy(() => import("./pages/wallet/WithdrawalHistory"));
 const WalletQRPage = lazy(() => import("./pages/wallet/WalletQRPage"));
@@ -241,6 +245,10 @@ const AppContent = () => {
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/community" element={<Community />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/contact" element={<ContactPage />} />
             <Route path="/complete-profile" element={<CompleteProfile />} />
             <Route path="/legal/:slug" element={<LegalDocument />} />
 

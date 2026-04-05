@@ -4628,10 +4628,10 @@ const Footer = () => {
             <h4 className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-4">{t.footer.company}</h4>
             <ul className="space-y-2.5">
               {([
-                [t.footer.links.about,    "/help-support"],
-                [t.footer.links.blog,     "/community"],
-                [t.footer.links.careers,  "/help-support"],
-                [t.footer.links.contact,  "/help-support"],
+                [t.footer.links.about,    "/about"],
+                [t.footer.links.blog,     "/blog"],
+                [t.footer.links.careers,  "/careers"],
+                [t.footer.links.contact,  "/contact"],
               ] as const).map(([name, href]) => (
                 <li key={name}><Link to={href} className="text-sm text-white/50 hover:text-white transition-colors">{name}</Link></li>
               ))}
