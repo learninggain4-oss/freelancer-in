@@ -1853,7 +1853,7 @@ const distPath = path.join(__dirname, "..", "dist");
 if (existsSync(distPath)) {
   app.use(express.static(distPath));
   // SPA catch-all — must come AFTER all API routes
-  app.get("*", (_req, res) => {
+  app.use((_req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 }

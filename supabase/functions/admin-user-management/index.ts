@@ -387,6 +387,34 @@ Deno.serve(async (req) => {
         });
       }
 
+      case "reset_mpin": {
+        let targetUserId = body.user_id;
+        if (!targetUserId && body.profile_id) {
+          const { data: p } = await adminClient.from("profiles").select("user_id").eq("id", body.profile_id).single();
+          if (!p?.user_id) return new Response(JSON.stringify({ error: "User not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          targetUserId = p.user_id;
+        }
+        if (!targetUserId) return new Response(JSON.stringify({ error: "user_id or profile_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        const { error: updateErr } = await adminClient.auth.admin.updateUserById(targetUserId, {
+          app_metadata: {
+            mpin_hash: null,
+            mpin_failed_attempts: 0,
+            mpin_blocked_until: null,
+            security_questions_done: false,
+            security_answers: [],
+            totp_secret: null,
+            totp_setup_done: false,
+            totp_pending_secret: null,
+          },
+        });
+        if (updateErr) return new Response(JSON.stringify({ error: updateErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        return new Response(JSON.stringify({ success: true, message: "Full security reset done. User will be prompted to create M-Pin, Security Questions, and setup Google Auth on next login." }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       default:
         return new Response(JSON.stringify({ error: "Unknown action" }), {
           status: 400,
