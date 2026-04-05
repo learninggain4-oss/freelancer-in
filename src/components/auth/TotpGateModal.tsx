@@ -43,8 +43,13 @@ const STEPS = [
   "Enter the 6-digit code shown in the app to confirm.",
 ];
 
-async function getToken() {
-  const { data: { session } } = await supabase.auth.getSession();
+async function getToken(): Promise<string> {
+  // Try to get an active session; refresh if necessary
+  let { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    const { data } = await supabase.auth.refreshSession();
+    session = data.session;
+  }
   return session?.access_token ?? "";
 }
 
@@ -71,13 +76,19 @@ export default function TotpGateModal({ mode, theme, onVerified }: Props) {
       try {
         setQrImgErr(false);
         const token = await getToken();
+        if (!token) {
+          if (!cancelled) setError("Session expired. Please refresh the page and log in again.");
+          return;
+        }
         const res = await callEdgeFunction("totp-setup-init", { method: "POST", body: {}, token });
         let json: any = {};
         try { json = await res.json(); } catch { /* non-JSON response */ }
         if (!cancelled && json.qrCodeDataUrl) {
           setQrData({ qrCodeDataUrl: json.qrCodeDataUrl, formattedSecret: json.formattedSecret });
         } else if (!cancelled) {
-          setError(json.error || "Failed to load QR code. Please refresh.");
+          setError(json.error === "Unauthorized"
+            ? "Session expired. Please refresh the page and log in again."
+            : json.error || "Failed to load QR code. Please refresh.");
         }
       } catch {
         if (!cancelled) setError("Failed to load QR code. Please refresh.");
