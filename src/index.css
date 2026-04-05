@@ -179,6 +179,9 @@
   }
 }
 
+/* Admin animations */
+@import "./styles/admin-animations.css";
+
 /* Infinite scroll carousel */
 @keyframes scroll-left {
   0% { transform: translateX(0); }

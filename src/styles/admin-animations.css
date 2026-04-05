@@ -1,0 +1,302 @@
+/* ═══════════════════════════════════════════════════════════════
+   ADMIN PANEL — PREMIUM ANIMATIONS
+   All super-admin pages automatically benefit from these styles.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Keyframes ──────────────────────────────────────────────── */
+
+@keyframes adminPageIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);     }
+}
+
+@keyframes adminFadeUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes adminFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes adminSlideRight {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0);     }
+}
+
+@keyframes adminSlideLeft {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+
+@keyframes adminScaleIn {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1);    }
+}
+
+@keyframes adminPopIn {
+  0%   { opacity: 0; transform: scale(0.72) translateY(8px); }
+  65%  { transform: scale(1.04) translateY(-2px); }
+  100% { opacity: 1; transform: scale(1)    translateY(0);   }
+}
+
+@keyframes adminShimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+
+@keyframes adminFloat {
+  0%, 100% { transform: translateY(0);    }
+  50%       { transform: translateY(-6px); }
+}
+
+@keyframes adminPulseDot {
+  0%, 100% { opacity: 1;   transform: scale(1);    }
+  50%       { opacity: .55; transform: scale(1.35); }
+}
+
+@keyframes adminRingPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(99,102,241,.45); }
+  70%  { box-shadow: 0 0 0 8px rgba(99,102,241,0);  }
+  100% { box-shadow: 0 0 0 0 rgba(99,102,241,0);    }
+}
+
+@keyframes adminSpin {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes adminBarGrow {
+  from { transform: scaleX(0); transform-origin: left; }
+  to   { transform: scaleX(1); transform-origin: left; }
+}
+
+@keyframes adminCountUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes adminBorderGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,.0), 0 2px 12px rgba(0,0,0,.06); }
+  50%       { box-shadow: 0 0 0 3px rgba(99,102,241,.18), 0 4px 20px rgba(99,102,241,.12); }
+}
+
+@keyframes adminTableRow {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0);     }
+}
+
+@keyframes adminBadgePop {
+  0%   { transform: scale(0); }
+  70%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+/* ─── Page Transition Wrapper ────────────────────────────────── */
+
+.admin-page-transition {
+  animation: adminPageIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ─── Auto-stagger: direct children of page transition ───────── */
+
+.admin-page-transition > * {
+  animation: adminFadeUp 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.admin-page-transition > *:nth-child(1)  { animation-delay: 0.04s; }
+.admin-page-transition > *:nth-child(2)  { animation-delay: 0.09s; }
+.admin-page-transition > *:nth-child(3)  { animation-delay: 0.13s; }
+.admin-page-transition > *:nth-child(4)  { animation-delay: 0.17s; }
+.admin-page-transition > *:nth-child(5)  { animation-delay: 0.21s; }
+.admin-page-transition > *:nth-child(6)  { animation-delay: 0.25s; }
+.admin-page-transition > *:nth-child(7)  { animation-delay: 0.28s; }
+.admin-page-transition > *:nth-child(8)  { animation-delay: 0.31s; }
+.admin-page-transition > *:nth-child(9)  { animation-delay: 0.34s; }
+.admin-page-transition > *:nth-child(10) { animation-delay: 0.37s; }
+
+/* ─── Stat Cards ─────────────────────────────────────────────── */
+
+.admin-stat-card {
+  animation: adminFadeUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.admin-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(0,0,0,.12) !important;
+}
+.admin-stat-card:nth-child(1) { animation-delay: 0.06s; }
+.admin-stat-card:nth-child(2) { animation-delay: 0.12s; }
+.admin-stat-card:nth-child(3) { animation-delay: 0.18s; }
+.admin-stat-card:nth-child(4) { animation-delay: 0.24s; }
+.admin-stat-card:nth-child(5) { animation-delay: 0.30s; }
+.admin-stat-card:nth-child(6) { animation-delay: 0.36s; }
+
+/* ─── Card / Panel blocks ────────────────────────────────────── */
+
+.admin-card {
+  animation: adminFadeUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.admin-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0,0,0,.1) !important;
+}
+
+/* ─── Table rows stagger ─────────────────────────────────────── */
+
+.admin-table-row {
+  animation: adminTableRow 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.admin-table-row:nth-child(1)  { animation-delay: 0.05s; }
+.admin-table-row:nth-child(2)  { animation-delay: 0.08s; }
+.admin-table-row:nth-child(3)  { animation-delay: 0.11s; }
+.admin-table-row:nth-child(4)  { animation-delay: 0.14s; }
+.admin-table-row:nth-child(5)  { animation-delay: 0.17s; }
+.admin-table-row:nth-child(6)  { animation-delay: 0.20s; }
+.admin-table-row:nth-child(7)  { animation-delay: 0.23s; }
+.admin-table-row:nth-child(8)  { animation-delay: 0.26s; }
+.admin-table-row:nth-child(9)  { animation-delay: 0.29s; }
+.admin-table-row:nth-child(10) { animation-delay: 0.32s; }
+.admin-table-row:nth-child(n+11) { animation-delay: 0.35s; }
+
+/* ─── Header bar slide-down ──────────────────────────────────── */
+
+.admin-header {
+  animation: adminFadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ─── Sidebar items slide-in ─────────────────────────────────── */
+
+.admin-nav-item {
+  animation: adminSlideRight 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.admin-nav-item:nth-child(1)  { animation-delay: 0.04s; }
+.admin-nav-item:nth-child(2)  { animation-delay: 0.07s; }
+.admin-nav-item:nth-child(3)  { animation-delay: 0.10s; }
+.admin-nav-item:nth-child(4)  { animation-delay: 0.13s; }
+.admin-nav-item:nth-child(5)  { animation-delay: 0.16s; }
+.admin-nav-item:nth-child(6)  { animation-delay: 0.19s; }
+.admin-nav-item:nth-child(7)  { animation-delay: 0.22s; }
+.admin-nav-item:nth-child(8)  { animation-delay: 0.25s; }
+.admin-nav-item:nth-child(9)  { animation-delay: 0.28s; }
+.admin-nav-item:nth-child(10) { animation-delay: 0.31s; }
+.admin-nav-item:nth-child(n+11) { animation-delay: 0.33s; }
+
+/* ─── Dropdown menus ─────────────────────────────────────────── */
+
+.admin-drop {
+  animation: adminScaleIn 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-origin: top right;
+}
+
+/* ─── Badge pop-in ───────────────────────────────────────────── */
+
+.admin-badge {
+  animation: adminBadgePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ─── Floating icon (used for decorative illustrations) ──────── */
+
+.admin-float {
+  animation: adminFloat 3.5s ease-in-out infinite;
+}
+.admin-float-slow {
+  animation: adminFloat 5s ease-in-out infinite;
+}
+.admin-float-delay {
+  animation: adminFloat 3.5s ease-in-out 0.6s infinite;
+}
+
+/* ─── Pulsing dot (status indicators) ───────────────────────── */
+
+.admin-pulse-dot {
+  animation: adminPulseDot 2s ease-in-out infinite;
+}
+
+/* ─── Spinning loader ────────────────────────────────────────── */
+
+.admin-spin {
+  animation: adminSpin 0.75s linear infinite;
+}
+
+/* ─── Ring pulse (active/live items) ────────────────────────── */
+
+.admin-ring-pulse {
+  animation: adminRingPulse 2.2s ease-out infinite;
+}
+
+/* ─── Progress bar animate-in ────────────────────────────────── */
+
+.admin-bar {
+  animation: adminBarGrow 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+}
+
+/* ─── Shimmer skeleton ───────────────────────────────────────── */
+
+.admin-shimmer {
+  background: linear-gradient(90deg, #e8eaf0 25%, #f3f4f6 50%, #e8eaf0 75%);
+  background-size: 600px 100%;
+  animation: adminShimmer 1.4s infinite linear;
+  border-radius: 8px;
+}
+
+/* ─── Number/stat count-up feel ─────────────────────────────── */
+
+.admin-stat-num {
+  animation: adminCountUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+  display: inline-block;
+}
+
+/* ─── Modal / sheet entry ────────────────────────────────────── */
+
+.admin-modal-enter {
+  animation: adminPopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ─── Glow border on active card ─────────────────────────────── */
+
+.admin-glow {
+  animation: adminBorderGlow 3s ease-in-out infinite;
+}
+
+/* ─── Smooth icon hover micro-interaction ────────────────────── */
+
+.admin-icon-btn {
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 0.15s ease,
+              box-shadow 0.15s ease;
+}
+.admin-icon-btn:hover {
+  transform: scale(1.12);
+}
+.admin-icon-btn:active {
+  transform: scale(0.92);
+}
+
+/* ─── Action button press ────────────────────────────────────── */
+
+.admin-btn {
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+.admin-btn:hover  { transform: translateY(-1px); }
+.admin-btn:active { transform: translateY(1px) scale(0.97); }
+
+/* ─── Smooth table row hover ─────────────────────────────────── */
+
+.admin-table-row {
+  transition: background 0.15s ease;
+}
+
+/* ─── Scrollbar (admin area) ─────────────────────────────────── */
+
+.admin-main::-webkit-scrollbar { width: 5px; }
+.admin-main::-webkit-scrollbar-track { background: transparent; }
+.admin-main::-webkit-scrollbar-thumb {
+  background: rgba(99,102,241,.18);
+  border-radius: 10px;
+}
+.admin-main::-webkit-scrollbar-thumb:hover {
+  background: rgba(99,102,241,.35);
+}

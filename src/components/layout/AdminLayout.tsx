@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
+import AdminPageTransition from "./AdminPageTransition";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -512,7 +513,7 @@ const AdminLayout = () => {
                   )}
                   {(!isCollapsed || sidebarMini) && section.items.map(item => (
                     <NavLink key={item.path} to={item.path} onClick={() => setSidebarOpen(false)}
-                      className={({ isActive }) => `admin-nav-link${isActive ? " active" : ""}`}
+                      className={({ isActive }) => `admin-nav-link admin-nav-item${isActive ? " active" : ""}`}
                       title={sidebarMini ? item.label : undefined}
                       style={sidebarMini ? { justifyContent: "center", padding: "8px 0" } : {}}>
                       <item.icon size={14} style={{ flexShrink: 0, opacity: .85 }} />
@@ -557,7 +558,7 @@ const AdminLayout = () => {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, position: "relative", zIndex: 1 }}>
 
         {/* ─── HEADER ─────────────────────────────────────────────── */}
-        <header style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 16px", height: 58, background: tok.header, borderBottom: `1px solid ${tok.headerBdr}`, backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 30, flexShrink: 0 }}>
+        <header className="admin-header" style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 16px", height: 58, background: tok.header, borderBottom: `1px solid ${tok.headerBdr}`, backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 30, flexShrink: 0 }}>
 
           {/* Hamburger (mobile) */}
           <button className="lg:hidden" onClick={() => setSidebarOpen(true)}
@@ -782,7 +783,9 @@ const AdminLayout = () => {
 
           {/* Main content */}
           <main className="admin-main flex-1" style={{ background: tok.mainBg, padding: 24, overflowY: "auto", minWidth: 0 }}>
-            <Outlet />
+            <AdminPageTransition>
+              <Outlet />
+            </AdminPageTransition>
           </main>
 
           {/* ─── RIGHT QUICK PANEL ──────────────────────────────────── */}
@@ -870,7 +873,7 @@ const AdminLayout = () => {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: tok.statusDot, display: "inline-block", animation: "pulse-dot 2.5s ease-in-out infinite" }} />
+              <span className="admin-pulse-dot" style={{ width: 6, height: 6, borderRadius: "50%", background: tok.statusDot, display: "inline-block" }} />
               <span style={{ fontSize: 11, color: tok.green, fontWeight: 600 }}>All Systems Operational</span>
             </div>
             <span style={{ fontSize: 11, color: tok.mainSub }}>Last updated: {new Date().toLocaleTimeString()}</span>

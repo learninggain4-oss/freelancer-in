@@ -290,8 +290,8 @@ const AdminDashboard = () => {
 
       {/* ── Hero Section ── */}
       <div style={{ position: "relative", overflow: "hidden", borderRadius: 20, padding: "26px 28px 22px", background: tok.heroGrad, border: `1px solid ${tok.heroBdr}` }}>
-        <div style={{ position: "absolute", top: -20, right: -20, width: 140, height: 140, borderRadius: "50%", background: tok.orbA, filter: "blur(30px)" }} />
-        <div style={{ position: "absolute", bottom: -30, left: 60, width: 100, height: 100, borderRadius: "50%", background: tok.orbB, filter: "blur(20px)" }} />
+        <div className="admin-float-slow" style={{ position: "absolute", top: -20, right: -20, width: 140, height: 140, borderRadius: "50%", background: tok.orbA, filter: "blur(30px)" }} />
+        <div className="admin-float-delay" style={{ position: "absolute", bottom: -30, left: 60, width: 100, height: 100, borderRadius: "50%", background: tok.orbB, filter: "blur(20px)" }} />
 
         <div style={{ position: "relative", zIndex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
@@ -304,7 +304,7 @@ const AdminDashboard = () => {
             </div>
             <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: "rgba(34,197,94,.18)", border: "1px solid rgba(34,197,94,.3)" }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e" }} />
+                <div className="admin-pulse-dot" style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e" }} />
                 <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 700 }}>All Systems Live</span>
               </div>
               <button onClick={() => navigate("/admin/server-monitor")}
@@ -339,7 +339,7 @@ const AdminDashboard = () => {
         {sectionHeader(<BarChart3 size={14} color={A1} />, "Platform Overview", "Live Data", "#4ade80")}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(155px, 1fr))", gap: 12 }}>
           {topCards.map(c => (
-            <div key={c.label}
+            <div key={c.label} className="admin-stat-card"
               style={{ ...card, padding: "16px", cursor: "pointer", transition: "all .2s", border: (c as any).urgent ? "1px solid rgba(239,68,68,.3)" : `1px solid ${tok.cardBdr}` }}
               onClick={() => navigate(c.path)}
               onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform = "translateY(-3px)"; el.style.boxShadow = theme === "black" ? "0 12px 32px rgba(0,0,0,.35)" : "0 8px 24px rgba(0,0,0,.12)"; }}
