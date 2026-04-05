@@ -951,3 +951,426 @@
   display: inline-block;
   animation: adminDigitIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   PREMIUM ANIMATIONS v4 — Mesh BG, Spotlight, Flip, Neon, 3D
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Animated mesh gradient background for content area ─────── */
+
+@keyframes adminMeshShift {
+  0%   { background-position: 0% 0%;   }
+  25%  { background-position: 100% 0%; }
+  50%  { background-position: 100% 100%; }
+  75%  { background-position: 0% 100%; }
+  100% { background-position: 0% 0%;   }
+}
+
+.admin-main {
+  background-image:
+    radial-gradient(ellipse at 20% 10%,  rgba(99,102,241,0.055) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 0%,   rgba(139,92,246,0.04)  0%, transparent 50%),
+    radial-gradient(ellipse at 5%  50%,  rgba(99,102,241,0.035) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 60%,  rgba(168,85,247,0.04)  0%, transparent 55%),
+    radial-gradient(ellipse at 50% 100%, rgba(99,102,241,0.045) 0%, transparent 50%);
+  background-attachment: local;
+  background-size: 200% 200%;
+  animation: adminMeshShift 18s ease-in-out infinite;
+}
+
+/* ─── Table cursor spotlight ─────────────────────────────────── */
+
+.admin-table-spotlight::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    600px circle at var(--sx, 50%) var(--sy, 50%),
+    var(--sc, rgba(99,102,241,0.06)) 0%,
+    transparent 60%
+  );
+  opacity: var(--so, 0);
+  transition: opacity 0.3s ease;
+}
+.admin-table-spotlight > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── Flip number digit ──────────────────────────────────────── */
+
+.admin-flip-digit {
+  display: inline-block;
+  perspective: 200px;
+}
+@keyframes adminFlipDigit {
+  0%   { transform: rotateX(0deg);    opacity: 1; }
+  49%  { transform: rotateX(-90deg);  opacity: 0; }
+  50%  { transform: rotateX(90deg);   opacity: 0; }
+  100% { transform: rotateX(0deg);    opacity: 1; }
+}
+.admin-flip-digit.flipping {
+  animation: adminFlipDigit 0.3s ease both;
+}
+
+/* ─── Neon text pulse ────────────────────────────────────────── */
+
+@keyframes adminNeonPulse {
+  0%, 100% {
+    text-shadow:
+      0 0 4px currentColor,
+      0 0 10px rgba(99,102,241,0.5),
+      0 0 20px rgba(99,102,241,0.3);
+  }
+  50% {
+    text-shadow:
+      0 0 6px currentColor,
+      0 0 20px rgba(99,102,241,0.8),
+      0 0 40px rgba(99,102,241,0.4),
+      0 0 80px rgba(99,102,241,0.2);
+  }
+}
+.admin-neon-pulse {
+  animation: adminNeonPulse 3s ease-in-out infinite;
+}
+
+/* ─── 3D entrance variants ───────────────────────────────────── */
+
+@keyframes adminFlipInX {
+  from {
+    opacity: 0;
+    transform: perspective(600px) rotateX(-80deg);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(600px) rotateX(0deg);
+  }
+}
+.admin-flip-in-x {
+  animation: adminFlipInX 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes adminFlipInY {
+  from {
+    opacity: 0;
+    transform: perspective(600px) rotateY(80deg);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(600px) rotateY(0deg);
+  }
+}
+.admin-flip-in-y {
+  animation: adminFlipInY 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ─── Stagger for nth siblings ───────────────────────────────── */
+
+.admin-stagger > *:nth-child(1)  { animation-delay: 0.05s !important; }
+.admin-stagger > *:nth-child(2)  { animation-delay: 0.10s !important; }
+.admin-stagger > *:nth-child(3)  { animation-delay: 0.15s !important; }
+.admin-stagger > *:nth-child(4)  { animation-delay: 0.20s !important; }
+.admin-stagger > *:nth-child(5)  { animation-delay: 0.25s !important; }
+.admin-stagger > *:nth-child(6)  { animation-delay: 0.30s !important; }
+.admin-stagger > *:nth-child(7)  { animation-delay: 0.35s !important; }
+.admin-stagger > *:nth-child(8)  { animation-delay: 0.40s !important; }
+.admin-stagger > *:nth-child(9)  { animation-delay: 0.45s !important; }
+.admin-stagger > *:nth-child(10) { animation-delay: 0.50s !important; }
+
+/* ─── Gradient animated divider ──────────────────────────────── */
+
+@keyframes adminDivider {
+  0%   { background-position: 0% 50%;   }
+  100% { background-position: 200% 50%; }
+}
+.admin-divider {
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(99,102,241,0.6) 30%,
+    rgba(139,92,246,0.8) 50%,
+    rgba(99,102,241,0.6) 70%,
+    transparent 100%);
+  background-size: 200% 100%;
+  animation: adminDivider 3s linear infinite;
+  border: none;
+  margin: 0;
+}
+
+/* ─── Glowing sidebar logo animation ────────────────────────── */
+
+@keyframes adminLogoGlow {
+  0%, 100% { box-shadow: 0 4px 18px rgba(99,102,241,0.4), 0 0 0 0 rgba(99,102,241,0); }
+  50%       { box-shadow: 0 4px 28px rgba(99,102,241,0.7), 0 0 0 6px rgba(99,102,241,0.1); }
+}
+.admin-logo-glow {
+  animation: adminLogoGlow 3s ease-in-out infinite;
+}
+
+/* ─── Hero banner animated gradient ─────────────────────────── */
+
+@keyframes adminHeroGrad {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+.admin-hero-grad {
+  background-size: 300% 300%;
+  animation: adminHeroGrad 6s ease infinite;
+}
+
+/* ─── Orbiting ring decoration ───────────────────────────────── */
+
+@keyframes adminOrbit {
+  from { transform: rotate(0deg) translateX(28px) rotate(0deg);   }
+  to   { transform: rotate(360deg) translateX(28px) rotate(-360deg); }
+}
+.admin-orbit {
+  animation: adminOrbit 6s linear infinite;
+}
+
+/* ─── Spotlight card effect (hover) ──────────────────────────── */
+
+.admin-spotlight-card {
+  position: relative;
+  overflow: hidden;
+}
+.admin-spotlight-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse 200px 150px at var(--mx, 50%) var(--my, 50%),
+    rgba(255,255,255,0.06) 0%,
+    transparent 80%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.admin-spotlight-card:hover::after {
+  opacity: 1;
+}
+
+/* ─── Animated counter separator (comma/dot) ─────────────────── */
+
+.admin-counter-sep {
+  animation: adminFadeIn 0.2s ease both;
+  color: rgba(99,102,241,0.6);
+}
+
+/* ─── Pulsing ring around icon ───────────────────────────────── */
+
+@keyframes adminIconRing {
+  0%   { transform: scale(1);    opacity: 0.7; }
+  100% { transform: scale(1.6);  opacity: 0;   }
+}
+.admin-icon-ring {
+  position: relative;
+}
+.admin-icon-ring::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 2px solid currentColor;
+  animation: adminIconRing 1.8s ease-out infinite;
+  pointer-events: none;
+}
+
+/* ─── Particle burst on click (pure CSS trigger) ─────────────── */
+
+@keyframes adminBurst1 { to { transform: translate(-30px,-40px) scale(0); opacity: 0; } }
+@keyframes adminBurst2 { to { transform: translate(40px,-30px)  scale(0); opacity: 0; } }
+@keyframes adminBurst3 { to { transform: translate(30px,40px)   scale(0); opacity: 0; } }
+@keyframes adminBurst4 { to { transform: translate(-40px,30px)  scale(0); opacity: 0; } }
+
+/* ─── Shimmer text animation ─────────────────────────────────── */
+
+@keyframes adminShimmerText {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+.admin-shimmer-text {
+  background: linear-gradient(
+    90deg,
+    rgba(99,102,241,1) 0%,
+    rgba(168,85,247,1) 25%,
+    rgba(255,255,255,1) 50%,
+    rgba(168,85,247,1) 75%,
+    rgba(99,102,241,1) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: adminShimmerText 3s linear infinite;
+}
+
+/* ─── Section entrance with fade + blur ──────────────────────── */
+
+@keyframes adminFadeBlur {
+  from { opacity: 0; filter: blur(8px); transform: translateY(12px); }
+  to   { opacity: 1; filter: blur(0px); transform: translateY(0);    }
+}
+.admin-fade-blur {
+  animation: adminFadeBlur 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ─── Hover lift with shadow ─────────────────────────────────── */
+
+.admin-hover-lift {
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease;
+}
+.admin-hover-lift:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 32px rgba(99,102,241,0.15), 0 4px 12px rgba(0,0,0,0.08) !important;
+}
+
+/* ─── Typing animation for dashboard subtitle ────────────────── */
+
+@keyframes adminTyping {
+  from { width: 0;    }
+  to   { width: 100%; }
+}
+.admin-typing {
+  overflow: hidden;
+  white-space: nowrap;
+  animation: adminTyping 1.2s steps(40) 0.5s both;
+}
+
+/* ─── Glow border rotate ─────────────────────────────────────── */
+
+@keyframes adminBorderRotate {
+  from { --angle: 0deg;   }
+  to   { --angle: 360deg; }
+}
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+.admin-border-rotate {
+  background: conic-gradient(
+    from var(--angle),
+    transparent 70%,
+    rgba(99,102,241,0.8) 80%,
+    rgba(168,85,247,0.8) 90%,
+    transparent 100%
+  );
+  animation: adminBorderRotate 3s linear infinite;
+}
+
+/* ─── Enhanced page transition — slide + depth ───────────────── */
+
+@keyframes adminPageInV2 {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.978);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+.admin-page-transition {
+  animation: adminPageInV2 0.42s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+}
+
+/* ─── Glow behind icon buttons ───────────────────────────────── */
+
+.admin-main button:not(:disabled):hover .lucide,
+.admin-main button:not(:disabled):hover svg {
+  filter: drop-shadow(0 0 4px rgba(99,102,241,0.5));
+  transition: filter 0.2s ease;
+}
+
+/* ─── Enhanced active sidebar item ──────────────────────────── */
+
+.admin-nav-link.active {
+  background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(139,92,246,0.12)) !important;
+  box-shadow: inset 0 0 0 1px rgba(99,102,241,0.2), 0 2px 12px rgba(99,102,241,0.15);
+}
+
+/* ─── Animated gradient on section headers ───────────────────── */
+
+.admin-main h2, .admin-main h3 {
+  animation: adminFadeBlur 0.4s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* ─── Card hover glow shadow ─────────────────────────────────── */
+
+.admin-stat-card:hover,
+.admin-card:hover {
+  box-shadow: 
+    0 0 0 1px rgba(99,102,241,0.12),
+    0 8px 28px rgba(99,102,241,0.14),
+    0 2px 8px rgba(0,0,0,0.06) !important;
+}
+
+/* ─── Input transition ───────────────────────────────────────── */
+
+.admin-main input,
+.admin-main select,
+.admin-main textarea {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.admin-main input:focus,
+.admin-main select:focus,
+.admin-main textarea:focus {
+  transform: scale(1.005);
+}
+
+/* ─── Animated page title underline on all h1 ───────────────── */
+
+.admin-main h1 {
+  animation: adminFadeBlur 0.5s cubic-bezier(0.22,1,0.36,1) 0.05s both;
+}
+
+/* ─── Reveal animation for sidebar section titles ────────────── */
+
+.admin-nav-section-title {
+  animation: adminFadeIn 0.3s ease both;
+}
+
+/* ─── Pulsing count badge ────────────────────────────────────── */
+
+@keyframes adminBadgeGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); }
+  50%       { box-shadow: 0 0 0 4px rgba(99,102,241,0); }
+}
+.admin-badge-glow {
+  animation: adminBadgeGlow 2s ease-in-out infinite;
+}
+
+/* ─── Slide-over panel ───────────────────────────────────────── */
+
+@keyframes adminSlideOver {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+.admin-slide-over {
+  animation: adminSlideOver 0.3s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* ─── Content area glass tint ────────────────────────────────── */
+
+.admin-panel {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(16px) saturate(1.5);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  border: 1px solid rgba(255,255,255,0.5);
+  box-shadow: 0 4px 24px rgba(99,102,241,0.07), 0 1px 4px rgba(0,0,0,0.04);
+}
+
+/* ─── Scrolled-to highlight ──────────────────────────────────── */
+
+:target {
+  animation: adminBorderGlow 2s ease-in-out 3;
+}

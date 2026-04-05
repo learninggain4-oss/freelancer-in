@@ -17,6 +17,8 @@ import AdminTiltCard from "@/components/admin/AdminTiltCard";
 import AdminCountUp from "@/components/admin/AdminCountUp";
 import AdminScrollReveal from "@/components/admin/AdminScrollReveal";
 import AdminProgressRing from "@/components/admin/AdminProgressRing";
+import AdminTableSpotlight from "@/components/admin/AdminTableSpotlight";
+import AdminFlipNumber from "@/components/admin/AdminFlipNumber";
 import {
   AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis,
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
@@ -336,7 +338,7 @@ const AdminDashboard = () => {
                 </div>
                 <p style={{ fontSize: 20, fontWeight: 900, color: tok.statTxt, margin: 0 }}>
                   {s.isNum
-                    ? <AdminCountUp to={typeof s.value === "number" ? s.value : 0} duration={1200} />
+                    ? <AdminFlipNumber value={typeof s.value === "number" ? s.value : 0} />
                     : s.value}
                 </p>
               </AdminTiltCard>
@@ -348,7 +350,7 @@ const AdminDashboard = () => {
       {/* ── 10 Enterprise Summary Cards ── */}
       <div style={{ opacity: loaded ? 1 : 0, transform: loaded ? "none" : "translateY(12px)", transition: "all .4s ease" }}>
         {sectionHeader(<BarChart3 size={14} color={A1} />, "Platform Overview", "Live Data", "#4ade80")}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(155px, 1fr))", gap: 12 }}>
+        <div className="admin-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(155px, 1fr))", gap: 12 }}>
           {topCards.map(c => (
             <AdminTiltCard key={c.label} intensity={12} glare
               className="admin-stat-card admin-grad-border"
@@ -364,7 +366,7 @@ const AdminDashboard = () => {
               </div>
               <p style={{ fontWeight: 900, color: tok.cardText, fontSize: typeof c.value === "string" ? 15 : 22, letterSpacing: "-0.5px", margin: 0 }}>
                 {typeof c.value === "number"
-                  ? <AdminCountUp to={c.value} duration={1400} />
+                  ? <AdminFlipNumber value={c.value} />
                   : c.value}
               </p>
               <p style={{ fontSize: 10.5, color: tok.cardSub, marginTop: 3, margin: "3px 0 0" }}>{c.label}</p>
@@ -463,7 +465,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Resource gauges — animated progress rings */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 16 }}>
+        <div className="admin-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 16 }}>
           {[
             { label: "CPU",    icon: Cpu,       pct: cpuUsage,  color: cpuUsage  > 80 ? "#f87171" : cpuUsage  > 60 ? "#fbbf24" : "#4ade80" },
             { label: "Memory", icon: Monitor,   pct: memUsage,  color: memUsage  > 80 ? "#f87171" : memUsage  > 60 ? "#fbbf24" : "#4ade80" },
@@ -499,11 +501,11 @@ const AdminDashboard = () => {
       {/* ── Fraud Detection + Risk Chart ── */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 16 }}>
 
-        <div style={{ ...card, padding: "18px" }}>
+        <AdminTableSpotlight style={{ ...card, padding: "18px" }} color="rgba(248,113,113,0.07)">
           {sectionHeader(<ShieldAlert size={14} color="#f87171" />, "Fraud Detection", `${FRAUD_CASES.length} flagged`, "#f87171")}
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {FRAUD_CASES.map((f, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", borderRadius: 12, background: tok.sysRowBg, border: `1px solid ${f.color}22` }}>
+              <div key={i} className="admin-hover-lift" style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", borderRadius: 12, background: tok.sysRowBg, border: `1px solid ${f.color}22` }}>
                 <div style={{ width: 34, height: 34, borderRadius: 10, background: `${f.color}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <UserX size={14} color={f.color} />
                 </div>
@@ -533,7 +535,7 @@ const AdminDashboard = () => {
               </button>
             ))}
           </div>
-        </div>
+        </AdminTableSpotlight>
 
         {/* Risk Donut */}
         <div style={{ ...card, padding: "18px", display: "flex", flexDirection: "column" }}>

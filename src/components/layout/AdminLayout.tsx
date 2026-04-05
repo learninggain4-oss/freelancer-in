@@ -483,13 +483,14 @@ const AdminLayout = () => {
 
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: sidebarMini ? "18px 0 14px" : "18px 14px 14px", borderBottom: `1px solid ${tok.sidebarBdr}`, justifyContent: sidebarMini ? "center" : "flex-start", flexShrink: 0, marginTop: 3 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 11, background: tok.logoBg, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 18px ${tok.logoShadow}`, flexShrink: 0 }}>
+          <div className="admin-logo-glow" style={{ width: 36, height: 36, borderRadius: 11, background: tok.logoBg, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 18px ${tok.logoShadow}`, flexShrink: 0, position: "relative" }}>
             <ShieldCheck size={18} color="white" />
+            <span style={{ position: "absolute", inset: -2, borderRadius: 13, border: "1px solid rgba(165,180,252,0.3)", animation: "adminIconRing 2.4s ease-out infinite", pointerEvents: "none" }} />
           </div>
           {!sidebarMini && (
             <>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontWeight: 800, fontSize: 13.5, color: "white", lineHeight: 1.2, margin: 0 }}>Freelancer India</p>
+                <p className="admin-shimmer-text" style={{ fontWeight: 800, fontSize: 13.5, lineHeight: 1.2, margin: 0 }}>Freelancer India</p>
                 <p style={{ fontSize: 9.5, color: "rgba(165,180,252,.55)", fontWeight: 600, margin: 0, textTransform: "uppercase", letterSpacing: 1 }}>Super Admin</p>
               </div>
               <button className="lg:hidden" onClick={() => setSidebarOpen(false)}
