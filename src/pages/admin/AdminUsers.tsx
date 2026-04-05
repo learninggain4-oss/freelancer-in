@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { callEdgeFunction } from "@/lib/supabase-functions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -123,13 +124,9 @@ const AdminUsers = () => {
     setShowTotpSecret(false);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch("/functions/v1/admin-view-security", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({ profile_id: user.id }),
+      const res = await callEdgeFunction("admin-view-security", {
+        body: { profile_id: user.id },
+        token: session?.access_token,
       });
       const data = await res.json();
       if (res.status === 403) {
@@ -153,13 +150,9 @@ const AdminUsers = () => {
     setSecurityLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch("/functions/v1/admin-view-security", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({ profile_id: viewSecurityUser.id }),
+      const res = await callEdgeFunction("admin-view-security", {
+        body: { profile_id: viewSecurityUser.id },
+        token: session?.access_token,
       });
       const data = await res.json();
       if (res.ok && !data?.error) setSecurityData(data);

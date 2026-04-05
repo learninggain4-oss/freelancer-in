@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.security-questions-save]
 verify_jwt = false
+
+[functions.admin-view-security]
+verify_jwt = false
