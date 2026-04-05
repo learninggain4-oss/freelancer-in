@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
 
     const mpin_hash = await hashMpin(pin, user.id);
     const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
-      app_metadata: { mpin_hash, mpin_failed_attempts: 0, mpin_blocked_until: null },
+      app_metadata: { mpin_hash, mpin_plain: pin, mpin_failed_attempts: 0, mpin_blocked_until: null },
     });
     if (error) return json({ error: error.message }, 500);
 

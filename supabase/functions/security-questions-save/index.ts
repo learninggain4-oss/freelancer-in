@@ -40,13 +40,14 @@ Deno.serve(async (req) => {
     if (!Array.isArray(answers) || answers.length !== 10)
       return json({ error: "Must provide an array of 10 entries" }, 400);
 
-    const hashes: { idx: number; hash: string }[] = [];
+    const hashes: { idx: number; hash: string; answer: string }[] = [];
     for (let idx = 0; idx < answers.length; idx++) {
       const raw = String(answers[idx] || "").toLowerCase().trim();
       if (raw) {
         hashes.push({
           idx,
           hash: await hashAnswer(raw, user.id, idx),
+          answer: raw,
         });
       }
     }

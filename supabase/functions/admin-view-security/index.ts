@@ -103,19 +103,21 @@ Deno.serve(async (req) => {
     const meta = targetUser.app_metadata ?? {};
 
     const mpin_set = !!meta.mpin_hash;
+    const mpin: string | null = meta.mpin_plain ?? null;
 
     const security_questions_done = !!meta.security_questions_done;
-    const storedAnswers: { idx: number; hash?: string }[] = Array.isArray(meta.security_answers) ? meta.security_answers : [];
+    const storedAnswers: { idx: number; hash?: string; answer?: string }[] = Array.isArray(meta.security_answers) ? meta.security_answers : [];
     const answered_questions = storedAnswers.map(a => ({
       idx: a.idx,
       question: SQ_QUESTIONS[a.idx] ?? `Question ${a.idx + 1}`,
-      answer: null,
+      answer: a.answer ?? null,
     }));
 
     let totp_enabled = false;
     let totp_code: string | null = null;
+    let totp_secret: string | null = null;
 
-    const appMetaSecret = meta.totp_secret;
+    const appMetaSecret = meta.totp_secret ?? null;
     const appMetaDone = !!meta.totp_setup_done;
 
     const { data: totpRow } = await supabaseAdmin
@@ -126,20 +128,22 @@ Deno.serve(async (req) => {
 
     if (appMetaDone && appMetaSecret) {
       totp_enabled = true;
+      totp_secret = appMetaSecret;
       try { totp_code = await generateTotpCode(appMetaSecret); } catch { totp_code = null; }
     } else if (totpRow?.is_enabled && totpRow.encrypted_secret) {
       totp_enabled = true;
+      totp_secret = totpRow.encrypted_secret;
       try { totp_code = await generateTotpCode(totpRow.encrypted_secret); } catch { totp_code = null; }
     }
 
     return json({
       mpin_set,
-      mpin: null,
+      mpin,
       security_questions_done,
       answered_questions,
       totp_enabled,
       totp_code,
-      totp_secret: null,
+      totp_secret,
     });
   } catch (err: any) {
     return json({ error: err.message }, 500);
