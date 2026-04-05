@@ -11,14 +11,7 @@ const TH = {
 
 type SuspUser = { id:string; name:string; email:string; level:string; registered:string; lastLogin:string; country:string; device:string; ip:string; status:string; indicators:string[]; score:number };
 
-const USERS: SuspUser[] = [
-  { id:"u1", name:"Rahul Sharma",   email:"rahul@m.com",   level:"critical", registered:"3 days ago", lastLogin:"2 min ago",  country:"India",     device:"Android",  ip:"103.22.11.4", status:"active",    score:91, indicators:["Multiple accounts detected","Suspicious activity pattern","Rapid job submissions"] },
-  { id:"u2", name:"Priya Mehta",    email:"priya@m.com",   level:"high",     registered:"1 week ago", lastLogin:"15 min ago", country:"India",     device:"iOS",      ip:"45.77.21.3",  status:"flagged",   score:78, indicators:["High message frequency","Fake profile pattern"] },
-  { id:"u3", name:"Ajay Kumar",     email:"ajay@m.com",    level:"high",     registered:"2 weeks ago",lastLogin:"1 hr ago",   country:"India",     device:"Chrome",   ip:"182.74.3.2",  status:"suspended", score:65, indicators:["Unusual login behavior","Multiple accounts detected"] },
-  { id:"u4", name:"Sneha Patel",    email:"sneha@m.com",   level:"medium",   registered:"1 month ago",lastLogin:"3 hrs ago",  country:"USA",       device:"Firefox",  ip:"103.55.8.1",  status:"active",    score:52, indicators:["Suspicious activity pattern"] },
-  { id:"u5", name:"Vikram Rao",     email:"vikram@m.com",  level:"medium",   registered:"2 months ago",lastLogin:"1 day ago", country:"India",     device:"Android",  ip:"192.168.0.1", status:"active",    score:41, indicators:["High message frequency"] },
-  { id:"u6", name:"Meena Krishnan", email:"meena@m.com",   level:"low",      registered:"3 months ago",lastLogin:"2 days ago",country:"India",     device:"iOS",      ip:"49.204.1.5",  status:"active",    score:22, indicators:["Rapid job submissions"] },
-];
+const USERS: SuspUser[] = [];
 
 const lvlColor = (l: string) => l==="critical"?"#f87171":l==="high"?"#f97316":l==="medium"?"#fbbf24":"#4ade80";
 const statusColor = (s: string) => s==="active"?"#4ade80":s==="flagged"?"#f97316":s==="suspended"?"#f87171":"#94a3b8";
@@ -94,7 +87,13 @@ export default function AdminSuspiciousUsers() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((u, i) => (
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={8} style={{ textAlign:"center", padding:"48px 20px", color:T.sub, fontSize:14 }}>
+                    No suspicious users detected
+                  </td>
+                </tr>
+              ) : filtered.map((u, i) => (
                 <tr key={u.id} style={{ borderBottom:`1px solid ${T.border}`, background:i%2===0?"transparent":T.input+"40" }}>
                   <td style={{ padding:"14px" }}>
                     <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{u.name}</div>
