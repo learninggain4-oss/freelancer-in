@@ -388,9 +388,9 @@ Deno.serve(async (req) => {
       }
 
       case "reset_mpin": {
-        let targetUserId = body.user_id;
-        if (!targetUserId && body.profile_id) {
-          const { data: p } = await adminClient.from("profiles").select("user_id").eq("id", body.profile_id).single();
+        let targetUserId = user_id;
+        if (!targetUserId && profile_id) {
+          const { data: p } = await adminClient.from("profiles").select("user_id").eq("id", profile_id).single();
           if (!p?.user_id) return new Response(JSON.stringify({ error: "User not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
           targetUserId = p.user_id;
         }
