@@ -2799,7 +2799,7 @@ const BlogPreviewSection = () => (
           </h2>
           <p className="text-white/50">Freelancing tips, earning guides &amp; platform updates.</p>
         </div>
-        <Link to="/community" className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white/70 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+        <Link to="/blog" className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white/70 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
           View All <ArrowRight className="h-4 w-4" />
         </Link>
       </Reveal>
@@ -3199,33 +3199,27 @@ const DemoVideoSection = () => {
         </Reveal>
         <Reveal>
           <div className="relative rounded-3xl overflow-hidden group" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.15), rgba(var(--t-a2-rgb),0.15))", border: "1px solid rgba(var(--t-a1-rgb),0.25)", aspectRatio: "16/9" }}>
-            {false ? (
-              <div />
-            ) : (
-              <>
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-                  <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.2) 0%, rgba(var(--t-a2-rgb),0.2) 100%)" }} />
-                  <div className="absolute inset-0 opacity-5" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
-                  <div className="relative z-10 flex h-20 w-20 items-center justify-center rounded-full shadow-2xl" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 50px rgba(var(--t-a1-rgb),0.5)" }}>
-                    <Clock className="h-8 w-8 text-white" />
-                  </div>
-                  <div className="relative z-10 text-center">
-                    <p className="text-white font-bold mb-1">Demo Video — Coming Soon</p>
-                    <p className="text-white/50 text-sm">We are working on a platform walkthrough video</p>
-                  </div>
-                  {[
-                    { text: "Post a Project", x: "8%",  y: "20%", color: "#60a5fa" },
-                    { text: "Get Proposals",  x: "72%", y: "15%", color: "#a78bfa" },
-                    { text: "Pay Securely",   x: "15%", y: "75%", color: "#34d399" },
-                    { text: "Rate & Review",  x: "65%", y: "70%", color: "#fbbf24" },
-                  ].map(l => (
-                    <div key={l.text} className="absolute rounded-full px-3 py-1 text-xs font-bold hidden sm:block" style={{ left: l.x, top: l.y, background: `${l.color}25`, border: `1px solid ${l.color}50`, color: l.color }}>
-                      {l.text}
-                    </div>
-                  ))}
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+              <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.2) 0%, rgba(var(--t-a2-rgb),0.2) 100%)" }} />
+              <div className="absolute inset-0 opacity-5" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
+              <div className="relative z-10 flex h-20 w-20 items-center justify-center rounded-full shadow-2xl" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 50px rgba(var(--t-a1-rgb),0.5)" }}>
+                <Clock className="h-8 w-8 text-white" />
+              </div>
+              <div className="relative z-10 text-center">
+                <p className="text-white font-bold mb-1">Demo Video — Coming Soon</p>
+                <p className="text-white/50 text-sm">We are working on a platform walkthrough video</p>
+              </div>
+              {[
+                { text: "Post a Project", x: "8%",  y: "20%", color: "#60a5fa" },
+                { text: "Get Proposals",  x: "72%", y: "15%", color: "#a78bfa" },
+                { text: "Pay Securely",   x: "15%", y: "75%", color: "#34d399" },
+                { text: "Rate & Review",  x: "65%", y: "70%", color: "#fbbf24" },
+              ].map(l => (
+                <div key={l.text} className="absolute rounded-full px-3 py-1 text-xs font-bold hidden sm:block" style={{ left: l.x, top: l.y, background: `${l.color}25`, border: `1px solid ${l.color}50`, color: l.color }}>
+                  {l.text}
                 </div>
-              </>
-            )}
+              ))}
+            </div>
           </div>
         </Reveal>
         <Reveal className="flex flex-wrap justify-center gap-6 mt-8">
