@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// qrcode toString(svg) works in Deno — no Canvas API required
 import QRCode from "https://esm.sh/qrcode@1.5.4";
 
 const corsHeaders = {
@@ -27,9 +28,7 @@ function base32Encode(bytes: Uint8Array): string {
       bits -= 5;
     }
   }
-  if (bits > 0) {
-    result += alphabet[(value << (5 - bits)) & 31];
-  }
+  if (bits > 0) result += alphabet[(value << (5 - bits)) & 31];
   return result;
 }
 
@@ -68,12 +67,13 @@ Deno.serve(async (req) => {
 
     const formattedSecret = secret.match(/.{1,4}/g)?.join(" ") ?? secret;
 
-    // Generate QR code as base64 PNG data URL — no external service needed
-    const qrCodeDataUrl: string = await QRCode.toDataURL(otpauthUrl, {
+    // Use SVG mode — no Canvas needed, works perfectly in Deno
+    const svgString: string = await QRCode.toString(otpauthUrl, {
+      type: "svg",
       width: 220,
       margin: 2,
-      color: { dark: "#000000", light: "#ffffff" },
     });
+    const qrCodeDataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
 
     return json({ qrCodeDataUrl, formattedSecret, otpauthUrl });
   } catch (err: any) {
