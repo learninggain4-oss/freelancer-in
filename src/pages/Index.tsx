@@ -2799,9 +2799,9 @@ const BlogPreviewSection = () => (
           </h2>
           <p className="text-white/50">Freelancing tips, earning guides &amp; platform updates.</p>
         </div>
-        <a href="#" className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white/70 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+        <Link to="/community" className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white/70 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
           View All <ArrowRight className="h-4 w-4" />
-        </a>
+        </Link>
       </Reveal>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {BLOG_POSTS.map((post, i) => (
@@ -3184,7 +3184,6 @@ const PricingSection = () => (
 
 /* ─────────────────────── Platform Demo Video ─────────────────────── */
 const DemoVideoSection = () => {
-  const [playing, setPlaying] = useState(false);
   return (
     <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
       <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(var(--t-a1-rgb),0.06) 0%, transparent 70%)" }} />
@@ -3199,38 +3198,28 @@ const DemoVideoSection = () => {
           <p className="text-white/50 max-w-md mx-auto">Watch how freelancers and employers connect on Freelancer India in under 60 seconds.</p>
         </Reveal>
         <Reveal>
-          <div className="relative rounded-3xl overflow-hidden cursor-pointer group" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.15), rgba(var(--t-a2-rgb),0.15))", border: "1px solid rgba(var(--t-a1-rgb),0.25)", aspectRatio: "16/9" }} onClick={() => setPlaying(true)}>
-            {playing ? (
-              <iframe
-                className="absolute inset-0 w-full h-full"
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1"
-                title="Freelancer India Platform Demo"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
+          <div className="relative rounded-3xl overflow-hidden group" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.15), rgba(var(--t-a2-rgb),0.15))", border: "1px solid rgba(var(--t-a1-rgb),0.25)", aspectRatio: "16/9" }}>
+            {false ? (
+              <div />
             ) : (
               <>
-                {/* Fake video thumbnail */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                   <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.2) 0%, rgba(var(--t-a2-rgb),0.2) 100%)" }} />
-                  {/* Decorative grid */}
                   <div className="absolute inset-0 opacity-5" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
-                  {/* Play button */}
-                  <div className="relative z-10 flex h-20 w-20 items-center justify-center rounded-full shadow-2xl group-hover:scale-110 transition-transform duration-300" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 50px rgba(var(--t-a1-rgb),0.5)" }}>
-                    <Play className="h-8 w-8 text-white ml-1 fill-white" />
+                  <div className="relative z-10 flex h-20 w-20 items-center justify-center rounded-full shadow-2xl" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 50px rgba(var(--t-a1-rgb),0.5)" }}>
+                    <Clock className="h-8 w-8 text-white" />
                   </div>
                   <div className="relative z-10 text-center">
-                    <p className="text-white font-bold mb-1">Freelancer India — Platform Walkthrough</p>
-                    <p className="text-white/50 text-sm">60 seconds · How it works</p>
+                    <p className="text-white font-bold mb-1">Demo Video — Coming Soon</p>
+                    <p className="text-white/50 text-sm">We are working on a platform walkthrough video</p>
                   </div>
-                  {/* Floating labels */}
                   {[
                     { text: "Post a Project", x: "8%",  y: "20%", color: "#60a5fa" },
                     { text: "Get Proposals",  x: "72%", y: "15%", color: "#a78bfa" },
                     { text: "Pay Securely",   x: "15%", y: "75%", color: "#34d399" },
                     { text: "Rate & Review",  x: "65%", y: "70%", color: "#fbbf24" },
                   ].map(l => (
-                    <div key={l.text} className="absolute rounded-full px-3 py-1 text-xs font-bold text-white hidden sm:block" style={{ left: l.x, top: l.y, background: `${l.color}25`, border: `1px solid ${l.color}50`, color: l.color }}>
+                    <div key={l.text} className="absolute rounded-full px-3 py-1 text-xs font-bold hidden sm:block" style={{ left: l.x, top: l.y, background: `${l.color}25`, border: `1px solid ${l.color}50`, color: l.color }}>
                       {l.text}
                     </div>
                   ))}
@@ -4611,26 +4600,40 @@ const Footer = () => {
             </div>
             <p className="text-sm text-white/40 leading-relaxed mb-5 max-w-xs">{t.footer.tagline}</p>
             <div className="flex gap-3">
-              {[Twitter, Linkedin, Instagram, Github].map((Icon, i) => (
-                <div key={i} className="social-icon flex h-8 w-8 items-center justify-center rounded-lg cursor-pointer" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              {([
+                [Twitter,   "https://twitter.com/freelancer_india"],
+                [Linkedin,  "https://linkedin.com/company/freelancer-india"],
+                [Instagram, "https://instagram.com/freelancer.india"],
+                [Github,    "https://github.com/learninggain4-oss/freelancer-in"],
+              ] as const).map(([Icon, href], i) => (
+                <a key={i} href={href} target="_blank" rel="noopener noreferrer" className="social-icon flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-white/10" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   <Icon className="h-3.5 w-3.5 text-white/50" />
-                </div>
+                </a>
               ))}
             </div>
           </div>
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-4">{t.footer.platform}</h4>
             <ul className="space-y-2.5">
-              {[t.footer.links.findWork, t.footer.links.howItWorks, t.footer.links.pricing].map((item) => (
-                <li key={item}><a href="#" className="text-sm text-white/50 hover:text-white transition-colors">{item}</a></li>
+              {([
+                [t.footer.links.findWork,   "/projects"],
+                [t.footer.links.howItWorks, "/how-it-works"],
+                [t.footer.links.pricing,    "/pricing"],
+              ] as const).map(([name, href]) => (
+                <li key={name}><Link to={href} className="text-sm text-white/50 hover:text-white transition-colors">{name}</Link></li>
               ))}
             </ul>
           </div>
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-4">{t.footer.company}</h4>
             <ul className="space-y-2.5">
-              {[[t.footer.links.about, "#"],[t.footer.links.blog, "#"],[t.footer.links.careers, "#"],[t.footer.links.contact, "#"]].map(([name, href]) => (
-                <li key={name}><a href={href} className="text-sm text-white/50 hover:text-white transition-colors">{name}</a></li>
+              {([
+                [t.footer.links.about,    "/help-support"],
+                [t.footer.links.blog,     "/community"],
+                [t.footer.links.careers,  "/help-support"],
+                [t.footer.links.contact,  "/help-support"],
+              ] as const).map(([name, href]) => (
+                <li key={name}><Link to={href} className="text-sm text-white/50 hover:text-white transition-colors">{name}</Link></li>
               ))}
             </ul>
           </div>
