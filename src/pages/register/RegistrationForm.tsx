@@ -160,10 +160,14 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
     return true;
   };
 
+  const skippableSteps = ["work", "emergency", "services"];
+  const isSkippable = skippableSteps.includes(getStepType(step));
+
   const handleNext = async () => {
     const valid = await validateCurrentStep();
     if (valid) { setCompletedSteps(p => new Set([...p, step])); setStep(s => Math.min(s+1, stepConfig.length-1)); }
   };
+  const handleSkip = () => { setArrayErrors([]); setStep(s => Math.min(s+1, stepConfig.length-1)); };
   const handleBack = () => { setStep(s => Math.max(s-1, 0)); setArrayErrors([]); };
 
   const onSubmit = async (data: RegistrationFormData) => {
@@ -180,12 +184,12 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       if (profileError) throw profileError;
       const profileId = userId;
       await supabase.from("registration_metadata" as any).insert([{ profile_id: profileId, ip_address: geoData.ip||null, city: geoData.city||null, region: geoData.region||null, country: geoData.country||null, latitude: geoData.lat||null, longitude: geoData.lon||null }] as any);
-      for (const w of workExperiences) {
+      for (const w of workExperiences.filter(w => w.company_name.trim())) {
         let certPath: string | null = null, certName: string | null = null;
         if (w.certificate_file) { const ext = w.certificate_file.name.split(".").pop(); const path = `${profileId}/${crypto.randomUUID()}.${ext}`; const { error: ue } = await supabase.storage.from("work-certificates").upload(path, w.certificate_file); if (!ue) { certPath = path; certName = w.certificate_file.name; } }
         await supabase.from("work_experiences").insert({ profile_id: profileId, company_name: w.company_name, company_type: w.company_type, work_description: w.work_description||null, start_year: Number(w.start_year), end_year: w.is_current ? null : Number(w.end_year), is_current: w.is_current, certificate_path: certPath, certificate_name: certName });
       }
-      for (const c of emergencyContacts) await supabase.from("employee_emergency_contacts").insert({ profile_id: profileId, contact_name: c.contact_name, contact_phone: c.contact_phone, relationship: c.relationship });
+      for (const c of emergencyContacts.filter(c => c.contact_name.trim())) await supabase.from("employee_emergency_contacts").insert({ profile_id: profileId, contact_name: c.contact_name, contact_phone: c.contact_phone, relationship: c.relationship });
       for (const s of services) {
         if (!s.category_id || !s.service_title) continue;
         const { data: svcData } = await supabase.from("employee_services").insert({ profile_id: profileId, category_id: s.category_id, service_title: s.service_title, hourly_rate: Number(s.hourly_rate)||0, minimum_budget: Number(s.minimum_budget)||0 }).select("id").single();
@@ -783,25 +787,40 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
           )}
 
           {/* Nav buttons */}
-          <div style={{ display: "flex", gap: 12 }}>
-            {step > 0 && (
-              <button type="button" onClick={handleBack} style={{ flex: 1, padding: "13px", borderRadius: 14, border: "1px solid rgba(255,255,255,.1)", background: "rgba(255,255,255,.04)", color: "rgba(255,255,255,.7)", fontWeight: 600, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <ArrowLeft size={15} /> Back
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", gap: 12 }}>
+              {step > 0 && (
+                <button type="button" onClick={handleBack} style={{ flex: 1, padding: "13px", borderRadius: 14, border: "1px solid rgba(255,255,255,.1)", background: "rgba(255,255,255,.04)", color: "rgba(255,255,255,.7)", fontWeight: 600, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  <ArrowLeft size={15} /> Back
+                </button>
+              )}
+              {step < stepConfig.length - 1 ? (
+                <button type="button" onClick={handleNext} style={{ flex: 1, padding: "13px", borderRadius: 14, background: `linear-gradient(135deg,${A1},${A2})`, color: "white", fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 8px 24px rgba(99,102,241,.35)" }}>
+                  Next <ArrowRight size={15} />
+                </button>
+              ) : (
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} style={{ flex: 1 }}>
+                    <button type="submit" disabled={submitting || !agreedToTerms} style={{ width: "100%", padding: "13px", borderRadius: 14, background: submitting || !agreedToTerms ? "rgba(99,102,241,.3)" : `linear-gradient(135deg,${A1},${A2})`, color: "white", fontWeight: 700, fontSize: 14, border: "none", cursor: submitting || !agreedToTerms ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: submitting || !agreedToTerms ? "none" : "0 8px 24px rgba(99,102,241,.35)" }}>
+                      {submitting ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle2 size={16} />}
+                      {submitting ? "Submitting…" : "Submit Registration"}
+                    </button>
+                  </form>
+                </Form>
+              )}
+            </div>
+
+            {/* Skip button — only for optional steps */}
+            {isSkippable && step < stepConfig.length - 1 && (
+              <button
+                type="button"
+                onClick={handleSkip}
+                style={{ width: "100%", padding: "10px", borderRadius: 12, border: "1px dashed rgba(255,255,255,.15)", background: "transparent", color: "rgba(255,255,255,.4)", fontWeight: 500, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5, transition: "all .2s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,.4)"; e.currentTarget.style.color = "#a5b4fc"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,.15)"; e.currentTarget.style.color = "rgba(255,255,255,.4)"; }}
+              >
+                Skip for now — I'll add this later
               </button>
-            )}
-            {step < stepConfig.length - 1 ? (
-              <button type="button" onClick={handleNext} style={{ flex: 1, padding: "13px", borderRadius: 14, background: `linear-gradient(135deg,${A1},${A2})`, color: "white", fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 8px 24px rgba(99,102,241,.35)" }}>
-                Next <ArrowRight size={15} />
-              </button>
-            ) : (
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} style={{ flex: 1 }}>
-                  <button type="submit" disabled={submitting || !agreedToTerms} style={{ width: "100%", padding: "13px", borderRadius: 14, background: submitting || !agreedToTerms ? "rgba(99,102,241,.3)" : `linear-gradient(135deg,${A1},${A2})`, color: "white", fontWeight: 700, fontSize: 14, border: "none", cursor: submitting || !agreedToTerms ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: submitting || !agreedToTerms ? "none" : "0 8px 24px rgba(99,102,241,.35)" }}>
-                    {submitting ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : <CheckCircle2 size={16} />}
-                    {submitting ? "Submitting…" : "Submit Registration"}
-                  </button>
-                </form>
-              </Form>
             )}
           </div>
 
