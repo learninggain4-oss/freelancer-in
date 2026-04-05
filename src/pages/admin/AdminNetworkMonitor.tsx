@@ -20,7 +20,7 @@ const seedEndpoints=():NetEndpoint[]=>[
   {id:"e2",name:"Razorpay Gateway",url:"api.razorpay.com",type:"Payments",latencyMs:142,status:"online",lastCheck:new Date(Date.now()-60000).toISOString(),retryCount:0,failoverActive:false},
   {id:"e3",name:"OneSignal Push",url:"onesignal.com",type:"Notifications",latencyMs:940,status:"degraded",lastCheck:new Date(Date.now()-120000).toISOString(),retryCount:3,failoverActive:true},
   {id:"e4",name:"Resend Email",url:"api.resend.com",type:"Email",latencyMs:380,status:"online",lastCheck:new Date(Date.now()-90000).toISOString(),retryCount:0,failoverActive:false},
-  {id:"e5",name:"Replit CDN",url:"spock.replit.dev",type:"Hosting",latencyMs:55,status:"online",lastCheck:new Date(Date.now()-45000).toISOString(),retryCount:0,failoverActive:false},
+  {id:"e5",name:"Lovable CDN",url:"freelancer-india.lovable.app",type:"Hosting",latencyMs:55,status:"online",lastCheck:new Date(Date.now()-45000).toISOString(),retryCount:0,failoverActive:false},
 ];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
