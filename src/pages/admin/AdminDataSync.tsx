@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { RefreshCw, AlertTriangle, CheckCircle2, Activity, Clock, Shield } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
@@ -26,7 +26,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={synced:"#4ade80",syncing:"#a5b4fc",delayed:"#fbbf24",error:"#f87171"};
 
 export default function AdminDataSync(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[jobs,setJobs]=useState<SyncJob[]>(()=>load("admin_data_sync_v1",seedJobs));
   const[syncing,setSyncing]=useState<string|null>(null);

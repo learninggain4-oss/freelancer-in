@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Globe, AlertTriangle, CheckCircle2, RefreshCw, Activity, Shield } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format, differenceInDays } from "date-fns";
 import { safeFmt, safeDist } from "@/lib/admin-date";
@@ -25,7 +25,7 @@ const dColor={active:"#4ade80",expiring:"#fbbf24",expired:"#f87171"};
 const rColor={ok:"#4ade80",mismatch:"#fbbf24",missing:"#f87171"};
 
 export default function AdminDnsDomain(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[domains]=useState(()=>load("admin_dns_v1",seed));
   const[checking,setChecking]=useState<string|null>(null);
   const[expanded,setExpanded]=useState<string|null>(null);

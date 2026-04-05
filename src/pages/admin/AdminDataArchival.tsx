@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Archive, AlertTriangle, CheckCircle2, RefreshCw, Clock, Activity } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
 import { safeFmt, safeDist } from "@/lib/admin-date";
@@ -18,7 +18,7 @@ const seed=():ArchiveJob[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminDataArchival(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[jobs,setJobs]=useState(()=>load("admin_archival_v1",seed));
   const[running,setRunning]=useState<string|null>(null);
 

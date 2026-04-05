@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Star, Plus, Trash2, Edit, Save, X, Upload, Image, MessageSquareQuote, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Badge } from "@/components/ui/badge";
 
 const TH = {
@@ -36,7 +36,7 @@ const BUCKET = "company-logos";
 const AdminTestimonials = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);

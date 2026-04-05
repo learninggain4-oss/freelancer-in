@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ShieldCheck, RefreshCw, AlertTriangle, CheckCircle2, Clock, Activity, Users } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
@@ -26,7 +26,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={synced:"#4ade80",stale:"#fbbf24",syncing:"#a5b4fc"};
 
 export default function AdminPermissionSync(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[caches,setCaches]=useState<RoleCache[]>(()=>load("admin_perm_sync_v1",seedCaches));
   const[syncing,setSyncing]=useState<string|null>(null);

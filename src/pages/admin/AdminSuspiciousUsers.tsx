@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Users, Search, Filter, Eye, Flag, Ban, UserX, ShieldCheck, AlertTriangle } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -17,7 +17,7 @@ const lvlColor = (l: string) => l==="critical"?"#f87171":l==="high"?"#f97316":l=
 const statusColor = (s: string) => s==="active"?"#4ade80":s==="flagged"?"#f97316":s==="suspended"?"#f87171":"#94a3b8";
 
 export default function AdminSuspiciousUsers() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [users, setUsers] = useState(USERS);
   const [search, setSearch] = useState("");

@@ -7,7 +7,7 @@ import {
   WifiOff, KeyRound, LogOut, Bell, ChevronRight, Settings, ClipboardList, Crown,
   ToggleLeft, ToggleRight, Zap, Globe, Terminal,
 } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,7 +43,7 @@ function addConfigEntry(by: string, key: string, change: string) {
 }
 
 export default function AdminSafetyCenter() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { signOut, profile } = useAuth();
   const navigate = useNavigate();

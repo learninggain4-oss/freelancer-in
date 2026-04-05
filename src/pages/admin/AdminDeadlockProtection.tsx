@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Lock, AlertTriangle, CheckCircle2, RefreshCw, Activity, Clock, BarChart3 } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -30,7 +30,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={running:"#4ade80",waiting:"#fbbf24",deadlock:"#f87171",resolved:"#94a3b8"};
 
 export default function AdminDeadlockProtection(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"locks"|"history">("locks");
   const[locks,setLocks]=useState<LockEntry[]>(()=>load("admin_locks_v1",seedLocks));

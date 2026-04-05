@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CalendarClock, AlertTriangle, CheckCircle2, RefreshCw, Play, Pause, Activity } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
 import { safeFmt, safeDist } from "@/lib/admin-date";
@@ -20,7 +20,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={running:"#4ade80",paused:"#94a3b8",failed:"#f87171",idle:"#a5b4fc"};
 
 export default function AdminCronJobs(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[jobs,setJobs]=useState(()=>load("admin_cron_jobs_v1",seed));
   const[running,setRunning]=useState<string|null>(null);
 

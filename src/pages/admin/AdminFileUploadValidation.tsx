@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Upload, AlertTriangle, CheckCircle2, RefreshCw, Shield, FileText } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
 import { safeFmt, safeDist } from "@/lib/admin-date";
@@ -18,7 +18,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={valid:"#4ade80",corrupted:"#f87171",recovering:"#fbbf24"};
 
 export default function AdminFileUploadValidation(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[uploads,setUploads]=useState(()=>load("admin_file_upload_v1",seed));
   const[recovering,setRecovering]=useState<string|null>(null);
   const[rules,setRules]=useState({maxSizeMB:50,checksumEnabled:true,retryEnabled:true});

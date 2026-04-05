@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FileUp, Shield, AlertTriangle, CheckCircle2, Eye, Trash2, Lock, ToggleLeft, ToggleRight, Activity, FolderOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
@@ -44,7 +44,7 @@ const statusColor: Record<string,string> = { clean:"#4ade80", quarantined:"#fbbf
 const statusLabel: Record<string,string> = { clean:"CLEAN", quarantined:"QUARANTINED", blocked:"BLOCKED", pending_scan:"SCANNING" };
 
 export default function AdminFileManager() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

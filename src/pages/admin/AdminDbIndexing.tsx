@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Database, AlertTriangle, CheckCircle2, RefreshCw, Activity, Zap } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 
@@ -23,7 +23,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const impactColor={high:"#f87171",medium:"#fbbf24",low:"#4ade80"};
 
 export default function AdminDbIndexing(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[indexes,setIndexes]=useState(()=>load("admin_db_idx_v1",seedIdx));
   const[slowQ]=useState(()=>load("admin_slow_q_v1",seedSlowQ));
   const[creating,setCreating]=useState<string|null>(null);

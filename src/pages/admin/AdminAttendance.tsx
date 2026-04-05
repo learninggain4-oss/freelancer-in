@@ -30,7 +30,7 @@ import { format } from "date-fns";
 import { Search, Users, CheckCircle, Clock, UserCheck, Timer, Camera, Download, Eye, Calendar } from "lucide-react";
 import { formatDuration } from "@/utils/attendance-helpers";
 import { toast } from "sonner";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const TH = {
@@ -40,7 +40,7 @@ const TH = {
 };
 
 const AdminAttendance = () => {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");

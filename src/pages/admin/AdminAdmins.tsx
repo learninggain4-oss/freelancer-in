@@ -19,7 +19,7 @@ import {
   RefreshCw, Star, Mail, Phone, Clock, Shield, ChevronLeft, ChevronRight, X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { callEdgeFunction, getToken } from "@/lib/supabase-functions";
 
 const TH = {
@@ -59,7 +59,7 @@ function fmt(date: string | null) {
 }
 
 const AdminAdmins = () => {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const queryClient = useQueryClient();
 

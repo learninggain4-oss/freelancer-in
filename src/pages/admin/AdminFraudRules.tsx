@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Shield, Plus, Edit2, Trash2, Play, Settings, Sliders, AlertTriangle, CheckCircle2, Activity } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -34,7 +34,7 @@ const THRESHOLDS = [
 ];
 
 export default function AdminFraudRules() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [rules, setRules] = useState(INIT_RULES);
   const [thresholds, setThresholds] = useState(THRESHOLDS);

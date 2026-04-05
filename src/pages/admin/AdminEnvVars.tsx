@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { KeyRound, Plus, Edit2, Trash2, Eye, EyeOff, Copy, Download, Upload, ToggleLeft, ToggleRight, Search, History, Shield, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -47,7 +47,7 @@ const BLANK: { name: string; value: string; description: string; environment: "a
 const envBadge: Record<string, { color: string; bg: string }> = { all: { color: "#a5b4fc", bg: "rgba(99,102,241,.12)" }, production: { color: "#f87171", bg: "rgba(248,113,113,.12)" }, staging: { color: "#fbbf24", bg: "rgba(251,191,36,.12)" }, testing: { color: "#4ade80", bg: "rgba(74,222,128,.12)" } };
 
 export default function AdminEnvVars() {
-  const { themeKey } = useDashboardTheme();
+  const { themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

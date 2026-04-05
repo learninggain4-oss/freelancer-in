@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Clock, Landmark, Gift, CreditCard, Search, X, Coins, CheckCircle, Briefcase, Calendar, Star, Users, Receipt, Settings, Globe, Share2 } from "lucide-react";
 import TotpSetupCard from "@/components/admin/TotpSetupCard";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Badge } from "@/components/ui/badge";
 
 const TH = {
@@ -30,7 +30,7 @@ type ClientPaymentRow = {
 
 const AdminSettings = () => {
   const { toast } = useToast();
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [countdownHours, setCountdownHours] = useState("");
   const [maxBankAttempts, setMaxBankAttempts] = useState("");

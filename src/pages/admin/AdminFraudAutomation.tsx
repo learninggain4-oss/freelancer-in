@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Zap, Play, Pause, Settings, Clock, AlertTriangle, CheckCircle2, RefreshCw, Plus, Trash2 } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -25,7 +25,7 @@ const ACTION_OPTS = ["Auto Block User","Auto Freeze Account","Auto Flag Payment"
 const TRIGGER_OPTS = ["Risk score ≥ 90","Risk score ≥ 70","Risk score ≥ 50","Failed login ≥ 5","Failed login ≥ 10","Duplicate payment detected","Login from new country","Payment from blocked IP","IP change ≥ 3","VPN detected"];
 
 export default function AdminFraudAutomation() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [actions, setActions] = useState(INIT_ACTIONS);
   const [globalEnabled, setGlobalEnabled] = useState(true);

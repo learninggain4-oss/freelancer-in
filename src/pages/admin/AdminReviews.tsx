@@ -15,7 +15,7 @@ import { format } from "date-fns";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const TH = {
@@ -26,7 +26,7 @@ const TH = {
 
 const AdminReviews = () => {
   const queryClient = useQueryClient();
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [search, setSearch] = useState("");
   const [showCleared, setShowCleared] = useState(false);

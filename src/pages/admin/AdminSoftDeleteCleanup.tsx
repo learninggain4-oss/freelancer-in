@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Trash2, AlertTriangle, CheckCircle2, RefreshCw, Activity, Archive } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { safeFmt, safeDist } from "@/lib/admin-date";
@@ -18,7 +18,7 @@ const seed=():DeleteGroup[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminSoftDeleteCleanup(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[groups,setGroups]=useState(()=>load("admin_soft_del_v1",seed));
   const[cleaning,setCleaning]=useState<string|null>(null);
   const[cleaningAll,setCleaningAll]=useState(false);

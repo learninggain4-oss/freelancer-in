@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { ClipboardList, Search, Download, Filter, User, Shield, CreditCard, LogIn, Activity } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -31,7 +31,7 @@ const typeIcon = (t: string) => ({ admin:Shield, user:User, fraud:Activity, paym
 const statusColor = (s: string) => s==="critical"?"#f87171":s==="warning"?"#fbbf24":"#4ade80";
 
 export default function AdminFraudAuditLog() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");

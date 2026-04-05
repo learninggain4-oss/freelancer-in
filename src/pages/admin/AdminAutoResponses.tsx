@@ -22,7 +22,7 @@ import {
   Clock, Zap, Filter, Save, X, Settings2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 
 const TH = {
   black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
@@ -68,7 +68,7 @@ const defaultForm: Omit<AutoResponse, "id" | "created_at" | "updated_at"> = {
 
 const AdminAutoResponses = () => {
   const queryClient = useQueryClient();
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "enabled" | "disabled">("all");

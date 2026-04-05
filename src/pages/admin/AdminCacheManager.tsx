@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Layers, RefreshCw, AlertTriangle, CheckCircle2, Activity, Search, Zap, BarChart3, Clock, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -51,7 +51,7 @@ function load<T>(key:string,seed:()=>T[]): T[] {
 const statusColor = { healthy:"#4ade80", stale:"#fbbf24", failed:"#f87171" };
 
 export default function AdminCacheManager() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

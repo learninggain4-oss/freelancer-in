@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Bell, CheckCircle2, AlertTriangle, RefreshCw, Mail, MessageSquare, Activity } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
@@ -27,7 +27,7 @@ const sColor={healthy:"#4ade80",degraded:"#fbbf24",down:"#f87171"};
 const typeIcon={email:Mail,sms:MessageSquare,push:Bell};
 
 export default function AdminNotificationDelivery(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[channels,setChannels]=useState<Channel[]>(()=>load("admin_notif_delivery_v1",seedChannels));
   const[retrying,setRetrying]=useState<string|null>(null);

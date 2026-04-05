@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Zap, CheckCircle2, AlertTriangle, XCircle, RefreshCw, Activity, Shield, ArrowRight } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -16,7 +16,7 @@ const GATEWAYS = [
 ];
 
 export default function AdminGatewayFailover() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
 
   const [gateways, setGateways] = useState(GATEWAYS);

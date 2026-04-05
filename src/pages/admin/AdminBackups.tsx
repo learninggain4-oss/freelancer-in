@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Archive, Download, Upload, Plus, Trash2, CheckCircle2, Clock, Database, FileJson, Shield, RefreshCw, AlertTriangle, HardDrive, Calendar, Lock } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -31,7 +31,7 @@ function loadBackups(): Backup[] {
 const BACKUP_TABLES = ["profiles", "withdrawals", "recovery_requests", "aadhaar_verifications", "bank_verifications", "jobs", "attendance_records", "wallet_transactions", "ip_blocks", "announcements"];
 
 export default function AdminBackups() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

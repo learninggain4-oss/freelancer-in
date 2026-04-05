@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Bell, Mail, MessageSquare, Smartphone, CheckCircle2, XCircle, AlertTriangle, RefreshCw, ToggleLeft, ToggleRight, Globe, Zap, Activity, Clock, Send, Filter, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -56,7 +56,7 @@ const sevBg    = { critical: "rgba(248,113,113,.1)", high: "rgba(251,146,60,.1)"
 const chanIcon: Record<string, React.ElementType> = { email: Mail, sms: MessageSquare, push: Smartphone, webhook: Globe };
 
 export default function AdminAlertSystem() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

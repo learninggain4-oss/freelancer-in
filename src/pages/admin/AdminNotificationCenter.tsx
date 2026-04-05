@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Bell, AlertTriangle, CheckCircle2, Clock, RefreshCw, ToggleLeft, ToggleRight, Layers, Zap, Activity } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
@@ -49,7 +49,7 @@ function load<T>(key:string,seed:()=>T[]): T[] {
 const statusColor: Record<string,string> = { queued:"#94a3b8", sending:A1, delivered:"#4ade80", failed:"#f87171", cooldown:"#fbbf24" };
 
 export default function AdminNotificationCenter() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

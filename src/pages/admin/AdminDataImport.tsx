@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Upload, CheckCircle2, AlertTriangle, RefreshCw, Eye, RotateCcw, FileText } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -23,7 +23,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={pending:"#94a3b8",validating:"#a5b4fc",ready:"#fbbf24",importing:"#6366f1",done:"#4ade80",failed:"#f87171",rolled_back:"#fb923c"};
 
 export default function AdminDataImport(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[jobs,setJobs]=useState<ImportJob[]>(()=>load("admin_data_import_v1",seedJobs));
   const[processing,setProcessing]=useState<string|null>(null);

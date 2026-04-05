@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ShieldCheck, AlertTriangle, CheckCircle2, RefreshCw, Activity, Lock } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { safeFmt, safeDist } from "@/lib/admin-date";
@@ -18,7 +18,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sevColor={low:"#4ade80",medium:"#fbbf24",high:"#f87171"};
 
 export default function AdminCsrfProtection(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[events]=useState(()=>load("admin_csrf_v1",seedEvents));
   const[config,setConfig]=useState({tokenRotation:true,originValidation:true,middlewareEnabled:true,rotationIntervalMins:30,allowedOrigins:"https://freelancer.in"});
   const[rotating,setRotating]=useState(false);

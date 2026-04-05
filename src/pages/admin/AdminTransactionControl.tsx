@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { IndianRupee, ShieldCheck, AlertTriangle, CheckCircle2, Search, Lock, RefreshCw, XCircle, Eye } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -18,7 +18,7 @@ const TRANSACTIONS = [
 ];
 
 export default function AdminTransactionControl() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
 
   const [search, setSearch] = useState("");

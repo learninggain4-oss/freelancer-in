@@ -9,7 +9,7 @@ import {
   CheckCircle2, XCircle, AlertCircle, QrCode, Share2, ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 
 const TH = {
   black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", inputBorder:"rgba(255,255,255,.12)", tab:"rgba(255,255,255,.04)", tabActive:"rgba(99,102,241,.2)", tabActiveFg:"#a5b4fc" },
@@ -51,7 +51,7 @@ function fmt(d: string) {
 }
 
 const AdminInvite = () => {
-  const { themeKey } = useDashboardTheme();
+  const { themeKey } = useAdminTheme();
   const T = TH[themeKey];
 
   const [tab, setTab] = useState<Tab>("email");

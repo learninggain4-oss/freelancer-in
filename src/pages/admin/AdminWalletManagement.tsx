@@ -27,7 +27,7 @@ import {
   Search, Wallet, IndianRupee, Clock, PlusCircle, MinusCircle, Loader2,
   Lock, ArrowRightLeft, Pencil, Trash2, User, ChevronLeft, ChevronRight, EyeOff, Unlock, LayoutDashboard,
 } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { cn } from "@/lib/utils";
 
 const TH = {
@@ -75,7 +75,7 @@ type Withdrawal = {
 
 
 const AdminWalletManagement = () => {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");

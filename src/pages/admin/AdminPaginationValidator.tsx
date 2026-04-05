@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Activity, AlertTriangle, CheckCircle2, RefreshCw } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 
 const A1="#6366f1",A2="#8b5cf6";
@@ -16,7 +16,7 @@ const seed=():PageCheck[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminPaginationValidator(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[checks,setChecks]=useState(()=>load("admin_pagination_v1",seed));
   const[testing,setTesting]=useState<string|null>(null);
   const[testAll,setTestAll]=useState(false);

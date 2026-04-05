@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Globe, RefreshCw, AlertTriangle, CheckCircle2, ToggleLeft, ToggleRight, ArrowRightLeft, Download, Zap, Shield, Activity, Clock, ServerCrash, Package } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -57,7 +57,7 @@ const complexColor = { low:"#4ade80", medium:"#fbbf24", high:"#f87171" };
 const sevColor = { low:"#4ade80", medium:"#fbbf24", high:"#f87171" };
 
 export default function AdminVendorManager() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

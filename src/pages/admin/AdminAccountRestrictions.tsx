@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Ban, Lock, UserX, UserCheck, Clock, Shield, MessageSquare, CreditCard, Wallet, History } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -29,7 +29,7 @@ const RESTRICTION_OPTS = [
 const blockTypeColor = (t: string) => t==="permanent"?"#f87171":t==="temporary"?"#fbbf24":t==="freeze"?"#60a5fa":"#4ade80";
 
 export default function AdminAccountRestrictions() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [users, setUsers] = useState(USERS);
   const [selected, setSelected] = useState<RestrictedUser|null>(null);

@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const TH = {
@@ -44,7 +44,7 @@ type SessionUser = {
 };
 
 const AdminSessions = () => {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const navigate = useNavigate();
   const queryClient = useQueryClient();

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { ClipboardList, Search, Download, User, Shield, Eye, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 const A1 = "#6366f1";
@@ -14,7 +14,7 @@ const LOGS: { id:number; action:string; actor:string; target:string; type:string
 const TYPES = ["all","admin","user","finance","system","security"];
 
 export default function AdminAuditLogs() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
 
   const [search, setSearch] = useState("");

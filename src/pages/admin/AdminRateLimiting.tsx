@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Gauge, AlertTriangle, CheckCircle2, Clock, Zap, Activity, RefreshCw, Shield, Ban, ToggleLeft, ToggleRight, Eye, Cpu } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
@@ -55,7 +55,7 @@ function load<T>(key:string, seed:()=>T[]): T[] {
 const statusColor = { queued:"#fbbf24", processing:A1, done:"#4ade80", retrying:"#fb923c", failed:"#f87171", success:"#4ade80", active:"#f87171", resolved:"#94a3b8" };
 
 export default function AdminRateLimiting() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

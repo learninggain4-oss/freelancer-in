@@ -16,7 +16,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { cn } from "@/lib/utils";
 
 const TH = {
@@ -38,7 +38,7 @@ type Countdown = {
 
 const AdminCountdowns = () => {
   const qc = useQueryClient();
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");

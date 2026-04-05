@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { UserCheck, AlertTriangle, CheckCircle2, RefreshCw, Shield, Lock } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { safeFmt, safeDist } from "@/lib/admin-date";
@@ -24,7 +24,7 @@ const seedChanges=():RoleChange[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminRbacSecurity(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[roles]=useState(()=>load("admin_rbac_roles_v1",seedRoles));
   const[changes,setChanges]=useState(()=>load("admin_rbac_changes_v1",seedChanges));
   const[acting,setActing]=useState<string|null>(null);

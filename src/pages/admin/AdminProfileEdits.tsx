@@ -10,7 +10,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { cn } from "@/lib/utils";
 
 const TH = {
@@ -22,7 +22,7 @@ const TH = {
 const AdminProfileEdits = () => {
   const { profile: adminProfile } = useAuth();
   const queryClient = useQueryClient();
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
 

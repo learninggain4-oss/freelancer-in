@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Search, Globe, Monitor, Smartphone, Tablet, Users, UserCheck, Eye, RefreshCw, ShieldBan, ShieldCheck, MapPin, Activity } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const TH = {
@@ -54,7 +54,7 @@ const DeviceIcon = ({ type }: { type: string | null }) => {
 };
 
 const AdminVisitors = () => {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);

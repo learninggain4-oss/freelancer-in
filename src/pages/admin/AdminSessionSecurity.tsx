@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Monitor, Smartphone, Globe, LogOut, AlertTriangle, CheckCircle2, Clock, MapPin, Shield, Wifi, Lock, RefreshCw, Eye, Activity, Key, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -80,7 +80,7 @@ function load<T>(key: string, seed: () => T[]): T[] {
 const defaultSettings: SecuritySettings = { mfaRequired: false, deviceBinding: true, ipChangeAlert: true, maxSessions: 3, sessionTimeoutMin: 30, forceLogoutOnIpChange: false };
 
 export default function AdminSessionSecurity() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

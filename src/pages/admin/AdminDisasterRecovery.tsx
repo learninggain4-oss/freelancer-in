@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ShieldCheck, AlertTriangle, CheckCircle2, RefreshCw, Activity, Clock, Zap, HardDrive } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
@@ -32,7 +32,7 @@ const sColor={ready:"#4ade80",activating:"#a5b4fc",not_ready:"#f87171"};
 const prColor={critical:"#f87171",high:"#fb923c",medium:"#fbbf24"};
 
 export default function AdminDisasterRecovery(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"plans"|"logs">("plans");
   const[plans,setPlans]=useState<RecoveryPlan[]>(()=>load("admin_dr_plans_v1",seedPlans));

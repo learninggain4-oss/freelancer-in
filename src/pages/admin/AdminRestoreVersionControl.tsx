@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Database, AlertTriangle, CheckCircle2, RefreshCw, Shield, Clock } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
 import { safeFmt, safeDist } from "@/lib/admin-date";
@@ -18,7 +18,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={compatible:"#4ade80",incompatible:"#f87171",unknown:"#94a3b8"};
 
 export default function AdminRestoreVersionControl(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[backups]=useState(()=>load("admin_restore_v1",seed));
   const[restoring,setRestoring]=useState<string|null>(null);
   const[checking,setChecking]=useState<string|null>(null);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Activity, AlertTriangle, CheckCircle2, RefreshCw, Clock, Gauge, Zap, XCircle } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -19,7 +19,7 @@ const ACTIONS = [
 ];
 
 export default function AdminPerformanceMonitor() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [activeTab, setActiveTab] = useState<"actions"|"alerts"|"logs">("actions");
   const [retrying, setRetrying] = useState<string|null>(null);

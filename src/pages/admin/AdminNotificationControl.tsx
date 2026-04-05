@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Bell, AlertTriangle, CheckCircle2, RefreshCw, Activity, Pause, Clock, XCircle, BarChart3 } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -17,7 +17,7 @@ const CHANNELS = [
 ];
 
 export default function AdminNotificationControl() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
 
   const [freqLimit, setFreqLimit] = useState(10);

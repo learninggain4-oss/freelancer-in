@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Bell, BarChart3, Filter, Clock, CheckCircle2, AlertTriangle, Layers, Settings } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -18,7 +18,7 @@ const GROUPS = [
 ];
 
 export default function AdminSmartAlertManager() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
 
   const [groups, setGroups] = useState(GROUPS);

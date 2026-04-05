@@ -12,7 +12,7 @@ import { Loader2, PlusCircle, ArrowUpRight, SendHorizontal, Search, History, Wal
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import TotpVerifyDialog from "@/components/admin/TotpVerifyDialog";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { cn } from "@/lib/utils";
 
 const TH = {
@@ -22,7 +22,7 @@ const TH = {
 };
 
 const AdminWallet = () => {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();

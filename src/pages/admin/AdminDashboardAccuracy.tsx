@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { BarChart3, RefreshCw, CheckCircle2, AlertTriangle, Eye, Activity, XCircle, Clock } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -19,7 +19,7 @@ const METRICS = [
 ];
 
 export default function AdminDashboardAccuracy() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
 
   const [refreshing, setRefreshing] = useState<string|null>(null);

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { GitBranch, RotateCcw, Clock, CheckCircle2, AlertTriangle, Tag, FileText, Wrench, RefreshCw, Shield, Download, UploadCloud, ChevronDown, ChevronUp, Zap } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -71,7 +71,7 @@ const statusColor = { live: "#4ade80", "rolled-back": "#f87171", staged: "#fbbf2
 const catColor: Record<string, string> = { Feature: "#a5b4fc", Fix: "#4ade80", Security: "#f87171", Performance: "#fbbf24", Breaking: "#fb923c" };
 
 export default function AdminVersionControl() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

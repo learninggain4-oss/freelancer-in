@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Mail, CheckCircle2, AlertTriangle, XCircle, RefreshCw, Activity, Shield, BarChart3 } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -16,7 +16,7 @@ const PROVIDERS = [
 ];
 
 export default function AdminEmailDeliverability() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<null|"pass">(null);

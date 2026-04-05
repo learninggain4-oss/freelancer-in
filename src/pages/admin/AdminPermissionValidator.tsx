@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { UserCog, Shield, Eye, Play, CheckCircle2, AlertTriangle, History, ChevronDown, ChevronRight, Lock, Unlock, GitCompare, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -46,7 +46,7 @@ const PERM_AUDIT: PermAudit[] = [
 ];
 
 export default function AdminPermissionValidator() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

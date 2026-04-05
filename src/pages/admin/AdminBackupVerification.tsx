@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { HardDrive, CheckCircle2, AlertTriangle, RefreshCw, Shield, Clock, FileText } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
@@ -27,7 +27,7 @@ const sColor={verified:"#4ade80",unverified:"#fbbf24",corrupt:"#f87171",testing:
 const tColor={full:A1,incremental:"#4ade80",snapshot:"#fbbf24"};
 
 export default function AdminBackupVerification(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[backups,setBackups]=useState<Backup[]>(()=>load("admin_backup_verify_v1",seedBackups));
   const[verifying,setVerifying]=useState<string|null>(null);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Wifi, Monitor, Smartphone, LogOut, RefreshCw, CheckCircle2, AlertTriangle, Activity } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -17,7 +17,7 @@ const DEVICES = [
 ];
 
 export default function AdminSessionSync() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
 
   const [devices, setDevices] = useState(DEVICES);

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Users, AlertTriangle, CheckCircle2, RefreshCw, UserCheck, Shield } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { safeFmt, safeDist } from "@/lib/admin-date";
@@ -17,7 +17,7 @@ const seed=():DuplicateGroup[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminDuplicateAccounts(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[groups,setGroups]=useState(()=>load("admin_dup_accounts_v1",seed));
   const[scanning,setScanning]=useState(false);
   const[acting,setActing]=useState<string|null>(null);

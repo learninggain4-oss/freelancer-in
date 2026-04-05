@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { HardDrive, AlertTriangle, CheckCircle2, Trash2, Upload, Activity, XCircle, RefreshCw, Shield } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -18,7 +18,7 @@ const BUCKETS = [
 ];
 
 export default function AdminStorageManager() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
 
   const [cleaning, setCleaning] = useState(false);

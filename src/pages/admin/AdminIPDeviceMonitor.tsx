@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Monitor, Globe, AlertTriangle, Shield, Ban, CheckCircle2, Eye, Clock, Wifi, Lock } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -19,7 +19,7 @@ const DEVICE_RECORDS: DeviceRecord[] = [];
 const statusColor = (s: string) => s==="blocked"||s==="blacklisted"?"#f87171":s==="suspicious"?"#f97316":s==="whitelisted"?"#4ade80":"#94a3b8";
 
 export default function AdminIPDeviceMonitor() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [tab, setTab] = useState<"ip"|"device">("ip");
   const [ipRecords, setIpRecords] = useState(IP_RECORDS);

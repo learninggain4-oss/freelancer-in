@@ -20,7 +20,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, Loader2, Eye, EyeOff, ArchiveRestore, Layers, LayoutGrid, CheckCircle2, XCircle } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { cn } from "@/lib/utils";
 
 const TH = {
@@ -75,7 +75,7 @@ const defaultForm: WalletTypeForm = {
 };
 
 const AdminWalletTypes = () => {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const queryClient = useQueryClient();
   const [showCleared, setShowCleared] = useState(false);

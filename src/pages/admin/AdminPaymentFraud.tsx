@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { CreditCard, AlertTriangle, CheckCircle2, XCircle, Flag, RefreshCw, Bell, Snowflake, RotateCcw, Ban, Activity } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -28,7 +28,7 @@ const statusColor = (s: string) => s==="fraud"?"#f87171":s==="suspicious"?"#f973
 const typeLabel = (t: string) => ({ duplicate:"Duplicate", unusual_amount:"Unusual Amount", rapid_attempt:"Rapid Attempt", refund_abuse:"Refund Abuse", location_mismatch:"Location Mismatch", failed_pattern:"Failed Pattern", chargeback:"Chargeback" }[t] || t);
 
 export default function AdminPaymentFraud() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [payments, setPayments] = useState(PAYMENTS);
   const [filter, setFilter] = useState("all");

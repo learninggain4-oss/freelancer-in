@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { GitPullRequest, CheckCircle2, XCircle, Clock, Users, ShieldAlert, UserPlus, History, AlertTriangle, Lock, Unlock, RefreshCw, Eye, MessageSquare, Star, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -61,7 +61,7 @@ const statusColor = { pending: "#fbbf24", approved: "#4ade80", rejected: "#f8717
 const catColor: Record<string, string> = { Financial: "#a5b4fc", Security: "#f87171", "User Management": "#4ade80", System: "#fbbf24", Data: "#fb923c" };
 
 export default function AdminApprovalCenter() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

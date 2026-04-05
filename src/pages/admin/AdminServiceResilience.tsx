@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Globe, CheckCircle2, AlertTriangle, RefreshCw, Clock, Activity, ToggleLeft, ToggleRight, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
@@ -32,7 +32,7 @@ function load<T>(key:string,seed:()=>T[]): T[] {
 const statusColor = { healthy:"#4ade80", degraded:"#fbbf24", offline:"#f87171", unknown:"#94a3b8" };
 
 export default function AdminServiceResilience() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

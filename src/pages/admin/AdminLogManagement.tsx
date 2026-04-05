@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FileText, AlertTriangle, CheckCircle2, RefreshCw, Archive, Clock, Trash2 } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -25,7 +25,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={ok:"#4ade80",warning:"#fbbf24",full:"#f87171"};
 
 export default function AdminLogManagement(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[stores,setStores]=useState<LogStore[]>(()=>load("admin_log_mgmt_v1",seedStores));
   const[rotating,setRotating]=useState<string|null>(null);

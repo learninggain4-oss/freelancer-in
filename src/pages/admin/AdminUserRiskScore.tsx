@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { TrendingUp, AlertTriangle, RefreshCw, Lock, RotateCcw, Edit2, CheckCircle2, ChevronDown, ChevronUp, Shield } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -18,7 +18,7 @@ const USERS: User[] = [];
 const lvlColor = (l: string) => l==="critical"?"#f87171":l==="high"?"#f97316":l==="medium"?"#fbbf24":"#4ade80";
 
 export default function AdminUserRiskScore() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [users, setUsers] = useState(USERS);
   const [selected, setSelected] = useState<string|null>(null);

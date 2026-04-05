@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Activity, AlertTriangle, CheckCircle2, RefreshCw, Zap, Shield } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 
 const A1="#6366f1",A2="#8b5cf6";
@@ -10,7 +10,7 @@ const BARS=20;
 function genBar(rps:number){return Math.max(5,Math.min(100,Math.round(rps/20+Math.random()*15)));}
 
 export default function AdminTrafficManagement(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[rps,setRps]=useState(820);
   const[bars,setBars]=useState<number[]>(Array(BARS).fill(0).map(()=>genBar(820)));
   const[config,setConfig]=useState({rateLimit:1000,autoScaling:true,loadBalancing:true,ddosProtection:true,maxConcurrent:5000});

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { CalendarClock, Globe, RefreshCw, Play, Pause, CheckCircle2, AlertTriangle, Clock, Settings, ToggleLeft, ToggleRight, Zap, Terminal } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -56,7 +56,7 @@ function parseCron(expr:string): string {
 }
 
 export default function AdminScheduler() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

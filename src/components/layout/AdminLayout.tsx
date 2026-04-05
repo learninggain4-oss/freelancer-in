@@ -22,7 +22,6 @@ import {
   Mail,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import ThemeToggle from "./ThemeToggle";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 
 const SESSION_TIMEOUT_KEY = "admin_session_timeout_min";
@@ -33,164 +32,60 @@ const A1 = "#6366f1";
 const A2 = "#8b5cf6";
 const VER = "v2.4.1";
 
-/* ─── Per-theme tokens ─────────────────────────────────────────── */
+/* ─── Fixed dark admin design tokens ──────────────────────────── */
 const T = {
-  black: {
-    shell:        "#070714",
-    sidebar:      "rgba(10,10,28,.97)",
-    sidebarBdr:   "rgba(255,255,255,.07)",
-    header:       "rgba(7,7,20,.92)",
-    headerBdr:    "rgba(255,255,255,.07)",
-    sectionTit:   "rgba(255,255,255,.28)",
-    navLink:      "rgba(255,255,255,.45)",
-    navHoverBg:   "rgba(255,255,255,.06)",
-    navHoverFg:   "rgba(255,255,255,.9)",
-    navActiveBg:  "rgba(99,102,241,.18)",
-    navActiveFg:  "#a5b4fc",
-    navActiveBdr: "rgba(99,102,241,.25)",
-    logoBg:       `linear-gradient(135deg,${A1},${A2})`,
-    logoShadow:   "rgba(99,102,241,.5)",
-    logoutFg:     "#f87171",
-    logoutHover:  "rgba(239,68,68,.1)",
-    badgeBg:      "#ef4444",
-    mainBg:       "#070714",
-    mainText:     "rgba(255,255,255,.9)",
-    mainSub:      "rgba(255,255,255,.45)",
-    cardBg:       "rgba(255,255,255,.05)",
-    cardBdr:      "rgba(255,255,255,.09)",
-    mutedBg:      "rgba(255,255,255,.06)",
-    inputBg:      "rgba(255,255,255,.06)",
-    inputBdr:     "rgba(255,255,255,.1)",
-    inputFg:      "white",
-    inputPh:      "rgba(255,255,255,.25)",
-    accent:       "#a5b4fc",
-    green:        "#4ade80",
-    orange:       "#fbbf24",
-    red:          "#f87171",
-    orbA:         "rgba(99,102,241,.12)",
-    orbB:         "rgba(139,92,246,.10)",
-    gridLine:     "rgba(255,255,255,.015)",
-    headerRight:  "rgba(255,255,255,.35)",
-    statusDot:    "#22c55e",
-    liveBg:       "rgba(34,197,94,.15)",
-    liveBdr:      "rgba(34,197,94,.25)",
-    liveFg:       "#4ade80",
-    searchBg:     "rgba(255,255,255,.06)",
-    searchBdr:    "rgba(255,255,255,.1)",
-    dropBg:       "rgba(10,10,28,.98)",
-    dropBdr:      "rgba(255,255,255,.1)",
-    footerBg:     "rgba(7,7,20,.92)",
-    footerBdr:    "rgba(255,255,255,.07)",
-    rightBg:      "rgba(10,10,28,.97)",
-    rightBdr:     "rgba(255,255,255,.07)",
-    iconBtn:      "rgba(255,255,255,.06)",
-    iconBtnHov:   "rgba(255,255,255,.12)",
-  },
-  white: {
-    shell:        "#f0f4ff",
-    sidebar:      "#ffffff",
-    sidebarBdr:   "rgba(0,0,0,.09)",
-    header:       "rgba(255,255,255,.95)",
-    headerBdr:    "rgba(0,0,0,.08)",
-    sectionTit:   "#9ca3af",
-    navLink:      "#4b5563",
-    navHoverBg:   "#f1f5f9",
-    navHoverFg:   "#0d0d24",
-    navActiveBg:  "rgba(99,102,241,.1)",
-    navActiveFg:  "#4f46e5",
-    navActiveBdr: "rgba(99,102,241,.2)",
-    logoBg:       `linear-gradient(135deg,${A1},${A2})`,
-    logoShadow:   "rgba(99,102,241,.35)",
-    logoutFg:     "#ef4444",
-    logoutHover:  "rgba(239,68,68,.08)",
-    badgeBg:      "#ef4444",
-    mainBg:       "#f0f4ff",
-    mainText:     "#0d0d24",
-    mainSub:      "#6b7280",
-    cardBg:       "#ffffff",
-    cardBdr:      "rgba(0,0,0,.08)",
-    mutedBg:      "#f1f5f9",
-    inputBg:      "#ffffff",
-    inputBdr:     "rgba(0,0,0,.1)",
-    inputFg:      "#0d0d24",
-    inputPh:      "#9ca3af",
-    accent:       "#4f46e5",
-    green:        "#16a34a",
-    orange:       "#d97706",
-    red:          "#dc2626",
-    orbA:         "rgba(99,102,241,.07)",
-    orbB:         "rgba(139,92,246,.05)",
-    gridLine:     "rgba(0,0,0,.025)",
-    headerRight:  "#6b7280",
-    statusDot:    "#22c55e",
-    liveBg:       "rgba(22,163,74,.1)",
-    liveBdr:      "rgba(22,163,74,.2)",
-    liveFg:       "#16a34a",
-    searchBg:     "#f1f5f9",
-    searchBdr:    "rgba(0,0,0,.08)",
-    dropBg:       "#ffffff",
-    dropBdr:      "rgba(0,0,0,.1)",
-    footerBg:     "rgba(255,255,255,.95)",
-    footerBdr:    "rgba(0,0,0,.07)",
-    rightBg:      "#ffffff",
-    rightBdr:     "rgba(0,0,0,.08)",
-    iconBtn:      "rgba(0,0,0,.05)",
-    iconBtnHov:   "rgba(0,0,0,.09)",
-  },
-  wb: {
-    shell:        "#f0f4ff",
-    sidebar:      "rgba(10,10,28,.97)",
-    sidebarBdr:   "rgba(255,255,255,.07)",
-    header:       "rgba(255,255,255,.95)",
-    headerBdr:    "rgba(0,0,0,.08)",
-    sectionTit:   "rgba(255,255,255,.28)",
-    navLink:      "rgba(255,255,255,.45)",
-    navHoverBg:   "rgba(255,255,255,.06)",
-    navHoverFg:   "rgba(255,255,255,.9)",
-    navActiveBg:  "rgba(99,102,241,.2)",
-    navActiveFg:  "#a5b4fc",
-    navActiveBdr: "rgba(99,102,241,.3)",
-    logoBg:       `linear-gradient(135deg,${A1},${A2})`,
-    logoShadow:   "rgba(99,102,241,.5)",
-    logoutFg:     "#f87171",
-    logoutHover:  "rgba(239,68,68,.1)",
-    badgeBg:      "#ef4444",
-    mainBg:       "#f0f4ff",
-    mainText:     "#0d0d24",
-    mainSub:      "#6b7280",
-    cardBg:       "#ffffff",
-    cardBdr:      "rgba(0,0,0,.08)",
-    mutedBg:      "#f1f5f9",
-    inputBg:      "#ffffff",
-    inputBdr:     "rgba(0,0,0,.1)",
-    inputFg:      "#0d0d24",
-    inputPh:      "#9ca3af",
-    accent:       "#4f46e5",
-    green:        "#16a34a",
-    orange:       "#d97706",
-    red:          "#dc2626",
-    orbA:         "rgba(99,102,241,.07)",
-    orbB:         "rgba(139,92,246,.05)",
-    gridLine:     "rgba(0,0,0,.025)",
-    headerRight:  "#6b7280",
-    statusDot:    "#22c55e",
-    liveBg:       "rgba(22,163,74,.1)",
-    liveBdr:      "rgba(22,163,74,.2)",
-    liveFg:       "#16a34a",
-    searchBg:     "#f1f5f9",
-    searchBdr:    "rgba(0,0,0,.08)",
-    dropBg:       "#ffffff",
-    dropBdr:      "rgba(0,0,0,.1)",
-    footerBg:     "rgba(255,255,255,.95)",
-    footerBdr:    "rgba(0,0,0,.07)",
-    rightBg:      "#ffffff",
-    rightBdr:     "rgba(0,0,0,.08)",
-    iconBtn:      "rgba(0,0,0,.05)",
-    iconBtnHov:   "rgba(0,0,0,.09)",
-  },
+  shell:        "#04040f",
+  sidebar:      "#07071a",
+  sidebarBdr:   "rgba(99,102,241,.12)",
+  header:       "rgba(4,4,15,.93)",
+  headerBdr:    "rgba(99,102,241,.1)",
+  sectionTit:   "rgba(165,180,252,.38)",
+  navLink:      "rgba(226,232,240,.42)",
+  navHoverBg:   "rgba(99,102,241,.1)",
+  navHoverFg:   "rgba(226,232,240,.95)",
+  navActiveBg:  "rgba(99,102,241,.22)",
+  navActiveFg:  "#c4b5fd",
+  navActiveBdr: "rgba(99,102,241,.35)",
+  logoBg:       `linear-gradient(135deg,${A1},${A2})`,
+  logoShadow:   "rgba(99,102,241,.55)",
+  logoutFg:     "#f87171",
+  logoutHover:  "rgba(239,68,68,.12)",
+  badgeBg:      "#ef4444",
+  mainBg:       "#04040f",
+  mainText:     "rgba(226,232,240,.92)",
+  mainSub:      "rgba(148,163,184,.65)",
+  cardBg:       "rgba(255,255,255,.04)",
+  cardBdr:      "rgba(99,102,241,.1)",
+  mutedBg:      "rgba(255,255,255,.05)",
+  inputBg:      "rgba(255,255,255,.05)",
+  inputBdr:     "rgba(99,102,241,.15)",
+  inputFg:      "rgba(226,232,240,.9)",
+  inputPh:      "rgba(148,163,184,.4)",
+  accent:       "#c4b5fd",
+  green:        "#4ade80",
+  orange:       "#fbbf24",
+  red:          "#f87171",
+  orbA:         "rgba(99,102,241,.14)",
+  orbB:         "rgba(139,92,246,.1)",
+  gridLine:     "rgba(99,102,241,.025)",
+  headerRight:  "rgba(226,232,240,.35)",
+  statusDot:    "#22c55e",
+  liveBg:       "rgba(34,197,94,.13)",
+  liveBdr:      "rgba(34,197,94,.22)",
+  liveFg:       "#4ade80",
+  searchBg:     "rgba(99,102,241,.07)",
+  searchBdr:    "rgba(99,102,241,.15)",
+  dropBg:       "#0c0c22",
+  dropBdr:      "rgba(99,102,241,.15)",
+  footerBg:     "rgba(4,4,15,.94)",
+  footerBdr:    "rgba(99,102,241,.1)",
+  rightBg:      "#07071a",
+  rightBdr:     "rgba(99,102,241,.1)",
+  iconBtn:      "rgba(99,102,241,.08)",
+  iconBtnHov:   "rgba(99,102,241,.16)",
 };
 
-function buildCss(t: typeof T.black): string {
+function buildCss(t: typeof T): string {
   return `
 @keyframes orbGlow { 0%,100%{opacity:.4;transform:scale(1)} 50%{opacity:.7;transform:scale(1.1)} }
 @keyframes slideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
@@ -427,7 +322,7 @@ const AdminLayout = () => {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { theme, setTheme } = useAdminTheme();
+  useAdminTheme();
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const warnRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -443,10 +338,10 @@ const AdminLayout = () => {
   useClickOutside(quickRef,   () => setQuickOpen(false));
   useClickOutside(searchRef,  () => { if (!searchQ) setSearchOpen(false); });
 
-  const tok = T[theme as keyof typeof T] ?? T.black;
+  const tok = T;
   const css = buildCss(tok);
 
-  const isLight = theme === "white";
+  const isLight = false;
 
   const currentNav = allNavItems.find(item => location.pathname === item.path);
   const isSubPage  = location.pathname !== "/admin/dashboard";
@@ -807,9 +702,6 @@ const AdminLayout = () => {
                 </div>
               )}
             </div>
-
-            {/* Theme Toggle */}
-            <ThemeToggle theme={theme} setTheme={setTheme} />
 
             {/* Right Panel Toggle */}
             {iconBtn(() => setRightOpen(o => !o), rightOpen ? <PanelRightClose size={15} /> : <PanelRightOpen size={15} />, undefined, "Quick Panel")}

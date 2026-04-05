@@ -24,7 +24,7 @@ import {
 import { Loader2, ChevronLeft, ChevronRight, ArrowLeft, Search, History, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { cn } from "@/lib/utils";
 import { safeFmt, safeDist } from "@/lib/admin-date";
 
@@ -52,7 +52,7 @@ const typeBadgeVariant = (type: string) => {
 };
 
 const AdminWalletTransactions = () => {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { profile } = useAuth();
   const navigate = useNavigate();

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Database, AlertTriangle, CheckCircle2, RefreshCw, HardDrive, Shield } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
 import { safeFmt, safeDist } from "@/lib/admin-date";
@@ -18,7 +18,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={ok:"#4ade80",warning:"#fbbf24",paused:"#94a3b8"};
 
 export default function AdminBackupStorage(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[sets,setSets]=useState(()=>load("admin_backup_storage_v1",seed));
   const[cleaning,setCleaning]=useState<string|null>(null);
 

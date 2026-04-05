@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Lock, AlertTriangle, CheckCircle2, RefreshCw, Shield, Globe } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format, differenceInDays } from "date-fns";
 import { safeFmt, safeDist } from "@/lib/admin-date";
@@ -19,7 +19,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={valid:"#4ade80",expiring:"#fbbf24",expired:"#f87171"};
 
 export default function AdminSslMonitor(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[certs,setCerts]=useState(()=>load("admin_ssl_v1",seed));
   const[renewing,setRenewing]=useState<string|null>(null);
 

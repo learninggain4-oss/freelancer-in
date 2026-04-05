@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ClipboardCheck, AlertTriangle, CheckCircle2, RefreshCw, Shield, FileText } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { safeFmt, safeDist } from "@/lib/admin-date";
@@ -19,7 +19,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={compliant:"#4ade80","needs-review":"#fbbf24","non-compliant":"#f87171"};
 
 export default function AdminComplianceManager(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[policies,setPolicies]=useState(()=>load("admin_compliance_v1",seed));
   const[reviewing,setReviewing]=useState<string|null>(null);
 

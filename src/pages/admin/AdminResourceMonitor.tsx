@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Activity, AlertTriangle, RefreshCw, Cpu, HardDrive, Wifi, BarChart3, Clock, CheckCircle2 } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -54,7 +54,7 @@ function Gauge({ pct, label, color, size=80 }: { pct:number; label:string; color
 }
 
 export default function AdminResourceMonitor() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

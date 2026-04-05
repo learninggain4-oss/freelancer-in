@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Users, IndianRupee, Gift, ChevronLeft, ChevronRight, Share2 } from "lucide-react";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const TH = {
@@ -21,7 +21,7 @@ const TH = {
 const PAGE_SIZE = 15;
 
 const AdminReferrals = () => {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);

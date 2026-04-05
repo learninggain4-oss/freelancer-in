@@ -19,7 +19,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { safeDist } from "@/lib/admin-date";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 
 const ADMIN_EMOJIS = ["😊","😂","❤️","👍","👎","😢","😮","😡","🔥","💯","🙏","✅","❌","💪","🎉","😎","🤔","😍","👏","🤝","💼","⭐","🚀","💡","📞","📸","📁","💰","🎯","⚡"];
 
@@ -364,7 +364,7 @@ const CustomTemplatesManager = ({ profileId }: { profileId: string }) => {
 
 const AdminHelpSupport = () => {
   const { profile, user } = useAuth();
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
 
   // WhatsApp-style color palette mapped to dark / light theme

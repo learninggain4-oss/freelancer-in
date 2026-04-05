@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Layers, AlertTriangle, CheckCircle2, RefreshCw, Activity, Pause, Play, Trash2, XCircle } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -18,7 +18,7 @@ const QUEUES = [
 ];
 
 export default function AdminQueueManagement() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
 
   const [queues, setQueues] = useState(QUEUES);

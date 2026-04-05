@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Server, AlertTriangle, CheckCircle2, RefreshCw, Activity, HardDrive, Cpu } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 
@@ -49,7 +49,7 @@ function CircularBar({pct,color,size=90,label}:{pct:number;color:string;size?:nu
 }
 
 export default function AdminSystemResources(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{toast}=useToast();
   const[metrics,setMetrics]=useState<ResourceMetric[]>(genMetrics);
   const[alerts]=useState<Alert[]>(()=>load("admin_sys_res_alerts_v1",seedAlerts));

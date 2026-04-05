@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Lock, Shield, Key, Smartphone, Globe, AlertTriangle, CheckCircle2, Save, RefreshCw, Eye, EyeOff } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -13,7 +13,7 @@ const IP_WHITELIST_INIT = ["192.168.1.1","192.168.1.2","10.0.0.1"];
 const IP_BLACKLIST_INIT = ["103.22.11.4","45.77.21.3","182.74.3.2"];
 
 export default function AdminFraudSecuritySettings() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [tab, setTab] = useState<"auth"|"password"|"captcha"|"ip"|"device">("auth");
   const [saved, setSaved] = useState(false);

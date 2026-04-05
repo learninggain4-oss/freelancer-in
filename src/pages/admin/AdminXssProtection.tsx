@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ShieldCheck, AlertTriangle, CheckCircle2, Activity, Eye, Lock } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { safeFmt, safeDist } from "@/lib/admin-date";
@@ -17,7 +17,7 @@ const seed=():ThreatEvent[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminXssProtection(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[events]=useState(()=>load("admin_xss_v1",seed));
   const[config,setConfig]=useState({sanitizationEnabled:true,htmlValidation:true,contentFiltering:true,alertsEnabled:true,cspEnabled:true});
   const[testInput,setTestInput]=useState("");

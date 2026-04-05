@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { KeyRound, Eye, EyeOff, RefreshCw, AlertTriangle, CheckCircle2, Lock, Shield, Clock } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
@@ -40,7 +40,7 @@ const sensColor = { critical:"#f87171", high:"#fb923c", medium:"#fbbf24" };
 const statusColor = { active:"#4ade80", expired:"#f87171", needs_rotation:"#fbbf24" };
 
 export default function AdminSecretsManager() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

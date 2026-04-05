@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Folder, Plus, Clock, CheckCircle2, AlertTriangle, User, Paperclip, MessageSquare, XCircle, ArrowRight } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -29,7 +29,7 @@ const statusColor = (s: string) => s==="open"?"#60a5fa":s==="investigating"?"#fb
 const prioColor = (p: string) => p==="critical"?"#f87171":p==="high"?"#f97316":p==="medium"?"#fbbf24":"#4ade80";
 
 export default function AdminFraudCases() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [cases, setCases] = useState(CASES);
   const [selected, setSelected] = useState<FraudCase|null>(CASES[0]);

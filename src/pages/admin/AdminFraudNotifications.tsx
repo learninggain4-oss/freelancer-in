@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Bell, Mail, MessageSquare, Smartphone, Send, Settings, RotateCcw, CheckCircle2, AlertTriangle } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -30,7 +30,7 @@ const DEFAULT_TEMPLATES = {
 type ChannelConfig = { enabled:boolean; priorities:string[]; template:string; retryOnFail:boolean };
 
 export default function AdminFraudNotifications() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [configs, setConfigs] = useState<Record<string, ChannelConfig>>({
     email:    { enabled:true,  priorities:["high","critical"], template:DEFAULT_TEMPLATES.email,    retryOnFail:true },

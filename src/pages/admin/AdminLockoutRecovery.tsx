@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ShieldCheck, AlertTriangle, CheckCircle2, Users, Key, Clock, FileText, RefreshCw } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
@@ -28,7 +28,7 @@ const seedRecoveryLogs=():RecoveryLog[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminLockoutRecovery(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"locked"|"logs">("locked");
   const[locked,setLocked]=useState<LockedAdmin[]>(()=>load("admin_lockout_v1",seedLocked));

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Activity, CheckCircle2, AlertTriangle, XCircle, Clock, RefreshCw, BarChart3, Globe } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -19,7 +19,7 @@ const INTEGRATIONS = [
 ];
 
 export default function AdminApiMonitor() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<"integrations"|"health"|"logs">("integrations");

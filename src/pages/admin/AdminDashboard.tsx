@@ -11,7 +11,7 @@ import {
   UserX, CreditCard, Globe, RefreshCw, Archive, Key,
   Eye, ClipboardList, TrendingDown, Monitor, Bell,
 } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import {
   AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis,
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
@@ -174,7 +174,7 @@ const BACKUP_HISTORY = [
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const tok = TH[themeKey];
 
   const [stats, setStats] = useState({

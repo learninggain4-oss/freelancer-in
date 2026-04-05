@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Database, Plus, Edit2, Trash2, CheckCircle2, XCircle, Loader2, Copy, ToggleRight, TestTube2, History, Star, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { ConfirmActionDialog } from "@/components/admin/ConfirmActionDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -66,7 +66,7 @@ const envColor = { production: "#f87171", staging: "#fbbf24", testing: "#4ade80"
 const providerIcon = { supabase: "⚡", postgresql: "🐘", mysql: "🐬" };
 
 export default function AdminDatabaseManager() {
-  const { themeKey } = useDashboardTheme();
+  const { themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

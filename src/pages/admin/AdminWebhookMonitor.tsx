@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Zap, AlertTriangle, CheckCircle2, RefreshCw, Activity, Shield } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
 import { safeFmt, safeDist } from "@/lib/admin-date";
@@ -17,7 +17,7 @@ const seed=():Webhook[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminWebhookMonitor(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[hooks,setHooks]=useState(()=>load("admin_webhooks_v1",seed));
   const[testing,setTesting]=useState<string|null>(null);
   const[retrying,setRetrying]=useState<string|null>(null);

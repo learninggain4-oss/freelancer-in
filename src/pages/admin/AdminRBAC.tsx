@@ -4,7 +4,7 @@ import {
   Trash2, Search, Loader2, Mail, ChevronDown, BadgeCheck,
   Send, Clock, Link2, Copy, RefreshCw, CheckCircle, AlertCircle,
 } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
@@ -86,7 +86,7 @@ function isExpired(expiresAt: string): boolean {
 }
 
 export default function AdminRBAC() {
-  const { themeKey } = useDashboardTheme();
+  const { themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const { logAction } = useAdminAudit();
   const { toast } = useToast();

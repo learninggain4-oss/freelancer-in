@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Users, AlertTriangle, CheckCircle2, RefreshCw, Lock, Activity } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
 import { safeFmt, safeDist } from "@/lib/admin-date";
@@ -21,7 +21,7 @@ const seedEvents=():ChangeEvent[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminMultiAdminConflict(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[locks,setLocks]=useState(()=>load("admin_locks_v1",seedLocks));
   const[events,setEvents]=useState(()=>load("admin_conflict_events_v1",seedEvents));
   const[releasing,setReleasing]=useState<string|null>(null);

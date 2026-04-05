@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Users, Clock, AlertTriangle, CheckCircle2, RefreshCw, Activity, LogOut, Monitor, Smartphone, Shield } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -17,7 +17,7 @@ const SESSIONS = [
 ];
 
 export default function AdminSessionManagement() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
 
   const [sessions, setSessions] = useState(SESSIONS);

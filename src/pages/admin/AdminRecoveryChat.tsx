@@ -26,7 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { callEdgeFunction } from "@/lib/supabase-functions";
 import { toast } from "sonner";
 import MessageBubble from "@/components/chat/MessageBubble";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 
 const TH = {
   black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
@@ -36,7 +36,7 @@ const TH = {
 
 const AdminRecoveryChat = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [searchParams] = useSearchParams();
   const roomId = searchParams.get("room");

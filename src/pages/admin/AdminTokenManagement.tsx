@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Key, AlertTriangle, CheckCircle2, RefreshCw, Clock, Shield, Activity } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
@@ -26,7 +26,7 @@ function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(
 const sColor={healthy:"#4ade80",warning:"#fbbf24",critical:"#f87171"};
 
 export default function AdminTokenManagement(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tokens,setTokens]=useState<TokenType[]>(()=>load("admin_token_mgmt_v1",seedTokens));
   const[rotating,setRotating]=useState<string|null>(null);

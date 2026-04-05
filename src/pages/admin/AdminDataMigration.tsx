@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Database, CheckCircle2, AlertTriangle, RefreshCw, Play, RotateCcw, Eye, Clock, Shield, XCircle } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -19,7 +19,7 @@ const MIGRATIONS = [
 ];
 
 export default function AdminDataMigration() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
 
   const [previewId, setPreviewId] = useState<string|null>(null);

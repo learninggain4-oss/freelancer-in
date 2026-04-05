@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Edit2, Check, X, ChevronDown, ChevronRight, Briefcase, Target, Layers, Settings2, Save } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { cn } from "@/lib/utils";
 
 const TH = {
@@ -19,7 +19,7 @@ const TH = {
 
 const AdminServiceManagement = () => {
   const qc = useQueryClient();
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [newCatName, setNewCatName] = useState("");
   const [editCatId, setEditCatId] = useState<string | null>(null);

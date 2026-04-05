@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { GitBranch, AlertTriangle, CheckCircle2, RefreshCw, Lock, Activity } from "lucide-react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
 import { safeFmt, safeDist } from "@/lib/admin-date";
@@ -19,7 +19,7 @@ const seed=():ConfigItem[]=>[
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminConfigDrift(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];const{toast}=useToast();
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[configs,setConfigs]=useState(()=>load("admin_config_drift_v1",seed));
   const[syncing,setSyncing]=useState<string|null>(null);
   const[syncAll,setSyncAll]=useState(false);

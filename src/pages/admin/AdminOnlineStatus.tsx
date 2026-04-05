@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Wifi, WifiOff, Users, ChevronLeft, ChevronRight, Activity, Globe } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { safeFmt, safeDist } from "@/lib/admin-date";
 
 const TH = {
@@ -23,7 +23,7 @@ const PAGE_SIZE = 15;
 const ONLINE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
 
 const AdminOnlineStatus = () => {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "online" | "offline">("all");

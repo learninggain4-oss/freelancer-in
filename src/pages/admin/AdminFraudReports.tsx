@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { BarChart2, Download, TrendingUp, TrendingDown, Calendar, Users, CreditCard, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -46,7 +46,7 @@ const MONTHLY = [
 ];
 
 export default function AdminFraudReports() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const [period, setPeriod] = useState<"daily"|"weekly"|"monthly">("daily");
   const [exportFmt, setExportFmt] = useState("pdf");

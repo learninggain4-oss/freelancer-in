@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ShieldCheck, AlertTriangle, CheckCircle2, Clock, Eye, RotateCcw, FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
@@ -28,7 +28,7 @@ const sColor={pending:"#fbbf24",approved:"#4ade80",rejected:"#f87171",rolled_bac
 const riskColor={low:"#4ade80",medium:"#fbbf24",high:"#f87171"};
 
 export default function AdminChangeApproval(){
-  const{theme,themeKey}=useDashboardTheme();const T=TH[themeKey];
+  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"pending"|"history">("pending");
   const[changes,setChanges]=useState<ChangeRequest[]>(()=>load("admin_change_approval_v1",seedChanges));

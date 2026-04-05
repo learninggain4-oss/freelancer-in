@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Globe, Clock, AlertTriangle, CheckCircle2, RefreshCw, Activity, Shield } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
@@ -25,7 +25,7 @@ const LOGS = [
 ];
 
 export default function AdminTimezoneManager() {
-  const { theme, themeKey } = useDashboardTheme();
+  const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
 
   const [systemTz, setSystemTz] = useState("Asia/Kolkata (IST, UTC+5:30)");
