@@ -13,63 +13,7 @@ type User = { id:string; name:string; email:string; score:number; level:string; 
   factors:{ name:string; value:number; weight:number }[];
   history:{ date:string; score:number; reason:string }[] };
 
-const USERS: User[] = [
-  { id:"u1", name:"Rahul Sharma", email:"rahul@mail.com", score:91, level:"critical", locked:false,
-    factors:[
-      { name:"Failed login attempts", value:12, weight:20 },
-      { name:"IP address changes", value:8, weight:18 },
-      { name:"Device changes", value:5, weight:15 },
-      { name:"Payment failures", value:6, weight:14 },
-      { name:"Multiple account detection", value:2, weight:12 },
-      { name:"Suspicious messaging", value:34, weight:8 },
-      { name:"Rapid transactions", value:9, weight:10 },
-      { name:"Location mismatch", value:4, weight:8 },
-      { name:"Account age (days)", value:12, weight:5 },
-      { name:"Refund frequency", value:3, weight:6 },
-    ],
-    history:[
-      { date:"Today 09:00", score:91, reason:"IP change + login failure spike" },
-      { date:"Yesterday", score:72, reason:"Multiple device logins" },
-      { date:"3 days ago", score:45, reason:"Payment failure x3" },
-      { date:"1 week ago", score:20, reason:"Initial baseline" },
-    ]
-  },
-  { id:"u2", name:"Priya Mehta", email:"priya@mail.com", score:78, level:"high", locked:false,
-    factors:[
-      { name:"Failed login attempts", value:7, weight:20 },
-      { name:"IP address changes", value:5, weight:18 },
-      { name:"Device changes", value:2, weight:15 },
-      { name:"Payment failures", value:4, weight:14 },
-      { name:"Multiple account detection", value:1, weight:12 },
-      { name:"Suspicious messaging", value:18, weight:8 },
-      { name:"Rapid transactions", value:6, weight:10 },
-      { name:"Location mismatch", value:2, weight:8 },
-      { name:"Account age (days)", value:30, weight:5 },
-      { name:"Refund frequency", value:2, weight:6 },
-    ],
-    history:[
-      { date:"Today 11:30", score:78, reason:"Suspicious messaging pattern" },
-      { date:"Yesterday", score:55, reason:"Rapid transactions" },
-    ]
-  },
-  { id:"u3", name:"Ajay Kumar", email:"ajay@mail.com", score:52, level:"medium", locked:true,
-    factors:[
-      { name:"Failed login attempts", value:4, weight:20 },
-      { name:"IP address changes", value:3, weight:18 },
-      { name:"Device changes", value:1, weight:15 },
-      { name:"Payment failures", value:2, weight:14 },
-      { name:"Multiple account detection", value:0, weight:12 },
-      { name:"Suspicious messaging", value:9, weight:8 },
-      { name:"Rapid transactions", value:3, weight:10 },
-      { name:"Location mismatch", value:1, weight:8 },
-      { name:"Account age (days)", value:60, weight:5 },
-      { name:"Refund frequency", value:1, weight:6 },
-    ],
-    history:[
-      { date:"Today 08:00", score:52, reason:"IP change" },
-    ]
-  },
-];
+const USERS: User[] = [];
 
 const lvlColor = (l: string) => l==="critical"?"#f87171":l==="high"?"#f97316":l==="medium"?"#fbbf24":"#4ade80";
 
@@ -77,7 +21,7 @@ export default function AdminUserRiskScore() {
   const { theme, themeKey } = useDashboardTheme();
   const T = TH[themeKey];
   const [users, setUsers] = useState(USERS);
-  const [selected, setSelected] = useState<string|null>("u1");
+  const [selected, setSelected] = useState<string|null>(null);
   const [overrideVal, setOverrideVal] = useState("");
   const [showOverride, setShowOverride] = useState(false);
   const [recalculating, setRecalculating] = useState<string|null>(null);
@@ -127,21 +71,24 @@ export default function AdminUserRiskScore() {
           <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:16, backdropFilter:"blur(10px)", height:"fit-content" }}>
             <div style={{ fontSize:13, fontWeight:600, color:T.text, marginBottom:12 }}>Users ({users.length})</div>
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-              {users.map(u => (
-                <div key={u.id} onClick={()=>setSelected(u.id)} style={{ padding:"12px 14px", borderRadius:10, border:`1px solid ${selected===u.id?A1:T.border}`, background:selected===u.id?`${A1}10`:T.input, cursor:"pointer" }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                    <div>
-                      <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{u.name}</div>
-                      <div style={{ fontSize:11, color:T.sub }}>{u.email}</div>
+              {users.length === 0
+                ? <div style={{ textAlign:"center", padding:"32px 12px", color:T.sub, fontSize:13 }}>No users with risk scores</div>
+                : users.map(u => (
+                  <div key={u.id} onClick={()=>setSelected(u.id)} style={{ padding:"12px 14px", borderRadius:10, border:`1px solid ${selected===u.id?A1:T.border}`, background:selected===u.id?`${A1}10`:T.input, cursor:"pointer" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                      <div>
+                        <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{u.name}</div>
+                        <div style={{ fontSize:11, color:T.sub }}>{u.email}</div>
+                      </div>
+                      <div style={{ textAlign:"right" }}>
+                        <div style={{ fontSize:18, fontWeight:700, color:lvlColor(u.level) }}>{u.score}</div>
+                        <span style={{ fontSize:10, padding:"2px 7px", borderRadius:10, background:`${lvlColor(u.level)}18`, color:lvlColor(u.level), fontWeight:700, textTransform:"capitalize" }}>{u.level}</span>
+                      </div>
                     </div>
-                    <div style={{ textAlign:"right" }}>
-                      <div style={{ fontSize:18, fontWeight:700, color:lvlColor(u.level) }}>{u.score}</div>
-                      <span style={{ fontSize:10, padding:"2px 7px", borderRadius:10, background:`${lvlColor(u.level)}18`, color:lvlColor(u.level), fontWeight:700, textTransform:"capitalize" }}>{u.level}</span>
-                    </div>
+                    {u.locked && <div style={{ fontSize:11, color:"#fbbf24", marginTop:4 }}>🔒 Score Locked</div>}
                   </div>
-                  {u.locked && <div style={{ fontSize:11, color:"#fbbf24", marginTop:4 }}>🔒 Score Locked</div>}
-                </div>
-              ))}
+                ))
+              }
             </div>
           </div>
 
