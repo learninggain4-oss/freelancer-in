@@ -167,6 +167,97 @@ export default function AdminFraudRules() {
           </div>
         )}
 
+        {/* Edit Rule Modal */}
+        {editRule && (
+          <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, backdropFilter:"blur(4px)" }}>
+            <div style={{ background:theme==="black"?"#0d0d24":"#fff", border:`1px solid ${T.border}`, borderRadius:20, padding:28, width:480 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+                <h2 style={{ fontSize:16, fontWeight:700, color:T.text, margin:0 }}>Edit Fraud Rule</h2>
+                <button onClick={()=>setEditRule(null)} style={{ background:"none", border:"none", color:T.sub, cursor:"pointer", fontSize:20 }}>×</button>
+              </div>
+              <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                <div>
+                  <label style={{ fontSize:12, color:T.sub }}>Rule Name</label>
+                  <input
+                    value={editRule.name}
+                    onChange={e => setEditRule(r => r ? {...r, name:e.target.value} : r)}
+                    style={{ width:"100%", marginTop:6, padding:"8px 12px", borderRadius:8, border:`1px solid ${T.border}`, background:T.input, color:T.text, fontSize:13, boxSizing:"border-box" }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize:12, color:T.sub }}>Description</label>
+                  <textarea
+                    value={editRule.description}
+                    onChange={e => setEditRule(r => r ? {...r, description:e.target.value} : r)}
+                    rows={2}
+                    style={{ width:"100%", marginTop:6, padding:"8px 12px", borderRadius:8, border:`1px solid ${T.border}`, background:T.input, color:T.text, fontSize:13, resize:"vertical", boxSizing:"border-box" }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize:12, color:T.sub }}>Action</label>
+                  <select
+                    value={editRule.action}
+                    onChange={e => setEditRule(r => r ? {...r, action:e.target.value} : r)}
+                    style={{ width:"100%", marginTop:6, padding:"8px 12px", borderRadius:8, border:`1px solid ${T.border}`, background:T.input, color:T.text, fontSize:13 }}
+                  >
+                    {["send_alert","auto_block","freeze_account","flag_payment","require_verify","block_login"].map(a => (
+                      <option key={a} value={a}>{a.replace(/_/g," ")}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize:12, color:T.sub }}>Priority</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={editRule.priority}
+                    onChange={e => setEditRule(r => r ? {...r, priority:parseInt(e.target.value)||1} : r)}
+                    style={{ width:"100%", marginTop:6, padding:"8px 12px", borderRadius:8, border:`1px solid ${T.border}`, background:T.input, color:T.text, fontSize:13, boxSizing:"border-box" }}
+                  />
+                </div>
+                <div style={{ display:"flex", gap:16 }}>
+                  <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:13, color:T.sub, cursor:"pointer" }}>
+                    <div
+                      onClick={() => setEditRule(r => r ? {...r, enabled:!r.enabled} : r)}
+                      style={{ width:36, height:20, borderRadius:10, background:editRule.enabled?A1:T.input, position:"relative", cursor:"pointer", transition:"background .2s", border:`1px solid ${T.border}` }}
+                    >
+                      <div style={{ width:16, height:16, borderRadius:"50%", background:"#fff", position:"absolute", top:1, left:editRule.enabled?18:1, transition:"left .2s" }} />
+                    </div>
+                    Enabled
+                  </label>
+                  <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:13, color:T.sub, cursor:"pointer" }}>
+                    <div
+                      onClick={() => setEditRule(r => r ? {...r, testing:!r.testing} : r)}
+                      style={{ width:36, height:20, borderRadius:10, background:editRule.testing?"#fbbf24":T.input, position:"relative", cursor:"pointer", transition:"background .2s", border:`1px solid ${T.border}` }}
+                    >
+                      <div style={{ width:16, height:16, borderRadius:"50%", background:"#fff", position:"absolute", top:1, left:editRule.testing?18:1, transition:"left .2s" }} />
+                    </div>
+                    Testing Mode
+                  </label>
+                </div>
+                <div style={{ display:"flex", gap:10, marginTop:4 }}>
+                  <button
+                    onClick={() => {
+                      setRules(prev => prev.map(x => x.id === editRule.id ? editRule : x));
+                      setEditRule(null);
+                    }}
+                    style={{ flex:1, padding:"10px", borderRadius:10, background:`linear-gradient(135deg,${A1},${A2})`, color:"#fff", border:"none", fontSize:14, fontWeight:700, cursor:"pointer" }}
+                  >
+                    Save Changes
+                  </button>
+                  <button
+                    onClick={() => setEditRule(null)}
+                    style={{ padding:"10px 20px", borderRadius:10, border:`1px solid ${T.border}`, background:T.input, color:T.sub, fontSize:14, cursor:"pointer" }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Add Rule Modal */}
         {showAdd && (
           <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, backdropFilter:"blur(4px)" }}>
