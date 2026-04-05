@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import QRCode from "https://esm.sh/qrcode@1.5.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,7 +14,6 @@ function json(data: unknown, status = 200) {
   });
 }
 
-// Inline base32 encode — no external Deno imports needed
 function base32Encode(bytes: Uint8Array): string {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
   let result = "";
@@ -67,7 +67,13 @@ Deno.serve(async (req) => {
     if (updateErr) return json({ error: updateErr.message }, 500);
 
     const formattedSecret = secret.match(/.{1,4}/g)?.join(" ") ?? secret;
-    const qrCodeDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=2&data=${encodeURIComponent(otpauthUrl)}`;
+
+    // Generate QR code as base64 PNG data URL — no external service needed
+    const qrCodeDataUrl: string = await QRCode.toDataURL(otpauthUrl, {
+      width: 220,
+      margin: 2,
+      color: { dark: "#000000", light: "#ffffff" },
+    });
 
     return json({ qrCodeDataUrl, formattedSecret, otpauthUrl });
   } catch (err: any) {
