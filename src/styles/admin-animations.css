@@ -300,3 +300,364 @@
 .admin-main::-webkit-scrollbar-thumb:hover {
   background: rgba(99,102,241,.35);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ENHANCED PREMIUM ANIMATIONS v2
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Ripple click ───────────────────────────────────────────── */
+
+@keyframes adminRippleEffect {
+  0%   { transform: scale(0); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+/* ─── Aurora background shift ────────────────────────────────── */
+
+@keyframes adminAurora {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+
+.admin-aurora {
+  background: linear-gradient(135deg, #1e1b4b, #312e81, #4f46e5, #7c3aed, #6d28d9, #1e1b4b);
+  background-size: 400% 400%;
+  animation: adminAurora 8s ease infinite;
+}
+
+/* ─── Shimmer sweep (highlight effect on cards) ──────────────── */
+
+@keyframes adminSweep {
+  0%   { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(300%)  skewX(-15deg); }
+}
+
+.admin-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.admin-sweep::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 40%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+  animation: adminSweep 3.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ─── Gradient border glow (animated) ───────────────────────── */
+
+@keyframes adminGradBorder {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+
+.admin-grad-border {
+  position: relative;
+  border-radius: inherit;
+}
+.admin-grad-border::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899, #06b6d4, #6366f1);
+  background-size: 300% 300%;
+  animation: adminGradBorder 4s ease infinite;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.admin-grad-border:hover::before { opacity: 1; }
+
+/* ─── Number tick (rolling digit) ───────────────────────────── */
+
+@keyframes adminTickUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.admin-tick {
+  display: inline-block;
+  animation: adminTickUp 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+/* ─── Typewriter cursor ──────────────────────────────────────── */
+
+@keyframes adminBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.admin-cursor::after {
+  content: "|";
+  animation: adminBlink 1.1s step-end infinite;
+  color: #6366f1;
+  font-weight: 300;
+  margin-left: 1px;
+}
+
+/* ─── Glow pulse (active/selected item) ─────────────────────── */
+
+@keyframes adminGlowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0), 0 4px 16px rgba(0,0,0,.08); }
+  50%       { box-shadow: 0 0 0 4px rgba(99,102,241,.15), 0 8px 28px rgba(99,102,241,.2); }
+}
+.admin-glow-pulse {
+  animation: adminGlowPulse 2.8s ease-in-out infinite;
+}
+
+/* ─── Wave bottom decoration ─────────────────────────────────── */
+
+@keyframes adminWave {
+  0%   { transform: translateX(0);    }
+  50%  { transform: translateX(-25%); }
+  100% { transform: translateX(0);    }
+}
+.admin-wave {
+  animation: adminWave 6s ease-in-out infinite;
+}
+
+/* ─── Zoom-in entrance ───────────────────────────────────────── */
+
+@keyframes adminZoomIn {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1);   }
+}
+.admin-zoom-in {
+  animation: adminZoomIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+/* ─── Heartbeat (for urgent/warning items) ───────────────────── */
+
+@keyframes adminHeartbeat {
+  0%, 100% { transform: scale(1);    }
+  14%       { transform: scale(1.12); }
+  28%       { transform: scale(1);    }
+  42%       { transform: scale(1.08); }
+  56%       { transform: scale(1);    }
+}
+.admin-heartbeat {
+  animation: adminHeartbeat 1.8s ease-in-out infinite;
+}
+
+/* ─── Slide-up-fade (for toast/alert) ───────────────────────── */
+
+@keyframes adminToastIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+.admin-toast-in {
+  animation: adminToastIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+/* ─── Starburst / sparkle ────────────────────────────────────── */
+
+@keyframes adminStarburst {
+  0%   { opacity: 0; transform: scale(0) rotate(0deg);   }
+  50%  { opacity: 1; transform: scale(1) rotate(180deg); }
+  100% { opacity: 0; transform: scale(0) rotate(360deg); }
+}
+.admin-star {
+  animation: adminStarburst 1.6s ease-in-out infinite;
+}
+
+/* ─── Flip card ──────────────────────────────────────────────── */
+
+@keyframes adminFlipIn {
+  from { opacity: 0; transform: perspective(500px) rotateY(-90deg); }
+  to   { opacity: 1; transform: perspective(500px) rotateY(0deg);   }
+}
+.admin-flip-in {
+  animation: adminFlipIn 0.5s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* ─── Elastic slide from bottom ──────────────────────────────── */
+
+@keyframes adminElasticUp {
+  from { opacity: 0; transform: translateY(40px) scale(0.96); }
+  60%  { transform: translateY(-6px) scale(1.01); }
+  80%  { transform: translateY(3px)  scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.admin-elastic-up {
+  animation: adminElasticUp 0.55s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* ─── Sidebar gradient shift ─────────────────────────────────── */
+
+@keyframes adminSidebarGlow {
+  0%   { box-shadow: 4px 0 24px rgba(0,0,0,.18), inset -1px 0 0 rgba(99,102,241,.0); }
+  50%  { box-shadow: 4px 0 32px rgba(99,102,241,.2), inset -1px 0 0 rgba(99,102,241,.18); }
+  100% { box-shadow: 4px 0 24px rgba(0,0,0,.18), inset -1px 0 0 rgba(99,102,241,.0); }
+}
+.admin-sidebar-glow {
+  animation: adminSidebarGlow 4s ease-in-out infinite;
+}
+
+/* ─── Header shimmer line ────────────────────────────────────── */
+
+@keyframes adminHeaderLine {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100vw); }
+}
+.admin-header-line::after {
+  content: "";
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 120px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(99,102,241,.7), transparent);
+  animation: adminHeaderLine 3.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ─── Morphing blob background ───────────────────────────────── */
+
+@keyframes adminBlob {
+  0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+  25%       { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+  50%       { border-radius: 50% 60% 30% 60% / 40% 70% 60% 30%; }
+  75%       { border-radius: 70% 30% 60% 40% / 30% 50% 70% 50%; }
+}
+.admin-blob {
+  animation: adminBlob 8s ease-in-out infinite;
+}
+
+/* ─── Progress fill animation ────────────────────────────────── */
+
+@keyframes adminProgressFill {
+  from { width: 0%; }
+}
+.admin-progress-fill {
+  animation: adminProgressFill 1.2s cubic-bezier(0.22,1,0.36,1) 0.3s both;
+}
+
+/* ─── Typing dots loader ──────────────────────────────────────── */
+
+@keyframes adminDot1 { 0%,80%,100% { transform: scale(0); } 40% { transform: scale(1); } }
+@keyframes adminDot2 { 0%,80%,100% { transform: scale(0); } 40% { transform: scale(1); } }
+@keyframes adminDot3 { 0%,80%,100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+.admin-dots span:nth-child(1) { animation: adminDot1 1.4s ease-in-out 0s   infinite; }
+.admin-dots span:nth-child(2) { animation: adminDot2 1.4s ease-in-out 0.2s infinite; }
+.admin-dots span:nth-child(3) { animation: adminDot3 1.4s ease-in-out 0.4s infinite; }
+.admin-dots span {
+  display: inline-block; width: 6px; height: 6px;
+  border-radius: 50%; background: #6366f1; margin: 0 2px;
+}
+
+/* ─── Magnetic button hover ──────────────────────────────────── */
+
+.admin-magnetic {
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.admin-magnetic:hover {
+  transform: scale(1.06);
+}
+.admin-magnetic:active {
+  transform: scale(0.94);
+  transition: transform 0.08s ease;
+}
+
+/* ─── Neon text glow ─────────────────────────────────────────── */
+
+@keyframes adminNeon {
+  0%, 100% { text-shadow: 0 0 4px #6366f1, 0 0 12px rgba(99,102,241,.5); }
+  50%       { text-shadow: 0 0 8px #6366f1, 0 0 24px rgba(99,102,241,.8), 0 0 48px rgba(99,102,241,.3); }
+}
+.admin-neon {
+  animation: adminNeon 2.5s ease-in-out infinite;
+}
+
+/* ─── Card reveal on hover ───────────────────────────────────── */
+
+.admin-reveal {
+  overflow: hidden;
+}
+.admin-reveal-inner {
+  transform: translateY(6px);
+  opacity: 0;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+.admin-reveal:hover .admin-reveal-inner {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* ─── Skeleton shimmer (dark variant) ───────────────────────── */
+
+@keyframes adminSkeletonDark {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+.admin-skeleton-dark {
+  background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.08) 50%, rgba(255,255,255,.04) 75%);
+  background-size: 600px 100%;
+  animation: adminSkeletonDark 1.4s infinite linear;
+  border-radius: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GLOBAL AUTO-TARGETING
+   Applies animations to all admin pages automatically.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* All table rows inside admin pages */
+.admin-main table tbody tr {
+  animation: adminTableRow 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: background 0.15s ease;
+}
+.admin-main table tbody tr:nth-child(1)  { animation-delay: 0.04s; }
+.admin-main table tbody tr:nth-child(2)  { animation-delay: 0.07s; }
+.admin-main table tbody tr:nth-child(3)  { animation-delay: 0.10s; }
+.admin-main table tbody tr:nth-child(4)  { animation-delay: 0.13s; }
+.admin-main table tbody tr:nth-child(5)  { animation-delay: 0.16s; }
+.admin-main table tbody tr:nth-child(6)  { animation-delay: 0.19s; }
+.admin-main table tbody tr:nth-child(7)  { animation-delay: 0.22s; }
+.admin-main table tbody tr:nth-child(8)  { animation-delay: 0.25s; }
+.admin-main table tbody tr:nth-child(9)  { animation-delay: 0.28s; }
+.admin-main table tbody tr:nth-child(10) { animation-delay: 0.31s; }
+.admin-main table tbody tr:nth-child(n+11) { animation-delay: 0.33s; }
+
+/* All progress bars inside admin */
+.admin-main [role="progressbar"] > div,
+.admin-main progress::-webkit-progress-value {
+  animation: adminProgressFill 1s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+}
+
+/* Input focus glow */
+.admin-main input:focus,
+.admin-main select:focus,
+.admin-main textarea:focus {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18) !important;
+  transition: box-shadow 0.2s ease;
+}
+
+/* Button press feedback */
+.admin-main button:not(:disabled):active {
+  transform: scale(0.96);
+  transition: transform 0.08s ease;
+}
+
+/* Badge pop when value changes */
+.admin-main [class*="badge"],
+.admin-main [class*="Badge"] {
+  animation: adminBadgePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Dialog / Modal enter */
+.admin-main [role="dialog"],
+[data-radix-popper-content-wrapper] > div {
+  animation: adminPopIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Tab content switch */
+.admin-main [role="tabpanel"] {
+  animation: adminFadeUp 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Alert / toast */
+.admin-main [role="alert"] {
+  animation: adminToastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}

@@ -12,6 +12,9 @@ import {
   Eye, ClipboardList, TrendingDown, Monitor, Bell,
 } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
+import AdminParticles from "@/components/admin/AdminParticles";
+import AdminTiltCard from "@/components/admin/AdminTiltCard";
+import AdminCountUp from "@/components/admin/AdminCountUp";
 import {
   AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis,
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
@@ -289,8 +292,9 @@ const AdminDashboard = () => {
     <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
 
       {/* ── Hero Section ── */}
-      <div style={{ position: "relative", overflow: "hidden", borderRadius: 20, padding: "26px 28px 22px", background: tok.heroGrad, border: `1px solid ${tok.heroBdr}` }}>
-        <div className="admin-float-slow" style={{ position: "absolute", top: -20, right: -20, width: 140, height: 140, borderRadius: "50%", background: tok.orbA, filter: "blur(30px)" }} />
+      <div className="admin-sweep" style={{ position: "relative", overflow: "hidden", borderRadius: 20, padding: "26px 28px 22px", background: tok.heroGrad, border: `1px solid ${tok.heroBdr}` }}>
+        <AdminParticles count={32} />
+        <div className="admin-float-slow admin-blob" style={{ position: "absolute", top: -20, right: -20, width: 140, height: 140, background: tok.orbA, filter: "blur(30px)" }} />
         <div className="admin-float-delay" style={{ position: "absolute", bottom: -30, left: 60, width: 100, height: 100, borderRadius: "50%", background: tok.orbB, filter: "blur(20px)" }} />
 
         <div style={{ position: "relative", zIndex: 1 }}>
@@ -317,18 +321,23 @@ const AdminDashboard = () => {
           {/* Quick 4-metric strip */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10 }}>
             {[
-              { label: "Users",       value: stats.totalUsers || 2847,     icon: Users,        color: "#a5b4fc" },
-              { label: "Pending",     value: stats.pendingApprovals || 14, icon: Clock,        color: "#fbbf24" },
-              { label: "Revenue",     value: totalRev > 0 ? fmt(totalRev) : "₹14.6L", icon: IndianRupee, color: "#4ade80" },
-              { label: "Fraud Alerts",value: 4,                             icon: ShieldAlert,  color: "#f87171" },
+              { label: "Users",       value: stats.totalUsers || 2847,     icon: Users,        color: "#a5b4fc", isNum: true },
+              { label: "Pending",     value: stats.pendingApprovals || 14, icon: Clock,        color: "#fbbf24", isNum: true },
+              { label: "Revenue",     value: totalRev > 0 ? fmt(totalRev) : "₹14.6L", icon: IndianRupee, color: "#4ade80", isNum: false },
+              { label: "Fraud Alerts",value: 4,                             icon: ShieldAlert,  color: "#f87171", isNum: true },
             ].map(s => (
-              <div key={s.label} style={{ padding: "12px 14px", borderRadius: 14, background: tok.statBox, border: `1px solid ${tok.statBdr}` }}>
+              <AdminTiltCard key={s.label} intensity={8}
+                style={{ padding: "12px 14px", borderRadius: 14, background: tok.statBox, border: `1px solid ${tok.statBdr}` }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
                   <s.icon size={13} style={{ color: s.color }} />
                   <span style={{ fontSize: 10.5, color: tok.statSub }}>{s.label}</span>
                 </div>
-                <p style={{ fontSize: 20, fontWeight: 900, color: tok.statTxt, margin: 0 }}>{s.value}</p>
-              </div>
+                <p style={{ fontSize: 20, fontWeight: 900, color: tok.statTxt, margin: 0 }}>
+                  {s.isNum
+                    ? <AdminCountUp to={typeof s.value === "number" ? s.value : 0} duration={1200} />
+                    : s.value}
+                </p>
+              </AdminTiltCard>
             ))}
           </div>
         </div>
@@ -339,11 +348,10 @@ const AdminDashboard = () => {
         {sectionHeader(<BarChart3 size={14} color={A1} />, "Platform Overview", "Live Data", "#4ade80")}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(155px, 1fr))", gap: 12 }}>
           {topCards.map(c => (
-            <div key={c.label} className="admin-stat-card"
-              style={{ ...card, padding: "16px", cursor: "pointer", transition: "all .2s", border: (c as any).urgent ? "1px solid rgba(239,68,68,.3)" : `1px solid ${tok.cardBdr}` }}
-              onClick={() => navigate(c.path)}
-              onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform = "translateY(-3px)"; el.style.boxShadow = theme === "black" ? "0 12px 32px rgba(0,0,0,.35)" : "0 8px 24px rgba(0,0,0,.12)"; }}
-              onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform = "none"; el.style.boxShadow = theme !== "black" ? "0 2px 8px rgba(0,0,0,.06)" : "none"; }}>
+            <AdminTiltCard key={c.label} intensity={12} glare
+              className="admin-stat-card admin-grad-border"
+              style={{ ...card, padding: "16px", cursor: "pointer", border: (c as any).urgent ? "1px solid rgba(239,68,68,.3)" : `1px solid ${tok.cardBdr}` }}
+              onClick={() => navigate(c.path)}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <div style={{ width: 34, height: 34, borderRadius: 10, background: c.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <c.icon size={15} style={{ color: c.color }} />
@@ -352,15 +360,19 @@ const AdminDashboard = () => {
                   {c.trend}
                 </span>
               </div>
-              <p style={{ fontWeight: 900, color: tok.cardText, fontSize: typeof c.value === "string" ? 15 : 22, letterSpacing: "-0.5px", margin: 0 }}>{c.value}</p>
+              <p style={{ fontWeight: 900, color: tok.cardText, fontSize: typeof c.value === "string" ? 15 : 22, letterSpacing: "-0.5px", margin: 0 }}>
+                {typeof c.value === "number"
+                  ? <AdminCountUp to={c.value} duration={1400} />
+                  : c.value}
+              </p>
               <p style={{ fontSize: 10.5, color: tok.cardSub, marginTop: 3, margin: "3px 0 0" }}>{c.label}</p>
               {(c as any).urgent && (
                 <div style={{ marginTop: 7, display: "flex", alignItems: "center", gap: 4 }}>
-                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444" }} />
+                  <div className="admin-pulse-dot" style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444" }} />
                   <span style={{ fontSize: 9.5, color: "#ef4444", fontWeight: 600 }}>Needs attention</span>
                 </div>
               )}
-            </div>
+            </AdminTiltCard>
           ))}
         </div>
       </div>

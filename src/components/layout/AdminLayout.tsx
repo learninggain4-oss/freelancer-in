@@ -471,8 +471,8 @@ const AdminLayout = () => {
 
       {/* ─── SIDEBAR ──────────────────────────────────────────────── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300 lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
-        style={{ width: sidebarW, background: tok.sidebar, borderRight: `1px solid ${tok.sidebarBdr}`, display: "flex", flexDirection: "column", position: "relative", boxShadow: "4px 0 24px rgba(0,0,0,.18)" }}
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300 lg:static lg:translate-x-0 admin-sidebar-glow ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        style={{ width: sidebarW, background: tok.sidebar, borderRight: `1px solid ${tok.sidebarBdr}`, display: "flex", flexDirection: "column", position: "relative" }}
       >
         {/* Gradient top accent */}
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg,${A1},${A2},#a855f7)`, zIndex: 1, flexShrink: 0 }} />
@@ -558,7 +558,7 @@ const AdminLayout = () => {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, position: "relative", zIndex: 1 }}>
 
         {/* ─── HEADER ─────────────────────────────────────────────── */}
-        <header className="admin-header" style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 16px", height: 58, background: tok.header, borderBottom: `1px solid ${tok.headerBdr}`, backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 30, flexShrink: 0 }}>
+        <header className="admin-header admin-header-line" style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 16px", height: 58, background: tok.header, borderBottom: `1px solid ${tok.headerBdr}`, backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 30, flexShrink: 0 }}>
 
           {/* Hamburger (mobile) */}
           <button className="lg:hidden" onClick={() => setSidebarOpen(true)}
