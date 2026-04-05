@@ -65,8 +65,8 @@ export function useDashboardTheme(opts?: ThemeOptions) {
 
 export function useAdminTheme() {
   return {
-    theme: "black" as DashboardTheme,
-    themeKey: "black" as DashboardThemeKey,
+    theme: "ocean" as DashboardTheme,
+    themeKey: "white" as DashboardThemeKey,
     setTheme: (_: DashboardTheme) => {},
   };
 }
