@@ -1,5 +1,4 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { encode as base32Encode } from "https://deno.land/std@0.208.0/encoding/base32.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,10 +13,30 @@ function json(data: unknown, status = 200) {
   });
 }
 
+// Inline base32 encode — no external Deno imports needed
+function base32Encode(bytes: Uint8Array): string {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let result = "";
+  let bits = 0;
+  let value = 0;
+  for (const byte of bytes) {
+    value = (value << 8) | byte;
+    bits += 8;
+    while (bits >= 5) {
+      result += alphabet[(value >>> (bits - 5)) & 31];
+      bits -= 5;
+    }
+  }
+  if (bits > 0) {
+    result += alphabet[(value << (5 - bits)) & 31];
+  }
+  return result;
+}
+
 function generateSecret(): string {
   const bytes = new Uint8Array(20);
   crypto.getRandomValues(bytes);
-  return base32Encode(bytes).replace(/=/g, "");
+  return base32Encode(bytes);
 }
 
 Deno.serve(async (req) => {
@@ -42,9 +61,10 @@ Deno.serve(async (req) => {
     const issuer = encodeURIComponent("Freelancer India");
     const otpauthUrl = `otpauth://totp/${issuer}:${label}?secret=${secret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
 
-    await supabaseAdmin.auth.admin.updateUserById(user.id, {
+    const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
       app_metadata: { totp_pending_secret: secret },
     });
+    if (updateErr) return json({ error: updateErr.message }, 500);
 
     const formattedSecret = secret.match(/.{1,4}/g)?.join(" ") ?? secret;
     const qrCodeDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=2&data=${encodeURIComponent(otpauthUrl)}`;

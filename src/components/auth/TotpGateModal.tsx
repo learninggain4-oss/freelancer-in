@@ -73,6 +73,8 @@ export default function TotpGateModal({ mode, theme, onVerified }: Props) {
         const json = await res.json();
         if (!cancelled && json.qrCodeDataUrl) {
           setQrData({ qrCodeDataUrl: json.qrCodeDataUrl, formattedSecret: json.formattedSecret });
+        } else if (!cancelled) {
+          setError(json.error || "Failed to load QR code. Please refresh.");
         }
       } catch {
         if (!cancelled) setError("Failed to load QR code. Please refresh.");
