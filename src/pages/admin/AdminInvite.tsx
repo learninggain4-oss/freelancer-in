@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { callEdgeFunction } from "@/lib/supabase-functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,11 +21,7 @@ const APP_URL = typeof window !== "undefined" ? window.location.origin : "https:
 
 async function callServer(body: object) {
   const { data: { session } } = await supabase.auth.getSession();
-  const res = await fetch("/functions/v1/admin-invite", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` },
-    body: JSON.stringify(body),
-  });
+  const res = await callEdgeFunction("admin-invite", { method: "POST", body, token: session?.access_token ?? "" });
   const data = await res.json();
   if (!res.ok || data?.error) throw new Error(data?.error || "Request failed");
   return data;
@@ -32,11 +29,7 @@ async function callServer(body: object) {
 
 async function callUserMgmt(body: object) {
   const { data: { session } } = await supabase.auth.getSession();
-  const res = await fetch("/functions/v1/admin-user-management", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` },
-    body: JSON.stringify(body),
-  });
+  const res = await callEdgeFunction("admin-user-management", { method: "POST", body, token: session?.access_token ?? "" });
   const data = await res.json();
   if (!res.ok || data?.error) throw new Error(data?.error || "Request failed");
   return data;

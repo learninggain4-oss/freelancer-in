@@ -10,22 +10,15 @@ export async function callEdgeFunction(
   },
 ): Promise<Response> {
   const method = options?.method ?? (options?.body ? "POST" : "GET");
-
-  const isDev = import.meta.env.DEV;
-  const url = isDev
-    ? `/functions/v1/${functionName}`
-    : `${SUPABASE_URL}/functions/v1/${functionName}`;
+  const url = `${SUPABASE_URL}/functions/v1/${functionName}`;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "apikey": SUPABASE_ANON_KEY,
   };
 
   if (options?.token) {
     headers["Authorization"] = `Bearer ${options.token}`;
-  }
-
-  if (!isDev) {
-    headers["apikey"] = SUPABASE_ANON_KEY;
   }
 
   return fetch(url, {

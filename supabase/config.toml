@@ -68,3 +68,18 @@ verify_jwt = false
 
 [functions.totp-disable]
 verify_jwt = false
+
+[functions.admin-invite]
+verify_jwt = false
+
+[functions.admin-list]
+verify_jwt = false
+
+[functions.support-delete-message]
+verify_jwt = false
+
+[functions.support-clear-history]
+verify_jwt = false
+
+[functions.support-delete-conversation]
+verify_jwt = false

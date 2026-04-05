@@ -81,9 +81,7 @@ const AdminUsers = () => {
     setProfiles((data as FullProfile[]) || []);
     // Fetch admin list to detect admin / super admin users
     try {
-      const res = await fetch("/functions/v1/admin-list", {
-        headers: { "Authorization": `Bearer ${session?.access_token}` },
-      });
+      const res = await callEdgeFunction("admin-list", { method: "GET", token: session?.access_token ?? "" });
       const adminData = await res.json();
       const map = new Map<string, { isSuperAdmin: boolean }>();
       (adminData.admins || []).forEach((a: { email: string; is_super_admin: boolean }) => {
@@ -228,14 +226,7 @@ const AdminUsers = () => {
     setActionProcessing(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch("/functions/v1/admin-user-management", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({ action: "reset_mpin", profile_id: user.id }),
-      });
+      const res = await callEdgeFunction("admin-user-management", { method: "POST", body: { action: "reset_mpin", profile_id: user.id }, token: session?.access_token ?? "" });
       const data = await res.json();
       if (!res.ok || data?.error) {
         toast.error(data?.error || "Security reset failed");
@@ -786,11 +777,7 @@ const AdminUsers = () => {
                             setActionProcessing(true);
                             try {
                               const { data: { session } } = await supabase.auth.getSession();
-                              const r = await fetch("/functions/v1/admin-user-management", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` },
-                                body: JSON.stringify({ action: "reset_mpin", profile_id: viewSecurityUser.id }),
-                              });
+                              const r = await callEdgeFunction("admin-user-management", { method: "POST", body: { action: "reset_mpin", profile_id: viewSecurityUser.id }, token: session?.access_token ?? "" });
                               if (r.ok) {
                                 toast.success("Security reset done. User will re-setup on next login.");
                                 setViewSecurityUser(null);
