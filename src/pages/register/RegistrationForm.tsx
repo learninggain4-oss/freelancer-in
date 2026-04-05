@@ -90,6 +90,24 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const [referralCode, setReferralCode] = useState(() => searchParams.get("ref")?.toUpperCase() || "");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [submitted, setSubmitted] = useState(false);
+  const [countdownSec, setCountdownSec] = useState(180);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [redirectSec, setRedirectSec] = useState(30);
+
+  useEffect(() => {
+    if (!submitted || showSuccess) return;
+    if (countdownSec <= 0) { setShowSuccess(true); return; }
+    const t = setTimeout(() => setCountdownSec(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [submitted, countdownSec, showSuccess]);
+
+  useEffect(() => {
+    if (!showSuccess) return;
+    if (redirectSec <= 0) { navigate("/login"); return; }
+    const t = setTimeout(() => setRedirectSec(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [showSuccess, redirectSec, navigate]);
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationProfileSchema),
@@ -158,7 +176,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       if (authError) throw authError;
       if (!authData.user) throw new Error("Registration failed");
       const userId = authData.user.id;
-      const { error: profileError } = await supabase.from("profiles").insert([{ user_id: userId, user_type: userType, full_name: [data.full_name.toUpperCase()], user_code: [], email: data.email, gender: data.gender, date_of_birth: data.date_of_birth, marital_status: data.marital_status, education_level: data.education_level, mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number, education_background: data.education_background || null, referred_by: referralCode.trim() || null } as any]);
+      const { error: profileError } = await supabase.from("profiles").insert([{ user_id: userId, user_type: userType, full_name: [data.full_name.toUpperCase()], user_code: [], email: data.email, gender: data.gender, date_of_birth: data.date_of_birth, marital_status: data.marital_status, education_level: data.education_level, mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number, education_background: data.education_background || null, referred_by: referralCode.trim() || null, ...(isFreelancer ? { approval_status: "approved" } : {}) } as any]);
       if (profileError) throw profileError;
       const profileId = userId;
       await supabase.from("registration_metadata" as any).insert([{ profile_id: profileId, ip_address: geoData.ip||null, city: geoData.city||null, region: geoData.region||null, country: geoData.country||null, latitude: geoData.lat||null, longitude: geoData.lon||null }] as any);
@@ -173,8 +191,12 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
         const { data: svcData } = await supabase.from("employee_services").insert({ profile_id: profileId, category_id: s.category_id, service_title: s.service_title, hourly_rate: Number(s.hourly_rate)||0, minimum_budget: Number(s.minimum_budget)||0 }).select("id").single();
         if (svcData && s.skill_ids.length > 0) await supabase.from("employee_skill_selections").insert(s.skill_ids.map(skillId => ({ employee_service_id: svcData.id, skill_id: skillId })));
       }
-      toast({ title: "Registration successful!", description: "Your account is pending admin approval." });
-      navigate("/verification-pending");
+      if (isFreelancer) {
+        setSubmitted(true);
+      } else {
+        toast({ title: "Registration successful!", description: "Your account is pending admin approval." });
+        navigate("/verification-pending");
+      }
     } catch (error: any) {
       toast({ title: "Registration failed", description: error.message, variant: "destructive" });
     } finally { setSubmitting(false); }
@@ -188,6 +210,128 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const progressPercent = ((step + 1) / stepConfig.length) * 100;
   const StepIcon = stepConfig[step].icon;
   const stepColor = stepConfig[step].color;
+
+  const cMins = Math.floor(countdownSec / 60);
+  const cSecs = countdownSec % 60;
+  const cProgress = ((180 - countdownSec) / 180) * 100;
+
+  if (submitted) return (
+    <div style={{ background: "linear-gradient(160deg,#0a0e1a 0%,#0f1629 40%,#0d1220 100%)", color: "white", minHeight: "100vh", fontFamily: "Inter,system-ui,sans-serif", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 16px" }}>
+      <style>{`
+        @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0.4)}50%{box-shadow:0 0 0 14px rgba(99,102,241,0)}}
+        @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+        @keyframes confetti{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(-60px) rotate(360deg);opacity:0}}
+      `}</style>
+
+      <div style={{ width: "100%", maxWidth: 440, animation: "fadeUp .5s ease both" }}>
+        {/* Logo */}
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Briefcase size={16} color="white" />
+            </div>
+            <span style={{ fontWeight: 800, fontSize: 16, color: "white" }}>Freelancer<span style={{ color: "#6366f1" }}>.</span>in</span>
+          </div>
+        </div>
+
+        {showSuccess ? (
+          /* ── SUCCESS SCREEN ── */
+          <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: 24, padding: "40px 28px", textAlign: "center" }}>
+            <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(34,197,94,0.15)", border: "2px solid rgba(34,197,94,0.4)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", animation: "pulse 2s ease-in-out infinite", boxShadow: "0 0 40px rgba(34,197,94,0.2)" }}>
+              <CheckCircle2 size={38} color="#22c55e" />
+            </div>
+            <h2 style={{ fontSize: 26, fontWeight: 800, color: "#ffffff", margin: "0 0 8px" }}>Registration Successful!</h2>
+            <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 14, margin: "0 0 24px", lineHeight: 1.6 }}>
+              Your Freelancer account has been created and activated. Welcome aboard!
+            </p>
+            <div style={{ padding: "14px 18px", borderRadius: 14, background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", marginBottom: 20 }}>
+              <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, margin: 0 }}>
+                Redirecting to Login in{" "}
+                <strong style={{ color: "#818cf8", fontSize: 16 }}>{redirectSec}</strong> seconds…
+              </p>
+            </div>
+            <button
+              onClick={() => navigate("/login")}
+              style={{ width: "100%", padding: "13px", borderRadius: 14, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "white", fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer", boxShadow: "0 8px 24px rgba(99,102,241,0.35)" }}
+            >
+              Go to Login Now
+            </button>
+          </div>
+        ) : (
+          /* ── COUNTDOWN SCREEN ── */
+          <div>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 24, padding: "28px 24px", marginBottom: 12 }}>
+              {/* Header */}
+              <div style={{ textAlign: "center", marginBottom: 24 }}>
+                <div style={{ width: 64, height: 64, borderRadius: 20, background: "rgba(99,102,241,0.15)", border: "2px solid rgba(99,102,241,0.35)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px", animation: "pulse 3s ease-in-out infinite" }}>
+                  <Loader2 size={28} color="#818cf8" style={{ animation: "spin 2s linear infinite" }} />
+                </div>
+                <h2 style={{ fontSize: 22, fontWeight: 800, color: "#ffffff", margin: "0 0 6px" }}>Processing Registration…</h2>
+                <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, margin: 0 }}>Please stay on this page. Do not close the browser.</p>
+              </div>
+
+              {/* Timer */}
+              <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 10, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", textAlign: "center", margin: "0 0 14px" }}>Time Remaining</p>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 20 }}>
+                {[{ val: cMins, label: "MIN" }, { val: cSecs, label: "SEC" }].map(({ val, label }, i) => (
+                  <div key={label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", borderRadius: 16, padding: "14px 0", width: 90, textAlign: "center", boxShadow: "0 4px 20px rgba(99,102,241,0.35),inset 0 1px 0 rgba(255,255,255,0.15)", position: "relative", overflow: "hidden" }}>
+                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent)", backgroundSize: "200% 100%", animation: "shimmer 2s infinite" }} />
+                      <p style={{ fontSize: 36, fontWeight: 900, color: "#ffffff", fontFamily: "Inter,monospace", lineHeight: 1, margin: 0, letterSpacing: "-1px", textShadow: "0 1px 4px rgba(0,0,0,0.3)", position: "relative" }}>
+                        {String(val).padStart(2, "0")}
+                      </p>
+                      <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 10, fontWeight: 700, letterSpacing: 1.5, margin: "4px 0 0", position: "relative" }}>{label}</p>
+                    </div>
+                    {i === 0 && <p style={{ color: "#6366f1", fontWeight: 900, fontSize: 28, lineHeight: 1, margin: 0, textShadow: "0 0 12px rgba(99,102,241,0.5)" }}>:</p>}
+                  </div>
+                ))}
+              </div>
+
+              {/* Progress bar */}
+              <div style={{ height: 6, borderRadius: 6, background: "rgba(255,255,255,0.07)", overflow: "hidden", marginBottom: 6 }}>
+                <div style={{ height: "100%", borderRadius: 6, background: "linear-gradient(90deg,#6366f1,#8b5cf6)", width: `${cProgress}%`, transition: "width 1s linear", boxShadow: "0 0 10px rgba(99,102,241,0.5)" }} />
+              </div>
+              <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, textAlign: "center", margin: "0 0 20px" }}>
+                Account setup in progress — {Math.round(cProgress)}% complete
+              </p>
+
+              {/* Steps */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {[
+                  { label: "Registration Data Saved", done: true, active: false },
+                  { label: "Account Being Configured", done: false, active: true },
+                  { label: "Profile Ready to Use", done: false, active: false },
+                ].map(({ label, done, active }) => (
+                  <div key={label} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 12, background: done ? "rgba(34,197,94,0.08)" : active ? "rgba(99,102,241,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${done ? "rgba(34,197,94,0.2)" : active ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.06)"}` }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: done ? "rgba(34,197,94,0.15)" : active ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      {done ? <Check size={14} color="#22c55e" /> : active ? <Loader2 size={14} color="#818cf8" style={{ animation: "spin 1.5s linear infinite" }} /> : <Shield size={14} color="rgba(255,255,255,0.2)" />}
+                    </div>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: done ? "#86efac" : active ? "#c7d2fe" : "rgba(255,255,255,0.3)", margin: 0 }}>{label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Warning card */}
+            <div style={{ padding: "14px 16px", borderRadius: 16, background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.2)" }}>
+              <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                <div style={{ flexShrink: 0, marginTop: 1 }}>
+                  <Sparkles size={15} color="#f59e0b" />
+                </div>
+                <div>
+                  <p style={{ color: "#fbbf24", fontWeight: 700, fontSize: 12, margin: "0 0 6px", textTransform: "uppercase", letterSpacing: 0.5 }}>⚠ Multiple Account Policy</p>
+                  <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, margin: 0, lineHeight: 1.6 }}>
+                    Creating <strong style={{ color: "rgba(255,255,255,0.75)" }}>multiple accounts</strong> is strictly prohibited on Freelancer.in. Users found with duplicate accounts will be <strong style={{ color: "#fca5a5" }}>permanently banned</strong> and any pending earnings or coins will be <strong style={{ color: "#fca5a5" }}>forfeited</strong>. One person, one account — always.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div style={{ background: "#070714", color: "white", minHeight: "100vh", fontFamily: "Inter,system-ui,sans-serif", overflowX: "hidden" }}>
