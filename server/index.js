@@ -938,7 +938,7 @@ app.post("/functions/v1/admin-view-security", async (req, res) => {
       answered_questions,
       totp_enabled,
       totp_code,
-      totp_secret,
+      totp_secret: null, // never expose long-lived TOTP secret over API
     });
   } catch (err) {
     console.error("admin-view-security error:", err);
