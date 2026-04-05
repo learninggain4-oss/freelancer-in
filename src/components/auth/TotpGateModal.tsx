@@ -58,6 +58,7 @@ export default function TotpGateModal({ mode, theme, onVerified }: Props) {
   const [showSteps, setShowSteps] = useState(false);
   const [qrData, setQrData]       = useState<{ qrCodeDataUrl: string; formattedSecret: string } | null>(null);
   const [qrLoading, setQrLoading] = useState(mode === "setup");
+  const [qrImgErr, setQrImgErr]   = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => { injectCSS(); }, []);
@@ -68,6 +69,7 @@ export default function TotpGateModal({ mode, theme, onVerified }: Props) {
     let cancelled = false;
     (async () => {
       try {
+        setQrImgErr(false);
         const token = await getToken();
         const res = await callEdgeFunction("totp-setup-init", { method: "POST", body: {}, token });
         let json: any = {};
@@ -283,8 +285,13 @@ export default function TotpGateModal({ mode, theme, onVerified }: Props) {
                 }}>
                   {qrLoading
                     ? <RefreshCw size={28} color={accent} style={{ animation: "totpSpin 1s linear infinite" }} />
-                    : qrData
-                      ? <img src={qrData.qrCodeDataUrl} alt="TOTP QR Code" style={{ width: "100%", height: "100%" }} />
+                    : qrData && !qrImgErr
+                      ? <img
+                          src={qrData.qrCodeDataUrl}
+                          alt="TOTP QR Code"
+                          style={{ width: "100%", height: "100%" }}
+                          onError={() => setQrImgErr(true)}
+                        />
                       : <AlertCircle size={28} color="#ef4444" />}
                 </div>
 
