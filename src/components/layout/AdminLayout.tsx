@@ -34,55 +34,56 @@ const VER = "v2.4.1";
 
 /* ─── Fixed light admin design tokens ─────────────────────────── */
 const T = {
-  shell:        "#f0f4ff",
-  sidebar:      "#ffffff",
-  sidebarBdr:   "rgba(99,102,241,.12)",
-  header:       "rgba(255,255,255,.96)",
-  headerBdr:    "rgba(99,102,241,.1)",
-  sectionTit:   "#94a3b8",
-  navLink:      "#64748b",
-  navHoverBg:   "rgba(99,102,241,.07)",
-  navHoverFg:   "#1e293b",
-  navActiveBg:  "rgba(99,102,241,.12)",
-  navActiveFg:  "#4f46e5",
-  navActiveBdr: "rgba(99,102,241,.22)",
+  shell:        "#f5f7ff",
+  sidebar:      "#0e1030",
+  sidebarBdr:   "rgba(255,255,255,.07)",
+  header:       "rgba(255,255,255,.97)",
+  headerBdr:    "rgba(0,0,0,.07)",
+  sectionTit:   "rgba(165,180,252,.42)",
+  navLink:      "rgba(226,232,240,.5)",
+  navHoverBg:   "rgba(255,255,255,.08)",
+  navHoverFg:   "rgba(255,255,255,.95)",
+  navActiveBg:  "rgba(99,102,241,.28)",
+  navActiveFg:  "#c4b5fd",
+  navActiveBdr: "rgba(139,92,246,.45)",
+  contentHoverBg: "rgba(99,102,241,.07)",
   logoBg:       `linear-gradient(135deg,${A1},${A2})`,
-  logoShadow:   "rgba(99,102,241,.35)",
-  logoutFg:     "#ef4444",
-  logoutHover:  "rgba(239,68,68,.07)",
+  logoShadow:   "rgba(99,102,241,.65)",
+  logoutFg:     "#f87171",
+  logoutHover:  "rgba(239,68,68,.14)",
   badgeBg:      "#ef4444",
-  mainBg:       "#f0f4ff",
+  mainBg:       "#f5f7ff",
   mainText:     "#0f172a",
   mainSub:      "#64748b",
   cardBg:       "#ffffff",
-  cardBdr:      "rgba(99,102,241,.1)",
+  cardBdr:      "rgba(0,0,0,.08)",
   mutedBg:      "#f1f5f9",
   inputBg:      "#ffffff",
-  inputBdr:     "rgba(99,102,241,.15)",
+  inputBdr:     "rgba(0,0,0,.1)",
   inputFg:      "#0f172a",
   inputPh:      "#94a3b8",
   accent:       "#4f46e5",
   green:        "#16a34a",
   orange:       "#d97706",
   red:          "#dc2626",
-  orbA:         "rgba(99,102,241,.06)",
-  orbB:         "rgba(139,92,246,.04)",
-  gridLine:     "rgba(99,102,241,.03)",
+  orbA:         "rgba(99,102,241,.07)",
+  orbB:         "rgba(139,92,246,.05)",
+  gridLine:     "rgba(99,102,241,.025)",
   headerRight:  "#64748b",
   statusDot:    "#22c55e",
   liveBg:       "rgba(22,163,74,.08)",
   liveBdr:      "rgba(22,163,74,.18)",
   liveFg:       "#16a34a",
   searchBg:     "#f1f5f9",
-  searchBdr:    "rgba(99,102,241,.15)",
+  searchBdr:    "rgba(0,0,0,.1)",
   dropBg:       "#ffffff",
-  dropBdr:      "rgba(99,102,241,.12)",
-  footerBg:     "rgba(255,255,255,.96)",
-  footerBdr:    "rgba(99,102,241,.1)",
+  dropBdr:      "rgba(0,0,0,.09)",
+  footerBg:     "rgba(255,255,255,.97)",
+  footerBdr:    "rgba(0,0,0,.07)",
   rightBg:      "#ffffff",
-  rightBdr:     "rgba(99,102,241,.1)",
-  iconBtn:      "rgba(99,102,241,.06)",
-  iconBtnHov:   "rgba(99,102,241,.12)",
+  rightBdr:     "rgba(0,0,0,.08)",
+  iconBtn:      "rgba(0,0,0,.04)",
+  iconBtnHov:   "rgba(99,102,241,.09)",
 };
 
 function buildCss(t: typeof T): string {
@@ -341,7 +342,7 @@ const AdminLayout = () => {
   const tok = T;
   const css = buildCss(tok);
 
-  const isLight = true;
+  const isLight = false;
 
   const currentNav = allNavItems.find(item => location.pathname === item.path);
   const isSubPage  = location.pathname !== "/admin/dashboard";
@@ -431,7 +432,7 @@ const AdminLayout = () => {
 
   const iconBtn = (onClick: () => void, children: React.ReactNode, badge?: number, title?: string) => (
     <button onClick={onClick} title={title}
-      style={{ position: "relative", width: 34, height: 34, borderRadius: 9, background: tok.iconBtn, border: `1px solid ${isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.08)"}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: tok.mainSub, transition: "all .15s", flexShrink: 0 }}
+      style={{ position: "relative", width: 34, height: 34, borderRadius: 9, background: tok.iconBtn, border: "1px solid rgba(0,0,0,.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: tok.mainSub, transition: "all .15s", flexShrink: 0 }}
       onMouseEnter={e => { e.currentTarget.style.background = tok.iconBtnHov; e.currentTarget.style.color = tok.mainText; }}
       onMouseLeave={e => { e.currentTarget.style.background = tok.iconBtn;    e.currentTarget.style.color = tok.mainSub;  }}>
       {children}
@@ -470,21 +471,24 @@ const AdminLayout = () => {
       {/* ─── SIDEBAR ──────────────────────────────────────────────── */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300 lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
-        style={{ width: sidebarW, background: tok.sidebar, borderRight: `1px solid ${tok.sidebarBdr}`, display: "flex", flexDirection: "column", position: "relative" }}
+        style={{ width: sidebarW, background: tok.sidebar, borderRight: `1px solid ${tok.sidebarBdr}`, display: "flex", flexDirection: "column", position: "relative", boxShadow: "4px 0 24px rgba(0,0,0,.18)" }}
       >
+        {/* Gradient top accent */}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg,${A1},${A2},#a855f7)`, zIndex: 1, flexShrink: 0 }} />
+
         {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: sidebarMini ? "14px 0" : "14px 14px", borderBottom: `1px solid ${tok.sidebarBdr}`, justifyContent: sidebarMini ? "center" : "flex-start", flexShrink: 0 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 10, background: tok.logoBg, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 20px ${tok.logoShadow}`, flexShrink: 0 }}>
-            <ShieldCheck size={17} color="white" />
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: sidebarMini ? "18px 0 14px" : "18px 14px 14px", borderBottom: `1px solid ${tok.sidebarBdr}`, justifyContent: sidebarMini ? "center" : "flex-start", flexShrink: 0, marginTop: 3 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 11, background: tok.logoBg, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 18px ${tok.logoShadow}`, flexShrink: 0 }}>
+            <ShieldCheck size={18} color="white" />
           </div>
           {!sidebarMini && (
             <>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontWeight: 800, fontSize: 13, color: isLight ? "#0d0d24" : "white", lineHeight: 1.2, margin: 0 }}>Bank Manager</p>
-                <p style={{ fontSize: 9.5, color: isLight ? "#9ca3af" : "rgba(255,255,255,.35)", fontWeight: 600, margin: 0, textTransform: "uppercase", letterSpacing: 0.8 }}>Admin Panel</p>
+                <p style={{ fontWeight: 800, fontSize: 13.5, color: "white", lineHeight: 1.2, margin: 0 }}>Freelancer India</p>
+                <p style={{ fontSize: 9.5, color: "rgba(165,180,252,.55)", fontWeight: 600, margin: 0, textTransform: "uppercase", letterSpacing: 1 }}>Super Admin</p>
               </div>
               <button className="lg:hidden" onClick={() => setSidebarOpen(false)}
-                style={{ color: isLight ? "#9ca3af" : "rgba(255,255,255,.4)", background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>
+                style={{ color: "rgba(255,255,255,.4)", background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>
                 <X size={16} />
               </button>
             </>
@@ -595,14 +599,14 @@ const AdminLayout = () => {
                 <input autoFocus value={searchQ} onChange={e => setSearchQ(e.target.value)}
                   placeholder="Search pages..."
                   style={{ flex: 1, background: "none", border: "none", outline: "none", color: tok.mainText, fontSize: 13 }} />
-                <kbd style={{ fontSize: 9, color: tok.mainSub, background: isLight ? "rgba(0,0,0,.06)" : "rgba(255,255,255,.08)", borderRadius: 4, padding: "1px 5px" }}>ESC</kbd>
+                <kbd style={{ fontSize: 9, color: tok.mainSub, background: "rgba(0,0,0,.06)", borderRadius: 4, padding: "1px 5px" }}>ESC</kbd>
               </div>
             ) : (
               <button onClick={() => setSearchOpen(true)}
                 style={{ display: "flex", alignItems: "center", gap: 8, background: tok.searchBg, border: `1px solid ${tok.searchBdr}`, borderRadius: 10, padding: "0 12px", height: 34, width: "100%", cursor: "text", color: tok.mainSub, fontSize: 12.5 }}>
                 <Search size={13} />
                 <span style={{ flex: 1, textAlign: "left" }}>Search pages...</span>
-                <kbd style={{ fontSize: 9, color: tok.mainSub, background: isLight ? "rgba(0,0,0,.06)" : "rgba(255,255,255,.08)", borderRadius: 4, padding: "1px 5px" }}>⌘K</kbd>
+                <kbd style={{ fontSize: 9, color: tok.mainSub, background: "rgba(0,0,0,.06)", borderRadius: 4, padding: "1px 5px" }}>⌘K</kbd>
               </button>
             )}
             {searchResults.length > 0 && (
@@ -610,7 +614,7 @@ const AdminLayout = () => {
                 {searchResults.map(r => (
                   <button key={r.path} onClick={() => { navigate(r.path); setSearchOpen(false); setSearchQ(""); setSidebarOpen(false); }}
                     style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 14px", background: "none", border: "none", cursor: "pointer", color: tok.mainText, fontSize: 13, textAlign: "left" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = tok.navHoverBg)}
+                    onMouseEnter={e => (e.currentTarget.style.background = tok.contentHoverBg)}
                     onMouseLeave={e => (e.currentTarget.style.background = "none")}>
                     <r.icon size={13} color={A1} />
                     <span>{r.label}</span>
@@ -634,7 +638,7 @@ const AdminLayout = () => {
                   {QUICK_ACTIONS.map(a => (
                     <button key={a.path} onClick={() => { navigate(a.path); setQuickOpen(false); }}
                       style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 14px", background: "none", border: "none", cursor: "pointer", color: tok.mainText, fontSize: 13 }}
-                      onMouseEnter={e => (e.currentTarget.style.background = tok.navHoverBg)}
+                      onMouseEnter={e => (e.currentTarget.style.background = tok.contentHoverBg)}
                       onMouseLeave={e => (e.currentTarget.style.background = "none")}>
                       <a.icon size={13} color={A1} />
                       <span>{a.label}</span>
@@ -678,7 +682,7 @@ const AdminLayout = () => {
             {/* Language */}
             <div ref={langRef} style={{ position: "relative" }}>
               <button onClick={() => setLangOpen(o => !o)} title="Language"
-                style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 9, background: tok.iconBtn, border: `1px solid ${isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.08)"}`, cursor: "pointer", color: tok.mainSub, fontSize: 12, fontWeight: 600, height: 34 }}
+                style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 9, background: tok.iconBtn, border: "1px solid rgba(0,0,0,.08)", cursor: "pointer", color: tok.mainSub, fontSize: 12, fontWeight: 600, height: 34 }}
                 onMouseEnter={e => { e.currentTarget.style.background = tok.iconBtnHov; e.currentTarget.style.color = tok.mainText; }}
                 onMouseLeave={e => { e.currentTarget.style.background = tok.iconBtn;    e.currentTarget.style.color = tok.mainSub;  }}>
                 <Languages size={13} />
@@ -692,7 +696,7 @@ const AdminLayout = () => {
                   {LANGS.map(l => (
                     <button key={l.code} onClick={() => { setLang(l.code); setLangOpen(false); }}
                       style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 14px", background: lang === l.code ? `${A1}12` : "none", border: "none", cursor: "pointer", color: lang === l.code ? tok.accent : tok.mainText, fontSize: 13, fontWeight: lang === l.code ? 600 : 400 }}
-                      onMouseEnter={e => { if (lang !== l.code) e.currentTarget.style.background = tok.navHoverBg; }}
+                      onMouseEnter={e => { if (lang !== l.code) e.currentTarget.style.background = tok.contentHoverBg; }}
                       onMouseLeave={e => { if (lang !== l.code) e.currentTarget.style.background = "none"; }}>
                       <span>{l.flag}</span>
                       <span>{l.label}</span>
@@ -709,7 +713,7 @@ const AdminLayout = () => {
             {/* Profile Dropdown */}
             <div ref={profileRef} style={{ position: "relative" }}>
               <button onClick={() => setProfileOpen(o => !o)}
-                style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 10px 4px 4px", borderRadius: 10, background: tok.iconBtn, border: `1px solid ${isLight ? "rgba(0,0,0,.07)" : "rgba(255,255,255,.08)"}`, cursor: "pointer", height: 36 }}
+                style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 10px 4px 4px", borderRadius: 10, background: tok.iconBtn, border: "1px solid rgba(0,0,0,.08)", cursor: "pointer", height: 36 }}
                 onMouseEnter={e => (e.currentTarget.style.background = tok.iconBtnHov)}
                 onMouseLeave={e => (e.currentTarget.style.background = tok.iconBtn)}>
                 <div style={{ width: 26, height: 26, borderRadius: 8, background: `linear-gradient(135deg,${A1},${A2})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "white", flexShrink: 0 }}>
@@ -742,7 +746,7 @@ const AdminLayout = () => {
                   ].map(item => (
                     <button key={item.label} onClick={() => { navigate(item.path); setProfileOpen(false); }}
                       style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", background: "none", border: "none", cursor: "pointer", color: tok.mainText, fontSize: 13 }}
-                      onMouseEnter={e => (e.currentTarget.style.background = tok.navHoverBg)}
+                      onMouseEnter={e => (e.currentTarget.style.background = tok.contentHoverBg)}
                       onMouseLeave={e => (e.currentTarget.style.background = "none")}>
                       <item.icon size={14} color={tok.mainSub} />
                       <span>{item.label}</span>
