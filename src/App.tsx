@@ -237,7 +237,9 @@ const AppContent = () => {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/register/employee" element={<EmployeeRegister />} />
+            <Route path="/register/freelancer" element={<EmployeeRegister />} />
             <Route path="/register/employer" element={<ClientRegister />} />
+            <Route path="/register/client" element={<ClientRegister />} />
             <Route path="/verification-pending" element={<VerificationPending />} />
             <Route path="/install" element={<InstallApp />} />
             <Route path="/categories" element={<Categories />} />

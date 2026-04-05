@@ -69,7 +69,8 @@ const GetFree = () => {
 
   const handleShare = async (type: "freelancer" | "employer") => {
     const label = type === "freelancer" ? "Freelancer" : "Employer";
-    const link = `${window.location.origin}/register/${type}?ref=${referralCode}`;
+    const routeType = type === "freelancer" ? "employee" : "employer";
+    const link = `${window.location.origin}/register/${routeType}?ref=${referralCode}`;
     const text = shareMsg
       .replace(/\{role\}/gi, label)
       .replace(/\{code\}/gi, referralCode)
