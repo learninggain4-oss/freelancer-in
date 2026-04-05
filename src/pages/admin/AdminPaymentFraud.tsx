@@ -11,25 +11,17 @@ const TH = {
 
 type Payment = { id:string; txnId:string; user:string; amount:string; type:string; status:string; detected:string; time:string; ip:string; location:string };
 
-const PAYMENTS: Payment[] = [
-  { id:"p1", txnId:"TXN-8821", user:"Rahul Sharma",   amount:"₹45,000", type:"duplicate",         status:"suspicious", detected:"Duplicate Payment",            time:"2 min ago",  ip:"103.22.11.4", location:"Mumbai" },
-  { id:"p2", txnId:"TXN-3391", user:"Priya Mehta",    amount:"₹1,20,000",type:"unusual_amount",  status:"fraud",      detected:"Unusual Amount Detection",      time:"5 min ago",  ip:"45.77.21.3",  location:"Delhi"  },
-  { id:"p3", txnId:"TXN-7741", user:"Ajay Kumar",     amount:"₹500",    type:"rapid_attempt",    status:"suspicious", detected:"Rapid Payment Attempts (x8)",   time:"12 min ago", ip:"182.74.3.2",  location:"Pune"   },
-  { id:"p4", txnId:"TXN-4420", user:"Sneha Patel",    amount:"₹8,000",  type:"refund_abuse",     status:"suspicious", detected:"Refund Abuse Pattern",          time:"25 min ago", ip:"103.55.8.1",  location:"Chennai"},
-  { id:"p5", txnId:"TXN-9933", user:"Vikram Rao",     amount:"₹22,000", type:"location_mismatch",status:"suspicious", detected:"Payment Location Mismatch",     time:"40 min ago", ip:"192.168.0.1", location:"USA"    },
-  { id:"p6", txnId:"TXN-1102", user:"Meena Krishnan", amount:"₹3,500",  type:"failed_pattern",   status:"safe",       detected:"Failed Payment Pattern",        time:"1 hr ago",   ip:"49.204.1.5",  location:"Bangalore"},
-  { id:"p7", txnId:"TXN-6610", user:"Ravi Verma",     amount:"₹75,000", type:"chargeback",       status:"fraud",      detected:"Chargeback Detected",           time:"2 hrs ago",  ip:"106.51.1.2",  location:"Hyderabad"},
-];
+const PAYMENTS: Payment[] = [];
 
 const DETECTION_RULES = [
-  { label:"Duplicate Payment Detection", count:12, active:true },
-  { label:"Rapid Payment Attempts", count:34, active:true },
-  { label:"Unusual Payment Amount", count:8, active:true },
-  { label:"Refund Abuse Detection", count:6, active:true },
-  { label:"Chargeback Detection", count:3, active:true },
-  { label:"Location Mismatch Detection", count:15, active:true },
-  { label:"Failed Payment Pattern", count:22, active:false },
-  { label:"Payment Frequency Monitor", count:9, active:true },
+  { label:"Duplicate Payment Detection", count:0, active:true },
+  { label:"Rapid Payment Attempts", count:0, active:true },
+  { label:"Unusual Payment Amount", count:0, active:true },
+  { label:"Refund Abuse Detection", count:0, active:true },
+  { label:"Chargeback Detection", count:0, active:true },
+  { label:"Location Mismatch Detection", count:0, active:true },
+  { label:"Failed Payment Pattern", count:0, active:false },
+  { label:"Payment Frequency Monitor", count:0, active:true },
 ];
 
 const statusColor = (s: string) => s==="fraud"?"#f87171":s==="suspicious"?"#f97316":"#4ade80";

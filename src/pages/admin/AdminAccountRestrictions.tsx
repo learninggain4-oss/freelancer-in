@@ -11,16 +11,7 @@ const TH = {
 
 type RestrictedUser = { id:string; name:string; email:string; blockType:string; restrictions:string[]; blockedAt:string; expiresAt:string; reason:string; blockedBy:string; history:{ action:string; date:string; by:string }[] };
 
-const USERS: RestrictedUser[] = [
-  { id:"u1", name:"Rahul Sharma",   email:"rahul@m.com",   blockType:"permanent", restrictions:["login","payment","withdrawal","messaging"], blockedAt:"Today 09:00", expiresAt:"Never",      reason:"Multiple fraud attempts detected", blockedBy:"superadmin@site.com",
-    history:[{ action:"Account Blocked",   date:"Today 09:00",  by:"superadmin" },{ action:"Payment Restricted", date:"Yesterday", by:"admin" },{ action:"Warning Issued",  date:"3 days ago", by:"admin" }] },
-  { id:"u2", name:"Priya Mehta",    email:"priya@m.com",   blockType:"temporary", restrictions:["payment","withdrawal"], blockedAt:"Today 11:00", expiresAt:"Tomorrow 11:00", reason:"Suspicious payment pattern", blockedBy:"admin@site.com",
-    history:[{ action:"Payment Frozen", date:"Today 11:00", by:"admin" }] },
-  { id:"u3", name:"Ajay Kumar",     email:"ajay@m.com",    blockType:"freeze",    restrictions:["login"],              blockedAt:"Yesterday",   expiresAt:"3 days",         reason:"Unusual login activity", blockedBy:"admin@site.com",
-    history:[{ action:"Login Restricted", date:"Yesterday", by:"admin" }] },
-  { id:"u4", name:"Sneha Patel",    email:"sneha@m.com",   blockType:"none",      restrictions:[],                     blockedAt:"—",           expiresAt:"—",              reason:"—", blockedBy:"—",
-    history:[] },
-];
+const USERS: RestrictedUser[] = [];
 
 const BLOCK_TYPES = [
   { id:"temp",      label:"Temporary Block",  icon:Clock,       color:"#fbbf24", desc:"Block for limited time" },
@@ -107,36 +98,39 @@ export default function AdminAccountRestrictions() {
                 </tr>
               </thead>
               <tbody>
-                {users.map(u => (
-                  <tr key={u.id} style={{ borderBottom:`1px solid ${T.border}` }}>
-                    <td style={{ padding:"14px 12px" }}>
-                      <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{u.name}</div>
-                      <div style={{ fontSize:11, color:T.sub }}>{u.email}</div>
-                    </td>
-                    <td style={{ padding:"14px 12px" }}>
-                      <span style={{ padding:"3px 10px", borderRadius:20, background:`${blockTypeColor(u.blockType)}15`, color:blockTypeColor(u.blockType), fontSize:11, fontWeight:700, textTransform:"capitalize" }}>{u.blockType==="none"?"Active":u.blockType}</span>
-                    </td>
-                    <td style={{ padding:"14px 12px" }}>
-                      <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
-                        {u.restrictions.length===0 ? <span style={{ fontSize:11, color:T.sub }}>None</span> : u.restrictions.map(r => (
-                          <span key={r} style={{ padding:"2px 8px", borderRadius:6, background:`${A1}15`, color:A1, fontSize:10, textTransform:"capitalize" }}>{r}</span>
-                        ))}
-                      </div>
-                    </td>
-                    <td style={{ padding:"14px 12px", fontSize:12, color:T.sub }}>{u.blockedAt}</td>
-                    <td style={{ padding:"14px 12px", fontSize:12, color:T.sub }}>{u.expiresAt}</td>
-                    <td style={{ padding:"14px 12px", fontSize:12, color:T.sub, maxWidth:150 }}>
-                      <div style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{u.reason}</div>
-                    </td>
-                    <td style={{ padding:"14px 12px" }}>
-                      <div style={{ display:"flex", gap:6 }}>
-                        <button onClick={()=>{setSelected(u);setActionPanel("block");}} style={{ padding:"5px 10px", borderRadius:7, border:`1px solid #f87171`, background:"rgba(248,113,113,.1)", color:"#f87171", fontSize:12, cursor:"pointer" }}>Restrict</button>
-                        <button onClick={()=>applyAction(u.id,"Activate")} style={{ padding:"5px 10px", borderRadius:7, border:`1px solid #4ade80`, background:"rgba(74,222,128,.1)", color:"#4ade80", fontSize:12, cursor:"pointer" }}>Activate</button>
-                        <button onClick={()=>{setSelected(u);setShowHistory(true);}} style={{ padding:"5px 8px", borderRadius:7, border:`1px solid ${T.border}`, background:T.input, color:T.sub, fontSize:12, cursor:"pointer" }}><History size={13}/></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {users.length === 0
+                  ? <tr><td colSpan={7} style={{ textAlign:"center", padding:"48px 20px", color:T.sub, fontSize:14 }}>No restricted accounts</td></tr>
+                  : users.map(u => (
+                    <tr key={u.id} style={{ borderBottom:`1px solid ${T.border}` }}>
+                      <td style={{ padding:"14px 12px" }}>
+                        <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{u.name}</div>
+                        <div style={{ fontSize:11, color:T.sub }}>{u.email}</div>
+                      </td>
+                      <td style={{ padding:"14px 12px" }}>
+                        <span style={{ padding:"3px 10px", borderRadius:20, background:`${blockTypeColor(u.blockType)}15`, color:blockTypeColor(u.blockType), fontSize:11, fontWeight:700, textTransform:"capitalize" }}>{u.blockType==="none"?"Active":u.blockType}</span>
+                      </td>
+                      <td style={{ padding:"14px 12px" }}>
+                        <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
+                          {u.restrictions.length===0 ? <span style={{ fontSize:11, color:T.sub }}>None</span> : u.restrictions.map(r => (
+                            <span key={r} style={{ padding:"2px 8px", borderRadius:6, background:`${A1}15`, color:A1, fontSize:10, textTransform:"capitalize" }}>{r}</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td style={{ padding:"14px 12px", fontSize:12, color:T.sub }}>{u.blockedAt}</td>
+                      <td style={{ padding:"14px 12px", fontSize:12, color:T.sub }}>{u.expiresAt}</td>
+                      <td style={{ padding:"14px 12px", fontSize:12, color:T.sub, maxWidth:150 }}>
+                        <div style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{u.reason}</div>
+                      </td>
+                      <td style={{ padding:"14px 12px" }}>
+                        <div style={{ display:"flex", gap:6 }}>
+                          <button onClick={()=>{setSelected(u);setActionPanel("block");}} style={{ padding:"5px 10px", borderRadius:7, border:`1px solid #f87171`, background:"rgba(248,113,113,.1)", color:"#f87171", fontSize:12, cursor:"pointer" }}>Restrict</button>
+                          <button onClick={()=>applyAction(u.id,"Activate")} style={{ padding:"5px 10px", borderRadius:7, border:`1px solid #4ade80`, background:"rgba(74,222,128,.1)", color:"#4ade80", fontSize:12, cursor:"pointer" }}>Activate</button>
+                          <button onClick={()=>{setSelected(u);setShowHistory(true);}} style={{ padding:"5px 8px", borderRadius:7, border:`1px solid ${T.border}`, background:T.input, color:T.sub, fontSize:12, cursor:"pointer" }}><History size={13}/></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                }
               </tbody>
             </table>
           </div>

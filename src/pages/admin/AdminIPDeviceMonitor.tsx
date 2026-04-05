@@ -12,21 +12,9 @@ const TH = {
 type IPRecord = { id:string; ip:string; user:string; country:string; isp:string; vpn:boolean; proxy:boolean; failedLogins:number; status:string; lastSeen:string; locations:string[] };
 type DeviceRecord = { id:string; fingerprint:string; user:string; device:string; os:string; browser:string; status:string; lastSeen:string; logins:number };
 
-const IP_RECORDS: IPRecord[] = [
-  { id:"i1", ip:"103.22.11.4",  user:"Rahul Sharma",  country:"India",  isp:"Jio",     vpn:false, proxy:false, failedLogins:12, status:"blocked",     lastSeen:"2 min ago",  locations:["Mumbai","Delhi","Pune"] },
-  { id:"i2", ip:"45.77.21.3",   user:"Priya Mehta",   country:"USA",    isp:"AWS",     vpn:true,  proxy:false, failedLogins:3,  status:"suspicious",  lastSeen:"5 min ago",  locations:["US-East","Mumbai"] },
-  { id:"i3", ip:"182.74.3.2",   user:"Ajay Kumar",    country:"India",  isp:"Airtel",  vpn:false, proxy:true,  failedLogins:7,  status:"blacklisted", lastSeen:"12 min ago", locations:["Bangalore"] },
-  { id:"i4", ip:"103.55.8.1",   user:"Sneha Patel",   country:"India",  isp:"BSNL",    vpn:false, proxy:false, failedLogins:1,  status:"clean",       lastSeen:"1 hr ago",   locations:["Chennai"] },
-  { id:"i5", ip:"192.168.0.1",  user:"Vikram Rao",    country:"India",  isp:"Local",   vpn:false, proxy:false, failedLogins:0,  status:"whitelisted", lastSeen:"2 hrs ago",  locations:["Hyderabad"] },
-  { id:"i6", ip:"49.204.1.5",   user:"Meena Krishnan",country:"India",  isp:"Vi",      vpn:false, proxy:false, failedLogins:2,  status:"clean",       lastSeen:"3 hrs ago",  locations:["Bangalore"] },
-];
+const IP_RECORDS: IPRecord[] = [];
 
-const DEVICE_RECORDS: DeviceRecord[] = [
-  { id:"d1", fingerprint:"fp_a1b2c3", user:"Rahul Sharma",  device:"Android 13", os:"Android", browser:"Chrome",  status:"blocked",     lastSeen:"2 min ago",  logins:28 },
-  { id:"d2", fingerprint:"fp_d4e5f6", user:"Priya Mehta",   device:"iPhone 14",  os:"iOS",     browser:"Safari",  status:"suspicious",  lastSeen:"5 min ago",  logins:14 },
-  { id:"d3", fingerprint:"fp_g7h8i9", user:"Ajay Kumar",    device:"Windows 11", os:"Windows", browser:"Firefox", status:"clean",       lastSeen:"1 hr ago",   logins:7  },
-  { id:"d4", fingerprint:"fp_j1k2l3", user:"Sneha Patel",   device:"MacBook Pro",os:"macOS",   browser:"Chrome",  status:"clean",       lastSeen:"2 hrs ago",  logins:5  },
-];
+const DEVICE_RECORDS: DeviceRecord[] = [];
 
 const statusColor = (s: string) => s==="blocked"||s==="blacklisted"?"#f87171":s==="suspicious"?"#f97316":s==="whitelisted"?"#4ade80":"#94a3b8";
 
@@ -111,28 +99,31 @@ export default function AdminIPDeviceMonitor() {
                 </tr>
               </thead>
               <tbody>
-                {ipRecords.map(r => (
-                  <tr key={r.id} style={{ borderBottom:`1px solid ${T.border}` }}>
-                    <td style={{ padding:"12px", fontFamily:"monospace", fontSize:13, color:A1, fontWeight:600 }}>{r.ip}</td>
-                    <td style={{ padding:"12px", fontSize:13, color:T.text }}>{r.user}</td>
-                    <td style={{ padding:"12px", fontSize:13, color:T.sub }}>{r.country}</td>
-                    <td style={{ padding:"12px", fontSize:12, color:T.sub }}>{r.isp}</td>
-                    <td style={{ padding:"12px" }}><span style={{ fontSize:12, color:r.vpn?"#f97316":"#4ade80", fontWeight:600 }}>{r.vpn?"YES":"NO"}</span></td>
-                    <td style={{ padding:"12px" }}><span style={{ fontSize:12, color:r.proxy?"#f87171":"#4ade80", fontWeight:600 }}>{r.proxy?"YES":"NO"}</span></td>
-                    <td style={{ padding:"12px" }}><span style={{ fontSize:13, color:r.failedLogins>5?"#f87171":T.text, fontWeight:r.failedLogins>5?700:400 }}>{r.failedLogins}</span></td>
-                    <td style={{ padding:"12px" }}><span style={{ padding:"3px 10px", borderRadius:20, background:`${statusColor(r.status)}15`, color:statusColor(r.status), fontSize:11, fontWeight:700, textTransform:"capitalize" }}>{r.status}</span></td>
-                    <td style={{ padding:"12px", fontSize:12, color:T.sub }}>{r.lastSeen}</td>
-                    <td style={{ padding:"12px" }}>
-                      <div style={{ display:"flex", gap:4 }}>
-                        <button onClick={()=>setSelectedIP(r)} style={{ padding:"4px 8px", borderRadius:6, border:`1px solid ${T.border}`, background:T.input, color:T.sub, cursor:"pointer", fontSize:11 }}><Eye size={12}/></button>
-                        <button onClick={()=>ipAction(r.id, r.status==="blocked"?"Unblock":"Block")} style={{ padding:"4px 8px", borderRadius:6, border:`1px solid ${r.status==="blocked"?"#4ade80":"#f87171"}`, background:r.status==="blocked"?"rgba(74,222,128,.1)":"rgba(248,113,113,.1)", color:r.status==="blocked"?"#4ade80":"#f87171", cursor:"pointer", fontSize:11 }}>
-                          {r.status==="blocked"?"Unblock":"Block"}
-                        </button>
-                        <button onClick={()=>ipAction(r.id,"Whitelist")} style={{ padding:"4px 8px", borderRadius:6, border:`1px solid #4ade80`, background:"rgba(74,222,128,.1)", color:"#4ade80", cursor:"pointer", fontSize:11 }}>✓</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {ipRecords.length === 0
+                  ? <tr><td colSpan={10} style={{ textAlign:"center", padding:"48px 20px", color:T.sub, fontSize:14 }}>No IP records found</td></tr>
+                  : ipRecords.map(r => (
+                    <tr key={r.id} style={{ borderBottom:`1px solid ${T.border}` }}>
+                      <td style={{ padding:"12px", fontFamily:"monospace", fontSize:13, color:A1, fontWeight:600 }}>{r.ip}</td>
+                      <td style={{ padding:"12px", fontSize:13, color:T.text }}>{r.user}</td>
+                      <td style={{ padding:"12px", fontSize:13, color:T.sub }}>{r.country}</td>
+                      <td style={{ padding:"12px", fontSize:12, color:T.sub }}>{r.isp}</td>
+                      <td style={{ padding:"12px" }}><span style={{ fontSize:12, color:r.vpn?"#f97316":"#4ade80", fontWeight:600 }}>{r.vpn?"YES":"NO"}</span></td>
+                      <td style={{ padding:"12px" }}><span style={{ fontSize:12, color:r.proxy?"#f87171":"#4ade80", fontWeight:600 }}>{r.proxy?"YES":"NO"}</span></td>
+                      <td style={{ padding:"12px" }}><span style={{ fontSize:13, color:r.failedLogins>5?"#f87171":T.text, fontWeight:r.failedLogins>5?700:400 }}>{r.failedLogins}</span></td>
+                      <td style={{ padding:"12px" }}><span style={{ padding:"3px 10px", borderRadius:20, background:`${statusColor(r.status)}15`, color:statusColor(r.status), fontSize:11, fontWeight:700, textTransform:"capitalize" }}>{r.status}</span></td>
+                      <td style={{ padding:"12px", fontSize:12, color:T.sub }}>{r.lastSeen}</td>
+                      <td style={{ padding:"12px" }}>
+                        <div style={{ display:"flex", gap:4 }}>
+                          <button onClick={()=>setSelectedIP(r)} style={{ padding:"4px 8px", borderRadius:6, border:`1px solid ${T.border}`, background:T.input, color:T.sub, cursor:"pointer", fontSize:11 }}><Eye size={12}/></button>
+                          <button onClick={()=>ipAction(r.id, r.status==="blocked"?"Unblock":"Block")} style={{ padding:"4px 8px", borderRadius:6, border:`1px solid ${r.status==="blocked"?"#4ade80":"#f87171"}`, background:r.status==="blocked"?"rgba(74,222,128,.1)":"rgba(248,113,113,.1)", color:r.status==="blocked"?"#4ade80":"#f87171", cursor:"pointer", fontSize:11 }}>
+                            {r.status==="blocked"?"Unblock":"Block"}
+                          </button>
+                          <button onClick={()=>ipAction(r.id,"Whitelist")} style={{ padding:"4px 8px", borderRadius:6, border:`1px solid #4ade80`, background:"rgba(74,222,128,.1)", color:"#4ade80", cursor:"pointer", fontSize:11 }}>✓</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                }
               </tbody>
             </table>
           </div>
@@ -149,24 +140,27 @@ export default function AdminIPDeviceMonitor() {
                 </tr>
               </thead>
               <tbody>
-                {devices.map(d => (
-                  <tr key={d.id} style={{ borderBottom:`1px solid ${T.border}` }}>
-                    <td style={{ padding:"12px", fontFamily:"monospace", fontSize:12, color:A2 }}>{d.fingerprint}</td>
-                    <td style={{ padding:"12px", fontSize:13, color:T.text }}>{d.user}</td>
-                    <td style={{ padding:"12px", fontSize:13, color:T.sub }}>{d.device}</td>
-                    <td style={{ padding:"12px", fontSize:12, color:T.sub }}>{d.os}</td>
-                    <td style={{ padding:"12px", fontSize:12, color:T.sub }}>{d.browser}</td>
-                    <td style={{ padding:"12px" }}><span style={{ padding:"3px 10px", borderRadius:20, background:`${statusColor(d.status)}15`, color:statusColor(d.status), fontSize:11, fontWeight:700, textTransform:"capitalize" }}>{d.status}</span></td>
-                    <td style={{ padding:"12px", fontSize:13, color:T.text }}>{d.logins}</td>
-                    <td style={{ padding:"12px", fontSize:12, color:T.sub }}>{d.lastSeen}</td>
-                    <td style={{ padding:"12px" }}>
-                      <div style={{ display:"flex", gap:6 }}>
-                        <button onClick={()=>deviceAction(d.id,"Block")} style={{ padding:"5px 10px", borderRadius:6, border:`1px solid #f87171`, background:"rgba(248,113,113,.1)", color:"#f87171", cursor:"pointer", fontSize:12 }}>Block</button>
-                        <button onClick={()=>deviceAction(d.id,"Allow")} style={{ padding:"5px 10px", borderRadius:6, border:`1px solid #4ade80`, background:"rgba(74,222,128,.1)", color:"#4ade80", cursor:"pointer", fontSize:12 }}>Allow</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {devices.length === 0
+                  ? <tr><td colSpan={9} style={{ textAlign:"center", padding:"48px 20px", color:T.sub, fontSize:14 }}>No device records found</td></tr>
+                  : devices.map(d => (
+                    <tr key={d.id} style={{ borderBottom:`1px solid ${T.border}` }}>
+                      <td style={{ padding:"12px", fontFamily:"monospace", fontSize:12, color:A2 }}>{d.fingerprint}</td>
+                      <td style={{ padding:"12px", fontSize:13, color:T.text }}>{d.user}</td>
+                      <td style={{ padding:"12px", fontSize:13, color:T.sub }}>{d.device}</td>
+                      <td style={{ padding:"12px", fontSize:12, color:T.sub }}>{d.os}</td>
+                      <td style={{ padding:"12px", fontSize:12, color:T.sub }}>{d.browser}</td>
+                      <td style={{ padding:"12px" }}><span style={{ padding:"3px 10px", borderRadius:20, background:`${statusColor(d.status)}15`, color:statusColor(d.status), fontSize:11, fontWeight:700, textTransform:"capitalize" }}>{d.status}</span></td>
+                      <td style={{ padding:"12px", fontSize:13, color:T.text }}>{d.logins}</td>
+                      <td style={{ padding:"12px", fontSize:12, color:T.sub }}>{d.lastSeen}</td>
+                      <td style={{ padding:"12px" }}>
+                        <div style={{ display:"flex", gap:6 }}>
+                          <button onClick={()=>deviceAction(d.id,"Block")} style={{ padding:"5px 10px", borderRadius:6, border:`1px solid #f87171`, background:"rgba(248,113,113,.1)", color:"#f87171", cursor:"pointer", fontSize:12 }}>Block</button>
+                          <button onClick={()=>deviceAction(d.id,"Allow")} style={{ padding:"5px 10px", borderRadius:6, border:`1px solid #4ade80`, background:"rgba(74,222,128,.1)", color:"#4ade80", cursor:"pointer", fontSize:12 }}>Allow</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                }
               </tbody>
             </table>
           </div>
