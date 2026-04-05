@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardTheme } from "@/hooks/use-dashboard-theme";
-import { readFunctionJson } from "@/lib/function-response";
+import { isFunctionUnavailableError, readFunctionJson } from "@/lib/function-response";
 
 interface Props {
   mode: "create" | "verify";
@@ -75,6 +75,27 @@ const NUMPAD = [
 async function getToken() {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token ?? "";
+}
+
+function getMpinErrorMessage(error: unknown, fallback = "M-Pin is not available right now. Please try again later.") {
+  if (isFunctionUnavailableError(error)) return fallback;
+  if (!(error instanceof Error)) return "Something went wrong. Please try again.";
+
+  const msg = error.message?.trim() ?? "";
+  if (!msg) return "Something went wrong. Please try again.";
+
+  const lowered = msg.toLowerCase();
+  if (
+    lowered.includes("unexpected token") ||
+    lowered.includes("doctype") ||
+    lowered.includes("valid json") ||
+    lowered.includes("failed to fetch") ||
+    lowered.includes("networkerror")
+  ) {
+    return fallback;
+  }
+
+  return msg;
 }
 
 export default function MPinGateModal({ mode, theme, onVerified }: Props) {
@@ -248,7 +269,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
       if (!res.ok || !json.valid) throw new Error("Incorrect code. Please try again.");
       setForgotStep("new-pin-enter");
     } catch (err: unknown) {
-      setForgotError(err instanceof Error ? err.message : "Verification failed");
+      setForgotError(getMpinErrorMessage(err, "M-Pin recovery is not available right now."));
       setTotpBoxes(["","","","","",""]);
       setTimeout(() => totpRefs.current[0]?.focus(), 100);
     } finally { setForgotLoading(false); }
@@ -274,7 +295,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
       if (!res.ok || !json.valid) throw new Error("One or more answers are incorrect. Please try again.");
       setForgotStep("new-pin-enter");
     } catch (err: unknown) {
-      setForgotError(err instanceof Error ? err.message : "Verification failed");
+      setForgotError(getMpinErrorMessage(err, "M-Pin recovery is not available right now."));
       setSqAnswers(["","",""]);
     } finally { setForgotLoading(false); }
   }, [sqAnswers, sqOptions, forgotLoading]);
@@ -312,7 +333,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
             setForgotStep("success");
             setTimeout(onVerified, 1600);
           } catch (err: unknown) {
-            setForgotError(err instanceof Error ? err.message : "Error saving PIN");
+            setForgotError(getMpinErrorMessage(err));
             setNewPin(""); setNewPinFirst(""); setForgotStep("new-pin-enter");
           } finally { setForgotLoading(false); }
         })();
@@ -381,7 +402,7 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
       setAttemptsLeft(3);
       onVerified();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Server error");
+      setError(getMpinErrorMessage(err));
       triggerShake(setShake); setPin("");
     } finally { setLoading(false); }
   }, [pin, mode, step, firstPin, loading, blocked, attemptsLeft, onVerified]);
