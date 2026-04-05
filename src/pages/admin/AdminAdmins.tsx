@@ -235,7 +235,7 @@ const AdminAdmins = () => {
                   {/* Admin info */}
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: admin.is_super_admin ? "rgba(245,158,11,.15)" : "rgba(99,102,241,.15)", display: "flex", alignItems: "center", justifyContent: "center", shrink: 0 }}>
+                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: admin.is_super_admin ? "rgba(245,158,11,.15)" : "rgba(99,102,241,.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         {admin.is_super_admin
                           ? <Star className="h-5 w-5 text-amber-400" />
                           : <Crown className="h-4 w-4 text-indigo-400" />}
