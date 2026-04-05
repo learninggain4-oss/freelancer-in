@@ -810,7 +810,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
               )}
             </div>
 
-            {/* Skip button — only for optional steps */}
+            {/* Skip button — optional steps (work, emergency) */}
             {isSkippable && step < stepConfig.length - 1 && (
               <button
                 type="button"
@@ -821,6 +821,24 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
               >
                 Skip for now — I'll add this later
               </button>
+            )}
+
+            {/* Skip & Submit — services step (last step) */}
+            {getStepType(step) === "services" && step === stepConfig.length - 1 && (
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} style={{ width: "100%" }}>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    onClick={() => { setServices([]); }}
+                    style={{ width: "100%", padding: "10px", borderRadius: 12, border: "1px dashed rgba(255,255,255,.15)", background: "transparent", color: "rgba(255,255,255,.4)", fontWeight: 500, fontSize: 13, cursor: submitting ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5, transition: "all .2s" }}
+                    onMouseEnter={e => { if (!submitting) { e.currentTarget.style.borderColor = "rgba(99,102,241,.4)"; e.currentTarget.style.color = "#a5b4fc"; } }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,.15)"; e.currentTarget.style.color = "rgba(255,255,255,.4)"; }}
+                  >
+                    Skip Services — Submit Registration
+                  </button>
+                </form>
+              </Form>
             )}
           </div>
 
