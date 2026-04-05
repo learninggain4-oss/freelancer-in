@@ -661,3 +661,293 @@
 .admin-main [role="alert"] {
   animation: adminToastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   PREMIUM ANIMATIONS v3 — Scroll Reveal, Gradient Text, Nav Pill
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Scroll Reveal hidden state ────────────────────────────── */
+
+.admin-scroll-hidden {
+  opacity: 0 !important;
+}
+
+/* ─── Scroll Reveal — slide up ───────────────────────────────── */
+
+@keyframes adminRevealUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+.admin-scroll-up.admin-scroll-visible {
+  animation: adminRevealUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ─── Scroll Reveal — slide left ─────────────────────────────── */
+
+@keyframes adminRevealLeft {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0);     }
+}
+.admin-scroll-left.admin-scroll-visible {
+  animation: adminRevealLeft 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ─── Scroll Reveal — slide right ────────────────────────────── */
+
+@keyframes adminRevealRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+.admin-scroll-right.admin-scroll-visible {
+  animation: adminRevealRight 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ─── Scroll Reveal — scale ──────────────────────────────────── */
+
+@keyframes adminRevealScale {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1);    }
+}
+.admin-scroll-scale.admin-scroll-visible {
+  animation: adminRevealScale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ─── Animated gradient text ─────────────────────────────────── */
+
+@keyframes adminGradText {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+.admin-grad-text {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899, #06b6d4, #6366f1);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: adminGradText 5s ease infinite;
+}
+
+/* ─── Section title animated underline ───────────────────────── */
+
+@keyframes adminUnderline {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+.admin-section-title {
+  position: relative;
+  display: inline-block;
+}
+.admin-section-title::after {
+  content: "";
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  height: 2px;
+  width: 0%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  animation: adminUnderline 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
+}
+
+/* ─── Active nav sliding pill ────────────────────────────────── */
+
+.admin-nav-link {
+  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+.admin-nav-link:not(.active):hover {
+  transform: translateX(2px);
+}
+.admin-nav-link.active {
+  position: relative;
+}
+.admin-nav-link.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 65%;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, #6366f1, #8b5cf6);
+  box-shadow: 2px 0 8px rgba(99,102,241,0.6);
+  animation: adminFadeIn 0.25s ease both;
+}
+
+/* ─── Pulsing active indicator dot on nav ────────────────────── */
+
+.admin-nav-link.active::after {
+  content: "";
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #6366f1;
+  animation: adminPulseDot 2s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(99,102,241,0.7);
+}
+
+/* ─── Stat number glow on hover ──────────────────────────────── */
+
+.admin-stat-card:hover .admin-stat-num,
+.admin-stat-card:hover p:first-of-type {
+  text-shadow: 0 0 16px rgba(99,102,241,0.35);
+  transition: text-shadow 0.3s ease;
+}
+
+/* ─── Custom text selection in admin ─────────────────────────── */
+
+.admin-main ::selection {
+  background: rgba(99,102,241,0.25);
+  color: inherit;
+}
+
+/* ─── Smooth card focus (keyboard) ──────────────────────────── */
+
+.admin-main a:focus-visible,
+.admin-main button:focus-visible {
+  outline: 2px solid rgba(99,102,241,0.7);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ─── Table row left accent on hover ─────────────────────────── */
+
+.admin-main table tbody tr {
+  position: relative;
+}
+.admin-main table tbody tr::after {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0;
+  background: linear-gradient(180deg, #6366f1, #8b5cf6);
+  border-radius: 0 2px 2px 0;
+  transition: width 0.18s ease;
+}
+.admin-main table tbody tr:hover::after {
+  width: 3px;
+}
+
+/* ─── Card inner shine on mount ──────────────────────────────── */
+
+@keyframes adminCardShine {
+  0%   { left: -120%; }
+  60%  { left: 130%;  }
+  100% { left: 130%;  }
+}
+.admin-stat-card::after,
+.admin-card::after {
+  content: "";
+  position: absolute;
+  top: 0; left: -120%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  transform: skewX(-15deg);
+  animation: adminCardShine 1.2s ease 0.4s both;
+  pointer-events: none;
+}
+
+/* ─── Floating label animation on inputs ─────────────────────── */
+
+.admin-main input:not(:placeholder-shown) + label,
+.admin-main input:focus + label {
+  transform: translateY(-18px) scale(0.82);
+  color: #6366f1;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+/* ─── Page-level section stagger (h1,h2,h3,p first appear) ──── */
+
+.admin-page-transition h1,
+.admin-page-transition h2 {
+  animation: adminFadeUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
+}
+
+/* ─── Gradient progress bar ──────────────────────────────────── */
+
+.admin-main [role="progressbar"] > div {
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899) !important;
+  box-shadow: 0 0 8px rgba(99,102,241,0.4);
+}
+
+/* ─── Chart tooltip premium ──────────────────────────────────── */
+
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: rgba(15,14,48,0.95) !important;
+  border: 1px solid rgba(99,102,241,0.25) !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.4) !important;
+  animation: adminPopIn 0.2s cubic-bezier(0.34,1.56,0.64,1) both !important;
+}
+
+/* ─── Sidebar nav section title ──────────────────────────────── */
+
+.admin-nav-section-title {
+  transition: color 0.2s ease;
+}
+
+/* ─── Icon hover spin (for refresh/reload icons) ─────────────── */
+
+.admin-spin-hover:hover svg,
+.admin-spin-hover:hover .lucide {
+  animation: adminSpin 0.5s ease;
+}
+
+/* ─── Glow button variant ────────────────────────────────────── */
+
+.admin-btn-glow {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.45) !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+.admin-btn-glow:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 28px rgba(99,102,241,0.6) !important;
+}
+.admin-btn-glow:active {
+  transform: translateY(1px) scale(0.97) !important;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.3) !important;
+}
+
+/* ─── Frosted glass card ─────────────────────────────────────── */
+
+.admin-glass {
+  background: rgba(255,255,255,0.7) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255,255,255,0.5) !important;
+  box-shadow: 0 8px 32px rgba(99,102,241,0.08) !important;
+}
+
+/* ─── Notification wiggle ────────────────────────────────────── */
+
+@keyframes adminWiggle {
+  0%,100% { transform: rotate(0deg);   }
+  20%      { transform: rotate(-8deg);  }
+  40%      { transform: rotate(8deg);   }
+  60%      { transform: rotate(-5deg);  }
+  80%      { transform: rotate(5deg);   }
+}
+.admin-wiggle {
+  animation: adminWiggle 0.5s ease both;
+}
+.admin-wiggle-loop {
+  animation: adminWiggle 1.8s ease-in-out 1s infinite;
+}
+
+/* ─── Number slide-in digits ─────────────────────────────────── */
+
+@keyframes adminDigitIn {
+  from { opacity: 0; transform: translateY(-12px) scale(0.8); }
+  to   { opacity: 1; transform: translateY(0)      scale(1);   }
+}
+.admin-digit {
+  display: inline-block;
+  animation: adminDigitIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+}

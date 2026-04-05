@@ -1,3 +1,5 @@
+@import "./styles/admin-animations.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -178,9 +180,6 @@
     padding-top: env(safe-area-inset-top);
   }
 }
-
-/* Admin animations */
-@import "./styles/admin-animations.css";
 
 /* Infinite scroll carousel */
 @keyframes scroll-left {

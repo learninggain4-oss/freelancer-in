@@ -15,6 +15,8 @@ import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import AdminParticles from "@/components/admin/AdminParticles";
 import AdminTiltCard from "@/components/admin/AdminTiltCard";
 import AdminCountUp from "@/components/admin/AdminCountUp";
+import AdminScrollReveal from "@/components/admin/AdminScrollReveal";
+import AdminProgressRing from "@/components/admin/AdminProgressRing";
 import {
   AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis,
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
@@ -303,7 +305,7 @@ const AdminDashboard = () => {
               <Shield size={22} color="white" />
             </div>
             <div>
-              <h1 style={{ fontSize: 21, fontWeight: 900, color: tok.secTitle, letterSpacing: "-0.5px", margin: 0 }}>Super Admin Dashboard</h1>
+              <h1 className="admin-grad-text admin-section-title" style={{ fontSize: 21, fontWeight: 900, letterSpacing: "-0.5px", margin: 0 }}>Super Admin Dashboard</h1>
               <p style={{ fontSize: 11.5, color: tok.cardSub, marginTop: 2, margin: 0 }}>Enterprise control center — real-time platform management</p>
             </div>
             <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
@@ -460,20 +462,22 @@ const AdminDashboard = () => {
           </button>
         </div>
 
-        {/* Resource gauges */}
+        {/* Resource gauges — animated progress rings */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 16 }}>
           {[
-            { label: "CPU Usage",    icon: Cpu,       pct: cpuUsage, color: cpuUsage > 80 ? "#f87171" : cpuUsage > 60 ? "#fbbf24" : "#4ade80" },
-            { label: "Memory Usage", icon: Monitor,   pct: memUsage, color: memUsage > 80 ? "#f87171" : memUsage > 60 ? "#fbbf24" : "#4ade80" },
-            { label: "Disk Usage",   icon: HardDrive, pct: diskUsage, color: diskUsage > 80 ? "#f87171" : diskUsage > 60 ? "#fbbf24" : "#4ade80" },
+            { label: "CPU",    icon: Cpu,       pct: cpuUsage,  color: cpuUsage  > 80 ? "#f87171" : cpuUsage  > 60 ? "#fbbf24" : "#4ade80" },
+            { label: "Memory", icon: Monitor,   pct: memUsage,  color: memUsage  > 80 ? "#f87171" : memUsage  > 60 ? "#fbbf24" : "#4ade80" },
+            { label: "Disk",   icon: HardDrive, pct: diskUsage, color: diskUsage > 80 ? "#f87171" : diskUsage > 60 ? "#fbbf24" : "#4ade80" },
           ].map(r => (
-            <div key={r.label} style={{ padding: "12px 14px", borderRadius: 12, background: tok.sysRowBg, border: `1px solid ${tok.alertBdr}` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 9 }}>
-                <r.icon size={13} color={r.color} />
-                <span style={{ fontSize: 11.5, fontWeight: 600, color: tok.cardText }}>{r.label}</span>
+            <AdminScrollReveal key={r.label} direction="scale" delay={80}>
+              <div style={{ padding: "14px", borderRadius: 12, background: tok.sysRowBg, border: `1px solid ${tok.alertBdr}`, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                <AdminProgressRing value={r.pct} size={76} stroke={7} color={r.color} trackColor={`${r.color}18`} suffix="%" animated />
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <r.icon size={12} color={r.color} />
+                  <span style={{ fontSize: 11.5, fontWeight: 600, color: tok.cardText }}>{r.label}</span>
+                </div>
               </div>
-              {gaugePct(r.pct, r.color)}
-            </div>
+            </AdminScrollReveal>
           ))}
         </div>
 

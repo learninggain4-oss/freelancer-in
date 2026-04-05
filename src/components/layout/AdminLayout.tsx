@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import AdminPageTransition from "./AdminPageTransition";
+import AdminTopLoadingBar from "@/components/admin/AdminTopLoadingBar";
+import AdminCursorGlow from "@/components/admin/AdminCursorGlow";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -455,6 +457,8 @@ const AdminLayout = () => {
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: tok.shell, color: tok.mainText, fontFamily: "Inter,system-ui,sans-serif" }}>
       <style>{css}</style>
+      <AdminTopLoadingBar />
+      <AdminCursorGlow />
 
       {/* Ambient background */}
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
