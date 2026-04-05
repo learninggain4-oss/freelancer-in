@@ -4,6 +4,12 @@ import { createClient } from "@supabase/supabase-js";
 import cron from "node-cron";
 import crypto from "crypto";
 import { createRequire } from "module";
+import path from "path";
+import { fileURLToPath } from "url";
+import { existsSync } from "fs";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
 const _require = createRequire(import.meta.url);
 const QRCode   = _require("qrcode");
 
@@ -60,7 +66,8 @@ const app = express();
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
-const PORT = process.env.SERVER_PORT || 3001;
+// In production Replit sets PORT; in dev we use SERVER_PORT (set in workflow) to avoid conflict with Vite
+const PORT = process.env.PORT || process.env.SERVER_PORT || 3001;
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
@@ -1779,6 +1786,16 @@ app.post("/functions/v1/mpin-verify", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ── Production: serve the Vite build + SPA fallback ─────────────────────────
+const distPath = path.join(__dirname, "..", "dist");
+if (existsSync(distPath)) {
+  app.use(express.static(distPath));
+  // SPA catch-all — must come AFTER all API routes
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(distPath, "index.html"));
+  });
+}
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`API server running on port ${PORT}`);
