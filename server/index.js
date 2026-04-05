@@ -60,6 +60,25 @@ function verifyTotp(token, secret, window = 1) {
   }
   return false;
 }
+// Aliases used by user-totp / admin-totp routes (DB-backed TOTP flow)
+const generateSecret = generateTotpSecret;
+async function verifyTOTP(secret, code) {
+  return verifyTotp(code, secret);
+}
+
+// The 10 security questions (must match frontend)
+const SQ_QUESTIONS = [
+  "What is the name of your first pet?",
+  "What is your mother's maiden name?",
+  "What was the name of your primary school?",
+  "What city were you born in?",
+  "What is the name of your best childhood friend?",
+  "What was your childhood nickname?",
+  "What is the name of the street you grew up on?",
+  "What is your oldest sibling's first name?",
+  "What was the make and model of your first vehicle?",
+  "What is your all-time favourite food?",
+];
 // ───────────────────────────────────────────────────────────────────────────
 
 const app = express();
@@ -1460,20 +1479,6 @@ app.post("/functions/v1/mpin-set", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// The 10 security questions (must match frontend)
-const SQ_QUESTIONS = [
-  "What is the name of your first pet?",
-  "What is your mother's maiden name?",
-  "What was the name of your primary school?",
-  "What city were you born in?",
-  "What is the name of your best childhood friend?",
-  "What was your childhood nickname?",
-  "What is the name of the street you grew up on?",
-  "What is your oldest sibling's first name?",
-  "What was the make and model of your first vehicle?",
-  "What is your all-time favourite food?",
-];
 
 // GET /functions/v1/forgot-mpin-options — what identity options does this user have?
 app.get("/functions/v1/forgot-mpin-options", async (req, res) => {
