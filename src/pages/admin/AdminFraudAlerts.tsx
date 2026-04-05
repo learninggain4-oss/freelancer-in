@@ -11,16 +11,7 @@ const TH = {
 
 type Alert = { id:string; message:string; source:string; priority:string; status:string; timestamp:string; user:string; note:string; assignedTo:string };
 
-const INIT_ALERTS: Alert[] = [
-  { id:"al1", message:"Critical: User attempting to bypass payment verification",   source:"Payment Monitor",   priority:"critical", status:"new",          timestamp:"Just now",     user:"user_2841", note:"", assignedTo:"" },
-  { id:"al2", message:"High: Multiple login from different countries detected",      source:"IP Monitor",        priority:"high",     status:"investigating", timestamp:"3 min ago",    user:"user_5521", note:"", assignedTo:"admin@site.com" },
-  { id:"al3", message:"High: Risk score exceeded 90 threshold",                     source:"Risk Engine",       priority:"high",     status:"new",          timestamp:"7 min ago",    user:"user_1204", note:"", assignedTo:"" },
-  { id:"al4", message:"Medium: Suspicious messaging pattern detected",               source:"Message Monitor",   priority:"medium",   status:"investigating", timestamp:"15 min ago",   user:"user_8831", note:"Looking into it", assignedTo:"manager@site.com" },
-  { id:"al5", message:"Medium: Rapid withdrawal requests (x5 in 10 min)",           source:"Withdrawal Engine", priority:"medium",   status:"resolved",      timestamp:"30 min ago",   user:"user_3391", note:"User verified manually", assignedTo:"admin@site.com" },
-  { id:"al6", message:"Low: Failed login attempts x3",                               source:"Auth Monitor",      priority:"low",      status:"ignored",       timestamp:"1 hr ago",     user:"user_7710", note:"", assignedTo:"" },
-  { id:"al7", message:"Critical: Duplicate payment of ₹1,20,000 detected",          source:"Payment Monitor",   priority:"critical", status:"new",          timestamp:"1 min ago",    user:"user_4411", note:"", assignedTo:"" },
-  { id:"al8", message:"High: Proxy/VPN detected for financial transaction",          source:"IP Monitor",        priority:"high",     status:"new",          timestamp:"5 min ago",    user:"user_9920", note:"", assignedTo:"" },
-];
+const INIT_ALERTS: Alert[] = [];
 
 const prioColor = (p: string) => p==="critical"?"#f87171":p==="high"?"#f97316":p==="medium"?"#fbbf24":"#4ade80";
 const statusColor = (s: string) => s==="new"?"#60a5fa":s==="investigating"?"#fbbf24":s==="resolved"?"#4ade80":"#94a3b8";

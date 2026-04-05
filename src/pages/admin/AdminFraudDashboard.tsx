@@ -9,34 +9,13 @@ const TH = {
   wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc" },
 };
 
-const ALERTS_FEED = [
-  { id:1, user:"user_2841", action:"Multiple rapid payments", level:"critical", time:"1 min ago", ip:"103.22.11.4" },
-  { id:2, user:"user_5521", action:"Login from 4 different countries", level:"high", time:"3 min ago", ip:"45.77.21.3" },
-  { id:3, user:"user_1204", action:"Duplicate payment attempt", level:"high", time:"7 min ago", ip:"182.74.3.2" },
-  { id:4, user:"user_8831", action:"Suspicious profile pattern", level:"medium", time:"12 min ago", ip:"103.55.8.1" },
-  { id:5, user:"user_3391", action:"Failed login x10", level:"medium", time:"20 min ago", ip:"192.168.0.1" },
-  { id:6, user:"user_7710", action:"Unusual withdrawal amount", level:"low", time:"35 min ago", ip:"49.204.1.5" },
-];
+const ALERTS_FEED: { id:number; user:string; action:string; level:string; time:string; ip:string }[] = [];
 
-const TOP_SUSPICIOUS = [
-  { id:"u1", name:"Rahul Sharma", score:91, level:"critical", flags:7, last:"2 min ago" },
-  { id:"u2", name:"Priya Mehta", score:78, level:"high", flags:5, last:"15 min ago" },
-  { id:"u3", name:"Ajay Kumar", score:65, level:"high", flags:4, last:"1 hr ago" },
-  { id:"u4", name:"Sneha Patel", score:52, level:"medium", flags:3, last:"2 hrs ago" },
-  { id:"u5", name:"Vikram Rao", score:41, level:"medium", flags:2, last:"3 hrs ago" },
-];
+const TOP_SUSPICIOUS: { id:string; name:string; score:number; level:string; flags:number; last:string }[] = [];
 
-const RISK_DIST = [
-  { level:"Low", count:2840, color:"#4ade80", pct:62 },
-  { level:"Medium", count:810, color:"#fbbf24", pct:18 },
-  { level:"High", count:460, color:"#f97316", pct:10 },
-  { level:"Critical", count:230, color:"#f87171", pct:5 },
-];
+const RISK_DIST: { level:string; count:number; color:string; pct:number }[] = [];
 
-const TREND = [
-  { day:"Mon", alerts:42 }, { day:"Tue", alerts:38 }, { day:"Wed", alerts:61 },
-  { day:"Thu", alerts:49 }, { day:"Fri", alerts:73 }, { day:"Sat", alerts:35 }, { day:"Sun", alerts:28 },
-];
+const TREND: { day:string; alerts:number }[] = [];
 
 const lvlColor = (l: string) => l==="critical"?"#f87171":l==="high"?"#f97316":l==="medium"?"#fbbf24":"#4ade80";
 const lvlBg   = (l: string) => l==="critical"?"rgba(248,113,113,.12)":l==="high"?"rgba(249,115,22,.12)":l==="medium"?"rgba(251,191,36,.12)":"rgba(74,222,128,.12)";
@@ -63,15 +42,15 @@ export default function AdminFraudDashboard() {
   };
 
   const stats = [
-    { label:"Total Alerts", value:"1,284", color:"#f87171", icon:ShieldAlert, sub:"+12 today" },
-    { label:"High Risk Users", value:"230", color:"#f97316", icon:AlertTriangle, sub:"5 critical" },
-    { label:"Suspicious Payments", value:"184", color:"#fbbf24", icon:CreditCard, sub:"₹8.4L flagged" },
-    { label:"Blocked Accounts", value:"47", color:A1, icon:Ban, sub:"3 today" },
-    { label:"Accuracy Rate", value:"94.2%", color:"#4ade80", icon:Activity, sub:"Rule-based AI" },
-    { label:"Suspicious Users", value:"810", color:A2, icon:Users, sub:"18% of total" },
+    { label:"Total Alerts", value:"—", color:"#f87171", icon:ShieldAlert, sub:"No data" },
+    { label:"High Risk Users", value:"—", color:"#f97316", icon:AlertTriangle, sub:"No data" },
+    { label:"Suspicious Payments", value:"—", color:"#fbbf24", icon:CreditCard, sub:"No data" },
+    { label:"Blocked Accounts", value:"—", color:A1, icon:Ban, sub:"No data" },
+    { label:"Accuracy Rate", value:"—", color:"#4ade80", icon:Activity, sub:"No data" },
+    { label:"Suspicious Users", value:"—", color:A2, icon:Users, sub:"No data" },
   ];
 
-  const maxTrend = Math.max(...TREND.map(t => t.alerts));
+  const maxTrend = TREND.length > 0 ? Math.max(...TREND.map(t => t.alerts)) : 1;
 
   return (
     <div style={{ background:T.bg, minHeight:"100vh", padding:"24px", fontFamily:"Inter,sans-serif" }}>
@@ -179,18 +158,21 @@ export default function AdminFraudDashboard() {
           <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:24, backdropFilter:"blur(10px)" }}>
             <h3 style={{ fontSize:15, fontWeight:700, color:T.text, margin:"0 0 20px" }}>Real-Time Fraud Alerts Feed</h3>
             <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-              {ALERTS_FEED.map(a => (
-                <div key={a.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 16px", borderRadius:10, background:lvlBg(a.level), border:`1px solid ${lvlColor(a.level)}22` }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                    <div style={{ width:10, height:10, borderRadius:"50%", background:lvlColor(a.level), animation:"pulse 2s infinite" }} />
-                    <div>
-                      <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{a.user} — {a.action}</div>
-                      <div style={{ fontSize:12, color:T.sub }}>IP: {a.ip} · {a.time}</div>
+              {ALERTS_FEED.length === 0
+                ? <div style={{ textAlign:"center", padding:40, color:T.sub, fontSize:14 }}>No fraud alerts at this time</div>
+                : ALERTS_FEED.map(a => (
+                  <div key={a.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 16px", borderRadius:10, background:lvlBg(a.level), border:`1px solid ${lvlColor(a.level)}22` }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                      <div style={{ width:10, height:10, borderRadius:"50%", background:lvlColor(a.level), animation:"pulse 2s infinite" }} />
+                      <div>
+                        <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{a.user} — {a.action}</div>
+                        <div style={{ fontSize:12, color:T.sub }}>IP: {a.ip} · {a.time}</div>
+                      </div>
                     </div>
+                    <span style={{ padding:"3px 10px", borderRadius:20, background:`${lvlColor(a.level)}18`, color:lvlColor(a.level), fontSize:11, fontWeight:700, textTransform:"capitalize" }}>{a.level}</span>
                   </div>
-                  <span style={{ padding:"3px 10px", borderRadius:20, background:`${lvlColor(a.level)}18`, color:lvlColor(a.level), fontSize:11, fontWeight:700, textTransform:"capitalize" }}>{a.level}</span>
-                </div>
-              ))}
+                ))
+              }
             </div>
           </div>
         )}
@@ -207,25 +189,28 @@ export default function AdminFraudDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {TOP_SUSPICIOUS.map(u => (
-                  <tr key={u.id}>
-                    <td style={{ padding:"12px", color:T.text, fontSize:13, fontWeight:600 }}>{u.name}</td>
-                    <td style={{ padding:"12px" }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                        <div style={{ width:60, height:6, borderRadius:3, background:T.input, overflow:"hidden" }}>
-                          <div style={{ height:"100%", width:`${u.score}%`, background:lvlColor(u.level), borderRadius:3 }} />
+                {TOP_SUSPICIOUS.length === 0
+                  ? <tr><td colSpan={6} style={{ textAlign:"center", padding:40, color:T.sub, fontSize:14 }}>No suspicious users detected</td></tr>
+                  : TOP_SUSPICIOUS.map(u => (
+                    <tr key={u.id}>
+                      <td style={{ padding:"12px", color:T.text, fontSize:13, fontWeight:600 }}>{u.name}</td>
+                      <td style={{ padding:"12px" }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                          <div style={{ width:60, height:6, borderRadius:3, background:T.input, overflow:"hidden" }}>
+                            <div style={{ height:"100%", width:`${u.score}%`, background:lvlColor(u.level), borderRadius:3 }} />
+                          </div>
+                          <span style={{ fontSize:13, color:lvlColor(u.level), fontWeight:700 }}>{u.score}</span>
                         </div>
-                        <span style={{ fontSize:13, color:lvlColor(u.level), fontWeight:700 }}>{u.score}</span>
-                      </div>
-                    </td>
-                    <td style={{ padding:"12px" }}><span style={{ padding:"3px 10px", borderRadius:20, background:lvlBg(u.level), color:lvlColor(u.level), fontSize:11, fontWeight:700, textTransform:"capitalize" }}>{u.level}</span></td>
-                    <td style={{ padding:"12px", color:T.sub, fontSize:13 }}>{u.flags} flags</td>
-                    <td style={{ padding:"12px", color:T.sub, fontSize:13 }}>{u.last}</td>
-                    <td style={{ padding:"12px" }}>
-                      <button style={{ padding:"5px 12px", borderRadius:7, border:`1px solid ${A1}`, background:"transparent", color:A1, fontSize:12, cursor:"pointer" }}>View</button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td style={{ padding:"12px" }}><span style={{ padding:"3px 10px", borderRadius:20, background:lvlBg(u.level), color:lvlColor(u.level), fontSize:11, fontWeight:700, textTransform:"capitalize" }}>{u.level}</span></td>
+                      <td style={{ padding:"12px", color:T.sub, fontSize:13 }}>{u.flags} flags</td>
+                      <td style={{ padding:"12px", color:T.sub, fontSize:13 }}>{u.last}</td>
+                      <td style={{ padding:"12px" }}>
+                        <button style={{ padding:"5px 12px", borderRadius:7, border:`1px solid ${A1}`, background:"transparent", color:A1, fontSize:12, cursor:"pointer" }}>View</button>
+                      </td>
+                    </tr>
+                  ))
+                }
               </tbody>
             </table>
           </div>
