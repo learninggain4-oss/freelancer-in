@@ -7,7 +7,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardTheme } from "@/hooks/use-dashboard-theme";
 import { isFunctionUnavailableError, readFunctionJson } from "@/lib/function-response";
-import { callEdgeFunction } from "@/lib/supabase-functions";
+import { callEdgeFunction, getToken } from "@/lib/supabase-functions";
 
 interface Props {
   mode: "create" | "verify";
@@ -73,10 +73,6 @@ const NUMPAD = [
   ["","0","⌫"],
 ];
 
-async function getToken() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token ?? "";
-}
 
 function getMpinErrorMessage(error: unknown, fallback = "M-Pin is not available right now. Please try again later.") {
   if (isFunctionUnavailableError(error)) return fallback;

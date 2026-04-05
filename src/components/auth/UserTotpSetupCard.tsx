@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { callEdgeFunction } from "@/lib/supabase-functions";
+import { callEdgeFunction, getToken } from "@/lib/supabase-functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +11,7 @@ import { ShieldCheck, ShieldOff, Loader2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 
 async function serverFetch(functionName: string, body?: object) {
-  const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token;
+  const token = await getToken();
   const res = await callEdgeFunction(functionName, { body, token });
   const data = await res.json();
   if (!res.ok || data?.error) throw new Error(data?.error || "Request failed");

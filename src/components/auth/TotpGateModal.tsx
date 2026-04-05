@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardTheme } from "@/hooks/use-dashboard-theme";
-import { callEdgeFunction } from "@/lib/supabase-functions";
+import { callEdgeFunction, getToken } from "@/lib/supabase-functions";
 
 interface Props {
   mode: "setup" | "verify";
@@ -43,15 +43,6 @@ const STEPS = [
   "Enter the 6-digit code shown in the app to confirm.",
 ];
 
-async function getToken(): Promise<string> {
-  // Try to get an active session; refresh if necessary
-  let { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) {
-    const { data } = await supabase.auth.refreshSession();
-    session = data.session;
-  }
-  return session?.access_token ?? "";
-}
 
 export default function TotpGateModal({ mode, theme, onVerified }: Props) {
   const [step, setStep]           = useState<"setup" | "verify">(mode);

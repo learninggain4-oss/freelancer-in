@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { callEdgeFunction } from "@/lib/supabase-functions";
+import { callEdgeFunction, getToken } from "@/lib/supabase-functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,16 +20,14 @@ const TH = {
 const APP_URL = typeof window !== "undefined" ? window.location.origin : "https://freelancer-india.lovable.app";
 
 async function callServer(body: object) {
-  const { data: { session } } = await supabase.auth.getSession();
-  const res = await callEdgeFunction("admin-invite", { method: "POST", body, token: session?.access_token ?? "" });
+  const res = await callEdgeFunction("admin-invite", { method: "POST", body, token: await getToken() });
   const data = await res.json();
   if (!res.ok || data?.error) throw new Error(data?.error || "Request failed");
   return data;
 }
 
 async function callUserMgmt(body: object) {
-  const { data: { session } } = await supabase.auth.getSession();
-  const res = await callEdgeFunction("admin-user-management", { method: "POST", body, token: session?.access_token ?? "" });
+  const res = await callEdgeFunction("admin-user-management", { method: "POST", body, token: await getToken() });
   const data = await res.json();
   if (!res.ok || data?.error) throw new Error(data?.error || "Request failed");
   return data;

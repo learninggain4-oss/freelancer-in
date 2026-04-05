@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { ShieldCheck, ChevronDown, ChevronUp, Eye, EyeOff, Check, RefreshCw, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardTheme } from "@/hooks/use-dashboard-theme";
-import { callEdgeFunction } from "@/lib/supabase-functions";
+import { callEdgeFunction, getToken } from "@/lib/supabase-functions";
 
 interface Props {
   theme: DashboardTheme;
@@ -91,8 +91,7 @@ export default function SecurityQuestionsModal({ theme, onDone }: Props) {
     setSubmitting(true);
     setGlobalError("");
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      const token = await getToken();
       if (!token) throw new Error("Session expired. Please log in again.");
 
       const res = await callEdgeFunction("security-questions-save", { body: { answers }, token });

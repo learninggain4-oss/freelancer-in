@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { callEdgeFunction } from "@/lib/supabase-functions";
+import { callEdgeFunction, getToken } from "@/lib/supabase-functions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,14 +31,6 @@ const TH = {
 
 const PAGE_SIZE = 15;
 
-async function getToken(): Promise<string> {
-  let { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) {
-    const { data } = await supabase.auth.refreshSession();
-    session = data.session;
-  }
-  return session?.access_token ?? "";
-}
 
 const AdminUsers = () => {
   const { theme, themeKey } = useDashboardTheme();

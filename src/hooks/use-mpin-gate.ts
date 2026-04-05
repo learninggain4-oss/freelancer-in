@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { isFunctionUnavailableError, readFunctionJson } from "@/lib/function-response";
-import { callEdgeFunction } from "@/lib/supabase-functions";
+import { callEdgeFunction, getToken } from "@/lib/supabase-functions";
 
 export type MpinGateMode = "checking" | "create" | "verify" | "done";
 
@@ -37,8 +37,7 @@ export function useMpinGate(_userType?: string) {
 
     (async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
+        const token = await getToken();
         if (!token) { if (!cancelled) setMode("create"); return; }
 
         const res = await callEdgeFunction("mpin-status", { token });

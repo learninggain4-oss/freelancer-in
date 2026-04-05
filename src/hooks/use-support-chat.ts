@@ -2,7 +2,7 @@ import { useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { callEdgeFunction } from "@/lib/supabase-functions";
+import { callEdgeFunction, getToken } from "@/lib/supabase-functions";
 
 export interface SupportReaction {
   id: string;
@@ -219,8 +219,7 @@ export const useSupportChat = (conversationId: string | undefined) => {
       );
 
       try {
-        const { data } = await supabase.auth.getSession();
-        const token = data.session?.access_token ?? "";
+        const token = await getToken();
         const res = await callEdgeFunction("support-delete-message", { method: "DELETE", body: { messageId }, token });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || "Delete failed");
@@ -242,8 +241,7 @@ export const useSupportChat = (conversationId: string | undefined) => {
       queryClient.setQueryData<SupportMessage[]>(QK, []);
 
       try {
-        const { data } = await supabase.auth.getSession();
-        const token = data.session?.access_token ?? "";
+        const token = await getToken();
         const res = await callEdgeFunction("support-clear-history", { method: "DELETE", body: { conversationId }, token });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || "Clear failed");

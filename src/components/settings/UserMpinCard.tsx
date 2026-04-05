@@ -7,11 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { KeyRound, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { isFunctionUnavailableError, readFunctionJson } from "@/lib/function-response";
-import { callEdgeFunction } from "@/lib/supabase-functions";
+import { callEdgeFunction, getToken } from "@/lib/supabase-functions";
 
 async function serverFetch<T>(functionName: string, body?: object): Promise<T> {
-  const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token;
+  const token = await getToken();
   const res = await callEdgeFunction(functionName, { body, token });
   return readFunctionJson<T>(res, "M-Pin is not available right now.");
 }
