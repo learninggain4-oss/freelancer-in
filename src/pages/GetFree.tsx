@@ -30,6 +30,7 @@ const GetFree = () => {
   const [referralStats, setReferralStats] = useState({ total: 0, signupPaid: 0, jobPaid: 0 });
   const [referralHistory, setReferralHistory] = useState<ReferralEntry[]>([]);
   const [terms, setTerms] = useState("");
+  const [shareMsg, setShareMsg] = useState("Join Freelancer as a {role} using my referral code: {code}\nSign up at {link}");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,7 +39,7 @@ const GetFree = () => {
       const [profRes, historyRes, settingsRes] = await Promise.all([
         supabase.from("profiles").select("referral_code").eq("id", profile.id).single(),
         supabase.rpc("get_referral_history"),
-        supabase.from("app_settings").select("key, value").in("key", ["referral_terms_conditions"]),
+        supabase.from("app_settings").select("key, value").in("key", ["referral_terms_conditions", "referral_share_message"]),
       ]);
       if (profRes.data) setReferralCode((profRes.data as any).referral_code || "");
       if (historyRes.data) {
@@ -47,7 +48,10 @@ const GetFree = () => {
         setReferralStats({ total: arr.length, signupPaid: arr.filter((r) => r.signup_bonus_paid).length, jobPaid: arr.filter((r) => r.job_bonus_paid).length });
       }
       if (settingsRes.data) {
-        for (const s of settingsRes.data) { if (s.key === "referral_terms_conditions") setTerms(s.value); }
+        for (const s of settingsRes.data) {
+          if (s.key === "referral_terms_conditions") setTerms(s.value);
+          if (s.key === "referral_share_message") setShareMsg(s.value.replace(/\\n/g, "\n"));
+        }
       }
       setLoading(false);
     };
@@ -66,7 +70,10 @@ const GetFree = () => {
   const handleShare = async (type: "freelancer" | "employer") => {
     const label = type === "freelancer" ? "Freelancer" : "Employer";
     const link = `${window.location.origin}/register/${type}?ref=${referralCode}`;
-    const text = `Join Freelancer as a ${label} using my referral code: ${referralCode}\nSign up at ${link}`;
+    const text = shareMsg
+      .replace(/\{role\}/gi, label)
+      .replace(/\{code\}/gi, referralCode)
+      .replace(/\{link\}/gi, link);
     if (navigator.share) {
       try { await navigator.share({ title: `Join Freelancer as ${label}`, text }); } catch {}
     } else { handleCopy(); }

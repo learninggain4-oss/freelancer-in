@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Clock, Landmark, Gift, CreditCard, Search, X, Coins, CheckCircle, Briefcase, Calendar, Star, Users, Receipt, Settings, Globe } from "lucide-react";
+import { Loader2, Save, Clock, Landmark, Gift, CreditCard, Search, X, Coins, CheckCircle, Briefcase, Calendar, Star, Users, Receipt, Settings, Globe, Share2 } from "lucide-react";
 import TotpSetupCard from "@/components/admin/TotpSetupCard";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +37,7 @@ const AdminSettings = () => {
   const [signupBonus, setSignupBonus] = useState("");
   const [jobBonus, setJobBonus] = useState("");
   const [referralTerms, setReferralTerms] = useState("");
+  const [referralShareMsg, setReferralShareMsg] = useState("Join Freelancer as a {role} using my referral code: {code}\nSign up at {link}");
   const [coinRate, setCoinRate] = useState("");
   const [minCoinConversion, setMinCoinConversion] = useState("");
   const [rewardCompleteProfile, setRewardCompleteProfile] = useState("");
@@ -95,6 +96,7 @@ const AdminSettings = () => {
           "referral_signup_bonus",
           "referral_job_bonus",
           "referral_terms_conditions",
+          "referral_share_message",
           "employee_code_prefix",
           "client_code_prefix",
           "employee_code_digits",
@@ -128,6 +130,7 @@ const AdminSettings = () => {
           if (row.key === "referral_signup_bonus") setSignupBonus(row.value);
           if (row.key === "referral_job_bonus") setJobBonus(row.value);
           if (row.key === "referral_terms_conditions") setReferralTerms(row.value.replace(/\\n/g, "\n"));
+          if (row.key === "referral_share_message") setReferralShareMsg(row.value.replace(/\\n/g, "\n"));
           if (row.key === "employee_code_prefix") setEmpPrefix(row.value);
           if (row.key === "client_code_prefix") setCltPrefix(row.value);
           if (row.key === "employee_code_digits") setEmpDigits(row.value);
@@ -542,6 +545,40 @@ const AdminSettings = () => {
             >
               {saving === "referral_terms_conditions" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Save Terms
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Referral Share Message */}
+        <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+          <CardHeader className="pb-3 border-b" style={{ borderColor: T.border }}>
+            <CardTitle className="flex items-center gap-2 text-lg" style={{ color: T.text }}>
+              <Share2 className="h-5 w-5 text-[#6366f1]" />
+              Referral Share Message
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-4">
+            <p className="text-sm" style={{ color: T.sub }}>
+              This message is sent when a user shares their referral link. Use placeholders:
+              <span className="font-mono text-xs ml-1 px-1 py-0.5 rounded" style={{ background: "rgba(99,102,241,0.15)", color: "#a5b4fc" }}>{"{role}"}</span>,{" "}
+              <span className="font-mono text-xs px-1 py-0.5 rounded" style={{ background: "rgba(99,102,241,0.15)", color: "#a5b4fc" }}>{"{code}"}</span>,{" "}
+              <span className="font-mono text-xs px-1 py-0.5 rounded" style={{ background: "rgba(99,102,241,0.15)", color: "#a5b4fc" }}>{"{link}"}</span>
+            </p>
+            <Textarea
+              rows={4}
+              value={referralShareMsg}
+              onChange={(e) => setReferralShareMsg(e.target.value)}
+              placeholder="Join Freelancer as a {role} using my referral code: {code}&#10;Sign up at {link}"
+              style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+              className="resize-none font-mono text-sm"
+            />
+            <Button
+              onClick={() => handleSaveText("referral_share_message", referralShareMsg, "Referral share message")}
+              disabled={saving === "referral_share_message"}
+              className="gap-2 bg-[#6366f1] hover:bg-[#6366f1]/90 text-white w-full sm:w-auto"
+            >
+              {saving === "referral_share_message" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save Message
             </Button>
           </CardContent>
         </Card>
