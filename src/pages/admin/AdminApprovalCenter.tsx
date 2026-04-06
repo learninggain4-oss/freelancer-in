@@ -29,7 +29,9 @@ interface RecoveryAccount {
   isActive: boolean; lastUsed?: string; createdAt: string;
 }
 
-,
+function seedApprovals(): ApprovalRequest[] {
+  return [
+    { id: "a1", action: "Delete User Account (ID: DEMO)", requestedBy: "Admin A", target: "User DEMO", category: "User Management", risk: "critical", status: "pending", reason: "Repeated policy violations", requestedAt: new Date(Date.now() - 3600000).toISOString() },
     { id: "a2", action: "Approve Withdrawal ₹85,000 (User: DEMO)", requestedBy: "Admin B", target: "Wallet #W-0042", category: "Financial", risk: "high", status: "pending", reason: "High-value withdrawal flagged for dual approval", requestedAt: new Date(Date.now() - 7200000).toISOString() },
     { id: "a3", action: "Grant Admin Role to freeandin@gmail.com", requestedBy: "Admin A", target: "freeandin@gmail.com", category: "Security", risk: "critical", status: "approved", reason: "New super admin required for operations", requestedAt: new Date(Date.now() - 86400000).toISOString(), resolvedAt: new Date(Date.now() - 82800000).toISOString(), resolvedBy: "Super Admin" },
     { id: "a4", action: "Export Full User Database (CSV)", requestedBy: "Admin C", target: "profiles table", category: "System", risk: "high", status: "pending", reason: "Compliance audit requirement", requestedAt: new Date(Date.now() - 1800000).toISOString() },
@@ -37,7 +39,9 @@ interface RecoveryAccount {
   ];
 }
 
-,
+function seedRecoveryAccounts(): RecoveryAccount[] {
+  return [
+    { id: "r1", name: "Super Admin", email: "admin@freelancer.in", role: "super_admin", isActive: true, lastUsed: new Date(Date.now() - 864e5 * 2).toISOString(), createdAt: new Date(Date.now() - 864e5 * 30).toISOString() },
     { id: "r2", name: "Emergency Recovery", email: "recovery@freelancer.in", role: "emergency", isActive: true, createdAt: new Date(Date.now() - 864e5 * 15).toISOString() },
   ];
 }
