@@ -326,6 +326,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
   const [searchQ, setSearchQ]         = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
   const [appLogoUrl, setAppLogoUrl]   = useState<string | null>(null);
+  const [appName, setAppName]         = useState("Freelancer India");
   const { theme, setTheme } = useDashboardTheme();
   const { signOut, user, profile } = useAuth();
   const navigate = useNavigate();
@@ -418,8 +419,14 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
     : [];
 
   useEffect(() => {
-    supabase.from("app_settings").select("value").eq("key", "app_logo_url").maybeSingle()
-      .then(({ data }) => { if (data?.value) setAppLogoUrl(data.value); });
+    supabase.from("app_settings").select("key, value").in("key", ["app_logo_url", "app_name"])
+      .then(({ data }) => {
+        if (!data) return;
+        const logo = data.find(r => r.key === "app_logo_url");
+        const name = data.find(r => r.key === "app_name");
+        if (logo?.value) setAppLogoUrl(logo.value);
+        if (name?.value) setAppName(name.value);
+      });
   }, []);
 
   useEffect(() => {
@@ -472,7 +479,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
             </div>
             <div className="hidden sm:block">
               <p style={{ fontWeight: 800, fontSize: 15, color: tok.logo, lineHeight: 1.1, letterSpacing: "-0.3px", margin: 0 }}>
-                Freelancer<span style={{ color: A1 }}>.</span>in
+                {appName}
               </p>
               <p style={{ fontSize: 8.5, color: tok.logoSub, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, margin: 0 }}>
                 {userType === "employee" ? "Freelancer Portal" : "Employer Portal"}

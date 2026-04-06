@@ -325,6 +325,7 @@ const AdminLayout = () => {
   const [lang, setLang]                     = useState("en");
   const [openNavGroup, setOpenNavGroup]     = useState<string | null>(null);
   const [appLogoUrl, setAppLogoUrl]         = useState<string | null>(null);
+  const [appName, setAppName]               = useState("Freelancer India");
 
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
@@ -390,8 +391,14 @@ const AdminLayout = () => {
   }, []);
 
   useEffect(() => {
-    supabase.from("app_settings").select("value").eq("key", "app_logo_url").maybeSingle()
-      .then(({ data }) => { if (data?.value) setAppLogoUrl(data.value); });
+    supabase.from("app_settings").select("key, value").in("key", ["app_logo_url", "app_name"])
+      .then(({ data }) => {
+        if (!data) return;
+        const logo = data.find(r => r.key === "app_logo_url");
+        const name = data.find(r => r.key === "app_name");
+        if (logo?.value) setAppLogoUrl(logo.value);
+        if (name?.value) setAppName(name.value);
+      });
   }, []);
 
   const { data: pendingRecoveryCount = 0 } = useQuery({
@@ -471,7 +478,7 @@ const AdminLayout = () => {
               : <ShieldCheck size={16} color="white" />}
           </div>
           <div className="hidden sm:block">
-            <p style={{ fontWeight: 800, fontSize: 13, color: tok.mainText, lineHeight: 1.2, margin: 0 }}>Freelancer India</p>
+            <p style={{ fontWeight: 800, fontSize: 13, color: tok.mainText, lineHeight: 1.2, margin: 0 }}>{appName}</p>
             <p style={{ fontSize: 9, color: tok.mainSub, fontWeight: 600, margin: 0, textTransform: "uppercase", letterSpacing: 1 }}>Super Admin</p>
           </div>
         </div>
@@ -837,7 +844,7 @@ const AdminLayout = () => {
         <footer style={{ background: tok.footerBg, borderTop: `1px solid ${tok.footerBdr}`, padding: "8px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, backdropFilter: "blur(12px)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <span style={{ fontSize: 11, color: tok.mainSub, fontWeight: 600 }}>{VER}</span>
-            <span style={{ fontSize: 11, color: tok.mainSub }}>© {new Date().getFullYear()} Freelancer India</span>
+            <span style={{ fontSize: 11, color: tok.mainSub }}>© {new Date().getFullYear()} {appName}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
