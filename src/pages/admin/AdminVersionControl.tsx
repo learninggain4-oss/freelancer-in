@@ -29,6 +29,10 @@ interface ChangeLog {
 
 interface PreDeployCheck { id: string; label: string; status: "pass" | "fail" | "pending" | "skipped"; }
 
+const DEPLOY_KEY = "admin_vc_deployments_v1";
+const STAGING_KEY = "admin_vc_staging_v1";
+const CHECKS_KEY = "admin_vc_checks_v1";
+
 function load<T>(key: string, seed: () => T[]): T[] {
   try { const d = localStorage.getItem(key); if (d) return JSON.parse(d); } catch { /* */ }
   const s = seed(); localStorage.setItem(key, JSON.stringify(s)); return s;

@@ -15,7 +15,7 @@ function loadArr<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);
 
 export default function AdminSessionStorage(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[stats,setStats]=useState([]);
+  const[stats,setStats]=useState<SessionStats>({activeSessions:0,maxSessions:500,expiredLast1h:0,avgSessionMins:12,overflowRisk:false,storageUsedMB:0,storageLimitMB:100});
   const[sessions,setSessions]=useState([]);
   const[cleaning,setCleaning]=useState(false);
   const[expiryMins,setExpiryMins]=useState(30);

@@ -48,8 +48,8 @@ export default function AdminIPDeviceMonitor() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("site_visitors")
-        .select("id, ip_address, profile_id, created_at, user_agent, path")
-        .order("created_at", { ascending: false })
+        .select("id, ip_address, profile_id, visited_at, user_agent, page_path")
+        .order("visited_at", { ascending: false })
         .limit(200);
       if (error) throw error;
       return data || [];
@@ -72,7 +72,7 @@ export default function AdminIPDeviceMonitor() {
   }));
 
   const uniqueIPs = [...new Map(visitors.map((v: { ip_address: string | null }) => [v.ip_address, v])).values()].filter(v => v.ip_address);
-  const visitorsAsIPs: IPRecord[] = uniqueIPs.slice(0, 50).map((v: { id: string; ip_address: string | null; created_at: string; user_agent: string | null }) => {
+  const visitorsAsIPs: IPRecord[] = uniqueIPs.slice(0, 50).map((v: { id: string; ip_address: string | null; visited_at: string; user_agent: string | null }) => {
     const isBlocked = blockedIps.some((b: { ip_address: string }) => b.ip_address === v.ip_address);
     return {
       id: v.id,
@@ -84,14 +84,14 @@ export default function AdminIPDeviceMonitor() {
       proxy: false,
       failedLogins: 0,
       status: isBlocked ? "blocked" : "clean",
-      lastSeen: timeAgo(v.created_at),
+      lastSeen: timeAgo(v.visited_at),
       locations: ["India"],
     };
   });
 
   const allIPs = [...ipRecords, ...visitorsAsIPs.filter(v => !ipRecords.some(b => b.ip === v.ip))];
 
-  const deviceRecords = visitors.filter((v: { user_agent: string | null }) => v.user_agent).slice(0, 50).map((v: { id: string; ip_address: string | null; user_agent: string | null; created_at: string }) => {
+  const deviceRecords = visitors.filter((v: { user_agent: string | null }) => v.user_agent).slice(0, 50).map((v: { id: string; ip_address: string | null; user_agent: string | null; visited_at: string }) => {
     const ua = v.user_agent || "";
     const isAndroid = ua.includes("Android");
     const isIOS = ua.includes("iPhone") || ua.includes("iPad");
@@ -105,7 +105,7 @@ export default function AdminIPDeviceMonitor() {
       os: isAndroid ? "Android" : isIOS ? "iOS" : "Windows",
       browser: isChrome ? "Chrome" : isFirefox ? "Firefox" : "Other",
       status: "clean",
-      lastSeen: timeAgo(v.created_at),
+      lastSeen: timeAgo(v.visited_at),
       logins: 1,
     };
   });
