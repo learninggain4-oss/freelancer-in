@@ -12,7 +12,7 @@ import {
   Award, Trophy, Eye, Scale, Receipt, Building, Layers as LayersIcon,
   UserCheck, FileCheck, AlertTriangle, Smartphone as SmartphoneIcon2,
 } from "lucide-react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
@@ -5084,6 +5084,7 @@ const FounderStorySection = () => (
 /* ─────────────────────── Main Page ─────────────────────── */
 const Index = () => {
   const { user, profile, loading } = useAuth();
+  const navigate = useNavigate();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -5427,9 +5428,9 @@ const Index = () => {
         <MobileAppScreensSection />
         <NeonDivider />
         <AppDownloadSection
-          onAndroidInstall={() => handleInstall("android")}
-          onIOSInstall={handleIOSInstall}
-          onWindowsInstall={() => handleInstall("windows")}
+          onAndroidInstall={() => navigate("/install")}
+          onIOSInstall={() => navigate("/install")}
+          onWindowsInstall={() => navigate("/install")}
         />
         <LiveSupportSection />
         <NeonDivider />
