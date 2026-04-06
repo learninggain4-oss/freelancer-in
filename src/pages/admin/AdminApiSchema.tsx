@@ -10,11 +10,17 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface ApiEndpoint{id:string;name:string;version:string;latestVersion:string;compatible:boolean;changeType:"none"|"minor"|"breaking";lastChecked:string;status:"ok"|"warning"|"breaking";}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const API_SCHEMA_KEY="admin_api_schema_v1";
+function seedEndpoints2():ApiEndpoint[]{return[
+  {id:"ep1",name:"GET /profiles",version:"v1",latestVersion:"v1",compatible:true,changeType:"none",lastChecked:new Date().toISOString(),status:"ok"},
+  {id:"ep2",name:"POST /projects",version:"v1",latestVersion:"v2",compatible:false,changeType:"minor",lastChecked:new Date().toISOString(),status:"warning"},
+  {id:"ep3",name:"DELETE /users/:id",version:"v1",latestVersion:"v1",compatible:true,changeType:"none",lastChecked:new Date().toISOString(),status:"ok"},
+];}
 const sColor={ok:"#4ade80",warning:"#fbbf24",breaking:"#f87171"};
 
 export default function AdminApiSchema(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[endpoints,setEndpoints]=useState([]);
+  const[endpoints,setEndpoints]=useState<ApiEndpoint[]>(()=>load(API_SCHEMA_KEY,seedEndpoints2));
   const[checking,setChecking]=useState(false);
 
   const checkAll=async()=>{

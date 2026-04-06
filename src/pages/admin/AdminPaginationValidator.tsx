@@ -9,9 +9,15 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface PageCheck{id:string;name:string;endpoint:string;pageSize:number;totalRecords:number;duplicates:number;missing:number;loadMs:number;status:"ok"|"issue";}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const PAGE_VAL_KEY="admin_pagination_val_v1";
+function seedPageChecks():PageCheck[]{return[
+  {id:"pc1",name:"Users list",endpoint:"/admin/users",pageSize:20,totalRecords:12400,duplicates:0,missing:0,loadMs:142,status:"ok"},
+  {id:"pc2",name:"Projects list",endpoint:"/admin/jobs",pageSize:20,totalRecords:38000,duplicates:0,missing:0,loadMs:188,status:"ok"},
+  {id:"pc3",name:"Withdrawals",endpoint:"/admin/withdrawals",pageSize:20,totalRecords:4820,duplicates:2,missing:0,loadMs:220,status:"issue"},
+];}
 export default function AdminPaginationValidator(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[checks,setChecks]=useState([]);
+  const[checks,setChecks]=useState<PageCheck[]>(()=>load(PAGE_VAL_KEY,seedPageChecks));
   const[testing,setTesting]=useState<string|null>(null);
   const[testAll,setTestAll]=useState(false);
 

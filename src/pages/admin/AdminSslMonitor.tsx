@@ -10,11 +10,17 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface Certificate{id:string;domain:string;issuer:string;expiresAt:string;autoRenew:boolean;httpsEnforced:boolean;status:"valid"|"expiring"|"expired";}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const SSL_KEY="admin_ssl_certs_v1";
+function seedCerts():Certificate[]{return[
+  {id:"sc1",domain:"www.freelan.space",issuer:"Let's Encrypt",expiresAt:new Date(Date.now()+864e5*75).toISOString(),autoRenew:true,httpsEnforced:true,status:"valid"},
+  {id:"sc2",domain:"freelan.space",issuer:"Let's Encrypt",expiresAt:new Date(Date.now()+864e5*75).toISOString(),autoRenew:true,httpsEnforced:true,status:"valid"},
+  {id:"sc3",domain:"api.freelan.space",issuer:"Let's Encrypt",expiresAt:new Date(Date.now()+864e5*25).toISOString(),autoRenew:true,httpsEnforced:true,status:"expiring"},
+];}
 const sColor={valid:"#4ade80",expiring:"#fbbf24",expired:"#f87171"};
 
 export default function AdminSslMonitor(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[certs,setCerts]=useState([]);
+  const[certs,setCerts]=useState<Certificate[]>(()=>load(SSL_KEY,seedCerts));
   const[renewing,setRenewing]=useState<string|null>(null);
 
   const renew=async(c:Certificate)=>{

@@ -15,7 +15,7 @@ export default function AdminAlertVisibility() {
   const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
 
-  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>(()=>load(ALERTS_KEY,seedAlerts2));
   const [activeTab, setActiveTab] = useState<"alerts"|"channels"|"escalation">("alerts");
 
   const acknowledge = (id: string) => setAlerts(prev => prev.map(a => a.id === id ? {...a, acknowledged:true} : a));

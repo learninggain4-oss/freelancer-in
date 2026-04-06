@@ -28,6 +28,12 @@ const generateSnapshot = (): ResourceSnapshot => ({
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
+const RES_ALERTS_KEY="admin_resource_alerts_v1";
+function seedResAlerts():Alert[]{return[
+  {id:"ra1",metric:"Memory",value:"91%",at:new Date(Date.now()-3600000).toISOString(),resolved:true},
+  {id:"ra2",metric:"CPU",value:"87%",at:new Date(Date.now()-7200000).toISOString(),resolved:true},
+  {id:"ra3",metric:"Disk",value:"95%",at:new Date(Date.now()-86400000).toISOString(),resolved:false},
+];}
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
 }
 
@@ -56,7 +62,7 @@ export default function AdminResourceMonitor() {
 
   const [snap, setSnap]     = useState<ResourceSnapshot>(generateSnapshot);
   const [history, setHistory] = useState<ResourceSnapshot[]>(()=>Array.from({length:10},(_,i)=>({...generateSnapshot(),timestamp:new Date(Date.now()-i*60000).toISOString()})));
-  const [alerts]            = useState<Alert[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>(()=>load(RES_ALERTS_KEY,seedResAlerts));
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab]       = useState<"live"|"history"|"alerts">("live");
 

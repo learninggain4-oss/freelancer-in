@@ -10,11 +10,18 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface Policy{id:string;name:string;regulation:string;version:string;status:"compliant"|"needs-review"|"non-compliant";lastReviewed:string;nextReview:string;consentRequired:boolean;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const COMPLIANCE_KEY="admin_compliance_v1";
+function seedPolicies2():Policy[]{return[
+  {id:"cp1",name:"GDPR Data Retention",regulation:"GDPR",version:"2.1",status:"compliant",lastReviewed:new Date(Date.now()-864e5*30).toISOString(),nextReview:new Date(Date.now()+864e5*60).toISOString(),consentRequired:true},
+  {id:"cp2",name:"IT Act 2000 Compliance",regulation:"India IT Act",version:"1.3",status:"compliant",lastReviewed:new Date(Date.now()-864e5*14).toISOString(),nextReview:new Date(Date.now()+864e5*76).toISOString(),consentRequired:false},
+  {id:"cp3",name:"PCI-DSS Payment Standards",regulation:"PCI-DSS",version:"4.0",status:"needs-review",lastReviewed:new Date(Date.now()-864e5*90).toISOString(),nextReview:new Date(Date.now()+864e5*5).toISOString(),consentRequired:false},
+  {id:"cp4",name:"Data Localization Policy",regulation:"India DPDP Act",version:"1.0",status:"non-compliant",lastReviewed:new Date(Date.now()-864e5*45).toISOString(),nextReview:new Date(Date.now()-864e5*5).toISOString(),consentRequired:true},
+];}
 const sColor={compliant:"#4ade80","needs-review":"#fbbf24","non-compliant":"#f87171"};
 
 export default function AdminComplianceManager(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[policies,setPolicies]=useState([]);
+  const[policies,setPolicies]=useState<Policy[]>(()=>load(COMPLIANCE_KEY,seedPolicies2));
   const[reviewing,setReviewing]=useState<string|null>(null);
 
   const markReviewed=async(id:string)=>{

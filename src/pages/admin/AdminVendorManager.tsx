@@ -41,6 +41,13 @@ const outageHistory: OutageEvent[] = [
 
 function load<T>(key:string, seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
+const VENDOR_KEY="admin_vendors_v1";
+function seedProviders():ServiceProvider[]{return[
+  {id:"vp1",category:"Database",primaryName:"Supabase",primaryStatus:"online",primaryLatency:45,backupName:"PlanetScale",backupStatus:"standby",isFailedOver:false,lastChecked:new Date(Date.now()-30000).toISOString(),failoverCount:0,exportable:true,migrationComplexity:"high"},
+  {id:"vp2",category:"Push Notifications",primaryName:"OneSignal",primaryStatus:"online",primaryLatency:220,backupName:"Firebase FCM",backupStatus:"standby",isFailedOver:false,lastChecked:new Date(Date.now()-60000).toISOString(),failoverCount:1,exportable:true,migrationComplexity:"medium"},
+  {id:"vp3",category:"Email",primaryName:"Gmail SMTP",primaryStatus:"online",primaryLatency:850,backupName:"SendGrid",backupStatus:"standby",isFailedOver:false,lastChecked:new Date(Date.now()-120000).toISOString(),failoverCount:0,exportable:false,migrationComplexity:"low"},
+  {id:"vp4",category:"Payments",primaryName:"Razorpay",primaryStatus:"degraded",primaryLatency:1240,backupName:"Cashfree",backupStatus:"online",isFailedOver:false,lastChecked:new Date(Date.now()-120000).toISOString(),failoverCount:3,exportable:true,migrationComplexity:"high"},
+];}
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
 }
 
@@ -55,7 +62,7 @@ export default function AdminVendorManager() {
   const { toast } = useToast();
 
   const [tab, setTab]       = useState<"providers"|"migration"|"outages">("providers");
-  const [providers, setProviders] = useState<ServiceProvider[]>([]);
+  const [providers, setProviders] = useState<ServiceProvider[]>(()=>load(VENDOR_KEY,seedProviders));
   const [checking, setChecking] = useState(false);
   const [confirmFailover, setConfirmFailover] = useState<ServiceProvider|null>(null);
   const [exportingId, setExportingId] = useState<string|null>(null);

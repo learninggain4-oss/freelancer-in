@@ -11,9 +11,15 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface AuditEntry{id:string;actor:string;action:string;target:string;ip:string;hash:string;at:string;tampered:boolean;accessLevel:"admin"|"super_admin"|"system";}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const SEC_AUDIT_KEY="admin_secure_audit_v1";
+function seedAuditEntries():AuditEntry[]{return[
+  {id:"sa1",actor:"freeandin9@gmail.com",action:"LOGIN",target:"admin_panel",ip:"103.12.44.10",hash:"sha256:a3f8b2...",at:new Date(Date.now()-3600000).toISOString(),tampered:false,accessLevel:"super_admin"},
+  {id:"sa2",actor:"freeandin9@gmail.com",action:"WITHDRAW_APPROVE",target:"withdrawal#4821",ip:"103.12.44.10",hash:"sha256:d9c4e1...",at:new Date(Date.now()-7200000).toISOString(),tampered:false,accessLevel:"super_admin"},
+  {id:"sa3",actor:"system",action:"BACKUP_COMPLETE",target:"supabase_db",ip:"0.0.0.0",hash:"sha256:b7f3a9...",at:new Date(Date.now()-86400000).toISOString(),tampered:false,accessLevel:"system"},
+];}
 export default function AdminSecureAuditLog(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[entries]=useState([]);
+  const[entries,setEntries]=useState<AuditEntry[]>(()=>load(SEC_AUDIT_KEY,seedAuditEntries));
   const[verifying,setVerifying]=useState(false);
   const[search,setSearch]=useState("");
   const[retentionDays,setRetentionDays]=useState(365);

@@ -17,13 +17,19 @@ interface Backup{id:string;name:string;type:"full"|"incremental"|"snapshot";size
 
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const BKVER_KEY="admin_backup_verify_v1";
+function seedBkVerify():Backup[]{return[
+  {id:"bv1",name:"Full Backup 2025-04-05",type:"full",sizeMB:4200,checksumOk:true,restoreTested:true,status:"verified",createdAt:new Date(Date.now()-86400000).toISOString(),verifiedAt:new Date(Date.now()-82800000).toISOString(),location:"supabase-storage/backups"},
+  {id:"bv2",name:"Incremental Backup 2025-04-06",type:"incremental",sizeMB:820,checksumOk:true,restoreTested:false,status:"unverified",createdAt:new Date(Date.now()-3600000).toISOString(),location:"supabase-storage/backups"},
+  {id:"bv3",name:"Config Snapshot",type:"snapshot",sizeMB:12,checksumOk:false,restoreTested:false,status:"corrupt",createdAt:new Date(Date.now()-172800000).toISOString(),location:"local"},
+];}
 const sColor={verified:"#4ade80",unverified:"#fbbf24",corrupt:"#f87171",testing:"#a5b4fc"};
 const tColor={full:A1,incremental:"#4ade80",snapshot:"#fbbf24"};
 
 export default function AdminBackupVerification(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[backups,setBackups]=useState<Backup[]>([]);
+  const[backups,setBackups]=useState<Backup[]>(()=>load(BKVER_KEY,seedBkVerify));
   const[verifying,setVerifying]=useState<string|null>(null);
   const[testing,setTesting]=useState<string|null>(null);
 

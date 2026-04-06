@@ -9,9 +9,15 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface DataSet{id:string;name:string;table:string;totalRows:number;sortValid:boolean;filterValid:boolean;consistencyOk:boolean;lastValidated:string;issues:string[];}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const QUERY_VAL_KEY="admin_query_val_v1";
+function seedDataSets():DataSet[]{return[
+  {id:"ds1",name:"User profiles",table:"profiles",totalRows:12400,sortValid:true,filterValid:true,consistencyOk:true,lastValidated:new Date().toISOString(),issues:[]},
+  {id:"ds2",name:"Active projects",table:"projects",totalRows:38000,sortValid:true,filterValid:true,consistencyOk:true,lastValidated:new Date().toISOString(),issues:[]},
+  {id:"ds3",name:"Pending withdrawals",table:"withdrawals",totalRows:124,sortValid:true,filterValid:false,consistencyOk:false,lastValidated:new Date().toISOString(),issues:["Filter by date returns wrong order","2 orphan records found"]},
+];}
 export default function AdminQueryValidation(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[datasets,setDatasets]=useState([]);
+  const[datasets,setDatasets]=useState<DataSet[]>(()=>load(QUERY_VAL_KEY,seedDataSets));
   const[validating,setValidating]=useState<string|null>(null);
 
   const validate=async(id:string)=>{

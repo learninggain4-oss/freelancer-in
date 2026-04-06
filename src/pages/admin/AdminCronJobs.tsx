@@ -10,11 +10,18 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface CronJob{id:string;name:string;schedule:string;priority:number;status:"running"|"paused"|"failed"|"idle";lastRun:string;nextRun:string;duration:number;retries:number;conflict:boolean;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const CRON_KEY="admin_cron_jobs_v1";
+function seedCrons():CronJob[]{return[
+  {id:"cj1",name:"Daily DB Backup",schedule:"0 2 * * *",priority:1,status:"idle",lastRun:new Date(Date.now()-86400000).toISOString(),nextRun:new Date(Date.now()+7200000).toISOString(),duration:340,retries:0,conflict:false},
+  {id:"cj2",name:"Send Weekly Digest",schedule:"0 9 * * 1",priority:2,status:"idle",lastRun:new Date(Date.now()-864e5*7).toISOString(),nextRun:new Date(Date.now()+864e5*5).toISOString(),duration:1200,retries:0,conflict:false},
+  {id:"cj3",name:"Clean Expired Sessions",schedule:"*/30 * * * *",priority:3,status:"running",lastRun:new Date(Date.now()-1800000).toISOString(),nextRun:new Date(Date.now()+1800000).toISOString(),duration:8,retries:0,conflict:false},
+  {id:"cj4",name:"Sync User Scores",schedule:"0 */4 * * *",priority:4,status:"failed",lastRun:new Date(Date.now()-14400000).toISOString(),nextRun:new Date(Date.now()+3600000).toISOString(),duration:0,retries:3,conflict:false},
+];}
 const sColor={running:"#4ade80",paused:"#94a3b8",failed:"#f87171",idle:"#a5b4fc"};
 
 export default function AdminCronJobs(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[jobs,setJobs]=useState([]);
+  const[jobs,setJobs]=useState<CronJob[]>(()=>load(CRON_KEY,seedCrons));
   const[running,setRunning]=useState<string|null>(null);
 
   const toggle=(j:CronJob)=>{

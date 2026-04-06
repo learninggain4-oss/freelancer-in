@@ -11,9 +11,15 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface DeleteGroup{id:string;table:string;count:number;oldestDeletedAt:string;retentionDays:number;safeToClean:boolean;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const SDELETE_KEY="admin_soft_delete_v1";
+function seedDelGroups():DeleteGroup[]{return[
+  {id:"sdg1",table:"profiles",count:124,oldestDeletedAt:new Date(Date.now()-864e5*30).toISOString(),retentionDays:30,safeToClean:true},
+  {id:"sdg2",table:"projects",count:87,oldestDeletedAt:new Date(Date.now()-864e5*60).toISOString(),retentionDays:30,safeToClean:true},
+  {id:"sdg3",table:"messages",count:4820,oldestDeletedAt:new Date(Date.now()-864e5*7).toISOString(),retentionDays:30,safeToClean:false},
+];}
 export default function AdminSoftDeleteCleanup(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[groups,setGroups]=useState([]);
+  const[groups,setGroups]=useState<DeleteGroup[]>(()=>load(SDELETE_KEY,seedDelGroups));
   const[cleaning,setCleaning]=useState<string|null>(null);
   const[cleaningAll,setCleaningAll]=useState(false);
 

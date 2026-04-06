@@ -19,12 +19,20 @@ interface RecoveryLog{id:string;admin:string;action:string;ip:string;at:string;s
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const LOCKOUT_KEY="admin_lockout_recovery_v1";const LOCKOUT_LOG_KEY="admin_lockout_log_v1";
+function seedLockouts():any[]{return[
+  {id:"lo1",user:"Rahul Kumar",email:"rahul@example.com",lockedAt:new Date(Date.now()-3600000).toISOString(),reason:"5 failed login attempts",status:"locked",attempts:5,ip:"103.12.44.10"},
+  {id:"lo2",user:"Priya Sharma",email:"priya@example.com",lockedAt:new Date(Date.now()-7200000).toISOString(),reason:"Suspicious device change",status:"unlocked",attempts:3,ip:"45.33.32.156"},
+];}
+function seedLockoutLogs():any[]{return[
+  {id:"ll1",user:"Priya Sharma",action:"unlocked",by:"freeandin9@gmail.com",at:new Date(Date.now()-7000000).toISOString(),reason:"User verified via phone"},
+];}
 export default function AdminLockoutRecovery(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"locked"|"logs">("locked");
-  const[locked,setLocked]=useState<LockedAdmin[]>([]);
-  const[logs]=useState<RecoveryLog[]>([]);
+  const[locked,setLocked]=useState<LockedAdmin[]>(()=>load(LOCKOUT_KEY,seedLockouts));
+  const[logs2,setLogs2]=useState<RecoveryLog[]>(()=>load(LOCKOUT_LOG_KEY,seedLockoutLogs));
   const[unlocking,setUnlocking]=useState<string|null>(null);
   const[sendingToken,setSendingToken]=useState<string|null>(null);
 

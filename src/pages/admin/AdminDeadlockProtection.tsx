@@ -17,14 +17,21 @@ interface LockEntry{id:string;table:string;query:string;pid:number;waitingMs:num
 interface DeadlockEvent{id:string;tables:string[];resolvedBy:string;durationMs:number;at:string;auto:boolean;}
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const LOCK_KEY="admin_locks_v1";const DEADLOCK_KEY="admin_deadlocks_v1";
+function seedLocks():LockEntry[]{return[
+  {id:"lk1",table:"profiles",type:"row",holder:"tx_4821",waitedBy:"tx_4822",durationMs:120,status:"active",detectedAt:new Date(Date.now()-60000).toISOString()},
+];}
+function seedDeadlocks():DeadlockEvent[]{return[
+  {id:"dl1",tables:["profiles","withdrawals"],transactions:["tx_4800","tx_4801"],resolvedBy:"auto-rollback",at:new Date(Date.now()-3600000).toISOString(),durationMs:450},
+];}
 const sColor={running:"#4ade80",waiting:"#fbbf24",deadlock:"#f87171",resolved:"#94a3b8"};
 
 export default function AdminDeadlockProtection(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"locks"|"history">("locks");
-  const[locks,setLocks]=useState<LockEntry[]>([]);
-  const[events]=useState<DeadlockEvent[]>([]);
+  const[locks,setLocks]=useState<LockEntry[]>(()=>load(LOCK_KEY,seedLocks));
+  const[events,setEvents]=useState<DeadlockEvent[]>(()=>load(DEADLOCK_KEY,seedDeadlocks));
   const[killing,setKilling]=useState<string|null>(null);
 
   const killLock=async(l:LockEntry)=>{

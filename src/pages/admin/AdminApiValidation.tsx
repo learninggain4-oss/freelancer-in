@@ -17,12 +17,18 @@ interface ApiEndpoint{id:string;name:string;method:string;path:string;version:st
 
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const API_VAL_KEY="admin_api_validation_v1";
+function seedApiVal():ApiEndpoint[]{return[
+  {id:"av1",name:"Get Profiles",method:"GET",path:"/rest/v1/profiles",version:"v1",schemaValid:true,avgResponseMs:45,errorRate:0.1,status:"healthy",lastValidated:new Date().toISOString()},
+  {id:"av2",name:"Create Project",method:"POST",path:"/rest/v1/projects",version:"v1",schemaValid:true,avgResponseMs:120,errorRate:0.5,status:"healthy",lastValidated:new Date().toISOString()},
+  {id:"av3",name:"Get Withdrawals",method:"GET",path:"/rest/v1/withdrawals",version:"v1",schemaValid:false,avgResponseMs:88,errorRate:2.1,status:"mismatch",lastValidated:new Date().toISOString(),mismatchDetail:"requested_at field type changed"},
+];}
 const sColor={healthy:"#4ade80",mismatch:"#fbbf24",error:"#f87171"};
 
 export default function AdminApiValidation(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[apis,setApis]=useState<ApiEndpoint[]>([]);
+  const[apis,setApis]=useState<ApiEndpoint[]>(()=>load(API_VAL_KEY,seedApiVal));
   const[validating,setValidating]=useState<string|null>(null);
 
   const validate=async(a:ApiEndpoint)=>{

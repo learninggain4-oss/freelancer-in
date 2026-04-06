@@ -17,12 +17,18 @@ interface SyncJob{id:string;name:string;source:string;target:string;intervalMins
 
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const DSYNC_KEY="admin_data_sync_v1";
+function seedSyncJobs():SyncJob[]{return[
+  {id:"dj1",name:"Profiles Sync",source:"local_cache",target:"supabase",intervalMins:30,lastSyncAt:new Date(Date.now()-1800000).toISOString(),nextSyncAt:new Date(Date.now()+1800000).toISOString(),status:"synced",delayMins:0,rowsSync:12400,errors:0},
+  {id:"dj2",name:"Withdrawals Sync",source:"payment_gateway",target:"supabase",intervalMins:15,lastSyncAt:new Date(Date.now()-900000).toISOString(),nextSyncAt:new Date(Date.now()+900000).toISOString(),status:"synced",delayMins:0,rowsSync:4820,errors:0},
+  {id:"dj3",name:"Analytics Rollup",source:"events_raw",target:"analytics_db",intervalMins:60,lastSyncAt:new Date(Date.now()-7200000).toISOString(),nextSyncAt:new Date(Date.now()-3600000).toISOString(),status:"delayed",delayMins:60,rowsSync:88000,errors:2},
+];}
 const sColor={synced:"#4ade80",syncing:"#a5b4fc",delayed:"#fbbf24",error:"#f87171"};
 
 export default function AdminDataSync(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[jobs,setJobs]=useState<SyncJob[]>([]);
+  const[jobs,setJobs]=useState<SyncJob[]>(()=>load(DSYNC_KEY,seedSyncJobs));
   const[syncing,setSyncing]=useState<string|null>(null);
 
   const forceSync=async(j:SyncJob)=>{

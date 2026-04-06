@@ -11,10 +11,16 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface MaintLog{id:string;action:string;by:string;at:string;duration:number;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const MAINT_MODE_KEY="admin_maintenance_mode_v1";
+function seedMaintEvents():any[]{return[
+  {id:"me1",title:"Database Migration",startedAt:new Date(Date.now()-864e5*14).toISOString(),endedAt:new Date(Date.now()-864e5*14+3600000).toISOString(),triggeredBy:"freeandin9@gmail.com",reason:"Schema update"},
+];}
 export default function AdminMaintenanceMode(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[enabled,setEnabled]=useState(false);
-  const[logs,setLogs]=useState([]);
+  const[logs,setLogs]=useState<any[]>(()=>load(MAINT_MODE_KEY,()=>[
+  {id:"ml1",title:"Database Migration",startedAt:new Date(Date.now()-864e5*14).toISOString(),endedAt:new Date(Date.now()-864e5*14+3600000).toISOString(),triggeredBy:"freeandin9@gmail.com",reason:"Schema update"},
+]));
   const[toggling,setToggling]=useState(false);
   const[banner,setBanner]=useState("System maintenance in progress. We'll be back soon.");
   const[scheduledAt,setScheduledAt]=useState("");

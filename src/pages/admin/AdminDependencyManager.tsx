@@ -10,9 +10,17 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface Dependency{id:string;name:string;current:string;latest:string;type:"runtime"|"dev"|"peer";compatible:boolean;hasConflict:boolean;breakingChange:boolean;updateApproved:boolean;lastChecked:string;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const DEPS_KEY="admin_dependencies_v1";
+function seedDeps2():any[]{return[
+  {id:"dep1",name:"@supabase/supabase-js",current:"2.39.0",latest:"2.39.3",type:"prod",hasConflict:false,securityAlert:false,lastChecked:new Date().toISOString()},
+  {id:"dep2",name:"react",current:"18.2.0",latest:"18.3.1",type:"prod",hasConflict:false,securityAlert:false,lastChecked:new Date().toISOString()},
+  {id:"dep3",name:"date-fns",current:"3.3.1",latest:"3.6.0",type:"prod",hasConflict:false,securityAlert:false,lastChecked:new Date().toISOString()},
+  {id:"dep4",name:"vite",current:"5.0.8",latest:"5.2.0",type:"dev",hasConflict:false,securityAlert:false,lastChecked:new Date().toISOString()},
+  {id:"dep5",name:"ws",current:"8.14.0",latest:"8.17.1",type:"prod",hasConflict:false,securityAlert:true,lastChecked:new Date().toISOString()},
+];}
 export default function AdminDependencyManager(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[deps,setDeps]=useState([]);
+  const[deps,setDeps]=useState<any[]>(()=>load(DEPS_KEY,seedDeps2));
   const[checking,setChecking]=useState(false);
   const[approving,setApproving]=useState<string|null>(null);
 

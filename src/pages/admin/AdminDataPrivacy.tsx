@@ -66,10 +66,10 @@ export default function AdminDataPrivacy() {
   const { toast } = useToast();
 
   const [tab, setTab] = useState<"masking" | "retention" | "access" | "exports">("masking");
-  const [maskRules, setMaskRules] = useState<MaskRule[]>([]);
-  const [retention, setRetention] = useState<RetentionPolicy[]>([]);
-  const [accessLog] = useState<AccessLog[]>([]);
-  const [exports, setExports] = useState<ExportRequest[]>([]);
+  const [maskRules, setMaskRules] = useState<MaskRule[]>(() => load(MASKING_KEY, defaultMaskRules));
+  const [retention, setRetention] = useState<RetentionPolicy[]>(() => load(RETENTION_KEY, defaultRetention));
+  const [accessLog, setAccessLog] = useState<AccessLog[]>(() => load("admin_dp_access_log_v1", defaultAccessLog));
+  const [exports, setExports] = useState<ExportRequest[]>(() => load(EXPORT_KEY, defaultExports));
   const [editRetId, setEditRetId] = useState<string | null>(null);
   const [editDays, setEditDays] = useState(365);
 

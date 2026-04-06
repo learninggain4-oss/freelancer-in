@@ -10,11 +10,17 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface EncKey{id:string;name:string;purpose:string;algorithm:string;createdAt:string;expiresAt:string;status:"active"|"expiring"|"expired"|"rotated";rotationDays:number;lastUsed:string;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const ENC_KEY="admin_encryption_keys_v1";
+function seedKeys2():any[]{return[
+  {id:"ek1",name:"DB Master Key",algorithm:"AES-256-GCM",createdAt:new Date(Date.now()-864e5*90).toISOString(),expiresAt:new Date(Date.now()+864e5*275).toISOString(),status:"active",usedFor:"Database encryption",lastRotated:new Date(Date.now()-864e5*90).toISOString()},
+  {id:"ek2",name:"File Storage Key",algorithm:"AES-256-GCM",createdAt:new Date(Date.now()-864e5*60).toISOString(),expiresAt:new Date(Date.now()+864e5*305).toISOString(),status:"active",usedFor:"Uploaded files",lastRotated:new Date(Date.now()-864e5*60).toISOString()},
+  {id:"ek3",name:"Session Signing Key",algorithm:"HMAC-SHA256",createdAt:new Date(Date.now()-864e5*120).toISOString(),expiresAt:new Date(Date.now()-864e5*5).toISOString(),status:"expired",usedFor:"JWT tokens",lastRotated:new Date(Date.now()-864e5*120).toISOString()},
+];}
 const sColor={active:"#4ade80",expiring:"#fbbf24",expired:"#f87171",rotated:"#a5b4fc"};
 
 export default function AdminEncryptionKeys(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[keys,setKeys]=useState([]);
+  const[keys,setKeys]=useState<any[]>(()=>load(ENC_KEY,seedKeys2));
   const[rotating,setRotating]=useState<string|null>(null);
 
   const rotate=async(k:EncKey)=>{

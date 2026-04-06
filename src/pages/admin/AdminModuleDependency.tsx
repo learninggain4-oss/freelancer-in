@@ -9,9 +9,15 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface Module{id:string;name:string;version:string;deps:string[];reverseDeps:string[];issues:string[];healthy:boolean;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const MOD_DEP_KEY="admin_module_deps_v1";
+function seedModDeps():any[]{return[
+  {id:"md1",module:"Payment Gateway",dependsOn:["Supabase","Email Service"],status:"healthy",lastChecked:new Date().toISOString()},
+  {id:"md2",module:"Push Notifications",dependsOn:["OneSignal API"],status:"healthy",lastChecked:new Date().toISOString()},
+  {id:"md3",module:"KYC Verification",dependsOn:["File Storage","Email Service"],status:"degraded",lastChecked:new Date().toISOString()},
+];}
 export default function AdminModuleDependency(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[modules,setModules]=useState([]);
+  const[modules,setModules]=useState<any[]>(()=>load(MOD_DEP_KEY,seedModDeps));
   const[scanning,setScanning]=useState(false);
 
   const scan=async()=>{

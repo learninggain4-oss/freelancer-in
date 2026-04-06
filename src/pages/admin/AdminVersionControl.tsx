@@ -35,6 +35,22 @@ const CHECKS_KEY = "admin_vc_checks_v1";
 
 function load<T>(key: string, seed: () => T[]): T[] {
   try { const d = localStorage.getItem(key); if (d) return JSON.parse(d); } catch { /* */ }
+const CHANGELOG_KEY="admin_vc_changelog_v1";
+function seedDeployments():Deployment[]{return[
+  {id:"dep1",version:"v2.4.1",type:"patch",description:"Fix Clear Data table names",deployedBy:"freeandin9@gmail.com",deployedAt:new Date(Date.now()-3600000).toISOString(),status:"live",rollbackAvailable:true,tests:4,passed:4},
+  {id:"dep2",version:"v2.4.0",type:"minor",description:"Add per-record Clear Data checkboxes",deployedBy:"freeandin9@gmail.com",deployedAt:new Date(Date.now()-86400000).toISOString(),status:"live",rollbackAvailable:true,tests:6,passed:6},
+  {id:"dep3",version:"v2.3.0",type:"minor",description:"Connect fraud pages to Supabase",deployedBy:"freeandin9@gmail.com",deployedAt:new Date(Date.now()-864e5*7).toISOString(),status:"live",rollbackAvailable:false,tests:5,passed:5},
+];}
+function seedChangelog():ChangeLog[]{return[
+  {id:"cl1",version:"v2.4.1",type:"patch",title:"Build error fixes",author:"freeandin9@gmail.com",date:new Date(Date.now()-3600000).toISOString(),breaking:false},
+  {id:"cl2",version:"v2.4.0",type:"minor",title:"Clear Data per-record selection",author:"freeandin9@gmail.com",date:new Date(Date.now()-86400000).toISOString(),breaking:false},
+];}
+function seedChecks():PreDeployCheck[]{return[
+  {id:"c1",label:"Build passes",status:"pass"},
+  {id:"c2",label:"No TypeScript errors",status:"pass"},
+  {id:"c3",label:"Supabase connectivity",status:"pass"},
+  {id:"c4",label:"Admin auth working",status:"pass"},
+];}
   const s = seed(); localStorage.setItem(key, JSON.stringify(s)); return s;
 }
 
@@ -49,9 +65,9 @@ export default function AdminVersionControl() {
   const { toast } = useToast();
 
   const [tab, setTab]         = useState<"deployments" | "changelog" | "checks">("deployments");
-  const [deployments, setDeployments] = useState<Deployment[]>([]);
-  const [changelog]           = useState<ChangeLog[]>([]);
-  const [checks, setChecks]   = useState<PreDeployCheck[]>([]);
+  const [deployments, setDeployments] = useState<Deployment[]>(()=>load(DEPLOY_KEY,seedDeployments));
+  const [changelog, setChangelog]     = useState<ChangeLog[]>(()=>load(CHANGELOG_KEY,seedChangelog));
+  const [checks, setChecks]   = useState<PreDeployCheck[]>(()=>load(CHECKS_KEY,seedChecks));
   const [stagingMode, setStagingMode] = useState(() => localStorage.getItem(STAGING_KEY) === "true");
   const [confirmRollback, setConfirmRollback] = useState<Deployment | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);

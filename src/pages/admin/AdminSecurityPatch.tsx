@@ -17,6 +17,15 @@ interface Vulnerability{id:string;component:string;cve:string;severity:"critical
 
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const PATCH_KEY="admin_patches_v1";const VULN_KEY="admin_vulns_v1";
+function seedPatches():Patch[]{return[
+  {id:"p1",name:"Node.js Security Update",version:"20.12.1",severity:"high",status:"applied",description:"Fix for HTTP/2 DoS vulnerability",appliedAt:new Date(Date.now()-86400000).toISOString(),autoApply:true},
+  {id:"p2",name:"npm audit fix",version:"latest",severity:"medium",status:"pending",description:"Fix moderate vulnerabilities in ws package",autoApply:false},
+  {id:"p3",name:"Database SSL Certificate Renewal",version:"2025-v2",severity:"critical",status:"scheduled",description:"Renew SSL certificate before expiry",scheduledFor:new Date(Date.now()+864e5*7).toISOString(),autoApply:false},
+];}
+function seedVulns():Vulnerability[]{return[
+  {id:"v1",component:"ws",cve:"CVE-2024-37890",severity:"medium",description:"DoS vulnerability in WebSocket library",fixAvailable:true},
+];}
 const sColor={critical:"#f87171",high:"#fb923c",medium:"#fbbf24",low:"#94a3b8"};
 const pColor={pending:"#fbbf24",scheduled:"#a5b4fc",applying:"#6366f1",applied:"#4ade80",failed:"#f87171"};
 
@@ -24,8 +33,8 @@ export default function AdminSecurityPatch(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"patches"|"vulns">("patches");
-  const[patches,setPatches]=useState<Patch[]>([]);
-  const[vulns]=useState<Vulnerability[]>([]);
+  const[patches,setPatches]=useState<Patch[]>(()=>load(PATCH_KEY,seedPatches));
+  const[vulns,setVulns]=useState<Vulnerability[]>(()=>load(VULN_KEY,seedVulns));
   const[applying,setApplying]=useState<string|null>(null);
 
   const applyPatch=async(p:Patch)=>{

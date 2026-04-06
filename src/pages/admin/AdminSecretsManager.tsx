@@ -20,6 +20,16 @@ interface SecretLog { id:string; secretName:string; action:string; actor:string;
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
+const SECRETS_KEY="admin_secrets_v1";const SLOGS_KEY="admin_secret_logs_v1";
+function seedSecrets():Secret[]{return[
+  {id:"s1",name:"SUPABASE_SERVICE_ROLE_KEY",service:"supabase",sensitivity:"critical",maskedValue:"eyJhbG••••YWRt",lastRotated:new Date(Date.now()-864e5*30).toISOString(),expiresIn:335,status:"active",accessCount:842,lastAccessed:new Date(Date.now()-3600000).toISOString(),inLogs:false},
+  {id:"s2",name:"GITHUB_TOKEN",service:"github",sensitivity:"high",maskedValue:"ghp_••••Xk9P",lastRotated:new Date(Date.now()-864e5*60).toISOString(),expiresIn:305,status:"active",accessCount:122,lastAccessed:new Date(Date.now()-86400000).toISOString(),inLogs:false},
+  {id:"s3",name:"ONESIGNAL_REST_KEY",service:"onesignal",sensitivity:"medium",maskedValue:"NDk3••••abc",lastRotated:new Date(Date.now()-864e5*90).toISOString(),status:"needs_rotation",accessCount:45,lastAccessed:new Date(Date.now()-172800000).toISOString(),inLogs:false},
+];}
+function seedSLogs():SecretLog[]{return[
+  {id:"l1",secretName:"SUPABASE_SERVICE_ROLE_KEY",action:"access",actor:"freeandin9@gmail.com",ip:"103.12.44.10",timestamp:new Date(Date.now()-3600000).toISOString(),suspicious:false},
+  {id:"l2",secretName:"GITHUB_TOKEN",action:"rotated",actor:"freeandin9@gmail.com",ip:"103.12.44.10",timestamp:new Date(Date.now()-86400000).toISOString(),suspicious:false},
+];}
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
 }
 
@@ -33,8 +43,8 @@ export default function AdminSecretsManager() {
   const { toast } = useToast();
 
   const [tab, setTab]       = useState<"secrets"|"logs">("secrets");
-  const [secrets, setSecrets] = useState<Secret[]>([]);
-  const [logs]              = useState<SecretLog[]>([]);
+  const [secrets, setSecrets] = useState<Secret[]>(()=>load(SECRETS_KEY,seedSecrets));
+  const [logs, setLogs]     = useState<SecretLog[]>(()=>load(SLOGS_KEY,seedSLogs));
   const [visible, setVisible] = useState<Set<string>>(new Set());
   const [rotating, setRotating] = useState<string|null>(null);
 

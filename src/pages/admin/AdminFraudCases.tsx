@@ -43,7 +43,7 @@ export default function AdminFraudCases() {
   const [showAdd, setShowAdd] = useState(false);
   const [newCase, setNewCase] = useState({ description:"", priority:"high", user:"" });
   const [filterStatus, setFilterStatus] = useState("all");
-  const [localCases, setLocalCases] = useState<FraudCase[]>([]);
+  const [localCases, setLocalCases] = useState<FraudCase[]>(()=>load(LOCAL_CASES_KEY,seedLocalCases));
   const [overrides, setOverrides] = useState<Record<string, Partial<FraudCase>>>({});
 
   const { data: rawLogs = [], isLoading } = useQuery({

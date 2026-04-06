@@ -12,10 +12,15 @@ interface ConfigLock{id:string;section:string;lockedBy:string;lockedAt:string;ex
 interface ChangeEvent{id:string;admin:string;section:string;change:string;conflict:boolean;at:string;rolled:boolean;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const CONFLICT_KEY="admin_conflicts_v1";const CHANGE_KEY2="admin_change_events_v1";
+function seedConflicts():any[]{return[]}
+function seedChangeEvents():ChangeEvent[]{return[
+  {id:"ce1",admin:"freeandin9@gmail.com",section:"App Settings",change:"commission_rate: 10→12",conflict:false,at:new Date(Date.now()-3600000).toISOString(),rolled:false},
+];}
 export default function AdminMultiAdminConflict(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[locks,setLocks]=useState([]);
-  const[events,setEvents]=useState([]);
+  const[locks,setLocks]=useState<any[]>(()=>load(CONFLICT_KEY,seedConflicts));
+  const[events,setEvents]=useState<ChangeEvent[]>(()=>load(CHANGE_KEY2,seedChangeEvents));
   const[releasing,setReleasing]=useState<string|null>(null);
   const[rolling,setRolling]=useState<string|null>(null);
 

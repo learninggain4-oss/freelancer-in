@@ -11,9 +11,15 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface ArchiveJob{id:string;name:string;table:string;olderThanDays:number;lastRun:string;nextRun:string;rowsArchived:number;status:"idle"|"running"|"failed";enabled:boolean;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const ARCHIVAL_KEY="admin_data_archival_v1";
+function seedArchiveJobs():ArchiveJob[]{return[
+  {id:"aj1",name:"Archive Old Messages",table:"messages",olderThanDays:180,lastRun:new Date(Date.now()-86400000).toISOString(),nextRun:new Date(Date.now()+86400000).toISOString(),rowsArchived:1240,status:"idle",enabled:true},
+  {id:"aj2",name:"Archive Completed Projects",table:"projects",olderThanDays:365,lastRun:new Date(Date.now()-864e5*7).toISOString(),nextRun:new Date(Date.now()+864e5*7).toISOString(),rowsArchived:87,status:"idle",enabled:true},
+  {id:"aj3",name:"Archive Admin Audit Logs",table:"admin_audit_logs",olderThanDays:90,lastRun:new Date(Date.now()-3600000).toISOString(),nextRun:new Date(Date.now()+86400000).toISOString(),rowsArchived:5420,status:"idle",enabled:false},
+];}
 export default function AdminDataArchival(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[jobs,setJobs]=useState([]);
+  const[jobs,setJobs]=useState<ArchiveJob[]>(()=>load(ARCHIVAL_KEY,seedArchiveJobs));
   const[running,setRunning]=useState<string|null>(null);
 
   const runJob=async(j:ArchiveJob)=>{

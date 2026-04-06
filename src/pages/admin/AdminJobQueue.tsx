@@ -21,6 +21,18 @@ interface JobSetting { id:string; label:string; value:number|boolean; type:"numb
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
+const JOBS_KEY="admin_job_queue_v1";const JSETTINGS_KEY="admin_job_settings_v1";
+function seedJobs():Job[]{return[
+  {id:"j1",name:"Send Payout Emails",type:"email",priority:"high",status:"completed",attempts:1,maxAttempts:3,durationMs:340,scheduledAt:new Date(Date.now()-3600000).toISOString(),startedAt:new Date(Date.now()-3600000).toISOString(),completedAt:new Date(Date.now()-3595000).toISOString()},
+  {id:"j2",name:"Process Withdrawal #4821",type:"payment",priority:"high",status:"running",attempts:1,maxAttempts:3,scheduledAt:new Date(Date.now()-120000).toISOString(),startedAt:new Date(Date.now()-60000).toISOString()},
+  {id:"j3",name:"Daily Backup",type:"backup",priority:"normal",status:"queued",attempts:0,maxAttempts:3,scheduledAt:new Date(Date.now()+3600000).toISOString()},
+  {id:"j4",name:"Sync User Profiles",type:"sync",priority:"low",status:"failed",attempts:3,maxAttempts:3,durationMs:0,scheduledAt:new Date(Date.now()-7200000).toISOString(),error:"Timeout after 30s"},
+];}
+function seedJSettings():JobSetting[]{return[
+  {id:"s1",label:"Max Concurrent Jobs",value:5,type:"number",description:"Maximum parallel jobs"},
+  {id:"s2",label:"Retry Delay (sec)",value:30,type:"number",description:"Seconds between retries"},
+  {id:"s3",label:"Auto Retry Enabled",value:true,type:"boolean",description:"Retry failed jobs automatically"},
+];}
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
 }
 
@@ -34,8 +46,8 @@ export default function AdminJobQueue() {
   const { toast } = useToast();
 
   const [tab, setTab]           = useState<"queue"|"settings">("queue");
-  const [jobs, setJobs]         = useState<Job[]>([]);
-  const [settings, setSettings] = useState<JobSetting[]>([]);
+  const [jobs, setJobs]         = useState<Job[]>(()=>load(JOBS_KEY,seedJobs));
+  const [settings, setSettings] = useState<JobSetting[]>(()=>load(JSETTINGS_KEY,seedJSettings));
   const [editId, setEditId]     = useState<string|null>(null);
   const [editVal, setEditVal]   = useState<string|number>("");
   const [retrying, setRetrying] = useState<string|null>(null);

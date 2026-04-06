@@ -18,10 +18,16 @@ interface ConfigVersion{id:string;version:string;label:string;changes:string[];c
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const ROLLBACK_KEY="admin_config_rollback_v1";
+function seedVersions():ConfigVersion[]{return[
+  {id:"cv1",version:"v4",label:"Current production config",changes:["commission_rate: 10%","max_withdrawal: 50000","maintenance_mode: false"],createdAt:new Date().toISOString(),createdBy:"freeandin9@gmail.com",isActive:true,tested:true},
+  {id:"cv2",version:"v3",label:"Pre-april config",changes:["commission_rate: 8%","max_withdrawal: 50000"],createdAt:new Date(Date.now()-864e5*7).toISOString(),createdBy:"freeandin9@gmail.com",isActive:false,tested:true},
+  {id:"cv3",version:"v2",label:"Initial config",changes:["commission_rate: 5%"],createdAt:new Date(Date.now()-864e5*30).toISOString(),createdBy:"freeandin9@gmail.com",isActive:false,tested:false},
+];}
 export default function AdminConfigRollback(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[versions,setVersions]=useState<ConfigVersion[]>([]);
+  const[versions,setVersions]=useState<ConfigVersion[]>(()=>load(ROLLBACK_KEY,seedVersions));
   const[rolling,setRolling]=useState<string|null>(null);
   const[testing,setTesting]=useState<string|null>(null);
   const[confirmId,setConfirmId]=useState<string|null>(null);

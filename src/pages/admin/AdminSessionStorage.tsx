@@ -13,10 +13,17 @@ interface SessionEntry{id:string;user:string;device:string;startedAt:string;last
 function load<T>(k:string,s:()=>T):T{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 function loadArr<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const SESSION_STOR_KEY="admin_session_storage_v1";
+function seedSessionEntries():SessionEntry[]{return[
+  {id:"se1",user:"rahul@example.com",device:"Android - Chrome",startedAt:new Date(Date.now()-3600000).toISOString(),lastActivity:new Date(Date.now()-300000).toISOString(),sizekb:4.2},
+  {id:"se2",user:"priya@example.com",device:"iPhone - Safari",startedAt:new Date(Date.now()-7200000).toISOString(),lastActivity:new Date(Date.now()-1800000).toISOString(),sizekb:3.8},
+  {id:"se3",user:"admin@freelan.space",device:"Desktop - Firefox",startedAt:new Date(Date.now()-1800000).toISOString(),lastActivity:new Date(Date.now()-60000).toISOString(),sizekb:5.1},
+  {id:"se4",user:"employer@company.com",device:"Desktop - Chrome",startedAt:new Date(Date.now()-86400000).toISOString(),lastActivity:new Date(Date.now()-86340000).toISOString(),sizekb:2.9},
+];}
 export default function AdminSessionStorage(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[stats,setStats]=useState<SessionStats>({activeSessions:0,maxSessions:500,expiredLast1h:0,avgSessionMins:12,overflowRisk:false,storageUsedMB:0,storageLimitMB:100});
-  const[sessions,setSessions]=useState([]);
+  const[sessions,setSessions]=useState<SessionEntry[]>(()=>loadArr(SESSION_STOR_KEY,seedSessionEntries));
   const[cleaning,setCleaning]=useState(false);
   const[expiryMins,setExpiryMins]=useState(30);
   const[terminating,setTerminating]=useState<string|null>(null);

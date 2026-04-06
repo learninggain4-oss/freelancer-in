@@ -21,6 +21,17 @@ interface FilePolicy { id:string; label:string; value:string|number|boolean; typ
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
+const FILES_KEY="admin_files_v1";const FSTORAGE_KEY="admin_file_storage_v1";
+function seedFiles():any[]{return[
+  {id:"fl1",name:"profile_avatar_u1.jpg",type:"image",size:"245 KB",bucket:"avatars",uploadedBy:"user1@example.com",uploadedAt:new Date(Date.now()-86400000).toISOString(),status:"active"},
+  {id:"fl2",name:"aadhaar_scan_u2.pdf",type:"document",size:"1.2 MB",bucket:"kyc-docs",uploadedBy:"user2@example.com",uploadedAt:new Date(Date.now()-172800000).toISOString(),status:"active"},
+  {id:"fl3",name:"project_proposal.docx",type:"document",size:"880 KB",bucket:"project-files",uploadedBy:"user3@example.com",uploadedAt:new Date(Date.now()-3600000).toISOString(),status:"active"},
+];}
+function seedFStorage():any[]{return[
+  {id:"fs1",bucket:"avatars",usedMB:124,limitMB:5000,files:1240,status:"ok"},
+  {id:"fs2",bucket:"kyc-docs",usedMB:4820,limitMB:10000,files:2840,status:"ok"},
+  {id:"fs3",bucket:"project-files",usedMB:8940,limitMB:10000,files:5120,status:"warning"},
+];}
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
 }
 
@@ -34,8 +45,8 @@ export default function AdminFileManager() {
   const { toast } = useToast();
 
   const [tab, setTab]         = useState<"uploads"|"policy">("uploads");
-  const [logs, setLogs]       = useState<UploadLog[]>([]);
-  const [policies, setPolicies] = useState<FilePolicy[]>([]);
+  const [logs, setLogs]       = useState<UploadLog[]>(()=>load(FILES_KEY,seedFiles));
+  const [policies, setPolicies] = useState<FilePolicy[]>(()=>load(FSTORAGE_KEY,seedFStorage));
   const [editId, setEditId]   = useState<string|null>(null);
   const [editVal, setEditVal] = useState<string|number>("");
   const [filterStatus, setFilterStatus] = useState("all");

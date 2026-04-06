@@ -10,11 +10,17 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface UploadEvent{id:string;filename:string;user:string;sizeMb:number;checksum:string;status:"valid"|"corrupted"|"recovering";uploadedAt:string;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const FUPLOAD_KEY="admin_file_uploads_v1";
+function seedFUploads():any[]{return[
+  {id:"fu1",fileName:"report.pdf",size:"2.1 MB",type:"application/pdf",uploader:"user@example.com",status:"valid",scanned:true,threats:0,uploadedAt:new Date(Date.now()-3600000).toISOString()},
+  {id:"fu2",fileName:"profile.jpg",size:"345 KB",type:"image/jpeg",uploader:"user2@example.com",status:"valid",scanned:true,threats:0,uploadedAt:new Date(Date.now()-7200000).toISOString()},
+  {id:"fu3",fileName:"script.js",size:"12 KB",type:"application/javascript",uploader:"user3@example.com",status:"blocked",scanned:true,threats:1,uploadedAt:new Date(Date.now()-86400000).toISOString()},
+];}
 const sColor={valid:"#4ade80",corrupted:"#f87171",recovering:"#fbbf24"};
 
 export default function AdminFileUploadValidation(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[uploads,setUploads]=useState([]);
+  const[uploads,setUploads]=useState<any[]>(()=>load(FUPLOAD_KEY,seedFUploads));
   const[recovering,setRecovering]=useState<string|null>(null);
   const[rules,setRules]=useState({maxSizeMB:50,checksumEnabled:true,retryEnabled:true});
 

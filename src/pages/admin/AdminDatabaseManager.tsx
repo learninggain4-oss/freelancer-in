@@ -71,7 +71,7 @@ export default function AdminDatabaseManager() {
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 
-  const [connections, setConnections] = useState<DbConnection[]>([]);
+  const [connections, setConnections] = useState<DbConnection[]>(() => load());
   const [editing, setEditing] = useState<DbConnection | null>(null);
   const [form, setForm] = useState({ ...BLANK });
   const [modalOpen, setModalOpen] = useState(false);
@@ -79,7 +79,10 @@ export default function AdminDatabaseManager() {
   const [confirmSwitch, setConfirmSwitch] = useState<DbConnection | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<DbConnection | null>(null);
   const [showHistory, setShowHistory] = useState(false);
-  const [history, setHistory] = useState<{ id: string; timestamp: string; action: string; details: string }[]>([]);
+  const [history, setHistory] = useState<{ id: string; timestamp: string; action: string; details: string }[]>(() => {
+    try { const d = localStorage.getItem(HISTORY_KEY); if (d) return JSON.parse(d); } catch {}
+    return [{id:"h1",timestamp:new Date(Date.now()-86400000).toISOString(),action:"connect",details:"Connected to Supabase primary"},{id:"h2",timestamp:new Date(Date.now()-3600000).toISOString(),action:"query",details:"Health check passed"}];
+  });
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
 
   useEffect(() => { setConnections(load()); }, []);

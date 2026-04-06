@@ -11,9 +11,14 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface Session{id:string;user:string;ip:string;device:string;location:string;startedAt:string;lastActivity:string;suspicious:boolean;expiryMins:number;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const SESS_MGR_KEY="admin_secure_sess_v1";
+function seedSessions3():Session[]{return[
+  {id:"ss1",user:"freeandin9@gmail.com",ip:"103.12.44.10",device:"Desktop - Chrome 124",location:"Kochi, Kerala",startedAt:new Date(Date.now()-3600000).toISOString(),lastActivity:new Date(Date.now()-300000).toISOString(),suspicious:false,expiryMins:60},
+  {id:"ss2",user:"admin2@freelan.space",ip:"45.33.32.156",device:"Mobile - Safari 17",location:"Mumbai, Maharashtra",startedAt:new Date(Date.now()-7200000).toISOString(),lastActivity:new Date(Date.now()-1800000).toISOString(),suspicious:true,expiryMins:60},
+];}
 export default function AdminSecureSessionMgr(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[sessions,setSessions]=useState([]);
+  const[sessions,setSessions]=useState<Session[]>(()=>load(SESS_MGR_KEY,seedSessions3));
   const[revoking,setRevoking]=useState<string|null>(null);
   const[expiryMins,setExpiryMins]=useState(60);
 

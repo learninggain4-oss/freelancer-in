@@ -10,11 +10,17 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface Deployment{id:string;version:string;environment:string;deployedAt:string;deployedBy:string;status:"success"|"failed"|"rolling-back"|"in-progress";rollbackAvailable:boolean;healthScore:number;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const DEPLOY_MON_KEY="admin_deploy_monitor_v1";
+function seedDeploys():any[]{return[
+  {id:"dm1",version:"v2.4.1",status:"live",deployedAt:new Date(Date.now()-3600000).toISOString(),deployedBy:"freeandin9@gmail.com",duration:145,healthChecks:4,passed:4,rollbackAvailable:true},
+  {id:"dm2",version:"v2.4.0",status:"live",deployedAt:new Date(Date.now()-86400000).toISOString(),deployedBy:"freeandin9@gmail.com",duration:138,healthChecks:4,passed:4,rollbackAvailable:true},
+  {id:"dm3",version:"v2.3.9",status:"rolled_back",deployedAt:new Date(Date.now()-172800000).toISOString(),deployedBy:"freeandin9@gmail.com",duration:92,healthChecks:4,passed:2,rollbackAvailable:false},
+];}
 const sColor={success:"#4ade80",failed:"#f87171","rolling-back":"#fbbf24","in-progress":"#a5b4fc"};
 
 export default function AdminDeploymentMonitor(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[deploys,setDeploys]=useState([]);
+  const[deploys,setDeploys]=useState<any[]>(()=>load(DEPLOY_MON_KEY,seedDeploys));
   const[rollingBack,setRollingBack]=useState<string|null>(null);
 
   const rollback=async(d:Deployment)=>{

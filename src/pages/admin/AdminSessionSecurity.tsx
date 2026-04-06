@@ -53,6 +53,15 @@ function getOS(ua: string): string {
 
 function load<T>(key: string, seed: () => T[]): T[] {
   try { const d = localStorage.getItem(key); if (d) return JSON.parse(d); } catch { /* */ }
+const KNOWN_SESS_KEY="admin_known_sessions_v1";const SUSP_KEY="admin_suspicious_events_v1";
+function seedKnownSessions():KnownSession[]{return[
+  {id:"ks1",device:"Desktop",browser:"Chrome 124",os:"Windows 11",ip:"103.12.44.10",location:"Kochi, Kerala",isCurrent:true,lastActive:new Date(Date.now()-60000).toISOString(),loginAt:new Date(Date.now()-3600000).toISOString(),isSuspicious:false,isBlocked:false},
+  {id:"ks2",device:"Mobile",browser:"Safari 17",os:"iOS 17",ip:"45.33.32.156",location:"Mumbai, Maharashtra",isCurrent:false,lastActive:new Date(Date.now()-1800000).toISOString(),loginAt:new Date(Date.now()-7200000).toISOString(),isSuspicious:true,isBlocked:false},
+];}
+function seedSuspicious():SuspiciousEvent[]{return[
+  {id:"se1",type:"New location login",ip:"45.33.32.156",device:"Mobile - Safari 17",timestamp:new Date(Date.now()-7200000).toISOString(),resolved:false},
+  {id:"se2",type:"Multiple failed logins",ip:"192.168.1.100",device:"Unknown",timestamp:new Date(Date.now()-86400000).toISOString(),resolved:true},
+];}
   const s = seed(); localStorage.setItem(key, JSON.stringify(s)); return s;
 }
 
@@ -65,9 +74,9 @@ export default function AdminSessionSecurity() {
   const { toast } = useToast();
 
   const [tab, setTab]       = useState<"sessions" | "settings" | "suspicious">("sessions");
-  const [sessions, setSessions] = useState<KnownSession[]>([]);
+  const [sessions, setSessions] = useState<KnownSession[]>(()=>load(KNOWN_SESS_KEY,seedKnownSessions));
   const [settings, setSettings] = useState<SecuritySettings>(() => { try { return JSON.parse(localStorage.getItem(SECURITY_KEY) || "{}"); } catch { return defaultSettings; } });
-  const [suspicious, setSuspicious] = useState<SuspiciousEvent[]>([]);
+  const [suspicious, setSuspicious] = useState<SuspiciousEvent[]>(()=>load(SUSP_KEY,seedSuspicious));
   const [confirmTerminate, setConfirmTerminate] = useState<KnownSession | null>(null);
   const [confirmTerminateAll, setConfirmTerminateAll] = useState(false);
   const [realSession, setRealSession] = useState<{ email?: string; last_sign_in?: string } | null>(null);

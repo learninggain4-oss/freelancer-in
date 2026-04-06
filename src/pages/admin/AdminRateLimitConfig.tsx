@@ -12,10 +12,19 @@ interface RateRule{id:string;endpoint:string;limitPerMin:number;burstLimit:numbe
 interface ViolationEntry{id:string;ip:string;endpoint:string;attempts:number;blockedAt:string;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const RL_CFG_KEY="admin_rl_config_v1";const RL_VIOL_KEY="admin_rl_violations_v1";
+function seedRlRules():RateRule[]{return[
+  {id:"rl1",endpoint:"/api/login",limitPerMin:5,burstLimit:10,perUser:5,perIp:10,throttleEnabled:true,violations24h:3,status:"ok"},
+  {id:"rl2",endpoint:"/api/withdraw",limitPerMin:1,burstLimit:2,perUser:1,perIp:3,throttleEnabled:true,violations24h:0,status:"ok"},
+  {id:"rl3",endpoint:"/api/upload",limitPerMin:3,burstLimit:5,perUser:3,perIp:10,throttleEnabled:true,violations24h:12,status:"warning"},
+];}
+function seedViolations():ViolationEntry[]{return[
+  {id:"vl1",ip:"45.33.32.156",endpoint:"/api/login",attempts:18,blockedAt:new Date(Date.now()-3600000).toISOString()},
+];}
 export default function AdminRateLimitConfig(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[rules,setRules]=useState([]);
-  const[violations]=useState([]);
+  const[rules,setRules]=useState<RateRule[]>(()=>load(RL_CFG_KEY,seedRlRules));
+  const[violations,setViolations]=useState<ViolationEntry[]>(()=>load(RL_VIOL_KEY,seedViolations));
   const[tab,setTab]=useState<"rules"|"violations">("rules");
   const[saving,setSaving]=useState<string|null>(null);
 

@@ -10,12 +10,21 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface IndexInfo{id:string;table:string;column:string;exists:boolean;recommended:boolean;usage:number;impact:"high"|"medium"|"low";avgQueryMs:number;}
 interface SlowQuery{id:string;sql:string;avgMs:number;count:number;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const DB_IDX_KEY="admin_db_indexing_v1";const DB_SQ_KEY="admin_db_slow_queries_v1";
+function seedIndexes():any[]{return[
+  {id:"idx1",table:"profiles",column:"email",type:"btree",size:"2.1 MB",scans24h:1240,status:"healthy",createdAt:new Date(Date.now()-864e5*30).toISOString()},
+  {id:"idx2",table:"projects",column:"status",type:"btree",size:"0.8 MB",scans24h:456,status:"healthy",createdAt:new Date(Date.now()-864e5*14).toISOString()},
+  {id:"idx3",table:"withdrawals",column:"requested_at",type:"btree",size:"1.2 MB",scans24h:88,status:"missing",createdAt:new Date(Date.now()-864e5*7).toISOString()},
+];}
+function seedSlowQ():any[]{return[
+  {id:"sq1",query:"SELECT * FROM profiles WHERE ...",table:"profiles",avgMs:1240,executions:88,lastRun:new Date(Date.now()-3600000).toISOString(),indexed:false},
+];}
 const impactColor={high:"#f87171",medium:"#fbbf24",low:"#4ade80"};
 
 export default function AdminDbIndexing(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[indexes,setIndexes]=useState([]);
-  const[slowQ]=useState([]);
+  const[indexes,setIndexes]=useState<any[]>(()=>load(DB_IDX_KEY,seedIndexes));
+  const[slowQ,setSlowQ]=useState<any[]>(()=>load(DB_SQ_KEY,seedSlowQ));
   const[creating,setCreating]=useState<string|null>(null);
   const[tab,setTab]=useState<"indexes"|"slow">("indexes");
 

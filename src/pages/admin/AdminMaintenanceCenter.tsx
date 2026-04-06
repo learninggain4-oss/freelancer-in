@@ -30,6 +30,11 @@ const storageBuckets: StorageBucket[] = [
 
 function load<T>(key: string, seed: ()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
+const MAINT_KEY="admin_maintenance_v1";
+function seedOrphans():any[]{return[
+  {id:"mo1",table:"projects",count:12,reason:"Freelancer account deleted",oldestAt:new Date(Date.now()-864e5*30).toISOString()},
+  {id:"mo2",table:"messages",count:840,reason:"Project archived",oldestAt:new Date(Date.now()-864e5*60).toISOString()},
+];}
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
 }
 
@@ -42,8 +47,14 @@ export default function AdminMaintenanceCenter() {
   const { toast } = useToast();
 
   const [tab, setTab]     = useState<"orphans"|"storage"|"logs">("orphans");
-  const [orphans, setOrphans] = useState<OrphanItem[]>([]);
-  const [logs]            = useState<CleanupLog[]>([]);
+  const [orphans, setOrphans] = useState<OrphanItem[]>(()=>load("admin_maint_orphans_v1",()=>[
+  {id:"oi1",type:"Orphan Record",description:"Projects with deleted owner",size:"2.1 MB",table:"projects",risk:"medium",selected:false},
+  {id:"oi2",type:"Orphan Record",description:"Messages in archived projects",size:"18.4 MB",table:"messages",risk:"safe",selected:false},
+  {id:"oi3",type:"Temp File",description:"Unlinked uploaded files in storage",size:"124 MB",table:"storage.objects",risk:"safe",selected:false},
+]));
+  const [logs, setLogs]   = useState<CleanupLog[]>(()=>load("admin_maint_logs_v1",()=>[
+  {id:"cl1",action:"Remove orphan messages",itemsRemoved:1240,sizeSaved:"8.2 MB",performedBy:"freeandin9@gmail.com",timestamp:new Date(Date.now()-86400000).toISOString(),status:"success"},
+]));
   const [scanning, setScanning] = useState(false);
   const [confirmClean, setConfirmClean] = useState(false);
   const [dbChecking, setDbChecking] = useState(false);

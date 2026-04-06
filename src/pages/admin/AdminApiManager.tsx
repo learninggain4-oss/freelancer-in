@@ -23,6 +23,23 @@ interface Dependency { id:string; name:string; current:string; latest:string; ty
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
+const API_KEYS_KEY = "admin_api_keys_v1";
+const API_LOGS_KEY = "admin_api_logs_v1";
+const API_DEPS_KEY = "admin_api_deps_v1";
+function seedApiKeys():ApiKey[]{return[
+  {id:"k1",name:"Supabase Public",service:"supabase",maskedKey:"eyJhbG••••qX0",permissions:["read","write"],lastRotated:new Date(Date.now()-864e5*30).toISOString(),expiresAt:new Date(Date.now()+864e5*335).toISOString(),status:"active",requestsToday:1842,requestLimit:10000},
+  {id:"k2",name:"OneSignal Push",service:"onesignal",maskedKey:"NDk3••••YjQ",permissions:["push"],lastRotated:new Date(Date.now()-864e5*15).toISOString(),expiresAt:new Date(Date.now()+864e5*350).toISOString(),status:"active",requestsToday:320,requestLimit:5000},
+  {id:"k3",name:"SendGrid Email",service:"sendgrid",maskedKey:"SG.••••abc",permissions:["send"],lastRotated:new Date(Date.now()-864e5*90).toISOString(),expiresAt:new Date(Date.now()-864e5*5).toISOString(),status:"expired",requestsToday:0,requestLimit:1000},
+];}
+function seedApiLogs():ApiLog[]{return[
+  {id:"l1",method:"GET",endpoint:"/rest/v1/profiles",status:200,latencyMs:45,ip:"103.12.44.10",apiKey:"k1",timestamp:new Date(Date.now()-60000).toISOString()},
+  {id:"l2",method:"POST",endpoint:"/rest/v1/projects",status:201,latencyMs:120,ip:"103.12.44.10",apiKey:"k1",timestamp:new Date(Date.now()-300000).toISOString()},
+];}
+function seedApiDeps():Dependency[]{return[
+  {id:"d1",name:"@supabase/supabase-js",current:"2.39.0",latest:"2.39.3",type:"prod",hasConflict:false,securityAlert:false,lastChecked:new Date().toISOString()},
+  {id:"d2",name:"react",current:"18.2.0",latest:"18.3.1",type:"prod",hasConflict:false,securityAlert:false,lastChecked:new Date().toISOString()},
+  {id:"d3",name:"vite",current:"5.0.8",latest:"5.2.0",type:"dev",hasConflict:false,securityAlert:false,lastChecked:new Date().toISOString()},
+];}
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
 }
 
@@ -33,9 +50,9 @@ export default function AdminApiManager() {
   const { toast } = useToast();
 
   const [tab, setTab]       = useState<"keys"|"logs"|"deps">("keys");
-  const [keys, setKeys]     = useState<ApiKey[]>([]);
-  const [logs]              = useState<ApiLog[]>([]);
-  const [deps]              = useState<Dependency[]>([]);
+  const [keys, setKeys]     = useState<ApiKey[]>(()=>load(API_KEYS_KEY,seedApiKeys));
+  const [logs, setLogs]     = useState<ApiLog[]>(()=>load(API_LOGS_KEY,seedApiLogs));
+  const [deps, setDeps]     = useState<Dependency[]>(()=>load(API_DEPS_KEY,seedApiDeps));
   const [showKeys, setShowKeys] = useState<Set<string>>(new Set());
   const [rotating, setRotating] = useState<string|null>(null);
 

@@ -19,6 +19,12 @@ interface BulkOp { id:string; name:string; description:string; target:string; co
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
+const BULK_OPS_KEY="admin_bulk_ops_v1";
+function seedBulkOps():BulkOp[]{return[
+  {id:"op1",name:"Mark inactive users",description:"Mark users with no login for 180+ days as inactive",target:"profiles",count:124,status:"completed",risk:"medium",createdAt:new Date(Date.now()-864e5*3).toISOString(),completedAt:new Date(Date.now()-864e5*3+3600000).toISOString(),canUndo:true,executedBy:"freeandin9@gmail.com"},
+  {id:"op2",name:"Archive old projects",description:"Archive projects with no activity for 1 year",target:"projects",count:87,status:"preview",risk:"low",createdAt:new Date(Date.now()-86400000).toISOString(),canUndo:true},
+  {id:"op3",name:"Clear unverified accounts",description:"Delete unverified accounts older than 30 days",target:"profiles",count:312,status:"pending_approval",risk:"high",createdAt:new Date(Date.now()-3600000).toISOString(),canUndo:false},
+];}
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
 }
 
@@ -31,7 +37,7 @@ export default function AdminBulkOperations() {
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 
-  const [ops, setOps]   = useState<BulkOp[]>([]);
+  const [ops, setOps]   = useState<BulkOp[]>(()=>load(BULK_OPS_KEY,seedBulkOps));
   const [tab, setTab]   = useState<"ops"|"logs">("ops");
   const [confirmOp, setConfirmOp] = useState<BulkOp|null>(null);
   const [confirmUndo, setConfirmUndo] = useState<BulkOp|null>(null);

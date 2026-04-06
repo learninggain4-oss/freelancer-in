@@ -11,9 +11,15 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface Webhook{id:string;name:string;url:string;event:string;status:"active"|"failed"|"paused";deliveries24h:number;failures24h:number;avgResponseMs:number;retryCount:number;lastDelivery:string;backupUrl?:string;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const WEBHOOK_KEY="admin_webhooks_v1";
+function seedWebhooks():Webhook[]{return[
+  {id:"wh1",name:"Payment Success",url:"https://freelan.space/api/webhooks/payment",event:"payment.completed",status:"active",deliveries24h:124,failures24h:0,avgResponseMs:145,retryCount:0,lastDelivery:new Date(Date.now()-3600000).toISOString()},
+  {id:"wh2",name:"New User Signup",url:"https://freelan.space/api/webhooks/signup",event:"user.created",status:"active",deliveries24h:38,failures24h:2,avgResponseMs:220,retryCount:2,lastDelivery:new Date(Date.now()-7200000).toISOString()},
+  {id:"wh3",name:"Withdrawal Alert",url:"https://freelan.space/api/webhooks/withdraw",event:"withdrawal.requested",status:"failed",deliveries24h:0,failures24h:8,avgResponseMs:0,retryCount:8,lastDelivery:new Date(Date.now()-86400000).toISOString(),backupUrl:"https://freelan.space/api/webhooks/withdraw-backup"},
+];}
 export default function AdminWebhookMonitor(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[hooks,setHooks]=useState([]);
+  const[hooks,setHooks]=useState<Webhook[]>(()=>load(WEBHOOK_KEY,seedWebhooks));
   const[testing,setTesting]=useState<string|null>(null);
   const[retrying,setRetrying]=useState<string|null>(null);
 

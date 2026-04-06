@@ -18,6 +18,12 @@ interface ChangeRequest{id:string;field:string;table:string;oldValue:string;newV
 
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const CHANGES_KEY="admin_changes_v1";
+function seedChanges():ChangeRequest[]{return[
+  {id:"cr1",field:"commission_rate",table:"app_settings",oldValue:"10",newValue:"12",requestedBy:"admin@freelan.space",status:"pending",risk:"high",createdAt:new Date(Date.now()-3600000).toISOString()},
+  {id:"cr2",field:"max_withdrawal",table:"app_settings",oldValue:"50000",newValue:"75000",requestedBy:"admin@freelan.space",status:"approved",risk:"medium",createdAt:new Date(Date.now()-86400000).toISOString(),reviewedAt:new Date(Date.now()-82800000).toISOString(),reviewedBy:"freeandin9@gmail.com"},
+  {id:"cr3",field:"maintenance_mode",table:"app_settings",oldValue:"false",newValue:"true",requestedBy:"admin@freelan.space",status:"rejected",risk:"high",createdAt:new Date(Date.now()-172800000).toISOString(),reviewedAt:new Date(Date.now()-169200000).toISOString(),reviewedBy:"freeandin9@gmail.com",rejectReason:"Not during business hours"},
+];}
 const sColor={pending:"#fbbf24",approved:"#4ade80",rejected:"#f87171",rolled_back:"#fb923c"};
 const riskColor={low:"#4ade80",medium:"#fbbf24",high:"#f87171"};
 
@@ -25,7 +31,7 @@ export default function AdminChangeApproval(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"pending"|"history">("pending");
-  const[changes,setChanges]=useState<ChangeRequest[]>([]);
+  const[changes,setChanges]=useState<ChangeRequest[]>(()=>load(CHANGES_KEY,seedChanges));
   const[approving,setApproving]=useState<string|null>(null);
   const[rejecting,setRejecting]=useState<string|null>(null);
   const[rolling,setRolling]=useState<string|null>(null);

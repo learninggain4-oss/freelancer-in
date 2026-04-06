@@ -17,12 +17,18 @@ interface RoleCache{id:string;role:string;users:number;cacheAge:number;syncStatu
 
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const PERM_SYNC_KEY="admin_perm_sync_v1";
+function seedRoleCaches():RoleCache[]{return[
+  {id:"rc1",role:"admin",users:8,cacheAge:2,syncStatus:"synced",lastSync:new Date(Date.now()-7200000).toISOString(),pendingChanges:0},
+  {id:"rc2",role:"freelancer",users:9240,cacheAge:15,syncStatus:"stale",lastSync:new Date(Date.now()-54000000).toISOString(),pendingChanges:3},
+  {id:"rc3",role:"employer",users:3160,cacheAge:8,syncStatus:"synced",lastSync:new Date(Date.now()-28800000).toISOString(),pendingChanges:0},
+];}
 const sColor={synced:"#4ade80",stale:"#fbbf24",syncing:"#a5b4fc"};
 
 export default function AdminPermissionSync(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[caches,setCaches]=useState<RoleCache[]>([]);
+  const[caches,setCaches]=useState<RoleCache[]>(()=>load(PERM_SYNC_KEY,seedRoleCaches));
   const[syncing,setSyncing]=useState<string|null>(null);
   const[syncingAll,setSyncingAll]=useState(false);
 

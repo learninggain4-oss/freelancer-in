@@ -34,6 +34,24 @@ interface ConfigAudit {
 }
 
 const TOGGLES_KEY = "admin_config_toggles_v1";
+const CONFIGS_KEY = "admin_config_entries_v1";
+const AUDIT_KEY2 = "admin_config_audit_v1";
+function seedToggles():FeatureToggle[]{return[
+  {id:"ft1",name:"Dark Mode",key:"dark_mode",description:"Enable dark mode for all users",enabled:true,requiresApproval:false,category:"UI",lastChanged:new Date(Date.now()-864e5*14).toISOString(),changedBy:"freeandin9@gmail.com"},
+  {id:"ft2",name:"PWA Install Prompt",key:"pwa_install",description:"Show install prompt for progressive web app",enabled:true,requiresApproval:false,category:"Features",lastChanged:new Date(Date.now()-864e5*7).toISOString(),changedBy:"freeandin9@gmail.com"},
+  {id:"ft3",name:"AI Job Matching",key:"ai_matching",description:"Use AI to suggest jobs to freelancers",enabled:false,requiresApproval:true,category:"Features",lastChanged:new Date(Date.now()-3600000).toISOString(),changedBy:"freeandin9@gmail.com"},
+  {id:"ft4",name:"Referral Program",key:"referral",description:"Allow users to earn via referrals",enabled:false,requiresApproval:true,category:"Monetization",lastChanged:new Date(Date.now()-86400000).toISOString()},
+];}
+function seedConfigs():ConfigEntry[]{return[
+  {id:"ce1",key:"commission_rate",prodValue:"10",backupValue:"10",stagingValue:"10",category:"Payments",sensitive:false,lastSync:new Date().toISOString(),hasDrift:false},
+  {id:"ce2",key:"max_withdrawal",prodValue:"50000",backupValue:"50000",stagingValue:"75000",category:"Payments",sensitive:false,lastSync:new Date(Date.now()-3600000).toISOString(),hasDrift:true},
+  {id:"ce3",key:"session_timeout_mins",prodValue:"60",backupValue:"60",stagingValue:"60",category:"Auth",sensitive:false,lastSync:new Date().toISOString(),hasDrift:false},
+  {id:"ce4",key:"supabase_service_key",prodValue:"eyJhbG••••",backupValue:"eyJhbG••••",stagingValue:"eyJhbG••••",category:"Infrastructure",sensitive:true,lastSync:new Date().toISOString(),hasDrift:false},
+];}
+function seedAudit2():ConfigAudit[]{return[
+  {id:"ca1",key:"commission_rate",oldValue:"8",newValue:"10",changedBy:"freeandin9@gmail.com",timestamp:new Date(Date.now()-864e5*7).toISOString(),approved:true},
+  {id:"ca2",key:"max_withdrawal",oldValue:"50000",newValue:"75000",changedBy:"freeandin9@gmail.com",timestamp:new Date(Date.now()-3600000).toISOString(),approved:false},
+];}
 
 function load<T>(key: string, seed: () => T[]): T[] {
   try { const d = localStorage.getItem(key); if (d) return JSON.parse(d); } catch {}
@@ -47,9 +65,9 @@ export default function AdminConfigManagement() {
   const { toast } = useToast();
 
   const [tab, setTab]         = useState<"toggles"|"drift"|"audit">("toggles");
-  const [toggles, setToggles] = useState<FeatureToggle[]>([]);
-  const [configs]             = useState<ConfigEntry[]>([]);
-  const [audit]               = useState<ConfigAudit[]>([]);
+  const [toggles, setToggles] = useState<FeatureToggle[]>(()=>load(TOGGLES_KEY,seedToggles));
+  const [configs, setConfigs] = useState<ConfigEntry[]>(()=>load(CONFIGS_KEY,seedConfigs));
+  const [audit, setAudit]     = useState<ConfigAudit[]>(()=>load(AUDIT_KEY2,seedAudit2));
   const [pendingToggle, setPendingToggle] = useState<FeatureToggle | null>(null);
   const [catFilter, setCatFilter] = useState("All");
   const [syncing, setSyncing] = useState(false);

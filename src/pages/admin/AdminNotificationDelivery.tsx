@@ -17,13 +17,19 @@ interface Channel{id:string;name:string;type:"email"|"sms"|"push";provider:strin
 
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const NOTIF_CH_KEY="admin_notif_channels_v1";
+function seedChannels():Channel[]{return[
+  {id:"nc1",name:"Primary Email",type:"email",provider:"Gmail SMTP",sent24h:124,failed24h:2,queued:8,status:"healthy",lastDelivery:new Date(Date.now()-3600000).toISOString(),retryEnabled:true},
+  {id:"nc2",name:"Push Notifications",type:"push",provider:"OneSignal",sent24h:840,failed24h:12,queued:0,status:"healthy",lastDelivery:new Date(Date.now()-600000).toISOString(),retryEnabled:true},
+  {id:"nc3",name:"SMS Alerts",type:"sms",provider:"Twilio",sent24h:0,failed24h:0,queued:0,status:"down",lastDelivery:new Date(Date.now()-864e5*3).toISOString(),retryEnabled:false,backupProvider:"Email"},
+];}
 const sColor={healthy:"#4ade80",degraded:"#fbbf24",down:"#f87171"};
 const typeIcon={email:Mail,sms:MessageSquare,push:Bell};
 
 export default function AdminNotificationDelivery(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[channels,setChannels]=useState<Channel[]>([]);
+  const[channels,setChannels]=useState<Channel[]>(()=>load(NOTIF_CH_KEY,seedChannels));
   const[retrying,setRetrying]=useState<string|null>(null);
 
   const retryFailed=async(c:Channel)=>{

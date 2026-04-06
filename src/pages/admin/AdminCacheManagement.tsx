@@ -10,11 +10,18 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface CacheModule{id:string;name:string;sizeMB:number;ttlMins:number;hitRate:number;status:"fresh"|"stale"|"expired";lastUpdated:string;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const CACHE_MOD_KEY="admin_cache_modules_v1";
+function seedModules():any[]{return[
+  {id:"cm1",name:"API Cache",icon:"Globe",sizeMB:2.4,status:"fresh",hitRate:94,lastUpdated:new Date(Date.now()-3600000).toISOString()},
+  {id:"cm2",name:"User Sessions",icon:"Users",sizeMB:1.1,status:"fresh",hitRate:88,lastUpdated:new Date(Date.now()-7200000).toISOString()},
+  {id:"cm3",name:"Image CDN",icon:"Image",sizeMB:18.5,status:"fresh",hitRate:97,lastUpdated:new Date(Date.now()-86400000).toISOString()},
+  {id:"cm4",name:"Database Queries",icon:"Database",sizeMB:0.8,status:"stale",hitRate:62,lastUpdated:new Date(Date.now()-172800000).toISOString()},
+];}
 const sColor={fresh:"#4ade80",stale:"#fbbf24",expired:"#f87171"};
 
 export default function AdminCacheManagement(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[modules,setModules]=useState([]);
+  const[modules,setModules]=useState<any[]>(()=>load(CACHE_MOD_KEY,seedModules));
   const[clearing,setClearing]=useState<string|null>(null);
   const[ttl,setTtl]=useState<Record<string,number>>({});
 

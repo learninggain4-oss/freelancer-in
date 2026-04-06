@@ -10,11 +10,16 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface CsrfEvent{id:string;ip:string;endpoint:string;reason:string;at:string;severity:"low"|"medium"|"high";}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const CSRF_KEY="admin_csrf_events_v1";
+function seedCsrfEvents():CsrfEvent[]{return[
+  {id:"ce1",ip:"45.33.32.156",endpoint:"/api/withdraw",reason:"Invalid CSRF token",at:new Date(Date.now()-3600000).toISOString(),severity:"high"},
+  {id:"ce2",ip:"192.168.1.100",endpoint:"/admin/settings",reason:"Token expired",at:new Date(Date.now()-7200000).toISOString(),severity:"medium"},
+];}
 const sevColor={low:"#4ade80",medium:"#fbbf24",high:"#f87171"};
 
 export default function AdminCsrfProtection(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[events]=useState([]);
+  const[events,setEvents]=useState<CsrfEvent[]>(()=>load(CSRF_KEY,seedCsrfEvents));
   const[config,setConfig]=useState({tokenRotation:true,originValidation:true,middlewareEnabled:true,rotationIntervalMins:30,allowedOrigins:"https://freelancer.in"});
   const[rotating,setRotating]=useState(false);
 

@@ -12,10 +12,19 @@ interface FileRule{id:string;bucket:string;visibility:"public"|"private"|"role-b
 interface AccessLog{id:string;file:string;user:string;action:string;ip:string;at:string;allowed:boolean;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const FPERMS_KEY="admin_file_permissions_v1";const FVIOLATIONS_KEY="admin_file_violations_v1";
+function seedFPerms():any[]{return[
+  {id:"fp1",bucket:"avatars",allowedTypes:["image/jpeg","image/png","image/webp"],maxSizeMB:2,publicRead:true,requireAuth:false},
+  {id:"fp2",bucket:"kyc-docs",allowedTypes:["application/pdf","image/jpeg"],maxSizeMB:5,publicRead:false,requireAuth:true},
+  {id:"fp3",bucket:"project-files",allowedTypes:["application/pdf","application/msword","text/plain"],maxSizeMB:10,publicRead:false,requireAuth:true},
+];}
+function seedFViolations():any[]{return[
+  {id:"fv1",file:"malware.exe",bucket:"project-files",reason:"Blocked file type",ip:"45.33.32.156",at:new Date(Date.now()-3600000).toISOString()},
+];}
 export default function AdminFilePermissions(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[rules,setRules]=useState([]);
-  const[logs]=useState([]);
+  const[rules,setRules]=useState<FileRule[]>(()=>load(FPERMS_KEY,seedFPerms));
+  const[logs,setLogs]=useState<AccessLog[]>(()=>load(FVIOLATIONS_KEY,seedFViolations));
   const[tab,setTab]=useState<"rules"|"logs">("rules");
 
   const toggleVisibility=(id:string)=>{

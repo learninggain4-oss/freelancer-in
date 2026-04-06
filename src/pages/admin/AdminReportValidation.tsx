@@ -11,9 +11,15 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface Report{id:string;name:string;frequency:string;lastGenerated:string;status:"valid"|"invalid"|"pending";discrepancyPct:number;rowCount:number;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const RVAL_KEY="admin_report_validation_v1";
+function seedRValidations():Report[]{return[
+  {id:"rv1",name:"Monthly Revenue",frequency:"monthly",lastGenerated:new Date(Date.now()-86400000).toISOString(),status:"valid",discrepancyPct:0,rowCount:1240},
+  {id:"rv2",name:"User Activity",frequency:"weekly",lastGenerated:new Date(Date.now()-172800000).toISOString(),status:"valid",discrepancyPct:0.2,rowCount:5820},
+  {id:"rv3",name:"Fraud Summary",frequency:"daily",lastGenerated:new Date(Date.now()-3600000).toISOString(),status:"invalid",discrepancyPct:8.5,rowCount:142},
+];}
 export default function AdminReportValidation(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[reports,setReports]=useState([]);
+  const[reports,setReports]=useState<Report[]>(()=>load(RVAL_KEY,seedRValidations));
   const[regenerating,setRegenerating]=useState<string|null>(null);
 
   const regenerate=async(r:Report)=>{

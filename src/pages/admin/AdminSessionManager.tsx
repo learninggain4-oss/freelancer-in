@@ -22,6 +22,17 @@ interface SessionPolicy { id:string; label:string; value:number|boolean; type:"n
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
+const SESS_LIST_KEY="admin_sessions_list_v1";const SESS_POL_KEY="admin_session_policies_v1";
+function seedSessionList():Session[]{return[
+  {id:"sl1",userId:"u1",username:"Rahul Kumar",email:"rahul@example.com",role:"freelancer",device:"Android - Chrome",ip:"103.12.44.10",location:"Kochi, Kerala",startedAt:new Date(Date.now()-3600000).toISOString(),lastActive:new Date(Date.now()-300000).toISOString(),suspicious:false,deviceCount:2},
+  {id:"sl2",userId:"u2",username:"Priya Sharma",email:"priya@example.com",role:"employer",device:"iPhone - Safari",ip:"45.33.32.156",location:"Mumbai",startedAt:new Date(Date.now()-7200000).toISOString(),lastActive:new Date(Date.now()-900000).toISOString(),suspicious:true,deviceCount:4},
+  {id:"sl3",userId:"u3",username:"Admin User",email:"freeandin9@gmail.com",role:"super_admin",device:"Desktop - Firefox",ip:"103.12.44.11",location:"Thiruvananthapuram, Kerala",startedAt:new Date(Date.now()-1800000).toISOString(),lastActive:new Date(Date.now()-60000).toISOString(),suspicious:false,deviceCount:1},
+];}
+function seedSessPolicy():SessionPolicy[]{return[
+  {id:"sp1",label:"Session Timeout (min)",value:60,type:"number",description:"Auto-logout after inactivity"},
+  {id:"sp2",label:"Max Devices Per User",value:3,type:"number",description:"Maximum simultaneous sessions"},
+  {id:"sp3",label:"Force Logout Suspicious Sessions",value:true,type:"boolean",description:"Auto-logout flagged sessions"},
+];}
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
 }
 
@@ -34,8 +45,8 @@ export default function AdminSessionManager() {
   const { toast } = useToast();
 
   const [tab, setTab]         = useState<"sessions"|"policy">("sessions");
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [policies, setPolicies] = useState<SessionPolicy[]>([]);
+  const [sessions, setSessions] = useState<Session[]>(()=>load(SESS_LIST_KEY,seedSessionList));
+  const [policies, setPolicies] = useState<SessionPolicy[]>(()=>load(SESS_POL_KEY,seedSessPolicy));
   const [confirmLogout, setConfirmLogout] = useState<Session|null>(null);
   const [confirmAll, setConfirmAll] = useState(false);
   const [editId, setEditId]   = useState<string|null>(null);

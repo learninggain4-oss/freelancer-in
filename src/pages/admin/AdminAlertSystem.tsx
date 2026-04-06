@@ -16,6 +16,22 @@ const TH = {
 
 const SERVICES_KEY = "admin_alert_services_v1";
 const CHANNELS_KEY = "admin_alert_channels_v1";
+const ALERT_EVENTS_KEY = "admin_alert_events_v1";
+const defaultChannels: AlertChannel[] = [
+  {id:"ac1",type:"email",label:"Admin Email",endpoint:"freeandin9@gmail.com",enabled:true,lastTested:new Date(Date.now()-3600000).toISOString(),testStatus:"ok"},
+  {id:"ac2",type:"push",label:"OneSignal Push",endpoint:"https://onesignal.com/api/v1/",enabled:true,lastTested:new Date(Date.now()-7200000).toISOString(),testStatus:"ok"},
+  {id:"ac3",type:"webhook",label:"Slack Webhook",endpoint:"https://hooks.slack.com/services/T000/B000/xxx",enabled:false},
+];
+const defaultAlerts: AlertEvent[] = [
+  {id:"ae1",title:"High Fraud Score User",severity:"critical",source:"fraud-detection",message:"User priya@example.com has fraud score >90",timestamp:new Date(Date.now()-3600000).toISOString(),delivered:true,channel:"email"},
+  {id:"ae2",title:"DB Backup Complete",severity:"info",source:"backup-cron",message:"Full database backup completed successfully",timestamp:new Date(Date.now()-86400000).toISOString(),delivered:true,channel:"push"},
+  {id:"ae3",title:"API Rate Limit Exceeded",severity:"high",source:"rate-limiter",message:"45.33.32.156 exceeded login rate limit (18 attempts)",timestamp:new Date(Date.now()-7200000).toISOString(),delivered:true,channel:"email"},
+];
+const defaultServices: ServiceDep[] = [
+  {id:"sd1",name:"Supabase",url:"https://maysttckdfnnzvfeujaj.supabase.co",category:"Database",status:"online",latency:45,lastChecked:new Date(Date.now()-60000).toISOString()},
+  {id:"sd2",name:"OneSignal",url:"https://onesignal.com/api/v1/",category:"Notifications",status:"online",latency:220,lastChecked:new Date(Date.now()-60000).toISOString()},
+  {id:"sd3",name:"GitHub",url:"https://api.github.com",category:"Deployment",status:"online",latency:180,lastChecked:new Date(Date.now()-60000).toISOString()},
+];
 
 interface AlertChannel { id: string; type: "email" | "sms" | "push" | "webhook"; label: string; endpoint: string; enabled: boolean; lastTested?: string; testStatus?: "ok" | "fail"; }
 interface AlertEvent { id: string; title: string; severity: "critical" | "high" | "medium" | "info"; source: string; message: string; timestamp: string; delivered: boolean; channel: string; }
@@ -61,9 +77,9 @@ export default function AdminAlertSystem() {
   const { toast } = useToast();
 
   const [tab, setTab]         = useState<"live" | "channels" | "services">("live");
-  const [channels, setChannels] = useState<AlertChannel[]>([]);
-  const [alerts]              = useState<AlertEvent[]>([]);
-  const [services, setServices] = useState<ServiceDep[]>([]);
+  const [channels, setChannels] = useState<AlertChannel[]>(()=>load(CHANNELS_KEY,defaultChannels));
+  const [alerts, setAlerts]    = useState<AlertEvent[]>(()=>load(ALERT_EVENTS_KEY,defaultAlerts));
+  const [services, setServices] = useState<ServiceDep[]>(()=>load(SERVICES_KEY,defaultServices));
   const [checking, setChecking] = useState(false);
   const [sevFilter, setSevFilter] = useState("all");
 

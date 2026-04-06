@@ -23,6 +23,20 @@ interface NotifSetting { id:string; label:string; value:number|boolean; type:"nu
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
+const NOTIF_JOBS_KEY="admin_notif_jobs_v1";const NOTIF_LOGS_KEY="admin_notif_logs_v1";const NOTIF_SETTINGS_KEY="admin_notif_settings_v1";
+function seedNotifJobs():NotifJob[]{return[
+  {id:"nj1",title:"Welcome Email — New User",type:"email",recipients:1,attempts:1,maxAttempts:3,status:"delivered",sentAt:new Date(Date.now()-3600000).toISOString(),isDuplicate:false},
+  {id:"nj2",title:"Withdrawal Approved",type:"push",recipients:1,attempts:1,maxAttempts:3,status:"delivered",sentAt:new Date(Date.now()-7200000).toISOString(),isDuplicate:false},
+  {id:"nj3",title:"Weekly Digest",type:"email",recipients:1240,attempts:2,maxAttempts:3,status:"failed",failReason:"SMTP limit reached",isDuplicate:false},
+];}
+function seedNotifLogs():NotifLog[]{return[
+  {id:"nl1",title:"Welcome Email — New User",type:"email",recipients:1,delivered:1,failed:0,timestamp:new Date(Date.now()-3600000).toISOString(),triggeredBy:"auth.signup"},
+];}
+function seedNotifSettings():NotifSetting[]{return[
+  {id:"ns1",label:"Daily Email Limit",value:5000,type:"number",description:"Max emails per day"},
+  {id:"ns2",label:"Retry Failed Notifications",value:true,type:"boolean",description:"Auto retry failed jobs"},
+  {id:"ns3",label:"Cooldown Between Retries (min)",value:15,type:"number",description:"Wait time between retry attempts"},
+];}
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
 }
 
@@ -35,9 +49,9 @@ export default function AdminNotificationCenter() {
   const { toast } = useToast();
 
   const [tab, setTab]         = useState<"queue"|"logs"|"settings">("queue");
-  const [jobs, setJobs]       = useState<NotifJob[]>([]);
-  const [logs]                = useState<NotifLog[]>([]);
-  const [settings, setSettings] = useState<NotifSetting[]>([]);
+  const [jobs, setJobs]       = useState<NotifJob[]>(()=>load(NOTIF_JOBS_KEY,seedNotifJobs));
+  const [logs, setLogs]       = useState<NotifLog[]>(()=>load(NOTIF_LOGS_KEY,seedNotifLogs));
+  const [settings, setSettings] = useState<NotifSetting[]>(()=>load(NOTIF_SETTINGS_KEY,seedNotifSettings));
   const [editId, setEditId]   = useState<string|null>(null);
   const [editVal, setEditVal] = useState<string|number>("");
   const [retrying, setRetrying] = useState<string|null>(null);

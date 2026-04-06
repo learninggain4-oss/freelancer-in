@@ -9,9 +9,15 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface ExportFormat{id:string;name:string;format:"csv"|"xlsx"|"pdf"|"json";supported:boolean;tested:boolean;encoding:string;maxRows:number;status:"ok"|"issue";}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const EXPORT_FMT_KEY="admin_export_formats_v1";
+function seedFormats():any[]{return[
+  {id:"ef1",name:"CSV Export",format:"csv",tables:["profiles","projects","withdrawals"],includeHeaders:true,delimiter:",",encoding:"UTF-8",enabled:true},
+  {id:"ef2",name:"JSON Export",format:"json",tables:["profiles","projects"],pretty:true,enabled:true},
+  {id:"ef3",name:"Excel Export",format:"xlsx",tables:["withdrawals","bank_verifications"],sheetPerTable:true,enabled:false},
+];}
 export default function AdminExportFormat(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[formats,setFormats]=useState([]);
+  const[formats,setFormats]=useState<any[]>(()=>load(EXPORT_FMT_KEY,seedFormats));
   const[testing,setTesting]=useState<string|null>(null);
   const[exporting,setExporting]=useState<string|null>(null);
 

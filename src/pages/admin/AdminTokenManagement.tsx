@@ -17,12 +17,19 @@ interface TokenType{id:string;name:string;type:string;totalActive:number;expirin
 
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const TOKEN_KEY="admin_tokens_v1";
+function seedTokens():TokenType[]{return[
+  {id:"tk1",name:"User Sessions",type:"session",totalActive:1240,expiringSoon:45,expired:120,avgTtlHours:24,autoRefresh:true,status:"healthy",lastRotated:new Date(Date.now()-86400000).toISOString()},
+  {id:"tk2",name:"API Access Tokens",type:"api",totalActive:38,expiringSoon:5,expired:12,avgTtlHours:720,autoRefresh:false,status:"warning",lastRotated:new Date(Date.now()-864e5*30).toISOString()},
+  {id:"tk3",name:"Password Reset Tokens",type:"reset",totalActive:8,expiringSoon:0,expired:240,avgTtlHours:1,autoRefresh:false,status:"healthy",lastRotated:new Date().toISOString()},
+  {id:"tk4",name:"Admin Refresh Tokens",type:"refresh",totalActive:5,expiringSoon:1,expired:20,avgTtlHours:168,autoRefresh:true,status:"healthy",lastRotated:new Date(Date.now()-864e5*7).toISOString()},
+];}
 const sColor={healthy:"#4ade80",warning:"#fbbf24",critical:"#f87171"};
 
 export default function AdminTokenManagement(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[tokens,setTokens]=useState<TokenType[]>([]);
+  const[tokens,setTokens]=useState<TokenType[]>(()=>load(TOKEN_KEY,seedTokens));
   const[rotating,setRotating]=useState<string|null>(null);
   const[revoking,setRevoking]=useState<string|null>(null);
 

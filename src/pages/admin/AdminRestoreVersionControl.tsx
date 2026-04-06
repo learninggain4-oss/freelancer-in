@@ -10,11 +10,17 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface Backup{id:string;name:string;version:string;appVersion:string;sizeGB:number;createdAt:string;status:"compatible"|"incompatible"|"unknown";tables:number;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const RESTORE_VC_KEY="admin_restore_vc_v1";
+function seedRestoreBackups():Backup[]{return[
+  {id:"rv1",name:"Full Backup 2025-04-05",version:"v2.4.1",appVersion:"2.4.1",sizeGB:4.2,createdAt:new Date(Date.now()-86400000).toISOString(),status:"compatible",tables:12},
+  {id:"rv2",name:"Full Backup 2025-04-03",version:"v2.4.0",appVersion:"2.4.0",sizeGB:4.1,createdAt:new Date(Date.now()-864e5*3).toISOString(),status:"compatible",tables:12},
+  {id:"rv3",name:"Full Backup 2025-03-28",version:"v2.3.9",appVersion:"2.3.9",sizeGB:3.9,createdAt:new Date(Date.now()-864e5*9).toISOString(),status:"incompatible",tables:11},
+];}
 const sColor={compatible:"#4ade80",incompatible:"#f87171",unknown:"#94a3b8"};
 
 export default function AdminRestoreVersionControl(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[backups]=useState([]);
+  const[backups,setBackups]=useState<Backup[]>(()=>load(RESTORE_VC_KEY,seedRestoreBackups));
   const[restoring,setRestoring]=useState<string|null>(null);
   const[checking,setChecking]=useState<string|null>(null);
   const currentSchema="schema_v48";const currentApp="v2.4";

@@ -11,9 +11,16 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface FeatureFlag{id:string;name:string;key:string;enabled:boolean;rolloutPct:number;targetGroups:string[];env:"production"|"staging"|"testing";version:string;lastChanged:string;changedBy:string;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const FLAGS_KEY="admin_feature_flags_v1";
+function seedFlags():any[]{return[
+  {id:"ff1",name:"dark_mode",label:"Dark Mode",enabled:true,rolloutPct:100,environment:"all",updatedBy:"freeandin9@gmail.com",updatedAt:new Date(Date.now()-864e5*14).toISOString()},
+  {id:"ff2",name:"pwa_install",label:"PWA Install Prompt",enabled:true,rolloutPct:100,environment:"production",updatedBy:"freeandin9@gmail.com",updatedAt:new Date(Date.now()-864e5*7).toISOString()},
+  {id:"ff3",name:"referral_program",label:"Referral Program",enabled:false,rolloutPct:0,environment:"staging",updatedBy:"freeandin9@gmail.com",updatedAt:new Date(Date.now()-86400000).toISOString()},
+  {id:"ff4",name:"ai_matching",label:"AI Job Matching",enabled:false,rolloutPct:10,environment:"testing",updatedBy:"freeandin9@gmail.com",updatedAt:new Date(Date.now()-3600000).toISOString()},
+];}
 export default function AdminFeatureFlags(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[flags,setFlags]=useState([]);
+  const[flags,setFlags]=useState<any[]>(()=>load(FLAGS_KEY,seedFlags));
   const[rolling,setRolling]=useState<string|null>(null);
 
   const toggle=(id:string)=>{

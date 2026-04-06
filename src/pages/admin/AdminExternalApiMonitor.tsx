@@ -10,11 +10,17 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface ApiService{id:string;name:string;provider:string;usageToday:number;limitToday:number;latencyMs:number;status:"healthy"|"degraded"|"down";errors24h:number;fallbackActive:boolean;lastCheck:string;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const EXT_API_KEY="admin_ext_apis_v1";
+function seedExtApis():any[]{return[
+  {id:"ea1",name:"Supabase",url:"https://maysttckdfnnzvfeujaj.supabase.co/rest/v1/",status:"healthy",avgMs:45,uptime:99.9,lastCheck:new Date(Date.now()-60000).toISOString()},
+  {id:"ea2",name:"OneSignal",url:"https://onesignal.com/api/v1/",status:"healthy",avgMs:220,uptime:99.5,lastCheck:new Date(Date.now()-60000).toISOString()},
+  {id:"ea3",name:"GitHub API",url:"https://api.github.com",status:"healthy",avgMs:180,uptime:99.8,lastCheck:new Date(Date.now()-60000).toISOString()},
+];}
 const sColor={healthy:"#4ade80",degraded:"#fbbf24",down:"#f87171"};
 
 export default function AdminExternalApiMonitor(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[services,setServices]=useState([]);
+  const[services,setServices]=useState<any[]>(()=>load(EXT_API_KEY,seedExtApis));
   const[checking,setChecking]=useState<string|null>(null);
 
   const check=async(s:ApiService)=>{

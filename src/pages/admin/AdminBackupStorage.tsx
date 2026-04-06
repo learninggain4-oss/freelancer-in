@@ -10,11 +10,17 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface BackupSet{id:string;name:string;usedGB:number;limitGB:number;retentionDays:number;lastBackup:string;status:"ok"|"warning"|"paused";autoPause:boolean;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const BKSTORAGE_KEY="admin_backup_storage_v1";
+function seedBkSets():BackupSet[]{return[
+  {id:"bs1",name:"Primary Supabase Backup",usedGB:4.2,limitGB:10,retentionDays:30,lastBackup:new Date(Date.now()-86400000).toISOString(),status:"ok",autoPause:false},
+  {id:"bs2",name:"Config Snapshot Storage",usedGB:0.8,limitGB:5,retentionDays:90,lastBackup:new Date(Date.now()-172800000).toISOString(),status:"ok",autoPause:false},
+  {id:"bs3",name:"Audit Log Archive",usedGB:9.1,limitGB:10,retentionDays:365,lastBackup:new Date(Date.now()-3600000).toISOString(),status:"warning",autoPause:true},
+];}
 const sColor={ok:"#4ade80",warning:"#fbbf24",paused:"#94a3b8"};
 
 export default function AdminBackupStorage(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[sets,setSets]=useState([]);
+  const[sets,setSets]=useState<BackupSet[]>(()=>load(BKSTORAGE_KEY,seedBkSets));
   const[cleaning,setCleaning]=useState<string|null>(null);
 
   const cleanup=async(b:BackupSet)=>{

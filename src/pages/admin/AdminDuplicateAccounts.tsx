@@ -11,9 +11,14 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface DuplicateGroup{id:string;matchType:"email"|"phone";identifier:string;accounts:number;primaryId:string;detectedAt:string;mergeStatus:"pending"|"merged"|"dismissed";}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const DUP_KEY="admin_duplicate_accounts_v1";
+function seedGroups():any[]{return[
+  {id:"dg1",email:"user@example.com",accounts:[{id:"u1",name:"Rahul Kumar",createdAt:new Date(Date.now()-864e5*10).toISOString()},{id:"u2",name:"Rahul K",createdAt:new Date(Date.now()-864e5*5).toISOString()}],matchType:"email",riskScore:95},
+  {id:"dg2",phone:"+919876543210",accounts:[{id:"u3",name:"Priya S",createdAt:new Date(Date.now()-864e5*20).toISOString()},{id:"u4",name:"Priya Sharma",createdAt:new Date(Date.now()-864e5*2).toISOString()}],matchType:"phone",riskScore:88},
+];}
 export default function AdminDuplicateAccounts(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[groups,setGroups]=useState([]);
+  const[groups,setGroups]=useState<any[]>(()=>load(DUP_KEY,seedGroups));
   const[scanning,setScanning]=useState(false);
   const[acting,setActing]=useState<string|null>(null);
   const[config,setConfig]=useState({checkEmail:true,checkPhone:true,autoDetect:true});

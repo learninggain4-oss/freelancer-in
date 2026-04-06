@@ -24,6 +24,23 @@ interface Checklist { id:string; task:string; category:string; completed:boolean
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
+const KB_GUIDES_KEY="admin_kb_guides_v1";const KB_ADMINS_KEY="admin_kb_admins_v1";const KB_TRAINING_KEY="admin_kb_training_v1";const KB_CHECKLIST_KEY="admin_kb_checklist_v1";
+function seedGuides():Guide[]{return[
+  {id:"g1",title:"Admin Dashboard Overview",category:"Getting Started",role:["admin","super_admin"],lastUpdated:new Date(Date.now()-864e5*7).toISOString(),updatedBy:"freeandin9@gmail.com",content:"Overview of all admin sections and their functions.",essential:true},
+  {id:"g2",title:"Managing User Accounts",category:"Users",role:["admin","super_admin"],lastUpdated:new Date(Date.now()-864e5*14).toISOString(),updatedBy:"freeandin9@gmail.com",content:"How to view, edit, block, and delete user accounts.",essential:true},
+  {id:"g3",title:"Fraud Detection Guide",category:"Security",role:["super_admin"],lastUpdated:new Date(Date.now()-864e5*3).toISOString(),updatedBy:"freeandin9@gmail.com",content:"How to use fraud rules and automation.",essential:false},
+];}
+function seedBackupAdmins():BackupAdmin[]{return[
+  {id:"ba1",name:"Super Admin",email:"freeandin9@gmail.com",role:"super_admin",coveredAreas:["Users","Payments","Security"],trainingCompleted:true,lastActive:new Date().toISOString()},
+];}
+function seedTrainingLogs():TrainingLog[]{return[
+  {id:"tl1",admin:"freeandin9@gmail.com",guide:"Admin Dashboard Overview",completedAt:new Date(Date.now()-864e5*5).toISOString(),passed:true},
+];}
+function seedChecklist2():Checklist[]{return[
+  {id:"ch1",task:"Review pending withdrawals",category:"Payments",completed:false},
+  {id:"ch2",task:"Check fraud alerts",category:"Security",completed:true,completedAt:new Date(Date.now()-3600000).toISOString(),completedBy:"freeandin9@gmail.com"},
+  {id:"ch3",task:"Backup database",category:"System",completed:false},
+];}
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
 }
 
@@ -34,9 +51,9 @@ export default function AdminKnowledgeBase() {
   const { toast } = useToast();
 
   const [tab, setTab]         = useState<"guides"|"backup"|"checklist">("guides");
-  const [guides]              = useState<Guide[]>([]);
-  const [backups]             = useState<BackupAdmin[]>([]);
-  const [checklist, setChecklist] = useState<Checklist[]>([]);
+  const [guides, setGuides]     = useState<Guide[]>(()=>load(KB_GUIDES_KEY,seedGuides));
+  const [backups, setBackups]   = useState<BackupAdmin[]>(()=>load(KB_ADMINS_KEY,seedBackupAdmins));
+  const [checklist, setChecklist] = useState<Checklist[]>(()=>load(KB_CHECKLIST_KEY,seedChecklist2));
   const [expanded, setExpanded] = useState<string|null>(null);
   const [search, setSearch]   = useState("");
 

@@ -18,6 +18,14 @@ interface RecoveryLog{id:string;event:string;trigger:string;durationMins:number;
 
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const DR_PLANS_KEY="admin_dr_plans_v1";const DR_LOGS_KEY="admin_dr_logs_v1";
+function seedDrPlans():RecoveryPlan[]{return[
+  {id:"drp1",name:"Database Failure Recovery",trigger:"DB connection lost",rto:30,rpo:5,steps:["Switch to backup DB","Notify team","Verify data integrity"],lastTested:new Date(Date.now()-864e5*14).toISOString(),status:"ready"},
+  {id:"drp2",name:"Full System Outage",trigger:"All services down",rto:120,rpo:15,steps:["Activate backup server","Restore from latest backup","DNS failover"],lastTested:new Date(Date.now()-864e5*30).toISOString(),status:"ready"},
+];}
+function seedDrLogs():RecoveryLog[]{return[
+  {id:"drl1",plan:"Database Failure Recovery",startedAt:new Date(Date.now()-864e5*14).toISOString(),completedAt:new Date(Date.now()-864e5*14+1800000).toISOString(),triggeredBy:"Manual drill",success:true,notes:"30 min RTO achieved"},
+];}
 const sColor={ready:"#4ade80",activating:"#a5b4fc",not_ready:"#f87171"};
 const prColor={critical:"#f87171",high:"#fb923c",medium:"#fbbf24"};
 
@@ -25,8 +33,8 @@ export default function AdminDisasterRecovery(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"plans"|"logs">("plans");
-  const[plans,setPlans]=useState<RecoveryPlan[]>([]);
-  const[logs]=useState<RecoveryLog[]>([]);
+  const[plans,setPlans]=useState<RecoveryPlan[]>(()=>load(DR_PLANS_KEY,seedDrPlans));
+  const[logs,setLogs]=useState<RecoveryLog[]>(()=>load(DR_LOGS_KEY,seedDrLogs));
   const[testing,setTesting]=useState<string|null>(null);
   const[activating,setActivating]=useState<string|null>(null);
   const[confirmActivate,setConfirmActivate]=useState<string|null>(null);

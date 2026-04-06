@@ -16,12 +16,23 @@ interface LogStore{id:string;name:string;type:string;sizeMB:number;maxMB:number;
 
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const LOGS_MGMT_KEY="admin_logs_mgmt_v1";
+function seedLogs3():any[]{return[
+  {id:"lm1",level:"info",message:"Admin logged in",source:"auth",actor:"freeandin9@gmail.com",timestamp:new Date(Date.now()-3600000).toISOString()},
+  {id:"lm2",level:"warning",message:"High memory usage: 87%",source:"system",actor:"system",timestamp:new Date(Date.now()-7200000).toISOString()},
+  {id:"lm3",level:"error",message:"Failed withdrawal payment gateway timeout",source:"payment",actor:"system",timestamp:new Date(Date.now()-86400000).toISOString()},
+  {id:"lm4",level:"info",message:"Backup completed successfully",source:"backup",actor:"cron",timestamp:new Date(Date.now()-172800000).toISOString()},
+];}
 const sColor={ok:"#4ade80",warning:"#fbbf24",full:"#f87171"};
 
 export default function AdminLogManagement(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[stores,setStores]=useState<LogStore[]>([]);
+  const[stores,setStores]=useState<LogStore[]>(()=>load(LOGS_MGMT_KEY,()=>[
+  {id:"ls1",name:"Application Logs",type:"app",sizeMB:124,maxMB:500,retentionDays:30,compressionEnabled:true,autoCleanup:true,archivedMB:0,status:"ok",lastRotated:new Date(Date.now()-86400000).toISOString()},
+  {id:"ls2",name:"Error Logs",type:"error",sizeMB:48,maxMB:200,retentionDays:60,compressionEnabled:true,autoCleanup:true,archivedMB:12,status:"ok",lastRotated:new Date(Date.now()-3600000).toISOString()},
+  {id:"ls3",name:"Access Logs",type:"access",sizeMB:480,maxMB:500,retentionDays:90,compressionEnabled:false,autoCleanup:false,archivedMB:0,status:"warning",lastRotated:new Date(Date.now()-172800000).toISOString()},
+]));
   const[rotating,setRotating]=useState<string|null>(null);
   const[compressing,setCompressing]=useState<string|null>(null);
   const[archiving,setArchiving]=useState<string|null>(null);

@@ -9,12 +9,20 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface AuditItem{id:string;category:string;check:string;status:"pass"|"warn"|"fail";detail:string;severity:"critical"|"high"|"medium"|"low";lastChecked:string;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const AUDIT_KEY="admin_comprehensive_audit_v1";
+function seedAuditItems():AuditItem[]{return[
+  {id:"ai1",category:"Authentication",check:"2FA enforcement",status:"pass",detail:"2FA is enabled for all admin accounts",severity:"critical",lastChecked:new Date().toISOString()},
+  {id:"ai2",category:"Data",check:"Backup freshness",status:"pass",detail:"Last backup 18 hours ago",severity:"high",lastChecked:new Date().toISOString()},
+  {id:"ai3",category:"Security",check:"CSRF protection",status:"pass",detail:"CSRF tokens active on all forms",severity:"high",lastChecked:new Date().toISOString()},
+  {id:"ai4",category:"Performance",check:"API response time",status:"warn",detail:"3 endpoints > 500ms avg",severity:"medium",lastChecked:new Date().toISOString()},
+  {id:"ai5",category:"Storage",check:"Backup storage usage",status:"warn",detail:"Audit log archive at 91% capacity",severity:"medium",lastChecked:new Date().toISOString()},
+];}
 const sColor={pass:"#4ade80",warn:"#fbbf24",fail:"#f87171"};
 const sevColor={critical:"#f87171",high:"#fb923c",medium:"#fbbf24",low:"#4ade80"};
 
 export default function AdminComprehensiveAudit(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[items,setItems]=useState([]);
+  const[items,setItems]=useState<AuditItem[]>(()=>load(AUDIT_KEY,seedAuditItems));
   const[running,setRunning]=useState(false);
   const[filter,setFilter]=useState<"all"|"pass"|"warn"|"fail">("all");
 

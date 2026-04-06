@@ -29,6 +29,11 @@ function genMetrics():ResourceMetric[]{
 interface Alert{id:string;metric:string;value:string;at:string;resolved:boolean;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const SYSRES_ALERTS_KEY="admin_sys_alerts_v1";
+function seedSysAlerts():Alert[]{return[
+  {id:"sa1",metric:"Memory",value:"91%",at:new Date(Date.now()-3600000).toISOString(),resolved:true},
+  {id:"sa2",metric:"Disk",value:"95%",at:new Date(Date.now()-86400000).toISOString(),resolved:false},
+];}
 function CircularBar({pct,color,size=90,label}:{pct:number;color:string;size?:number;label:string}){
   const r=size*.38,cx=size/2,cy=size/2,circ=2*Math.PI*r;
   const dash=(pct/100)*circ*0.75;
@@ -48,7 +53,7 @@ export default function AdminSystemResources(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{toast}=useToast();
   const[metrics,setMetrics]=useState<ResourceMetric[]>(genMetrics);
-  const[alerts]=useState<Alert[]>([]);
+  const[alerts,setAlerts]=useState<Alert[]>(()=>load(SYSRES_ALERTS_KEY,seedSysAlerts));
   const[refreshing,setRefreshing]=useState(false);
 
   useEffect(()=>{const iv=setInterval(()=>setMetrics(genMetrics()),8000);return()=>clearInterval(iv);},[]);

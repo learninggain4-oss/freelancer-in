@@ -21,6 +21,17 @@ interface ReportSetting { id:string; label:string; value:number|boolean; type:"n
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
+const REPORTS_KEY="admin_reports_v1";const RSETTINGS_KEY="admin_report_settings_v1";
+function seedReports():Report[]{return[
+  {id:"rp1",name:"Monthly Revenue Report",type:"financial",status:"ready",rowCount:1240,sizeMB:0.8,requestedAt:new Date(Date.now()-3600000).toISOString(),completedAt:new Date(Date.now()-3540000).toISOString(),requestedBy:"freeandin9@gmail.com",cached:true,scheduledDaily:false},
+  {id:"rp2",name:"User Activity Summary",type:"users",status:"ready",rowCount:5820,sizeMB:2.1,requestedAt:new Date(Date.now()-86400000).toISOString(),completedAt:new Date(Date.now()-86340000).toISOString(),requestedBy:"freeandin9@gmail.com",cached:false,scheduledDaily:true},
+  {id:"rp3",name:"Fraud Detection Report",type:"security",status:"generating",pct:65,requestedAt:new Date(Date.now()-600000).toISOString(),requestedBy:"freeandin9@gmail.com",cached:false,scheduledDaily:false},
+];}
+function seedRSetts():ReportSetting[]{return[
+  {id:"rs1",label:"Max Rows Per Report",value:10000,type:"number",description:"Maximum rows in any single report"},
+  {id:"rs2",label:"Cache Reports (hours)",value:24,type:"number",description:"How long to keep generated reports"},
+  {id:"rs3",label:"Auto-Schedule Daily",value:false,type:"boolean",description:"Run scheduled reports automatically"},
+];}
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
 }
 
@@ -33,8 +44,8 @@ export default function AdminReportGenerator() {
   const { toast } = useToast();
 
   const [tab, setTab]           = useState<"reports"|"settings">("reports");
-  const [reports, setReports]   = useState<Report[]>([]);
-  const [settings, setSettings] = useState<ReportSetting[]>([]);
+  const [reports, setReports]   = useState<Report[]>(()=>load(REPORTS_KEY,seedReports));
+  const [settings, setSettings] = useState<ReportSetting[]>(()=>load(RSETTINGS_KEY,seedRSetts));
   const [editId, setEditId]     = useState<string|null>(null);
   const [editVal, setEditVal]   = useState<string|number>("");
   const [regenerating, setRegenerating] = useState<string|null>(null);

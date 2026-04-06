@@ -20,6 +20,13 @@ interface RetentionPolicy { id:string; dataType:string; category:string; retainD
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
+const RETENTION_KEY2="admin_data_retention_v1";
+function seedPolicies():RetentionPolicy[]{return[
+  {id:"rp1",dataType:"User Profiles",retentionDays:2555,autoDelete:false,lastReview:new Date(Date.now()-864e5*30).toISOString()},
+  {id:"rp2",dataType:"Chat Messages",retentionDays:365,autoDelete:true,lastReview:new Date(Date.now()-864e5*14).toISOString()},
+  {id:"rp3",dataType:"Admin Audit Logs",retentionDays:180,autoDelete:false,lastReview:new Date(Date.now()-864e5*7).toISOString()},
+  {id:"rp4",dataType:"Payment Receipts",retentionDays:2555,autoDelete:false,lastReview:new Date(Date.now()-864e5*30).toISOString()},
+];}
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
 }
 
@@ -29,7 +36,7 @@ export default function AdminDataRetention() {
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 
-  const [policies, setPolicies] = useState<RetentionPolicy[]>([]);
+  const [policies, setPolicies] = useState<RetentionPolicy[]>(()=>load(RETENTION_KEY2,seedPolicies));
   const [confirmClean, setConfirmClean] = useState<RetentionPolicy|null>(null);
   const [editId, setEditId]   = useState<string|null>(null);
   const [editDays, setEditDays] = useState("");

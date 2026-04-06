@@ -20,6 +20,18 @@ interface CacheSetting { id:string; label:string; value:number|boolean; type:"nu
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
+const CACHE_ENTRIES_KEY="admin_cache_entries_v1";const CACHE_SETTINGS_KEY="admin_cache_settings_v1";
+function seedEntries():CacheEntry[]{return[
+  {id:"ce1",key:"profiles:all",type:"query",size:"2.4 MB",ttlSec:300,hitRate:94,lastInvalidated:new Date(Date.now()-86400000).toISOString(),status:"healthy"},
+  {id:"ce2",key:"projects:list",type:"query",size:"1.1 MB",ttlSec:120,hitRate:88,status:"healthy"},
+  {id:"ce3",key:"testimonials:active",type:"query",size:"0.3 MB",ttlSec:3600,hitRate:99,status:"healthy"},
+  {id:"ce4",key:"admin_settings",type:"config",size:"0.1 MB",ttlSec:600,hitRate:72,status:"stale"},
+];}
+function seedCSetts():CacheSetting[]{return[
+  {id:"cs1",label:"Default TTL (sec)",value:300,type:"number",description:"Default cache time-to-live"},
+  {id:"cs2",label:"Max Cache Size (MB)",value:512,type:"number",description:"Maximum total cache size"},
+  {id:"cs3",label:"Auto Invalidate on Write",value:true,type:"boolean",description:"Clear cache when data changes"},
+];}
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
 }
 
@@ -33,9 +45,13 @@ export default function AdminCacheManager() {
   const { toast } = useToast();
 
   const [tab, setTab]       = useState<"cache"|"queries"|"settings">("cache");
-  const [entries, setEntries] = useState<CacheEntry[]>([]);
-  const [queries]           = useState<SlowQuery[]>([]);
-  const [settings, setSettings] = useState<CacheSetting[]>([]);
+  const [entries, setEntries] = useState<CacheEntry[]>(()=>load(CACHE_ENTRIES_KEY,seedEntries));
+  const [queries, setQueries] = useState<SlowQuery[]>(()=>load("admin_slow_queries_v1",()=>[
+    {id:"sq1",query:"SELECT * FROM profiles WHERE full_name ILIKE '%rahul%'",table:"profiles",avgMs:1240,executions:88,lastRun:new Date(Date.now()-3600000).toISOString(),indexed:false},
+    {id:"sq2",query:"SELECT * FROM projects WHERE status = 'open' ORDER BY created_at DESC",table:"projects",avgMs:680,executions:456,lastRun:new Date(Date.now()-7200000).toISOString(),indexed:false},
+    {id:"sq3",query:"SELECT * FROM withdrawals WHERE requested_at > NOW() - INTERVAL '7 days'",table:"withdrawals",avgMs:340,executions:124,lastRun:new Date(Date.now()-86400000).toISOString(),indexed:true},
+  ]));
+  const [settings, setSettings] = useState<CacheSetting[]>(()=>load(CACHE_SETTINGS_KEY,seedCSetts));
   const [flushing, setFlushing] = useState<string|null>(null);
   const [flushAll, setFlushAll] = useState(false);
   const [editId, setEditId] = useState<string|null>(null);

@@ -11,9 +11,14 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface ThreatEvent{id:string;type:string;payload:string;field:string;user:string;ip:string;at:string;blocked:boolean;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const XSS_KEY="admin_xss_events_v1";
+function seedXssEvents():ThreatEvent[]{return[
+  {id:"xe1",type:"Stored XSS",payload:"<script>alert('xss')</script>",field:"bio",user:"attacker@spam.com",ip:"45.33.32.156",at:new Date(Date.now()-3600000).toISOString(),blocked:true},
+  {id:"xe2",type:"Reflected XSS",payload:"<img src=x onerror=alert(1)>",field:"search",user:"unknown",ip:"192.168.1.100",at:new Date(Date.now()-7200000).toISOString(),blocked:true},
+];}
 export default function AdminXssProtection(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[events]=useState([]);
+  const[events,setEvents]=useState<ThreatEvent[]>(()=>load(XSS_KEY,seedXssEvents));
   const[config,setConfig]=useState({sanitizationEnabled:true,htmlValidation:true,contentFiltering:true,alertsEnabled:true,cspEnabled:true});
   const[testInput,setTestInput]=useState("");
   const[testResult,setTestResult]=useState<string|null>(null);

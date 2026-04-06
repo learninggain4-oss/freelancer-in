@@ -12,10 +12,22 @@ interface RoleChange{id:string;user:string;fromRole:string;toRole:string;request
 interface Role{id:string;name:string;level:number;permissions:string[];users:number;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const RBAC_CH_KEY="admin_rbac_changes_v1";const RBAC_ROLES_KEY="admin_rbac_roles_v1";
+function seedRoleChanges():RoleChange[]{return[
+  {id:"rc1",user:"admin2@freelan.space",fromRole:"moderator",toRole:"admin",requestedBy:"freeandin9@gmail.com",status:"approved",at:new Date(Date.now()-86400000).toISOString(),suspicious:false},
+  {id:"rc2",user:"newmod@freelan.space",fromRole:"user",toRole:"moderator",requestedBy:"freeandin9@gmail.com",status:"pending",at:new Date(Date.now()-3600000).toISOString(),suspicious:false},
+];}
+function seedRoles2():Role[]{return[
+  {id:"r1",name:"super_admin",level:100,permissions:["*"],users:1},
+  {id:"r2",name:"admin",level:80,permissions:["users.read","users.write","payments.read"],users:3},
+  {id:"r3",name:"moderator",level:50,permissions:["users.read","content.moderate"],users:5},
+  {id:"r4",name:"freelancer",level:10,permissions:["profile.own","projects.bid"],users:9240},
+  {id:"r5",name:"employer",level:10,permissions:["profile.own","projects.post"],users:3160},
+];}
 export default function AdminRbacSecurity(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[roles]=useState([]);
-  const[changes,setChanges]=useState([]);
+  const[roles,setRoles]=useState<Role[]>(()=>load(RBAC_ROLES_KEY,seedRoles2));
+  const[changes,setChanges]=useState<RoleChange[]>(()=>load(RBAC_CH_KEY,seedRoleChanges));
   const[acting,setActing]=useState<string|null>(null);
   const[tab,setTab]=useState<"roles"|"changes">("changes");
 

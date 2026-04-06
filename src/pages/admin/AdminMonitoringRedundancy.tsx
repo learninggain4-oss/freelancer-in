@@ -17,12 +17,19 @@ interface MonitoringService{id:string;name:string;type:string;primary:boolean;st
 
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+const MON_RED_KEY="admin_monitoring_redundancy_v1";
+function seedMonServices():MonitoringService[]{return[
+  {id:"ms1",name:"Primary Health Check",type:"http",primary:true,status:"active",uptimePct:99.9,lastCheck:new Date(Date.now()-30000).toISOString(),failoverReady:true},
+  {id:"ms2",name:"Secondary Health Check",type:"http",primary:false,status:"standby",uptimePct:99.5,lastCheck:new Date(Date.now()-30000).toISOString(),failoverReady:true},
+  {id:"ms3",name:"DB Connection Monitor",type:"db",primary:true,status:"active",uptimePct:99.8,lastCheck:new Date(Date.now()-60000).toISOString(),failoverReady:true},
+  {id:"ms4",name:"Alert Notification Service",type:"webhook",primary:true,status:"active",uptimePct:98.2,lastCheck:new Date(Date.now()-120000).toISOString(),failoverReady:false},
+];}
 const sColor={active:"#4ade80",standby:"#94a3b8",failed:"#f87171",recovering:"#fbbf24"};
 
 export default function AdminMonitoringRedundancy(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[services,setServices]=useState<MonitoringService[]>([]);
+  const[services,setServices]=useState<MonitoringService[]>(()=>load(MON_RED_KEY,seedMonServices));
   const[activating,setActivating]=useState<string|null>(null);
 
   const activateFailover=async(s:MonitoringService)=>{

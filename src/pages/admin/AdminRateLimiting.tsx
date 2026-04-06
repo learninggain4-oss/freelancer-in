@@ -25,6 +25,22 @@ interface OpQueueItem { id:string; operation:string; requestedBy:string; size:nu
 
 function load<T>(key:string, seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
+const RATE_RULES_KEY="admin_rate_rules_v1";const RATE_ALERTS_KEY="admin_rate_alerts_v1";const RATE_JOBS_KEY="admin_rate_jobs_v1";const RATE_QUEUE_KEY="admin_rate_queue_v1";
+function seedRules():RateRule[]{return[
+  {id:"r1",action:"login",limitPerMin:5,limitPerHour:20,currentUsage:2,enabled:true,superAdminOverride:false,category:"auth",cooldownSec:60},
+  {id:"r2",action:"api_call",limitPerMin:60,limitPerHour:1000,currentUsage:14,enabled:true,superAdminOverride:false,category:"api",cooldownSec:0},
+  {id:"r3",action:"file_upload",limitPerMin:3,limitPerHour:30,currentUsage:0,enabled:true,superAdminOverride:false,category:"storage",cooldownSec:10},
+  {id:"r4",action:"withdrawal_request",limitPerMin:1,limitPerHour:5,currentUsage:0,enabled:true,superAdminOverride:true,category:"payment",cooldownSec:300},
+];}
+function seedAlerts():AbuseAlert[]{return[
+  {id:"a1",type:"Brute Force",ip:"45.33.32.156",adminEmail:"freeandin9@gmail.com",occurrences:23,timestamp:new Date(Date.now()-3600000).toISOString(),status:"resolved"},
+];}
+function seedJobs2():FailedJob[]{return[
+  {id:"fj1",jobName:"Send OTP",error:"SMTP timeout",attempts:3,maxAttempts:3,lastAttempt:new Date(Date.now()-1800000).toISOString(),status:"failed"},
+];}
+function seedQueue():OpQueueItem[]{return[
+  {id:"q1",operation:"Bulk Profile Sync",requestedBy:"freeandin9@gmail.com",size:450,status:"queued",queuedAt:new Date(Date.now()-300000).toISOString()},
+];}
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
 }
 
@@ -37,10 +53,10 @@ export default function AdminRateLimiting() {
   const { toast } = useToast();
 
   const [tab, setTab]   = useState<"rules"|"abuse"|"jobs"|"queue">("rules");
-  const [rules, setRules] = useState<RateRule[]>([]);
-  const [alerts, setAlerts] = useState<AbuseAlert[]>([]);
-  const [jobs, setJobs] = useState<FailedJob[]>([]);
-  const [queue] = useState<OpQueueItem[]>([]);
+  const [rules, setRules] = useState<RateRule[]>(()=>load(RATE_RULES_KEY,seedRules));
+  const [alerts, setAlerts] = useState<AbuseAlert[]>(()=>load(RATE_ALERTS_KEY,seedAlerts));
+  const [jobs, setJobs] = useState<FailedJob[]>(()=>load(RATE_JOBS_KEY,seedJobs2));
+  const [queue, setQueue] = useState<OpQueueItem[]>(()=>load(RATE_QUEUE_KEY,seedQueue));
   const [editId, setEditId] = useState<string|null>(null);
   const [editLimit, setEditLimit] = useState(0);
   const [retrying, setRetrying] = useState<string|null>(null);

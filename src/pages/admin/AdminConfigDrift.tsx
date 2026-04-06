@@ -11,9 +11,15 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface ConfigItem{id:string;key:string;server1:string;server2:string;expected:string;drifted:boolean;lastSynced:string;category:string;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const DRIFT_KEY="admin_config_drift_v1";
+function seedDrift():ConfigItem[]{return[
+  {id:"cd1",key:"commission_rate",server1:"10",server2:"10",expected:"10",drifted:false,lastSynced:new Date().toISOString(),category:"payments"},
+  {id:"cd2",key:"max_file_size_mb",server1:"10",server2:"15",expected:"10",drifted:true,lastSynced:new Date(Date.now()-3600000).toISOString(),category:"storage"},
+  {id:"cd3",key:"session_timeout_mins",server1:"60",server2:"60",expected:"60",drifted:false,lastSynced:new Date().toISOString(),category:"auth"},
+];}
 export default function AdminConfigDrift(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[configs,setConfigs]=useState([]);
+  const[configs,setConfigs]=useState<ConfigItem[]>(()=>load(DRIFT_KEY,seedDrift));
   const[syncing,setSyncing]=useState<string|null>(null);
   const[syncAll,setSyncAll]=useState(false);
 

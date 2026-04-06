@@ -9,9 +9,15 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface Language{id:string;code:string;name:string;enabled:boolean;completionPct:number;fallback:string;isDefault:boolean;encodingValid:boolean;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const LOCALE_KEY="admin_localization_v1";
+function seedLocales():any[]{return[
+  {id:"lc1",code:"en",name:"English",active:true,coverage:100,strings:1240,missing:0,lastUpdated:new Date().toISOString()},
+  {id:"lc2",code:"ml",name:"Malayalam",active:true,coverage:85,strings:1240,missing:186,lastUpdated:new Date(Date.now()-86400000).toISOString()},
+  {id:"lc3",code:"hi",name:"Hindi",active:false,coverage:42,strings:1240,missing:719,lastUpdated:new Date(Date.now()-864e5*7).toISOString()},
+];}
 export default function AdminLocalization(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[languages,setLanguages]=useState([]);
+  const[languages,setLanguages]=useState<any[]>(()=>load(LOCALE_KEY,seedLocales));
   const[checking,setChecking]=useState(false);
   const[testCode,setTestCode]=useState("Hello, welcome!");
 

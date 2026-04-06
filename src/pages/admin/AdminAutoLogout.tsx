@@ -11,9 +11,15 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 interface LogoutEvent{id:string;user:string;role:string;reason:string;idleMins:number;at:string;}
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
+const AUTO_LOGOUT_KEY="admin_auto_logout_events_v1";
+function seedLogoutEvents():LogoutEvent[]{return[
+  {id:"le1",user:"rahul@example.com",role:"freelancer",reason:"Idle timeout",idleMins:32,at:new Date(Date.now()-3600000).toISOString()},
+  {id:"le2",user:"priya@example.com",role:"employer",reason:"Idle timeout",idleMins:35,at:new Date(Date.now()-7200000).toISOString()},
+  {id:"le3",user:"admin2@freelan.space",role:"admin",reason:"Session force-expired",idleMins:65,at:new Date(Date.now()-86400000).toISOString()},
+];}
 export default function AdminAutoLogout(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[events]=useState([]);
+  const[events,setEvents]=useState<LogoutEvent[]>(()=>load(AUTO_LOGOUT_KEY,seedLogoutEvents));
   const[config,setConfig]=useState({enabled:true,idleTimeoutMins:30,adminTimeoutMins:60,forceLogoutOnSuspicion:true});
   const[testing,setTesting]=useState(false);
   const[forcingAll,setForcingAll]=useState(false);

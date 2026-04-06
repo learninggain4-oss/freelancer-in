@@ -25,6 +25,18 @@ interface TimezoneConfig { current:string; serverTime:string; ntpSynced:boolean;
 
 function load<T>(key:string, seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
+const SCHED_JOBS_KEY="admin_scheduler_jobs_v1";const SCHED_LOGS_KEY="admin_scheduler_logs_v1";
+function seedSchedJobs():CronJob[]{return[
+  {id:"sj1",name:"Daily DB Backup",schedule:"0 2 * * *",description:"Full database backup to storage",enabled:true,lastRun:new Date(Date.now()-86400000).toISOString(),nextRun:new Date(Date.now()+7200000).toISOString(),lastStatus:"success",duration:"5m 40s"},
+  {id:"sj2",name:"Weekly Digest Email",schedule:"0 9 * * 1",description:"Send weekly activity digest to all users",enabled:true,lastRun:new Date(Date.now()-864e5*7).toISOString(),nextRun:new Date(Date.now()+864e5*5).toISOString(),lastStatus:"success",duration:"20m 0s"},
+  {id:"sj3",name:"Clean Expired Sessions",schedule:"*/30 * * * *",description:"Remove expired user sessions",enabled:true,lastRun:new Date(Date.now()-1800000).toISOString(),nextRun:new Date(Date.now()+1800000).toISOString(),lastStatus:"running"},
+  {id:"sj4",name:"Fraud Score Update",schedule:"0 */6 * * *",description:"Recalculate fraud scores for all users",enabled:false,nextRun:new Date(Date.now()+86400000).toISOString(),lastStatus:"never"},
+];}
+function seedSchedLogs():CronLog[]{return[
+  {id:"sl1",jobName:"Daily DB Backup",startedAt:new Date(Date.now()-86400000).toISOString(),duration:"5m 40s",status:"success",output:"Backup written to supabase-storage/backups/2025-04-05.sql.gz"},
+  {id:"sl2",jobName:"Weekly Digest Email",startedAt:new Date(Date.now()-864e5*7).toISOString(),duration:"20m 0s",status:"success",output:"1240 emails sent, 0 failed"},
+  {id:"sl3",jobName:"Fraud Score Update",startedAt:new Date(Date.now()-864e5*14).toISOString(),duration:"0s",status:"failed",output:"Error: Supabase connection timeout after 30s"},
+];}
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
 }
 
@@ -48,8 +60,8 @@ export default function AdminScheduler() {
   const { toast } = useToast();
 
   const [tab, setTab]   = useState<"jobs"|"timezone"|"logs">("jobs");
-  const [jobs, setJobs] = useState<CronJob[]>([]);
-  const [logs]          = useState<CronLog[]>([]);
+  const [jobs, setJobs] = useState<CronJob[]>(()=>load(SCHED_JOBS_KEY,seedSchedJobs));
+  const [logs, setLogs] = useState<CronLog[]>(()=>load(SCHED_LOGS_KEY,seedSchedLogs));
   const [tz, setTz]     = useState<TimezoneConfig>(()=>({
     current:   Intl.DateTimeFormat().resolvedOptions().timeZone,
     serverTime: new Date().toISOString(),
