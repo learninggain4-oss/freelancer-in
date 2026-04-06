@@ -311,36 +311,31 @@ export const useMyConversation = () => {
   });
 };
 
-/** Admin: delete a support conversation and all its messages directly via Supabase client */
+/** Admin: delete a support conversation via Supabase Edge Function (uses service role, bypasses RLS) */
 export const useDeleteConversation = () => {
   const queryClient = useQueryClient();
   const AQK = ["admin-support-conversations"];
 
   const deleteConversation = async (conversationId: string) => {
-    // Delete reactions first (if FK constraints exist)
-    const { data: msgIds } = await supabase
-      .from("support_messages")
-      .select("id")
-      .eq("conversation_id", conversationId);
+    // Always refresh the session before calling so the token is fresh
+    const token = await getToken();
+    if (!token) throw new Error("Not authenticated");
 
-    if (msgIds && msgIds.length > 0) {
-      const ids = msgIds.map((m: any) => m.id);
-      await supabase.from("support_reactions").delete().in("message_id", ids);
+    const res = await callEdgeFunction("support-delete-conversation", {
+      method: "DELETE",
+      body: { conversationId },
+      token,
+    });
+
+    // Surface a clear error if the request itself failed
+    if (!res.ok) {
+      let msg = "Delete failed";
+      try {
+        const json = await res.json();
+        msg = json.error || msg;
+      } catch (_) { /* ignore parse errors */ }
+      throw new Error(msg);
     }
-
-    // Delete all messages in the conversation
-    const { error: msgErr } = await supabase
-      .from("support_messages")
-      .delete()
-      .eq("conversation_id", conversationId);
-    if (msgErr) throw new Error("Failed to delete messages: " + msgErr.message);
-
-    // Delete the conversation itself
-    const { error: convErr } = await supabase
-      .from("support_conversations")
-      .delete()
-      .eq("id", conversationId);
-    if (convErr) throw new Error("Failed to delete conversation: " + convErr.message);
 
     // Remove from cache
     queryClient.setQueryData(AQK, (old: any[]) =>
