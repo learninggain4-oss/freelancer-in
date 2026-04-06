@@ -237,6 +237,18 @@ const AdminProjectAnalytics = lazy(() => import("./pages/admin/AdminProjectAnaly
 const AdminContentModeration = lazy(() => import("./pages/admin/AdminContentModeration"));
 const AdminAffiliateManagement = lazy(() => import("./pages/admin/AdminAffiliateManagement"));
 const AdminFeeConfiguration = lazy(() => import("./pages/admin/AdminFeeConfiguration"));
+const AdminSkillCategoryManagement = lazy(() => import("./pages/admin/AdminSkillCategoryManagement"));
+const AdminKycDashboard = lazy(() => import("./pages/admin/AdminKycDashboard"));
+const AdminSubscriptionManagement = lazy(() => import("./pages/admin/AdminSubscriptionManagement"));
+const AdminRevenueAnalytics = lazy(() => import("./pages/admin/AdminRevenueAnalytics"));
+const AdminMilestoneManagement = lazy(() => import("./pages/admin/AdminMilestoneManagement"));
+const AdminInvoiceManagement = lazy(() => import("./pages/admin/AdminInvoiceManagement"));
+const AdminReviewManagement = lazy(() => import("./pages/admin/AdminReviewManagement"));
+const AdminEmailCampaigns = lazy(() => import("./pages/admin/AdminEmailCampaigns"));
+const AdminPayoutSchedule = lazy(() => import("./pages/admin/AdminPayoutSchedule"));
+const AdminMobileAppManagement = lazy(() => import("./pages/admin/AdminMobileAppManagement"));
+const AdminWaitlistManagement = lazy(() => import("./pages/admin/AdminWaitlistManagement"));
+const AdminSlaReports = lazy(() => import("./pages/admin/AdminSlaReports"));
 const WalletTypes = lazy(() => import("./pages/WalletTypes"));
 const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));
@@ -682,6 +694,18 @@ const AppContent = () => {
               <Route path="content-moderation" element={<AdminContentModeration />} />
               <Route path="affiliate-management" element={<AdminAffiliateManagement />} />
               <Route path="fee-configuration" element={<AdminFeeConfiguration />} />
+              <Route path="skill-category-management" element={<AdminSkillCategoryManagement />} />
+              <Route path="kyc-dashboard" element={<AdminKycDashboard />} />
+              <Route path="subscription-management" element={<AdminSubscriptionManagement />} />
+              <Route path="revenue-analytics" element={<AdminRevenueAnalytics />} />
+              <Route path="milestone-management" element={<AdminMilestoneManagement />} />
+              <Route path="invoice-management" element={<AdminInvoiceManagement />} />
+              <Route path="review-management" element={<AdminReviewManagement />} />
+              <Route path="email-campaigns" element={<AdminEmailCampaigns />} />
+              <Route path="payout-schedule" element={<AdminPayoutSchedule />} />
+              <Route path="mobile-app-management" element={<AdminMobileAppManagement />} />
+              <Route path="waitlist-management" element={<AdminWaitlistManagement />} />
+              <Route path="sla-reports" element={<AdminSlaReports />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
