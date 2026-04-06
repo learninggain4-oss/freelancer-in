@@ -1360,6 +1360,11 @@ function getDiskUsage() {
 
 app.get("/functions/v1/server-metrics", async (req, res) => {
   try {
+    const user = await getUserFromToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    const { data: roleData } = await adminClient.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+    if (!roleData) return res.status(403).json({ error: "Forbidden: admin role required" });
+
     const cpuPct  = await getCpuUsage();
     const totalMem = os.totalmem();
     const freeMem  = os.freemem();
