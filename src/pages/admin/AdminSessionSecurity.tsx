@@ -50,14 +50,17 @@ function getOS(ua: string): string {
   if (ua.includes("iPhone") || ua.includes("iPad")) return "iOS";
   return "Unknown";
 }
-
-,
+function seedSessions(): KnownSession[] {
+  return [
+    { id: "ses1", device: "Desktop", browser: "Chrome", os: "macOS", ip: "192.168.1.100", location: "Delhi, India", isCurrent: true, lastActive: new Date().toISOString(), loginAt: new Date(Date.now() - 3600000).toISOString(), isSuspicious: false, isBlocked: false },
     { id: "ses2", device: "Desktop", browser: "Chrome", os: "Windows", ip: "103.21.58.44", location: "Mumbai, India", isCurrent: false, lastActive: new Date(Date.now() - 86400000).toISOString(), loginAt: new Date(Date.now() - 86400000 * 2).toISOString(), isSuspicious: false, isBlocked: false },
     { id: "ses3", device: "Mobile",  browser: "Safari", os: "iOS",     ip: "45.79.12.200", location: "Chennai, India", isCurrent: false, lastActive: new Date(Date.now() - 3600000 * 6).toISOString(), loginAt: new Date(Date.now() - 3600000 * 8).toISOString(), isSuspicious: true, isBlocked: false },
   ];
 }
 
-,
+function seedSuspicious(): SuspiciousEvent[] {
+  return [
+    { id: "sp1", type: "Multiple failed login attempts (5+)", ip: "103.21.58.44", device: "Chrome/Windows", timestamp: new Date(Date.now() - 3600000).toISOString(), resolved: false },
     { id: "sp2", type: "Login from unusual location (Bangalore)",  ip: "49.204.xx.xx",  device: "Chrome/Linux",   timestamp: new Date(Date.now() - 7200000).toISOString(),  resolved: true },
     { id: "sp3", type: "IP change detected during active session", ip: "45.79.12.200",  device: "Safari/iOS",     timestamp: new Date(Date.now() - 86400000).toISOString(), resolved: false },
   ];
