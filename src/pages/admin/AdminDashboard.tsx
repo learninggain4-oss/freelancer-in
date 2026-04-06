@@ -186,8 +186,9 @@ const AdminDashboard = () => {
   });
   const [commissionStats, setCommissionStats] = useState({ today: 0, thisWeek: 0, thisMonth: 0 });
   const [growthKPIs, setGrowthKPIs] = useState({
-    momUserPct: 0, momRevPct: 0, jobCompletionRate: 0, avgWithdrawal: 0,
+    momUserPct: 0, momRevPct: 0, momJobPct: 0, jobCompletionRate: 0, avgWithdrawal: 0,
   });
+  const [jobGrowthSpark, setJobGrowthSpark] = useState<Array<{ v: number }>>([]);
   const [sysAlerts, setSysAlerts] = useState<Array<{
     msg: string; count: number; color: string; bg: string; border: string; path: string;
   }>>([]);
@@ -446,7 +447,19 @@ const AdminDashboard = () => {
       const activeJobs     = pj.filter(p => p.status !== "open" && p.status !== "draft" && p.status !== "cancelled");
       const jobCompletionRate = activeJobs.length > 0 ? Math.round(pj.filter(p => p.status === "completed").length / activeJobs.length * 100) : 0;
       const avgWithdrawal  = wd.length > 0 ? Math.round(wd.reduce((s, w) => s + Number(w.amount), 0) / wd.length) : 0;
-      setGrowthKPIs({ momUserPct, momRevPct, jobCompletionRate, avgWithdrawal });
+      const lastMonthJobs  = pj.filter(p => { const t = new Date(p.created_at).getTime(); return t >= lastMonthStart && t <= lastMonthEnd; }).length;
+      const thisMonthJobs  = pj.filter(p => new Date(p.created_at).getTime() >= monthStart).length;
+      const momJobPct      = lastMonthJobs > 0 ? Math.round((thisMonthJobs - lastMonthJobs) / lastMonthJobs * 100) : 0;
+      setGrowthKPIs({ momUserPct, momRevPct, momJobPct, jobCompletionRate, avgWithdrawal });
+
+      /* ── Job growth sparkline (weekly counts, last 7 weeks) ── */
+      const jobWeekMap: Record<string, number> = {};
+      for (const p of pj) {
+        const w = weekLabel(p.created_at);
+        jobWeekMap[w] = (jobWeekMap[w] || 0) + 1;
+      }
+      const sortedJobWeeks = Object.entries(jobWeekMap).sort((a, b) => a[0].localeCompare(b[0])).slice(-7);
+      setJobGrowthSpark(sortedJobWeeks.length >= 2 ? sortedJobWeeks.map(([, v]) => ({ v })) : []);
 
       /* ── Section 10: Alerts ── */
       const oneDayAgo  = nowMs - 24 * 60 * 60 * 1000;
@@ -633,31 +646,38 @@ const AdminDashboard = () => {
   );
 
   const pendingTotal = stats.pendingApprovals + stats.pendingAadhaar + stats.pendingWithdrawals;
-  const fallSpark = (n: number) => Array.from({ length: 7 }, (_, i) => ({ v: Math.max(1, Math.round((n || 10) * (0.4 + i * 0.09))) }));
+  const fmtTrend = (pct: number) => pct === 0 ? "—" : `${pct > 0 ? "+" : ""}${pct}%`;
+  const pendingBreakdownSpark = [
+    stats.pendingApprovals, stats.pendingAadhaar, stats.pendingBank,
+    stats.pendingWithdrawals, stats.pendingRecovery, stats.pendingProfileEdits, pendingTotal,
+  ].map(v => ({ v: Math.max(0, v) }));
   const valexCards = [
     {
       label: "Total Users",
       value: stats.totalUsers.toLocaleString("en-IN"),
-      trend: "+12%", up: true, path: "/admin/users", icon: Users,
+      trend: fmtTrend(growthKPIs.momUserPct), up: growthKPIs.momUserPct >= 0,
+      path: "/admin/users", icon: Users,
       grad: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
       shadow: "rgba(102,126,234,.35)",
-      spark: growthData.length >= 2 ? growthData.map(d => ({ v: d.freelancers + d.employers })) : fallSpark(stats.totalUsers),
+      spark: growthData.length >= 2 ? growthData.map(d => ({ v: d.freelancers + d.employers })) : null,
     },
     {
       label: "Total Jobs Posted",
       value: stats.totalJobs.toLocaleString("en-IN"),
-      trend: "+22%", up: true, path: "/admin/jobs", icon: Briefcase,
+      trend: fmtTrend(growthKPIs.momJobPct), up: growthKPIs.momJobPct >= 0,
+      path: "/admin/jobs", icon: Briefcase,
       grad: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
       shadow: "rgba(245,87,108,.35)",
-      spark: revenueData.length >= 2 ? revenueData.map((_, i) => ({ v: Math.max(1, Math.round((stats.totalJobs || 10) * (0.3 + i * 0.1))) })) : fallSpark(stats.totalJobs),
+      spark: jobGrowthSpark.length >= 2 ? jobGrowthSpark : null,
     },
     {
       label: "Total Revenue",
       value: totalRev > 0 ? fmt(totalRev) : "₹0",
-      trend: "+18%", up: true, path: "/admin/wallet-management", icon: IndianRupee,
+      trend: fmtTrend(growthKPIs.momRevPct), up: growthKPIs.momRevPct >= 0,
+      path: "/admin/wallet-management", icon: IndianRupee,
       grad: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
       shadow: "rgba(79,172,254,.35)",
-      spark: revenueData.length >= 2 ? revenueData.map(d => ({ v: d.revenue })) : fallSpark(totalRev || 1000),
+      spark: revenueData.length >= 2 ? revenueData.map(d => ({ v: d.revenue })) : null,
     },
     {
       label: "Pending Actions",
@@ -665,7 +685,7 @@ const AdminDashboard = () => {
       trend: pendingTotal > 10 ? "High" : "Low", up: false, path: "/admin/users", icon: Clock,
       grad: "linear-gradient(135deg, #f7971e 0%, #ffd200 100%)",
       shadow: "rgba(247,151,30,.35)",
-      spark: [12, 9, 14, 11, 8, 10, Math.max(1, pendingTotal)].map(v => ({ v })),
+      spark: pendingBreakdownSpark,
     },
   ];
 
@@ -730,22 +750,29 @@ const AdminDashboard = () => {
               </div>
               <p style={{ fontSize: 30, fontWeight: 900, color: "white", margin: "4px 0 6px", letterSpacing: "-1px", lineHeight: 1 }}>{c.value}</p>
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.9)" }}>{c.up ? "▲" : "▼"} {c.trend}</span>
-                <span style={{ fontSize: 10.5, color: "rgba(255,255,255,.6)" }}>vs last week</span>
+                {c.trend !== "—" && <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.9)" }}>{c.up ? "▲" : "▼"} {c.trend}</span>}
+                {c.trend === "—" && <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,.6)" }}>—</span>}
+                <span style={{ fontSize: 10.5, color: "rgba(255,255,255,.6)" }}>{c.trend === "—" ? "no prior data" : "vs last month"}</span>
               </div>
             </div>
             <div style={{ height: 64 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={c.spark} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id={`sg${c.label.replace(/\s/g,"")}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="rgba(255,255,255,.35)" />
-                      <stop offset="100%" stopColor="rgba(255,255,255,.02)" />
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="v" stroke="rgba(255,255,255,.7)" strokeWidth={2} fill={`url(#sg${c.label.replace(/\s/g,"")})`} dot={false} isAnimationActive={false} />
-                </AreaChart>
-              </ResponsiveContainer>
+              {c.spark ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={c.spark} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id={`sg${c.label.replace(/\s/g,"")}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="rgba(255,255,255,.35)" />
+                        <stop offset="100%" stopColor="rgba(255,255,255,.02)" />
+                      </linearGradient>
+                    </defs>
+                    <Area type="monotone" dataKey="v" stroke="rgba(255,255,255,.7)" strokeWidth={2} fill={`url(#sg${c.label.replace(/\s/g,"")})`} dot={false} isAnimationActive={false} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,.35)" }}>No chart data yet</span>
+                </div>
+              )}
             </div>
           </div>
         ))}
