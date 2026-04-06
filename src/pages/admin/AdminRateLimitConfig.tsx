@@ -10,22 +10,12 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface RateRule{id:string;endpoint:string;limitPerMin:number;burstLimit:number;perUser:number;perIp:number;throttleEnabled:boolean;violations24h:number;status:"ok"|"warning";}
 interface ViolationEntry{id:string;ip:string;endpoint:string;attempts:number;blockedAt:string;}
-const seedRules=():RateRule[]=>[
-  {id:"r1",endpoint:"/api/jobs",limitPerMin:60,burstLimit:20,perUser:30,perIp:60,throttleEnabled:true,violations24h:4,status:"ok"},
-  {id:"r2",endpoint:"/api/wallet/withdraw",limitPerMin:5,burstLimit:2,perUser:3,perIp:5,throttleEnabled:true,violations24h:12,status:"warning"},
-  {id:"r3",endpoint:"/api/auth/login",limitPerMin:10,burstLimit:5,perUser:5,perIp:10,throttleEnabled:true,violations24h:38,status:"warning"},
-  {id:"r4",endpoint:"/api/notifications",limitPerMin:120,burstLimit:40,perUser:60,perIp:120,throttleEnabled:false,violations24h:0,status:"ok"},
-];
-const seedViolations=():ViolationEntry[]=>[
-  {id:"v1",ip:"45.79.12.200",endpoint:"/api/auth/login",attempts:85,blockedAt:new Date(Date.now()-1800000).toISOString()},
-  {id:"v2",ip:"103.21.58.9",endpoint:"/api/wallet/withdraw",attempts:24,blockedAt:new Date(Date.now()-3600000).toISOString()},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminRateLimitConfig(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[rules,setRules]=useState(()=>load("admin_rate_limit_v1",seedRules));
-  const[violations]=useState(()=>load("admin_rate_violations_v1",seedViolations));
+  const[rules,setRules]=useState([]);
+  const[violations]=useState([]);
   const[tab,setTab]=useState<"rules"|"violations">("rules");
   const[saving,setSaving]=useState<string|null>(null);
 

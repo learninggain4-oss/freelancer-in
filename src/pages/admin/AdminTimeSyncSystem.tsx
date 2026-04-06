@@ -14,11 +14,6 @@ const TH={
 
 interface NTPServer{id:string;host:string;region:string;offsetMs:number;latencyMs:number;status:"synced"|"drifted"|"unreachable";lastSync:string;}
 
-const seedServers=():NTPServer[]=>[
-  {id:"n1",host:"time.google.com",region:"Global",offsetMs:2,latencyMs:18,status:"synced",lastSync:new Date(Date.now()-120000).toISOString()},
-  {id:"n2",host:"pool.ntp.org",region:"Global",offsetMs:8,latencyMs:42,status:"synced",lastSync:new Date(Date.now()-180000).toISOString()},
-  {id:"n3",host:"time.cloudflare.com",region:"Global",offsetMs:350,latencyMs:95,status:"drifted",lastSync:new Date(Date.now()-300000).toISOString()},
-];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 function safeFmt(raw:string|undefined,fmt:string,fallback="—"):string{try{if(!raw)return fallback;const d=new Date(raw);if(isNaN(d.getTime()))return fallback;return format(d,fmt);}catch{return fallback;}}
@@ -26,7 +21,7 @@ function safeFmt(raw:string|undefined,fmt:string,fallback="—"):string{try{if(!
 export default function AdminTimeSyncSystem(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[servers,setServers]=useState<NTPServer[]>(()=>load("admin_ntp_v1",seedServers));
+  const[servers,setServers]=useState<NTPServer[]>([]);
   const[now,setNow]=useState(new Date());
   const[syncing,setSyncing]=useState<string|null>(null);
   const[tz,setTz]=useState("Asia/Kolkata");

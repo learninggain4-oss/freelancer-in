@@ -9,17 +9,11 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface DeleteGroup{id:string;table:string;count:number;oldestDeletedAt:string;retentionDays:number;safeToClean:boolean;}
-const seed=():DeleteGroup[]=>[
-  {id:"dg1",table:"jobs",count:8420,oldestDeletedAt:new Date(Date.now()-365*86400000).toISOString(),retentionDays:365,safeToClean:true},
-  {id:"dg2",table:"notifications",count:215000,oldestDeletedAt:new Date(Date.now()-180*86400000).toISOString(),retentionDays:90,safeToClean:true},
-  {id:"dg3",table:"sessions",count:48200,oldestDeletedAt:new Date(Date.now()-30*86400000).toISOString(),retentionDays:30,safeToClean:true},
-  {id:"dg4",table:"messages",count:4200,oldestDeletedAt:new Date(Date.now()-60*86400000).toISOString(),retentionDays:180,safeToClean:false},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminSoftDeleteCleanup(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[groups,setGroups]=useState(()=>load("admin_soft_del_v1",seed));
+  const[groups,setGroups]=useState([]);
   const[cleaning,setCleaning]=useState<string|null>(null);
   const[cleaningAll,setCleaningAll]=useState(false);
 

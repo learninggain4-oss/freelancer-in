@@ -16,20 +16,7 @@ const TH = {
 interface Secret { id:string; name:string; service:string; sensitivity:"critical"|"high"|"medium"; maskedValue:string; lastRotated:string; expiresIn?:number; status:"active"|"expired"|"needs_rotation"; accessCount:number; lastAccessed:string; inLogs:boolean; }
 interface SecretLog { id:string; secretName:string; action:string; actor:string; ip:string; timestamp:string; suspicious:boolean; }
 
-const seedSecrets = (): Secret[] => [
-  { id:"sk1", name:"SUPABASE_SERVICE_ROLE_KEY", service:"Supabase",   sensitivity:"critical", maskedValue:"eyJhbGci••••••••••••••••••",   lastRotated:new Date(Date.now()-864e5*90).toISOString(),  expiresIn:275, status:"active",          accessCount:8420, lastAccessed:new Date(Date.now()-300000).toISOString(),   inLogs:false },
-  { id:"sk2", name:"RAZORPAY_KEY_SECRET",       service:"Razorpay",   sensitivity:"critical", maskedValue:"rzp_live_••••••••••••WXYZ",     lastRotated:new Date(Date.now()-864e5*30).toISOString(),  expiresIn:335, status:"active",          accessCount:1240, lastAccessed:new Date(Date.now()-600000).toISOString(),   inLogs:false },
-  { id:"sk3", name:"ONESIGNAL_REST_API_KEY",    service:"OneSignal",  sensitivity:"high",     maskedValue:"os_v2_app_••••••••••••ABCD",    lastRotated:new Date(Date.now()-864e5*60).toISOString(),  expiresIn:305, status:"active",          accessCount:580,  lastAccessed:new Date(Date.now()-1800000).toISOString(),  inLogs:false },
-  { id:"sk4", name:"DATABASE_URL",              service:"Database",   sensitivity:"critical", maskedValue:"postgresql://postgres:••••@db", lastRotated:new Date(Date.now()-864e5*180).toISOString(), status:"needs_rotation",  accessCount:42100,lastAccessed:new Date(Date.now()-30000).toISOString(),    inLogs:true,  expiresIn:undefined },
-  { id:"sk5", name:"SMTP_PASSWORD",             service:"Email",      sensitivity:"high",     maskedValue:"••••••••••••pass1234",          lastRotated:new Date(Date.now()-864e5*400).toISOString(), status:"expired",         accessCount:840,  lastAccessed:new Date(Date.now()-864e5*5).toISOString(),   inLogs:false },
-];
 
-const seedLogs = (): SecretLog[] => [
-  { id:"l1", secretName:"SUPABASE_SERVICE_ROLE_KEY", action:"Key accessed",     actor:"System (API)",  ip:"127.0.0.1",   timestamp:new Date(Date.now()-300000).toISOString(),   suspicious:false },
-  { id:"l2", secretName:"DATABASE_URL",              action:"Key accessed",     actor:"System (API)",  ip:"127.0.0.1",   timestamp:new Date(Date.now()-600000).toISOString(),   suspicious:false },
-  { id:"l3", secretName:"RAZORPAY_KEY_SECRET",       action:"Accessed via log", actor:"Unknown",       ip:"45.79.12.200", timestamp:new Date(Date.now()-3600000).toISOString(),  suspicious:true  },
-  { id:"l4", secretName:"SUPABASE_SERVICE_ROLE_KEY", action:"Rotation attempted",actor:"Admin A",      ip:"192.168.1.10",timestamp:new Date(Date.now()-7200000).toISOString(),  suspicious:false },
-];
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
@@ -46,8 +33,8 @@ export default function AdminSecretsManager() {
   const { toast } = useToast();
 
   const [tab, setTab]       = useState<"secrets"|"logs">("secrets");
-  const [secrets, setSecrets] = useState<Secret[]>(()=>load("admin_secrets_v1",seedSecrets));
-  const [logs]              = useState<SecretLog[]>(()=>load("admin_secret_logs_v1",seedLogs));
+  const [secrets, setSecrets] = useState<Secret[]>([]);
+  const [logs]              = useState<SecretLog[]>([]);
   const [visible, setVisible] = useState<Set<string>>(new Set());
   const [rotating, setRotating] = useState<string|null>(null);
 

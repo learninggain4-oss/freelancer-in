@@ -9,17 +9,12 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface Backup{id:string;name:string;version:string;appVersion:string;sizeGB:number;createdAt:string;status:"compatible"|"incompatible"|"unknown";tables:number;}
-const seed=():Backup[]=>[
-  {id:"b1",name:"Full DB Backup",version:"schema_v48",appVersion:"v2.4",sizeGB:12.4,createdAt:new Date(Date.now()-86400000).toISOString(),status:"compatible",tables:42},
-  {id:"b2",name:"Pre-migration Backup",version:"schema_v45",appVersion:"v2.1",sizeGB:10.8,createdAt:new Date(Date.now()-604800000).toISOString(),status:"incompatible",tables:38},
-  {id:"b3",name:"Monthly Backup",version:"schema_v47",appVersion:"v2.3",sizeGB:11.6,createdAt:new Date(Date.now()-2592000000).toISOString(),status:"compatible",tables:40},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={compatible:"#4ade80",incompatible:"#f87171",unknown:"#94a3b8"};
 
 export default function AdminRestoreVersionControl(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[backups]=useState(()=>load("admin_restore_v1",seed));
+  const[backups]=useState([]);
   const[restoring,setRestoring]=useState<string|null>(null);
   const[checking,setChecking]=useState<string|null>(null);
   const currentSchema="schema_v48";const currentApp="v2.4";

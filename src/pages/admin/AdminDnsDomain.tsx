@@ -10,23 +10,13 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface DnsRecord{id:string;type:string;name:string;value:string;ttl:number;status:"ok"|"mismatch"|"missing";}
 interface Domain{id:string;domain:string;registrar:string;expiresAt:string;status:"active"|"expiring"|"expired";records:DnsRecord[];}
-const seed=():Domain[]=>[
-  {id:"d1",domain:"freelancer.in",registrar:"GoDaddy",expiresAt:new Date(Date.now()+365*86400000).toISOString(),status:"active",records:[
-    {id:"r1",type:"A",name:"@",value:"104.21.48.1",ttl:300,status:"ok"},
-    {id:"r2",type:"CNAME",name:"www",value:"freelancer.in",ttl:300,status:"ok"},
-    {id:"r3",type:"MX",name:"@",value:"mail.freelancer.in",ttl:3600,status:"mismatch"},
-  ]},
-  {id:"d2",domain:"api.freelancer.in",registrar:"GoDaddy",expiresAt:new Date(Date.now()+30*86400000).toISOString(),status:"expiring",records:[
-    {id:"r4",type:"A",name:"api",value:"104.21.48.2",ttl:300,status:"ok"},
-  ]},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const dColor={active:"#4ade80",expiring:"#fbbf24",expired:"#f87171"};
 const rColor={ok:"#4ade80",mismatch:"#fbbf24",missing:"#f87171"};
 
 export default function AdminDnsDomain(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[domains]=useState(()=>load("admin_dns_v1",seed));
+  const[domains]=useState([]);
   const[checking,setChecking]=useState<string|null>(null);
   const[expanded,setExpanded]=useState<string|null>(null);
 

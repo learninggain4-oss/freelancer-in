@@ -15,12 +15,6 @@ const TH={
 
 interface TokenType{id:string;name:string;type:string;totalActive:number;expiringSoon:number;expired:number;avgTtlHours:number;autoRefresh:boolean;status:"healthy"|"warning"|"critical";lastRotated:string;}
 
-const seedTokens=():TokenType[]=>[
-  {id:"t1",name:"User Auth Tokens",type:"JWT",totalActive:12400,expiringSoon:84,expired:12,avgTtlHours:24,autoRefresh:true,status:"healthy",lastRotated:new Date(Date.now()-86400000).toISOString()},
-  {id:"t2",name:"API Keys",type:"api_key",totalActive:340,expiringSoon:28,expired:5,avgTtlHours:8760,autoRefresh:false,status:"warning",lastRotated:new Date(Date.now()-2592000000).toISOString()},
-  {id:"t3",name:"Payment Tokens",type:"razorpay",totalActive:120,expiringSoon:0,expired:0,avgTtlHours:0.25,autoRefresh:true,status:"healthy",lastRotated:new Date(Date.now()-900000).toISOString()},
-  {id:"t4",name:"Webhook Secrets",type:"secret",totalActive:8,expiringSoon:2,expired:1,avgTtlHours:8760,autoRefresh:false,status:"warning",lastRotated:new Date(Date.now()-7776000000).toISOString()},
-];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={healthy:"#4ade80",warning:"#fbbf24",critical:"#f87171"};
@@ -28,7 +22,7 @@ const sColor={healthy:"#4ade80",warning:"#fbbf24",critical:"#f87171"};
 export default function AdminTokenManagement(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[tokens,setTokens]=useState<TokenType[]>(()=>load("admin_token_mgmt_v1",seedTokens));
+  const[tokens,setTokens]=useState<TokenType[]>([]);
   const[rotating,setRotating]=useState<string|null>(null);
   const[revoking,setRevoking]=useState<string|null>(null);
 

@@ -15,12 +15,6 @@ const TH={
 
 interface Backup{id:string;name:string;type:"full"|"incremental"|"snapshot";sizeMB:number;checksumOk:boolean;restoreTested:boolean;status:"verified"|"unverified"|"corrupt"|"testing";createdAt:string;verifiedAt?:string;location:string;}
 
-const seedBackups=():Backup[]=>[
-  {id:"b1",name:"daily_full_20260401",type:"full",sizeMB:420,checksumOk:true,restoreTested:true,status:"verified",createdAt:new Date(Date.now()-86400000).toISOString(),verifiedAt:new Date(Date.now()-82800000).toISOString(),location:"Supabase Storage / backups"},
-  {id:"b2",name:"daily_full_20260331",type:"full",sizeMB:418,checksumOk:true,restoreTested:false,status:"unverified",createdAt:new Date(Date.now()-172800000).toISOString(),location:"Supabase Storage / backups"},
-  {id:"b3",name:"incr_20260401_0600",type:"incremental",sizeMB:42,checksumOk:true,restoreTested:true,status:"verified",createdAt:new Date(Date.now()-64800000).toISOString(),verifiedAt:new Date(Date.now()-63000000).toISOString(),location:"Supabase Storage / backups"},
-  {id:"b4",name:"snapshot_schema_v8",type:"snapshot",sizeMB:2,checksumOk:false,restoreTested:false,status:"corrupt",createdAt:new Date(Date.now()-604800000).toISOString(),location:"Supabase Storage / snapshots"},
-];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={verified:"#4ade80",unverified:"#fbbf24",corrupt:"#f87171",testing:"#a5b4fc"};
@@ -29,7 +23,7 @@ const tColor={full:A1,incremental:"#4ade80",snapshot:"#fbbf24"};
 export default function AdminBackupVerification(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[backups,setBackups]=useState<Backup[]>(()=>load("admin_backup_verify_v1",seedBackups));
+  const[backups,setBackups]=useState<Backup[]>([]);
   const[verifying,setVerifying]=useState<string|null>(null);
   const[testing,setTesting]=useState<string|null>(null);
 

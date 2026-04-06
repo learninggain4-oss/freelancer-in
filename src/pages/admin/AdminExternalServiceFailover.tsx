@@ -9,18 +9,12 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface ExternalService{id:string;name:string;primary:string;backup:string;status:"primary-active"|"backup-active"|"both-down";autoSwitch:boolean;checkIntervalSec:number;lastChecked:string;}
-const seed=():ExternalService[]=>[
-  {id:"es1",name:"Payment Gateway",primary:"Razorpay",backup:"PayU",status:"primary-active",autoSwitch:true,checkIntervalSec:30,lastChecked:new Date(Date.now()-60000).toISOString()},
-  {id:"es2",name:"SMS Service",primary:"Twilio",backup:"Msg91",status:"backup-active",autoSwitch:true,checkIntervalSec:60,lastChecked:new Date(Date.now()-120000).toISOString()},
-  {id:"es3",name:"Email Service",primary:"SendGrid",backup:"Mailgun",status:"primary-active",autoSwitch:true,checkIntervalSec:120,lastChecked:new Date(Date.now()-300000).toISOString()},
-  {id:"es4",name:"Cloud Storage",primary:"AWS S3",backup:"GCP Storage",status:"primary-active",autoSwitch:false,checkIntervalSec:300,lastChecked:new Date(Date.now()-1800000).toISOString()},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={"primary-active":"#4ade80","backup-active":"#fbbf24","both-down":"#f87171"};
 
 export default function AdminExternalServiceFailover(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[services,setServices]=useState(()=>load("admin_ext_failover_v1",seed));
+  const[services,setServices]=useState([]);
   const[switching,setSwitching]=useState<string|null>(null);
 
   const switchToBackup=async(s:ExternalService)=>{

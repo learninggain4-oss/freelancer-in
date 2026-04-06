@@ -8,19 +8,12 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface ApiConfig{id:string;name:string;endpoint:string;timeoutMs:number;retries:number;avgLatencyMs:number;timeouts24h:number;status:"healthy"|"slow"|"timing-out";}
-const seed=():ApiConfig[]=>[
-  {id:"ac1",name:"Job Search",endpoint:"/api/jobs/search",timeoutMs:5000,retries:2,avgLatencyMs:220,timeouts24h:0,status:"healthy"},
-  {id:"ac2",name:"Wallet Transfer",endpoint:"/api/wallet/transfer",timeoutMs:10000,retries:3,avgLatencyMs:4200,timeouts24h:8,status:"slow"},
-  {id:"ac3",name:"KYC Verify",endpoint:"/api/kyc/verify",timeoutMs:30000,retries:1,avgLatencyMs:28000,timeouts24h:42,status:"timing-out"},
-  {id:"ac4",name:"Payment Process",endpoint:"/api/payments/process",timeoutMs:15000,retries:3,avgLatencyMs:1800,timeouts24h:0,status:"healthy"},
-  {id:"ac5",name:"Report Export",endpoint:"/api/reports/export",timeoutMs:60000,retries:0,avgLatencyMs:42000,timeouts24h:18,status:"timing-out"},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={healthy:"#4ade80",slow:"#fbbf24","timing-out":"#f87171"};
 
 export default function AdminApiTimeout(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[configs,setConfigs]=useState(()=>load("admin_api_timeout_v1",seed));
+  const[configs,setConfigs]=useState([]);
   const[testing,setTesting]=useState<string|null>(null);
 
   const test=async(c:ApiConfig)=>{

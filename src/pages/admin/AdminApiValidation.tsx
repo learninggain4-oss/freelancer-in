@@ -15,13 +15,6 @@ const TH={
 
 interface ApiEndpoint{id:string;name:string;method:string;path:string;version:string;schemaValid:boolean;avgResponseMs:number;errorRate:number;status:"healthy"|"mismatch"|"error";lastValidated:string;mismatchDetail?:string;}
 
-const seedApis=():ApiEndpoint[]=>[
-  {id:"a1",name:"Create Job",method:"POST",path:"/api/jobs",version:"v2",schemaValid:true,avgResponseMs:84,errorRate:0.2,status:"healthy",lastValidated:new Date(Date.now()-600000).toISOString()},
-  {id:"a2",name:"Wallet Balance",method:"GET",path:"/api/wallet/balance",version:"v2",schemaValid:true,avgResponseMs:42,errorRate:0.1,status:"healthy",lastValidated:new Date(Date.now()-300000).toISOString()},
-  {id:"a3",name:"Initiate Withdrawal",method:"POST",path:"/api/wallet/withdraw",version:"v1",schemaValid:false,avgResponseMs:240,errorRate:4.8,status:"mismatch",lastValidated:new Date(Date.now()-900000).toISOString(),mismatchDetail:"Response missing required field `transaction_id` — schema v1 vs v2 mismatch"},
-  {id:"a4",name:"User KYC Status",method:"GET",path:"/api/user/kyc",version:"v2",schemaValid:true,avgResponseMs:110,errorRate:0.5,status:"healthy",lastValidated:new Date(Date.now()-1200000).toISOString()},
-  {id:"a5",name:"Push Notification",method:"POST",path:"/api/notify/push",version:"v2",schemaValid:true,avgResponseMs:940,errorRate:1.8,status:"error",lastValidated:new Date(Date.now()-1800000).toISOString(),mismatchDetail:"OneSignal API returning 503 intermittently — rate limit hit"},
-];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={healthy:"#4ade80",mismatch:"#fbbf24",error:"#f87171"};
@@ -29,7 +22,7 @@ const sColor={healthy:"#4ade80",mismatch:"#fbbf24",error:"#f87171"};
 export default function AdminApiValidation(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[apis,setApis]=useState<ApiEndpoint[]>(()=>load("admin_api_valid_v1",seedApis));
+  const[apis,setApis]=useState<ApiEndpoint[]>([]);
   const[validating,setValidating]=useState<string|null>(null);
 
   const validate=async(a:ApiEndpoint)=>{

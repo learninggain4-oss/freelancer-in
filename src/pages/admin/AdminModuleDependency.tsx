@@ -7,17 +7,11 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface Module{id:string;name:string;version:string;deps:string[];reverseDeps:string[];issues:string[];healthy:boolean;}
-const seed=():Module[]=>[
-  {id:"m1",name:"Wallet Service",version:"v2.4",deps:["Payment Gateway","KYC Service","Notification Service"],reverseDeps:["Job Module","Freelancer Dashboard"],issues:[],healthy:true},
-  {id:"m2",name:"Job Module",version:"v3.1",deps:["Wallet Service","User Auth","Search Service"],reverseDeps:["Freelancer Dashboard","Admin Panel"],issues:["Search Service v2.1 missing feature used in Job Module"],healthy:false},
-  {id:"m3",name:"User Auth",version:"v1.8",deps:["Session Storage","Email Service"],reverseDeps:["All modules"],issues:[],healthy:true},
-  {id:"m4",name:"Search Service",version:"v2.1",deps:[],reverseDeps:["Job Module","User Search"],issues:["Missing full-text search index"],healthy:false},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminModuleDependency(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[modules,setModules]=useState(()=>load("admin_module_dep_v1",seed));
+  const[modules,setModules]=useState([]);
   const[scanning,setScanning]=useState(false);
 
   const scan=async()=>{

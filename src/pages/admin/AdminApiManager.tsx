@@ -18,28 +18,8 @@ interface ApiKey { id:string; name:string; service:string; maskedKey:string; per
 interface ApiLog { id:string; method:string; endpoint:string; status:number; latencyMs:number; ip:string; apiKey:string; timestamp:string; }
 interface Dependency { id:string; name:string; current:string; latest:string; type:"prod"|"dev"; hasConflict:boolean; securityAlert:boolean; lastChecked:string; }
 
-const seedKeys = (): ApiKey[] => [
-  { id:"k1", name:"Razorpay Live",      service:"Payments",    maskedKey:"rzp_live_••••••••••ABCD", permissions:["payments.create","payments.capture","refunds.create"], lastRotated:new Date(Date.now()-864e5*30).toISOString(),  expiresAt:new Date(Date.now()+864e5*335).toISOString(), status:"active",  requestsToday:142, requestLimit:1000 },
-  { id:"k2", name:"OneSignal Push",     service:"Push",        maskedKey:"os_••••••••••••••••WXYZ", permissions:["notifications.send","players.read"],                   lastRotated:new Date(Date.now()-864e5*60).toISOString(),  expiresAt:new Date(Date.now()+864e5*305).toISOString(), status:"active",  requestsToday:89,  requestLimit:500 },
-  { id:"k3", name:"Supabase Service",   service:"Database",    maskedKey:"eyJhbGciOiJIUzI1NiIs••••", permissions:["database.read","database.write","auth.admin"],         lastRotated:new Date(Date.now()-864e5*90).toISOString(),  expiresAt:new Date(Date.now()+864e5*9).toISOString(),  status:"active",  requestsToday:2140,requestLimit:5000 },
-  { id:"k4", name:"Resend Email (old)", service:"Email",       maskedKey:"re_old_••••••••••••DEAD", permissions:["emails.send"],                                         lastRotated:new Date(Date.now()-864e5*200).toISOString(), expiresAt:new Date(Date.now()-864e5*5).toISOString(),  status:"expired", requestsToday:0,   requestLimit:200 },
-];
 
-const seedLogs = (): ApiLog[] => [
-  { id:"l1", method:"POST", endpoint:"/api/webhooks/razorpay",  status:200, latencyMs:142, ip:"103.21.58.44", apiKey:"k1", timestamp:new Date(Date.now()-300000).toISOString()  },
-  { id:"l2", method:"GET",  endpoint:"/api/admin/users",        status:200, latencyMs:88,  ip:"192.168.1.10", apiKey:"k3", timestamp:new Date(Date.now()-600000).toISOString()  },
-  { id:"l3", method:"POST", endpoint:"/api/notifications/send", status:429, latencyMs:12,  ip:"45.79.12.200", apiKey:"k2", timestamp:new Date(Date.now()-900000).toISOString()  },
-  { id:"l4", method:"POST", endpoint:"/api/auth/admin",         status:401, latencyMs:24,  ip:"45.79.12.200", apiKey:"?",  timestamp:new Date(Date.now()-1200000).toISOString() },
-  { id:"l5", method:"GET",  endpoint:"/api/admin/withdrawals",  status:200, latencyMs:210, ip:"192.168.1.11", apiKey:"k3", timestamp:new Date(Date.now()-1500000).toISOString() },
-];
 
-const seedDeps = (): Dependency[] => [
-  { id:"d1", name:"react",          current:"18.3.1",  latest:"18.3.1",  type:"prod", hasConflict:false, securityAlert:false, lastChecked:new Date(Date.now()-86400000).toISOString() },
-  { id:"d2", name:"@supabase/supabase-js", current:"2.43.4", latest:"2.45.0", type:"prod", hasConflict:false, securityAlert:false, lastChecked:new Date(Date.now()-86400000).toISOString() },
-  { id:"d3", name:"vite",           current:"5.2.0",   latest:"5.4.21",  type:"dev",  hasConflict:false, securityAlert:true,  lastChecked:new Date(Date.now()-86400000).toISOString() },
-  { id:"d4", name:"date-fns",       current:"3.3.1",   latest:"3.6.0",   type:"prod", hasConflict:false, securityAlert:false, lastChecked:new Date(Date.now()-86400000).toISOString() },
-  { id:"d5", name:"lucide-react",   current:"0.344.0", latest:"0.441.0", type:"prod", hasConflict:true,  securityAlert:false, lastChecked:new Date(Date.now()-86400000).toISOString() },
-];
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
@@ -53,9 +33,9 @@ export default function AdminApiManager() {
   const { toast } = useToast();
 
   const [tab, setTab]       = useState<"keys"|"logs"|"deps">("keys");
-  const [keys, setKeys]     = useState<ApiKey[]>(()=>load("admin_api_keys_v1",seedKeys));
-  const [logs]              = useState<ApiLog[]>(()=>load("admin_api_logs_v1",seedLogs));
-  const [deps]              = useState<Dependency[]>(()=>load("admin_dep_manager_v1",seedDeps));
+  const [keys, setKeys]     = useState<ApiKey[]>([]);
+  const [logs]              = useState<ApiLog[]>([]);
+  const [deps]              = useState<Dependency[]>([]);
   const [showKeys, setShowKeys] = useState<Set<string>>(new Set());
   const [rotating, setRotating] = useState<string|null>(null);
 

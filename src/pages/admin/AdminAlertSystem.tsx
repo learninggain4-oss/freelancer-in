@@ -14,10 +14,6 @@ const TH = {
   wb:    { bg:"#f0f4ff",card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badge:"rgba(99,102,241,.1)",badgeFg:"#4f46e5" },
 };
 
-const CHANNELS_KEY  = "admin_alert_channels_v1";
-const ALERT_LOG_KEY = "admin_alert_history_v1";
-const SERVICES_KEY  = "admin_service_health_v1";
-
 interface AlertChannel { id: string; type: "email" | "sms" | "push" | "webhook"; label: string; endpoint: string; enabled: boolean; lastTested?: string; testStatus?: "ok" | "fail"; }
 interface AlertEvent { id: string; title: string; severity: "critical" | "high" | "medium" | "info"; source: string; message: string; timestamp: string; delivered: boolean; channel: string; }
 interface ServiceDep { id: string; name: string; url: string; category: string; status: "online" | "degraded" | "offline" | "unknown"; latency?: number; lastChecked?: string; }
@@ -62,9 +58,9 @@ export default function AdminAlertSystem() {
   const { toast } = useToast();
 
   const [tab, setTab]         = useState<"live" | "channels" | "services">("live");
-  const [channels, setChannels] = useState<AlertChannel[]>(() => load(CHANNELS_KEY, defaultChannels));
-  const [alerts]              = useState<AlertEvent[]>(() => load(ALERT_LOG_KEY, defaultAlerts));
-  const [services, setServices] = useState<ServiceDep[]>(() => load(SERVICES_KEY, defaultServices));
+  const [channels, setChannels] = useState<AlertChannel[]>([]);
+  const [alerts]              = useState<AlertEvent[]>([]);
+  const [services, setServices] = useState<ServiceDep[]>([]);
   const [checking, setChecking] = useState(false);
   const [sevFilter, setSevFilter] = useState("all");
 

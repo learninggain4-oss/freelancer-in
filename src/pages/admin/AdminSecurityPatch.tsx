@@ -15,17 +15,6 @@ const TH={
 interface Patch{id:string;name:string;version:string;severity:"critical"|"high"|"medium"|"low";status:"pending"|"scheduled"|"applying"|"applied"|"failed";description:string;scheduledFor?:string;appliedAt?:string;autoApply:boolean;}
 interface Vulnerability{id:string;component:string;cve:string;severity:"critical"|"high"|"medium"|"low";description:string;fixAvailable:boolean;}
 
-const seedPatches=():Patch[]=>[
-  {id:"p1",name:"Node.js Security Update",version:"v20.11.1",severity:"high",status:"pending",description:"Fixes HTTP header injection vulnerability",autoApply:false},
-  {id:"p2",name:"Supabase SDK Patch",version:"2.38.5",severity:"medium",status:"scheduled",description:"Addresses potential token refresh race condition",scheduledFor:new Date(Date.now()+86400000).toISOString(),autoApply:false},
-  {id:"p3",name:"Vite Security Fix",version:"5.0.12",severity:"low",status:"applied",description:"XSS mitigation in dev server",appliedAt:new Date(Date.now()-86400000).toISOString(),autoApply:true},
-  {id:"p4",name:"crypto-js Critical Patch",version:"4.2.0",severity:"critical",status:"pending",description:"RNG weakness allowing brute force attacks",autoApply:false},
-];
-const seedVulns=():Vulnerability[]=>[
-  {id:"v1",component:"crypto-js",cve:"CVE-2023-46133",severity:"critical",description:"Weak PRNG can be predicted under certain entropy conditions",fixAvailable:true},
-  {id:"v2",component:"node",cve:"CVE-2024-21892",severity:"high",description:"Permission model bypass via path traversal",fixAvailable:true},
-  {id:"v3",component:"@supabase/auth-js",cve:"CVE-2024-22754",severity:"medium",description:"OAuth PKCE token reuse window vulnerability",fixAvailable:true},
-];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={critical:"#f87171",high:"#fb923c",medium:"#fbbf24",low:"#94a3b8"};
@@ -35,8 +24,8 @@ export default function AdminSecurityPatch(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"patches"|"vulns">("patches");
-  const[patches,setPatches]=useState<Patch[]>(()=>load("admin_sec_patch_v1",seedPatches));
-  const[vulns]=useState<Vulnerability[]>(()=>load("admin_vulns_v1",seedVulns));
+  const[patches,setPatches]=useState<Patch[]>([]);
+  const[vulns]=useState<Vulnerability[]>([]);
   const[applying,setApplying]=useState<string|null>(null);
 
   const applyPatch=async(p:Patch)=>{

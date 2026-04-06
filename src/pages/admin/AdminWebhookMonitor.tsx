@@ -9,16 +9,11 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface Webhook{id:string;name:string;url:string;event:string;status:"active"|"failed"|"paused";deliveries24h:number;failures24h:number;avgResponseMs:number;retryCount:number;lastDelivery:string;backupUrl?:string;}
-const seed=():Webhook[]=>[
-  {id:"w1",name:"Razorpay Payment",url:"https://api.freelancer.in/webhooks/razorpay",event:"payment.captured",status:"active",deliveries24h:340,failures24h:2,avgResponseMs:84,retryCount:0,lastDelivery:new Date(Date.now()-120000).toISOString()},
-  {id:"w2",name:"Job Status Update",url:"https://api.freelancer.in/webhooks/jobs",event:"job.completed",status:"active",deliveries24h:142,failures24h:0,avgResponseMs:42,retryCount:0,lastDelivery:new Date(Date.now()-900000).toISOString()},
-  {id:"w3",name:"KYC Verification",url:"https://api.freelancer.in/webhooks/kyc",event:"kyc.verified",status:"failed",deliveries24h:28,failures24h:14,avgResponseMs:0,retryCount:8,lastDelivery:new Date(Date.now()-7200000).toISOString(),backupUrl:"https://api.freelancer.in/webhooks/kyc-fallback"},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminWebhookMonitor(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[hooks,setHooks]=useState(()=>load("admin_webhooks_v1",seed));
+  const[hooks,setHooks]=useState([]);
   const[testing,setTesting]=useState<string|null>(null);
   const[retrying,setRetrying]=useState<string|null>(null);
 

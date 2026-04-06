@@ -19,33 +19,9 @@ interface AbuseAlert { id:string; type:string; ip:string; adminEmail:string; occ
 interface FailedJob { id:string; jobName:string; error:string; attempts:number; maxAttempts:number; lastAttempt:string; status:"queued"|"retrying"|"failed"|"success"; nextRetry?:string; }
 interface OpQueueItem { id:string; operation:string; requestedBy:string; size:number; status:"queued"|"processing"|"done"; queuedAt:string; }
 
-const seedRules = (): RateRule[] => [
-  { id:"r1", action:"Bulk User Operations",      limitPerMin:5,   limitPerHour:20,  currentUsage:2,  enabled:true,  superAdminOverride:true,  category:"User Mgmt", cooldownSec:60 },
-  { id:"r2", action:"Withdrawal Approvals",      limitPerMin:10,  limitPerHour:50,  currentUsage:7,  enabled:true,  superAdminOverride:true,  category:"Finance",   cooldownSec:30 },
-  { id:"r3", action:"Data Export Requests",      limitPerMin:2,   limitPerHour:10,  currentUsage:1,  enabled:true,  superAdminOverride:false, category:"Security",  cooldownSec:300 },
-  { id:"r4", action:"Admin Role Changes",        limitPerMin:3,   limitPerHour:15,  currentUsage:0,  enabled:true,  superAdminOverride:false, category:"Security",  cooldownSec:120 },
-  { id:"r5", action:"Bulk Notification Send",    limitPerMin:1,   limitPerHour:5,   currentUsage:0,  enabled:true,  superAdminOverride:true,  category:"Comms",     cooldownSec:600 },
-  { id:"r6", action:"Database Direct Queries",   limitPerMin:20,  limitPerHour:200, currentUsage:14, enabled:true,  superAdminOverride:true,  category:"Database",  cooldownSec:5 },
-];
 
-const seedAlerts = (): AbuseAlert[] => [
-  { id:"a1", type:"Rapid withdrawal approvals (12 in 5 min)", ip:"103.21.58.44", adminEmail:"admin@fi.com", occurrences:12, timestamp: new Date(Date.now()-3600000).toISOString(),  status:"active" },
-  { id:"a2", type:"Multiple failed admin logins (8 attempts)", ip:"45.79.12.200", adminEmail:"unknown",      occurrences:8,  timestamp: new Date(Date.now()-7200000).toISOString(),  status:"resolved" },
-  { id:"a3", type:"Bulk export request exceeded limit",        ip:"192.168.1.1",  adminEmail:"admin@fi.com", occurrences:3,  timestamp: new Date(Date.now()-86400000).toISOString(), status:"resolved" },
-];
 
-const seedJobs = (): FailedJob[] => [
-  { id:"j1", jobName:"Scheduled DB Backup",       error:"Connection timeout after 30s",         attempts:2, maxAttempts:3, lastAttempt: new Date(Date.now()-1800000).toISOString(), status:"retrying", nextRetry: new Date(Date.now()+600000).toISOString() },
-  { id:"j2", jobName:"Email Digest Send",          error:"SMTP auth failed: invalid credentials", attempts:3, maxAttempts:3, lastAttempt: new Date(Date.now()-3600000).toISOString(), status:"failed" },
-  { id:"j3", jobName:"Daily Orphan Scan",          error:"",                                     attempts:1, maxAttempts:3, lastAttempt: new Date(Date.now()-864e5).toISOString(),   status:"success" },
-  { id:"j4", jobName:"Wallet Reconciliation",      error:"",                                     attempts:1, maxAttempts:3, lastAttempt: new Date(Date.now()-7200000).toISOString(),  status:"success" },
-];
 
-const seedQueue = (): OpQueueItem[] => [
-  { id:"q1", operation:"Bulk send 1,200 notifications",  requestedBy:"Admin A", size:1200, status:"processing", queuedAt: new Date(Date.now()-300000).toISOString() },
-  { id:"q2", operation:"Export full users CSV (8,400)",  requestedBy:"Admin B", size:8400, status:"queued",     queuedAt: new Date(Date.now()-120000).toISOString() },
-  { id:"q3", operation:"Bulk role change (450 users)",   requestedBy:"Admin C", size:450,  status:"queued",     queuedAt: new Date(Date.now()-60000).toISOString() },
-];
 
 function load<T>(key:string, seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
@@ -61,10 +37,10 @@ export default function AdminRateLimiting() {
   const { toast } = useToast();
 
   const [tab, setTab]   = useState<"rules"|"abuse"|"jobs"|"queue">("rules");
-  const [rules, setRules] = useState<RateRule[]>(()=>load("admin_rate_rules_v1",seedRules));
-  const [alerts, setAlerts] = useState<AbuseAlert[]>(()=>load("admin_abuse_alerts_v1",seedAlerts));
-  const [jobs, setJobs] = useState<FailedJob[]>(()=>load("admin_failed_jobs_v1",seedJobs));
-  const [queue] = useState<OpQueueItem[]>(()=>load("admin_op_queue_v1",seedQueue));
+  const [rules, setRules] = useState<RateRule[]>([]);
+  const [alerts, setAlerts] = useState<AbuseAlert[]>([]);
+  const [jobs, setJobs] = useState<FailedJob[]>([]);
+  const [queue] = useState<OpQueueItem[]>([]);
   const [editId, setEditId] = useState<string|null>(null);
   const [editLimit, setEditLimit] = useState(0);
   const [retrying, setRetrying] = useState<string|null>(null);

@@ -15,12 +15,6 @@ const TH={
 
 interface RoleCache{id:string;role:string;users:number;cacheAge:number;syncStatus:"synced"|"stale"|"syncing";lastSync:string;pendingChanges:number;}
 
-const seedCaches=():RoleCache[]=>[
-  {id:"rc1",role:"admin",users:3,cacheAge:45,syncStatus:"synced",lastSync:new Date(Date.now()-2700000).toISOString(),pendingChanges:0},
-  {id:"rc2",role:"employer",users:4200,cacheAge:840,syncStatus:"stale",lastSync:new Date(Date.now()-50400000).toISOString(),pendingChanges:12},
-  {id:"rc3",role:"freelancer",users:8560,cacheAge:720,syncStatus:"stale",lastSync:new Date(Date.now()-43200000).toISOString(),pendingChanges:34},
-  {id:"rc4",role:"moderator",users:8,cacheAge:90,syncStatus:"synced",lastSync:new Date(Date.now()-5400000).toISOString(),pendingChanges:0},
-];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={synced:"#4ade80",stale:"#fbbf24",syncing:"#a5b4fc"};
@@ -28,7 +22,7 @@ const sColor={synced:"#4ade80",stale:"#fbbf24",syncing:"#a5b4fc"};
 export default function AdminPermissionSync(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[caches,setCaches]=useState<RoleCache[]>(()=>load("admin_perm_sync_v1",seedCaches));
+  const[caches,setCaches]=useState<RoleCache[]>([]);
   const[syncing,setSyncing]=useState<string|null>(null);
   const[syncingAll,setSyncingAll]=useState(false);
 

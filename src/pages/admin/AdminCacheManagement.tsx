@@ -9,21 +9,14 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface CacheModule{id:string;name:string;sizeMB:number;ttlMins:number;hitRate:number;status:"fresh"|"stale"|"expired";lastUpdated:string;}
-const seed=():CacheModule[]=>[
-  {id:"c1",name:"User Profiles",sizeMB:14.2,ttlMins:30,hitRate:94,status:"fresh",lastUpdated:new Date(Date.now()-900000).toISOString()},
-  {id:"c2",name:"Job Listings",sizeMB:42.8,ttlMins:10,hitRate:87,status:"stale",lastUpdated:new Date(Date.now()-1800000).toISOString()},
-  {id:"c3",name:"API Responses",sizeMB:8.4,ttlMins:5,hitRate:99,status:"fresh",lastUpdated:new Date(Date.now()-120000).toISOString()},
-  {id:"c4",name:"Search Results",sizeMB:22.1,ttlMins:15,hitRate:78,status:"expired",lastUpdated:new Date(Date.now()-3600000).toISOString()},
-  {id:"c5",name:"Wallet Balances",sizeMB:3.2,ttlMins:1,hitRate:91,status:"fresh",lastUpdated:new Date(Date.now()-30000).toISOString()},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={fresh:"#4ade80",stale:"#fbbf24",expired:"#f87171"};
 
 export default function AdminCacheManagement(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[modules,setModules]=useState(()=>load("admin_cache_v1",seed));
+  const[modules,setModules]=useState([]);
   const[clearing,setClearing]=useState<string|null>(null);
-  const[ttl,setTtl]=useState<Record<string,number>>(()=>Object.fromEntries(seed().map(m=>[m.id,m.ttlMins])));
+  const[ttl,setTtl]=useState<Record<string,number>>({}));
 
   const clear=async(m:CacheModule)=>{
     setClearing(m.id);await new Promise(r=>setTimeout(r,800));

@@ -39,7 +39,7 @@ function seedVars(): EnvVar[] {
 
 function loadVars(): EnvVar[] {
   try { const d = localStorage.getItem(ENV_KEY); if (d) return JSON.parse(d); } catch { /* */ }
-  const s = seedVars(); localStorage.setItem(ENV_KEY, JSON.stringify(s)); return s;
+  return [];
 }
 function saveVars(vars: EnvVar[]) { localStorage.setItem(ENV_KEY, JSON.stringify(vars)); }
 
@@ -52,7 +52,7 @@ export default function AdminEnvVars() {
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 
-  const [vars, setVars] = useState<EnvVar[]>(loadVars);
+  const [vars, setVars] = useState<EnvVar[]>([]);
   const [search, setSearch] = useState("");
   const [envFilter, setEnvFilter] = useState("all");
   const [editing, setEditing] = useState<EnvVar | null>(null);

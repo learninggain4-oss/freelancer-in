@@ -16,13 +16,6 @@ const TH = {
 
 interface BulkOp { id:string; name:string; description:string; target:string; count:number; status:"preview"|"pending_approval"|"running"|"completed"|"failed"|"cancelled"|"undone"; risk:"low"|"medium"|"high"; createdAt:string; completedAt?:string; canUndo:boolean; executedBy?:string; errorMsg?:string; }
 
-const seedOps = (): BulkOp[] => [
-  { id:"b1", name:"Suspend inactive users",        description:"Suspend all users with no login in 180+ days",      target:"users",        count:342,  status:"completed",         risk:"high",   createdAt:new Date(Date.now()-864e5*2).toISOString(),  completedAt:new Date(Date.now()-864e5*2+1800000).toISOString(), canUndo:true, executedBy:"Super Admin" },
-  { id:"b2", name:"Recalculate platform fees",     description:"Recompute fees for all pending withdrawals",        target:"transactions", count:1240, status:"pending_approval",  risk:"high",   createdAt:new Date(Date.now()-3600000).toISOString(),  canUndo:false, executedBy:"Admin A" },
-  { id:"b3", name:"Send re-verification emails",   description:"Email all unverified users to complete KYC",         target:"users",        count:580,  status:"preview",           risk:"medium", createdAt:new Date(Date.now()-600000).toISOString(),   canUndo:false },
-  { id:"b4", name:"Archive old job listings",      description:"Archive jobs with no activity for 90+ days",        target:"jobs",         count:2140, status:"completed",         risk:"medium", createdAt:new Date(Date.now()-864e5*5).toISOString(),  completedAt:new Date(Date.now()-864e5*5+7200000).toISOString(), canUndo:true, executedBy:"Admin B" },
-  { id:"b5", name:"Delete orphan files",           description:"Remove files with no linked records in DB",         target:"storage",      count:84,   status:"failed",            risk:"low",    createdAt:new Date(Date.now()-7200000).toISOString(),  errorMsg:"Storage service returned 503 during execution", canUndo:false },
-];
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
@@ -38,7 +31,7 @@ export default function AdminBulkOperations() {
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 
-  const [ops, setOps]   = useState<BulkOp[]>(()=>load("admin_bulk_ops_v1",seedOps));
+  const [ops, setOps]   = useState<BulkOp[]>([]);
   const [tab, setTab]   = useState<"ops"|"logs">("ops");
   const [confirmOp, setConfirmOp] = useState<BulkOp|null>(null);
   const [confirmUndo, setConfirmUndo] = useState<BulkOp|null>(null);

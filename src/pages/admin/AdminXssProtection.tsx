@@ -9,16 +9,11 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface ThreatEvent{id:string;type:string;payload:string;field:string;user:string;ip:string;at:string;blocked:boolean;}
-const seed=():ThreatEvent[]=>[
-  {id:"t1",type:"Script Injection",payload:"<script>alert(1)</script>",field:"job_title",user:"anonymous",ip:"45.79.12.200",at:new Date(Date.now()-3600000).toISOString(),blocked:true},
-  {id:"t2",type:"HTML Injection",payload:"<img onerror='fetch(...)'>",field:"bio",user:"user_182",ip:"103.21.58.9",at:new Date(Date.now()-7200000).toISOString(),blocked:true},
-  {id:"t3",type:"Suspicious Input",payload:"javascript:void(0)",field:"portfolio_url",user:"user_510",ip:"122.161.45.12",at:new Date(Date.now()-1800000).toISOString(),blocked:false},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminXssProtection(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[events]=useState(()=>load("admin_xss_v1",seed));
+  const[events]=useState([]);
   const[config,setConfig]=useState({sanitizationEnabled:true,htmlValidation:true,contentFiltering:true,alertsEnabled:true,cspEnabled:true});
   const[testInput,setTestInput]=useState("");
   const[testResult,setTestResult]=useState<string|null>(null);

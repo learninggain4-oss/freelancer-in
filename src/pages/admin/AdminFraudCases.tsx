@@ -13,26 +13,14 @@ type Evidence = { type:string; name:string; size:string; addedAt:string };
 type TimelineEntry = { action:string; by:string; time:string };
 type FraudCase = { id:string; caseId:string; status:string; priority:string; description:string; assignedAdmin:string; user:string; createdAt:string; updatedAt:string; notes:string; resolution:string; evidence:Evidence[]; timeline:TimelineEntry[] };
 
-const CASES: FraudCase[] = [
-  { id:"c1", caseId:"CASE-2841", status:"investigating", priority:"critical", description:"User attempting multiple payment bypasses using duplicate card entries. Evidence of coordinated fraud pattern.", assignedAdmin:"superadmin@site.com", user:"Rahul Sharma (user_2841)", createdAt:"Today 09:00", updatedAt:"30 min ago", notes:"Confirmed multiple device fingerprints. Card data matches known fraud pattern.", resolution:"",
-    evidence:[{ type:"screenshot", name:"payment_bypass.png", size:"1.2 MB", addedAt:"Today 09:30" },{ type:"document", name:"transaction_log.pdf", size:"450 KB", addedAt:"Today 10:00" }],
-    timeline:[{ action:"Case Opened", by:"System", time:"Today 09:00" },{ action:"Assigned to superadmin", by:"System", time:"Today 09:01" },{ action:"Evidence added (2 files)", by:"superadmin@site.com", time:"Today 09:30" },{ action:"Status: Investigating", by:"superadmin@site.com", time:"Today 10:00" }] },
-  { id:"c2", caseId:"CASE-5521", status:"open", priority:"high", description:"Login from 4 different countries within 2 hours. Suspected account takeover.", assignedAdmin:"", user:"Priya Mehta (user_5521)", createdAt:"Today 11:00", updatedAt:"15 min ago", notes:"", resolution:"",
-    evidence:[],
-    timeline:[{ action:"Case Opened", by:"System", time:"Today 11:00" }] },
-  { id:"c3", caseId:"CASE-1204", status:"resolved", priority:"high", description:"Duplicate payment of ₹1,20,000 detected. Refund initiated after investigation.", assignedAdmin:"admin@site.com", user:"Ajay Kumar (user_1204)", createdAt:"Yesterday", updatedAt:"2 hrs ago", notes:"Duplicate transaction confirmed. Refund processed.", resolution:"Refund initiated. No further action needed. User warned.",
-    evidence:[{ type:"payment_proof", name:"refund_receipt.pdf", size:"230 KB", addedAt:"Yesterday 15:00" }],
-    timeline:[{ action:"Case Opened", by:"System", time:"Yesterday 10:00" },{ action:"Assigned to admin@site.com", by:"superadmin", time:"Yesterday 10:05" },{ action:"Refund Initiated", by:"admin@site.com", time:"Yesterday 14:00" },{ action:"Case Resolved", by:"admin@site.com", time:"Yesterday 15:30" }] },
-];
-
 const statusColor = (s: string) => s==="open"?"#60a5fa":s==="investigating"?"#fbbf24":s==="resolved"?"#4ade80":"#f87171";
 const prioColor = (p: string) => p==="critical"?"#f87171":p==="high"?"#f97316":p==="medium"?"#fbbf24":"#4ade80";
 
 export default function AdminFraudCases() {
   const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
-  const [cases, setCases] = useState(CASES);
-  const [selected, setSelected] = useState<FraudCase|null>(CASES[0]);
+  const [cases, setCases] = useState<FraudCase[]>([]);
+  const [selected, setSelected] = useState<FraudCase|null>(null);
   const [noteInput, setNoteInput] = useState("");
   const [resolutionInput, setResolutionInput] = useState("");
   const [showAdd, setShowAdd] = useState(false);

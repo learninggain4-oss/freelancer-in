@@ -9,18 +9,12 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface EncKey{id:string;name:string;purpose:string;algorithm:string;createdAt:string;expiresAt:string;status:"active"|"expiring"|"expired"|"rotated";rotationDays:number;lastUsed:string;}
-const seed=():EncKey[]=>[
-  {id:"k1",name:"Database Encryption Key",purpose:"Data at rest",algorithm:"AES-256-GCM",createdAt:new Date(Date.now()-90*86400000).toISOString(),expiresAt:new Date(Date.now()+275*86400000).toISOString(),status:"active",rotationDays:365,lastUsed:new Date(Date.now()-60000).toISOString()},
-  {id:"k2",name:"JWT Signing Key",purpose:"Session tokens",algorithm:"RS-256",createdAt:new Date(Date.now()-80*86400000).toISOString(),expiresAt:new Date(Date.now()+25*86400000).toISOString(),status:"expiring",rotationDays:90,lastUsed:new Date(Date.now()-30000).toISOString()},
-  {id:"k3",name:"Payment Encryption Key",purpose:"Card data",algorithm:"AES-256-CBC",createdAt:new Date(Date.now()-180*86400000).toISOString(),expiresAt:new Date(Date.now()-5*86400000).toISOString(),status:"expired",rotationDays:180,lastUsed:new Date(Date.now()-432000000).toISOString()},
-  {id:"k4",name:"Backup Encryption Key",purpose:"Backup files",algorithm:"AES-256-GCM",createdAt:new Date(Date.now()-30*86400000).toISOString(),expiresAt:new Date(Date.now()+335*86400000).toISOString(),status:"active",rotationDays:365,lastUsed:new Date(Date.now()-3600000).toISOString()},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={active:"#4ade80",expiring:"#fbbf24",expired:"#f87171",rotated:"#a5b4fc"};
 
 export default function AdminEncryptionKeys(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[keys,setKeys]=useState(()=>load("admin_enc_keys_v1",seed));
+  const[keys,setKeys]=useState([]);
   const[rotating,setRotating]=useState<string|null>(null);
 
   const rotate=async(k:EncKey)=>{

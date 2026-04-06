@@ -9,18 +9,12 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface Certificate{id:string;domain:string;issuer:string;expiresAt:string;autoRenew:boolean;httpsEnforced:boolean;status:"valid"|"expiring"|"expired";}
-const seed=():Certificate[]=>[
-  {id:"ssl1",domain:"freelancer.in",issuer:"Let's Encrypt",expiresAt:new Date(Date.now()+45*86400000).toISOString(),autoRenew:true,httpsEnforced:true,status:"valid"},
-  {id:"ssl2",domain:"api.freelancer.in",issuer:"Let's Encrypt",expiresAt:new Date(Date.now()+12*86400000).toISOString(),autoRenew:false,httpsEnforced:true,status:"expiring"},
-  {id:"ssl3",domain:"cdn.freelancer.in",issuer:"DigiCert",expiresAt:new Date(Date.now()+180*86400000).toISOString(),autoRenew:true,httpsEnforced:true,status:"valid"},
-  {id:"ssl4",domain:"old.freelancer.in",issuer:"Comodo",expiresAt:new Date(Date.now()-5*86400000).toISOString(),autoRenew:false,httpsEnforced:false,status:"expired"},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={valid:"#4ade80",expiring:"#fbbf24",expired:"#f87171"};
 
 export default function AdminSslMonitor(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[certs,setCerts]=useState(()=>load("admin_ssl_v1",seed));
+  const[certs,setCerts]=useState([]);
   const[renewing,setRenewing]=useState<string|null>(null);
 
   const renew=async(c:Certificate)=>{

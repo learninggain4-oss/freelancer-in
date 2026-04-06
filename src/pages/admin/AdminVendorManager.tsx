@@ -24,14 +24,6 @@ interface ServiceProvider {
 interface MigrationTool { id:string; name:string; description:string; dataType:string; format:string; rows?:number; available:boolean; }
 interface OutageEvent { id:string; service:string; started:string; resolved?:string; impact:string; severity:"low"|"medium"|"high"; }
 
-const seedProviders = (): ServiceProvider[] => [
-  { id:"s1", category:"Database",      primaryName:"Supabase",     primaryStatus:"unknown", backupName:"PlanetScale",  backupStatus:"standby", isFailedOver:false, failoverCount:0, exportable:true,  migrationComplexity:"high",   lastChecked: new Date(Date.now()-300000).toISOString() },
-  { id:"s2", category:"Authentication",primaryName:"Supabase Auth",primaryStatus:"unknown", backupName:"Auth0",        backupStatus:"standby", isFailedOver:false, failoverCount:0, exportable:true,  migrationComplexity:"medium",  lastChecked: new Date(Date.now()-300000).toISOString() },
-  { id:"s3", category:"Payments",      primaryName:"Razorpay",     primaryStatus:"unknown", backupName:"Cashfree",     backupStatus:"standby", isFailedOver:false, failoverCount:1, exportable:false, migrationComplexity:"medium",  lastChecked: new Date(Date.now()-300000).toISOString() },
-  { id:"s4", category:"Push Notifications",primaryName:"OneSignal",primaryStatus:"unknown", backupName:"Firebase FCM", backupStatus:"standby", isFailedOver:false, failoverCount:0, exportable:true,  migrationComplexity:"low",     lastChecked: new Date(Date.now()-300000).toISOString() },
-  { id:"s5", category:"File Storage",  primaryName:"Supabase Storage",primaryStatus:"unknown",backupName:"Cloudinary", backupStatus:"standby", isFailedOver:false, failoverCount:0, exportable:true,  migrationComplexity:"low",     lastChecked: new Date(Date.now()-300000).toISOString() },
-  { id:"s6", category:"Hosting",       primaryName:"Replit",       primaryStatus:"unknown", backupName:"Railway.app",  backupStatus:"standby", isFailedOver:false, failoverCount:0, exportable:false, migrationComplexity:"medium",  lastChecked: new Date(Date.now()-300000).toISOString() },
-];
 
 const migrationTools: MigrationTool[] = [
   { id:"m1", name:"Export Users (CSV)",    description:"Full profiles table export",       dataType:"Users",        format:"CSV",  rows:8420,  available:true },
@@ -63,7 +55,7 @@ export default function AdminVendorManager() {
   const { toast } = useToast();
 
   const [tab, setTab]       = useState<"providers"|"migration"|"outages">("providers");
-  const [providers, setProviders] = useState<ServiceProvider[]>(()=>load("admin_vendors_v1",seedProviders));
+  const [providers, setProviders] = useState<ServiceProvider[]>([]);
   const [checking, setChecking] = useState(false);
   const [confirmFailover, setConfirmFailover] = useState<ServiceProvider|null>(null);
   const [exportingId, setExportingId] = useState<string|null>(null);

@@ -16,14 +16,6 @@ const TH={
 interface LockedAdmin{id:string;name:string;email:string;lockedAt:string;failedAttempts:number;lockReason:string;recoveryTokenSent:boolean;}
 interface RecoveryLog{id:string;admin:string;action:string;ip:string;at:string;success:boolean;}
 
-const seedLocked=():LockedAdmin[]=>[
-  {id:"la1",name:"Admin C",email:"admin.c@fi.com",lockedAt:new Date(Date.now()-3600000).toISOString(),failedAttempts:5,lockReason:"5 consecutive failed login attempts",recoveryTokenSent:true},
-];
-const seedRecoveryLogs=():RecoveryLog[]=>[
-  {id:"rl1",admin:"Admin A",action:"Account unlocked manually",ip:"192.168.1.10",at:new Date(Date.now()-86400000*3).toISOString(),success:true},
-  {id:"rl2",admin:"Admin B",action:"Recovery token sent",ip:"192.168.1.11",at:new Date(Date.now()-86400000*7).toISOString(),success:true},
-  {id:"rl3",admin:"Unknown",action:"Login attempt — blocked IP",ip:"45.79.12.200",at:new Date(Date.now()-7200000).toISOString(),success:false},
-];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
@@ -31,8 +23,8 @@ export default function AdminLockoutRecovery(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"locked"|"logs">("locked");
-  const[locked,setLocked]=useState<LockedAdmin[]>(()=>load("admin_lockout_v1",seedLocked));
-  const[logs]=useState<RecoveryLog[]>(()=>load("admin_recovery_logs_v1",seedRecoveryLogs));
+  const[locked,setLocked]=useState<LockedAdmin[]>([]);
+  const[logs]=useState<RecoveryLog[]>([]);
   const[unlocking,setUnlocking]=useState<string|null>(null);
   const[sendingToken,setSendingToken]=useState<string|null>(null);
 

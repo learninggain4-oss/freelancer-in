@@ -15,12 +15,6 @@ const TH={
 
 interface Channel{id:string;name:string;type:"email"|"sms"|"push";provider:string;sent24h:number;failed24h:number;queued:number;status:"healthy"|"degraded"|"down";lastDelivery:string;retryEnabled:boolean;backupProvider?:string;}
 
-const seedChannels=():Channel[]=>[
-  {id:"ch1",name:"Transactional Email",type:"email",provider:"Resend",sent24h:4820,failed24h:12,queued:3,status:"healthy",lastDelivery:new Date(Date.now()-60000).toISOString(),retryEnabled:true,backupProvider:"SMTP Direct"},
-  {id:"ch2",name:"Push Notifications",type:"push",provider:"OneSignal",sent24h:18400,failed24h:340,queued:84,status:"degraded",lastDelivery:new Date(Date.now()-120000).toISOString(),retryEnabled:true,backupProvider:"Firebase FCM"},
-  {id:"ch3",name:"OTP SMS",type:"sms",provider:"MSG91",sent24h:920,failed24h:8,queued:0,status:"healthy",lastDelivery:new Date(Date.now()-300000).toISOString(),retryEnabled:true},
-  {id:"ch4",name:"Withdrawal Alerts",type:"email",provider:"Resend",sent24h:340,failed24h:0,queued:0,status:"healthy",lastDelivery:new Date(Date.now()-900000).toISOString(),retryEnabled:true},
-];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={healthy:"#4ade80",degraded:"#fbbf24",down:"#f87171"};
@@ -29,7 +23,7 @@ const typeIcon={email:Mail,sms:MessageSquare,push:Bell};
 export default function AdminNotificationDelivery(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[channels,setChannels]=useState<Channel[]>(()=>load("admin_notif_delivery_v1",seedChannels));
+  const[channels,setChannels]=useState<Channel[]>([]);
   const[retrying,setRetrying]=useState<string|null>(null);
 
   const retryFailed=async(c:Channel)=>{

@@ -9,19 +9,13 @@ const TH = {
   wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc" },
 };
 
-const ALERTS = [
-  { id:"a1", title:"Payment gateway down", priority:"critical", acknowledged:false, channels:["email","sms","inapp"], time:"5 min ago" },
-  { id:"a2", title:"Storage above 75%", priority:"high", acknowledged:true, channels:["inapp"], time:"30 min ago" },
-  { id:"a3", title:"Unusual login pattern", priority:"high", acknowledged:false, channels:["email","inapp"], time:"1 hr ago" },
-  { id:"a4", title:"Backup completed", priority:"low", acknowledged:true, channels:["inapp"], time:"2 hrs ago" },
-  { id:"a5", title:"Search index corrupted", priority:"critical", acknowledged:false, channels:["email","sms","inapp"], time:"15 min ago" },
-];
+type Alert = { id:string; title:string; priority:string; acknowledged:boolean; channels:string[]; time:string };
 
 export default function AdminAlertVisibility() {
   const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
 
-  const [alerts, setAlerts] = useState(ALERTS);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
   const [activeTab, setActiveTab] = useState<"alerts"|"channels"|"escalation">("alerts");
 
   const acknowledge = (id: string) => setAlerts(prev => prev.map(a => a.id === id ? {...a, acknowledged:true} : a));

@@ -18,28 +18,8 @@ interface NotifJob { id:string; title:string; type:string; recipients:number; at
 interface NotifLog { id:string; title:string; type:string; recipients:number; delivered:number; failed:number; timestamp:string; triggeredBy:string; }
 interface NotifSetting { id:string; label:string; value:number|boolean; type:"number"|"boolean"; description:string; }
 
-const seedJobs = (): NotifJob[] => [
-  { id:"n1", title:"Withdrawal approved — ₹12,500",   type:"Transactional", recipients:1,    attempts:1, maxAttempts:3, status:"delivered", sentAt:new Date(Date.now()-300000).toISOString(),    isDuplicate:false },
-  { id:"n2", title:"New job posted in your skill set", type:"Marketing",     recipients:1240, attempts:1, maxAttempts:1, status:"sending",   isDuplicate:false },
-  { id:"n3", title:"Verify your Aadhaar",             type:"Onboarding",    recipients:340,  attempts:3, maxAttempts:3, status:"failed",    failReason:"OneSignal API rate limit exceeded", isDuplicate:false },
-  { id:"n4", title:"Withdrawal approved — ₹12,500",   type:"Transactional", recipients:1,    attempts:0, maxAttempts:1, status:"cooldown",  isDuplicate:true,  cooldownUntil:new Date(Date.now()+300000).toISOString() },
-  { id:"n5", title:"Platform maintenance tonight",    type:"System",        recipients:8420, attempts:0, maxAttempts:1, status:"queued",    isDuplicate:false },
-];
 
-const seedLogs = (): NotifLog[] => [
-  { id:"l1", title:"Profile completion reminder",     type:"Onboarding",  recipients:2100, delivered:1980, failed:120, timestamp:new Date(Date.now()-864e5).toISOString(),    triggeredBy:"Auto (Scheduled)" },
-  { id:"l2", title:"New message received",           type:"Transactional",recipients:340,  delivered:338,  failed:2,   timestamp:new Date(Date.now()-1800000).toISOString(),  triggeredBy:"System" },
-  { id:"l3", title:"Flash sale alert",               type:"Marketing",    recipients:5000, delivered:4812, failed:188, timestamp:new Date(Date.now()-864e5*2).toISOString(),  triggeredBy:"Admin A" },
-];
 
-const seedSettings = (): NotifSetting[] => [
-  { id:"s1", label:"Max Retry Attempts",         value:3,    type:"number",  description:"Maximum times a failed notification will be retried" },
-  { id:"s2", label:"Cooldown Between Retries (s)",value:60,  type:"number",  description:"Wait time in seconds between retry attempts" },
-  { id:"s3", label:"Duplicate Detection Window (s)",value:300,type:"number", description:"Suppress identical notifications sent within this window" },
-  { id:"s4", label:"Max Daily Per User",          value:5,    type:"number",  description:"Maximum notifications a single user receives per day" },
-  { id:"s5", label:"Loop Detection Enabled",      value:true, type:"boolean", description:"Automatically detect and halt notification send loops" },
-  { id:"s6", label:"Alert on Delivery Failure",   value:true, type:"boolean", description:"Notify admins when >10% of notifications fail to deliver" },
-];
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
@@ -55,9 +35,9 @@ export default function AdminNotificationCenter() {
   const { toast } = useToast();
 
   const [tab, setTab]         = useState<"queue"|"logs"|"settings">("queue");
-  const [jobs, setJobs]       = useState<NotifJob[]>(()=>load("admin_notif_jobs_v1",seedJobs));
-  const [logs]                = useState<NotifLog[]>(()=>load("admin_notif_logs_v1",seedLogs));
-  const [settings, setSettings] = useState<NotifSetting[]>(()=>load("admin_notif_settings_v1",seedSettings));
+  const [jobs, setJobs]       = useState<NotifJob[]>([]);
+  const [logs]                = useState<NotifLog[]>([]);
+  const [settings, setSettings] = useState<NotifSetting[]>([]);
   const [editId, setEditId]   = useState<string|null>(null);
   const [editVal, setEditVal] = useState<string|number>("");
   const [retrying, setRetrying] = useState<string|null>(null);

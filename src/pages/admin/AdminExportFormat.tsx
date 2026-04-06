@@ -7,17 +7,11 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface ExportFormat{id:string;name:string;format:"csv"|"xlsx"|"pdf"|"json";supported:boolean;tested:boolean;encoding:string;maxRows:number;status:"ok"|"issue";}
-const seed=():ExportFormat[]=>[
-  {id:"f1",name:"Transactions CSV",format:"csv",supported:true,tested:true,encoding:"UTF-8",maxRows:100000,status:"ok"},
-  {id:"f2",name:"Reports XLSX",format:"xlsx",supported:true,tested:true,encoding:"UTF-8",maxRows:50000,status:"ok"},
-  {id:"f3",name:"Invoice PDF",format:"pdf",supported:true,tested:false,encoding:"UTF-8",maxRows:1000,status:"issue"},
-  {id:"f4",name:"User Data JSON",format:"json",supported:true,tested:true,encoding:"UTF-8",maxRows:10000,status:"ok"},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminExportFormat(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[formats,setFormats]=useState(()=>load("admin_export_fmt_v1",seed));
+  const[formats,setFormats]=useState([]);
   const[testing,setTesting]=useState<string|null>(null);
   const[exporting,setExporting]=useState<string|null>(null);
 

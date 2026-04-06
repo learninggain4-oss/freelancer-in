@@ -9,23 +9,13 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface IndexInfo{id:string;table:string;column:string;exists:boolean;recommended:boolean;usage:number;impact:"high"|"medium"|"low";avgQueryMs:number;}
 interface SlowQuery{id:string;sql:string;avgMs:number;count:number;}
-const seedIdx=():IndexInfo[]=>[
-  {id:"i1",table:"jobs",column:"status, created_at",exists:true,recommended:true,usage:92,impact:"high",avgQueryMs:12},
-  {id:"i2",table:"users",column:"email",exists:true,recommended:true,usage:88,impact:"high",avgQueryMs:8},
-  {id:"i3",table:"transactions",column:"wallet_id, created_at",exists:false,recommended:true,usage:0,impact:"high",avgQueryMs:840},
-  {id:"i4",table:"notifications",column:"user_id, is_read",exists:false,recommended:true,usage:0,impact:"medium",avgQueryMs:420},
-];
-const seedSlowQ=():SlowQuery[]=>[
-  {id:"sq1",sql:"SELECT * FROM transactions WHERE wallet_id=? ORDER BY created_at DESC",avgMs:840,count:12480},
-  {id:"sq2",sql:"SELECT * FROM notifications WHERE user_id=? AND is_read=false",avgMs:420,count:84200},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const impactColor={high:"#f87171",medium:"#fbbf24",low:"#4ade80"};
 
 export default function AdminDbIndexing(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[indexes,setIndexes]=useState(()=>load("admin_db_idx_v1",seedIdx));
-  const[slowQ]=useState(()=>load("admin_slow_q_v1",seedSlowQ));
+  const[indexes,setIndexes]=useState([]);
+  const[slowQ]=useState([]);
   const[creating,setCreating]=useState<string|null>(null);
   const[tab,setTab]=useState<"indexes"|"slow">("indexes");
 

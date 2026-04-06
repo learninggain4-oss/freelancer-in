@@ -16,16 +16,6 @@ const TH={
 interface LockEntry{id:string;table:string;query:string;pid:number;waitingMs:number;status:"running"|"waiting"|"deadlock"|"resolved";startedAt:string;}
 interface DeadlockEvent{id:string;tables:string[];resolvedBy:string;durationMs:number;at:string;auto:boolean;}
 
-const seedLocks=():LockEntry[]=>[
-  {id:"lk1",table:"wallet_transactions",query:"UPDATE wallet_transactions SET status=...",pid:1842,waitingMs:0,status:"running",startedAt:new Date(Date.now()-2000).toISOString()},
-  {id:"lk2",table:"profiles",query:"SELECT FOR UPDATE FROM profiles WHERE id=...",pid:1843,waitingMs:4200,status:"waiting",startedAt:new Date(Date.now()-5000).toISOString()},
-  {id:"lk3",table:"jobs",query:"DELETE FROM jobs WHERE expired=true",pid:1801,waitingMs:12400,status:"deadlock",startedAt:new Date(Date.now()-15000).toISOString()},
-];
-const seedEvents=():DeadlockEvent[]=>[
-  {id:"d1",tables:["jobs","user_roles"],resolvedBy:"Auto-retry",durationMs:3200,at:new Date(Date.now()-3600000).toISOString(),auto:true},
-  {id:"d2",tables:["wallet_transactions","profiles"],resolvedBy:"Admin kill",durationMs:18000,at:new Date(Date.now()-86400000).toISOString(),auto:false},
-  {id:"d3",tables:["notifications"],resolvedBy:"Query timeout",durationMs:30000,at:new Date(Date.now()-172800000).toISOString(),auto:true},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={running:"#4ade80",waiting:"#fbbf24",deadlock:"#f87171",resolved:"#94a3b8"};
 
@@ -33,8 +23,8 @@ export default function AdminDeadlockProtection(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"locks"|"history">("locks");
-  const[locks,setLocks]=useState<LockEntry[]>(()=>load("admin_locks_v1",seedLocks));
-  const[events]=useState<DeadlockEvent[]>(()=>load("admin_deadlock_events_v1",seedEvents));
+  const[locks,setLocks]=useState<LockEntry[]>([]);
+  const[events]=useState<DeadlockEvent[]>([]);
   const[killing,setKilling]=useState<string|null>(null);
 
   const killLock=async(l:LockEntry)=>{

@@ -33,34 +33,6 @@ interface ConfigAudit {
   changedBy: string; timestamp: string; approved: boolean;
 }
 
-const TOGGLES_KEY = "admin_feature_toggles_v1";
-const CONFIG_KEY  = "admin_config_drift_v1";
-
-const seedToggles = (): FeatureToggle[] => [
-  { id:"t1", name:"Maintenance Mode",       key:"MAINTENANCE_MODE",       description:"Show maintenance page to all non-admin users",             enabled:false, requiresApproval:true,  category:"System",   lastChanged: new Date(Date.now()-864e5*5).toISOString(),  dependencies:[] },
-  { id:"t2", name:"New User Registration",  key:"ALLOW_REGISTRATION",     description:"Allow new users to register on the platform",              enabled:true,  requiresApproval:false, category:"Users",    lastChanged: new Date(Date.now()-864e5*10).toISOString(), dependencies:[] },
-  { id:"t3", name:"Wallet Withdrawals",     key:"WITHDRAWALS_ENABLED",    description:"Allow users to submit withdrawal requests",                enabled:true,  requiresApproval:true,  category:"Finance",  lastChanged: new Date(Date.now()-864e5*3).toISOString(),  dependencies:["WALLET_ENABLED"] },
-  { id:"t4", name:"Aadhaar Verification",   key:"AADHAAR_VERIFY",         description:"Enable Aadhaar-based identity verification flow",          enabled:true,  requiresApproval:false, category:"Verify",   lastChanged: new Date(Date.now()-864e5*20).toISOString(), dependencies:[] },
-  { id:"t5", name:"PWA Push Notifications", key:"PUSH_NOTIFICATIONS",     description:"Send push notifications via OneSignal",                    enabled:true,  requiresApproval:false, category:"System",   lastChanged: new Date(Date.now()-864e5*7).toISOString(),  dependencies:[] },
-  { id:"t6", name:"Chat File Uploads",      key:"CHAT_FILE_UPLOAD",       description:"Allow file attachments in project chat",                   enabled:true,  requiresApproval:false, category:"Features", lastChanged: new Date(Date.now()-864e5*14).toISOString(), dependencies:["CHAT_ENABLED"] },
-  { id:"t7", name:"Admin Dual Approval",    key:"DUAL_APPROVAL_REQUIRED", description:"Require second admin to approve sensitive admin actions",  enabled:false, requiresApproval:true,  category:"Security", lastChanged: new Date(Date.now()-864e5*1).toISOString(),  dependencies:[] },
-  { id:"t8", name:"Rate Limiting",          key:"RATE_LIMITING_ENABLED",  description:"Enforce API and admin action rate limits",                 enabled:true,  requiresApproval:true,  category:"Security", lastChanged: new Date(Date.now()-864e5*2).toISOString(),  dependencies:[] },
-];
-
-const seedConfigs = (): ConfigEntry[] => [
-  { id:"c1", key:"PLATFORM_COMMISSION_RATE", prodValue:"10%",   backupValue:"10%",   stagingValue:"5%",    category:"Finance", sensitive:false, lastSync: new Date(Date.now()-3600000).toISOString(),  hasDrift:true },
-  { id:"c2", key:"MAX_WITHDRAWAL_AMOUNT",    prodValue:"50000", backupValue:"50000", stagingValue:"50000", category:"Finance", sensitive:false, lastSync: new Date(Date.now()-7200000).toISOString(),  hasDrift:false },
-  { id:"c3", key:"SESSION_TIMEOUT_MIN",      prodValue:"30",    backupValue:"30",    stagingValue:"60",    category:"Security",sensitive:false, lastSync: new Date(Date.now()-3600000).toISOString(),  hasDrift:true },
-  { id:"c4", key:"SUPABASE_URL",             prodValue:"https://maystt…",backupValue:"https://maystt…",stagingValue:"https://maystt…",category:"Database",sensitive:true, lastSync: new Date().toISOString(), hasDrift:false },
-  { id:"c5", key:"SMTP_HOST",                prodValue:"smtp.resend.com",backupValue:"smtp.resend.com",stagingValue:"smtp.mailtrap.io",category:"Email",sensitive:false, lastSync: new Date(Date.now()-3600000).toISOString(), hasDrift:true },
-];
-
-const seedAudit = (): ConfigAudit[] => [
-  { id:"a1", key:"PLATFORM_COMMISSION_RATE", oldValue:"8%",  newValue:"10%", changedBy:"Super Admin", timestamp: new Date(Date.now()-864e5*3).toISOString(), approved:true },
-  { id:"a2", key:"SESSION_TIMEOUT_MIN",      oldValue:"60",  newValue:"30",  changedBy:"Admin A",     timestamp: new Date(Date.now()-864e5*7).toISOString(), approved:true },
-  { id:"a3", key:"DUAL_APPROVAL_REQUIRED",   oldValue:"true",newValue:"false",changedBy:"Admin B",    timestamp: new Date(Date.now()-864e5*1).toISOString(), approved:false },
-];
-
 function load<T>(key: string, seed: () => T[]): T[] {
   try { const d = localStorage.getItem(key); if (d) return JSON.parse(d); } catch {}
   const s = seed(); localStorage.setItem(key, JSON.stringify(s)); return s;
@@ -73,9 +45,9 @@ export default function AdminConfigManagement() {
   const { toast } = useToast();
 
   const [tab, setTab]         = useState<"toggles"|"drift"|"audit">("toggles");
-  const [toggles, setToggles] = useState<FeatureToggle[]>(() => load(TOGGLES_KEY, seedToggles));
-  const [configs]             = useState<ConfigEntry[]>(() => load(CONFIG_KEY, seedConfigs));
-  const [audit]               = useState<ConfigAudit[]>(() => load("admin_config_audit_v1", seedAudit));
+  const [toggles, setToggles] = useState<FeatureToggle[]>([]);
+  const [configs]             = useState<ConfigEntry[]>([]);
+  const [audit]               = useState<ConfigAudit[]>([]);
   const [pendingToggle, setPendingToggle] = useState<FeatureToggle | null>(null);
   const [catFilter, setCatFilter] = useState("All");
   const [syncing, setSyncing] = useState(false);

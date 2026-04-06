@@ -8,21 +8,13 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface AuditItem{id:string;category:string;check:string;status:"pass"|"warn"|"fail";detail:string;severity:"critical"|"high"|"medium"|"low";lastChecked:string;}
-const seed=():AuditItem[]=>[
-  {id:"ai1",category:"Security",check:"Admin 2FA enabled",status:"pass",detail:"All admins have 2FA configured",severity:"critical",lastChecked:new Date(Date.now()-3600000).toISOString()},
-  {id:"ai2",category:"Security",check:"JWT secret rotation",status:"warn",detail:"JWT secret last rotated 85 days ago (recommended: 90d)",severity:"high",lastChecked:new Date(Date.now()-3600000).toISOString()},
-  {id:"ai3",category:"Data",check:"PII encryption at rest",status:"pass",detail:"All PII fields encrypted with AES-256",severity:"critical",lastChecked:new Date(Date.now()-7200000).toISOString()},
-  {id:"ai4",category:"Compliance",check:"Cookie consent banner",status:"fail",detail:"Cookie consent is not collecting opt-in",severity:"high",lastChecked:new Date(Date.now()-1800000).toISOString()},
-  {id:"ai5",category:"Performance",check:"DB query timeout config",status:"pass",detail:"All queries have 30s timeout configured",severity:"medium",lastChecked:new Date(Date.now()-3600000).toISOString()},
-  {id:"ai6",category:"Infrastructure",check:"SSL certificate health",status:"warn",detail:"api.freelancer.in SSL expires in 12 days",severity:"high",lastChecked:new Date(Date.now()-900000).toISOString()},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={pass:"#4ade80",warn:"#fbbf24",fail:"#f87171"};
 const sevColor={critical:"#f87171",high:"#fb923c",medium:"#fbbf24",low:"#4ade80"};
 
 export default function AdminComprehensiveAudit(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[items,setItems]=useState(()=>load("admin_comp_audit_v1",seed));
+  const[items,setItems]=useState([]);
   const[running,setRunning]=useState(false);
   const[filter,setFilter]=useState<"all"|"pass"|"warn"|"fail">("all");
 

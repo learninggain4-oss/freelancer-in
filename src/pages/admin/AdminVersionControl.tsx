@@ -29,38 +29,6 @@ interface ChangeLog {
 
 interface PreDeployCheck { id: string; label: string; status: "pass" | "fail" | "pending" | "skipped"; }
 
-const DEPLOY_KEY   = "admin_deployments_v1";
-const STAGING_KEY  = "admin_staging_mode";
-const CHECKS_KEY   = "admin_predeploy_checks_v1";
-
-const seedDeployments = (): Deployment[] => [
-  { id: "d1", version: "v1.0.5", label: "Infrastructure System Control", type: "minor", status: "live", deployedBy: "Super Admin", deployedAt: new Date(Date.now() - 3600000).toISOString(), changes: ["Admin DB Manager", "Env Vars Manager", "Server Monitor", "Backup System", "Security Center", "RBAC & Roles", "Audit Logs"], backupId: "bk-2025-04", canRollback: true },
-  { id: "d2", version: "v1.0.4", label: "Safety Controls & Session Timeout", type: "minor", status: "rolled-back", deployedBy: "Admin A", deployedAt: new Date(Date.now() - 86400000).toISOString(), changes: ["Session timeout warning", "Auto-logout feature", "Maintenance mode"], backupId: "bk-2025-03", canRollback: true },
-  { id: "d3", version: "v1.0.3", label: "Full UI Glassmorphism Redesign", type: "major", status: "live", deployedBy: "Super Admin", deployedAt: new Date(Date.now() - 864e5 * 5).toISOString(), changes: ["50+ pages redesigned", "Theme switcher (Black/White/W&B)", "Admin layout overhaul"], canRollback: false },
-  { id: "d4", version: "v1.0.2", label: "Build Error Fixes", type: "patch", status: "live", deployedBy: "Admin A", deployedAt: new Date(Date.now() - 864e5 * 10).toISOString(), changes: ["Fixed orphaned JSX blocks", "Fixed duplicate exports", "6 files repaired"], canRollback: false },
-  { id: "d5", version: "v1.0.0", label: "Initial Production Launch", type: "major", status: "live", deployedBy: "Super Admin", deployedAt: new Date(Date.now() - 864e5 * 30).toISOString(), changes: ["Core app migrated from Lovable to Replit", "Supabase backend connected", "All user flows operational"], canRollback: false },
-];
-
-const seedChangelog = (): ChangeLog[] => [
-  { id: "c1", category: "Feature",  description: "Admin Approval Center with dual-approval workflow", version: "v1.0.6", author: "Super Admin", timestamp: new Date().toISOString() },
-  { id: "c2", category: "Security", description: "Session security monitoring with device binding detection", version: "v1.0.6", author: "Super Admin", timestamp: new Date(Date.now() - 1800000).toISOString() },
-  { id: "c3", category: "Feature",  description: "Data Privacy controls — masking, retention, export approval", version: "v1.0.6", author: "Super Admin", timestamp: new Date(Date.now() - 3600000).toISOString() },
-  { id: "c4", category: "Feature",  description: "Alert System with multi-channel notifications and service health", version: "v1.0.6", author: "Super Admin", timestamp: new Date(Date.now() - 5400000).toISOString() },
-  { id: "c5", category: "Security", description: "Admin role granted to freeandin@gmail.com via user_roles", version: "v1.0.5", author: "Super Admin", timestamp: new Date(Date.now() - 86400000).toISOString() },
-  { id: "c6", category: "Feature",  description: "Database Manager — live connection testing, history, switch", version: "v1.0.5", author: "Super Admin", timestamp: new Date(Date.now() - 86400000 * 2).toISOString() },
-];
-
-const seedChecks = (): PreDeployCheck[] => [
-  { id: "pk1", label: "Production build passes (npm run build)",       status: "pass" },
-  { id: "pk2", label: "No TypeScript errors",                           status: "pass" },
-  { id: "pk3", label: "Supabase DB connection healthy",                 status: "pass" },
-  { id: "pk4", label: "Backup created before deployment",               status: "pass" },
-  { id: "pk5", label: "All admin routes protected by AdminRoute guard", status: "pass" },
-  { id: "pk6", label: "Env variables validated",                        status: "pass" },
-  { id: "pk7", label: "Browser console has no critical errors",         status: "pending" },
-  { id: "pk8", label: "Mobile responsive check",                        status: "pending" },
-];
-
 function load<T>(key: string, seed: () => T[]): T[] {
   try { const d = localStorage.getItem(key); if (d) return JSON.parse(d); } catch { /* */ }
   const s = seed(); localStorage.setItem(key, JSON.stringify(s)); return s;
@@ -77,9 +45,9 @@ export default function AdminVersionControl() {
   const { toast } = useToast();
 
   const [tab, setTab]         = useState<"deployments" | "changelog" | "checks">("deployments");
-  const [deployments, setDeployments] = useState<Deployment[]>(() => load(DEPLOY_KEY, seedDeployments));
-  const [changelog]           = useState<ChangeLog[]>(() => load("admin_changelog_v1", seedChangelog));
-  const [checks, setChecks]   = useState<PreDeployCheck[]>(() => load(CHECKS_KEY, seedChecks));
+  const [deployments, setDeployments] = useState<Deployment[]>([]);
+  const [changelog]           = useState<ChangeLog[]>([]);
+  const [checks, setChecks]   = useState<PreDeployCheck[]>([]);
   const [stagingMode, setStagingMode] = useState(() => localStorage.getItem(STAGING_KEY) === "true");
   const [confirmRollback, setConfirmRollback] = useState<Deployment | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);

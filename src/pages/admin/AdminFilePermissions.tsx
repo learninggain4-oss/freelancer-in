@@ -10,21 +10,12 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface FileRule{id:string;bucket:string;visibility:"public"|"private"|"role-based";roles:string[];allowedOps:string[];signedUrlExpiry:number;changeApprovalRequired:boolean;lastModified:string;}
 interface AccessLog{id:string;file:string;user:string;action:string;ip:string;at:string;allowed:boolean;}
-const seedRules=():FileRule[]=>[
-  {id:"fr1",bucket:"user-avatars",visibility:"public",roles:[],allowedOps:["read","write"],signedUrlExpiry:3600,changeApprovalRequired:false,lastModified:new Date(Date.now()-86400000).toISOString()},
-  {id:"fr2",bucket:"kyc-documents",visibility:"private",roles:["admin","moderator"],allowedOps:["read"],signedUrlExpiry:300,changeApprovalRequired:true,lastModified:new Date(Date.now()-172800000).toISOString()},
-  {id:"fr3",bucket:"invoice-pdfs",visibility:"role-based",roles:["admin","employer","freelancer"],allowedOps:["read"],signedUrlExpiry:3600,changeApprovalRequired:false,lastModified:new Date(Date.now()-604800000).toISOString()},
-];
-const seedLogs=():AccessLog[]=>[
-  {id:"al1",file:"kyc_rahul_2024.pdf",user:"Admin A",action:"read",ip:"192.168.1.5",at:new Date(Date.now()-1800000).toISOString(),allowed:true},
-  {id:"al2",file:"kyc_priya_2024.pdf",user:"unknown_user",action:"read",ip:"45.79.12.200",at:new Date(Date.now()-3600000).toISOString(),allowed:false},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminFilePermissions(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[rules,setRules]=useState(()=>load("admin_file_perm_v1",seedRules));
-  const[logs]=useState(()=>load("admin_file_access_logs_v1",seedLogs));
+  const[rules,setRules]=useState([]);
+  const[logs]=useState([]);
   const[tab,setTab]=useState<"rules"|"logs">("rules");
 
   const toggleVisibility=(id:string)=>{

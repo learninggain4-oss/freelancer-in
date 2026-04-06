@@ -15,11 +15,6 @@ const TH = {
   wb:    { bg:"#f0f4ff",card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badge:"rgba(99,102,241,.1)",badgeFg:"#4f46e5" },
 };
 
-const MASKING_KEY   = "admin_data_masking_v1";
-const RETENTION_KEY = "admin_data_retention_v1";
-const ACCESS_LOG_KEY = "admin_data_access_log_v1";
-const EXPORT_KEY    = "admin_export_requests_v1";
-
 interface MaskRule { id: string; field: string; table: string; maskType: "partial" | "full" | "none"; example: string; enabled: boolean; }
 interface RetentionPolicy { id: string; dataType: string; retentionDays: number; autoDelete: boolean; lastReview: string; }
 interface AccessLog { id: string; admin: string; table: string; field: string; action: string; timestamp: string; }
@@ -67,10 +62,10 @@ export default function AdminDataPrivacy() {
   const { toast } = useToast();
 
   const [tab, setTab] = useState<"masking" | "retention" | "access" | "exports">("masking");
-  const [maskRules, setMaskRules] = useState<MaskRule[]>(() => load(MASKING_KEY, defaultMaskRules));
-  const [retention, setRetention] = useState<RetentionPolicy[]>(() => load(RETENTION_KEY, defaultRetention));
-  const [accessLog] = useState<AccessLog[]>(() => load(ACCESS_LOG_KEY, defaultAccessLog));
-  const [exports, setExports] = useState<ExportRequest[]>(() => load(EXPORT_KEY, defaultExports));
+  const [maskRules, setMaskRules] = useState<MaskRule[]>([]);
+  const [retention, setRetention] = useState<RetentionPolicy[]>([]);
+  const [accessLog] = useState<AccessLog[]>([]);
+  const [exports, setExports] = useState<ExportRequest[]>([]);
   const [editRetId, setEditRetId] = useState<string | null>(null);
   const [editDays, setEditDays] = useState(365);
 

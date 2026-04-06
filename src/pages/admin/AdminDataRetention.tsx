@@ -17,14 +17,6 @@ const TH = {
 
 interface RetentionPolicy { id:string; dataType:string; category:string; retainDays:number; autoDelete:boolean; requireApproval:boolean; lastCleaned?:string; pendingDeletion:number; legalBasis:string; }
 
-const seedPolicies = (): RetentionPolicy[] => [
-  { id:"r1", dataType:"User Profiles",       category:"User Data",    retainDays:1825, autoDelete:false, requireApproval:true,  lastCleaned:new Date(Date.now()-864e5*30).toISOString(), pendingDeletion:0,   legalBasis:"Contractual obligation" },
-  { id:"r2", dataType:"Wallet Transactions", category:"Finance",      retainDays:2555, autoDelete:false, requireApproval:true,  lastCleaned:new Date(Date.now()-864e5*30).toISOString(), pendingDeletion:0,   legalBasis:"Financial compliance (7-year rule)" },
-  { id:"r3", dataType:"Chat Messages",       category:"Communication",retainDays:365,  autoDelete:true,  requireApproval:false, lastCleaned:new Date(Date.now()-864e5*7).toISOString(),  pendingDeletion:4820,legalBasis:"Privacy policy — user consent" },
-  { id:"r4", dataType:"Audit Logs",          category:"Security",     retainDays:730,  autoDelete:false, requireApproval:true,  lastCleaned:new Date(Date.now()-864e5*14).toISOString(), pendingDeletion:0,   legalBasis:"Security & compliance" },
-  { id:"r5", dataType:"Notification Logs",   category:"System",       retainDays:90,   autoDelete:true,  requireApproval:false, lastCleaned:new Date(Date.now()-864e5*3).toISOString(),  pendingDeletion:1240,legalBasis:"Operational necessity" },
-  { id:"r6", dataType:"Uploaded Files",      category:"Storage",      retainDays:180,  autoDelete:false, requireApproval:false, lastCleaned:new Date(Date.now()-864e5*60).toISOString(), pendingDeletion:340, legalBasis:"User agreement" },
-];
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
@@ -37,7 +29,7 @@ export default function AdminDataRetention() {
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 
-  const [policies, setPolicies] = useState<RetentionPolicy[]>(()=>load("admin_retention_v1",seedPolicies));
+  const [policies, setPolicies] = useState<RetentionPolicy[]>([]);
   const [confirmClean, setConfirmClean] = useState<RetentionPolicy|null>(null);
   const [editId, setEditId]   = useState<string|null>(null);
   const [editDays, setEditDays] = useState("");

@@ -15,12 +15,6 @@ const TH={
 
 interface SyncJob{id:string;name:string;source:string;target:string;intervalMins:number;lastSyncAt:string;nextSyncAt:string;status:"synced"|"syncing"|"delayed"|"error";delayMins:number;rowsSync:number;errors:number;}
 
-const seedJobs=():SyncJob[]=>[
-  {id:"sj1",name:"User Profiles Sync",source:"Supabase Primary",target:"Supabase Replica",intervalMins:5,lastSyncAt:new Date(Date.now()-180000).toISOString(),nextSyncAt:new Date(Date.now()+120000).toISOString(),status:"synced",delayMins:0,rowsSync:12840,errors:0},
-  {id:"sj2",name:"Wallet Transactions",source:"Supabase Primary",target:"Analytics DB",intervalMins:15,lastSyncAt:new Date(Date.now()-1800000).toISOString(),nextSyncAt:new Date(Date.now()-600000).toISOString(),status:"delayed",delayMins:10,rowsSync:84200,errors:0},
-  {id:"sj3",name:"Notification Queue",source:"Queue Service",target:"Supabase Primary",intervalMins:1,lastSyncAt:new Date(Date.now()-3600000).toISOString(),nextSyncAt:new Date(Date.now()-3000000).toISOString(),status:"error",delayMins:50,rowsSync:215000,errors:14},
-  {id:"sj4",name:"Job Listings Cache",source:"Supabase Primary",target:"Redis Cache",intervalMins:10,lastSyncAt:new Date(Date.now()-540000).toISOString(),nextSyncAt:new Date(Date.now()+60000).toISOString(),status:"synced",delayMins:0,rowsSync:4510,errors:0},
-];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={synced:"#4ade80",syncing:"#a5b4fc",delayed:"#fbbf24",error:"#f87171"};
@@ -28,7 +22,7 @@ const sColor={synced:"#4ade80",syncing:"#a5b4fc",delayed:"#fbbf24",error:"#f8717
 export default function AdminDataSync(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[jobs,setJobs]=useState<SyncJob[]>(()=>load("admin_data_sync_v1",seedJobs));
+  const[jobs,setJobs]=useState<SyncJob[]>([]);
   const[syncing,setSyncing]=useState<string|null>(null);
 
   const forceSync=async(j:SyncJob)=>{

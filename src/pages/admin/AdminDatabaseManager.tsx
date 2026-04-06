@@ -71,7 +71,7 @@ export default function AdminDatabaseManager() {
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 
-  const [connections, setConnections] = useState<DbConnection[]>(load);
+  const [connections, setConnections] = useState<DbConnection[]>([]);
   const [editing, setEditing] = useState<DbConnection | null>(null);
   const [form, setForm] = useState({ ...BLANK });
   const [modalOpen, setModalOpen] = useState(false);

@@ -10,23 +10,12 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface RoleChange{id:string;user:string;fromRole:string;toRole:string;requestedBy:string;status:"pending"|"approved"|"rejected";at:string;suspicious:boolean;}
 interface Role{id:string;name:string;level:number;permissions:string[];users:number;}
-const seedRoles=():Role[]=>[
-  {id:"r1",name:"Super Admin",level:5,permissions:["all"],users:1},
-  {id:"r2",name:"Admin",level:4,permissions:["users","jobs","payments","settings"],users:3},
-  {id:"r3",name:"Moderator",level:3,permissions:["users","jobs","reviews"],users:8},
-  {id:"r4",name:"Support",level:2,permissions:["users","tickets"],users:12},
-];
-const seedChanges=():RoleChange[]=>[
-  {id:"rc1",user:"user_512",fromRole:"Support",toRole:"Admin",requestedBy:"Admin B",status:"pending",at:new Date(Date.now()-3600000).toISOString(),suspicious:true},
-  {id:"rc2",user:"user_288",fromRole:"Freelancer",toRole:"Moderator",requestedBy:"Super Admin",status:"approved",at:new Date(Date.now()-86400000).toISOString(),suspicious:false},
-  {id:"rc3",user:"user_901",fromRole:"Employer",toRole:"Admin",requestedBy:"Admin A",status:"rejected",at:new Date(Date.now()-172800000).toISOString(),suspicious:true},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminRbacSecurity(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[roles]=useState(()=>load("admin_rbac_roles_v1",seedRoles));
-  const[changes,setChanges]=useState(()=>load("admin_rbac_changes_v1",seedChanges));
+  const[roles]=useState([]);
+  const[changes,setChanges]=useState([]);
   const[acting,setActing]=useState<string|null>(null);
   const[tab,setTab]=useState<"roles"|"changes">("changes");
 

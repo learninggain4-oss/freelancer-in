@@ -9,17 +9,11 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface Report{id:string;name:string;frequency:string;lastGenerated:string;status:"valid"|"invalid"|"pending";discrepancyPct:number;rowCount:number;}
-const seed=():Report[]=>[
-  {id:"r1",name:"Daily Revenue Report",frequency:"daily",lastGenerated:new Date(Date.now()-3600000).toISOString(),status:"valid",discrepancyPct:0,rowCount:4200},
-  {id:"r2",name:"Commission Report",frequency:"weekly",lastGenerated:new Date(Date.now()-86400000).toISOString(),status:"invalid",discrepancyPct:3.2,rowCount:840},
-  {id:"r3",name:"User Growth Report",frequency:"monthly",lastGenerated:new Date(Date.now()-604800000).toISOString(),status:"valid",discrepancyPct:0,rowCount:12840},
-  {id:"r4",name:"Transaction Reconciliation",frequency:"daily",lastGenerated:new Date(Date.now()-7200000).toISOString(),status:"invalid",discrepancyPct:1.8,rowCount:84200},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminReportValidation(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[reports,setReports]=useState(()=>load("admin_report_val_v1",seed));
+  const[reports,setReports]=useState([]);
   const[regenerating,setRegenerating]=useState<string|null>(null);
 
   const regenerate=async(r:Report)=>{

@@ -18,21 +18,7 @@ const TH = {
 interface Session { id:string; userId:string; username:string; email:string; role:string; device:string; ip:string; location:string; startedAt:string; lastActive:string; suspicious:boolean; deviceCount:number; }
 interface SessionPolicy { id:string; label:string; value:number|boolean; type:"number"|"boolean"; description:string; }
 
-const seedSessions = (): Session[] => [
-  { id:"s1", userId:"d57d",  username:"Super Admin",  email:"freeandin@gmail.com",  role:"super_admin", device:"Chrome / macOS",  ip:"192.168.1.1",  location:"Mumbai, IN",    startedAt:new Date(Date.now()-7200000).toISOString(),  lastActive:new Date(Date.now()-120000).toISOString(),  suspicious:false, deviceCount:1 },
-  { id:"s2", userId:"4821",  username:"Admin A",       email:"admin.a@fi.com",       role:"admin",       device:"Firefox / Win",   ip:"192.168.1.10", location:"Delhi, IN",     startedAt:new Date(Date.now()-3600000).toISOString(),  lastActive:new Date(Date.now()-300000).toISOString(),  suspicious:false, deviceCount:2 },
-  { id:"s3", userId:"4821",  username:"Admin A",       email:"admin.a@fi.com",       role:"admin",       device:"Mobile / iOS",    ip:"103.21.58.44", location:"Delhi, IN",     startedAt:new Date(Date.now()-1800000).toISOString(),  lastActive:new Date(Date.now()-60000).toISOString(),   suspicious:false, deviceCount:2 },
-  { id:"s4", userId:"2241",  username:"Admin B",       email:"admin.b@fi.com",       role:"admin",       device:"Chrome / Linux",  ip:"192.168.1.11", location:"Bangalore, IN", startedAt:new Date(Date.now()-5400000).toISOString(),  lastActive:new Date(Date.now()-3600000).toISOString(), suspicious:false, deviceCount:1 },
-  { id:"s5", userId:"9901",  username:"Support1",      email:"support1@fi.com",      role:"support",     device:"Chrome / Win",    ip:"45.79.12.200", location:"Unknown",       startedAt:new Date(Date.now()-10800000).toISOString(), lastActive:new Date(Date.now()-7200000).toISOString(), suspicious:true,  deviceCount:1 },
-];
 
-const seedPolicies = (): SessionPolicy[] => [
-  { id:"p1", label:"Session Limit Per User",    value:3,    type:"number",  description:"Maximum simultaneous sessions allowed per user" },
-  { id:"p2", label:"Idle Timeout (minutes)",    value:30,   type:"number",  description:"Automatically expire sessions idle for this duration" },
-  { id:"p3", label:"Max Session Duration (hr)", value:8,    type:"number",  description:"Force logout after this many hours regardless of activity" },
-  { id:"p4", label:"Multiple Device Detection", value:true, type:"boolean", description:"Alert admins when a user logs in from multiple devices simultaneously" },
-  { id:"p5", label:"Suspicious IP Alert",       value:true, type:"boolean", description:"Flag sessions from unrecognized IP ranges or locations" },
-];
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
@@ -48,8 +34,8 @@ export default function AdminSessionManager() {
   const { toast } = useToast();
 
   const [tab, setTab]         = useState<"sessions"|"policy">("sessions");
-  const [sessions, setSessions] = useState<Session[]>(()=>load("admin_sessions_v1",seedSessions));
-  const [policies, setPolicies] = useState<SessionPolicy[]>(()=>load("admin_session_policy_v1",seedPolicies));
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [policies, setPolicies] = useState<SessionPolicy[]>([]);
   const [confirmLogout, setConfirmLogout] = useState<Session|null>(null);
   const [confirmAll, setConfirmAll] = useState(false);
   const [editId, setEditId]   = useState<string|null>(null);

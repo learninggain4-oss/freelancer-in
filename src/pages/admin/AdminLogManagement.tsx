@@ -14,12 +14,6 @@ const TH={
 
 interface LogStore{id:string;name:string;type:string;sizeMB:number;maxMB:number;retentionDays:number;compressionEnabled:boolean;autoCleanup:boolean;archivedMB:number;status:"ok"|"warning"|"full";lastRotated:string;}
 
-const seedStores=():LogStore[]=>[
-  {id:"ls1",name:"API Access Logs",type:"access",sizeMB:840,maxMB:2048,retentionDays:30,compressionEnabled:true,autoCleanup:true,archivedMB:1200,status:"ok",lastRotated:new Date(Date.now()-86400000).toISOString()},
-  {id:"ls2",name:"Error Logs",type:"error",sizeMB:1680,maxMB:2048,retentionDays:90,compressionEnabled:false,autoCleanup:true,archivedMB:420,status:"warning",lastRotated:new Date(Date.now()-172800000).toISOString()},
-  {id:"ls3",name:"Audit Logs",type:"audit",sizeMB:380,maxMB:2048,retentionDays:365,compressionEnabled:true,autoCleanup:false,archivedMB:2400,status:"ok",lastRotated:new Date(Date.now()-604800000).toISOString()},
-  {id:"ls4",name:"Payment Logs",type:"payment",sizeMB:1950,maxMB:2048,retentionDays:730,compressionEnabled:false,autoCleanup:false,archivedMB:8400,status:"warning",lastRotated:new Date(Date.now()-259200000).toISOString()},
-];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={ok:"#4ade80",warning:"#fbbf24",full:"#f87171"};
@@ -27,7 +21,7 @@ const sColor={ok:"#4ade80",warning:"#fbbf24",full:"#f87171"};
 export default function AdminLogManagement(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[stores,setStores]=useState<LogStore[]>(()=>load("admin_log_mgmt_v1",seedStores));
+  const[stores,setStores]=useState<LogStore[]>([]);
   const[rotating,setRotating]=useState<string|null>(null);
   const[compressing,setCompressing]=useState<string|null>(null);
   const[archiving,setArchiving]=useState<string|null>(null);

@@ -18,31 +18,6 @@ interface CacheEntry { id:string; key:string; type:string; size:string; ttlSec:n
 interface SlowQuery { id:string; query:string; table:string; avgMs:number; executions:number; lastRun:string; indexed:boolean; }
 interface CacheSetting { id:string; label:string; value:number|boolean; type:"number"|"boolean"; description:string; }
 
-const CACHE_KEY = "admin_cache_entries_v1";
-const seedCache = (): CacheEntry[] => [
-  { id:"c1", key:"user_profiles_list",     type:"Query",     size:"48 KB",  ttlSec:300,  hitRate:94, lastInvalidated:new Date(Date.now()-600000).toISOString(),  status:"healthy" },
-  { id:"c2", key:"job_listings_home",      type:"Query",     size:"120 KB", ttlSec:120,  hitRate:88, lastInvalidated:new Date(Date.now()-1800000).toISOString(), status:"healthy" },
-  { id:"c3", key:"wallet_balances",        type:"Query",     size:"22 KB",  ttlSec:30,   hitRate:71, lastInvalidated:new Date(Date.now()-60000).toISOString(),   status:"stale"  },
-  { id:"c4", key:"site_settings",          type:"Config",    size:"4 KB",   ttlSec:3600, hitRate:99, lastInvalidated:new Date(Date.now()-3600000).toISOString(), status:"healthy" },
-  { id:"c5", key:"active_sessions_count",  type:"Realtime",  size:"1 KB",   ttlSec:10,   hitRate:45, lastInvalidated:new Date(Date.now()-30000).toISOString(),   status:"stale"  },
-  { id:"c6", key:"admin_notifications",    type:"Push",      size:"8 KB",   ttlSec:60,   hitRate:82, lastInvalidated:new Date(Date.now()-900000).toISOString(),  status:"failed" },
-];
-
-const seedQueries = (): SlowQuery[] => [
-  { id:"q1", query:"SELECT * FROM profiles WHERE verified=true ORDER BY created_at DESC", table:"profiles",          avgMs:1840, executions:2340, lastRun:new Date(Date.now()-600000).toISOString(),   indexed:false },
-  { id:"q2", query:"SELECT jobs.*, profiles.name FROM jobs JOIN profiles ON …",           table:"jobs",              avgMs:920,  executions:1120, lastRun:new Date(Date.now()-1200000).toISOString(),  indexed:false },
-  { id:"q3", query:"SELECT COUNT(*) FROM wallet_transactions WHERE status='pending'",     table:"wallet_transactions",avgMs:340,  executions:5600, lastRun:new Date(Date.now()-300000).toISOString(),   indexed:true  },
-  { id:"q4", query:"SELECT * FROM job_applications WHERE job_id=? AND status='active'",   table:"job_applications",  avgMs:210,  executions:890,  lastRun:new Date(Date.now()-1800000).toISOString(),  indexed:true  },
-];
-
-const seedSettings = (): CacheSetting[] => [
-  { id:"s1", label:"Default TTL (seconds)", value:300,  type:"number",  description:"Default time-to-live for cached query results" },
-  { id:"s2", label:"Max Cache Size (MB)",   value:256,  type:"number",  description:"Maximum memory allocated to the cache layer" },
-  { id:"s3", label:"Auto-Invalidate on Write", value:true, type:"boolean", description:"Automatically clear related cache keys when data is written" },
-  { id:"s4", label:"Slow Query Threshold (ms)", value:500, type:"number", description:"Flag queries exceeding this response time as slow" },
-  { id:"s5", label:"Query Result Caching",  value:true, type:"boolean", description:"Cache repeated identical query results" },
-];
-
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
@@ -57,9 +32,9 @@ export default function AdminCacheManager() {
   const { toast } = useToast();
 
   const [tab, setTab]       = useState<"cache"|"queries"|"settings">("cache");
-  const [entries, setEntries] = useState<CacheEntry[]>(()=>load(CACHE_KEY,seedCache));
-  const [queries]           = useState<SlowQuery[]>(()=>load("admin_slow_queries_v1",seedQueries));
-  const [settings, setSettings] = useState<CacheSetting[]>(()=>load("admin_cache_settings_v1",seedSettings));
+  const [entries, setEntries] = useState<CacheEntry[]>([]);
+  const [queries]           = useState<SlowQuery[]>([]);
+  const [settings, setSettings] = useState<CacheSetting[]>([]);
   const [flushing, setFlushing] = useState<string|null>(null);
   const [flushAll, setFlushAll] = useState(false);
   const [editId, setEditId] = useState<string|null>(null);

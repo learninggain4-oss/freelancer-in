@@ -36,7 +36,7 @@ export default function AdminBackups() {
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 
-  const [backups, setBackups] = useState<Backup[]>(loadBackups);
+  const [backups, setBackups] = useState<Backup[]>([]);
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Backup | null>(null);

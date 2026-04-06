@@ -15,18 +15,13 @@ const TH={
 
 interface ConfigVersion{id:string;version:string;label:string;changes:string[];createdAt:string;createdBy:string;isActive:boolean;tested:boolean;}
 
-const seedVersions=():ConfigVersion[]=>[
-  {id:"cv1",version:"v12",label:"Platform fee increase + KYC mandatory",changes:["platform_fee_pct: 10% → 12%","kyc_required: false → true"],createdAt:new Date(Date.now()-86400000).toISOString(),createdBy:"Admin A",isActive:true,tested:true},
-  {id:"cv2",version:"v11",label:"Withdrawal limit reduction",changes:["withdrawal_limit: ₹50,000 → ₹25,000"],createdAt:new Date(Date.now()-172800000).toISOString(),createdBy:"Admin B",isActive:false,tested:true},
-  {id:"cv3",version:"v10",label:"Initial production config",changes:["Initial setup","Default platform settings"],createdAt:new Date(Date.now()-604800000).toISOString(),createdBy:"Super Admin",isActive:false,tested:true},
-];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminConfigRollback(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[versions,setVersions]=useState<ConfigVersion[]>(()=>load("admin_config_rollback_v1",seedVersions));
+  const[versions,setVersions]=useState<ConfigVersion[]>([]);
   const[rolling,setRolling]=useState<string|null>(null);
   const[testing,setTesting]=useState<string|null>(null);
   const[confirmId,setConfirmId]=useState<string|null>(null);

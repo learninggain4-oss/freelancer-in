@@ -14,10 +14,6 @@ const TH={
 
 interface ImportJob{id:string;fileName:string;target:string;rows:number;valid:number;invalid:number;status:"pending"|"validating"|"ready"|"importing"|"done"|"failed"|"rolled_back";progress:number;createdAt:string;errors:string[];}
 
-const seedJobs=():ImportJob[]=>[
-  {id:"ij1",fileName:"freelancers_batch_apr.csv",target:"profiles",rows:420,valid:418,invalid:2,status:"done",progress:100,createdAt:new Date(Date.now()-86400000).toISOString(),errors:["Row 208: invalid email format","Row 319: duplicate phone number"]},
-  {id:"ij2",fileName:"jobs_export_q1.json",target:"jobs",rows:1840,valid:1840,invalid:0,status:"ready",progress:0,createdAt:new Date(Date.now()-3600000).toISOString(),errors:[]},
-];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={pending:"#94a3b8",validating:"#a5b4fc",ready:"#fbbf24",importing:"#6366f1",done:"#4ade80",failed:"#f87171",rolled_back:"#fb923c"};
@@ -25,7 +21,7 @@ const sColor={pending:"#94a3b8",validating:"#a5b4fc",ready:"#fbbf24",importing:"
 export default function AdminDataImport(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[jobs,setJobs]=useState<ImportJob[]>(()=>load("admin_data_import_v1",seedJobs));
+  const[jobs,setJobs]=useState<ImportJob[]>([]);
   const[processing,setProcessing]=useState<string|null>(null);
   const[rolling,setRolling]=useState<string|null>(null);
   const[expandedErrors,setExpandedErrors]=useState<string|null>(null);

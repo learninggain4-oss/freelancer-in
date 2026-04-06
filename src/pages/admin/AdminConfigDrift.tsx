@@ -9,18 +9,11 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface ConfigItem{id:string;key:string;server1:string;server2:string;expected:string;drifted:boolean;lastSynced:string;category:string;}
-const seed=():ConfigItem[]=>[
-  {id:"c1",key:"MAX_UPLOAD_SIZE",server1:"50MB",server2:"50MB",expected:"50MB",drifted:false,lastSynced:new Date(Date.now()-3600000).toISOString(),category:"Storage"},
-  {id:"c2",key:"SESSION_TIMEOUT",server1:"30min",server2:"60min",expected:"30min",drifted:true,lastSynced:new Date(Date.now()-7200000).toISOString(),category:"Security"},
-  {id:"c3",key:"RATE_LIMIT_RPM",server1:"100",server2:"100",expected:"100",drifted:false,lastSynced:new Date(Date.now()-1800000).toISOString(),category:"API"},
-  {id:"c4",key:"LOG_LEVEL",server1:"warn",server2:"debug",expected:"warn",drifted:true,lastSynced:new Date(Date.now()-86400000).toISOString(),category:"Logging"},
-  {id:"c5",key:"PAYMENT_TIMEOUT_MS",server1:"30000",server2:"30000",expected:"30000",drifted:false,lastSynced:new Date(Date.now()-3600000).toISOString(),category:"Payments"},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminConfigDrift(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[configs,setConfigs]=useState(()=>load("admin_config_drift_v1",seed));
+  const[configs,setConfigs]=useState([]);
   const[syncing,setSyncing]=useState<string|null>(null);
   const[syncAll,setSyncAll]=useState(false);
 

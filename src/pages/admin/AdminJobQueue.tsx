@@ -17,23 +17,7 @@ const TH = {
 interface Job { id:string; name:string; type:string; priority:"high"|"normal"|"low"; status:"queued"|"running"|"completed"|"failed"|"paused"; attempts:number; maxAttempts:number; durationMs?:number; scheduledAt:string; startedAt?:string; completedAt?:string; error?:string; }
 interface JobSetting { id:string; label:string; value:number|boolean; type:"number"|"boolean"; description:string; }
 
-const seedJobs = (): Job[] => [
-  { id:"j1", name:"Daily wallet reconciliation",    type:"Finance",    priority:"high",   status:"running",   attempts:1, maxAttempts:3, scheduledAt:new Date(Date.now()-3600000).toISOString(), startedAt:new Date(Date.now()-120000).toISOString() },
-  { id:"j2", name:"Push notification batch (8,420)",type:"Messaging",  priority:"normal", status:"queued",    attempts:0, maxAttempts:3, scheduledAt:new Date(Date.now()-600000).toISOString() },
-  { id:"j3", name:"Orphan file cleanup",            type:"Maintenance", priority:"low",    status:"completed", attempts:1, maxAttempts:3, durationMs:4200, scheduledAt:new Date(Date.now()-864e5).toISOString(), completedAt:new Date(Date.now()-864e5+42e2).toISOString() },
-  { id:"j4", name:"Invoice PDF generation (340)",   type:"Reports",    priority:"normal", status:"failed",    attempts:3, maxAttempts:3, scheduledAt:new Date(Date.now()-7200000).toISOString(), error:"PDF renderer out of memory after 512 MB limit" },
-  { id:"j5", name:"KYC verification batch",         type:"Compliance", priority:"high",   status:"paused",    attempts:0, maxAttempts:5, scheduledAt:new Date(Date.now()-1800000).toISOString() },
-  { id:"j6", name:"Search index rebuild",           type:"Performance",priority:"low",    status:"queued",    attempts:0, maxAttempts:2, scheduledAt:new Date(Date.now()-300000).toISOString() },
-];
 
-const seedSettings = (): JobSetting[] => [
-  { id:"s1", label:"Max Concurrent Jobs",        value:5,    type:"number",  description:"Maximum number of jobs that can run simultaneously" },
-  { id:"s2", label:"Default Job Timeout (sec)",  value:300,  type:"number",  description:"Jobs exceeding this duration are auto-terminated" },
-  { id:"s3", label:"Max Retry Attempts",         value:3,    type:"number",  description:"Maximum retries before a job is marked as permanently failed" },
-  { id:"s4", label:"Retry Backoff (sec)",        value:60,   type:"number",  description:"Wait time between retry attempts (exponential backoff base)" },
-  { id:"s5", label:"Queue Auto-Drain",           value:true, type:"boolean", description:"Automatically process queued jobs when worker slots are free" },
-  { id:"s6", label:"Alert on Failed Jobs",       value:true, type:"boolean", description:"Notify admins immediately when a job fails after all retries" },
-];
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
@@ -50,8 +34,8 @@ export default function AdminJobQueue() {
   const { toast } = useToast();
 
   const [tab, setTab]           = useState<"queue"|"settings">("queue");
-  const [jobs, setJobs]         = useState<Job[]>(()=>load("admin_jobs_v1",seedJobs));
-  const [settings, setSettings] = useState<JobSetting[]>(()=>load("admin_job_settings_v1",seedSettings));
+  const [jobs, setJobs]         = useState<Job[]>([]);
+  const [settings, setSettings] = useState<JobSetting[]>([]);
   const [editId, setEditId]     = useState<string|null>(null);
   const [editVal, setEditVal]   = useState<string|number>("");
   const [retrying, setRetrying] = useState<string|null>(null);

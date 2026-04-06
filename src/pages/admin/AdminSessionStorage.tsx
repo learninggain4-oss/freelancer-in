@@ -10,19 +10,13 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface SessionStats{activeSessions:number;maxSessions:number;expiredLast1h:number;avgSessionMins:number;overflowRisk:boolean;storageUsedMB:number;storageLimitMB:number;}
 interface SessionEntry{id:string;user:string;device:string;startedAt:string;lastActivity:string;sizekb:number;}
-const seedStats=():SessionStats=>({activeSessions:2840,maxSessions:5000,expiredLast1h:420,avgSessionMins:42,overflowRisk:false,storageUsedMB:280,storageLimitMB:500});
-const seedSessions=():SessionEntry[]=>[
-  {id:"s1",user:"admin@freelancer.in",device:"Chrome/Mac",startedAt:new Date(Date.now()-7200000).toISOString(),lastActivity:new Date(Date.now()-300000).toISOString(),sizekb:12},
-  {id:"s2",user:"user_182 (idle 45min)",device:"Safari/iPhone",startedAt:new Date(Date.now()-3600000).toISOString(),lastActivity:new Date(Date.now()-2700000).toISOString(),sizekb:8},
-  {id:"s3",user:"user_510",device:"Firefox/Windows",startedAt:new Date(Date.now()-1800000).toISOString(),lastActivity:new Date(Date.now()-60000).toISOString(),sizekb:15},
-];
 function load<T>(k:string,s:()=>T):T{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 function loadArr<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminSessionStorage(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[stats,setStats]=useState(()=>load("admin_sess_stor_stats_v1",seedStats));
-  const[sessions,setSessions]=useState(()=>loadArr("admin_sess_stor_list_v1",seedSessions));
+  const[stats,setStats]=useState([]);
+  const[sessions,setSessions]=useState([]);
   const[cleaning,setCleaning]=useState(false);
   const[expiryMins,setExpiryMins]=useState(30);
   const[terminating,setTerminating]=useState<string|null>(null);

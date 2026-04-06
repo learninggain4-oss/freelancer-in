@@ -9,17 +9,12 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface MaintLog{id:string;action:string;by:string;at:string;duration:number;}
-const seedLogs=():MaintLog[]=>[
-  {id:"m1",action:"Maintenance mode enabled",by:"Super Admin",at:new Date(Date.now()-86400000).toISOString(),duration:45},
-  {id:"m2",action:"Database migration ran",by:"System",at:new Date(Date.now()-86400000+1800000).toISOString(),duration:18},
-  {id:"m3",action:"Maintenance mode disabled",by:"Super Admin",at:new Date(Date.now()-86400000+2700000).toISOString(),duration:0},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminMaintenanceMode(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[enabled,setEnabled]=useState(false);
-  const[logs,setLogs]=useState(()=>load("admin_maint_logs_v1",seedLogs));
+  const[logs,setLogs]=useState([]);
   const[toggling,setToggling]=useState(false);
   const[banner,setBanner]=useState("System maintenance in progress. We'll be back soon.");
   const[scheduledAt,setScheduledAt]=useState("");

@@ -9,18 +9,12 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface Policy{id:string;name:string;regulation:string;version:string;status:"compliant"|"needs-review"|"non-compliant";lastReviewed:string;nextReview:string;consentRequired:boolean;}
-const seed=():Policy[]=>[
-  {id:"p1",name:"Data Privacy Policy",regulation:"IT Act 2000 + DPDP Bill 2023",version:"v3.1",status:"compliant",lastReviewed:new Date(Date.now()-30*86400000).toISOString(),nextReview:new Date(Date.now()+60*86400000).toISOString(),consentRequired:true},
-  {id:"p2",name:"KYC/AML Policy",regulation:"RBI Guidelines",version:"v2.0",status:"needs-review",lastReviewed:new Date(Date.now()-120*86400000).toISOString(),nextReview:new Date(Date.now()-10*86400000).toISOString(),consentRequired:false},
-  {id:"p3",name:"Payment Processing Policy",regulation:"PCI-DSS",version:"v1.8",status:"compliant",lastReviewed:new Date(Date.now()-45*86400000).toISOString(),nextReview:new Date(Date.now()+45*86400000).toISOString(),consentRequired:false},
-  {id:"p4",name:"Cookie Policy",regulation:"IT Rules 2021",version:"v2.2",status:"non-compliant",lastReviewed:new Date(Date.now()-200*86400000).toISOString(),nextReview:new Date(Date.now()-100*86400000).toISOString(),consentRequired:true},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={compliant:"#4ade80","needs-review":"#fbbf24","non-compliant":"#f87171"};
 
 export default function AdminComplianceManager(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[policies,setPolicies]=useState(()=>load("admin_compliance_v1",seed));
+  const[policies,setPolicies]=useState([]);
   const[reviewing,setReviewing]=useState<string|null>(null);
 
   const markReviewed=async(id:string)=>{

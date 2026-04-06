@@ -17,23 +17,7 @@ const TH = {
 interface UploadLog { id:string; filename:string; uploader:string; userId:string; size:string; type:string; uploadedAt:string; status:"clean"|"quarantined"|"blocked"|"pending_scan"; reason?:string; }
 interface FilePolicy { id:string; label:string; value:string|number|boolean; type:"text"|"number"|"boolean"; description:string; }
 
-const seedLogs = (): UploadLog[] => [
-  { id:"f1", filename:"profile_avatar_4821.jpg",  uploader:"User 4821",   userId:"4821", size:"124 KB",  type:"image/jpeg",       uploadedAt:new Date(Date.now()-300000).toISOString(),    status:"clean" },
-  { id:"f2", filename:"resume_upload_2241.pdf",   uploader:"User 2241",   userId:"2241", size:"340 KB",  type:"application/pdf",  uploadedAt:new Date(Date.now()-600000).toISOString(),    status:"clean" },
-  { id:"f3", filename:"project_files.zip",        uploader:"User 9901",   userId:"9901", size:"12.4 MB", type:"application/zip",  uploadedAt:new Date(Date.now()-1200000).toISOString(),   status:"quarantined", reason:"ZIP exceeds 10 MB limit and contains suspicious JS files" },
-  { id:"f4", filename:"invoice_template.exe",     uploader:"User 1122",   userId:"1122", size:"890 KB",  type:"application/exe",  uploadedAt:new Date(Date.now()-3600000).toISOString(),   status:"blocked",     reason:"Executable file type (.exe) is not permitted" },
-  { id:"f5", filename:"chat_attachment_img.png",  uploader:"User 5544",   userId:"5544", size:"2.1 MB",  type:"image/png",        uploadedAt:new Date(Date.now()-7200000).toISOString(),   status:"clean" },
-  { id:"f6", filename:"large_dataset.csv",        uploader:"Admin A",     userId:"admin",size:"45 MB",   type:"text/csv",         uploadedAt:new Date(Date.now()-86400000).toISOString(),  status:"pending_scan" },
-];
 
-const seedPolicies = (): FilePolicy[] => [
-  { id:"p1", label:"Max File Size (MB)",       value:10,    type:"number",  description:"Maximum allowed upload size per file" },
-  { id:"p2", label:"Allowed Extensions",       value:"jpg,jpeg,png,gif,pdf,doc,docx,txt,csv", type:"text", description:"Comma-separated list of permitted file extensions" },
-  { id:"p3", label:"Blocked Extensions",       value:"exe,bat,sh,cmd,js,php,py",              type:"text", description:"These extensions are always rejected regardless of content" },
-  { id:"p4", label:"Max Uploads Per Hour",     value:20,    type:"number",  description:"Rate limit: max files a single user can upload per hour" },
-  { id:"p5", label:"Auto-Quarantine Suspicious",value:true, type:"boolean", description:"Automatically quarantine files that fail validation checks" },
-  { id:"p6", label:"Scan Before Storage",      value:true,  type:"boolean", description:"Run content validation before file is stored permanently" },
-];
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
@@ -50,8 +34,8 @@ export default function AdminFileManager() {
   const { toast } = useToast();
 
   const [tab, setTab]         = useState<"uploads"|"policy">("uploads");
-  const [logs, setLogs]       = useState<UploadLog[]>(()=>load("admin_file_logs_v1",seedLogs));
-  const [policies, setPolicies] = useState<FilePolicy[]>(()=>load("admin_file_policies_v1",seedPolicies));
+  const [logs, setLogs]       = useState<UploadLog[]>([]);
+  const [policies, setPolicies] = useState<FilePolicy[]>([]);
   const [editId, setEditId]   = useState<string|null>(null);
   const [editVal, setEditVal] = useState<string|number>("");
   const [filterStatus, setFilterStatus] = useState("all");

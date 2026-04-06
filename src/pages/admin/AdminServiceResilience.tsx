@@ -16,13 +16,6 @@ const TH = {
 
 interface ServiceConfig { id:string; name:string; category:string; url:string; timeoutMs:number; maxRetries:number; hasFallback:boolean; fallbackService?:string; status:"healthy"|"degraded"|"offline"|"unknown"; avgLatencyMs?:number; lastChecked?:string; failCount24h:number; autoFailover:boolean; }
 
-const seedServices = (): ServiceConfig[] => [
-  { id:"s1", name:"Razorpay Payments",   category:"Payments",    url:"https://api.razorpay.com",          timeoutMs:10000, maxRetries:3, hasFallback:false, status:"healthy",  avgLatencyMs:142, lastChecked:new Date(Date.now()-60000).toISOString(),    failCount24h:0,  autoFailover:false },
-  { id:"s2", name:"OneSignal Push",      category:"Notifications",url:"https://onesignal.com/api/v1",     timeoutMs:8000,  maxRetries:3, hasFallback:true,  fallbackService:"Firebase FCM", status:"degraded", avgLatencyMs:940, lastChecked:new Date(Date.now()-120000).toISOString(), failCount24h:14, autoFailover:true },
-  { id:"s3", name:"Supabase DB",         category:"Database",    url:"https://maysttckdfnnzvfeujaj.supabase.co", timeoutMs:5000,  maxRetries:2, hasFallback:false, status:"healthy",  avgLatencyMs:22,  lastChecked:new Date(Date.now()-30000).toISOString(),    failCount24h:0,  autoFailover:false },
-  { id:"s4", name:"Resend Email",        category:"Email",       url:"https://api.resend.com",            timeoutMs:15000, maxRetries:2, hasFallback:true,  fallbackService:"SMTP Direct", status:"healthy",  avgLatencyMs:380, lastChecked:new Date(Date.now()-90000).toISOString(),   failCount24h:1,  autoFailover:true },
-  { id:"s5", name:"Replit Hosting",      category:"Hosting",     url:"https://replit.com",                timeoutMs:30000, maxRetries:1, hasFallback:false, status:"healthy",  avgLatencyMs:55,  lastChecked:new Date(Date.now()-45000).toISOString(),    failCount24h:0,  autoFailover:false },
-];
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
@@ -37,7 +30,7 @@ export default function AdminServiceResilience() {
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 
-  const [services, setServices] = useState<ServiceConfig[]>(()=>load("admin_svc_resilience_v1",seedServices));
+  const [services, setServices] = useState<ServiceConfig[]>([]);
   const [checking, setChecking] = useState<string|null>(null);
   const [editId, setEditId]     = useState<string|null>(null);
   const [editTimeout, setEditTimeout] = useState("");

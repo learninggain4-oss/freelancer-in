@@ -10,20 +10,12 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface ConfigLock{id:string;section:string;lockedBy:string;lockedAt:string;expiresAt:string;}
 interface ChangeEvent{id:string;admin:string;section:string;change:string;conflict:boolean;at:string;rolled:boolean;}
-const seedLocks=():ConfigLock[]=>[
-  {id:"lk1",section:"Payment Settings",lockedBy:"Admin A",lockedAt:new Date(Date.now()-900000).toISOString(),expiresAt:new Date(Date.now()+300000).toISOString()},
-];
-const seedEvents=():ChangeEvent[]=>[
-  {id:"ch1",admin:"Admin A",section:"Payment Settings",change:"Changed Razorpay key",conflict:false,at:new Date(Date.now()-3600000).toISOString(),rolled:false},
-  {id:"ch2",admin:"Admin B",section:"Payment Settings",change:"Attempted commission rate change — CONFLICT",conflict:true,at:new Date(Date.now()-1800000).toISOString(),rolled:false},
-  {id:"ch3",admin:"Super Admin",section:"User Roles",change:"Added moderator permission",conflict:false,at:new Date(Date.now()-86400000).toISOString(),rolled:false},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 
 export default function AdminMultiAdminConflict(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[locks,setLocks]=useState(()=>load("admin_locks_v1",seedLocks));
-  const[events,setEvents]=useState(()=>load("admin_conflict_events_v1",seedEvents));
+  const[locks,setLocks]=useState([]);
+  const[events,setEvents]=useState([]);
   const[releasing,setReleasing]=useState<string|null>(null);
   const[rolling,setRolling]=useState<string|null>(null);
 

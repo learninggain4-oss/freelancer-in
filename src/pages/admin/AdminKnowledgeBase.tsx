@@ -19,29 +19,8 @@ interface BackupAdmin { id:string; name:string; email:string; role:string; cover
 interface TrainingLog { id:string; admin:string; guide:string; completedAt:string; passed:boolean; }
 interface Checklist { id:string; task:string; category:string; completed:boolean; completedAt?:string; completedBy?:string; }
 
-const seedGuides = (): Guide[] => [
-  { id:"g1", title:"Emergency Withdrawal Freeze Procedure",  category:"Emergency",    role:["super_admin"],              lastUpdated:new Date(Date.now()-864e5*7).toISOString(),   updatedBy:"Super Admin",  content:"1. Navigate to Finance → Wallet Control. 2. Toggle FREEZE_WITHDRAWALS to ON. 3. Post status update to system banner. 4. Notify payment gateway via admin portal. 5. Document reason in audit log.", essential:true },
-  { id:"g2", title:"User Account Suspension Guide",          category:"User Mgmt",    role:["super_admin","admin"],      lastUpdated:new Date(Date.now()-864e5*14).toISOString(),  updatedBy:"Admin A",       content:"Only suspend after reviewing all evidence. 1. Check user activity logs. 2. Review reports against user. 3. Use Admin → User Management → Suspend with reason. 4. Email user with reference ID.", essential:true },
-  { id:"g3", title:"Database Backup Verification",           category:"Technical",    role:["super_admin"],              lastUpdated:new Date(Date.now()-864e5*3).toISOString(),   updatedBy:"Super Admin",  content:"Weekly: Navigate to System Infrastructure → High Availability → Backup Systems. Click Verify Backup to confirm latest backup integrity. Log result.", essential:false },
-  { id:"g4", title:"Bulk Operation Safety Checklist",        category:"Operations",   role:["super_admin","admin"],      lastUpdated:new Date(Date.now()-864e5*30).toISOString(),  updatedBy:"Super Admin",  content:"Before any bulk op: 1. Use Preview Mode. 2. Get second-admin sign-off for high-risk ops. 3. Confirm undo is available. 4. Run during off-peak hours.", essential:false },
-  { id:"g5", title:"New Admin Onboarding Checklist",         category:"Onboarding",   role:["super_admin"],              lastUpdated:new Date(Date.now()-864e5*60).toISOString(),  updatedBy:"Super Admin",  content:"1. Create account. 2. Assign role with minimum required permissions. 3. Complete all required training guides. 4. Assign backup admin coverage area. 5. Enable 2FA before first login.", essential:true },
-];
 
-const seedBackups = (): BackupAdmin[] => [
-  { id:"ba1", name:"Admin A",   email:"admin.a@fi.com",   role:"admin",  coveredAreas:["User Management","Finance","KYC"], trainingCompleted:true,  lastActive:new Date(Date.now()-300000).toISOString()   },
-  { id:"ba2", name:"Admin B",   email:"admin.b@fi.com",   role:"admin",  coveredAreas:["Technical","System Monitoring"],  trainingCompleted:true,  lastActive:new Date(Date.now()-3600000).toISOString()  },
-  { id:"ba3", name:"Admin C",   email:"admin.c@fi.com",   role:"admin",  coveredAreas:["Content","Moderation"],           trainingCompleted:false, lastActive:new Date(Date.now()-86400000).toISOString() },
-];
 
-const seedChecklist = (): Checklist[] => [
-  { id:"c1", task:"Verify daily backup completed",        category:"Maintenance", completed:true,  completedAt:new Date(Date.now()-43200000).toISOString(),  completedBy:"System" },
-  { id:"c2", task:"Review new KYC submissions",           category:"Compliance",  completed:true,  completedAt:new Date(Date.now()-7200000).toISOString(),   completedBy:"Admin A" },
-  { id:"c3", task:"Check failed job queue",               category:"Technical",   completed:false },
-  { id:"c4", task:"Review suspended user appeals",        category:"User Mgmt",   completed:false },
-  { id:"c5", task:"Monitor withdrawal queue",             category:"Finance",     completed:true,  completedAt:new Date(Date.now()-1800000).toISOString(),   completedBy:"Admin B" },
-  { id:"c6", task:"Review platform health metrics",       category:"Monitoring",  completed:false },
-  { id:"c7", task:"Rotate any expiring API keys",         category:"Security",    completed:false },
-];
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
@@ -55,9 +34,9 @@ export default function AdminKnowledgeBase() {
   const { toast } = useToast();
 
   const [tab, setTab]         = useState<"guides"|"backup"|"checklist">("guides");
-  const [guides]              = useState<Guide[]>(()=>load("admin_kb_guides_v1",seedGuides));
-  const [backups]             = useState<BackupAdmin[]>(()=>load("admin_kb_backups_v1",seedBackups));
-  const [checklist, setChecklist] = useState<Checklist[]>(()=>load("admin_kb_checklist_v1",seedChecklist));
+  const [guides]              = useState<Guide[]>([]);
+  const [backups]             = useState<BackupAdmin[]>([]);
+  const [checklist, setChecklist] = useState<Checklist[]>([]);
   const [expanded, setExpanded] = useState<string|null>(null);
   const [search, setSearch]   = useState("");
 

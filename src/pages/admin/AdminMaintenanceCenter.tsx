@@ -18,23 +18,7 @@ interface OrphanItem { id: string; type: string; description: string; size: stri
 interface CleanupLog { id: string; action: string; itemsRemoved: number; sizeSaved: string; performedBy: string; timestamp: string; status: "success"|"failed"; }
 interface StorageBucket { name: string; used: number; total: number; unit: string; color: string; }
 
-const seedOrphans = (): OrphanItem[] => [
-  { id:"o1", type:"Avatar File",        description:"Profile avatar with no linked user (user deleted)",          size:"124 KB", table:"storage.objects", risk:"safe",   selected:false },
-  { id:"o2", type:"Chat Attachment",    description:"File uploaded in deleted chat room",                         size:"2.1 MB", table:"storage.objects", risk:"safe",   selected:false },
-  { id:"o3", type:"Wallet Transaction", description:"Transaction record with NULL wallet_id (FK violation)",      size:"<1 KB",  table:"wallet_transactions", risk:"high", selected:false },
-  { id:"o4", type:"Job Application",    description:"Application record for non-existent job posting",           size:"<1 KB",  table:"job_applications", risk:"medium",selected:false },
-  { id:"o5", type:"Temp Upload",        description:"Temporary file from incomplete multi-step upload",           size:"890 KB", table:"storage.objects", risk:"safe",   selected:false },
-  { id:"o6", type:"Review Record",      description:"Review linked to deleted project (no parent)",               size:"<1 KB",  table:"reviews",          risk:"medium",selected:false },
-  { id:"o7", type:"Notification",       description:"Push notification record for deactivated device token",     size:"<1 KB",  table:"notifications",    risk:"safe",   selected:false },
-];
 
-const seedLogs = (): CleanupLog[] => [
-  { id:"l1", action:"Orphan avatar cleanup",    itemsRemoved:14, sizeSaved:"8.2 MB",  performedBy:"Auto (Scheduled)", timestamp: new Date(Date.now()-864e5).toISOString(),    status:"success" },
-  { id:"l2", action:"Temp file purge",          itemsRemoved:31, sizeSaved:"45.6 MB", performedBy:"Admin A",          timestamp: new Date(Date.now()-864e5*3).toISOString(),  status:"success" },
-  { id:"l3", action:"DB integrity validation",  itemsRemoved:0,  sizeSaved:"0 KB",    performedBy:"Admin B",          timestamp: new Date(Date.now()-864e5*7).toISOString(),  status:"success" },
-  { id:"l4", action:"Old log rotation",         itemsRemoved:892,sizeSaved:"120 MB",  performedBy:"Auto (Scheduled)", timestamp: new Date(Date.now()-864e5*14).toISOString(), status:"success" },
-  { id:"l5", action:"Orphan transaction fix",   itemsRemoved:3,  sizeSaved:"<1 KB",   performedBy:"Super Admin",      timestamp: new Date(Date.now()-864e5*21).toISOString(), status:"failed" },
-];
 
 const storageBuckets: StorageBucket[] = [
   { name:"Profile Avatars",  used:234, total:500,  unit:"MB", color:"#6366f1" },
@@ -58,8 +42,8 @@ export default function AdminMaintenanceCenter() {
   const { toast } = useToast();
 
   const [tab, setTab]     = useState<"orphans"|"storage"|"logs">("orphans");
-  const [orphans, setOrphans] = useState<OrphanItem[]>(()=>load("admin_orphans_v1",seedOrphans));
-  const [logs]            = useState<CleanupLog[]>(()=>load("admin_cleanup_logs_v1",seedLogs));
+  const [orphans, setOrphans] = useState<OrphanItem[]>([]);
+  const [logs]            = useState<CleanupLog[]>([]);
   const [scanning, setScanning] = useState(false);
   const [confirmClean, setConfirmClean] = useState(false);
   const [dbChecking, setDbChecking] = useState(false);

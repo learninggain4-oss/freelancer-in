@@ -9,17 +9,12 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface Deployment{id:string;version:string;environment:string;deployedAt:string;deployedBy:string;status:"success"|"failed"|"rolling-back"|"in-progress";rollbackAvailable:boolean;healthScore:number;}
-const seed=():Deployment[]=>[
-  {id:"d1",version:"v2.4.1",environment:"production",deployedAt:new Date(Date.now()-3600000).toISOString(),deployedBy:"CI/CD",status:"success",rollbackAvailable:true,healthScore:98},
-  {id:"d2",version:"v2.4.0",environment:"production",deployedAt:new Date(Date.now()-86400000).toISOString(),deployedBy:"Admin A",status:"success",rollbackAvailable:true,healthScore:96},
-  {id:"d3",version:"v2.3.9",environment:"staging",deployedAt:new Date(Date.now()-1800000).toISOString(),deployedBy:"CI/CD",status:"failed",rollbackAvailable:false,healthScore:0},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={success:"#4ade80",failed:"#f87171","rolling-back":"#fbbf24","in-progress":"#a5b4fc"};
 
 export default function AdminDeploymentMonitor(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[deploys,setDeploys]=useState(()=>load("admin_deployments_v1",seed));
+  const[deploys,setDeploys]=useState([]);
   const[rollingBack,setRollingBack]=useState<string|null>(null);
 
   const rollback=async(d:Deployment)=>{

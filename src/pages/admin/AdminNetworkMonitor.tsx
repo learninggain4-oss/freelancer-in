@@ -15,13 +15,6 @@ const TH={
 
 interface NetEndpoint{id:string;name:string;url:string;type:string;latencyMs:number;status:"online"|"degraded"|"offline";lastCheck:string;retryCount:number;failoverActive:boolean;}
 
-const seedEndpoints=():NetEndpoint[]=>[
-  {id:"e1",name:"Supabase API",url:"maysttckdfnnzvfeujaj.supabase.co",type:"Database",latencyMs:22,status:"online",lastCheck:new Date(Date.now()-30000).toISOString(),retryCount:0,failoverActive:false},
-  {id:"e2",name:"Razorpay Gateway",url:"api.razorpay.com",type:"Payments",latencyMs:142,status:"online",lastCheck:new Date(Date.now()-60000).toISOString(),retryCount:0,failoverActive:false},
-  {id:"e3",name:"OneSignal Push",url:"onesignal.com",type:"Notifications",latencyMs:940,status:"degraded",lastCheck:new Date(Date.now()-120000).toISOString(),retryCount:3,failoverActive:true},
-  {id:"e4",name:"Resend Email",url:"api.resend.com",type:"Email",latencyMs:380,status:"online",lastCheck:new Date(Date.now()-90000).toISOString(),retryCount:0,failoverActive:false},
-  {id:"e5",name:"Lovable CDN",url:"freelancer-india.lovable.app",type:"Hosting",latencyMs:55,status:"online",lastCheck:new Date(Date.now()-45000).toISOString(),retryCount:0,failoverActive:false},
-];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={online:"#4ade80",degraded:"#fbbf24",offline:"#f87171"};
@@ -29,7 +22,7 @@ const sColor={online:"#4ade80",degraded:"#fbbf24",offline:"#f87171"};
 export default function AdminNetworkMonitor(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[endpoints,setEndpoints]=useState<NetEndpoint[]>(()=>load("admin_network_v1",seedEndpoints));
+  const[endpoints,setEndpoints]=useState<NetEndpoint[]>([]);
   const[pinging,setPinging]=useState<string|null>(null);
   const[tab,setTab]=useState<"status"|"logs">("status");
   const[uptime]=useState(99.7);

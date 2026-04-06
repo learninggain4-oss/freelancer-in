@@ -149,24 +149,39 @@ const navSections = [
     { label: "Services",   icon: Layers,        path: "/admin/services" },
   ]},
   { title: "Communication", items: [
-    { label: "Help & Support",  icon: HelpCircle, path: "/admin/help-support" },
-    { label: "Support Reports", icon: BarChart3,  path: "/admin/support-reporting" },
-    { label: "Recovery",        icon: LifeBuoy,   path: "/admin/recovery-requests" },
-    { label: "Notifications",   icon: Bell,       path: "/admin/notifications" },
-    { label: "Announcements",   icon: Megaphone,  path: "/admin/announcements" },
+    { label: "Help & Support",       icon: HelpCircle, path: "/admin/help-support" },
+    { label: "Support Reports",      icon: BarChart3,  path: "/admin/support-reporting" },
+    { label: "Recovery",             icon: LifeBuoy,   path: "/admin/recovery-requests" },
+    { label: "Notifications",        icon: Bell,       path: "/admin/notifications" },
+    { label: "Announcements",        icon: Megaphone,  path: "/admin/announcements" },
+    { label: "Email Deliverability", icon: Mail,       path: "/admin/email-deliverability" },
+    { label: "Bulk Notification",    icon: Bell,       path: "/admin/bulk-notification" },
+    { label: "Notification Control", icon: Settings,   path: "/admin/notification-control" },
   ]},
   { title: "Security & Monitoring", items: [
-    { label: "Safety Center",  icon: Shield,        path: "/admin/safety-center" },
-    { label: "Audit Logs",     icon: ClipboardList, path: "/admin/audit-logs" },
-    { label: "RBAC & Roles",   icon: Crown,         path: "/admin/rbac" },
-    { label: "IP Blocking",    icon: ShieldCheck,   path: "/admin/ip-blocking" },
-    { label: "App Installs",   icon: Monitor,       path: "/admin/pwa-installs" },
+    { label: "Safety Center",    icon: Shield,        path: "/admin/safety-center" },
+    { label: "Audit Logs",       icon: ClipboardList, path: "/admin/audit-logs" },
+    { label: "RBAC & Roles",     icon: Crown,         path: "/admin/rbac" },
+    { label: "IP Blocking",      icon: ShieldCheck,   path: "/admin/ip-blocking" },
+    { label: "App Installs",     icon: Monitor,       path: "/admin/pwa-installs" },
+    { label: "Auto Logout",      icon: Clock,         path: "/admin/auto-logout" },
+    { label: "SSL Monitor",      icon: Lock,          path: "/admin/ssl-monitor" },
+    { label: "XSS Protection",   icon: ShieldCheck,   path: "/admin/xss-protection" },
+    { label: "CSRF Protection",  icon: ShieldCheck,   path: "/admin/csrf-protection" },
+    { label: "Encryption Keys",  icon: KeyRound,      path: "/admin/encryption-keys" },
   ]},
   { title: "Infrastructure", items: [
-    { label: "Database Manager", icon: Database, path: "/admin/database-manager" },
-    { label: "Env Variables",    icon: KeyRound,  path: "/admin/env-vars" },
-    { label: "Server Monitor",   icon: Server,    path: "/admin/server-monitor" },
-    { label: "Backup & Restore", icon: Archive,   path: "/admin/backups" },
+    { label: "Database Manager",      icon: Database, path: "/admin/database-manager" },
+    { label: "Env Variables",         icon: KeyRound, path: "/admin/env-vars" },
+    { label: "Server Monitor",        icon: Server,   path: "/admin/server-monitor" },
+    { label: "Backup & Restore",      icon: Archive,  path: "/admin/backups" },
+    { label: "DNS & Domain",          icon: Globe,    path: "/admin/dns-domain" },
+    { label: "Storage Manager",       icon: Archive,  path: "/admin/storage-manager" },
+    { label: "File Paths",            icon: FileText, path: "/admin/file-paths" },
+    { label: "File Permissions",      icon: Lock,     path: "/admin/file-permissions" },
+    { label: "File Upload Validation",icon: FileUp,   path: "/admin/file-upload-validation" },
+    { label: "DB Indexing",           icon: Database, path: "/admin/db-indexing" },
+    { label: "Dependency Manager",    icon: Layers,   path: "/admin/dependency-manager" },
   ]},
   { title: "Risk Prevention", items: [
     { label: "Approval Center",  icon: GitPullRequest, path: "/admin/approval-center" },
@@ -176,25 +191,50 @@ const navSections = [
     { label: "Session Security", icon: Lock,           path: "/admin/session-security" },
   ]},
   { title: "System Stability", items: [
-    { label: "Config Management",  icon: Settings2,    path: "/admin/config-management" },
-    { label: "Maintenance Center", icon: Wrench,       path: "/admin/maintenance-center" },
-    { label: "Rate Limiting",      icon: Gauge,        path: "/admin/rate-limiting" },
-    { label: "Scheduler",          icon: CalendarClock,path: "/admin/scheduler" },
-    { label: "Vendor Manager",     icon: Globe,        path: "/admin/vendor-manager" },
+    { label: "Config Management",   icon: Settings2,    path: "/admin/config-management" },
+    { label: "Maintenance Center",  icon: Wrench,       path: "/admin/maintenance-center" },
+    { label: "Rate Limiting",       icon: Gauge,        path: "/admin/rate-limiting" },
+    { label: "Scheduler",           icon: CalendarClock,path: "/admin/scheduler" },
+    { label: "Vendor Manager",      icon: Globe,        path: "/admin/vendor-manager" },
+    { label: "Maintenance Mode",    icon: Wrench,       path: "/admin/maintenance-mode" },
+    { label: "Feature Flags",       icon: Zap,          path: "/admin/feature-flags" },
+    { label: "Cron Jobs",           icon: CalendarClock,path: "/admin/cron-jobs" },
+    { label: "Job Scheduler",       icon: CalendarClock,path: "/admin/job-scheduler" },
+    { label: "Feature Conflicts",   icon: Settings2,    path: "/admin/feature-conflicts" },
+    { label: "Feature Dependency",  icon: Layers,       path: "/admin/feature-dependency" },
+    { label: "Module Dependency",   icon: Cpu,          path: "/admin/module-dependency" },
   ]},
   { title: "Advanced Security", items: [
-    { label: "Permission Validator", icon: UserCog,  path: "/admin/permission-validator" },
-    { label: "Export Control",       icon: Download, path: "/admin/export-control" },
+    { label: "Permission Validator", icon: UserCog,       path: "/admin/permission-validator" },
+    { label: "Export Control",       icon: Download,      path: "/admin/export-control" },
+    { label: "RBAC Security",        icon: ShieldCheck,   path: "/admin/rbac-security" },
+    { label: "Role Escalation",      icon: Crown,         path: "/admin/role-escalation" },
+    { label: "Multi-Admin Conflict", icon: Users,         path: "/admin/multi-admin-conflict" },
+    { label: "Secure Audit Log",     icon: ClipboardList, path: "/admin/secure-audit-log" },
+    { label: "Secure Session Mgr",   icon: Lock,          path: "/admin/secure-session-mgr" },
   ]},
   { title: "Monitoring", items: [
-    { label: "Cache Manager",       icon: Layers,        path: "/admin/cache-manager" },
-    { label: "API Manager",         icon: Zap,           path: "/admin/api-manager" },
-    { label: "Session Manager",     icon: Users,         path: "/admin/session-manager" },
+    { label: "Cache Manager",        icon: Layers,    path: "/admin/cache-manager" },
+    { label: "API Manager",          icon: Zap,       path: "/admin/api-manager" },
+    { label: "Session Manager",      icon: Users,     path: "/admin/session-manager" },
+    { label: "API Monitor",          icon: Activity,  path: "/admin/api-monitor" },
+    { label: "API Schema",           icon: FileText,  path: "/admin/api-schema" },
+    { label: "API Timeout",          icon: Clock,     path: "/admin/api-timeout" },
+    { label: "API Rate Limiting",    icon: Gauge,     path: "/admin/api-rate-limiting" },
+    { label: "External API Monitor", icon: Globe,     path: "/admin/external-api-monitor" },
+    { label: "Deployment Monitor",   icon: Server,    path: "/admin/deployment-monitor" },
+    { label: "Webhook Monitor",      icon: Zap,       path: "/admin/webhook-monitor" },
+    { label: "Background Jobs",      icon: Cpu,       path: "/admin/background-jobs" },
+    { label: "Performance Monitor",  icon: Activity,  path: "/admin/performance-monitor" },
+    { label: "Smart Alerts",         icon: Bell,      path: "/admin/smart-alerts" },
+    { label: "Traffic Management",   icon: Activity,  path: "/admin/traffic-management" },
   ]},
   { title: "Platform Safety", items: [
-    { label: "Notification Center", icon: Bell,   path: "/admin/notification-center" },
-    { label: "File Manager",        icon: FileUp, path: "/admin/file-manager" },
-    { label: "High Availability",   icon: Server, path: "/admin/high-availability" },
+    { label: "Notification Center",    icon: Bell,   path: "/admin/notification-center" },
+    { label: "File Manager",           icon: FileUp, path: "/admin/file-manager" },
+    { label: "High Availability",      icon: Server, path: "/admin/high-availability" },
+    { label: "Gateway Failover",       icon: Globe,  path: "/admin/gateway-failover" },
+    { label: "External Svc Failover",  icon: Globe,  path: "/admin/external-failover" },
   ]},
   { title: "Reliability", items: [
     { label: "Data Migration",       icon: Database,     path: "/admin/data-migration" },
@@ -202,13 +242,23 @@ const navSections = [
     { label: "Transaction Control",  icon: IndianRupee,  path: "/admin/transaction-control" },
     { label: "Resource Monitor",     icon: Activity,     path: "/admin/resource-monitor" },
     { label: "Service Resilience",   icon: Globe,        path: "/admin/service-resilience" },
+    { label: "Backup Storage",       icon: Archive,      path: "/admin/backup-storage" },
+    { label: "Restore Version",      icon: RotateCcw,    path: "/admin/restore-version" },
   ]},
   { title: "Operations", items: [
-    { label: "Data Retention",       icon: Archive,      path: "/admin/data-retention" },
-    { label: "Bulk Operations",      icon: Layers,       path: "/admin/bulk-operations" },
-    { label: "Report Generator",     icon: BarChart3,    path: "/admin/report-generator" },
-    { label: "Secrets Manager",      icon: KeyRound,     path: "/admin/secrets-manager" },
-    { label: "Knowledge Base",       icon: BookOpen,     path: "/admin/knowledge-base" },
+    { label: "Data Retention",       icon: Archive,       path: "/admin/data-retention" },
+    { label: "Bulk Operations",      icon: Layers,        path: "/admin/bulk-operations" },
+    { label: "Report Generator",     icon: BarChart3,     path: "/admin/report-generator" },
+    { label: "Secrets Manager",      icon: KeyRound,      path: "/admin/secrets-manager" },
+    { label: "Knowledge Base",       icon: BookOpen,      path: "/admin/knowledge-base" },
+    { label: "Data Archival",        icon: Archive,       path: "/admin/data-archival" },
+    { label: "Cleanup Safety",       icon: Wrench,        path: "/admin/cleanup-safety" },
+    { label: "Soft Delete Cleanup",  icon: Trash2,        path: "/admin/soft-delete-cleanup" },
+    { label: "Export Format",        icon: Download,      path: "/admin/export-format" },
+    { label: "Report Validation",    icon: ClipboardCheck,path: "/admin/report-validation" },
+    { label: "Queue Management",     icon: Layers,        path: "/admin/queue-management" },
+    { label: "Compliance Manager",   icon: Shield,        path: "/admin/compliance" },
+    { label: "Comprehensive Audit",  icon: ClipboardList, path: "/admin/comprehensive-audit" },
   ]},
   { title: "Data Safety", items: [
     { label: "Data Integrity",          icon: Database,    path: "/admin/data-integrity" },
@@ -216,6 +266,8 @@ const navSections = [
     { label: "Deadlock Protection",     icon: Lock,        path: "/admin/deadlock-protection" },
     { label: "Notification Delivery",   icon: Bell,        path: "/admin/notification-delivery" },
     { label: "Change Approval",         icon: ShieldCheck, path: "/admin/change-approval" },
+    { label: "Search Index",            icon: Search,      path: "/admin/search-index" },
+    { label: "Duplicate Accounts",      icon: Users,       path: "/admin/duplicate-accounts" },
   ]},
   { title: "Time & Backup", items: [
     { label: "Time Sync",               icon: Clock,       path: "/admin/time-sync" },
@@ -225,30 +277,42 @@ const navSections = [
     { label: "API Validation",          icon: Zap,         path: "/admin/api-validation" },
   ]},
   { title: "System Health", items: [
-    { label: "Session Management",      icon: Users,       path: "/admin/session-management" },
-    { label: "Permission Sync",         icon: ShieldCheck, path: "/admin/permission-sync" },
-    { label: "Log Management",          icon: FileText,    path: "/admin/log-management" },
-    { label: "Data Import",             icon: FileUp,      path: "/admin/data-import" },
-    { label: "Config Rollback",         icon: Settings2,   path: "/admin/config-rollback" },
+    { label: "Session Management",    icon: Users,         path: "/admin/session-management" },
+    { label: "Permission Sync",       icon: ShieldCheck,   path: "/admin/permission-sync" },
+    { label: "Log Management",        icon: FileText,      path: "/admin/log-management" },
+    { label: "Data Import",           icon: FileUp,        path: "/admin/data-import" },
+    { label: "Config Rollback",       icon: Settings2,     path: "/admin/config-rollback" },
+    { label: "Query Validation",      icon: Database,      path: "/admin/query-validation" },
+    { label: "Pagination Validator",  icon: Monitor,       path: "/admin/pagination-validator" },
+    { label: "Session Storage",       icon: Lock,          path: "/admin/session-storage" },
+    { label: "Session Sync",          icon: Settings2,     path: "/admin/session-sync" },
+    { label: "Session Expiry",        icon: Clock,         path: "/admin/session-expiry" },
   ]},
   { title: "Advanced Ops", items: [
-    { label: "Monitoring Redundancy",   icon: Activity,    path: "/admin/monitoring-redundancy" },
-    { label: "Data Sync",               icon: Database,    path: "/admin/data-sync" },
-    { label: "Security Patch",          icon: Shield,      path: "/admin/security-patch" },
-    { label: "Token Management",        icon: KeyRound,    path: "/admin/token-management" },
+    { label: "Monitoring Redundancy",   icon: Activity,      path: "/admin/monitoring-redundancy" },
+    { label: "Data Sync",               icon: Database,      path: "/admin/data-sync" },
+    { label: "Security Patch",          icon: Shield,        path: "/admin/security-patch" },
+    { label: "Token Management",        icon: KeyRound,      path: "/admin/token-management" },
     { label: "Disaster Recovery",       icon: AlertTriangle, path: "/admin/disaster-recovery" },
+    { label: "Config Drift",            icon: Settings2,     path: "/admin/config-drift" },
+    { label: "Rate Limit Config",       icon: Gauge,         path: "/admin/rate-limit-config" },
   ]},
   { title: "Content & Config", items: [
-    { label: "App Branding",   icon: ImageIcon,          path: "/admin/branding" },
-    { label: "Reset Center",   icon: RotateCcw,          path: "/admin/reset" },
-    { label: "Hero Slideshow", icon: SlidersHorizontal,  path: "/admin/hero-slides" },
-    { label: "Testimonials",   icon: MessageSquareQuote, path: "/admin/testimonials" },
-    { label: "User Reviews",   icon: Star,               path: "/admin/reviews" },
-    { label: "Legal Docs",     icon: FileText,           path: "/admin/legal-documents" },
-    { label: "Countdowns",     icon: Clock,              path: "/admin/countdowns" },
-    { label: "Referrals",      icon: UserPlus,           path: "/admin/referrals" },
-    { label: "Site Visitors",  icon: Eye,                path: "/admin/visitors" },
-    { label: "Settings",       icon: Settings,           path: "/admin/settings" },
+    { label: "App Branding",        icon: ImageIcon,          path: "/admin/branding" },
+    { label: "Reset Center",        icon: RotateCcw,          path: "/admin/reset" },
+    { label: "Hero Slideshow",      icon: SlidersHorizontal,  path: "/admin/hero-slides" },
+    { label: "Testimonials",        icon: MessageSquareQuote, path: "/admin/testimonials" },
+    { label: "User Reviews",        icon: Star,               path: "/admin/reviews" },
+    { label: "Legal Docs",          icon: FileText,           path: "/admin/legal-documents" },
+    { label: "Countdowns",          icon: Clock,              path: "/admin/countdowns" },
+    { label: "Referrals",           icon: UserPlus,           path: "/admin/referrals" },
+    { label: "Site Visitors",       icon: Eye,                path: "/admin/visitors" },
+    { label: "Settings",            icon: Settings,           path: "/admin/settings" },
+    { label: "Localization",        icon: Languages,          path: "/admin/localization" },
+    { label: "Timezone Manager",    icon: Clock,              path: "/admin/timezone-manager" },
+    { label: "Time Slots",          icon: CalendarClock,      path: "/admin/time-slots" },
+    { label: "Alert Visibility",    icon: Eye,                path: "/admin/alert-visibility" },
+    { label: "Dashboard Accuracy",  icon: BarChart3,          path: "/admin/dashboard-accuracy" },
   ]},
   { title: "Fraud Detection", items: [
     { label: "Fraud Dashboard",       icon: ShieldAlert,    path: "/admin/fraud-dashboard" },
@@ -300,12 +364,6 @@ const QUICK_ACTIONS = [
   { label: "Settings",       icon: Settings,   path: "/admin/settings" },
 ];
 
-const SYSTEM_ALERTS = [
-  { type: "success", msg: "All systems operational", time: "Just now" },
-  { type: "warning", msg: "High load on DB server", time: "5 min ago" },
-  { type: "info",    msg: "Backup completed successfully", time: "1 hr ago" },
-  { type: "error",   msg: "2 failed login attempts blocked", time: "2 hr ago" },
-];
 
 /* ─── Clear Data config per admin route ─────────────────────────────────── */
 interface ClearConfig {
@@ -451,6 +509,19 @@ const AdminLayout = () => {
       return count || 0;
     },
     refetchInterval: 30000,
+  });
+
+  const { data: recentAlerts = [] } = useQuery({
+    queryKey: ["admin-layout-recent-alerts"],
+    queryFn: async () => {
+      const { data } = await supabase.from("notifications").select("id,message,type,created_at").order("created_at", { ascending: false }).limit(4);
+      return (data || []).map(n => ({
+        type: n.type || "info",
+        msg: n.message || "",
+        time: n.created_at ? new Date(n.created_at).toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" }) : "",
+      }));
+    },
+    refetchInterval: 60000,
   });
 
   const { data: profile } = useQuery({
@@ -616,8 +687,10 @@ const AdminLayout = () => {
                   <p style={{ fontWeight: 700, fontSize: 13, color: tok.mainText, margin: 0 }}>Notifications</p>
                   {pendingRecoveryCount > 0 && <span style={{ fontSize: 10, background: `${A1}22`, color: A1, borderRadius: 20, padding: "2px 8px", fontWeight: 700 }}>{pendingRecoveryCount} pending</span>}
                 </div>
-                {SYSTEM_ALERTS.map((a, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 16px", borderBottom: i < SYSTEM_ALERTS.length - 1 ? `1px solid ${tok.dropBdr}` : "none" }}>
+                {recentAlerts.length === 0 ? (
+                  <div style={{ padding: "16px", textAlign: "center", color: tok.mainSub, fontSize: 12 }}>No notifications yet</div>
+                ) : recentAlerts.map((a, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 16px", borderBottom: i < recentAlerts.length - 1 ? `1px solid ${tok.dropBdr}` : "none" }}>
                     <div style={{ marginTop: 2, flexShrink: 0 }}>{alertIcon(a.type)}</div>
                     <div style={{ flex: 1 }}>
                       <p style={{ fontSize: 12.5, color: tok.mainText, margin: 0 }}>{a.msg}</p>
@@ -885,7 +958,9 @@ const AdminLayout = () => {
               {/* Recent Alerts */}
               <div style={{ padding: "14px 16px", borderBottom: `1px solid ${tok.rightBdr}` }}>
                 <p style={{ fontSize: 10, fontWeight: 700, color: tok.mainSub, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 10px" }}>Recent Alerts</p>
-                {SYSTEM_ALERTS.map((a, i) => (
+                {recentAlerts.length === 0 ? (
+                  <p style={{ fontSize: 11, color: tok.mainSub, margin: 0 }}>No recent alerts</p>
+                ) : recentAlerts.map((a, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "5px 0" }}>
                     <div style={{ marginTop: 1, flexShrink: 0 }}>{alertIcon(a.type)}</div>
                     <div>

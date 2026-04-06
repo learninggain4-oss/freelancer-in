@@ -15,13 +15,6 @@ const TH={
 
 interface MonitoringService{id:string;name:string;type:string;primary:boolean;status:"active"|"standby"|"failed"|"recovering";uptimePct:number;lastCheck:string;failoverReady:boolean;}
 
-const seedServices=():MonitoringService[]=>[
-  {id:"ms1",name:"Supabase Realtime",type:"database",primary:true,status:"active",uptimePct:99.9,lastCheck:new Date(Date.now()-30000).toISOString(),failoverReady:true},
-  {id:"ms2",name:"Replit Health Monitor",type:"infrastructure",primary:true,status:"active",uptimePct:99.7,lastCheck:new Date(Date.now()-60000).toISOString(),failoverReady:true},
-  {id:"ms3",name:"Error Tracking (Primary)",type:"errors",primary:true,status:"failed",uptimePct:94.2,lastCheck:new Date(Date.now()-900000).toISOString(),failoverReady:false},
-  {id:"ms4",name:"Error Tracking (Backup)",type:"errors",primary:false,status:"recovering",uptimePct:98.4,lastCheck:new Date(Date.now()-120000).toISOString(),failoverReady:false},
-  {id:"ms5",name:"Uptime Robot",type:"uptime",primary:false,status:"standby",uptimePct:100,lastCheck:new Date(Date.now()-1800000).toISOString(),failoverReady:true},
-];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={active:"#4ade80",standby:"#94a3b8",failed:"#f87171",recovering:"#fbbf24"};
@@ -29,7 +22,7 @@ const sColor={active:"#4ade80",standby:"#94a3b8",failed:"#f87171",recovering:"#f
 export default function AdminMonitoringRedundancy(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
-  const[services,setServices]=useState<MonitoringService[]>(()=>load("admin_mon_redundancy_v1",seedServices));
+  const[services,setServices]=useState<MonitoringService[]>([]);
   const[activating,setActivating]=useState<string|null>(null);
 
   const activateFailover=async(s:MonitoringService)=>{

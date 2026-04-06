@@ -15,10 +15,6 @@ const TH = {
   wb:    { bg:"#f0f4ff",card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badge:"rgba(99,102,241,.1)",badgeFg:"#4f46e5" },
 };
 
-const SESSIONS_KEY  = "admin_known_sessions_v1";
-const SECURITY_KEY  = "admin_security_settings_v1";
-const SUSPICIOUS_KEY = "admin_suspicious_log_v1";
-
 interface KnownSession {
   id: string; device: string; browser: string; os: string; ip: string;
   location: string; isCurrent: boolean; lastActive: string; loginAt: string;
@@ -55,18 +51,13 @@ function getOS(ua: string): string {
   return "Unknown";
 }
 
-function seedSessions(): KnownSession[] {
-  const ua = navigator.userAgent;
-  return [
-    { id: "ses1", device: getDeviceType(ua), browser: getBrowser(ua), os: getOS(ua), ip: "Current Session", location: "Current Device", isCurrent: true, lastActive: new Date().toISOString(), loginAt: new Date(Date.now() - 1800000).toISOString(), isSuspicious: false, isBlocked: false },
+,
     { id: "ses2", device: "Desktop", browser: "Chrome", os: "Windows", ip: "103.21.58.44", location: "Mumbai, India", isCurrent: false, lastActive: new Date(Date.now() - 86400000).toISOString(), loginAt: new Date(Date.now() - 86400000 * 2).toISOString(), isSuspicious: false, isBlocked: false },
     { id: "ses3", device: "Mobile",  browser: "Safari", os: "iOS",     ip: "45.79.12.200", location: "Chennai, India", isCurrent: false, lastActive: new Date(Date.now() - 3600000 * 6).toISOString(), loginAt: new Date(Date.now() - 3600000 * 8).toISOString(), isSuspicious: true, isBlocked: false },
   ];
 }
 
-function seedSuspicious(): SuspiciousEvent[] {
-  return [
-    { id: "sp1", type: "Multiple failed logins (5 attempts)",     ip: "103.21.58.100", device: "Unknown Device",  timestamp: new Date(Date.now() - 3600000).toISOString(),  resolved: false },
+,
     { id: "sp2", type: "Login from unusual location (Bangalore)",  ip: "49.204.xx.xx",  device: "Chrome/Linux",   timestamp: new Date(Date.now() - 7200000).toISOString(),  resolved: true },
     { id: "sp3", type: "IP change detected during active session", ip: "45.79.12.200",  device: "Safari/iOS",     timestamp: new Date(Date.now() - 86400000).toISOString(), resolved: false },
   ];
@@ -86,9 +77,9 @@ export default function AdminSessionSecurity() {
   const { toast } = useToast();
 
   const [tab, setTab]       = useState<"sessions" | "settings" | "suspicious">("sessions");
-  const [sessions, setSessions] = useState<KnownSession[]>(() => load(SESSIONS_KEY, seedSessions));
+  const [sessions, setSessions] = useState<KnownSession[]>([]);
   const [settings, setSettings] = useState<SecuritySettings>(() => { try { return JSON.parse(localStorage.getItem(SECURITY_KEY) || "{}"); } catch { return defaultSettings; } });
-  const [suspicious, setSuspicious] = useState<SuspiciousEvent[]>(() => load(SUSPICIOUS_KEY, seedSuspicious));
+  const [suspicious, setSuspicious] = useState<SuspiciousEvent[]>([]);
   const [confirmTerminate, setConfirmTerminate] = useState<KnownSession | null>(null);
   const [confirmTerminateAll, setConfirmTerminateAll] = useState(false);
   const [realSession, setRealSession] = useState<{ email?: string; last_sign_in?: string } | null>(null);

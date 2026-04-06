@@ -16,12 +16,6 @@ const TH={
 
 interface ChangeRequest{id:string;field:string;table:string;oldValue:string;newValue:string;requestedBy:string;status:"pending"|"approved"|"rejected"|"rolled_back";risk:"low"|"medium"|"high";createdAt:string;reviewedAt?:string;reviewedBy?:string;rejectReason?:string;}
 
-const seedChanges=():ChangeRequest[]=>[
-  {id:"cr1",field:"platform_fee_pct",table:"config",oldValue:"10%",newValue:"12%",requestedBy:"Admin A",status:"pending",risk:"high",createdAt:new Date(Date.now()-1800000).toISOString()},
-  {id:"cr2",field:"withdrawal_limit",table:"config",oldValue:"₹50,000",newValue:"₹25,000",requestedBy:"Admin B",status:"pending",risk:"high",createdAt:new Date(Date.now()-3600000).toISOString()},
-  {id:"cr3",field:"kyc_required",table:"config",oldValue:"false",newValue:"true",requestedBy:"Admin A",status:"approved",risk:"medium",createdAt:new Date(Date.now()-86400000).toISOString(),reviewedAt:new Date(Date.now()-82800000).toISOString(),reviewedBy:"Super Admin"},
-  {id:"cr4",field:"min_payout_amount",table:"config",oldValue:"₹100",newValue:"₹500",requestedBy:"Admin B",status:"rolled_back",risk:"medium",createdAt:new Date(Date.now()-172800000).toISOString(),reviewedAt:new Date(Date.now()-170000000).toISOString(),reviewedBy:"Super Admin",rejectReason:"User complaints — reverted to ₹100"},
-];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={pending:"#fbbf24",approved:"#4ade80",rejected:"#f87171",rolled_back:"#fb923c"};
@@ -31,7 +25,7 @@ export default function AdminChangeApproval(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"pending"|"history">("pending");
-  const[changes,setChanges]=useState<ChangeRequest[]>(()=>load("admin_change_approval_v1",seedChanges));
+  const[changes,setChanges]=useState<ChangeRequest[]>([]);
   const[approving,setApproving]=useState<string|null>(null);
   const[rejecting,setRejecting]=useState<string|null>(null);
   const[rolling,setRolling]=useState<string|null>(null);

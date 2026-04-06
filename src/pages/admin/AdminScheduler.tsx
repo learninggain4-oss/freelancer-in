@@ -21,21 +21,7 @@ interface CronJob { id:string; name:string; schedule:string; description:string;
 interface CronLog { id:string; jobName:string; startedAt:string; duration:string; status:"success"|"failed"; output:string; }
 interface TimezoneConfig { current:string; serverTime:string; ntpSynced:boolean; lastSync:string; }
 
-const seedJobs = (): CronJob[] => [
-  { id:"j1", name:"Daily DB Backup",          schedule:"0 2 * * *",   description:"Full database backup every day at 2:00 AM",           enabled:true,  lastRun: new Date(Date.now()-864e5).toISOString(),    nextRun: new Date(Date.now()+3600000*14).toISOString(),  lastStatus:"success",  duration:"4m 12s" },
-  { id:"j2", name:"Orphan Data Cleanup",       schedule:"0 3 * * 0",   description:"Weekly scan and cleanup of orphaned records/files",   enabled:true,  lastRun: new Date(Date.now()-864e5*7).toISOString(),  nextRun: new Date(Date.now()+864e5*3).toISOString(),    lastStatus:"success",  duration:"1m 48s" },
-  { id:"j3", name:"Audit Log Rotation",        schedule:"0 0 1 * *",   description:"Archive and compress audit logs older than 90 days", enabled:true,  lastRun: new Date(Date.now()-864e5*14).toISOString(), nextRun: new Date(Date.now()+864e5*16).toISOString(),   lastStatus:"success",  duration:"8m 03s" },
-  { id:"j4", name:"Service Health Check",      schedule:"*/5 * * * *", description:"Ping all third-party services every 5 minutes",      enabled:true,  lastRun: new Date(Date.now()-300000).toISOString(),   nextRun: new Date(Date.now()+180000).toISOString(),     lastStatus:"success",  duration:"0m 12s" },
-  { id:"j5", name:"Wallet Reconciliation",     schedule:"0 6 * * *",   description:"Daily wallet balance consistency check",             enabled:true,  lastRun: new Date(Date.now()-864e5).toISOString(),    nextRun: new Date(Date.now()+3600000*18).toISOString(),  lastStatus:"failed",   duration:"2m 31s" },
-  { id:"j6", name:"Inactive Account Alert",    schedule:"0 10 * * 1",  description:"Weekly email to admins about inactive accounts",     enabled:false, lastRun: new Date(Date.now()-864e5*7).toISOString(),  nextRun: new Date(Date.now()+864e5*5).toISOString(),    lastStatus:"never" },
-];
 
-const seedLogs = (): CronLog[] => [
-  { id:"l1", jobName:"Service Health Check",  startedAt: new Date(Date.now()-300000).toISOString(),   duration:"0m 12s", status:"success", output:"6/6 services online. Avg latency: 145ms." },
-  { id:"l2", jobName:"Wallet Reconciliation", startedAt: new Date(Date.now()-864e5).toISOString(),    duration:"2m 31s", status:"failed",  output:"ERROR: Supabase RPC 'reconcile_wallets' returned 500. Rolled back." },
-  { id:"l3", jobName:"Daily DB Backup",       startedAt: new Date(Date.now()-864e5).toISOString(),    duration:"4m 12s", status:"success", output:"4 tables backed up. Total: 128 KB compressed. Stored at backup_2025-04-01." },
-  { id:"l4", jobName:"Service Health Check",  startedAt: new Date(Date.now()-600000).toISOString(),   duration:"0m 14s", status:"success", output:"5/6 online. Razorpay: degraded (680ms latency)." },
-];
 
 function load<T>(key:string, seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
@@ -62,8 +48,8 @@ export default function AdminScheduler() {
   const { toast } = useToast();
 
   const [tab, setTab]   = useState<"jobs"|"timezone"|"logs">("jobs");
-  const [jobs, setJobs] = useState<CronJob[]>(()=>load("admin_cron_jobs_v1",seedJobs));
-  const [logs]          = useState<CronLog[]>(()=>load("admin_cron_logs_v1",seedLogs));
+  const [jobs, setJobs] = useState<CronJob[]>([]);
+  const [logs]          = useState<CronLog[]>([]);
   const [tz, setTz]     = useState<TimezoneConfig>(()=>({
     current:   Intl.DateTimeFormat().resolvedOptions().timeZone,
     serverTime: new Date().toISOString(),

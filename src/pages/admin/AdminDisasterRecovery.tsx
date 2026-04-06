@@ -16,16 +16,6 @@ const TH={
 interface RecoveryPlan{id:string;name:string;rto:string;rpo:string;priority:"critical"|"high"|"medium";lastTested:string;testResult:"pass"|"fail"|"untested";autoRecovery:boolean;status:"ready"|"activating"|"not_ready";}
 interface RecoveryLog{id:string;event:string;trigger:string;durationMins:number;success:boolean;at:string;}
 
-const seedPlans=():RecoveryPlan[]=>[
-  {id:"rp1",name:"Database Full Recovery",rto:"4h",rpo:"1h",priority:"critical",lastTested:new Date(Date.now()-86400000*7).toISOString(),testResult:"pass",autoRecovery:true,status:"ready"},
-  {id:"rp2",name:"App Server Restart",rto:"15m",rpo:"0",priority:"critical",lastTested:new Date(Date.now()-86400000*14).toISOString(),testResult:"pass",autoRecovery:true,status:"ready"},
-  {id:"rp3",name:"Payment Gateway Failover",rto:"30m",rpo:"5m",priority:"high",lastTested:new Date(Date.now()-86400000*30).toISOString(),testResult:"fail",autoRecovery:false,status:"not_ready"},
-  {id:"rp4",name:"Full System Restore",rto:"24h",rpo:"4h",priority:"high",lastTested:new Date(Date.now()-86400000*90).toISOString(),testResult:"untested",autoRecovery:false,status:"not_ready"},
-];
-const seedLogs=():RecoveryLog[]=>[
-  {id:"rl1",event:"DB connection pool exhausted — auto restart",trigger:"Auto",durationMins:4,success:true,at:new Date(Date.now()-86400000*3).toISOString()},
-  {id:"rl2",event:"Payment gateway timeout — failover initiated",trigger:"Admin",durationMins:18,success:false,at:new Date(Date.now()-86400000*10).toISOString()},
-];
 
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={ready:"#4ade80",activating:"#a5b4fc",not_ready:"#f87171"};
@@ -35,8 +25,8 @@ export default function AdminDisasterRecovery(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];
   const{logAction}=useAdminAudit();const{toast}=useToast();
   const[tab,setTab]=useState<"plans"|"logs">("plans");
-  const[plans,setPlans]=useState<RecoveryPlan[]>(()=>load("admin_dr_plans_v1",seedPlans));
-  const[logs]=useState<RecoveryLog[]>(()=>load("admin_dr_logs_v1",seedLogs));
+  const[plans,setPlans]=useState<RecoveryPlan[]>([]);
+  const[logs]=useState<RecoveryLog[]>([]);
   const[testing,setTesting]=useState<string|null>(null);
   const[activating,setActivating]=useState<string|null>(null);
   const[confirmActivate,setConfirmActivate]=useState<string|null>(null);

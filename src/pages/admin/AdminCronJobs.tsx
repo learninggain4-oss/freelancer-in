@@ -9,19 +9,12 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface CronJob{id:string;name:string;schedule:string;priority:number;status:"running"|"paused"|"failed"|"idle";lastRun:string;nextRun:string;duration:number;retries:number;conflict:boolean;}
-const seed=():CronJob[]=>[
-  {id:"j1",name:"Wallet Reconciliation",schedule:"0 * * * *",priority:1,status:"idle",lastRun:new Date(Date.now()-3600000).toISOString(),nextRun:new Date(Date.now()+1800000).toISOString(),duration:42,retries:0,conflict:false},
-  {id:"j2",name:"Job Expiry Check",schedule:"*/15 * * * *",priority:2,status:"idle",lastRun:new Date(Date.now()-900000).toISOString(),nextRun:new Date(Date.now()+180000).toISOString(),duration:8,retries:0,conflict:false},
-  {id:"j3",name:"Notification Flush",schedule:"* * * * *",priority:3,status:"running",lastRun:new Date(Date.now()-60000).toISOString(),nextRun:new Date(Date.now()+30000).toISOString(),duration:3,retries:0,conflict:false},
-  {id:"j4",name:"Report Generator",schedule:"0 6 * * *",priority:4,status:"failed",lastRun:new Date(Date.now()-86400000).toISOString(),nextRun:new Date(Date.now()+72000000).toISOString(),duration:0,retries:3,conflict:false},
-  {id:"j5",name:"Backup Sync",schedule:"0 2 * * *",priority:5,status:"idle",lastRun:new Date(Date.now()-86400000).toISOString(),nextRun:new Date(Date.now()+57600000).toISOString(),duration:184,retries:0,conflict:true},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={running:"#4ade80",paused:"#94a3b8",failed:"#f87171",idle:"#a5b4fc"};
 
 export default function AdminCronJobs(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[jobs,setJobs]=useState(()=>load("admin_cron_jobs_v1",seed));
+  const[jobs,setJobs]=useState([]);
   const[running,setRunning]=useState<string|null>(null);
 
   const toggle=(j:CronJob)=>{

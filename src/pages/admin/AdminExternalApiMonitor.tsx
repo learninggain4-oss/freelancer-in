@@ -9,18 +9,12 @@ const A1="#6366f1",A2="#8b5cf6";
 const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",text:"#e2e8f0",sub:"#94a3b8",input:"rgba(255,255,255,.07)",badgeFg:"#a5b4fc"},white:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"},wb:{card:"#ffffff",border:"rgba(0,0,0,.08)",text:"#1e293b",sub:"#64748b",input:"#f8fafc",badgeFg:"#4f46e5"}};
 
 interface ApiService{id:string;name:string;provider:string;usageToday:number;limitToday:number;latencyMs:number;status:"healthy"|"degraded"|"down";errors24h:number;fallbackActive:boolean;lastCheck:string;}
-const seed=():ApiService[]=>[
-  {id:"a1",name:"Payment Gateway",provider:"Razorpay",usageToday:1240,limitToday:5000,latencyMs:84,status:"healthy",errors24h:2,fallbackActive:false,lastCheck:new Date(Date.now()-120000).toISOString()},
-  {id:"a2",name:"SMS Service",provider:"Twilio",usageToday:4820,limitToday:5000,latencyMs:220,status:"degraded",errors24h:18,fallbackActive:false,lastCheck:new Date(Date.now()-300000).toISOString()},
-  {id:"a3",name:"Email Service",provider:"SendGrid",usageToday:8200,limitToday:10000,latencyMs:140,status:"healthy",errors24h:0,fallbackActive:false,lastCheck:new Date(Date.now()-60000).toISOString()},
-  {id:"a4",name:"KYC Verification",provider:"Digio",usageToday:148,limitToday:500,latencyMs:0,status:"down",errors24h:148,fallbackActive:true,lastCheck:new Date(Date.now()-1800000).toISOString()},
-];
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const sColor={healthy:"#4ade80",degraded:"#fbbf24",down:"#f87171"};
 
 export default function AdminExternalApiMonitor(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[services,setServices]=useState(()=>load("admin_ext_api_v1",seed));
+  const[services,setServices]=useState([]);
   const[checking,setChecking]=useState<string|null>(null);
 
   const check=async(s:ApiService)=>{

@@ -25,11 +25,6 @@ const generateSnapshot = (): ResourceSnapshot => ({
   activeRequests: Math.round(3 + Math.random()*12),
 });
 
-const seedAlerts = (): Alert[] => [
-  { id:"a1", metric:"Memory Usage",   value:"91%", threshold:"85%", at:new Date(Date.now()-7200000).toISOString(), resolved:true },
-  { id:"a2", metric:"CPU Usage",      value:"87%", threshold:"80%", at:new Date(Date.now()-3600000).toISOString(), resolved:true },
-  { id:"a3", metric:"DB Connections", value:"28",  threshold:"25",  at:new Date(Date.now()-1800000).toISOString(), resolved:false },
-];
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
@@ -61,7 +56,7 @@ export default function AdminResourceMonitor() {
 
   const [snap, setSnap]     = useState<ResourceSnapshot>(generateSnapshot);
   const [history, setHistory] = useState<ResourceSnapshot[]>(()=>Array.from({length:10},(_,i)=>({...generateSnapshot(),timestamp:new Date(Date.now()-i*60000).toISOString()})));
-  const [alerts]            = useState<Alert[]>(()=>load("admin_resource_alerts_v1",seedAlerts));
+  const [alerts]            = useState<Alert[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab]       = useState<"live"|"history"|"alerts">("live");
 

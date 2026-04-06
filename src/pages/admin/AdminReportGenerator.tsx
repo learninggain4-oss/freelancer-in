@@ -17,22 +17,7 @@ const TH = {
 interface Report { id:string; name:string; type:string; status:"queued"|"generating"|"ready"|"failed"|"cached"; rowCount?:number; sizeMB?:number; pct?:number; requestedAt:string; completedAt?:string; requestedBy:string; error?:string; cached:boolean; scheduledDaily:boolean; }
 interface ReportSetting { id:string; label:string; value:number|boolean; type:"number"|"boolean"; description:string; }
 
-const seedReports = (): Report[] => [
-  { id:"r1", name:"Monthly Revenue Summary",     type:"Finance",    status:"ready",      rowCount:8420,  sizeMB:0.4, requestedAt:new Date(Date.now()-3600000).toISOString(),   completedAt:new Date(Date.now()-3420000).toISOString(),  requestedBy:"Admin A",     cached:true,  scheduledDaily:true  },
-  { id:"r2", name:"User KYC Status Export",      type:"Compliance", status:"generating", rowCount:undefined, pct:62,   requestedAt:new Date(Date.now()-600000).toISOString(),    requestedBy:"Admin B",     cached:false, scheduledDaily:false },
-  { id:"r3", name:"Full Transaction History",    type:"Finance",    status:"failed",     requestedAt:new Date(Date.now()-7200000).toISOString(),  requestedBy:"Super Admin", cached:false, scheduledDaily:false, error:"Report exceeded 100,000 row limit — use date filters to narrow range" },
-  { id:"r4", name:"Job Applications Summary",    type:"Operations", status:"ready",      rowCount:4510,  sizeMB:0.2, requestedAt:new Date(Date.now()-864e5).toISOString(),      completedAt:new Date(Date.now()-864e5+1200000).toISOString(), requestedBy:"Admin A", cached:false, scheduledDaily:false },
-  { id:"r5", name:"Platform Health Dashboard",   type:"System",     status:"queued",     requestedAt:new Date(Date.now()-300000).toISOString(),    requestedBy:"Admin B",     cached:false, scheduledDaily:true },
-];
 
-const seedSettings = (): ReportSetting[] => [
-  { id:"s1", label:"Max Rows Per Report",     value:100000, type:"number",  description:"Reports exceeding this row count are rejected to prevent timeout" },
-  { id:"s2", label:"Report Timeout (sec)",    value:120,    type:"number",  description:"Reports that take longer than this are automatically cancelled" },
-  { id:"s3", label:"Max Report Size (MB)",    value:50,     type:"number",  description:"Generated report files larger than this are split into chunks" },
-  { id:"s4", label:"Cache Duration (hours)",  value:6,      type:"number",  description:"Identical reports within this window are served from cache" },
-  { id:"s5", label:"Background Processing",   value:true,   type:"boolean", description:"Run report generation in the background queue instead of blocking" },
-  { id:"s6", label:"Alert on Long Reports",   value:true,   type:"boolean", description:"Notify admins when a report takes more than 60 seconds to generate" },
-];
 
 function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
@@ -48,8 +33,8 @@ export default function AdminReportGenerator() {
   const { toast } = useToast();
 
   const [tab, setTab]           = useState<"reports"|"settings">("reports");
-  const [reports, setReports]   = useState<Report[]>(()=>load("admin_reports_v1",seedReports));
-  const [settings, setSettings] = useState<ReportSetting[]>(()=>load("admin_report_settings_v1",seedSettings));
+  const [reports, setReports]   = useState<Report[]>([]);
+  const [settings, setSettings] = useState<ReportSetting[]>([]);
   const [editId, setEditId]     = useState<string|null>(null);
   const [editVal, setEditVal]   = useState<string|number>("");
   const [regenerating, setRegenerating] = useState<string|null>(null);
