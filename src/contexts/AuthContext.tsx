@@ -107,12 +107,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Auto-refresh profile every 1 second across all pages
+  // Auto-refresh profile every 30 seconds across all pages
   useEffect(() => {
     if (!user) return;
     const interval = setInterval(() => {
       fetchProfile(user.id).catch(() => {});
-    }, 1000);
+    }, 30000);
     return () => clearInterval(interval);
   }, [user]);
 
