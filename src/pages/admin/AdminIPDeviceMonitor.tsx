@@ -72,7 +72,7 @@ export default function AdminIPDeviceMonitor() {
   }));
 
   const uniqueIPs = [...new Map(visitors.map((v: { ip_address: string | null }) => [v.ip_address, v])).values()].filter(v => v.ip_address);
-  const visitorsAsIPs: IPRecord[] = uniqueIPs.slice(0, 50).map((v: { id: string; ip_address: string | null; created_at: string; user_agent: string | null }) => {
+  const visitorsAsIPs: IPRecord[] = uniqueIPs.slice(0, 50).map((v: { id: string; ip_address: string | null; visited_at: string; user_agent: string | null }) => {
     const isBlocked = blockedIps.some((b: { ip_address: string }) => b.ip_address === v.ip_address);
     return {
       id: v.id,
