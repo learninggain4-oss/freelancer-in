@@ -323,6 +323,7 @@ const AdminLayout = () => {
   const [rightOpen, setRightOpen]           = useState(false);
   const [lang, setLang]                     = useState("en");
   const [openNavGroup, setOpenNavGroup]     = useState<string | null>(null);
+  const [navDropPos, setNavDropPos]         = useState<{ top: number; left: number }>({ top: 102, left: 0 });
 
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
@@ -659,7 +660,11 @@ const AdminLayout = () => {
                 </NavLink>
               ) : (
                 <button
-                  onClick={() => setOpenNavGroup(isOpen ? null : group.label)}
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setNavDropPos({ top: rect.bottom + 2, left: rect.left });
+                    setOpenNavGroup(isOpen ? null : group.label);
+                  }}
                   style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 16px", height: 44, color: isGroupActive ? A1 : tok.mainSub, fontSize: 13, fontWeight: isGroupActive ? 700 : 500, borderBottom: isGroupActive ? `2px solid ${A1}` : "2px solid transparent", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>
                   <group.icon size={13} />
                   <span>{group.label}</span>
@@ -667,7 +672,7 @@ const AdminLayout = () => {
                 </button>
               )}
               {isOpen && group.items.length > 0 && (
-                <div className="admin-drop" style={{ position: "absolute", top: "100%", left: 0, zIndex: 300, background: tok.dropBg, border: `1px solid ${tok.dropBdr}`, borderRadius: 14, boxShadow: "0 20px 60px rgba(0,0,0,.2)", minWidth: 220, maxHeight: 480, overflowY: "auto" }}>
+                <div className="admin-drop" style={{ position: "fixed", top: navDropPos.top, left: navDropPos.left, zIndex: 9999, background: tok.dropBg, border: `1px solid ${tok.dropBdr}`, borderRadius: 14, boxShadow: "0 20px 60px rgba(0,0,0,.2)", minWidth: 220, maxHeight: 480, overflowY: "auto" }}>
                   <div style={{ padding: "8px 14px 6px", borderBottom: `1px solid ${tok.dropBdr}` }}>
                     <p style={{ fontSize: 10, fontWeight: 700, color: tok.mainSub, textTransform: "uppercase", letterSpacing: 1, margin: 0 }}>{group.label}</p>
                   </div>
