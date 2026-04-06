@@ -249,6 +249,18 @@ const AdminPayoutSchedule = lazy(() => import("./pages/admin/AdminPayoutSchedule
 const AdminMobileAppManagement = lazy(() => import("./pages/admin/AdminMobileAppManagement"));
 const AdminWaitlistManagement = lazy(() => import("./pages/admin/AdminWaitlistManagement"));
 const AdminSlaReports = lazy(() => import("./pages/admin/AdminSlaReports"));
+const AdminTdsManagement = lazy(() => import("./pages/admin/AdminTdsManagement"));
+const AdminTalentShowcase = lazy(() => import("./pages/admin/AdminTalentShowcase"));
+const AdminFreelancerLevels = lazy(() => import("./pages/admin/AdminFreelancerLevels"));
+const AdminChatMonitoring = lazy(() => import("./pages/admin/AdminChatMonitoring"));
+const AdminPanVerification = lazy(() => import("./pages/admin/AdminPanVerification"));
+const AdminCommissionTiers = lazy(() => import("./pages/admin/AdminCommissionTiers"));
+const AdminBiddingRules = lazy(() => import("./pages/admin/AdminBiddingRules"));
+const AdminBannerManager = lazy(() => import("./pages/admin/AdminBannerManager"));
+const AdminHolidayCalendar = lazy(() => import("./pages/admin/AdminHolidayCalendar"));
+const AdminRateCards = lazy(() => import("./pages/admin/AdminRateCards"));
+const AdminActivityLog = lazy(() => import("./pages/admin/AdminActivityLog"));
+const AdminFeatureFlags = lazy(() => import("./pages/admin/AdminFeatureFlags"));
 const WalletTypes = lazy(() => import("./pages/WalletTypes"));
 const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));
@@ -706,6 +718,18 @@ const AppContent = () => {
               <Route path="mobile-app-management" element={<AdminMobileAppManagement />} />
               <Route path="waitlist-management" element={<AdminWaitlistManagement />} />
               <Route path="sla-reports" element={<AdminSlaReports />} />
+              <Route path="tds-management" element={<AdminTdsManagement />} />
+              <Route path="talent-showcase" element={<AdminTalentShowcase />} />
+              <Route path="freelancer-levels" element={<AdminFreelancerLevels />} />
+              <Route path="chat-monitoring" element={<AdminChatMonitoring />} />
+              <Route path="pan-gst-verification" element={<AdminPanVerification />} />
+              <Route path="commission-tiers" element={<AdminCommissionTiers />} />
+              <Route path="bidding-rules" element={<AdminBiddingRules />} />
+              <Route path="banner-manager" element={<AdminBannerManager />} />
+              <Route path="holiday-calendar" element={<AdminHolidayCalendar />} />
+              <Route path="rate-cards" element={<AdminRateCards />} />
+              <Route path="activity-log" element={<AdminActivityLog />} />
+              <Route path="feature-flags" element={<AdminFeatureFlags />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

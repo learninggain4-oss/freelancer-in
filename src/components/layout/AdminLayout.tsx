@@ -143,6 +143,8 @@ const navSections = [
     { label: "Invoice Management", icon: FileText,           path: "/admin/invoice-management" },
     { label: "Revenue Analytics",  icon: TrendingUp,         path: "/admin/revenue-analytics" },
     { label: "Payout Schedule",    icon: Clock,              path: "/admin/payout-schedule" },
+    { label: "TDS Management",     icon: IndianRupee,        path: "/admin/tds-management" },
+    { label: "Commission Tiers",   icon: SlidersHorizontal,  path: "/admin/commission-tiers" },
   ]},
   { title: "Verification", items: [
     { label: "Aadhaar Verify",     icon: Fingerprint, path: "/admin/verifications" },
@@ -150,6 +152,7 @@ const navSections = [
     { label: "Validation",         icon: BadgeCheck,  path: "/admin/validation" },
     { label: "KYC Dashboard",      icon: ShieldCheck, path: "/admin/kyc-dashboard" },
     { label: "Waitlist Mgmt",      icon: UserCheck,   path: "/admin/waitlist-management" },
+    { label: "PAN/GST Verify",     icon: CreditCard,  path: "/admin/pan-gst-verification" },
   ]},
   { title: "Projects & Work", items: [
     { label: "Jobs",               icon: Briefcase,     path: "/admin/jobs" },
@@ -158,6 +161,7 @@ const navSections = [
     { label: "Project Analytics",  icon: BarChart3,     path: "/admin/project-analytics" },
     { label: "Dispute Center",     icon: ShieldAlert,   path: "/admin/dispute-center" },
     { label: "Milestone Mgmt",     icon: ClipboardCheck,path: "/admin/milestone-management" },
+    { label: "Bidding Rules",      icon: Zap,           path: "/admin/bidding-rules" },
   ]},
   { title: "Business & Growth", items: [
     { label: "Badge Management",   icon: Star,          path: "/admin/badge-management" },
@@ -171,6 +175,11 @@ const navSections = [
     { label: "Email Campaigns",    icon: Mail,          path: "/admin/email-campaigns" },
     { label: "Mobile App Mgmt",    icon: Monitor,       path: "/admin/mobile-app-management" },
     { label: "SLA Reports",        icon: BarChart2,     path: "/admin/sla-reports" },
+    { label: "Talent Showcase",    icon: Star,          path: "/admin/talent-showcase" },
+    { label: "Freelancer Levels",  icon: TrendingUp,    path: "/admin/freelancer-levels" },
+    { label: "Banner Manager",     icon: Megaphone,     path: "/admin/banner-manager" },
+    { label: "Rate Cards",         icon: FileText,      path: "/admin/rate-cards" },
+    { label: "Feature Flags",      icon: Activity,      path: "/admin/feature-flags" },
   ]},
   { title: "Communication", items: [
     { label: "Help & Support",       icon: HelpCircle, path: "/admin/help-support" },
@@ -181,6 +190,7 @@ const navSections = [
     { label: "Email Deliverability", icon: Mail,       path: "/admin/email-deliverability" },
     { label: "Bulk Notification",    icon: Bell,       path: "/admin/bulk-notification" },
     { label: "Notification Control", icon: Settings,   path: "/admin/notification-control" },
+    { label: "Chat Monitoring",      icon: MessageSquare, path: "/admin/chat-monitoring" },
   ]},
   { title: "Security & Monitoring", items: [
     { label: "Safety Center",    icon: Shield,        path: "/admin/safety-center" },
@@ -227,6 +237,8 @@ const navSections = [
     { label: "Feature Conflicts",   icon: Settings2,    path: "/admin/feature-conflicts" },
     { label: "Feature Dependency",  icon: Layers,       path: "/admin/feature-dependency" },
     { label: "Module Dependency",   icon: Cpu,          path: "/admin/module-dependency" },
+    { label: "Activity Log",        icon: Activity,     path: "/admin/activity-log" },
+    { label: "Holiday Calendar",    icon: CalendarClock,path: "/admin/holiday-calendar" },
   ]},
   { title: "Advanced Security", items: [
     { label: "Permission Validator", icon: UserCog,       path: "/admin/permission-validator" },
