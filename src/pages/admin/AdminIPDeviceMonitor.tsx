@@ -91,7 +91,7 @@ export default function AdminIPDeviceMonitor() {
 
   const allIPs = [...ipRecords, ...visitorsAsIPs.filter(v => !ipRecords.some(b => b.ip === v.ip))];
 
-  const deviceRecords = visitors.filter((v: { user_agent: string | null }) => v.user_agent).slice(0, 50).map((v: { id: string; ip_address: string | null; user_agent: string | null; created_at: string }) => {
+  const deviceRecords = visitors.filter((v: { user_agent: string | null }) => v.user_agent).slice(0, 50).map((v: { id: string; ip_address: string | null; user_agent: string | null; visited_at: string }) => {
     const ua = v.user_agent || "";
     const isAndroid = ua.includes("Android");
     const isIOS = ua.includes("iPhone") || ua.includes("iPad");
