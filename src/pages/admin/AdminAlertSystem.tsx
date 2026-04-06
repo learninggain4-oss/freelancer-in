@@ -17,48 +17,33 @@ const TH = {
 const SERVICES_KEY = "admin_alert_services_v1";
 const CHANNELS_KEY = "admin_alert_channels_v1";
 const ALERT_EVENTS_KEY = "admin_alert_events_v1";
-const defaultChannels: AlertChannel[] = [
-  {id:"ac1",type:"email",label:"Admin Email",endpoint:"freeandin9@gmail.com",enabled:true,lastTested:new Date(Date.now()-3600000).toISOString(),testStatus:"ok"},
-  {id:"ac2",type:"push",label:"OneSignal Push",endpoint:"https://onesignal.com/api/v1/",enabled:true,lastTested:new Date(Date.now()-7200000).toISOString(),testStatus:"ok"},
-  {id:"ac3",type:"webhook",label:"Slack Webhook",endpoint:"https://hooks.slack.com/services/T000/B000/xxx",enabled:false},
-];
-const defaultAlerts: AlertEvent[] = [
-  {id:"ae1",title:"High Fraud Score User",severity:"critical",source:"fraud-detection",message:"User priya@example.com has fraud score >90",timestamp:new Date(Date.now()-3600000).toISOString(),delivered:true,channel:"email"},
-  {id:"ae2",title:"DB Backup Complete",severity:"info",source:"backup-cron",message:"Full database backup completed successfully",timestamp:new Date(Date.now()-86400000).toISOString(),delivered:true,channel:"push"},
-  {id:"ae3",title:"API Rate Limit Exceeded",severity:"high",source:"rate-limiter",message:"45.33.32.156 exceeded login rate limit (18 attempts)",timestamp:new Date(Date.now()-7200000).toISOString(),delivered:true,channel:"email"},
-];
-const defaultServices: ServiceDep[] = [
-  {id:"sd1",name:"Supabase",url:"https://maysttckdfnnzvfeujaj.supabase.co",category:"Database",status:"online",latency:45,lastChecked:new Date(Date.now()-60000).toISOString()},
-  {id:"sd2",name:"OneSignal",url:"https://onesignal.com/api/v1/",category:"Notifications",status:"online",latency:220,lastChecked:new Date(Date.now()-60000).toISOString()},
-  {id:"sd3",name:"GitHub",url:"https://api.github.com",category:"Deployment",status:"online",latency:180,lastChecked:new Date(Date.now()-60000).toISOString()},
-];
 
 interface AlertChannel { id: string; type: "email" | "sms" | "push" | "webhook"; label: string; endpoint: string; enabled: boolean; lastTested?: string; testStatus?: "ok" | "fail"; }
 interface AlertEvent { id: string; title: string; severity: "critical" | "high" | "medium" | "info"; source: string; message: string; timestamp: string; delivered: boolean; channel: string; }
 interface ServiceDep { id: string; name: string; url: string; category: string; status: "online" | "degraded" | "offline" | "unknown"; latency?: number; lastChecked?: string; }
 
 const defaultChannels: AlertChannel[] = [
-  { id: "c1", type: "email",   label: "Admin Email",         endpoint: "freeandin@gmail.com", enabled: true },
-  { id: "c2", type: "push",    label: "OneSignal Push",      endpoint: "freelancer-india.lovable.app", enabled: true },
-  { id: "c3", type: "sms",     label: "SMS Gateway",         endpoint: "+91 98XXXXXXXX", enabled: false },
-  { id: "c4", type: "webhook", label: "Slack Webhook",       endpoint: "https://hooks.slack.com/…", enabled: false },
+  { id: "c1", type: "email",   label: "Admin Email",    endpoint: "freeandin9@gmail.com",              enabled: true,  lastTested: new Date(Date.now()-3600000).toISOString(), testStatus: "ok" },
+  { id: "c2", type: "push",    label: "OneSignal Push", endpoint: "https://onesignal.com/api/v1/",     enabled: true,  lastTested: new Date(Date.now()-7200000).toISOString(), testStatus: "ok" },
+  { id: "c3", type: "sms",     label: "SMS Gateway",    endpoint: "+91 98XXXXXXXX",                    enabled: false },
+  { id: "c4", type: "webhook", label: "Slack Webhook",  endpoint: "https://hooks.slack.com/…",         enabled: false },
 ];
 
 const defaultAlerts: AlertEvent[] = [
-  { id: "al1", title: "High-value withdrawal flagged",    severity: "high",     source: "Wallet System",    message: "Withdrawal of ₹85,000 by DEMO requires approval", timestamp: new Date(Date.now() - 3600000).toISOString(),  delivered: true,  channel: "Admin Email" },
-  { id: "al2", title: "Multiple failed logins detected",  severity: "critical", source: "Auth System",      message: "5 failed login attempts from IP 103.21.xx.xx",    timestamp: new Date(Date.now() - 7200000).toISOString(),  delivered: true,  channel: "Admin Email" },
-  { id: "al3", title: "DB latency spike: 820ms",          severity: "medium",   source: "Server Monitor",   message: "Supabase DB response time exceeded 800ms threshold",timestamp: new Date(Date.now() - 10800000).toISOString(), delivered: true,  channel: "Push" },
-  { id: "al4", title: "New Aadhaar verification pending", severity: "info",     source: "Verification",     message: "3 new Aadhaar verifications awaiting review",       timestamp: new Date(Date.now() - 14400000).toISOString(), delivered: false, channel: "Push" },
-  { id: "al5", title: "Backup completed successfully",    severity: "info",     source: "Backup System",    message: "Scheduled backup: 4 tables, 128 KB",               timestamp: new Date(Date.now() - 86400000).toISOString(), delivered: true,  channel: "Admin Email" },
+  { id: "al1", title: "High-value withdrawal flagged",    severity: "high",     source: "Wallet System",  message: "Withdrawal of ₹85,000 by DEMO requires approval",          timestamp: new Date(Date.now() - 3600000).toISOString(),  delivered: true,  channel: "Admin Email" },
+  { id: "al2", title: "Multiple failed logins detected",  severity: "critical", source: "Auth System",    message: "5 failed login attempts from IP 103.21.xx.xx",              timestamp: new Date(Date.now() - 7200000).toISOString(),  delivered: true,  channel: "Admin Email" },
+  { id: "al3", title: "DB latency spike: 820ms",          severity: "medium",   source: "Server Monitor", message: "Supabase DB response time exceeded 800ms threshold",         timestamp: new Date(Date.now() - 10800000).toISOString(), delivered: true,  channel: "Push" },
+  { id: "al4", title: "New Aadhaar verification pending", severity: "info",     source: "Verification",   message: "3 new Aadhaar verifications awaiting review",               timestamp: new Date(Date.now() - 14400000).toISOString(), delivered: false, channel: "Push" },
+  { id: "al5", title: "Backup completed successfully",    severity: "info",     source: "Backup System",  message: "Scheduled backup: 4 tables, 128 KB",                        timestamp: new Date(Date.now() - 86400000).toISOString(), delivered: true,  channel: "Admin Email" },
 ];
 
 const defaultServices: ServiceDep[] = [
-  { id: "s1", name: "Supabase Database",   url: "https://maysttckdfnnzvfeujaj.supabase.co", category: "Database",  status: "unknown" },
-  { id: "s2", name: "Supabase Auth",       url: "https://maysttckdfnnzvfeujaj.supabase.co/auth/v1/health", category: "Auth", status: "unknown" },
-  { id: "s3", name: "Supabase REST API",   url: "https://maysttckdfnnzvfeujaj.supabase.co/rest/v1/", category: "API",  status: "unknown" },
-  { id: "s4", name: "OneSignal Push",      url: "https://onesignal.com",      category: "Notifications", status: "unknown" },
-  { id: "s5", name: "Razorpay/Payments",   url: "https://razorpay.com",       category: "Payments",      status: "unknown" },
-  { id: "s6", name: "Replit Hosting",      url: "https://replit.com",         category: "Hosting",       status: "unknown" },
+  { id: "s1", name: "Supabase Database", url: "https://maysttckdfnnzvfeujaj.supabase.co",              category: "Database",      status: "unknown" },
+  { id: "s2", name: "Supabase Auth",     url: "https://maysttckdfnnzvfeujaj.supabase.co/auth/v1/health", category: "Auth",         status: "unknown" },
+  { id: "s3", name: "Supabase REST API", url: "https://maysttckdfnnzvfeujaj.supabase.co/rest/v1/",     category: "API",           status: "unknown" },
+  { id: "s4", name: "OneSignal Push",    url: "https://onesignal.com",                                  category: "Notifications", status: "unknown" },
+  { id: "s5", name: "Razorpay/Payments", url: "https://razorpay.com",                                   category: "Payments",      status: "unknown" },
+  { id: "s6", name: "Replit Hosting",    url: "https://replit.com",                                     category: "Hosting",       status: "unknown" },
 ];
 
 function load<T>(key: string, def: T[]): T[] {
