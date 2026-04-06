@@ -215,6 +215,7 @@ const navSections = [
   ]},
   { title: "Monitoring", items: [
     { label: "Cache Manager",        icon: Layers,    path: "/admin/cache-manager" },
+    { label: "Cache Management",     icon: Layers,    path: "/admin/cache-management" },
     { label: "API Manager",          icon: Zap,       path: "/admin/api-manager" },
     { label: "Session Manager",      icon: Users,     path: "/admin/session-manager" },
     { label: "API Monitor",          icon: Activity,  path: "/admin/api-monitor" },
