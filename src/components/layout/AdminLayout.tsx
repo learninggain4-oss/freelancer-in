@@ -19,6 +19,7 @@ import {
   Search, MessageSquare, Plus, ChevronDown,
   User, Languages, PanelRightOpen, PanelRightClose,
   CheckCircle2, Info, XCircle, Mail, Image as ImageIcon, RotateCcw,
+  Trash2,
 } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 
@@ -306,6 +307,43 @@ const SYSTEM_ALERTS = [
   { type: "error",   msg: "2 failed login attempts blocked", time: "2 hr ago" },
 ];
 
+/* ─── Clear Data config per admin route ─────────────────────────────────── */
+interface ClearConfig {
+  pageLabel: string;
+  tables: Array<{ name: string; label: string; filter?: Record<string, string> }>;
+  warning: string;
+}
+
+const CLEAR_DATA_MAP: Record<string, ClearConfig> = {
+  "/admin/notifications":      { pageLabel: "Notifications",          tables: [{ name: "notifications",         label: "all platform notifications" }],                        warning: "All user and system notifications will be permanently deleted." },
+  "/admin/announcements":      { pageLabel: "Announcements",          tables: [{ name: "announcements",         label: "all announcements" }],                                  warning: "All platform announcements will be permanently removed." },
+  "/admin/hero-slides":        { pageLabel: "Hero Slides",            tables: [{ name: "hero_slides",           label: "all hero slides" }],                                    warning: "All hero slideshow entries will be permanently deleted." },
+  "/admin/testimonials":       { pageLabel: "Testimonials",           tables: [{ name: "testimonials",          label: "all testimonials" }],                                   warning: "All testimonials will be permanently removed from the platform." },
+  "/admin/reviews":            { pageLabel: "User Reviews",           tables: [{ name: "user_reviews",          label: "all user reviews" }],                                   warning: "All user reviews and star ratings will be permanently deleted." },
+  "/admin/legal-documents":    { pageLabel: "Legal Documents",        tables: [{ name: "legal_documents",       label: "all legal documents" }],                                warning: "All legal documents (T&C, Privacy Policy, etc.) will be permanently removed." },
+  "/admin/countdowns":         { pageLabel: "Countdowns",             tables: [{ name: "countdowns",            label: "all countdown timers" }],                               warning: "All countdown timers will be permanently deleted." },
+  "/admin/referrals":          { pageLabel: "Referrals",              tables: [{ name: "referrals",             label: "all referral records" }],                               warning: "All referral records and bonus entries will be permanently deleted." },
+  "/admin/verifications":      { pageLabel: "Aadhaar Verifications",  tables: [{ name: "aadhaar_verifications", label: "all Aadhaar verification records" }],                   warning: "All Aadhaar KYC records will be permanently deleted. Users will need to re-submit their documents." },
+  "/admin/bank-verifications": { pageLabel: "Bank Verifications",     tables: [{ name: "bank_verifications",   label: "all bank verification records" }],                      warning: "All bank account verification records will be permanently deleted. Users will need to re-submit their bank details." },
+  "/admin/withdrawals":        { pageLabel: "Withdrawals",            tables: [{ name: "withdrawals",           label: "all withdrawal requests" }],                            warning: "All withdrawal request records will be permanently deleted. This is a financial record — this action cannot be undone." },
+  "/admin/recovery-requests":  { pageLabel: "Recovery Requests",      tables: [{ name: "recovery_requests",    label: "all recovery requests" }],                               warning: "All account recovery requests and held-fund records will be permanently deleted." },
+  "/admin/ip-blocking":        { pageLabel: "IP Blocking",            tables: [{ name: "blocked_ips",          label: "all blocked IP entries" }],                             warning: "All blocked IP address entries will be removed. Previously blocked IPs will be able to access the platform again." },
+  "/admin/wallet-upgrades":    { pageLabel: "Wallet Upgrades",        tables: [{ name: "wallet_upgrade_requests", label: "all wallet upgrade requests" }],                     warning: "All wallet upgrade request records will be permanently deleted." },
+  "/admin/jobs":               { pageLabel: "Jobs",                   tables: [{ name: "projects",             label: "all job/project records" }],                            warning: "ALL job and project records (open, in-progress, completed) will be permanently deleted. This cannot be undone." },
+  "/admin/auto-responses":     { pageLabel: "Auto Responses",         tables: [{ name: "upgrade_auto_responses", label: "all auto-response templates" }, { name: "quick_reply_analytics", label: "quick reply analytics" }], warning: "All auto-response templates and quick-reply analytics will be permanently deleted." },
+  "/admin/services":           { pageLabel: "Services",               tables: [{ name: "service_categories",   label: "all service categories" }, { name: "service_skills", label: "service skills" }], warning: "All service categories and skills will be permanently deleted. Freelancer profiles may lose their skill tags." },
+  "/admin/payment-methods":    { pageLabel: "Payment Methods",        tables: [{ name: "payment_methods",      label: "all custom payment methods" }],                         warning: "All configured payment methods will be permanently deleted." },
+  "/admin/attendance":         { pageLabel: "Attendance",             tables: [{ name: "attendance",           label: "all attendance records" }],                             warning: "All attendance and check-in records will be permanently deleted." },
+  "/admin/pwa-installs":       { pageLabel: "App Installs",           tables: [{ name: "pwa_installs",         label: "all app install records" }],                            warning: "All PWA/app install tracking records will be permanently deleted." },
+  "/admin/visitors":           { pageLabel: "Site Visitors",          tables: [{ name: "site_visitors",        label: "all visitor records" }],                                warning: "All site visitor tracking records will be permanently deleted." },
+  "/admin/audit-logs":         { pageLabel: "Audit Logs",             tables: [{ name: "audit_logs",           label: "all audit log entries" }],                              warning: "All admin action audit logs will be permanently deleted. You will lose the history of all admin operations." },
+  "/admin/sessions":           { pageLabel: "Sessions",               tables: [{ name: "admin_sessions",      label: "all recorded sessions" }],                              warning: "All recorded user session data will be permanently deleted." },
+  "/admin/suspicious-users":   { pageLabel: "Suspicious Users",       tables: [{ name: "user_risk_scores",    label: "all risk score records" }],                             warning: "All user risk scores and suspicious activity flags will be permanently cleared." },
+  "/admin/fraud-cases":        { pageLabel: "Fraud Cases",            tables: [{ name: "fraud_cases",         label: "all fraud case records" }],                             warning: "All fraud case records will be permanently deleted. This removes the complete fraud investigation history." },
+  "/admin/fraud-alerts":       { pageLabel: "Fraud Alerts",           tables: [{ name: "fraud_alerts",        label: "all fraud alert records" }],                            warning: "All fraud alert records and triggers will be permanently deleted." },
+  "/admin/fraud-audit-log":    { pageLabel: "Fraud Audit Log",        tables: [{ name: "fraud_audit_logs",    label: "all fraud audit log entries" }],                        warning: "All fraud system audit logs will be permanently deleted." },
+};
+
 function useClickOutside(ref: React.RefObject<HTMLDivElement | null>, fn: () => void) {
   useEffect(() => {
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) fn(); };
@@ -315,8 +353,11 @@ function useClickOutside(ref: React.RefObject<HTMLDivElement | null>, fn: () => 
 }
 
 const AdminLayout = () => {
-  const [sessionWarning, setSessionWarning] = useState(false);
-  const [searchOpen, setSearchOpen]         = useState(false);
+  const [sessionWarning, setSessionWarning]   = useState(false);
+  const [searchOpen, setSearchOpen]           = useState(false);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [clearingData, setClearingData]       = useState(false);
+  const [clearResult, setClearResult]         = useState<{ ok: boolean; msg: string } | null>(null);
   const [searchQ, setSearchQ]               = useState("");
   const [profileOpen, setProfileOpen]       = useState(false);
   const [notifOpen, setNotifOpen]           = useState(false);
@@ -423,6 +464,28 @@ const AdminLayout = () => {
   });
 
   const handleLogout = async () => { await signOut(); navigate("/login"); };
+
+  const clearConfig = CLEAR_DATA_MAP[location.pathname] ?? null;
+
+  const executeClearData = async () => {
+    if (!clearConfig) return;
+    setClearingData(true);
+    setClearResult(null);
+    try {
+      for (const t of clearConfig.tables) {
+        // Delete all rows by filtering "id is not null" (matches every row)
+        const { error } = await (supabase.from(t.name as any) as any)
+          .delete()
+          .not("id", "is", null);
+        if (error) throw new Error(`Failed to clear ${t.label}: ${error.message}`);
+      }
+      setClearResult({ ok: true, msg: `${clearConfig.pageLabel} data cleared successfully.` });
+      setTimeout(() => { setClearDialogOpen(false); setClearResult(null); }, 1800);
+    } catch (err: any) {
+      setClearResult({ ok: false, msg: err.message || "Clear failed." });
+    }
+    setClearingData(false);
+  };
 
   const userEmail   = profile?.email || user?.email || "admin@example.com";
   const userName    = (Array.isArray(profile?.full_name) ? profile.full_name[0] : profile?.full_name) || userEmail.split("@")[0] || "Admin";
@@ -715,8 +778,8 @@ const AdminLayout = () => {
           );
         })}
 
-        {/* Breadcrumb on right */}
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: tok.mainSub, flexShrink: 0, padding: "0 4px" }}>
+        {/* Breadcrumb + Clear Data on right */}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10, fontSize: 12, color: tok.mainSub, flexShrink: 0, padding: "0 4px" }}>
           {isSubPage ? (
             <>
               <button onClick={() => navigate("/admin/dashboard")}
@@ -739,6 +802,17 @@ const AdminLayout = () => {
               <span style={{ fontWeight: 700, color: tok.mainText, fontSize: 12 }}>Live</span>
             </div>
           )}
+
+          {/* ── Clear Data Button ── */}
+          <button
+            onClick={() => { setClearResult(null); setClearDialogOpen(true); }}
+            title="Clear page data"
+            style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 11px", borderRadius: 8, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.2)", color: "#dc2626", fontSize: 11.5, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,.15)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,.08)"; }}>
+            <Trash2 size={12} />
+            <span>Clear Data</span>
+          </button>
         </div>
       </div>
 
@@ -856,6 +930,97 @@ const AdminLayout = () => {
           </div>
         </footer>
       </div>
+
+      {/* ─── Clear Data Confirmation Modal ─────────────────────────── */}
+      {clearDialogOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {/* Backdrop */}
+          <div
+            onClick={() => { if (!clearingData) { setClearDialogOpen(false); setClearResult(null); } }}
+            style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.55)", backdropFilter: "blur(4px)" }}
+          />
+          {/* Dialog */}
+          <div style={{ position: "relative", background: "#ffffff", borderRadius: 20, boxShadow: "0 30px 80px rgba(0,0,0,.3)", padding: "28px 28px 24px", width: "100%", maxWidth: 460, margin: "0 16px" }}>
+
+            {/* Close × */}
+            {!clearingData && (
+              <button
+                onClick={() => { setClearDialogOpen(false); setClearResult(null); }}
+                style={{ position: "absolute", top: 14, right: 14, background: "rgba(0,0,0,.06)", border: "none", borderRadius: 8, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" }}>
+                <X size={15} />
+              </button>
+            )}
+
+            {/* Icon */}
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(239,68,68,.1)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
+              <Trash2 size={26} color="#dc2626" />
+            </div>
+
+            {/* Title */}
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", margin: "0 0 6px", letterSpacing: "-0.3px" }}>
+              {clearConfig ? `Clear ${clearConfig.pageLabel} Data?` : "Clear Page Data"}
+            </h2>
+
+            {clearConfig ? (
+              <>
+                {/* Warning banner */}
+                <div style={{ display: "flex", gap: 10, padding: "12px 14px", background: "rgba(239,68,68,.07)", border: "1px solid rgba(239,68,68,.2)", borderRadius: 12, margin: "14px 0 16px" }}>
+                  <AlertTriangle size={16} color="#dc2626" style={{ flexShrink: 0, marginTop: 1 }} />
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: "#dc2626", margin: "0 0 4px" }}>Permanent Action — Cannot Be Undone</p>
+                    <p style={{ fontSize: 12.5, color: "#64748b", margin: 0, lineHeight: 1.5 }}>{clearConfig.warning}</p>
+                  </div>
+                </div>
+
+                {/* What will be deleted */}
+                <p style={{ fontSize: 12, color: "#64748b", margin: "0 0 4px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.8px" }}>Records that will be deleted:</p>
+                <ul style={{ margin: "6px 0 20px", padding: "0 0 0 18px" }}>
+                  {clearConfig.tables.map(t => (
+                    <li key={t.name} style={{ fontSize: 13, color: "#0f172a", marginBottom: 3 }}>{t.label}</li>
+                  ))}
+                </ul>
+
+                {/* Result message */}
+                {clearResult && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: clearResult.ok ? "rgba(34,197,94,.08)" : "rgba(239,68,68,.08)", border: `1px solid ${clearResult.ok ? "rgba(34,197,94,.25)" : "rgba(239,68,68,.25)"}`, marginBottom: 16 }}>
+                    {clearResult.ok ? <CheckCircle2 size={15} color="#22c55e" /> : <XCircle size={15} color="#dc2626" />}
+                    <span style={{ fontSize: 13, fontWeight: 600, color: clearResult.ok ? "#16a34a" : "#dc2626" }}>{clearResult.msg}</span>
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button
+                    disabled={clearingData}
+                    onClick={() => { setClearDialogOpen(false); setClearResult(null); }}
+                    style={{ flex: 1, padding: "11px", borderRadius: 10, background: "#f1f5f9", border: "1px solid rgba(0,0,0,.1)", color: "#374151", fontSize: 13.5, fontWeight: 700, cursor: clearingData ? "not-allowed" : "pointer", opacity: clearingData ? 0.5 : 1 }}>
+                    Cancel
+                  </button>
+                  <button
+                    disabled={clearingData || clearResult?.ok === true}
+                    onClick={executeClearData}
+                    style={{ flex: 1, padding: "11px", borderRadius: 10, background: clearingData ? "rgba(239,68,68,.4)" : "#dc2626", border: "none", color: "white", fontSize: 13.5, fontWeight: 700, cursor: clearingData || clearResult?.ok === true ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+                    <Trash2 size={14} />
+                    {clearingData ? "Clearing…" : "Yes, Clear All Data"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* No clearable data for this page */}
+                <p style={{ fontSize: 13.5, color: "#64748b", margin: "10px 0 22px", lineHeight: 1.6 }}>
+                  This admin section does not have directly clearable database records. Configuration and monitoring pages do not store user-facing data that can be bulk-deleted.
+                </p>
+                <button
+                  onClick={() => setClearDialogOpen(false)}
+                  style={{ width: "100%", padding: "11px", borderRadius: 10, background: "#f1f5f9", border: "1px solid rgba(0,0,0,.1)", color: "#374151", fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}>
+                  Close
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
