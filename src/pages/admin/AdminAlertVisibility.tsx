@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
-import { Bell, AlertTriangle, CheckCircle2, RefreshCw, Eye, XCircle, Mail, Smartphone } from "lucide-react";
+import { Bell, AlertTriangle, CheckCircle2, Eye, Mail, Smartphone } from "lucide-react";
 
-const A1 = "#6366f1", A2 = "#8b5cf6";
+const A1 = "#6366f1";
 const TH = {
   black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)" },
   white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc" },
@@ -10,6 +10,26 @@ const TH = {
 };
 
 type Alert = { id:string; title:string; priority:string; acknowledged:boolean; channels:string[]; time:string };
+
+const ALERTS_KEY = "admin_alerts_v1";
+
+const seedAlerts2: Alert[] = [
+  { id:"1", title:"Payment gateway timeout", priority:"critical", acknowledged:false, channels:["In-App","Email","SMS"], time:"2 min ago" },
+  { id:"2", title:"KYC verification backlog >100", priority:"high", acknowledged:false, channels:["In-App","Email"], time:"8 min ago" },
+  { id:"3", title:"New freelancer registrations spike", priority:"medium", acknowledged:true, channels:["In-App"], time:"22 min ago" },
+  { id:"4", title:"Payout batch completed", priority:"low", acknowledged:true, channels:["Email"], time:"1 hr ago" },
+  { id:"5", title:"TDS filing deadline tomorrow", priority:"high", acknowledged:false, channels:["In-App","Email"], time:"3 hr ago" },
+  { id:"6", title:"Supabase storage 80% full", priority:"critical", acknowledged:false, channels:["In-App","Email","SMS"], time:"10 min ago" },
+];
+
+function load<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 export default function AdminAlertVisibility() {
   const { theme, themeKey } = useAdminTheme();
