@@ -2,7 +2,6 @@ import { useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { callEdgeFunction, getToken } from "@/lib/supabase-functions";
 
 export interface SupportReaction {
   id: string;
@@ -219,10 +218,9 @@ export const useSupportChat = (conversationId: string | undefined) => {
       );
 
       try {
-        const token = await getToken();
-        const res = await callEdgeFunction("support-delete-message", { method: "DELETE", body: { messageId }, token });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error || "Delete failed");
+        const { data, error } = await supabase.functions.invoke("support-delete-message", { body: { messageId } });
+        if (error) throw new Error(error.message || "Delete failed");
+        if (data?.error) throw new Error(data.error);
       } catch (err: any) {
         // Restore on failure by refetching
         queryClient.invalidateQueries({ queryKey: QK });
@@ -241,10 +239,9 @@ export const useSupportChat = (conversationId: string | undefined) => {
       queryClient.setQueryData<SupportMessage[]>(QK, []);
 
       try {
-        const token = await getToken();
-        const res = await callEdgeFunction("support-clear-history", { method: "DELETE", body: { conversationId }, token });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error || "Clear failed");
+        const { data, error } = await supabase.functions.invoke("support-clear-history", { body: { conversationId } });
+        if (error) throw new Error(error.message || "Clear failed");
+        if (data?.error) throw new Error(data.error);
       } catch (err: any) {
         // Restore on failure by refetching
         queryClient.invalidateQueries({ queryKey: QK });
@@ -317,25 +314,16 @@ export const useDeleteConversation = () => {
   const AQK = ["admin-support-conversations"];
 
   const deleteConversation = async (conversationId: string) => {
-    // Always refresh the session before calling so the token is fresh
-    const token = await getToken();
-    if (!token) throw new Error("Not authenticated");
+    // Use supabase.functions.invoke() — it always uses POST internally which avoids
+    // the browser CORS block that occurs when calling DELETE without an explicit
+    // Access-Control-Allow-Methods header in the edge function's preflight response.
+    const { data, error } = await supabase.functions.invoke(
+      "support-delete-conversation",
+      { body: { conversationId } },
+    );
 
-    const res = await callEdgeFunction("support-delete-conversation", {
-      method: "DELETE",
-      body: { conversationId },
-      token,
-    });
-
-    // Surface a clear error if the request itself failed
-    if (!res.ok) {
-      let msg = "Delete failed";
-      try {
-        const json = await res.json();
-        msg = json.error || msg;
-      } catch (_) { /* ignore parse errors */ }
-      throw new Error(msg);
-    }
+    if (error) throw new Error(error.message || "Delete failed");
+    if (data?.error) throw new Error(data.error);
 
     // Remove from cache
     queryClient.setQueryData(AQK, (old: any[]) =>
