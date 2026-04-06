@@ -10,6 +10,8 @@ import {
   CreditCard, RefreshCw, Key,
   ClipboardList, Monitor, BarChart3, Zap, XCircle,
   Check, X, Trophy, Star, Globe, TrendingDown,
+  AlertTriangle, Ban, Calendar, Mail, Package,
+  MessageCircle, RotateCcw, Tag, ArrowLeftRight,
 } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import {
@@ -192,6 +194,21 @@ const AdminDashboard = () => {
   const [topEmployers, setTopEmployers]   = useState<Array<{ id: string; name: string; jobs: number }>>([]);
   const [jobPeriods, setJobPeriods]       = useState({ today: 0, thisWeek: 0 });
 
+  // ── Phase 2 sections ─────────────────────────────────────────
+  const [revenueMode, setRevenueMode]     = useState<"day" | "week" | "month">("month");
+  const [revDayData, setRevDayData]       = useState<RevenuePoint[]>([]);
+  const [revWeekData, setRevWeekData]     = useState<RevenuePoint[]>([]);
+  const [categoryStats, setCategoryStats] = useState<Array<{ name: string; count: number; color: string }>>([]);
+  const [retentionStats, setRetentionStats] = useState({ active7d: 0, inactive7to30d: 0, inactive30d: 0, neverSeen: 0 });
+  const [latestUsers, setLatestUsers]     = useState<Array<{ id: string; full_name: string[]; user_type: string; created_at: string; registration_region: string | null }>>([]);
+  const [disabledUsers, setDisabledUsers] = useState<Array<{ id: string; full_name: string[]; disabled_reason: string | null }>>([]);
+  const [messageStats, setMessageStats]   = useState({ total: 0, unread: 0, rooms: 0, today: 0 });
+  const [duplicateIPs, setDuplicateIPs]   = useState<Array<{ ip: string; count: number }>>([]);
+  const [recoveryData, setRecoveryData]   = useState({ open: 0, resolved: 0, total: 0, totalAmt: 0 });
+  const [activityFeed, setActivityFeed]   = useState<Array<{ label: string; detail: string; time: string; color: string; icon: React.ElementType }>>([]);
+  const [paymentStats, setPaymentStats]   = useState({ creditAmt: 0, debitAmt: 0, creditCount: 0, debitCount: 0 });
+  const [pendingPayouts, setPendingPayouts] = useState<Array<{ id: string; employee_id: string; name: string; amount: number; method: string; requested_at: string }>>([]);
+
   useEffect(() => {
     const fetchAll = async () => {
       const sixMonthsAgo = new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -203,6 +220,9 @@ const AdminDashboard = () => {
         recentProfiles, recentWithdrawals, txHistory, profileGrowth,
         pendingApprovalUsers, allWithdrawals, allProjects,
         aadhaarAll, bankAll, allReferrals,
+        allTxFull, latestUsersQ, disabledQ, allMsgsQ,
+        allRecoveryQ, pendingWdFullQ, retentionQ, ipQ,
+        categoriesQ, projCatQ, recentProjectsQ,
       ] = await Promise.all([
         supabase.from("profiles").select("id, approval_status, user_type, edit_request_status, registration_region"),
         supabase.from("withdrawals").select("id").eq("status", "pending"),
@@ -217,13 +237,25 @@ const AdminDashboard = () => {
         supabase.from("withdrawals").select("id, amount, employee_id, created_at, status, requested_at").order("requested_at", { ascending: false }).limit(3),
         supabase.from("transactions").select("amount, created_at, type").gte("created_at", sixMonthsAgo).eq("type", "credit"),
         supabase.from("profiles").select("user_type, created_at").gte("created_at", fourWeeksAgo),
-        // New sections
+        // existing new sections
         supabase.from("profiles").select("id, full_name, email, user_type, created_at").eq("approval_status", "pending").order("created_at", { ascending: false }).limit(8),
         supabase.from("withdrawals").select("amount, status, requested_at"),
         supabase.from("projects").select("status, amount, client_id, created_at"),
         supabase.from("aadhaar_verifications").select("status"),
         supabase.from("bank_verifications").select("status"),
         supabase.from("referrals").select("referrer_id, signup_bonus_paid, job_bonus_paid"),
+        // phase 2 new queries
+        supabase.from("transactions").select("amount, created_at, type").gte("created_at", sixMonthsAgo),
+        supabase.from("profiles").select("id, full_name, user_type, created_at, registration_region").order("created_at", { ascending: false }).limit(10),
+        supabase.from("profiles").select("id, full_name, disabled_reason").eq("is_disabled", true).limit(10),
+        supabase.from("messages").select("id, is_read, created_at, chat_room_id"),
+        supabase.from("recovery_requests").select("id, status, held_amount, created_at, resolved_at"),
+        supabase.from("withdrawals").select("id, employee_id, amount, method, requested_at").eq("status", "pending").order("requested_at", { ascending: true }).limit(15),
+        supabase.from("profiles").select("id, last_seen_at, approval_status"),
+        supabase.from("profiles").select("registration_ip").not("registration_ip", "is", null),
+        supabase.from("service_categories").select("id, name"),
+        supabase.from("projects").select("category_id").not("category_id", "is", null),
+        supabase.from("projects").select("id, name, status, created_at").order("created_at", { ascending: false }).limit(5),
       ]);
 
       const allProfiles      = profiles.data || [];
@@ -434,6 +466,118 @@ const AdminDashboard = () => {
       if (pendingBankCount > 0)    newAlerts.push({ msg: `${pendingBankCount} bank verification pending`, count: pendingBankCount, color: "#fbbf24", bg: "rgba(245,158,11,.08)", border: "rgba(245,158,11,.2)", path: "/admin/bank-verifications" });
       if (pendingApprCount > 5)    newAlerts.push({ msg: `${pendingApprCount} users awaiting account approval`, count: pendingApprCount, color: "#a5b4fc", bg: "rgba(99,102,241,.08)", border: "rgba(99,102,241,.2)", path: "/admin/users" });
       setSysAlerts(newAlerts);
+
+      /* ── Phase 2 Section A: Revenue day/week breakdown ── */
+      const allTx = allTxFull.data || [];
+      const creditTx = allTx.filter(t => t.type === "credit");
+      const dayMap: Record<string, number> = {};
+      const weekMap2: Record<string, number> = {};
+      for (const t of creditTx) {
+        const d = new Date(t.created_at);
+        const dayKey = d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+        dayMap[dayKey] = (dayMap[dayKey] || 0) + Number(t.amount);
+        const weekKey = weekLabel(t.created_at);
+        weekMap2[weekKey] = (weekMap2[weekKey] || 0) + Number(t.amount);
+      }
+      setRevDayData(Object.entries(dayMap).slice(-30).map(([month, revenue]) => ({ month, revenue, commission: Math.round(revenue * 0.1) })));
+      setRevWeekData(Object.entries(weekMap2).slice(-12).map(([month, revenue]) => ({ month, revenue, commission: Math.round(revenue * 0.1) })));
+
+      /* ── Phase 2 Section B: Category Analytics ── */
+      const cats = categoriesQ.data || [];
+      const projCats = projCatQ.data || [];
+      const catCountMap: Record<string, number> = {};
+      for (const p of projCats) { if (p.category_id) catCountMap[p.category_id] = (catCountMap[p.category_id] || 0) + 1; }
+      setCategoryStats(
+        Object.entries(catCountMap)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 8)
+          .map(([id, count], i) => ({
+            name: cats.find(c => c.id === id)?.name || id.slice(0, 8),
+            count,
+            color: REGION_COLORS[i % REGION_COLORS.length],
+          }))
+      );
+
+      /* ── Phase 2 Section C: User Retention ── */
+      const retProfiles = retentionQ.data || [];
+      const sevenDaysAgo  = nowMs - 7 * 24 * 60 * 60 * 1000;
+      const thirtyDaysAgo = nowMs - 30 * 24 * 60 * 60 * 1000;
+      setRetentionStats({
+        active7d:       retProfiles.filter(p => p.last_seen_at && new Date(p.last_seen_at).getTime() >= sevenDaysAgo).length,
+        inactive7to30d: retProfiles.filter(p => p.last_seen_at && new Date(p.last_seen_at).getTime() < sevenDaysAgo && new Date(p.last_seen_at).getTime() >= thirtyDaysAgo).length,
+        inactive30d:    retProfiles.filter(p => p.last_seen_at && new Date(p.last_seen_at).getTime() < thirtyDaysAgo).length,
+        neverSeen:      retProfiles.filter(p => !p.last_seen_at).length,
+      });
+
+      /* ── Phase 2 Section D: New Registrations Feed ── */
+      setLatestUsers((latestUsersQ.data || []) as typeof latestUsers);
+
+      /* ── Phase 2 Section E: Disabled/Banned Users ── */
+      setDisabledUsers((disabledQ.data || []) as typeof disabledUsers);
+
+      /* ── Phase 2 Section F: Message Analytics ── */
+      const msgs = allMsgsQ.data || [];
+      const todayMsgs = msgs.filter(m => new Date(m.created_at).getTime() >= todayStart).length;
+      const uniqueRooms = new Set(msgs.map(m => m.chat_room_id)).size;
+      setMessageStats({ total: msgs.length, unread: msgs.filter(m => !m.is_read).length, rooms: uniqueRooms, today: todayMsgs });
+
+      /* ── Phase 2 Section G: Fraud Detection (Duplicate IPs) ── */
+      const ipList = (ipQ.data || []).map(p => p.registration_ip as string);
+      const ipCount: Record<string, number> = {};
+      for (const ip of ipList) { ipCount[ip] = (ipCount[ip] || 0) + 1; }
+      setDuplicateIPs(
+        Object.entries(ipCount)
+          .filter(([, c]) => c > 1)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([ip, count]) => ({ ip, count }))
+      );
+
+      /* ── Phase 2 Section H: Recovery Requests ── */
+      const allRec = allRecoveryQ.data || [];
+      setRecoveryData({
+        open:     allRec.filter(r => r.status === "pending").length,
+        resolved: allRec.filter(r => r.status === "resolved" || r.status === "approved").length,
+        total:    allRec.length,
+        totalAmt: allRec.reduce((s, r) => s + Number(r.held_amount), 0),
+      });
+
+      /* ── Phase 2 Section I: Activity Feed (combined) ── */
+      const feed: typeof activityFeed = [];
+      for (const p of (latestUsersQ.data || []).slice(0, 5)) {
+        feed.push({ icon: UserPlus, color: "#4ade80", label: `New ${p.user_type === "employee" ? "Freelancer" : "Employer"} joined`, detail: `${getName(p.full_name)} · ${p.registration_region || "—"}`, time: relTime(p.created_at) });
+      }
+      for (const w of (recentWithdrawals.data || []).slice(0, 3)) {
+        feed.push({ icon: Wallet, color: "#f87171", label: "Withdrawal requested", detail: `₹${Number(w.amount).toLocaleString("en-IN")} · ${w.status}`, time: relTime(w.requested_at || w.created_at) });
+      }
+      for (const proj of (recentProjectsQ.data || []).slice(0, 4)) {
+        feed.push({ icon: Briefcase, color: "#a5b4fc", label: "New job posted", detail: `${proj.name} · ${proj.status}`, time: relTime(proj.created_at) });
+      }
+      feed.sort((a, b) => {
+        const toMs = (t: string) => { const m = t.match(/(\d+)\s*(min|hr|d)/); if (!m) return 0; const n = Number(m[1]); return m[2] === "min" ? n * 60000 : m[2] === "hr" ? n * 3600000 : n * 86400000; };
+        return toMs(a.time) - toMs(b.time);
+      });
+      setActivityFeed(feed.slice(0, 15));
+
+      /* ── Phase 2 Section J: Payment Analytics ── */
+      setPaymentStats({
+        creditAmt:   allTx.filter(t => t.type === "credit").reduce((s, t) => s + Number(t.amount), 0),
+        debitAmt:    allTx.filter(t => t.type === "debit").reduce((s, t) => s + Number(t.amount), 0),
+        creditCount: allTx.filter(t => t.type === "credit").length,
+        debitCount:  allTx.filter(t => t.type === "debit").length,
+      });
+
+      /* ── Phase 2 Section K: Pending Payouts Queue ── */
+      const pendingWd = pendingWdFullQ.data || [];
+      if (pendingWd.length > 0) {
+        const empIds = [...new Set(pendingWd.map(w => w.employee_id))];
+        const { data: empNames } = await supabase.from("profiles").select("id, full_name").in("id", empIds);
+        setPendingPayouts(pendingWd.map(w => ({
+          id: w.id, employee_id: w.employee_id,
+          name: getName((empNames || []).find(p => p.id === w.employee_id)?.full_name),
+          amount: Number(w.amount), method: w.method, requested_at: w.requested_at,
+        })));
+      }
 
       /* ── Section 11: Top Employers ── */
       const empJobsMap: Record<string, number> = {};
@@ -660,11 +804,21 @@ const AdminDashboard = () => {
       {/* ── Revenue Chart + User Growth ── */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div style={{ ...card, padding: "18px" }}>
-          {sectionHeader(<TrendingUp size={14} color="#4ade80" />, "Revenue Analytics", "6 months")}
-          {revenueData.length === 0 ? emptyBox(BarChart3, "No transaction data yet") : (
-            <div style={{ height: 170 }}>
+          {sectionHeader(<TrendingUp size={14} color="#4ade80" />, "Revenue Analytics")}
+          <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
+            {(["day", "week", "month"] as const).map(m => (
+              <button key={m} onClick={() => setRevenueMode(m)}
+                style={{ padding: "4px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer", border: `1px solid ${revenueMode === m ? "#4ade80" : tok.alertBdr}`, background: revenueMode === m ? "rgba(74,222,128,.12)" : "transparent", color: revenueMode === m ? "#4ade80" : tok.cardSub }}>
+                {m === "day" ? "Daily" : m === "week" ? "Weekly" : "Monthly"}
+              </button>
+            ))}
+          </div>
+          {(revenueMode === "month" ? revenueData : revenueMode === "week" ? revWeekData : revDayData).length === 0
+            ? emptyBox(BarChart3, "No transaction data yet")
+            : (
+            <div style={{ height: 160 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+                <AreaChart data={revenueMode === "month" ? revenueData : revenueMode === "week" ? revWeekData : revDayData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
                   <defs>
                     <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#4ade80" stopOpacity={0.35} />
@@ -675,7 +829,7 @@ const AdminDashboard = () => {
                       <stop offset="100%" stopColor={A1} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="month" tick={{ fontSize: 10, fill: tok.chartAxis }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 9, fill: tok.chartAxis }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                   <YAxis tick={{ fontSize: 9, fill: tok.chartAxis }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
                   <Tooltip contentStyle={{ ...tok.chartTip, borderRadius: 12, fontSize: 11 }}
                     formatter={(v: number, n: string) => [`₹${v.toLocaleString("en-IN")}`, n === "revenue" ? "Revenue" : "Commission"]} />
@@ -1305,6 +1459,304 @@ const AdminDashboard = () => {
             ))}
           </div>
         )}
+      </div>
+
+      {/* ══ CATEGORY ANALYTICS + REGION JOB STATS ══ */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+
+        {/* Category Analytics */}
+        <div style={{ ...card, padding: "18px" }}>
+          {sectionHeader(<Tag size={14} color="#fbbf24" />, "Job Category Analytics", "Top categories")}
+          {categoryStats.length === 0 ? emptyBox(Tag, "No category data") : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              {categoryStats.map((c, i) => {
+                const maxC = categoryStats[0]?.count || 1;
+                return (
+                  <div key={c.name} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 11, color: tok.cardSub, width: 16, textAlign: "right", flexShrink: 0 }}>#{i + 1}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: tok.cardText, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: c.color, flexShrink: 0, marginLeft: 8 }}>{c.count}</span>
+                      </div>
+                      <div style={{ height: 5, borderRadius: 3, background: tok.alertBg, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${Math.round(c.count / maxC * 100)}%`, background: c.color, borderRadius: 3 }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* User Retention Tracker */}
+        <div style={{ ...card, padding: "18px" }}>
+          {sectionHeader(<RotateCcw size={14} color="#a5b4fc" />, "User Retention Tracker")}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {[
+              { label: "Active (last 7 days)",     val: retentionStats.active7d,       color: "#4ade80", bg: "rgba(34,197,94,.08)",   border: "rgba(34,197,94,.18)" },
+              { label: "Semi-active (7–30 days)",  val: retentionStats.inactive7to30d, color: "#fbbf24", bg: "rgba(245,158,11,.08)",  border: "rgba(245,158,11,.18)" },
+              { label: "Inactive (30+ days)",      val: retentionStats.inactive30d,    color: "#f87171", bg: "rgba(239,68,68,.08)",   border: "rgba(239,68,68,.18)" },
+              { label: "Never logged in",          val: retentionStats.neverSeen,      color: "#94a3b8", bg: "rgba(100,116,139,.08)", border: "rgba(100,116,139,.18)" },
+            ].map(s => (
+              <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 11, background: s.bg, border: `1px solid ${s.border}` }}>
+                <p style={{ fontSize: 20, fontWeight: 900, color: s.color, margin: 0, width: 42, flexShrink: 0 }}>{s.val}</p>
+                <p style={{ fontSize: 11.5, color: tok.cardText, margin: 0 }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ══ NEW REGISTRATIONS FEED + BANNED ACCOUNTS ══ */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+
+        {/* New Registrations Feed */}
+        <div style={{ ...card, padding: "18px" }}>
+          {sectionHeader(<Calendar size={14} color="#4ade80" />, "New Registrations Feed", "Latest 10")}
+          {latestUsers.length === 0 ? emptyBox(Calendar, "No users yet") : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              {latestUsers.map(u => (
+                <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 11, background: tok.sysRowBg, border: `1px solid ${tok.alertBdr}` }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 9, background: u.user_type === "employee" ? "rgba(99,102,241,.15)" : "rgba(139,92,246,.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    {u.user_type === "employee" ? <Users size={13} color="#a5b4fc" /> : <Building2 size={13} color="#c4b5fd" />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: tok.cardText, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{getName(u.full_name)}</p>
+                    <p style={{ fontSize: 10, color: tok.cardSub, margin: 0 }}>{u.registration_region || "—"} · <span style={{ color: u.user_type === "employee" ? "#a5b4fc" : "#c4b5fd" }}>{u.user_type === "employee" ? "Freelancer" : "Employer"}</span></p>
+                  </div>
+                  <span style={{ fontSize: 10, color: tok.cardSub, flexShrink: 0 }}>{relTime(u.created_at)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <button onClick={() => navigate("/admin/users")} style={{ width: "100%", marginTop: 10, padding: "8px", borderRadius: 9, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            View All Users →
+          </button>
+        </div>
+
+        {/* Banned/Suspended Accounts */}
+        <div style={{ ...card, padding: "18px" }}>
+          {sectionHeader(<Ban size={14} color="#f87171" />, "Banned / Disabled Accounts", disabledUsers.length > 0 ? `${disabledUsers.length} found` : "None", disabledUsers.length > 0 ? "#f87171" : "#4ade80")}
+          {disabledUsers.length === 0 ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px", borderRadius: 12, background: "rgba(34,197,94,.06)", border: "1px solid rgba(34,197,94,.15)" }}>
+              <CheckCircle2 size={18} color="#4ade80" />
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: "#4ade80", margin: 0 }}>No disabled accounts</p>
+                <p style={{ fontSize: 11, color: tok.cardSub, margin: "2px 0 0" }}>All accounts are active.</p>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              {disabledUsers.map(u => (
+                <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 11, background: "rgba(239,68,68,.05)", border: "1px solid rgba(239,68,68,.15)" }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(239,68,68,.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Ban size={13} color="#f87171" />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: tok.cardText, margin: 0 }}>{getName(u.full_name)}</p>
+                    <p style={{ fontSize: 10, color: "#f87171", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.disabled_reason || "No reason given"}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <button onClick={() => navigate("/admin/users")} style={{ width: "100%", marginTop: 10, padding: "8px", borderRadius: 9, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: "#f87171", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            Manage Users →
+          </button>
+        </div>
+      </div>
+
+      {/* ══ MESSAGE ANALYTICS + FRAUD DETECTION ══ */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+
+        {/* Message Analytics */}
+        <div style={{ ...card, padding: "18px" }}>
+          {sectionHeader(<MessageCircle size={14} color="#a5b4fc" />, "Message Analytics")}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+            {[
+              { label: "Total Messages",   val: messageStats.total,  color: "#a5b4fc", icon: MessageCircle },
+              { label: "Unread Messages",  val: messageStats.unread, color: "#fbbf24", icon: Mail },
+              { label: "Active Chat Rooms", val: messageStats.rooms, color: "#4ade80", icon: MessageSquare },
+              { label: "Sent Today",       val: messageStats.today,  color: "#c4b5fd", icon: Zap },
+            ].map(s => (
+              <div key={s.label} style={{ padding: "12px", borderRadius: 11, background: `${s.color}0f`, border: `1px solid ${s.color}22` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 5 }}>
+                  <s.icon size={12} color={s.color} />
+                  <span style={{ fontSize: 10, color: tok.cardSub }}>{s.label}</span>
+                </div>
+                <p style={{ fontSize: 20, fontWeight: 900, color: s.color, margin: 0 }}>{s.val}</p>
+              </div>
+            ))}
+          </div>
+          <button onClick={() => navigate("/admin/messages")} style={{ width: "100%", padding: "8px", borderRadius: 9, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            View All Messages →
+          </button>
+        </div>
+
+        {/* Fraud Detection Panel */}
+        <div style={{ ...card, padding: "18px" }}>
+          {sectionHeader(<AlertTriangle size={14} color="#f87171" />, "Fraud Detection", duplicateIPs.length > 0 ? `${duplicateIPs.length} alerts` : "Clean", duplicateIPs.length > 0 ? "#f87171" : "#4ade80")}
+          {duplicateIPs.length === 0 ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px", borderRadius: 12, background: "rgba(34,197,94,.06)", border: "1px solid rgba(34,197,94,.15)" }}>
+              <Shield size={18} color="#4ade80" />
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: "#4ade80", margin: 0 }}>No duplicate IPs detected</p>
+                <p style={{ fontSize: 11, color: tok.cardSub, margin: "2px 0 0" }}>All registration IPs are unique.</p>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 8px" }}>Multiple accounts from same IP address:</p>
+              {duplicateIPs.map(d => (
+                <div key={d.ip} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 11, background: "rgba(239,68,68,.06)", border: "1px solid rgba(239,68,68,.15)" }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(239,68,68,.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Globe size={13} color="#f87171" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: tok.cardText, margin: 0 }}>{d.ip}</p>
+                    <p style={{ fontSize: 10, color: tok.cardSub, margin: 0 }}>Registration IP</p>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <p style={{ fontSize: 16, fontWeight: 900, color: "#f87171", margin: 0 }}>{d.count}</p>
+                    <p style={{ fontSize: 10, color: tok.cardSub, margin: 0 }}>accounts</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <button onClick={() => navigate("/admin/users")} style={{ width: "100%", marginTop: 10, padding: "8px", borderRadius: 9, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: "#f87171", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            Review Users →
+          </button>
+        </div>
+      </div>
+
+      {/* ══ RECOVERY REQUESTS TRACKER ══ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<RotateCcw size={14} color="#fbbf24" />, "Recovery Requests Tracker", `${recoveryData.total} total`)}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 14 }}>
+          {[
+            { label: "Open / Pending", val: recoveryData.open,     color: "#fbbf24", bg: "rgba(245,158,11,.08)",  border: "rgba(245,158,11,.18)" },
+            { label: "Resolved",       val: recoveryData.resolved, color: "#4ade80", bg: "rgba(34,197,94,.08)",   border: "rgba(34,197,94,.18)" },
+            { label: "Total",          val: recoveryData.total,    color: "#a5b4fc", bg: "rgba(99,102,241,.08)",  border: "rgba(99,102,241,.18)" },
+            { label: "Total Held Amt", val: 0,                     color: "#f87171", bg: "rgba(239,68,68,.08)",   border: "rgba(239,68,68,.18)", fmtAmt: recoveryData.totalAmt },
+          ].map(s => (
+            <div key={s.label} style={{ padding: "12px", borderRadius: 11, background: s.bg, border: `1px solid ${s.border}`, textAlign: "center" }}>
+              <p style={{ fontSize: 18, fontWeight: 900, color: s.color, margin: 0 }}>
+                {"fmtAmt" in s ? fmt(s.fmtAmt!) : s.val}
+              </p>
+              <p style={{ fontSize: 10.5, color: tok.cardSub, margin: "3px 0 0" }}>{s.label}</p>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "rgba(245,158,11,.06)", border: "1px solid rgba(245,158,11,.15)" }}>
+            <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>Resolution rate</p>
+            <div style={{ height: 5, borderRadius: 3, background: tok.alertBg, marginTop: 6, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: recoveryData.total > 0 ? `${Math.round(recoveryData.resolved / recoveryData.total * 100)}%` : "0%", background: "#4ade80", borderRadius: 3 }} />
+            </div>
+            <p style={{ fontSize: 12, fontWeight: 700, color: "#4ade80", margin: "4px 0 0" }}>
+              {recoveryData.total > 0 ? `${Math.round(recoveryData.resolved / recoveryData.total * 100)}%` : "N/A"}
+            </p>
+          </div>
+          <button onClick={() => navigate("/admin/recovery-requests")} style={{ padding: "10px 18px", borderRadius: 10, background: "rgba(245,158,11,.08)", border: "1px solid rgba(245,158,11,.2)", color: "#fbbf24", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            Manage →
+          </button>
+        </div>
+      </div>
+
+      {/* ══ RECENT ACTIVITY LOG ══ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Activity size={14} color="#a5b4fc" />, "Recent Activity Log", `${activityFeed.length} events`)}
+        {activityFeed.length === 0 ? emptyBox(Activity, "No recent activity") : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+            {activityFeed.map((e, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", borderRadius: 11, background: tok.sysRowBg, border: `1px solid ${tok.alertBdr}` }}>
+                <div style={{ width: 30, height: 30, borderRadius: 9, background: `${e.color}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <e.icon size={13} color={e.color} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: tok.cardText, margin: 0 }}>{e.label}</p>
+                  <p style={{ fontSize: 10.5, color: tok.cardSub, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.detail}</p>
+                </div>
+                <span style={{ fontSize: 10, color: tok.cardSub, flexShrink: 0 }}>{e.time}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ══ PAYMENT ANALYTICS + PENDING PAYOUTS ══ */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+
+        {/* Payment Analytics */}
+        <div style={{ ...card, padding: "18px" }}>
+          {sectionHeader(<ArrowLeftRight size={14} color="#4ade80" />, "Payment Analytics", "Last 6 months")}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+            {[
+              { label: "Total Credits",  val: paymentStats.creditAmt,   color: "#4ade80", sub: `${paymentStats.creditCount} transactions`, icon: TrendingUp },
+              { label: "Total Debits",   val: paymentStats.debitAmt,    color: "#f87171", sub: `${paymentStats.debitCount} transactions`, icon: TrendingDown },
+            ].map(s => (
+              <div key={s.label} style={{ padding: "14px", borderRadius: 12, background: `${s.color}0e`, border: `1px solid ${s.color}22` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+                  <s.icon size={13} color={s.color} />
+                  <span style={{ fontSize: 11, color: tok.cardSub }}>{s.label}</span>
+                </div>
+                <p style={{ fontSize: 18, fontWeight: 900, color: s.color, margin: 0 }}>{fmt(s.val)}</p>
+                <p style={{ fontSize: 10, color: tok.cardSub, margin: "3px 0 0" }}>{s.sub}</p>
+              </div>
+            ))}
+          </div>
+          {paymentStats.creditCount + paymentStats.debitCount > 0 && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                <span style={{ fontSize: 11, color: tok.cardSub }}>Credit/Debit ratio</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80" }}>
+                  {Math.round(paymentStats.creditCount / (paymentStats.creditCount + paymentStats.debitCount) * 100)}% credits
+                </span>
+              </div>
+              <div style={{ height: 8, borderRadius: 4, background: "rgba(239,68,68,.2)", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${Math.round(paymentStats.creditCount / (paymentStats.creditCount + paymentStats.debitCount) * 100)}%`, background: "#4ade80", borderRadius: 4 }} />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Pending Payouts Queue */}
+        <div style={{ ...card, padding: "18px" }}>
+          {sectionHeader(<Package size={14} color="#fbbf24" />, "Pending Payouts Queue", `${pendingPayouts.length} pending`)}
+          {pendingPayouts.length === 0 ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px", borderRadius: 12, background: "rgba(34,197,94,.06)", border: "1px solid rgba(34,197,94,.15)" }}>
+              <CheckCircle2 size={18} color="#4ade80" />
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: "#4ade80", margin: 0 }}>No pending payouts</p>
+                <p style={{ fontSize: 11, color: tok.cardSub, margin: "2px 0 0" }}>All withdrawals are processed.</p>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              {pendingPayouts.slice(0, 8).map(p => (
+                <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 11, background: tok.sysRowBg, border: `1px solid ${tok.alertBdr}` }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(245,158,11,.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Wallet size={13} color="#fbbf24" />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: tok.cardText, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
+                    <p style={{ fontSize: 10, color: tok.cardSub, margin: 0 }}>{p.method?.toUpperCase()} · {relTime(p.requested_at)}</p>
+                  </div>
+                  <p style={{ fontSize: 14, fontWeight: 900, color: "#fbbf24", margin: 0, flexShrink: 0 }}>{fmt(p.amount)}</p>
+                </div>
+              ))}
+              {pendingPayouts.length > 8 && (
+                <p style={{ fontSize: 11, color: tok.cardSub, textAlign: "center", margin: "4px 0 0" }}>+{pendingPayouts.length - 8} more pending</p>
+              )}
+            </div>
+          )}
+          <button onClick={() => navigate("/admin/withdrawals")} style={{ width: "100%", marginTop: 10, padding: "8px", borderRadius: 9, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: "#fbbf24", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            Process Payouts →
+          </button>
+        </div>
       </div>
 
       {/* ── Quick Access ── */}
