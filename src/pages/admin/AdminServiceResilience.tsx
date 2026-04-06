@@ -21,7 +21,7 @@ function load<T>(key:string,seed:()=>T[]): T[] {
   try { const d=localStorage.getItem(key); if(d) return JSON.parse(d); } catch {}
 const SVC_RES_KEY="admin_service_resilience_v1";
 function seedServiceConfigs():ServiceConfig[]{return[
-  {id:"sc1",name:"Supabase REST API",category:"database",url:"https://maysttckdfnnzvfeujaj.supabase.co/rest/v1/",timeoutMs:5000,maxRetries:3,hasFallback:true,fallbackService:"Cached data",status:"healthy",avgLatencyMs:45,lastChecked:new Date(Date.now()-30000).toISOString(),failCount24h:0,autoFailover:true},
+  {id:"sc1",name:"Supabase REST API",category:"database",url:`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/`,timeoutMs:5000,maxRetries:3,hasFallback:true,fallbackService:"Cached data",status:"healthy",avgLatencyMs:45,lastChecked:new Date(Date.now()-30000).toISOString(),failCount24h:0,autoFailover:true},
   {id:"sc2",name:"OneSignal Push API",category:"notifications",url:"https://onesignal.com/api/v1/notifications",timeoutMs:8000,maxRetries:3,hasFallback:false,status:"healthy",avgLatencyMs:220,lastChecked:new Date(Date.now()-60000).toISOString(),failCount24h:2,autoFailover:false},
   {id:"sc3",name:"Payment Gateway",category:"payments",url:"https://api.razorpay.com/v1/",timeoutMs:10000,maxRetries:2,hasFallback:true,fallbackService:"Cashfree",status:"degraded",avgLatencyMs:1240,lastChecked:new Date(Date.now()-120000).toISOString(),failCount24h:8,autoFailover:false},
 ];}

@@ -28,7 +28,7 @@ const PROTECTED = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "DATABASE_URL", "VITE_SU
 
 function seedVars(): EnvVar[] {
   return [
-    { id: "v1", name: "VITE_SUPABASE_URL", value: "https://maysttckdfnnzvfeujaj.supabase.co", description: "Supabase project URL", environment: "all", isEnabled: true, isSensitive: false, createdAt: new Date(Date.now() - 864e5 * 30).toISOString(), updatedAt: new Date().toISOString(), history: [] },
+    { id: "v1", name: "VITE_SUPABASE_URL", value: import.meta.env.VITE_SUPABASE_URL, description: "Supabase project URL", environment: "all", isEnabled: true, isSensitive: false, createdAt: new Date(Date.now() - 864e5 * 30).toISOString(), updatedAt: new Date().toISOString(), history: [] },
     { id: "v2", name: "VITE_SUPABASE_ANON_KEY", value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.•••••••••••••••••", description: "Supabase public anon key", environment: "all", isEnabled: true, isSensitive: true, createdAt: new Date(Date.now() - 864e5 * 30).toISOString(), updatedAt: new Date().toISOString(), history: [] },
     { id: "v3", name: "ONESIGNAL_APP_ID", value: "•••••••••••••••••", description: "OneSignal push notifications App ID", environment: "production", isEnabled: true, isSensitive: true, createdAt: new Date(Date.now() - 864e5 * 14).toISOString(), updatedAt: new Date().toISOString(), history: [] },
     { id: "v4", name: "PLATFORM_COMMISSION_RATE", value: "10", description: "Platform commission percentage", environment: "all", isEnabled: true, isSensitive: false, createdAt: new Date(Date.now() - 864e5 * 7).toISOString(), updatedAt: new Date().toISOString(), history: [] },

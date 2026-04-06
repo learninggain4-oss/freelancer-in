@@ -12,7 +12,7 @@ interface ExternalService{id:string;name:string;primary:string;backup:string;sta
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const EXT_FAILOVER_KEY="admin_ext_failover_v1";
 function seedExtServices():ExternalService[]{return[
-  {id:"ef1",name:"Supabase DB",primary:"https://maysttckdfnnzvfeujaj.supabase.co",backup:"https://backup.supabase.co",status:"primary-active",autoSwitch:true,checkIntervalSec:30,lastChecked:new Date(Date.now()-30000).toISOString()},
+  {id:"ef1",name:"Supabase DB",primary:import.meta.env.VITE_SUPABASE_URL,backup:"https://backup.supabase.co",status:"primary-active",autoSwitch:true,checkIntervalSec:30,lastChecked:new Date(Date.now()-30000).toISOString()},
   {id:"ef2",name:"OneSignal",primary:"https://onesignal.com/api/v1/",backup:"https://fcm.googleapis.com",status:"primary-active",autoSwitch:true,checkIntervalSec:60,lastChecked:new Date(Date.now()-60000).toISOString()},
   {id:"ef3",name:"Payment Gateway",primary:"https://api.razorpay.com",backup:"https://api.cashfree.com",status:"primary-active",autoSwitch:false,checkIntervalSec:120,lastChecked:new Date(Date.now()-120000).toISOString()},
 ];}

@@ -16,12 +16,12 @@ interface ServiceHealth { id:string; name:string; category:string; url:string; s
 interface RecoveryStep { id:string; step:number; title:string; description:string; estimatedMin:number; automated:boolean; }
 
 const SERVICES: ServiceHealth[] = [
-  { id:"sv1", name:"Supabase DB",         category:"Database",      url:"https://maysttckdfnnzvfeujaj.supabase.co", status:"checking", uptime:"99.94%", isSPOF:true,  backupAvailable:true  },
-  { id:"sv2", name:"Supabase Auth",        category:"Auth",          url:"https://maysttckdfnnzvfeujaj.supabase.co/auth/v1/health", status:"checking", uptime:"99.97%", isSPOF:true,  backupAvailable:false },
+  { id:"sv1", name:"Supabase DB",         category:"Database",      url:import.meta.env.VITE_SUPABASE_URL, status:"checking", uptime:"99.94%", isSPOF:true,  backupAvailable:true  },
+  { id:"sv2", name:"Supabase Auth",        category:"Auth",          url:`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/health`, status:"checking", uptime:"99.97%", isSPOF:true,  backupAvailable:false },
   { id:"sv3", name:"Razorpay Gateway",     category:"Payments",      url:"https://razorpay.com",                     status:"checking", uptime:"99.80%", isSPOF:false, backupAvailable:true  },
   { id:"sv4", name:"OneSignal Push",       category:"Notifications", url:"https://onesignal.com",                    status:"checking", uptime:"99.70%", isSPOF:false, backupAvailable:true  },
   { id:"sv5", name:"Lovable Hosting",       category:"Hosting",       url:"https://lovable.app",                      status:"checking", uptime:"99.90%", isSPOF:false, backupAvailable:true  },
-  { id:"sv6", name:"Supabase Storage",     category:"Storage",       url:"https://maysttckdfnnzvfeujaj.supabase.co/storage/v1/", status:"checking", uptime:"99.85%", isSPOF:false, backupAvailable:true },
+  { id:"sv6", name:"Supabase Storage",     category:"Storage",       url:`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/`, status:"checking", uptime:"99.85%", isSPOF:false, backupAvailable:true },
 ];
 
 const RECOVERY: RecoveryStep[] = [

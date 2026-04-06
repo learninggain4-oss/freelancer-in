@@ -75,7 +75,7 @@ export default function AdminServerMonitor() {
   };
   const measureApi = async () => {
     const t = Date.now();
-    try { await fetch("https://maysttckdfnnzvfeujaj.supabase.co/rest/v1/", { signal: AbortSignal.timeout(5000) }); setApiLatency(Date.now() - t); }
+    try { await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/`, { signal: AbortSignal.timeout(5000) }); setApiLatency(Date.now() - t); }
     catch { setApiLatency(-1); }
   };
 

@@ -34,7 +34,7 @@ function load(): DbConnection[] {
   } catch { /* */ }
   const def: DbConnection = {
     id: "default", name: "Primary Supabase", provider: "supabase",
-    projectUrl: "https://maysttckdfnnzvfeujaj.supabase.co",
+    projectUrl: import.meta.env.VITE_SUPABASE_URL,
     anonKey: "••••••••••••••••••••••••", dbName: "postgres", username: "postgres",
     environment: "production", isActive: true, isPrimary: true,
     testStatus: "ok", lastTested: new Date().toISOString(),

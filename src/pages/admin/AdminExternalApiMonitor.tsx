@@ -12,7 +12,7 @@ interface ApiService{id:string;name:string;provider:string;usageToday:number;lim
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const EXT_API_KEY="admin_ext_apis_v1";
 function seedExtApis():any[]{return[
-  {id:"ea1",name:"Supabase",url:"https://maysttckdfnnzvfeujaj.supabase.co/rest/v1/",status:"healthy",avgMs:45,uptime:99.9,lastCheck:new Date(Date.now()-60000).toISOString()},
+  {id:"ea1",name:"Supabase",url:`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/`,status:"healthy",avgMs:45,uptime:99.9,lastCheck:new Date(Date.now()-60000).toISOString()},
   {id:"ea2",name:"OneSignal",url:"https://onesignal.com/api/v1/",status:"healthy",avgMs:220,uptime:99.5,lastCheck:new Date(Date.now()-60000).toISOString()},
   {id:"ea3",name:"GitHub API",url:"https://api.github.com",status:"healthy",avgMs:180,uptime:99.8,lastCheck:new Date(Date.now()-60000).toISOString()},
 ];}

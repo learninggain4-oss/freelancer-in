@@ -38,9 +38,9 @@ const defaultAlerts: AlertEvent[] = [
 ];
 
 const defaultServices: ServiceDep[] = [
-  { id: "s1", name: "Supabase Database", url: "https://maysttckdfnnzvfeujaj.supabase.co",              category: "Database",      status: "unknown" },
-  { id: "s2", name: "Supabase Auth",     url: "https://maysttckdfnnzvfeujaj.supabase.co/auth/v1/health", category: "Auth",         status: "unknown" },
-  { id: "s3", name: "Supabase REST API", url: "https://maysttckdfnnzvfeujaj.supabase.co/rest/v1/",     category: "API",           status: "unknown" },
+  { id: "s1", name: "Supabase Database", url: import.meta.env.VITE_SUPABASE_URL,              category: "Database",      status: "unknown" },
+  { id: "s2", name: "Supabase Auth",     url: `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/health`, category: "Auth",         status: "unknown" },
+  { id: "s3", name: "Supabase REST API", url: `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/`,     category: "API",           status: "unknown" },
   { id: "s4", name: "OneSignal Push",    url: "https://onesignal.com",                                  category: "Notifications", status: "unknown" },
   { id: "s5", name: "Razorpay/Payments", url: "https://razorpay.com",                                   category: "Payments",      status: "unknown" },
   { id: "s6", name: "Lovable Hosting",    url: "https://lovable.app",                                    category: "Hosting",       status: "unknown" },

@@ -3,7 +3,7 @@
  * Uses the CDN-loaded OneSignalDeferred global.
  */
 
-const ONESIGNAL_APP_ID = "c2875b6b-8c7c-4190-b65b-b424dcd3c67d";
+const ONESIGNAL_APP_ID = import.meta.env.VITE_ONESIGNAL_APP_ID as string || "c2875b6b-8c7c-4190-b65b-b424dcd3c67d";
 const ONESIGNAL_READY_TIMEOUT_MS = 15000;
 
 const oneSignalInitOptions = {

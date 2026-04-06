@@ -1,5 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+
 export async function getToken(): Promise<string> {
   let { data: { session } } = await supabase.auth.getSession();
   if (!session?.access_token) {
@@ -18,10 +21,11 @@ export async function callEdgeFunction(
   },
 ): Promise<Response> {
   const method = options?.method ?? (options?.body ? "POST" : "GET");
-  const url = `/functions/v1/${functionName}`;
+  const url = `${SUPABASE_URL}/functions/v1/${functionName}`;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "apikey": SUPABASE_ANON_KEY,
   };
 
   if (options?.token) {

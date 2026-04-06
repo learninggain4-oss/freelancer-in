@@ -11,7 +11,7 @@ interface ApiConfig{id:string;name:string;endpoint:string;timeoutMs:number;retri
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const API_TIMEOUT_KEY="admin_api_timeout_v1";
 function seedApiConfigs():ApiConfig[]{return[
-  {id:"ac1",name:"Supabase REST",endpoint:"https://maysttckdfnnzvfeujaj.supabase.co/rest/v1/",timeoutMs:5000,retries:2,avgLatencyMs:45,timeouts24h:0,status:"healthy"},
+  {id:"ac1",name:"Supabase REST",endpoint:`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/`,timeoutMs:5000,retries:2,avgLatencyMs:45,timeouts24h:0,status:"healthy"},
   {id:"ac2",name:"OneSignal Push API",endpoint:"https://onesignal.com/api/v1/notifications",timeoutMs:8000,retries:3,avgLatencyMs:220,timeouts24h:1,status:"healthy"},
   {id:"ac3",name:"Email SMTP",endpoint:"smtp.gmail.com:587",timeoutMs:10000,retries:2,avgLatencyMs:850,timeouts24h:3,status:"slow"},
 ];}

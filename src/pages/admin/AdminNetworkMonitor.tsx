@@ -19,7 +19,7 @@ interface NetEndpoint{id:string;name:string;url:string;type:string;latencyMs:num
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
 const NETMON_KEY="admin_network_monitor_v1";
 function seedEndpoints3():NetEndpoint[]{return[
-  {id:"ne1",name:"Supabase REST",url:"https://maysttckdfnnzvfeujaj.supabase.co/rest/v1/",type:"api",latencyMs:45,status:"online",lastCheck:new Date(Date.now()-30000).toISOString(),retryCount:0,failoverActive:false},
+  {id:"ne1",name:"Supabase REST",url:`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/`,type:"api",latencyMs:45,status:"online",lastCheck:new Date(Date.now()-30000).toISOString(),retryCount:0,failoverActive:false},
   {id:"ne2",name:"Freelan.space Web",url:"https://www.freelan.space",type:"frontend",latencyMs:180,status:"online",lastCheck:new Date(Date.now()-30000).toISOString(),retryCount:0,failoverActive:false},
   {id:"ne3",name:"OneSignal API",url:"https://onesignal.com/api/v1/",type:"api",latencyMs:220,status:"online",lastCheck:new Date(Date.now()-60000).toISOString(),retryCount:0,failoverActive:false},
   {id:"ne4",name:"GitHub API",url:"https://api.github.com",type:"api",latencyMs:340,status:"degraded",lastCheck:new Date(Date.now()-60000).toISOString(),retryCount:2,failoverActive:false},

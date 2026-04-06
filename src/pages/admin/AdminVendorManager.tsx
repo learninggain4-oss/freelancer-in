@@ -72,9 +72,9 @@ export default function AdminVendorManager() {
     const results = await Promise.allSettled(
       providers.map(async p => {
         const urls: Record<string,string> = {
-          "Supabase":"https://maysttckdfnnzvfeujaj.supabase.co",
-          "Supabase Auth":"https://maysttckdfnnzvfeujaj.supabase.co/auth/v1/health",
-          "Supabase Storage":"https://maysttckdfnnzvfeujaj.supabase.co/storage/v1/",
+          "Supabase":import.meta.env.VITE_SUPABASE_URL,
+          "Supabase Auth":`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/health`,
+          "Supabase Storage":`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/`,
           "Razorpay":"https://razorpay.com","OneSignal":"https://onesignal.com","Lovable":"https://lovable.app",
         };
         const url = urls[p.primaryName] || "https://example.com";
