@@ -227,6 +227,16 @@ const AdminTimezoneManager = lazy(() => import("./pages/admin/AdminTimezoneManag
 const AdminTrafficManagement = lazy(() => import("./pages/admin/AdminTrafficManagement"));
 const AdminWebhookMonitor = lazy(() => import("./pages/admin/AdminWebhookMonitor"));
 const AdminXssProtection = lazy(() => import("./pages/admin/AdminXssProtection"));
+const AdminCommissionManagement = lazy(() => import("./pages/admin/AdminCommissionManagement"));
+const AdminDisputeCenter = lazy(() => import("./pages/admin/AdminDisputeCenter"));
+const AdminBadgeManagement = lazy(() => import("./pages/admin/AdminBadgeManagement"));
+const AdminCoinManagement = lazy(() => import("./pages/admin/AdminCoinManagement"));
+const AdminGstTaxReports = lazy(() => import("./pages/admin/AdminGstTaxReports"));
+const AdminPromoManagement = lazy(() => import("./pages/admin/AdminPromoManagement"));
+const AdminProjectAnalytics = lazy(() => import("./pages/admin/AdminProjectAnalytics"));
+const AdminContentModeration = lazy(() => import("./pages/admin/AdminContentModeration"));
+const AdminAffiliateManagement = lazy(() => import("./pages/admin/AdminAffiliateManagement"));
+const AdminFeeConfiguration = lazy(() => import("./pages/admin/AdminFeeConfiguration"));
 const WalletTypes = lazy(() => import("./pages/WalletTypes"));
 const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));
@@ -662,6 +672,16 @@ const AppContent = () => {
               <Route path="traffic-management" element={<AdminTrafficManagement />} />
               <Route path="webhook-monitor" element={<AdminWebhookMonitor />} />
               <Route path="xss-protection" element={<AdminXssProtection />} />
+              <Route path="commission-management" element={<AdminCommissionManagement />} />
+              <Route path="dispute-center" element={<AdminDisputeCenter />} />
+              <Route path="badge-management" element={<AdminBadgeManagement />} />
+              <Route path="coin-management" element={<AdminCoinManagement />} />
+              <Route path="gst-tax-reports" element={<AdminGstTaxReports />} />
+              <Route path="promo-management" element={<AdminPromoManagement />} />
+              <Route path="project-analytics" element={<AdminProjectAnalytics />} />
+              <Route path="content-moderation" element={<AdminContentModeration />} />
+              <Route path="affiliate-management" element={<AdminAffiliateManagement />} />
+              <Route path="fee-configuration" element={<AdminFeeConfiguration />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
