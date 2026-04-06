@@ -311,18 +311,38 @@ export const useMyConversation = () => {
   });
 };
 
-/** Admin: list all support conversations with user info and last message */
+/** Admin: delete a support conversation and all its messages directly via Supabase client */
 export const useDeleteConversation = () => {
   const queryClient = useQueryClient();
   const AQK = ["admin-support-conversations"];
 
   const deleteConversation = async (conversationId: string) => {
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token ?? "";
-    const res = await callEdgeFunction("support-delete-conversation", { method: "DELETE", body: { conversationId }, token });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error || "Delete failed");
-    // Optimistically remove from cache
+    // Delete reactions first (if FK constraints exist)
+    const { data: msgIds } = await supabase
+      .from("support_messages")
+      .select("id")
+      .eq("conversation_id", conversationId);
+
+    if (msgIds && msgIds.length > 0) {
+      const ids = msgIds.map((m: any) => m.id);
+      await supabase.from("support_reactions").delete().in("message_id", ids);
+    }
+
+    // Delete all messages in the conversation
+    const { error: msgErr } = await supabase
+      .from("support_messages")
+      .delete()
+      .eq("conversation_id", conversationId);
+    if (msgErr) throw new Error("Failed to delete messages: " + msgErr.message);
+
+    // Delete the conversation itself
+    const { error: convErr } = await supabase
+      .from("support_conversations")
+      .delete()
+      .eq("id", conversationId);
+    if (convErr) throw new Error("Failed to delete conversation: " + convErr.message);
+
+    // Remove from cache
     queryClient.setQueryData(AQK, (old: any[]) =>
       (old || []).filter((c: any) => c.id !== conversationId)
     );
