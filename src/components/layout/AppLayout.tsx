@@ -381,6 +381,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
     { label: "Requests",      icon: FileText,         path: `${basePath}/requests` },
     { label: "Attendance",    icon: ClipboardCheck,   path: `${basePath}/attendance` },
     { label: "My Wallet",     icon: Wallet,           path: `${basePath}/wallet` },
+    { label: "My Profile",    icon: UserCircle,       path: `${basePath}/profile` },
     { label: "Services",      icon: Layers,           path: `${basePath}/profile/services` },
     { label: "Portfolio",     icon: Star,             path: `${basePath}/portfolio` },
     { label: "Help & Support",icon: HelpCircle,       path: `${basePath}/help-support` },
@@ -390,6 +391,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
     { label: "My Projects",   icon: Briefcase,        path: `${basePath}/projects` },
     { label: "Attendance",    icon: ClipboardCheck,   path: `${basePath}/attendance` },
     { label: "My Wallet",     icon: Wallet,           path: `${basePath}/wallet` },
+    { label: "My Profile",    icon: UserCircle,       path: `${basePath}/profile` },
     { label: "Help & Support",icon: HelpCircle,       path: `${basePath}/help-support` },
     { label: "Settings",      icon: Settings,         path: `${basePath}/settings` },
   ];
