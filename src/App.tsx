@@ -260,7 +260,6 @@ const AdminBannerManager = lazy(() => import("./pages/admin/AdminBannerManager")
 const AdminHolidayCalendar = lazy(() => import("./pages/admin/AdminHolidayCalendar"));
 const AdminRateCards = lazy(() => import("./pages/admin/AdminRateCards"));
 const AdminActivityLog = lazy(() => import("./pages/admin/AdminActivityLog"));
-const AdminFeatureFlags = lazy(() => import("./pages/admin/AdminFeatureFlags"));
 const WalletTypes = lazy(() => import("./pages/WalletTypes"));
 const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));
@@ -729,7 +728,6 @@ const AppContent = () => {
               <Route path="holiday-calendar" element={<AdminHolidayCalendar />} />
               <Route path="rate-cards" element={<AdminRateCards />} />
               <Route path="activity-log" element={<AdminActivityLog />} />
-              <Route path="feature-flags" element={<AdminFeatureFlags />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
