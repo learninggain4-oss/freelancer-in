@@ -105,7 +105,7 @@ export default function AdminIPDeviceMonitor() {
       os: isAndroid ? "Android" : isIOS ? "iOS" : "Windows",
       browser: isChrome ? "Chrome" : isFirefox ? "Firefox" : "Other",
       status: "clean",
-      lastSeen: timeAgo(v.created_at),
+      lastSeen: timeAgo(v.visited_at),
       logins: 1,
     };
   });
