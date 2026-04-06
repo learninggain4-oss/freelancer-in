@@ -137,7 +137,7 @@ const AdminMilestoneManagement = () => {
               <h2 style={{ fontWeight:800,fontSize:17,color:T.text,margin:0 }}>Milestone Details</h2>
               <button onClick={()=>setSelected(null)} style={{ background:"none",border:"none",cursor:"pointer",color:T.sub }}><X size={20}/></button>
             </div>
-            {[["Project",selected.projectTitle],["Milestone",selected.title],["Freelancer",selected.freelancerName],["Employer",selected.employerName],["Amount",`₹${selected.amount.toLocaleString("en-IN")}`],["Due Date",safeFmt(selected.dueDate,"dd MMM yyyy")],["Status",STATUS_META[selected.status].label],..selected.submittedAt?[["Submitted",safeFmt(selected.submittedAt,"dd MMM yyyy")]]:[]].map(([k,v])=>(
+            {[["Project",selected.projectTitle],["Milestone",selected.title],["Freelancer",selected.freelancerName],["Employer",selected.employerName],["Amount",`₹${selected.amount.toLocaleString("en-IN")}`],["Due Date",safeFmt(selected.dueDate,"dd MMM yyyy")],["Status",STATUS_META[selected.status].label],...selected.submittedAt?[["Submitted",safeFmt(selected.submittedAt,"dd MMM yyyy")]]:[]].map(([k,v])=>(
               <div key={k} style={{ display:"flex",gap:12,marginBottom:8 }}>
                 <span style={{ fontSize:12,color:T.sub,width:100,flexShrink:0 }}>{k}</span>
                 <span style={{ fontSize:13,color:T.text,fontWeight:600 }}>{v}</span>
