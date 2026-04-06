@@ -12,13 +12,6 @@ import {
   Eye, ClipboardList, TrendingDown, Monitor, Bell,
 } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
-import AdminParticles from "@/components/admin/AdminParticles";
-import AdminTiltCard from "@/components/admin/AdminTiltCard";
-import AdminCountUp from "@/components/admin/AdminCountUp";
-import AdminScrollReveal from "@/components/admin/AdminScrollReveal";
-import AdminProgressRing from "@/components/admin/AdminProgressRing";
-import AdminTableSpotlight from "@/components/admin/AdminTableSpotlight";
-import AdminFlipNumber from "@/components/admin/AdminFlipNumber";
 import {
   AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis,
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
@@ -296,10 +289,9 @@ const AdminDashboard = () => {
     <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
 
       {/* ── Hero Section ── */}
-      <div className="admin-sweep" style={{ position: "relative", overflow: "hidden", borderRadius: 20, padding: "26px 28px 22px", background: tok.heroGrad, border: `1px solid ${tok.heroBdr}` }}>
-        <AdminParticles count={32} />
-        <div className="admin-float-slow admin-blob" style={{ position: "absolute", top: -20, right: -20, width: 140, height: 140, background: tok.orbA, filter: "blur(30px)" }} />
-        <div className="admin-float-delay" style={{ position: "absolute", bottom: -30, left: 60, width: 100, height: 100, borderRadius: "50%", background: tok.orbB, filter: "blur(20px)" }} />
+      <div style={{ position: "relative", overflow: "hidden", borderRadius: 20, padding: "26px 28px 22px", background: tok.heroGrad, border: `1px solid ${tok.heroBdr}` }}>
+        <div style={{ position: "absolute", top: -20, right: -20, width: 140, height: 140, background: tok.orbA, filter: "blur(30px)" }} />
+        <div style={{ position: "absolute", bottom: -30, left: 60, width: 100, height: 100, borderRadius: "50%", background: tok.orbB, filter: "blur(20px)" }} />
 
         <div style={{ position: "relative", zIndex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
@@ -307,12 +299,12 @@ const AdminDashboard = () => {
               <Shield size={22} color="white" />
             </div>
             <div>
-              <h1 className="admin-grad-text admin-section-title" style={{ fontSize: 21, fontWeight: 900, letterSpacing: "-0.5px", margin: 0 }}>Super Admin Dashboard</h1>
+              <h1 style={{ fontSize: 21, fontWeight: 900, letterSpacing: "-0.5px", margin: 0, color: "white" }}>Super Admin Dashboard</h1>
               <p style={{ fontSize: 11.5, color: tok.cardSub, marginTop: 2, margin: 0 }}>Enterprise control center — real-time platform management</p>
             </div>
             <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: "rgba(34,197,94,.18)", border: "1px solid rgba(34,197,94,.3)" }}>
-                <div className="admin-pulse-dot" style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e" }} />
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e" }} />
                 <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 700 }}>All Systems Live</span>
               </div>
               <button onClick={() => navigate("/admin/server-monitor")}
@@ -330,18 +322,15 @@ const AdminDashboard = () => {
               { label: "Revenue",     value: totalRev > 0 ? fmt(totalRev) : "₹14.6L", icon: IndianRupee, color: "#4ade80", isNum: false },
               { label: "Fraud Alerts",value: 4,                             icon: ShieldAlert,  color: "#f87171", isNum: true },
             ].map(s => (
-              <AdminTiltCard key={s.label} intensity={8}
-                style={{ padding: "12px 14px", borderRadius: 14, background: tok.statBox, border: `1px solid ${tok.statBdr}` }}>
+              <div key={s.label} style={{ padding: "12px 14px", borderRadius: 14, background: tok.statBox, border: `1px solid ${tok.statBdr}` }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
                   <s.icon size={13} style={{ color: s.color }} />
                   <span style={{ fontSize: 10.5, color: tok.statSub }}>{s.label}</span>
                 </div>
                 <p style={{ fontSize: 20, fontWeight: 900, color: tok.statTxt, margin: 0 }}>
-                  {s.isNum
-                    ? <AdminFlipNumber value={typeof s.value === "number" ? s.value : 0} />
-                    : s.value}
+                  {typeof s.value === "number" ? s.value.toLocaleString() : s.value}
                 </p>
-              </AdminTiltCard>
+              </div>
             ))}
           </div>
         </div>
@@ -350,10 +339,9 @@ const AdminDashboard = () => {
       {/* ── 10 Enterprise Summary Cards ── */}
       <div style={{ opacity: loaded ? 1 : 0, transform: loaded ? "none" : "translateY(12px)", transition: "all .4s ease" }}>
         {sectionHeader(<BarChart3 size={14} color={A1} />, "Platform Overview", "Live Data", "#4ade80")}
-        <div className="admin-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(155px, 1fr))", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(155px, 1fr))", gap: 12 }}>
           {topCards.map(c => (
-            <AdminTiltCard key={c.label} intensity={12} glare
-              className="admin-stat-card admin-grad-border"
+            <div key={c.label}
               style={{ ...card, padding: "16px", cursor: "pointer", border: (c as any).urgent ? "1px solid rgba(239,68,68,.3)" : `1px solid ${tok.cardBdr}` }}
               onClick={() => navigate(c.path)}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
@@ -365,18 +353,16 @@ const AdminDashboard = () => {
                 </span>
               </div>
               <p style={{ fontWeight: 900, color: tok.cardText, fontSize: typeof c.value === "string" ? 15 : 22, letterSpacing: "-0.5px", margin: 0 }}>
-                {typeof c.value === "number"
-                  ? <AdminFlipNumber value={c.value} />
-                  : c.value}
+                {typeof c.value === "number" ? c.value.toLocaleString() : c.value}
               </p>
               <p style={{ fontSize: 10.5, color: tok.cardSub, marginTop: 3, margin: "3px 0 0" }}>{c.label}</p>
               {(c as any).urgent && (
                 <div style={{ marginTop: 7, display: "flex", alignItems: "center", gap: 4 }}>
-                  <div className="admin-pulse-dot" style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444" }} />
+                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444" }} />
                   <span style={{ fontSize: 9.5, color: "#ef4444", fontWeight: 600 }}>Needs attention</span>
                 </div>
               )}
-            </AdminTiltCard>
+            </div>
           ))}
         </div>
       </div>
@@ -465,21 +451,19 @@ const AdminDashboard = () => {
         </div>
 
         {/* Resource gauges — animated progress rings */}
-        <div className="admin-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 16 }}>
           {[
             { label: "CPU",    icon: Cpu,       pct: cpuUsage,  color: cpuUsage  > 80 ? "#f87171" : cpuUsage  > 60 ? "#fbbf24" : "#4ade80" },
             { label: "Memory", icon: Monitor,   pct: memUsage,  color: memUsage  > 80 ? "#f87171" : memUsage  > 60 ? "#fbbf24" : "#4ade80" },
             { label: "Disk",   icon: HardDrive, pct: diskUsage, color: diskUsage > 80 ? "#f87171" : diskUsage > 60 ? "#fbbf24" : "#4ade80" },
           ].map(r => (
-            <AdminScrollReveal key={r.label} direction="scale" delay={80}>
-              <div style={{ padding: "14px", borderRadius: 12, background: tok.sysRowBg, border: `1px solid ${tok.alertBdr}`, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                <AdminProgressRing value={r.pct} size={76} stroke={7} color={r.color} trackColor={`${r.color}18`} suffix="%" animated />
-                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                  <r.icon size={12} color={r.color} />
-                  <span style={{ fontSize: 11.5, fontWeight: 600, color: tok.cardText }}>{r.label}</span>
-                </div>
+            <div key={r.label} style={{ padding: "14px", borderRadius: 12, background: tok.sysRowBg, border: `1px solid ${tok.alertBdr}`, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+              <div style={{ fontSize: 24, fontWeight: 900, color: r.color }}>{r.pct}%</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <r.icon size={12} color={r.color} />
+                <span style={{ fontSize: 11.5, fontWeight: 600, color: tok.cardText }}>{r.label}</span>
               </div>
-            </AdminScrollReveal>
+            </div>
           ))}
         </div>
 
@@ -501,11 +485,11 @@ const AdminDashboard = () => {
       {/* ── Fraud Detection + Risk Chart ── */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 16 }}>
 
-        <AdminTableSpotlight style={{ ...card, padding: "18px" }} color="rgba(248,113,113,0.07)">
+        <div style={{ ...card, padding: "18px" }}>
           {sectionHeader(<ShieldAlert size={14} color="#f87171" />, "Fraud Detection", `${FRAUD_CASES.length} flagged`, "#f87171")}
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {FRAUD_CASES.map((f, i) => (
-              <div key={i} className="admin-hover-lift" style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", borderRadius: 12, background: tok.sysRowBg, border: `1px solid ${f.color}22` }}>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", borderRadius: 12, background: tok.sysRowBg, border: `1px solid ${f.color}22` }}>
                 <div style={{ width: 34, height: 34, borderRadius: 10, background: `${f.color}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <UserX size={14} color={f.color} />
                 </div>
@@ -535,7 +519,7 @@ const AdminDashboard = () => {
               </button>
             ))}
           </div>
-        </AdminTableSpotlight>
+        </div>
 
         {/* Risk Donut */}
         <div style={{ ...card, padding: "18px", display: "flex", flexDirection: "column" }}>
