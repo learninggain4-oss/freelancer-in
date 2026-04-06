@@ -5358,29 +5358,6 @@ const Index = () => {
       <Footer socialLinks={socialLinks} />
 
 
-      {/* Install Banner */}
-      {showBanner && !isInstalled && !bannerDismissed && (
-        <div className="fixed inset-x-0 bottom-0 z-50 p-4 pb-safe sm:hidden">
-          <div className="rounded-2xl p-4 shadow-2xl" style={{ background: "rgba(var(--t-bg-rgb),0.95)", border: "1px solid rgba(var(--t-a1-rgb),0.3)", backdropFilter: "blur(20px)" }}>
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>
-                <Download className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-white">Install Freelancer</p>
-                <p className="mt-0.5 text-xs text-white/50">{isIOS ? "Add to your home screen for the best experience" : "Install for quick access & offline support"}</p>
-                <div className="mt-3 flex gap-2">
-                  <button className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white flex items-center gap-1" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }} onClick={() => { if (deferredPrompt) handleInstall(); else if (isIOS) { setShowIOSTip(true); setShowBanner(false); } }}>
-                    <Download className="h-3.5 w-3.5" /> {isIOS ? "How to Install" : "Install Now"}
-                  </button>
-                  <button className="rounded-lg px-3 py-1.5 text-xs text-white/40 hover:text-white" onClick={() => { setShowBanner(false); setBannerDismissed(true); }}>Not now</button>
-                </div>
-              </div>
-              <button onClick={() => { setShowBanner(false); setBannerDismissed(true); }} className="text-white/30 hover:text-white">✕</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
     </LangContext.Provider>
   );
