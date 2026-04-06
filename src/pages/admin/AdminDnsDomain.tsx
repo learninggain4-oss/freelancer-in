@@ -10,13 +10,29 @@ const TH={black:{card:"rgba(255,255,255,.05)",border:"rgba(255,255,255,.08)",tex
 
 interface DnsRecord{id:string;type:string;name:string;value:string;ttl:number;status:"ok"|"mismatch"|"missing";}
 interface Domain{id:string;domain:string;registrar:string;expiresAt:string;status:"active"|"expiring"|"expired";records:DnsRecord[];}
+const DNS_KEY="admin_dns_domains_v1";
 function load<T>(k:string,s:()=>T[]):T[]{try{const d=localStorage.getItem(k);if(d)return JSON.parse(d);}catch{}const v=s();localStorage.setItem(k,JSON.stringify(v));return v;}
+function seedDomains():Domain[]{
+  return[
+    {id:"d1",domain:"www.freelan.space",registrar:"Namecheap",expiresAt:new Date(Date.now()+864e5*280).toISOString(),status:"active",records:[
+      {id:"r1",type:"A",name:"@",value:"76.76.21.21",ttl:3600,status:"ok"},
+      {id:"r2",type:"A",name:"www",value:"76.76.21.21",ttl:3600,status:"ok"},
+      {id:"r3",type:"CNAME",name:"www",value:"cname.vercel-dns.com",ttl:3600,status:"ok"},
+      {id:"r4",type:"MX",name:"@",value:"mail.freelan.space",ttl:3600,status:"ok"},
+      {id:"r5",type:"TXT",name:"@",value:"v=spf1 include:_spf.google.com ~all",ttl:3600,status:"ok"},
+    ]},
+    {id:"d2",domain:"freelan.space",registrar:"Namecheap",expiresAt:new Date(Date.now()+864e5*280).toISOString(),status:"active",records:[
+      {id:"r6",type:"A",name:"@",value:"76.76.21.21",ttl:3600,status:"ok"},
+      {id:"r7",type:"CNAME",name:"api",value:"api.freelan.space",ttl:3600,status:"ok"},
+    ]},
+  ];
+}
 const dColor={active:"#4ade80",expiring:"#fbbf24",expired:"#f87171"};
 const rColor={ok:"#4ade80",mismatch:"#fbbf24",missing:"#f87171"};
 
 export default function AdminDnsDomain(){
-  const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
-  const[domains]=useState([]);
+  const{themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
+  const[domains,setDomains]=useState<Domain[]>(()=>load(DNS_KEY,seedDomains));
   const[checking,setChecking]=useState<string|null>(null);
   const[expanded,setExpanded]=useState<string|null>(null);
 
