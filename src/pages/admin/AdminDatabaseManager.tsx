@@ -82,6 +82,8 @@ export default function AdminDatabaseManager() {
   const [history, setHistory] = useState<{ id: string; timestamp: string; action: string; details: string }[]>([]);
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
 
+  useEffect(() => { setConnections(load()); }, []);
+
   useEffect(() => {
     if (showHistory) {
       setHistory(JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"));
