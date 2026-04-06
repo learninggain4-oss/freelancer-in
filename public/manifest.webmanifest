@@ -1,0 +1,53 @@
+{
+  "name": "Freelancer India",
+  "short_name": "Freelancer India",
+  "description": "India's trusted freelancing platform. Hire verified freelancers or earn from home. UPI payments, GST invoices, escrow protection.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070714",
+  "theme_color": "#6366f1",
+  "lang": "en-IN",
+  "dir": "ltr",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pwa-icon-512.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Find Work",
+      "short_name": "Find Work",
+      "description": "Browse freelance projects",
+      "url": "/freelancer/projects",
+      "icons": [{ "src": "/pwa-icon-512.png", "sizes": "512x512" }]
+    },
+    {
+      "name": "Hire Freelancers",
+      "short_name": "Hire",
+      "description": "Post a project and hire freelancers",
+      "url": "/employer/projects/create",
+      "icons": [{ "src": "/pwa-icon-512.png", "sizes": "512x512" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Freelancer India Home"
+    }
+  ]
+}
