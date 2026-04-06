@@ -5091,6 +5091,9 @@ const Index = () => {
   const [showInstallGuide, setShowInstallGuide] = useState<"android"|"ios"|"windows"|null>(null);
   const [showBanner, setShowBanner] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [installPwa, setInstallPwa] = useState<{ active: boolean; progress: number; done: boolean }>({ active: false, progress: 0, done: false });
+  const installIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const installProgressVal = useRef(0);
   const [themeId, setThemeId] = useState<ThemeId>(() => (localStorage.getItem("fi-theme") as ThemeId) || "midnight");
   const [lang, setLangState] = useState<LangCode>(() => (localStorage.getItem("fi-lang") as LangCode) || "en");
   const [offerDismissed, setOfferDismissed] = useState(() => localStorage.getItem("fi-offer-dismissed") === "1");
@@ -5153,10 +5156,36 @@ const Index = () => {
 
   const handleInstall = async (platform: "android"|"windows" = "android") => {
     if (deferredPrompt) {
+      installProgressVal.current = 0;
+      setInstallPwa({ active: true, progress: 0, done: false });
+      installIntervalRef.current = setInterval(() => {
+        const cur = installProgressVal.current;
+        const step = cur < 20 ? 6 : cur < 50 ? 4 : cur < 70 ? 2 : cur < 80 ? 0.8 : 0;
+        const next = Math.min(cur + step, 80);
+        installProgressVal.current = next;
+        setInstallPwa(prev => ({ ...prev, progress: Math.round(next) }));
+      }, 80);
       await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") setIsInstalled(true);
+      if (installIntervalRef.current) clearInterval(installIntervalRef.current);
       setDeferredPrompt(null);
+      if (outcome === "accepted") {
+        let p = installProgressVal.current;
+        const finish = setInterval(() => {
+          p = Math.min(p + 5, 100);
+          installProgressVal.current = p;
+          setInstallPwa(prev => ({ ...prev, progress: Math.round(p) }));
+          if (p >= 100) {
+            clearInterval(finish);
+            setTimeout(() => {
+              setInstallPwa(prev => ({ ...prev, done: true }));
+              setIsInstalled(true);
+            }, 300);
+          }
+        }, 40);
+      } else {
+        setInstallPwa({ active: false, progress: 0, done: false });
+      }
     } else {
       setShowInstallGuide(platform);
     }
@@ -5263,6 +5292,66 @@ const Index = () => {
             <button onClick={() => setShowInstallGuide(null)} className="mt-6 w-full rounded-2xl py-3 text-sm font-bold text-white" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>
               Got it!
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* PWA Install Progress Modal */}
+      {installPwa.active && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.82)", backdropFilter: "blur(10px)" }}>
+          <div className="w-full max-w-xs rounded-3xl p-7 shadow-2xl text-center" style={{ background: "rgba(15,10,30,0.98)", border: "1px solid rgba(var(--t-a1-rgb),0.35)" }}>
+            {installPwa.done ? (
+              <>
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full" style={{ background: "rgba(74,222,128,0.12)", border: "2px solid rgba(74,222,128,0.3)" }}>
+                  <CheckCircle className="h-8 w-8 text-emerald-400" />
+                </div>
+                <p className="text-white font-black text-lg mb-2">Installation Complete!</p>
+                <p className="text-white/45 text-sm mb-5">The app has been added to your home screen.</p>
+                <button onClick={() => setInstallPwa({ active: false, progress: 0, done: false })} className="w-full rounded-2xl py-3 text-sm font-bold text-white" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>
+                  Done
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Circular progress */}
+                <div className="relative mx-auto mb-5" style={{ width: 88, height: 88 }}>
+                  <svg width="88" height="88" style={{ transform: "rotate(-90deg)" }}>
+                    <circle cx="44" cy="44" r="38" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="6" />
+                    <circle cx="44" cy="44" r="38" fill="none"
+                      stroke="url(#pwaGrad)" strokeWidth="6"
+                      strokeDasharray={`${2 * Math.PI * 38}`}
+                      strokeDashoffset={`${2 * Math.PI * 38 * (1 - installPwa.progress / 100)}`}
+                      strokeLinecap="round"
+                      style={{ transition: "stroke-dashoffset 0.1s ease" }}
+                    />
+                    <defs>
+                      <linearGradient id="pwaGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="var(--t-a1)" />
+                        <stop offset="100%" stopColor="var(--t-a2)" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-white font-black text-lg">{installPwa.progress}%</span>
+                  </div>
+                </div>
+                <p className="text-white font-bold text-base mb-1">
+                  {installPwa.progress < 30 ? "Preparing installation…"
+                    : installPwa.progress < 60 ? "Downloading resources…"
+                    : installPwa.progress < 80 ? "Almost ready…"
+                    : "Completing setup…"}
+                </p>
+                <p className="text-white/40 text-xs mb-5">Please confirm the install prompt</p>
+                {/* Linear bar */}
+                <div className="h-1.5 rounded-full overflow-hidden mb-2" style={{ background: "rgba(255,255,255,0.08)" }}>
+                  <div className="h-full rounded-full" style={{ width: `${installPwa.progress}%`, background: "linear-gradient(90deg,var(--t-a1),var(--t-a2))", transition: "width 0.1s ease", boxShadow: "0 0 8px var(--t-a1)" }} />
+                </div>
+                <div className="flex justify-between text-[10px] text-white/25">
+                  <span>Installing…</span>
+                  <span>{installPwa.progress}% complete</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
