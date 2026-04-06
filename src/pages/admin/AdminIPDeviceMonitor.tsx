@@ -84,7 +84,7 @@ export default function AdminIPDeviceMonitor() {
       proxy: false,
       failedLogins: 0,
       status: isBlocked ? "blocked" : "clean",
-      lastSeen: timeAgo(v.created_at),
+      lastSeen: timeAgo(v.visited_at),
       locations: ["India"],
     };
   });
