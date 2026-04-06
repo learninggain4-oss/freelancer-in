@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  LayoutDashboard, Users, Wallet, LogOut, Menu, X, ChevronLeft,
+  LayoutDashboard, Users, Wallet, LogOut, X, ChevronLeft,
   ShieldCheck, Fingerprint, UserCheck, Building2, Edit, UserPlus,
   FileText, Layers, IndianRupee, Settings, Landmark, Megaphone,
   Briefcase, LifeBuoy, Bell, HelpCircle, BarChart3, CreditCard,
@@ -16,12 +16,10 @@ import {
   Settings2, Wrench, Gauge, CalendarClock, UserCog, Download, Globe,
   Zap, FileUp, Cpu, Activity, BookOpen,
   ShieldAlert, UserX, Ban, Folder, BarChart2, TrendingUp,
-  Search, MessageSquare, Plus, ChevronDown, ChevronRight,
+  Search, MessageSquare, Plus, ChevronDown,
   User, Languages, PanelRightOpen, PanelRightClose,
-  CheckCircle2, Info, XCircle, Maximize2, ChevronsLeft, ChevronsRight,
-  Mail,
+  CheckCircle2, Info, XCircle, Mail,
 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 
 const SESSION_TIMEOUT_KEY = "admin_session_timeout_min";
@@ -91,11 +89,6 @@ function buildCss(t: typeof T): string {
 @keyframes orbGlow { 0%,100%{opacity:.4;transform:scale(1)} 50%{opacity:.7;transform:scale(1.1)} }
 @keyframes slideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
 @keyframes pulse-dot { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.4);opacity:.7} }
-.admin-nav-section-title { color:${t.sectionTit}; font-size:9.5px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; padding:4px 10px 5px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; user-select:none; border-radius:6px; transition:background .15s; }
-.admin-nav-section-title:hover { background:${t.navHoverBg}; }
-.admin-nav-link { display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:10px; font-size:12.5px; font-weight:500; color:${t.navLink}; text-decoration:none; transition:all .15s; cursor:pointer; border:1px solid transparent; }
-.admin-nav-link:hover { background:${t.navHoverBg}; color:${t.navHoverFg}; }
-.admin-nav-link.active { background:${t.navActiveBg}; color:${t.navActiveFg}; border:1px solid ${t.navActiveBdr}; }
 .admin-drop { animation:slideIn .15s ease; }
 .admin-main .text-foreground { color:${t.mainText} !important; }
 .admin-main .text-muted-foreground { color:${t.mainSub} !important; }
@@ -274,6 +267,21 @@ const navSections = [
 
 const allNavItems = navSections.flatMap(s => s.items);
 
+type NavItem = { label: string; icon: React.ElementType; path: string };
+type NavGroup = { label: string; icon: React.ElementType; directPath: string | null; items: NavItem[] };
+
+const navGroupItems: NavGroup[] = [
+  { label: "Dashboard",      icon: LayoutDashboard, directPath: "/admin/dashboard", items: [] },
+  { label: "Users",          icon: Users,            directPath: null, items: navSections.filter(s => s.title === "User Management").flatMap(s => s.items) },
+  { label: "Financial",      icon: Wallet,           directPath: null, items: navSections.filter(s => s.title === "Financial").flatMap(s => s.items) },
+  { label: "Verification",   icon: BadgeCheck,       directPath: null, items: navSections.filter(s => ["Verification","Projects & Work","Communication"].includes(s.title)).flatMap(s => s.items) },
+  { label: "Security",       icon: Shield,           directPath: null, items: navSections.filter(s => ["Security & Monitoring","Risk Prevention","Advanced Security"].includes(s.title)).flatMap(s => s.items) },
+  { label: "Infrastructure", icon: Server,           directPath: null, items: navSections.filter(s => ["Infrastructure","System Stability","Monitoring","Platform Safety"].includes(s.title)).flatMap(s => s.items) },
+  { label: "Operations",     icon: Activity,         directPath: null, items: navSections.filter(s => ["Reliability","Operations","Data Safety","Time & Backup","System Health","Advanced Ops"].includes(s.title)).flatMap(s => s.items) },
+  { label: "Fraud",          icon: ShieldAlert,      directPath: null, items: navSections.filter(s => s.title === "Fraud Detection").flatMap(s => s.items) },
+  { label: "Content",        icon: Layers,           directPath: null, items: navSections.filter(s => s.title === "Content & Config").flatMap(s => s.items) },
+];
+
 const LANGS = [
   { code: "en", label: "English", flag: "🇬🇧" },
   { code: "hi", label: "हिन्दी", flag: "🇮🇳" },
@@ -305,8 +313,6 @@ function useClickOutside(ref: React.RefObject<HTMLDivElement | null>, fn: () => 
 }
 
 const AdminLayout = () => {
-  const [sidebarOpen, setSidebarOpen]       = useState(false);
-  const [sidebarMini, setSidebarMini]       = useState(() => { try { return localStorage.getItem(SIDEBAR_MINI_KEY) === "1"; } catch { return false; } });
   const [sessionWarning, setSessionWarning] = useState(false);
   const [searchOpen, setSearchOpen]         = useState(false);
   const [searchQ, setSearchQ]               = useState("");
@@ -316,9 +322,7 @@ const AdminLayout = () => {
   const [quickOpen, setQuickOpen]           = useState(false);
   const [rightOpen, setRightOpen]           = useState(false);
   const [lang, setLang]                     = useState("en");
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
-    try { return JSON.parse(localStorage.getItem(COLLAPSED_SECTIONS_KEY) || "{}"); } catch { return {}; }
-  });
+  const [openNavGroup, setOpenNavGroup]     = useState<string | null>(null);
 
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
@@ -332,17 +336,17 @@ const AdminLayout = () => {
   const langRef    = useRef<HTMLDivElement>(null);
   const quickRef   = useRef<HTMLDivElement>(null);
   const searchRef  = useRef<HTMLDivElement>(null);
+  const navBarRef  = useRef<HTMLDivElement | null>(null);
 
   useClickOutside(profileRef, () => setProfileOpen(false));
   useClickOutside(notifRef,   () => setNotifOpen(false));
   useClickOutside(langRef,    () => setLangOpen(false));
   useClickOutside(quickRef,   () => setQuickOpen(false));
   useClickOutside(searchRef,  () => { if (!searchQ) setSearchOpen(false); });
+  useClickOutside(navBarRef as React.RefObject<HTMLDivElement | null>, () => setOpenNavGroup(null));
 
   const tok = T;
   const css = buildCss(tok);
-
-  const isLight = false;
 
   const currentNav = allNavItems.find(item => location.pathname === item.path);
   const isSubPage  = location.pathname !== "/admin/dashboard";
@@ -350,18 +354,6 @@ const AdminLayout = () => {
   const searchResults = searchQ.length > 1
     ? allNavItems.filter(i => i.label.toLowerCase().includes(searchQ.toLowerCase())).slice(0, 8)
     : [];
-
-  const toggleSection = (title: string) => {
-    const next = { ...collapsedSections, [title]: !collapsedSections[title] };
-    setCollapsedSections(next);
-    try { localStorage.setItem(COLLAPSED_SECTIONS_KEY, JSON.stringify(next)); } catch {}
-  };
-
-  const toggleMini = () => {
-    const next = !sidebarMini;
-    setSidebarMini(next);
-    try { localStorage.setItem(SIDEBAR_MINI_KEY, next ? "1" : "0"); } catch {}
-  };
 
   const resetSessionTimer = useCallback(() => {
     const minutes = parseInt(localStorage.getItem(SESSION_TIMEOUT_KEY) || "30");
@@ -389,7 +381,7 @@ const AdminLayout = () => {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") { e.preventDefault(); setSearchOpen(true); }
-      if (e.key === "Escape") { setSearchOpen(false); setSearchQ(""); setProfileOpen(false); setNotifOpen(false); setLangOpen(false); setQuickOpen(false); }
+      if (e.key === "Escape") { setSearchOpen(false); setSearchQ(""); setProfileOpen(false); setNotifOpen(false); setLangOpen(false); setQuickOpen(false); setOpenNavGroup(null); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -417,9 +409,8 @@ const AdminLayout = () => {
 
   const handleLogout = async () => { await signOut(); navigate("/login"); };
 
-  const sidebarW  = sidebarMini ? 64 : 240;
-  const userEmail = profile?.email || user?.email || "admin@example.com";
-  const userName  = (Array.isArray(profile?.full_name) ? profile.full_name[0] : profile?.full_name) || userEmail.split("@")[0] || "Admin";
+  const userEmail   = profile?.email || user?.email || "admin@example.com";
+  const userName    = (Array.isArray(profile?.full_name) ? profile.full_name[0] : profile?.full_name) || userEmail.split("@")[0] || "Admin";
   const userInitial = userName.charAt(0).toUpperCase();
   const currentLang = LANGS.find(l => l.code === lang) || LANGS[0];
 
@@ -452,8 +443,9 @@ const AdminLayout = () => {
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: tok.shell, color: tok.mainText, fontFamily: "Inter,system-ui,sans-serif" }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: tok.shell, color: tok.mainText, fontFamily: "Inter,system-ui,sans-serif" }}>
       <style>{css}</style>
+
       {/* Ambient background */}
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
         <div style={{ position: "absolute", top: "-10%", left: "-5%", width: 400, height: 400, borderRadius: "50%", background: `radial-gradient(circle,${tok.orbA} 0%,transparent 70%)`, animation: "orbGlow 8s ease-in-out infinite" }} />
@@ -461,309 +453,277 @@ const AdminLayout = () => {
         <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${tok.gridLine} 1px,transparent 1px),linear-gradient(90deg,${tok.gridLine} 1px,transparent 1px)`, backgroundSize: "60px 60px" }} />
       </div>
 
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 40, background: "rgba(0,0,0,.5)", backdropFilter: "blur(4px)" }}
-          className="lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      {/* ─── SIDEBAR ──────────────────────────────────────────────── */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300 lg:static lg:translate-x-0 admin-sidebar-glow ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
-        style={{ width: sidebarW, background: tok.sidebar, borderRight: `1px solid ${tok.sidebarBdr}`, display: "flex", flexDirection: "column", position: "relative" }}
-      >
-        {/* Gradient top accent */}
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg,${A1},${A2},#a855f7)`, zIndex: 1, flexShrink: 0 }} />
+      {/* ─── TOP HEADER BAR ─────────────────────────────────────────── */}
+      <header style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 20px", height: 58, background: tok.header, borderBottom: `1px solid ${tok.headerBdr}`, borderTop: `3px solid ${A1}`, backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 30, flexShrink: 0 }}>
 
         {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: sidebarMini ? "18px 0 14px" : "18px 14px 14px", borderBottom: `1px solid ${tok.sidebarBdr}`, justifyContent: sidebarMini ? "center" : "flex-start", flexShrink: 0, marginTop: 3 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 11, background: tok.logoBg, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 18px ${tok.logoShadow}`, flexShrink: 0 }}>
-            <ShieldCheck size={18} color="white" />
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+          <div style={{ width: 34, height: 34, borderRadius: 10, background: tok.logoBg, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 3px 12px ${tok.logoShadow}` }}>
+            <ShieldCheck size={16} color="white" />
           </div>
-          {!sidebarMini && (
-            <>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontWeight: 800, fontSize: 13.5, color: "white", lineHeight: 1.2, margin: 0 }}>Freelancer India</p>
-                <p style={{ fontSize: 9.5, color: "rgba(165,180,252,.55)", fontWeight: 600, margin: 0, textTransform: "uppercase", letterSpacing: 1 }}>Super Admin</p>
-              </div>
-              <button className="lg:hidden" onClick={() => setSidebarOpen(false)}
-                style={{ color: "rgba(255,255,255,.4)", background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>
-                <X size={16} />
-              </button>
-            </>
+          <div className="hidden sm:block">
+            <p style={{ fontWeight: 800, fontSize: 13, color: tok.mainText, lineHeight: 1.2, margin: 0 }}>Freelancer India</p>
+            <p style={{ fontSize: 9, color: tok.mainSub, fontWeight: 600, margin: 0, textTransform: "uppercase", letterSpacing: 1 }}>Super Admin</p>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div ref={searchRef} style={{ flex: 1, maxWidth: 380, margin: "0 16px", position: "relative" }}>
+          {searchOpen ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, background: tok.searchBg, border: `1px solid ${A1}55`, borderRadius: 10, padding: "0 12px", height: 34 }}>
+              <Search size={13} color={tok.mainSub} />
+              <input autoFocus value={searchQ} onChange={e => setSearchQ(e.target.value)}
+                placeholder="Search pages..."
+                style={{ flex: 1, background: "none", border: "none", outline: "none", color: tok.mainText, fontSize: 13 }} />
+              <kbd style={{ fontSize: 9, color: tok.mainSub, background: "rgba(0,0,0,.06)", borderRadius: 4, padding: "1px 5px" }}>ESC</kbd>
+            </div>
+          ) : (
+            <button onClick={() => setSearchOpen(true)}
+              style={{ display: "flex", alignItems: "center", gap: 8, background: tok.searchBg, border: `1px solid ${tok.searchBdr}`, borderRadius: 10, padding: "0 12px", height: 34, width: "100%", cursor: "text", color: tok.mainSub, fontSize: 12.5 }}>
+              <Search size={13} />
+              <span style={{ flex: 1, textAlign: "left" }}>Search pages...</span>
+              <kbd style={{ fontSize: 9, color: tok.mainSub, background: "rgba(0,0,0,.06)", borderRadius: 4, padding: "1px 5px" }}>⌘K</kbd>
+            </button>
+          )}
+          {searchResults.length > 0 && (
+            <div className="admin-drop" style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: tok.dropBg, border: `1px solid ${tok.dropBdr}`, borderRadius: 12, overflow: "hidden", boxShadow: "0 16px 40px rgba(0,0,0,.25)", zIndex: 300 }}>
+              {searchResults.map(r => (
+                <button key={r.path} onClick={() => { navigate(r.path); setSearchOpen(false); setSearchQ(""); }}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 14px", background: "none", border: "none", cursor: "pointer", color: tok.mainText, fontSize: 13, textAlign: "left" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = tok.contentHoverBg)}
+                  onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                  <r.icon size={13} color={A1} />
+                  <span>{r.label}</span>
+                </button>
+              ))}
+            </div>
           )}
         </div>
 
-        {/* Nav */}
-        <ScrollArea className="flex-1">
-          <nav style={{ padding: sidebarMini ? "8px 6px" : "8px 6px", display: "flex", flexDirection: "column", gap: 1 }}>
-            {navSections.map((section, idx) => {
-              const isCollapsed = !!collapsedSections[section.title];
-              return (
-                <div key={`${section.title}-${idx}`} style={{ marginTop: idx > 0 ? 12 : 0 }}>
-                  {!sidebarMini && (
-                    <div className="admin-nav-section-title" onClick={() => toggleSection(section.title)}>
-                      <span>{section.title}</span>
-                      {isCollapsed
-                        ? <ChevronRight size={10} style={{ opacity: .5 }} />
-                        : <ChevronDown size={10} style={{ opacity: .5 }} />}
-                    </div>
-                  )}
-                  {(!isCollapsed || sidebarMini) && section.items.map(item => (
-                    <NavLink key={item.path} to={item.path} onClick={() => setSidebarOpen(false)}
-                      className={({ isActive }) => `admin-nav-link admin-nav-item${isActive ? " active" : ""}`}
-                      title={sidebarMini ? item.label : undefined}
-                      style={sidebarMini ? { justifyContent: "center", padding: "8px 0" } : {}}>
-                      <item.icon size={14} style={{ flexShrink: 0, opacity: .85 }} />
-                      {!sidebarMini && (
-                        <>
-                          <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12.5 }}>{item.label}</span>
-                          {item.path === "/admin/recovery-requests" && pendingRecoveryCount > 0 && (
-                            <span style={{ minWidth: 16, height: 16, borderRadius: 8, background: tok.badgeBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "white", padding: "0 3px" }}>
-                              {pendingRecoveryCount}
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </NavLink>
-                  ))}
+        {/* Right header actions */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto", flexShrink: 0 }}>
+
+          {/* Quick Create */}
+          <div ref={quickRef} style={{ position: "relative" }}>
+            {iconBtn(() => setQuickOpen(o => !o), <Plus size={15} />, undefined, "Quick Actions")}
+            {quickOpen && (
+              <div className="admin-drop" style={{ ...dropStyle, minWidth: 200 }}>
+                <div style={{ padding: "10px 14px 8px", borderBottom: `1px solid ${tok.dropBdr}` }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: tok.mainSub, textTransform: "uppercase", letterSpacing: 1 }}>Quick Create</p>
                 </div>
-              );
-            })}
-          </nav>
-        </ScrollArea>
-
-        {/* Sidebar bottom: collapse toggle + logout */}
-        <div style={{ padding: sidebarMini ? "8px 6px" : "8px 8px", borderTop: `1px solid ${tok.sidebarBdr}`, display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
-          <button onClick={toggleMini} title={sidebarMini ? "Expand sidebar" : "Collapse sidebar"}
-            className="hidden lg:flex"
-            style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: sidebarMini ? "center" : "flex-start", gap: 8, padding: "7px 10px", borderRadius: 10, color: tok.navLink, background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 500, transition: "all .15s" }}
-            onMouseEnter={e => { e.currentTarget.style.background = tok.navHoverBg; e.currentTarget.style.color = tok.navHoverFg; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = tok.navLink; }}>
-            {sidebarMini ? <ChevronsRight size={14} /> : <><ChevronsLeft size={14} /><span>Collapse</span></>}
-          </button>
-          <button onClick={handleLogout}
-            style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: sidebarMini ? "center" : "flex-start", gap: 9, padding: "8px 10px", borderRadius: 10, color: tok.logoutFg, background: "none", border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 500, transition: "all .15s" }}
-            onMouseEnter={e => (e.currentTarget.style.background = tok.logoutHover)}
-            onMouseLeave={e => (e.currentTarget.style.background = "none")}>
-            <LogOut size={14} />
-            {!sidebarMini && <span>Logout</span>}
-          </button>
-        </div>
-      </aside>
-
-      {/* ─── MAIN AREA ────────────────────────────────────────────── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, position: "relative", zIndex: 1 }}>
-
-        {/* ─── HEADER ─────────────────────────────────────────────── */}
-        <header className="admin-header admin-header-line" style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 16px", height: 58, background: tok.header, borderBottom: `1px solid ${tok.headerBdr}`, backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 30, flexShrink: 0 }}>
-
-          {/* Hamburger (mobile) */}
-          <button className="lg:hidden" onClick={() => setSidebarOpen(true)}
-            style={{ color: tok.mainSub, background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>
-            <Menu size={20} />
-          </button>
-
-          {/* Breadcrumb */}
-          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, flex: "0 0 auto" }}>
-            {isSubPage ? (
-              <>
-                <button onClick={() => navigate("/admin/dashboard")}
-                  style={{ display: "flex", alignItems: "center", gap: 3, color: tok.mainSub, background: "none", border: "none", cursor: "pointer", fontSize: 12.5, padding: 0 }}
-                  onMouseEnter={e => (e.currentTarget.style.color = tok.mainText)}
-                  onMouseLeave={e => (e.currentTarget.style.color = tok.mainSub)}>
-                  <ChevronLeft size={14} />
-                  <span className="hidden sm:inline">Dashboard</span>
-                </button>
-                {currentNav && (
-                  <>
-                    <span style={{ color: tok.mainSub, opacity: .4 }}>/</span>
-                    <span style={{ fontWeight: 600, color: tok.mainText }}>{currentNav.label}</span>
-                  </>
-                )}
-              </>
-            ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: tok.statusDot, animation: "pulse-dot 2s ease-in-out infinite" }} />
-                <span style={{ fontWeight: 700, color: tok.mainText, fontSize: 13 }}>Admin Dashboard</span>
-              </div>
-            )}
-          </div>
-
-          {/* ─── Search bar ─── */}
-          <div ref={searchRef} style={{ flex: 1, maxWidth: 420, margin: "0 8px", position: "relative" }}>
-            {searchOpen ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, background: tok.searchBg, border: `1px solid ${A1}55`, borderRadius: 10, padding: "0 12px", height: 34, transition: "all .2s" }}>
-                <Search size={13} color={tok.mainSub} />
-                <input autoFocus value={searchQ} onChange={e => setSearchQ(e.target.value)}
-                  placeholder="Search pages..."
-                  style={{ flex: 1, background: "none", border: "none", outline: "none", color: tok.mainText, fontSize: 13 }} />
-                <kbd style={{ fontSize: 9, color: tok.mainSub, background: "rgba(0,0,0,.06)", borderRadius: 4, padding: "1px 5px" }}>ESC</kbd>
-              </div>
-            ) : (
-              <button onClick={() => setSearchOpen(true)}
-                style={{ display: "flex", alignItems: "center", gap: 8, background: tok.searchBg, border: `1px solid ${tok.searchBdr}`, borderRadius: 10, padding: "0 12px", height: 34, width: "100%", cursor: "text", color: tok.mainSub, fontSize: 12.5 }}>
-                <Search size={13} />
-                <span style={{ flex: 1, textAlign: "left" }}>Search pages...</span>
-                <kbd style={{ fontSize: 9, color: tok.mainSub, background: "rgba(0,0,0,.06)", borderRadius: 4, padding: "1px 5px" }}>⌘K</kbd>
-              </button>
-            )}
-            {searchResults.length > 0 && (
-              <div className="admin-drop" style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: tok.dropBg, border: `1px solid ${tok.dropBdr}`, borderRadius: 12, overflow: "hidden", boxShadow: "0 16px 40px rgba(0,0,0,.25)", zIndex: 300 }}>
-                {searchResults.map(r => (
-                  <button key={r.path} onClick={() => { navigate(r.path); setSearchOpen(false); setSearchQ(""); setSidebarOpen(false); }}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 14px", background: "none", border: "none", cursor: "pointer", color: tok.mainText, fontSize: 13, textAlign: "left" }}
+                {QUICK_ACTIONS.map(a => (
+                  <button key={a.path} onClick={() => { navigate(a.path); setQuickOpen(false); }}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 14px", background: "none", border: "none", cursor: "pointer", color: tok.mainText, fontSize: 13 }}
                     onMouseEnter={e => (e.currentTarget.style.background = tok.contentHoverBg)}
                     onMouseLeave={e => (e.currentTarget.style.background = "none")}>
-                    <r.icon size={13} color={A1} />
-                    <span>{r.label}</span>
+                    <a.icon size={13} color={A1} />
+                    <span>{a.label}</span>
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* ─── Right header actions ─── */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto", flexShrink: 0 }}>
+          {/* Messages */}
+          {iconBtn(() => navigate("/admin/notifications"), <MessageSquare size={15} />, undefined, "Messages")}
 
-            {/* Quick Create */}
-            <div ref={quickRef} style={{ position: "relative" }}>
-              {iconBtn(() => setQuickOpen(o => !o), <Plus size={15} />, undefined, "Quick Actions")}
-              {quickOpen && (
-                <div className="admin-drop" style={{ ...dropStyle, minWidth: 200 }}>
-                  <div style={{ padding: "10px 14px 8px", borderBottom: `1px solid ${tok.dropBdr}` }}>
-                    <p style={{ fontSize: 10, fontWeight: 700, color: tok.mainSub, textTransform: "uppercase", letterSpacing: 1 }}>Quick Create</p>
-                  </div>
-                  {QUICK_ACTIONS.map(a => (
-                    <button key={a.path} onClick={() => { navigate(a.path); setQuickOpen(false); }}
-                      style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 14px", background: "none", border: "none", cursor: "pointer", color: tok.mainText, fontSize: 13 }}
-                      onMouseEnter={e => (e.currentTarget.style.background = tok.contentHoverBg)}
-                      onMouseLeave={e => (e.currentTarget.style.background = "none")}>
-                      <a.icon size={13} color={A1} />
-                      <span>{a.label}</span>
-                    </button>
-                  ))}
+          {/* Notifications */}
+          <div ref={notifRef} style={{ position: "relative" }}>
+            {iconBtn(() => setNotifOpen(o => !o), <Bell size={15} />, pendingRecoveryCount, "Notifications")}
+            {notifOpen && (
+              <div className="admin-drop" style={{ ...dropStyle, minWidth: 300, maxHeight: 420, overflowY: "auto" }}>
+                <div style={{ padding: "12px 16px 10px", borderBottom: `1px solid ${tok.dropBdr}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <p style={{ fontWeight: 700, fontSize: 13, color: tok.mainText, margin: 0 }}>Notifications</p>
+                  {pendingRecoveryCount > 0 && <span style={{ fontSize: 10, background: `${A1}22`, color: A1, borderRadius: 20, padding: "2px 8px", fontWeight: 700 }}>{pendingRecoveryCount} pending</span>}
                 </div>
-              )}
-            </div>
-
-            {/* Messages */}
-            {iconBtn(() => navigate("/admin/notifications"), <MessageSquare size={15} />, undefined, "Messages")}
-
-            {/* Notifications */}
-            <div ref={notifRef} style={{ position: "relative" }}>
-              {iconBtn(() => setNotifOpen(o => !o), <Bell size={15} />, pendingRecoveryCount, "Notifications")}
-              {notifOpen && (
-                <div className="admin-drop" style={{ ...dropStyle, minWidth: 300, maxHeight: 420, overflowY: "auto" }}>
-                  <div style={{ padding: "12px 16px 10px", borderBottom: `1px solid ${tok.dropBdr}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <p style={{ fontWeight: 700, fontSize: 13, color: tok.mainText, margin: 0 }}>Notifications</p>
-                    {pendingRecoveryCount > 0 && <span style={{ fontSize: 10, background: `${A1}22`, color: A1, borderRadius: 20, padding: "2px 8px", fontWeight: 700 }}>{pendingRecoveryCount} pending</span>}
-                  </div>
-                  {SYSTEM_ALERTS.map((a, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 16px", borderBottom: i < SYSTEM_ALERTS.length - 1 ? `1px solid ${tok.dropBdr}` : "none" }}>
-                      <div style={{ marginTop: 2, flexShrink: 0 }}>{alertIcon(a.type)}</div>
-                      <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: 12.5, color: tok.mainText, margin: 0 }}>{a.msg}</p>
-                        <p style={{ fontSize: 10.5, color: tok.mainSub, margin: "2px 0 0" }}>{a.time}</p>
-                      </div>
-                    </div>
-                  ))}
-                  <div style={{ padding: "10px 16px" }}>
-                    <button onClick={() => { navigate("/admin/notifications"); setNotifOpen(false); }}
-                      style={{ width: "100%", padding: "7px 0", borderRadius: 8, background: `${A1}15`, border: `1px solid ${A1}30`, color: A1, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-                      View All Notifications
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Language */}
-            <div ref={langRef} style={{ position: "relative" }}>
-              <button onClick={() => setLangOpen(o => !o)} title="Language"
-                style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 9, background: tok.iconBtn, border: "1px solid rgba(0,0,0,.08)", cursor: "pointer", color: tok.mainSub, fontSize: 12, fontWeight: 600, height: 34 }}
-                onMouseEnter={e => { e.currentTarget.style.background = tok.iconBtnHov; e.currentTarget.style.color = tok.mainText; }}
-                onMouseLeave={e => { e.currentTarget.style.background = tok.iconBtn;    e.currentTarget.style.color = tok.mainSub;  }}>
-                <Languages size={13} />
-                <span className="hidden sm:inline">{currentLang.flag} {currentLang.code.toUpperCase()}</span>
-              </button>
-              {langOpen && (
-                <div className="admin-drop" style={{ ...dropStyle, minWidth: 160 }}>
-                  <div style={{ padding: "8px 12px 6px", borderBottom: `1px solid ${tok.dropBdr}` }}>
-                    <p style={{ fontSize: 10, fontWeight: 700, color: tok.mainSub, textTransform: "uppercase", letterSpacing: 1, margin: 0 }}>Language</p>
-                  </div>
-                  {LANGS.map(l => (
-                    <button key={l.code} onClick={() => { setLang(l.code); setLangOpen(false); }}
-                      style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 14px", background: lang === l.code ? `${A1}12` : "none", border: "none", cursor: "pointer", color: lang === l.code ? tok.accent : tok.mainText, fontSize: 13, fontWeight: lang === l.code ? 600 : 400 }}
-                      onMouseEnter={e => { if (lang !== l.code) e.currentTarget.style.background = tok.contentHoverBg; }}
-                      onMouseLeave={e => { if (lang !== l.code) e.currentTarget.style.background = "none"; }}>
-                      <span>{l.flag}</span>
-                      <span>{l.label}</span>
-                      {lang === l.code && <CheckCircle2 size={12} color={A1} style={{ marginLeft: "auto" }} />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Right Panel Toggle */}
-            {iconBtn(() => setRightOpen(o => !o), rightOpen ? <PanelRightClose size={15} /> : <PanelRightOpen size={15} />, undefined, "Quick Panel")}
-
-            {/* Profile Dropdown */}
-            <div ref={profileRef} style={{ position: "relative" }}>
-              <button onClick={() => setProfileOpen(o => !o)}
-                style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 10px 4px 4px", borderRadius: 10, background: tok.iconBtn, border: "1px solid rgba(0,0,0,.08)", cursor: "pointer", height: 36 }}
-                onMouseEnter={e => (e.currentTarget.style.background = tok.iconBtnHov)}
-                onMouseLeave={e => (e.currentTarget.style.background = tok.iconBtn)}>
-                <div style={{ width: 26, height: 26, borderRadius: 8, background: `linear-gradient(135deg,${A1},${A2})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "white", flexShrink: 0 }}>
-                  {userInitial}
-                </div>
-                <div className="hidden sm:block" style={{ textAlign: "left" }}>
-                  <p style={{ fontSize: 12, fontWeight: 700, color: tok.mainText, margin: 0, lineHeight: 1.2, whiteSpace: "nowrap", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis" }}>{userName}</p>
-                  <p style={{ fontSize: 10, color: tok.mainSub, margin: 0, lineHeight: 1.2 }}>Super Admin</p>
-                </div>
-                <ChevronDown size={12} color={tok.mainSub} className="hidden sm:block" />
-              </button>
-              {profileOpen && (
-                <div className="admin-drop" style={{ ...dropStyle, minWidth: 240 }}>
-                  <div style={{ padding: "14px 16px 12px", borderBottom: `1px solid ${tok.dropBdr}` }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: "white", flexShrink: 0 }}>
-                        {userInitial}
-                      </div>
-                      <div>
-                        <p style={{ fontWeight: 700, fontSize: 13, color: tok.mainText, margin: 0 }}>{userName}</p>
-                        <p style={{ fontSize: 11, color: tok.mainSub, margin: 0 }}>{userEmail}</p>
-                        <span style={{ fontSize: 9.5, background: `${A1}20`, color: A1, borderRadius: 20, padding: "1px 7px", fontWeight: 700, display: "inline-block", marginTop: 2 }}>Super Admin</span>
-                      </div>
+                {SYSTEM_ALERTS.map((a, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 16px", borderBottom: i < SYSTEM_ALERTS.length - 1 ? `1px solid ${tok.dropBdr}` : "none" }}>
+                    <div style={{ marginTop: 2, flexShrink: 0 }}>{alertIcon(a.type)}</div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: 12.5, color: tok.mainText, margin: 0 }}>{a.msg}</p>
+                      <p style={{ fontSize: 10.5, color: tok.mainSub, margin: "2px 0 0" }}>{a.time}</p>
                     </div>
                   </div>
-                  {[
-                    { label: "My Profile",   icon: User,     path: "/admin/settings" },
-                    { label: "Settings",     icon: Settings, path: "/admin/settings" },
-                    { label: "Audit Logs",   icon: ClipboardList, path: "/admin/audit-logs" },
-                  ].map(item => (
-                    <button key={item.label} onClick={() => { navigate(item.path); setProfileOpen(false); }}
-                      style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", background: "none", border: "none", cursor: "pointer", color: tok.mainText, fontSize: 13 }}
-                      onMouseEnter={e => (e.currentTarget.style.background = tok.contentHoverBg)}
-                      onMouseLeave={e => (e.currentTarget.style.background = "none")}>
-                      <item.icon size={14} color={tok.mainSub} />
-                      <span>{item.label}</span>
-                    </button>
-                  ))}
-                  <div style={{ borderTop: `1px solid ${tok.dropBdr}`, margin: "4px 0" }} />
-                  <button onClick={handleLogout}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", background: "none", border: "none", cursor: "pointer", color: tok.logoutFg, fontSize: 13, fontWeight: 500 }}
-                    onMouseEnter={e => (e.currentTarget.style.background = tok.logoutHover)}
-                    onMouseLeave={e => (e.currentTarget.style.background = "none")}>
-                    <LogOut size={14} />
-                    <span>Sign Out</span>
+                ))}
+                <div style={{ padding: "10px 16px" }}>
+                  <button onClick={() => { navigate("/admin/notifications"); setNotifOpen(false); }}
+                    style={{ width: "100%", padding: "7px 0", borderRadius: 8, background: `${A1}15`, border: `1px solid ${A1}30`, color: A1, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    View All Notifications
                   </button>
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Language */}
+          <div ref={langRef} style={{ position: "relative" }}>
+            <button onClick={() => setLangOpen(o => !o)} title="Language"
+              style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 9, background: tok.iconBtn, border: "1px solid rgba(0,0,0,.08)", cursor: "pointer", color: tok.mainSub, fontSize: 12, fontWeight: 600, height: 34 }}
+              onMouseEnter={e => { e.currentTarget.style.background = tok.iconBtnHov; e.currentTarget.style.color = tok.mainText; }}
+              onMouseLeave={e => { e.currentTarget.style.background = tok.iconBtn;    e.currentTarget.style.color = tok.mainSub;  }}>
+              <Languages size={13} />
+              <span className="hidden sm:inline">{currentLang.flag} {currentLang.code.toUpperCase()}</span>
+            </button>
+            {langOpen && (
+              <div className="admin-drop" style={{ ...dropStyle, minWidth: 160 }}>
+                <div style={{ padding: "8px 12px 6px", borderBottom: `1px solid ${tok.dropBdr}` }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: tok.mainSub, textTransform: "uppercase", letterSpacing: 1, margin: 0 }}>Language</p>
+                </div>
+                {LANGS.map(l => (
+                  <button key={l.code} onClick={() => { setLang(l.code); setLangOpen(false); }}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 14px", background: lang === l.code ? `${A1}12` : "none", border: "none", cursor: "pointer", color: lang === l.code ? tok.accent : tok.mainText, fontSize: 13, fontWeight: lang === l.code ? 600 : 400 }}
+                    onMouseEnter={e => { if (lang !== l.code) e.currentTarget.style.background = tok.contentHoverBg; }}
+                    onMouseLeave={e => { if (lang !== l.code) e.currentTarget.style.background = "none"; }}>
+                    <span>{l.flag}</span>
+                    <span>{l.label}</span>
+                    {lang === l.code && <CheckCircle2 size={12} color={A1} style={{ marginLeft: "auto" }} />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Right Panel Toggle */}
+          {iconBtn(() => setRightOpen(o => !o), rightOpen ? <PanelRightClose size={15} /> : <PanelRightOpen size={15} />, undefined, "Quick Panel")}
+
+          {/* Profile Dropdown */}
+          <div ref={profileRef} style={{ position: "relative" }}>
+            <button onClick={() => setProfileOpen(o => !o)}
+              style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 10px 4px 4px", borderRadius: 10, background: tok.iconBtn, border: "1px solid rgba(0,0,0,.08)", cursor: "pointer", height: 36 }}
+              onMouseEnter={e => (e.currentTarget.style.background = tok.iconBtnHov)}
+              onMouseLeave={e => (e.currentTarget.style.background = tok.iconBtn)}>
+              <div style={{ width: 26, height: 26, borderRadius: 8, background: `linear-gradient(135deg,${A1},${A2})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "white", flexShrink: 0 }}>
+                {userInitial}
+              </div>
+              <div className="hidden sm:block" style={{ textAlign: "left" }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: tok.mainText, margin: 0, lineHeight: 1.2, whiteSpace: "nowrap", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis" }}>{userName}</p>
+                <p style={{ fontSize: 10, color: tok.mainSub, margin: 0, lineHeight: 1.2 }}>Super Admin</p>
+              </div>
+              <ChevronDown size={12} color={tok.mainSub} className="hidden sm:block" />
+            </button>
+            {profileOpen && (
+              <div className="admin-drop" style={{ ...dropStyle, minWidth: 240 }}>
+                <div style={{ padding: "14px 16px 12px", borderBottom: `1px solid ${tok.dropBdr}` }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: "white", flexShrink: 0 }}>
+                      {userInitial}
+                    </div>
+                    <div>
+                      <p style={{ fontWeight: 700, fontSize: 13, color: tok.mainText, margin: 0 }}>{userName}</p>
+                      <p style={{ fontSize: 11, color: tok.mainSub, margin: 0 }}>{userEmail}</p>
+                      <span style={{ fontSize: 9.5, background: `${A1}20`, color: A1, borderRadius: 20, padding: "1px 7px", fontWeight: 700, display: "inline-block", marginTop: 2 }}>Super Admin</span>
+                    </div>
+                  </div>
+                </div>
+                {[
+                  { label: "My Profile",   icon: User,          path: "/admin/settings" },
+                  { label: "Settings",     icon: Settings,      path: "/admin/settings" },
+                  { label: "Audit Logs",   icon: ClipboardList, path: "/admin/audit-logs" },
+                ].map(item => (
+                  <button key={item.label} onClick={() => { navigate(item.path); setProfileOpen(false); }}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", background: "none", border: "none", cursor: "pointer", color: tok.mainText, fontSize: 13 }}
+                    onMouseEnter={e => (e.currentTarget.style.background = tok.contentHoverBg)}
+                    onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                    <item.icon size={14} color={tok.mainSub} />
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+                <div style={{ borderTop: `1px solid ${tok.dropBdr}`, margin: "4px 0" }} />
+                <button onClick={handleLogout}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", background: "none", border: "none", cursor: "pointer", color: tok.logoutFg, fontSize: 13, fontWeight: 500 }}
+                  onMouseEnter={e => (e.currentTarget.style.background = tok.logoutHover)}
+                  onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                  <LogOut size={14} />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* ─── HORIZONTAL NAV BAR ─────────────────────────────────────── */}
+      <div ref={navBarRef} style={{ background: tok.header, borderBottom: `1px solid ${tok.headerBdr}`, padding: "0 20px", display: "flex", alignItems: "stretch", overflowX: "auto", zIndex: 29, position: "sticky", top: 58, flexShrink: 0, backdropFilter: "blur(20px)" }}>
+        {navGroupItems.map(group => {
+          const isGroupActive = group.directPath
+            ? location.pathname === group.directPath
+            : group.items.some(item => location.pathname === item.path);
+          const isOpen = openNavGroup === group.label;
+          return (
+            <div key={group.label} style={{ position: "relative", flexShrink: 0 }}>
+              {group.directPath ? (
+                <NavLink to={group.directPath}
+                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 16px", height: 44, color: isGroupActive ? A1 : tok.mainSub, fontSize: 13, fontWeight: isGroupActive ? 700 : 500, borderBottom: isGroupActive ? `2px solid ${A1}` : "2px solid transparent", textDecoration: "none", whiteSpace: "nowrap", background: "none" }}>
+                  <group.icon size={13} />
+                  <span>{group.label}</span>
+                </NavLink>
+              ) : (
+                <button
+                  onClick={() => setOpenNavGroup(isOpen ? null : group.label)}
+                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 16px", height: 44, color: isGroupActive ? A1 : tok.mainSub, fontSize: 13, fontWeight: isGroupActive ? 700 : 500, borderBottom: isGroupActive ? `2px solid ${A1}` : "2px solid transparent", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>
+                  <group.icon size={13} />
+                  <span>{group.label}</span>
+                  <ChevronDown size={10} style={{ opacity: 0.5, marginLeft: 2 }} />
+                </button>
+              )}
+              {isOpen && group.items.length > 0 && (
+                <div className="admin-drop" style={{ position: "absolute", top: "100%", left: 0, zIndex: 300, background: tok.dropBg, border: `1px solid ${tok.dropBdr}`, borderRadius: 14, boxShadow: "0 20px 60px rgba(0,0,0,.2)", minWidth: 220, maxHeight: 480, overflowY: "auto" }}>
+                  <div style={{ padding: "8px 14px 6px", borderBottom: `1px solid ${tok.dropBdr}` }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: tok.mainSub, textTransform: "uppercase", letterSpacing: 1, margin: 0 }}>{group.label}</p>
+                  </div>
+                  <div style={{ padding: 6 }}>
+                    {group.items.map(item => {
+                      const isItemActive = location.pathname === item.path;
+                      return (
+                        <NavLink key={item.path} to={item.path}
+                          onClick={() => setOpenNavGroup(null)}
+                          style={{ display: "flex", alignItems: "center", gap: 9, padding: "7px 12px", borderRadius: 9, fontSize: 12.5, fontWeight: isItemActive ? 600 : 400, color: isItemActive ? A1 : tok.mainText, background: isItemActive ? `${A1}12` : "none", textDecoration: "none", border: isItemActive ? `1px solid ${A1}25` : "1px solid transparent" }}>
+                          <item.icon size={13} color={isItemActive ? A1 : tok.mainSub} style={{ flexShrink: 0 }} />
+                          <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {item.label}
+                            {item.path === "/admin/recovery-requests" && pendingRecoveryCount > 0 && (
+                              <span style={{ marginLeft: 5, fontSize: 9, fontWeight: 700, color: "white", background: tok.badgeBg, borderRadius: 8, padding: "1px 5px" }}>{pendingRecoveryCount}</span>
+                            )}
+                          </span>
+                        </NavLink>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </div>
-          </div>
-        </header>
+          );
+        })}
+
+        {/* Breadcrumb on right */}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: tok.mainSub, flexShrink: 0, padding: "0 4px" }}>
+          {isSubPage ? (
+            <>
+              <button onClick={() => navigate("/admin/dashboard")}
+                style={{ color: tok.mainSub, background: "none", border: "none", cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", gap: 3, padding: 0 }}
+                onMouseEnter={e => (e.currentTarget.style.color = tok.mainText)}
+                onMouseLeave={e => (e.currentTarget.style.color = tok.mainSub)}>
+                <ChevronLeft size={13} />
+                <span className="hidden sm:inline">Dashboard</span>
+              </button>
+              {currentNav && (
+                <>
+                  <span style={{ opacity: .4 }}>/</span>
+                  <span style={{ fontWeight: 600, color: tok.mainText }}>{currentNav.label}</span>
+                </>
+              )}
+            </>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: tok.statusDot, animation: "pulse-dot 2s ease-in-out infinite" }} />
+              <span style={{ fontWeight: 700, color: tok.mainText, fontSize: 12 }}>Live</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ─── MAIN AREA ──────────────────────────────────────────────── */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, position: "relative", zIndex: 1 }}>
 
         {/* Session warning banner */}
         {sessionWarning && (
@@ -784,7 +744,7 @@ const AdminLayout = () => {
             <Outlet />
           </main>
 
-          {/* ─── RIGHT QUICK PANEL ──────────────────────────────────── */}
+          {/* ─── RIGHT QUICK PANEL ────────────────────────────────── */}
           {rightOpen && (
             <aside style={{ width: 280, background: tok.rightBg, borderLeft: `1px solid ${tok.rightBdr}`, display: "flex", flexDirection: "column", flexShrink: 0, overflowY: "auto" }}>
               <div style={{ padding: "14px 16px 10px", borderBottom: `1px solid ${tok.rightBdr}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
