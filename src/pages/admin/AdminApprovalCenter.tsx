@@ -41,6 +41,8 @@ function load<T>(key: string, seed: () => T[]): T[] {
 }
 function persist<T>(key: string, data: T[]) { localStorage.setItem(key, JSON.stringify(data)); }
 
+const APPROVALS_KEY = "admin_approvals_v1";
+const RECOVERY_KEY = "admin_recovery_v1";
 const riskColor = { critical: "#f87171", high: "#fb923c", medium: "#fbbf24" };
 const riskBg    = { critical: "rgba(248,113,113,.1)", high: "rgba(251,146,60,.1)", medium: "rgba(251,191,36,.1)" };
 const statusColor = { pending: "#fbbf24", approved: "#4ade80", rejected: "#f87171" };

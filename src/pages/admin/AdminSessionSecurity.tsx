@@ -68,6 +68,10 @@ function seedSuspicious(): SuspiciousEvent[] {
 }
 
 
+const SESSIONS_KEY = "admin_sess_sec_sessions_v1";
+const SECURITY_KEY = "admin_sess_sec_settings_v1";
+const SUSPICIOUS_KEY = "admin_sess_sec_suspicious_v1";
+
 function load<T>(key: string, seed: () => T[]): T[] {
   try { const d = localStorage.getItem(key); if (d) return JSON.parse(d); } catch { /* */ }
   const s = seed(); localStorage.setItem(key, JSON.stringify(s)); return s;

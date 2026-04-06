@@ -23,6 +23,7 @@ function load<T>(key:string,seed:()=>T[]): T[] {
   const s=seed(); localStorage.setItem(key,JSON.stringify(s)); return s;
 }
 
+const CACHE_KEY = "admin_cache_manager_v1";
 const statusColor = { healthy:"#4ade80", stale:"#fbbf24", failed:"#f87171" };
 
 export default function AdminCacheManager() {

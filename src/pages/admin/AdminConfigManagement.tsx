@@ -33,6 +33,8 @@ interface ConfigAudit {
   changedBy: string; timestamp: string; approved: boolean;
 }
 
+const TOGGLES_KEY = "admin_config_toggles_v1";
+
 function load<T>(key: string, seed: () => T[]): T[] {
   try { const d = localStorage.getItem(key); if (d) return JSON.parse(d); } catch {}
   const s = seed(); localStorage.setItem(key, JSON.stringify(s)); return s;
