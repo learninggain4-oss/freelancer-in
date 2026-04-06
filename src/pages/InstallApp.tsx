@@ -44,7 +44,7 @@ const stepStatus = (from: number, to: number, progress: number): StepStatus => {
 const InstallApp = () => {
   const [hasPrompt, setHasPrompt]   = useState(() => !!pwa.getPrompt());
   const [platform, setPlatform]     = useState<Platform>("other");
-  const [phase, setPhase]           = useState<"idle" | "installing" | "confirming" | "done" | "dismissed">(
+  const [phase, setPhase]           = useState<"idle" | "installing" | "confirming" | "done" | "dismissed" | "no-prompt">(
     () => pwa.isInstalled() ? "done" : "idle"
   );
   const [progress, setProgress]     = useState(0);
@@ -75,12 +75,20 @@ const InstallApp = () => {
   };
 
   const handleInstall = async () => {
-    const prompt = pwa.getPrompt();
-    if (!prompt) return;
-
+    // Start animation IMMEDIATELY — always visible on click
     setPhase("installing");
     progressRef.current = 0;
     setProgress(0);
+
+    const prompt = pwa.getPrompt();
+
+    if (!prompt) {
+      // No browser prompt available — animate to completion then show guide
+      animateTo(100, 1.8, () => {
+        setTimeout(() => setPhase("no-prompt"), 300);
+      });
+      return;
+    }
 
     // Animate 0 → 68% (check + download + cache steps)
     animateTo(68, 1.2, async () => {
@@ -123,6 +131,7 @@ const InstallApp = () => {
 
   const circumference = 2 * Math.PI * R;
   const isInstalling  = phase === "installing" || phase === "confirming";
+  const isProcessing  = isInstalling || phase === "no-prompt";
   const activeStep    = STEPS.find(s => progress >= s.from && progress < s.to) ?? STEPS[STEPS.length - 1];
 
   return (
@@ -301,6 +310,26 @@ const InstallApp = () => {
                 )}
               </div>
 
+            /* No-prompt fallback after animation */
+            ) : phase === "no-prompt" ? (
+              <div style={{ textAlign: "center", padding: "8px 0" }}>
+                <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(99,102,241,.12)", border: "2px solid rgba(99,102,241,.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                  <Monitor size={26} color={A1} />
+                </div>
+                <p style={{ fontSize: 17, fontWeight: 800, color: "white", margin: 0 }}>Open in Chrome or Edge</p>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,.4)", marginTop: 8, lineHeight: 1.5 }}>
+                  Your browser hasn't offered an install prompt yet. Try opening this page in <strong style={{ color: "rgba(255,255,255,.55)" }}>Google Chrome</strong> or <strong style={{ color: "rgba(255,255,255,.55)" }}>Microsoft Edge</strong>.
+                </p>
+                <div style={{ marginTop: 14, padding: "11px 14px", borderRadius: 12, background: `${A1}18`, border: `1px solid ${A1}44` }}>
+                  <p style={{ fontSize: 12, color: "rgba(165,180,252,.85)", margin: 0 }}>
+                    💡 Or tap the browser menu → "Install App" / "Add to Home Screen"
+                  </p>
+                </div>
+                <button onClick={handleRetry} style={{ marginTop: 18, padding: "11px 28px", borderRadius: 12, background: `linear-gradient(135deg,${A1},${A2})`, border: "none", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer", boxShadow: `0 4px 16px ${A1}55` }}>
+                  Try Again
+                </button>
+              </div>
+
             /* Dismissed */
             ) : phase === "dismissed" ? (
               <div style={{ textAlign: "center", padding: "8px 0" }}>
@@ -384,7 +413,7 @@ const InstallApp = () => {
         </div>
 
         {/* Benefits strip */}
-        {phase === "idle" && !isInstalling && (
+        {phase === "idle" && !isProcessing && (
           <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 16 }}>
             {["Free", "Secure", "Offline Ready"].map(label => (
               <div key={label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
