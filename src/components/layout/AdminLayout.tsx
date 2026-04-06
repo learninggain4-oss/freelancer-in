@@ -366,40 +366,48 @@ const QUICK_ACTIONS = [
 
 
 /* ─── Clear Data config per admin route ─────────────────────────────────── */
+interface ClearTableConfig {
+  name: string;
+  label: string;
+  labelField: string;
+  dateField?: string;
+  filter?: Record<string, string>;
+}
 interface ClearConfig {
   pageLabel: string;
-  tables: Array<{ name: string; label: string; filter?: Record<string, string> }>;
+  tables: ClearTableConfig[];
   warning: string;
 }
+type FetchedRecord = { id: string; label: string; date?: string };
 
 const CLEAR_DATA_MAP: Record<string, ClearConfig> = {
-  "/admin/notifications":      { pageLabel: "Notifications",          tables: [{ name: "notifications",         label: "all platform notifications" }],                        warning: "All user and system notifications will be permanently deleted." },
-  "/admin/announcements":      { pageLabel: "Announcements",          tables: [{ name: "announcements",         label: "all announcements" }],                                  warning: "All platform announcements will be permanently removed." },
-  "/admin/hero-slides":        { pageLabel: "Hero Slides",            tables: [{ name: "hero_slides",           label: "all hero slides" }],                                    warning: "All hero slideshow entries will be permanently deleted." },
-  "/admin/testimonials":       { pageLabel: "Testimonials",           tables: [{ name: "testimonials",          label: "all testimonials" }],                                   warning: "All testimonials will be permanently removed from the platform." },
-  "/admin/reviews":            { pageLabel: "User Reviews",           tables: [{ name: "user_reviews",          label: "all user reviews" }],                                   warning: "All user reviews and star ratings will be permanently deleted." },
-  "/admin/legal-documents":    { pageLabel: "Legal Documents",        tables: [{ name: "legal_documents",       label: "all legal documents" }],                                warning: "All legal documents (T&C, Privacy Policy, etc.) will be permanently removed." },
-  "/admin/countdowns":         { pageLabel: "Countdowns",             tables: [{ name: "countdowns",            label: "all countdown timers" }],                               warning: "All countdown timers will be permanently deleted." },
-  "/admin/referrals":          { pageLabel: "Referrals",              tables: [{ name: "referrals",             label: "all referral records" }],                               warning: "All referral records and bonus entries will be permanently deleted." },
-  "/admin/verifications":      { pageLabel: "Aadhaar Verifications",  tables: [{ name: "aadhaar_verifications", label: "all Aadhaar verification records" }],                   warning: "All Aadhaar KYC records will be permanently deleted. Users will need to re-submit their documents." },
-  "/admin/bank-verifications": { pageLabel: "Bank Verifications",     tables: [{ name: "bank_verifications",   label: "all bank verification records" }],                      warning: "All bank account verification records will be permanently deleted. Users will need to re-submit their bank details." },
-  "/admin/withdrawals":        { pageLabel: "Withdrawals",            tables: [{ name: "withdrawals",           label: "all withdrawal requests" }],                            warning: "All withdrawal request records will be permanently deleted. This is a financial record — this action cannot be undone." },
-  "/admin/recovery-requests":  { pageLabel: "Recovery Requests",      tables: [{ name: "recovery_requests",    label: "all recovery requests" }],                               warning: "All account recovery requests and held-fund records will be permanently deleted." },
-  "/admin/ip-blocking":        { pageLabel: "IP Blocking",            tables: [{ name: "blocked_ips",          label: "all blocked IP entries" }],                             warning: "All blocked IP address entries will be removed. Previously blocked IPs will be able to access the platform again." },
-  "/admin/wallet-upgrades":    { pageLabel: "Wallet Upgrades",        tables: [{ name: "wallet_upgrade_requests", label: "all wallet upgrade requests" }],                     warning: "All wallet upgrade request records will be permanently deleted." },
-  "/admin/jobs":               { pageLabel: "Jobs",                   tables: [{ name: "projects",             label: "all job/project records" }],                            warning: "ALL job and project records (open, in-progress, completed) will be permanently deleted. This cannot be undone." },
-  "/admin/auto-responses":     { pageLabel: "Auto Responses",         tables: [{ name: "upgrade_auto_responses", label: "all auto-response templates" }, { name: "quick_reply_analytics", label: "quick reply analytics" }], warning: "All auto-response templates and quick-reply analytics will be permanently deleted." },
-  "/admin/services":           { pageLabel: "Services",               tables: [{ name: "service_categories",   label: "all service categories" }, { name: "service_skills", label: "service skills" }], warning: "All service categories and skills will be permanently deleted. Freelancer profiles may lose their skill tags." },
-  "/admin/payment-methods":    { pageLabel: "Payment Methods",        tables: [{ name: "payment_methods",      label: "all custom payment methods" }],                         warning: "All configured payment methods will be permanently deleted." },
-  "/admin/attendance":         { pageLabel: "Attendance",             tables: [{ name: "attendance",           label: "all attendance records" }],                             warning: "All attendance and check-in records will be permanently deleted." },
-  "/admin/pwa-installs":       { pageLabel: "App Installs",           tables: [{ name: "pwa_installs",         label: "all app install records" }],                            warning: "All PWA/app install tracking records will be permanently deleted." },
-  "/admin/visitors":           { pageLabel: "Site Visitors",          tables: [{ name: "site_visitors",        label: "all visitor records" }],                                warning: "All site visitor tracking records will be permanently deleted." },
-  "/admin/audit-logs":         { pageLabel: "Audit Logs",             tables: [{ name: "audit_logs",           label: "all audit log entries" }],                              warning: "All admin action audit logs will be permanently deleted. You will lose the history of all admin operations." },
-  "/admin/sessions":           { pageLabel: "Sessions",               tables: [{ name: "admin_sessions",      label: "all recorded sessions" }],                              warning: "All recorded user session data will be permanently deleted." },
-  "/admin/suspicious-users":   { pageLabel: "Suspicious Users",       tables: [{ name: "user_risk_scores",    label: "all risk score records" }],                             warning: "All user risk scores and suspicious activity flags will be permanently cleared." },
-  "/admin/fraud-cases":        { pageLabel: "Fraud Cases",            tables: [{ name: "fraud_cases",         label: "all fraud case records" }],                             warning: "All fraud case records will be permanently deleted. This removes the complete fraud investigation history." },
-  "/admin/fraud-alerts":       { pageLabel: "Fraud Alerts",           tables: [{ name: "fraud_alerts",        label: "all fraud alert records" }],                            warning: "All fraud alert records and triggers will be permanently deleted." },
-  "/admin/fraud-audit-log":    { pageLabel: "Fraud Audit Log",        tables: [{ name: "fraud_audit_logs",    label: "all fraud audit log entries" }],                        warning: "All fraud system audit logs will be permanently deleted." },
+  "/admin/notifications":      { pageLabel: "Notifications",         tables: [{ name: "notifications",            label: "Notifications",            labelField: "message",          dateField: "created_at" }],                                                                                                    warning: "Selected notification records will be permanently deleted." },
+  "/admin/announcements":      { pageLabel: "Announcements",         tables: [{ name: "announcements",            label: "Announcements",            labelField: "title",            dateField: "created_at" }],                                                                                                    warning: "Selected announcements will be permanently removed." },
+  "/admin/hero-slides":        { pageLabel: "Hero Slides",           tables: [{ name: "hero_slides",              label: "Hero Slides",              labelField: "title",            dateField: "created_at" }],                                                                                                    warning: "Selected hero slideshow entries will be permanently deleted." },
+  "/admin/testimonials":       { pageLabel: "Testimonials",          tables: [{ name: "testimonials",             label: "Testimonials",             labelField: "author_name",      dateField: "created_at" }],                                                                                                    warning: "Selected testimonials will be permanently removed." },
+  "/admin/reviews":            { pageLabel: "User Reviews",          tables: [{ name: "user_reviews",             label: "User Reviews",             labelField: "title",            dateField: "created_at" }],                                                                                                    warning: "Selected user reviews will be permanently deleted." },
+  "/admin/legal-documents":    { pageLabel: "Legal Documents",       tables: [{ name: "legal_documents",          label: "Legal Documents",          labelField: "title",            dateField: "created_at" }],                                                                                                    warning: "Selected legal documents will be permanently removed." },
+  "/admin/countdowns":         { pageLabel: "Countdowns",            tables: [{ name: "countdowns",               label: "Countdown Timers",         labelField: "name" }],                                                                                                                                         warning: "Selected countdown timers will be permanently deleted." },
+  "/admin/referrals":          { pageLabel: "Referrals",             tables: [{ name: "referrals",                label: "Referral Records",         labelField: "id",               dateField: "created_at" }],                                                                                                    warning: "Selected referral records will be permanently deleted." },
+  "/admin/verifications":      { pageLabel: "Aadhaar Verifications", tables: [{ name: "aadhaar_verifications",    label: "Aadhaar Verifications",    labelField: "status",           dateField: "created_at" }],                                                                                                    warning: "Selected Aadhaar KYC records will be permanently deleted." },
+  "/admin/bank-verifications": { pageLabel: "Bank Verifications",    tables: [{ name: "bank_verifications",       label: "Bank Verifications",       labelField: "bank_name",        dateField: "created_at" }],                                                                                                    warning: "Selected bank verification records will be permanently deleted." },
+  "/admin/withdrawals":        { pageLabel: "Withdrawals",           tables: [{ name: "withdrawals",              label: "Withdrawal Requests",      labelField: "amount",           dateField: "created_at" }],                                                                                                    warning: "Selected withdrawal records will be permanently deleted." },
+  "/admin/recovery-requests":  { pageLabel: "Recovery Requests",     tables: [{ name: "recovery_requests",       label: "Recovery Requests",        labelField: "status",           dateField: "created_at" }],                                                                                                    warning: "Selected recovery request records will be permanently deleted." },
+  "/admin/ip-blocking":        { pageLabel: "IP Blocking",           tables: [{ name: "blocked_ips",              label: "Blocked IPs",              labelField: "ip_address",       dateField: "blocked_at" }],                                                                                                    warning: "Selected blocked IP entries will be removed." },
+  "/admin/wallet-upgrades":    { pageLabel: "Wallet Upgrades",       tables: [{ name: "wallet_upgrade_requests", label: "Wallet Upgrade Requests",  labelField: "status",           dateField: "created_at" }],                                                                                                    warning: "Selected wallet upgrade request records will be permanently deleted." },
+  "/admin/jobs":               { pageLabel: "Jobs",                  tables: [{ name: "projects",                 label: "Jobs / Projects",          labelField: "title",            dateField: "created_at" }],                                                                                                    warning: "Selected job/project records will be permanently deleted." },
+  "/admin/auto-responses":     { pageLabel: "Auto Responses",        tables: [{ name: "upgrade_auto_responses",   label: "Auto-Response Templates",  labelField: "title" }, { name: "quick_reply_analytics", label: "Quick Reply Analytics", labelField: "query_text", dateField: "created_at" }],                 warning: "Selected auto-response and analytics records will be permanently deleted." },
+  "/admin/services":           { pageLabel: "Services",              tables: [{ name: "service_categories",       label: "Service Categories",       labelField: "name" }, { name: "service_skills", label: "Service Skills", labelField: "name" }],                                                               warning: "Selected service categories/skills will be permanently deleted." },
+  "/admin/payment-methods":    { pageLabel: "Payment Methods",       tables: [{ name: "payment_methods",          label: "Payment Methods",          labelField: "name" }],                                                                                                                                         warning: "Selected payment method records will be permanently deleted." },
+  "/admin/attendance":         { pageLabel: "Attendance",            tables: [{ name: "attendance",               label: "Attendance Records",       labelField: "date",             dateField: "created_at" }],                                                                                                    warning: "Selected attendance records will be permanently deleted." },
+  "/admin/pwa-installs":       { pageLabel: "App Installs",          tables: [{ name: "pwa_installs",             label: "App Install Records",      labelField: "platform",         dateField: "installed_at" }],                                                                                                  warning: "Selected PWA install records will be permanently deleted." },
+  "/admin/visitors":           { pageLabel: "Site Visitors",         tables: [{ name: "site_visitors",            label: "Site Visitor Records",     labelField: "ip_address",       dateField: "visited_at" }],                                                                                                    warning: "Selected visitor records will be permanently deleted." },
+  "/admin/audit-logs":         { pageLabel: "Audit Logs",            tables: [{ name: "audit_logs",               label: "Audit Log Entries",        labelField: "action",           dateField: "created_at" }],                                                                                                    warning: "Selected audit log entries will be permanently deleted." },
+  "/admin/sessions":           { pageLabel: "Sessions",              tables: [{ name: "admin_sessions",           label: "Session Records",          labelField: "id",               dateField: "created_at" }],                                                                                                    warning: "Selected session records will be permanently deleted." },
+  "/admin/suspicious-users":   { pageLabel: "Suspicious Users",      tables: [{ name: "user_risk_scores",         label: "Risk Score Records",       labelField: "score",            dateField: "created_at" }],                                                                                                    warning: "Selected risk score records will be permanently cleared." },
+  "/admin/fraud-cases":        { pageLabel: "Fraud Cases",           tables: [{ name: "fraud_cases",              label: "Fraud Case Records",       labelField: "id",               dateField: "created_at" }],                                                                                                    warning: "Selected fraud case records will be permanently deleted." },
+  "/admin/fraud-alerts":       { pageLabel: "Fraud Alerts",          tables: [{ name: "fraud_alerts",             label: "Fraud Alert Records",      labelField: "id",               dateField: "created_at" }],                                                                                                    warning: "Selected fraud alert records will be permanently deleted." },
+  "/admin/fraud-audit-log":    { pageLabel: "Fraud Audit Log",       tables: [{ name: "fraud_audit_logs",         label: "Fraud Audit Log Entries",  labelField: "action",           dateField: "created_at" }],                                                                                                    warning: "Selected fraud audit log entries will be permanently deleted." },
 };
 
 function useClickOutside(ref: React.RefObject<HTMLDivElement | null>, fn: () => void) {
@@ -418,7 +426,9 @@ const AdminLayout = () => {
   const [clearResult, setClearResult]         = useState<{ ok: boolean; msg: string } | null>(null);
   const [clearPhase, setClearPhase]           = useState<"confirm"|"countdown"|"result">("confirm");
   const [clearCountdown, setClearCountdown]   = useState(120);
-  const [selectedTables, setSelectedTables]   = useState<Set<string>>(new Set());
+  const [selectedRecordIds, setSelectedRecordIds] = useState<Set<string>>(new Set());
+  const [fetchedRecords, setFetchedRecords]   = useState<Record<string, FetchedRecord[]>>({});
+  const [fetchingRecords, setFetchingRecords] = useState(false);
   const clearIntervalRef                       = useRef<ReturnType<typeof setInterval> | null>(null);
   const [searchQ, setSearchQ]               = useState("");
   const [profileOpen, setProfileOpen]       = useState(false);
@@ -546,13 +556,30 @@ const AdminLayout = () => {
     if (clearIntervalRef.current) { clearInterval(clearIntervalRef.current); clearIntervalRef.current = null; }
   };
 
-  const openClearDialog = () => {
+  const openClearDialog = async () => {
     stopClearInterval();
     setClearPhase("confirm");
     setClearCountdown(120);
     setClearResult(null);
-    setSelectedTables(new Set(clearConfig?.tables.map(t => t.name) ?? []));
+    setSelectedRecordIds(new Set());
+    setFetchedRecords({});
     setClearDialogOpen(true);
+    if (!clearConfig) return;
+    setFetchingRecords(true);
+    const records: Record<string, FetchedRecord[]> = {};
+    for (const t of clearConfig.tables) {
+      const fields = ["id", t.labelField, ...(t.dateField ? [t.dateField] : [])].filter((v, i, a) => a.indexOf(v) === i).join(",");
+      const { data } = await (supabase.from(t.name as any) as any).select(fields).order("id", { ascending: false }).limit(200);
+      if (data) {
+        records[t.name] = (data as any[]).map((row: any) => ({
+          id: String(row.id ?? ""),
+          label: row[t.labelField] != null ? String(row[t.labelField]).substring(0, 80) : `Record #${row.id}`,
+          date: t.dateField && row[t.dateField] ? row[t.dateField] : undefined,
+        }));
+      }
+    }
+    setFetchedRecords(records);
+    setFetchingRecords(false);
   };
 
   const cancelClear = () => {
@@ -561,10 +588,12 @@ const AdminLayout = () => {
     setClearPhase("confirm");
     setClearCountdown(120);
     setClearResult(null);
+    setSelectedRecordIds(new Set());
+    setFetchedRecords({});
   };
 
   const startCountdown = () => {
-    if (!clearConfig || selectedTables.size === 0) return;
+    if (!clearConfig || selectedRecordIds.size === 0) return;
     setClearPhase("countdown");
     setClearCountdown(120);
     clearIntervalRef.current = setInterval(() => {
@@ -587,19 +616,19 @@ const AdminLayout = () => {
 
   const executeClearData = async () => {
     if (!clearConfig) return;
-    const tablesToClear = clearConfig.tables.filter(t => selectedTables.has(t.name));
-    if (tablesToClear.length === 0) return;
+    if (selectedRecordIds.size === 0) return;
     setClearingData(true);
     setClearPhase("result");
     setClearResult(null);
     try {
-      for (const t of tablesToClear) {
-        const { error } = await (supabase.from(t.name as any) as any)
-          .delete()
-          .not("id", "is", null);
+      for (const t of clearConfig.tables) {
+        const tableRecords = fetchedRecords[t.name] || [];
+        const idsToDelete = tableRecords.filter(r => selectedRecordIds.has(`${t.name}::${r.id}`)).map(r => r.id);
+        if (idsToDelete.length === 0) continue;
+        const { error } = await (supabase.from(t.name as any) as any).delete().in("id", idsToDelete);
         if (error) throw new Error(`Failed to clear ${t.label}: ${error.message}`);
       }
-      setClearResult({ ok: true, msg: `${clearConfig.pageLabel} data cleared successfully.` });
+      setClearResult({ ok: true, msg: `${selectedRecordIds.size} record${selectedRecordIds.size === 1 ? "" : "s"} deleted successfully.` });
       setTimeout(() => { setClearDialogOpen(false); setClearPhase("confirm"); setClearResult(null); }, 2500);
     } catch (err: any) {
       setClearResult({ ok: false, msg: err.message || "Clear failed." });
@@ -1063,15 +1092,41 @@ const AdminLayout = () => {
         const progress = ((120 - clearCountdown) / 120) * 100;
         const circumference = 2 * Math.PI * 52;
         const dashOffset = circumference - (progress / 100) * circumference;
-        const selectedCount = selectedTables.size;
+        const selectedCount = selectedRecordIds.size;
+
+        const totalRecords = Object.values(fetchedRecords).reduce((s, arr) => s + arr.length, 0);
+
+        const toggleTableAll = (tableName: string, records: FetchedRecord[]) => {
+          const allSel = records.every(r => selectedRecordIds.has(`${tableName}::${r.id}`));
+          const next = new Set(selectedRecordIds);
+          if (allSel) records.forEach(r => next.delete(`${tableName}::${r.id}`));
+          else records.forEach(r => next.add(`${tableName}::${r.id}`));
+          setSelectedRecordIds(next);
+        };
+
+        const toggleRecord = (key: string) => {
+          const next = new Set(selectedRecordIds);
+          if (next.has(key)) next.delete(key); else next.add(key);
+          setSelectedRecordIds(next);
+        };
+
+        const toggleSelectAll = () => {
+          if (selectedCount === totalRecords) {
+            setSelectedRecordIds(new Set());
+          } else {
+            const next = new Set<string>();
+            Object.entries(fetchedRecords).forEach(([tn, recs]) => recs.forEach(r => next.add(`${tn}::${r.id}`)));
+            setSelectedRecordIds(next);
+          }
+        };
 
         return (
           <div style={{ position: "fixed", inset: 0, zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div onClick={clearPhase === "countdown" ? undefined : cancelClear}
               style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.6)", backdropFilter: "blur(5px)" }} />
-            <div style={{ position: "relative", background: "#ffffff", borderRadius: 22, boxShadow: "0 32px 90px rgba(0,0,0,.35)", padding: "28px 28px 24px", width: "100%", maxWidth: 480, margin: "0 16px", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ position: "relative", background: "#ffffff", borderRadius: 22, boxShadow: "0 32px 90px rgba(0,0,0,.35)", padding: "28px 28px 24px", width: "100%", maxWidth: 540, margin: "0 16px", maxHeight: "92vh", overflowY: "auto" }}>
 
-              {/* ── PHASE 1: Confirm + Select ── */}
+              {/* ── PHASE 1: Confirm + Select Records ── */}
               {clearPhase === "confirm" && (
                 <>
                   <button onClick={cancelClear} style={{ position: "absolute", top: 14, right: 14, background: "rgba(0,0,0,.06)", border: "none", borderRadius: 8, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" }}>
@@ -1083,39 +1138,102 @@ const AdminLayout = () => {
                   </div>
 
                   <h2 style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", margin: "0 0 4px", letterSpacing: "-0.3px" }}>
-                    {clearConfig ? `Clear ${clearConfig.pageLabel} Data?` : "Clear Page Data"}
+                    {clearConfig ? `Clear ${clearConfig.pageLabel} Records` : "Clear Page Data"}
                   </h2>
 
                   {clearConfig ? (
                     <>
-                      <div style={{ display: "flex", gap: 9, padding: "11px 13px", background: "rgba(239,68,68,.07)", border: "1px solid rgba(239,68,68,.18)", borderRadius: 11, margin: "14px 0 18px" }}>
+                      <div style={{ display: "flex", gap: 9, padding: "10px 13px", background: "rgba(239,68,68,.07)", border: "1px solid rgba(239,68,68,.18)", borderRadius: 11, margin: "12px 0 16px" }}>
                         <AlertTriangle size={15} color="#dc2626" style={{ flexShrink: 0, marginTop: 1 }} />
                         <div>
-                          <p style={{ fontSize: 12.5, fontWeight: 700, color: "#dc2626", margin: "0 0 3px" }}>Permanent Action — Cannot Be Undone</p>
-                          <p style={{ fontSize: 12, color: "#64748b", margin: 0, lineHeight: 1.5 }}>{clearConfig.warning}</p>
+                          <p style={{ fontSize: 12, fontWeight: 700, color: "#dc2626", margin: "0 0 2px" }}>Permanent — Cannot Be Undone</p>
+                          <p style={{ fontSize: 11.5, color: "#64748b", margin: 0, lineHeight: 1.5 }}>{clearConfig.warning}</p>
                         </div>
                       </div>
 
-                      <p style={{ fontSize: 11, color: "#64748b", margin: "0 0 8px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.9px" }}>Select data to delete:</p>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 18 }}>
-                        {clearConfig.tables.map(t => {
-                          const checked = selectedTables.has(t.name);
-                          return (
-                            <button key={t.name}
-                              onClick={() => {
-                                const next = new Set(selectedTables);
-                                if (checked) next.delete(t.name); else next.add(t.name);
-                                setSelectedTables(next);
-                              }}
-                              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: checked ? "rgba(239,68,68,.06)" : "#f8fafc", border: `1px solid ${checked ? "rgba(239,68,68,.25)" : "rgba(0,0,0,.08)"}`, cursor: "pointer", textAlign: "left" }}>
-                              {checked
-                                ? <CheckSquare size={16} color="#dc2626" style={{ flexShrink: 0 }} />
-                                : <Square size={16} color="#94a3b8" style={{ flexShrink: 0 }} />}
-                              <span style={{ fontSize: 13, color: checked ? "#0f172a" : "#64748b", fontWeight: checked ? 600 : 400 }}>{t.label}</span>
+                      {/* Record list */}
+                      {fetchingRecords ? (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "28px 0", gap: 10, color: "#64748b", fontSize: 13 }}>
+                          <RotateCcw size={16} color="#6366f1" className="animate-spin" />
+                          Loading records…
+                        </div>
+                      ) : totalRecords === 0 ? (
+                        <div style={{ padding: "18px 0", textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
+                          No records found in this section.
+                        </div>
+                      ) : (
+                        <>
+                          {/* Select all bar */}
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                            <button onClick={toggleSelectAll}
+                              style={{ display: "flex", alignItems: "center", gap: 7, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                              {selectedCount === totalRecords
+                                ? <CheckSquare size={15} color="#dc2626" />
+                                : selectedCount > 0
+                                  ? <CheckSquare size={15} color="#94a3b8" />
+                                  : <Square size={15} color="#94a3b8" />}
+                              <span style={{ fontSize: 11.5, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.8px" }}>
+                                {selectedCount === totalRecords ? "Deselect All" : "Select All"} ({totalRecords})
+                              </span>
                             </button>
-                          );
-                        })}
-                      </div>
+                            {selectedCount > 0 && (
+                              <span style={{ fontSize: 11.5, fontWeight: 700, color: "#dc2626", background: "rgba(239,68,68,.1)", borderRadius: 20, padding: "2px 9px" }}>
+                                {selectedCount} selected
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Records grouped by table */}
+                          <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 18, maxHeight: 340, overflowY: "auto", paddingRight: 2 }}>
+                            {clearConfig.tables.map(t => {
+                              const records = fetchedRecords[t.name] || [];
+                              if (records.length === 0) return null;
+                              const allSel = records.every(r => selectedRecordIds.has(`${t.name}::${r.id}`));
+                              const someSel = records.some(r => selectedRecordIds.has(`${t.name}::${r.id}`));
+                              return (
+                                <div key={t.name}>
+                                  {/* Table section header */}
+                                  <button onClick={() => toggleTableAll(t.name, records)}
+                                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: "#f1f5f9", border: "1px solid rgba(0,0,0,.07)", borderRadius: 8, cursor: "pointer", marginBottom: 5 }}>
+                                    {allSel
+                                      ? <CheckSquare size={14} color="#dc2626" style={{ flexShrink: 0 }} />
+                                      : someSel
+                                        ? <CheckSquare size={14} color="#94a3b8" style={{ flexShrink: 0 }} />
+                                        : <Square size={14} color="#94a3b8" style={{ flexShrink: 0 }} />}
+                                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "#475569" }}>{t.label}</span>
+                                    <span style={{ marginLeft: "auto", fontSize: 10.5, color: "#94a3b8", background: "rgba(0,0,0,.05)", borderRadius: 20, padding: "1px 7px", fontWeight: 600 }}>
+                                      {records.length} record{records.length !== 1 ? "s" : ""}
+                                    </span>
+                                  </button>
+                                  {/* Individual records */}
+                                  <div style={{ display: "flex", flexDirection: "column", gap: 3, paddingLeft: 6 }}>
+                                    {records.map(r => {
+                                      const key = `${t.name}::${r.id}`;
+                                      const checked = selectedRecordIds.has(key);
+                                      return (
+                                        <button key={key} onClick={() => toggleRecord(key)}
+                                          style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 7, background: checked ? "rgba(239,68,68,.05)" : "transparent", border: `1px solid ${checked ? "rgba(239,68,68,.2)" : "rgba(0,0,0,.06)"}`, cursor: "pointer", textAlign: "left" }}>
+                                          {checked
+                                            ? <CheckSquare size={13} color="#dc2626" style={{ flexShrink: 0 }} />
+                                            : <Square size={13} color="#94a3b8" style={{ flexShrink: 0 }} />}
+                                          <span style={{ flex: 1, fontSize: 12.5, color: checked ? "#0f172a" : "#64748b", fontWeight: checked ? 500 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                            {r.label || `Record #${r.id}`}
+                                          </span>
+                                          {r.date && (
+                                            <span style={{ fontSize: 10.5, color: "#94a3b8", flexShrink: 0, marginLeft: 6 }}>
+                                              {new Date(r.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                                            </span>
+                                          )}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </>
+                      )}
 
                       <div style={{ display: "flex", gap: 10 }}>
                         <button onClick={cancelClear}
@@ -1127,7 +1245,7 @@ const AdminLayout = () => {
                           onClick={startCountdown}
                           style={{ flex: 1.5, padding: "11px", borderRadius: 10, background: selectedCount === 0 ? "rgba(239,68,68,.3)" : "#dc2626", border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: selectedCount === 0 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
                           <Trash2 size={14} />
-                          Yes, Clear {selectedCount === clearConfig.tables.length ? "All" : `${selectedCount}`} Data
+                          Delete {selectedCount} Record{selectedCount !== 1 ? "s" : ""}
                         </button>
                       </div>
                     </>
@@ -1171,12 +1289,17 @@ const AdminLayout = () => {
                   {/* What will be deleted */}
                   <div style={{ background: "#fef2f2", border: "1px solid rgba(239,68,68,.2)", borderRadius: 12, padding: "12px 14px", marginBottom: 20, textAlign: "left" }}>
                     <p style={{ fontSize: 11, fontWeight: 700, color: "#dc2626", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: 0.8 }}>Will be deleted:</p>
-                    {clearConfig?.tables.filter(t => selectedTables.has(t.name)).map((t, i) => (
-                      <div key={t.name} style={{ display: "flex", alignItems: "center", gap: 7, padding: i > 0 ? "5px 0 0" : 0 }}>
-                        <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#dc2626", flexShrink: 0 }} />
-                        <span style={{ fontSize: 12.5, color: "#0f172a" }}>{t.label}</span>
-                      </div>
-                    ))}
+                    {clearConfig?.tables.map(t => {
+                      const tableRecs = fetchedRecords[t.name] || [];
+                      const selCount = tableRecs.filter(r => selectedRecordIds.has(`${t.name}::${r.id}`)).length;
+                      if (selCount === 0) return null;
+                      return (
+                        <div key={t.name} style={{ display: "flex", alignItems: "center", gap: 7, padding: "3px 0" }}>
+                          <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#dc2626", flexShrink: 0 }} />
+                          <span style={{ fontSize: 12.5, color: "#0f172a" }}>{selCount} {t.label} record{selCount !== 1 ? "s" : ""}</span>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   <button onClick={cancelClear}
