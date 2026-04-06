@@ -75,7 +75,7 @@ export default function AdminVendorManager() {
           "Supabase":"https://maysttckdfnnzvfeujaj.supabase.co",
           "Supabase Auth":"https://maysttckdfnnzvfeujaj.supabase.co/auth/v1/health",
           "Supabase Storage":"https://maysttckdfnnzvfeujaj.supabase.co/storage/v1/",
-          "Razorpay":"https://razorpay.com","OneSignal":"https://onesignal.com","Replit":"https://replit.com",
+          "Razorpay":"https://razorpay.com","OneSignal":"https://onesignal.com","Lovable":"https://lovable.app",
         };
         const url = urls[p.primaryName] || "https://example.com";
         const t = Date.now();

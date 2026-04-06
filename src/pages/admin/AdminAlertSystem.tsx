@@ -43,7 +43,7 @@ const defaultServices: ServiceDep[] = [
   { id: "s3", name: "Supabase REST API", url: "https://maysttckdfnnzvfeujaj.supabase.co/rest/v1/",     category: "API",           status: "unknown" },
   { id: "s4", name: "OneSignal Push",    url: "https://onesignal.com",                                  category: "Notifications", status: "unknown" },
   { id: "s5", name: "Razorpay/Payments", url: "https://razorpay.com",                                   category: "Payments",      status: "unknown" },
-  { id: "s6", name: "Replit Hosting",    url: "https://replit.com",                                     category: "Hosting",       status: "unknown" },
+  { id: "s6", name: "Lovable Hosting",    url: "https://lovable.app",                                    category: "Hosting",       status: "unknown" },
 ];
 
 function load<T>(key: string, def: T[]): T[] {

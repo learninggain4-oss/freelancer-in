@@ -20,7 +20,7 @@ const SERVICES: ServiceHealth[] = [
   { id:"sv2", name:"Supabase Auth",        category:"Auth",          url:"https://maysttckdfnnzvfeujaj.supabase.co/auth/v1/health", status:"checking", uptime:"99.97%", isSPOF:true,  backupAvailable:false },
   { id:"sv3", name:"Razorpay Gateway",     category:"Payments",      url:"https://razorpay.com",                     status:"checking", uptime:"99.80%", isSPOF:false, backupAvailable:true  },
   { id:"sv4", name:"OneSignal Push",       category:"Notifications", url:"https://onesignal.com",                    status:"checking", uptime:"99.70%", isSPOF:false, backupAvailable:true  },
-  { id:"sv5", name:"Replit Hosting",       category:"Hosting",       url:"https://replit.com",                       status:"checking", uptime:"99.90%", isSPOF:false, backupAvailable:true  },
+  { id:"sv5", name:"Lovable Hosting",       category:"Hosting",       url:"https://lovable.app",                      status:"checking", uptime:"99.90%", isSPOF:false, backupAvailable:true  },
   { id:"sv6", name:"Supabase Storage",     category:"Storage",       url:"https://maysttckdfnnzvfeujaj.supabase.co/storage/v1/", status:"checking", uptime:"99.85%", isSPOF:false, backupAvailable:true },
 ];
 
