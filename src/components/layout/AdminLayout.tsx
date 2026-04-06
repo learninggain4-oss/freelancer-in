@@ -323,7 +323,6 @@ const AdminLayout = () => {
   const [rightOpen, setRightOpen]           = useState(false);
   const [lang, setLang]                     = useState("en");
   const [openNavGroup, setOpenNavGroup]     = useState<string | null>(null);
-  const [navDropPos, setNavDropPos]         = useState<{ top: number; left: number }>({ top: 102, left: 0 });
 
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
@@ -644,35 +643,34 @@ const AdminLayout = () => {
       </header>
 
       {/* ─── HORIZONTAL NAV BAR ─────────────────────────────────────── */}
-      <div ref={navBarRef} style={{ background: tok.header, borderBottom: `1px solid ${tok.headerBdr}`, padding: "0 20px", display: "flex", alignItems: "stretch", overflowX: "auto", zIndex: 29, position: "sticky", top: 58, flexShrink: 0, backdropFilter: "blur(20px)" }}>
+      {/* overflow:visible is critical — lets absolute dropdowns escape the bar */}
+      <div ref={navBarRef} style={{ background: tok.header, borderBottom: `1px solid ${tok.headerBdr}`, padding: "0 20px", display: "flex", alignItems: "stretch", overflow: "visible", zIndex: 29, position: "sticky", top: 58, flexShrink: 0, backdropFilter: "blur(20px)" }}>
         {navGroupItems.map(group => {
           const isGroupActive = group.directPath
             ? location.pathname === group.directPath
             : group.items.some(item => location.pathname === item.path);
           const isOpen = openNavGroup === group.label;
+          const tabColor = isGroupActive ? A1 : tok.mainSub;
+          const tabBorder = isGroupActive ? `2px solid ${A1}` : "2px solid transparent";
           return (
             <div key={group.label} style={{ position: "relative", flexShrink: 0 }}>
               {group.directPath ? (
                 <NavLink to={group.directPath}
-                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 16px", height: 44, color: isGroupActive ? A1 : tok.mainSub, fontSize: 13, fontWeight: isGroupActive ? 700 : 500, borderBottom: isGroupActive ? `2px solid ${A1}` : "2px solid transparent", textDecoration: "none", whiteSpace: "nowrap", background: "none" }}>
+                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 16px", height: 44, color: tabColor, fontSize: 13, fontWeight: isGroupActive ? 700 : 500, borderBottom: tabBorder, textDecoration: "none", whiteSpace: "nowrap" }}>
                   <group.icon size={13} />
                   <span>{group.label}</span>
                 </NavLink>
               ) : (
                 <button
-                  onClick={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setNavDropPos({ top: rect.bottom + 2, left: rect.left });
-                    setOpenNavGroup(isOpen ? null : group.label);
-                  }}
-                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 16px", height: 44, color: isGroupActive ? A1 : tok.mainSub, fontSize: 13, fontWeight: isGroupActive ? 700 : 500, borderBottom: isGroupActive ? `2px solid ${A1}` : "2px solid transparent", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>
+                  onClick={() => setOpenNavGroup(isOpen ? null : group.label)}
+                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 16px", height: 44, color: tabColor, fontSize: 13, fontWeight: isGroupActive ? 700 : 500, borderTop: "none", borderLeft: "none", borderRight: "none", borderBottom: tabBorder, background: "transparent", cursor: "pointer", whiteSpace: "nowrap" }}>
                   <group.icon size={13} />
                   <span>{group.label}</span>
                   <ChevronDown size={10} style={{ opacity: 0.5, marginLeft: 2 }} />
                 </button>
               )}
               {isOpen && group.items.length > 0 && (
-                <div className="admin-drop" style={{ position: "fixed", top: navDropPos.top, left: navDropPos.left, zIndex: 9999, background: tok.dropBg, border: `1px solid ${tok.dropBdr}`, borderRadius: 14, boxShadow: "0 20px 60px rgba(0,0,0,.2)", minWidth: 220, maxHeight: 480, overflowY: "auto" }}>
+                <div className="admin-drop" style={{ position: "absolute", top: "calc(100% + 2px)", left: 0, zIndex: 9999, background: tok.dropBg, border: `1px solid ${tok.dropBdr}`, borderRadius: 14, boxShadow: "0 20px 60px rgba(0,0,0,.2)", minWidth: 220, maxHeight: 480, overflowY: "auto" }}>
                   <div style={{ padding: "8px 14px 6px", borderBottom: `1px solid ${tok.dropBdr}` }}>
                     <p style={{ fontSize: 10, fontWeight: 700, color: tok.mainSub, textTransform: "uppercase", letterSpacing: 1, margin: 0 }}>{group.label}</p>
                   </div>
