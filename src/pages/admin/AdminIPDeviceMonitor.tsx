@@ -48,8 +48,8 @@ export default function AdminIPDeviceMonitor() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("site_visitors")
-        .select("id, ip_address, profile_id, created_at, user_agent, path")
-        .order("created_at", { ascending: false })
+        .select("id, ip_address, profile_id, visited_at, user_agent, page_path")
+        .order("visited_at", { ascending: false })
         .limit(200);
       if (error) throw error;
       return data || [];
