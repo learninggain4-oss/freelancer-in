@@ -19,7 +19,7 @@ import {
   Search, MessageSquare, Plus, ChevronDown,
   User, Languages, PanelRightOpen, PanelRightClose,
   CheckCircle2, Info, XCircle, Mail, Image as ImageIcon, RotateCcw,
-  Trash2,
+  Trash2, CheckSquare, Square, Timer,
 } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 
@@ -416,6 +416,10 @@ const AdminLayout = () => {
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const [clearingData, setClearingData]       = useState(false);
   const [clearResult, setClearResult]         = useState<{ ok: boolean; msg: string } | null>(null);
+  const [clearPhase, setClearPhase]           = useState<"confirm"|"countdown"|"result">("confirm");
+  const [clearCountdown, setClearCountdown]   = useState(120);
+  const [selectedTables, setSelectedTables]   = useState<Set<string>>(new Set());
+  const clearIntervalRef                       = useRef<ReturnType<typeof setInterval> | null>(null);
   const [searchQ, setSearchQ]               = useState("");
   const [profileOpen, setProfileOpen]       = useState(false);
   const [notifOpen, setNotifOpen]           = useState(false);
@@ -538,20 +542,65 @@ const AdminLayout = () => {
 
   const clearConfig = CLEAR_DATA_MAP[location.pathname] ?? null;
 
+  const stopClearInterval = () => {
+    if (clearIntervalRef.current) { clearInterval(clearIntervalRef.current); clearIntervalRef.current = null; }
+  };
+
+  const openClearDialog = () => {
+    stopClearInterval();
+    setClearPhase("confirm");
+    setClearCountdown(120);
+    setClearResult(null);
+    setSelectedTables(new Set(clearConfig?.tables.map(t => t.name) ?? []));
+    setClearDialogOpen(true);
+  };
+
+  const cancelClear = () => {
+    stopClearInterval();
+    setClearDialogOpen(false);
+    setClearPhase("confirm");
+    setClearCountdown(120);
+    setClearResult(null);
+  };
+
+  const startCountdown = () => {
+    if (!clearConfig || selectedTables.size === 0) return;
+    setClearPhase("countdown");
+    setClearCountdown(120);
+    clearIntervalRef.current = setInterval(() => {
+      setClearCountdown(prev => {
+        if (prev <= 1) {
+          stopClearInterval();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  useEffect(() => {
+    if (clearPhase === "countdown" && clearCountdown === 0) {
+      executeClearData();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clearPhase, clearCountdown]);
+
   const executeClearData = async () => {
     if (!clearConfig) return;
+    const tablesToClear = clearConfig.tables.filter(t => selectedTables.has(t.name));
+    if (tablesToClear.length === 0) return;
     setClearingData(true);
+    setClearPhase("result");
     setClearResult(null);
     try {
-      for (const t of clearConfig.tables) {
-        // Delete all rows by filtering "id is not null" (matches every row)
+      for (const t of tablesToClear) {
         const { error } = await (supabase.from(t.name as any) as any)
           .delete()
           .not("id", "is", null);
         if (error) throw new Error(`Failed to clear ${t.label}: ${error.message}`);
       }
       setClearResult({ ok: true, msg: `${clearConfig.pageLabel} data cleared successfully.` });
-      setTimeout(() => { setClearDialogOpen(false); setClearResult(null); }, 1800);
+      setTimeout(() => { setClearDialogOpen(false); setClearPhase("confirm"); setClearResult(null); }, 2500);
     } catch (err: any) {
       setClearResult({ ok: false, msg: err.message || "Clear failed." });
     }
@@ -878,7 +927,7 @@ const AdminLayout = () => {
 
           {/* ── Clear Data Button ── */}
           <button
-            onClick={() => { setClearResult(null); setClearDialogOpen(true); }}
+            onClick={openClearDialog}
             title="Clear page data"
             style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 11px", borderRadius: 8, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.2)", color: "#dc2626", fontSize: 11.5, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,.15)"; }}
@@ -1006,96 +1055,176 @@ const AdminLayout = () => {
         </footer>
       </div>
 
-      {/* ─── Clear Data Confirmation Modal ─────────────────────────── */}
-      {clearDialogOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          {/* Backdrop */}
-          <div
-            onClick={() => { if (!clearingData) { setClearDialogOpen(false); setClearResult(null); } }}
-            style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.55)", backdropFilter: "blur(4px)" }}
-          />
-          {/* Dialog */}
-          <div style={{ position: "relative", background: "#ffffff", borderRadius: 20, boxShadow: "0 30px 80px rgba(0,0,0,.3)", padding: "28px 28px 24px", width: "100%", maxWidth: 460, margin: "0 16px" }}>
+      {/* ─── Clear Data Modal (3-phase) ─────────────────────────────── */}
+      {clearDialogOpen && (() => {
+        const mins = Math.floor(clearCountdown / 60);
+        const secs = clearCountdown % 60;
+        const timerLabel = `${mins}:${secs.toString().padStart(2, "0")}`;
+        const progress = ((120 - clearCountdown) / 120) * 100;
+        const circumference = 2 * Math.PI * 52;
+        const dashOffset = circumference - (progress / 100) * circumference;
+        const selectedCount = selectedTables.size;
 
-            {/* Close × */}
-            {!clearingData && (
-              <button
-                onClick={() => { setClearDialogOpen(false); setClearResult(null); }}
-                style={{ position: "absolute", top: 14, right: 14, background: "rgba(0,0,0,.06)", border: "none", borderRadius: 8, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" }}>
-                <X size={15} />
-              </button>
-            )}
+        return (
+          <div style={{ position: "fixed", inset: 0, zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div onClick={clearPhase === "countdown" ? undefined : cancelClear}
+              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.6)", backdropFilter: "blur(5px)" }} />
+            <div style={{ position: "relative", background: "#ffffff", borderRadius: 22, boxShadow: "0 32px 90px rgba(0,0,0,.35)", padding: "28px 28px 24px", width: "100%", maxWidth: 480, margin: "0 16px", maxHeight: "90vh", overflowY: "auto" }}>
 
-            {/* Icon */}
-            <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(239,68,68,.1)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
-              <Trash2 size={26} color="#dc2626" />
+              {/* ── PHASE 1: Confirm + Select ── */}
+              {clearPhase === "confirm" && (
+                <>
+                  <button onClick={cancelClear} style={{ position: "absolute", top: 14, right: 14, background: "rgba(0,0,0,.06)", border: "none", borderRadius: 8, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" }}>
+                    <X size={15} />
+                  </button>
+
+                  <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(239,68,68,.1)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                    <Trash2 size={24} color="#dc2626" />
+                  </div>
+
+                  <h2 style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", margin: "0 0 4px", letterSpacing: "-0.3px" }}>
+                    {clearConfig ? `Clear ${clearConfig.pageLabel} Data?` : "Clear Page Data"}
+                  </h2>
+
+                  {clearConfig ? (
+                    <>
+                      <div style={{ display: "flex", gap: 9, padding: "11px 13px", background: "rgba(239,68,68,.07)", border: "1px solid rgba(239,68,68,.18)", borderRadius: 11, margin: "14px 0 18px" }}>
+                        <AlertTriangle size={15} color="#dc2626" style={{ flexShrink: 0, marginTop: 1 }} />
+                        <div>
+                          <p style={{ fontSize: 12.5, fontWeight: 700, color: "#dc2626", margin: "0 0 3px" }}>Permanent Action — Cannot Be Undone</p>
+                          <p style={{ fontSize: 12, color: "#64748b", margin: 0, lineHeight: 1.5 }}>{clearConfig.warning}</p>
+                        </div>
+                      </div>
+
+                      <p style={{ fontSize: 11, color: "#64748b", margin: "0 0 8px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.9px" }}>Select data to delete:</p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 18 }}>
+                        {clearConfig.tables.map(t => {
+                          const checked = selectedTables.has(t.name);
+                          return (
+                            <button key={t.name}
+                              onClick={() => {
+                                const next = new Set(selectedTables);
+                                if (checked) next.delete(t.name); else next.add(t.name);
+                                setSelectedTables(next);
+                              }}
+                              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: checked ? "rgba(239,68,68,.06)" : "#f8fafc", border: `1px solid ${checked ? "rgba(239,68,68,.25)" : "rgba(0,0,0,.08)"}`, cursor: "pointer", textAlign: "left" }}>
+                              {checked
+                                ? <CheckSquare size={16} color="#dc2626" style={{ flexShrink: 0 }} />
+                                : <Square size={16} color="#94a3b8" style={{ flexShrink: 0 }} />}
+                              <span style={{ fontSize: 13, color: checked ? "#0f172a" : "#64748b", fontWeight: checked ? 600 : 400 }}>{t.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div style={{ display: "flex", gap: 10 }}>
+                        <button onClick={cancelClear}
+                          style={{ flex: 1, padding: "11px", borderRadius: 10, background: "#f1f5f9", border: "1px solid rgba(0,0,0,.1)", color: "#374151", fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}>
+                          Cancel
+                        </button>
+                        <button
+                          disabled={selectedCount === 0}
+                          onClick={startCountdown}
+                          style={{ flex: 1.5, padding: "11px", borderRadius: 10, background: selectedCount === 0 ? "rgba(239,68,68,.3)" : "#dc2626", border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: selectedCount === 0 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+                          <Trash2 size={14} />
+                          Yes, Clear {selectedCount === clearConfig.tables.length ? "All" : `${selectedCount}`} Data
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p style={{ fontSize: 13.5, color: "#64748b", margin: "10px 0 22px", lineHeight: 1.6 }}>
+                        This admin section does not have directly clearable database records.
+                      </p>
+                      <button onClick={cancelClear} style={{ width: "100%", padding: "11px", borderRadius: 10, background: "#f1f5f9", border: "1px solid rgba(0,0,0,.1)", color: "#374151", fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}>
+                        Close
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
+
+              {/* ── PHASE 2: Countdown ── */}
+              {clearPhase === "countdown" && (
+                <div style={{ textAlign: "center", padding: "8px 0 4px" }}>
+                  <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(239,68,68,.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                    <Timer size={24} color="#dc2626" />
+                  </div>
+                  <h2 style={{ fontSize: 17, fontWeight: 800, color: "#0f172a", margin: "0 0 4px" }}>Deletion Scheduled</h2>
+                  <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 24px" }}>Data will be permanently deleted when the timer reaches zero. Cancel to abort.</p>
+
+                  {/* Circular countdown */}
+                  <div style={{ position: "relative", width: 140, height: 140, margin: "0 auto 20px" }}>
+                    <svg width={140} height={140} style={{ transform: "rotate(-90deg)" }}>
+                      <circle cx={70} cy={70} r={52} fill="none" stroke="rgba(239,68,68,.12)" strokeWidth={10} />
+                      <circle cx={70} cy={70} r={52} fill="none" stroke="#dc2626" strokeWidth={10}
+                        strokeDasharray={circumference} strokeDashoffset={dashOffset}
+                        strokeLinecap="round"
+                        style={{ transition: "stroke-dashoffset 1s linear" }} />
+                    </svg>
+                    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ fontSize: 32, fontWeight: 900, color: "#dc2626", letterSpacing: "-1px", fontVariantNumeric: "tabular-nums" }}>{timerLabel}</span>
+                      <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>remaining</span>
+                    </div>
+                  </div>
+
+                  {/* What will be deleted */}
+                  <div style={{ background: "#fef2f2", border: "1px solid rgba(239,68,68,.2)", borderRadius: 12, padding: "12px 14px", marginBottom: 20, textAlign: "left" }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: "#dc2626", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: 0.8 }}>Will be deleted:</p>
+                    {clearConfig?.tables.filter(t => selectedTables.has(t.name)).map((t, i) => (
+                      <div key={t.name} style={{ display: "flex", alignItems: "center", gap: 7, padding: i > 0 ? "5px 0 0" : 0 }}>
+                        <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#dc2626", flexShrink: 0 }} />
+                        <span style={{ fontSize: 12.5, color: "#0f172a" }}>{t.label}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button onClick={cancelClear}
+                    style={{ width: "100%", padding: "12px", borderRadius: 11, background: "#f1f5f9", border: "1px solid rgba(0,0,0,.12)", color: "#374151", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                    <X size={15} />
+                    Cancel — Keep My Data
+                  </button>
+                </div>
+              )}
+
+              {/* ── PHASE 3: Result ── */}
+              {clearPhase === "result" && (
+                <div style={{ textAlign: "center", padding: "12px 0 8px" }}>
+                  {clearingData ? (
+                    <>
+                      <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(239,68,68,.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px" }}>
+                        <RotateCcw size={26} color="#dc2626" className="animate-spin" />
+                      </div>
+                      <h2 style={{ fontSize: 17, fontWeight: 800, color: "#0f172a", margin: "0 0 6px" }}>Deleting Data…</h2>
+                      <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>Please wait, this may take a moment.</p>
+                    </>
+                  ) : clearResult?.ok ? (
+                    <>
+                      <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(34,197,94,.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px" }}>
+                        <CheckCircle2 size={28} color="#22c55e" />
+                      </div>
+                      <h2 style={{ fontSize: 17, fontWeight: 800, color: "#16a34a", margin: "0 0 6px" }}>Data Cleared</h2>
+                      <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>{clearResult.msg}</p>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(239,68,68,.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px" }}>
+                        <XCircle size={28} color="#dc2626" />
+                      </div>
+                      <h2 style={{ fontSize: 17, fontWeight: 800, color: "#dc2626", margin: "0 0 6px" }}>Clear Failed</h2>
+                      <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 18px" }}>{clearResult?.msg}</p>
+                      <button onClick={cancelClear} style={{ width: "100%", padding: "11px", borderRadius: 10, background: "#f1f5f9", border: "1px solid rgba(0,0,0,.1)", color: "#374151", fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}>
+                        Close
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
             </div>
-
-            {/* Title */}
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", margin: "0 0 6px", letterSpacing: "-0.3px" }}>
-              {clearConfig ? `Clear ${clearConfig.pageLabel} Data?` : "Clear Page Data"}
-            </h2>
-
-            {clearConfig ? (
-              <>
-                {/* Warning banner */}
-                <div style={{ display: "flex", gap: 10, padding: "12px 14px", background: "rgba(239,68,68,.07)", border: "1px solid rgba(239,68,68,.2)", borderRadius: 12, margin: "14px 0 16px" }}>
-                  <AlertTriangle size={16} color="#dc2626" style={{ flexShrink: 0, marginTop: 1 }} />
-                  <div>
-                    <p style={{ fontSize: 13, fontWeight: 700, color: "#dc2626", margin: "0 0 4px" }}>Permanent Action — Cannot Be Undone</p>
-                    <p style={{ fontSize: 12.5, color: "#64748b", margin: 0, lineHeight: 1.5 }}>{clearConfig.warning}</p>
-                  </div>
-                </div>
-
-                {/* What will be deleted */}
-                <p style={{ fontSize: 12, color: "#64748b", margin: "0 0 4px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.8px" }}>Records that will be deleted:</p>
-                <ul style={{ margin: "6px 0 20px", padding: "0 0 0 18px" }}>
-                  {clearConfig.tables.map(t => (
-                    <li key={t.name} style={{ fontSize: 13, color: "#0f172a", marginBottom: 3 }}>{t.label}</li>
-                  ))}
-                </ul>
-
-                {/* Result message */}
-                {clearResult && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: clearResult.ok ? "rgba(34,197,94,.08)" : "rgba(239,68,68,.08)", border: `1px solid ${clearResult.ok ? "rgba(34,197,94,.25)" : "rgba(239,68,68,.25)"}`, marginBottom: 16 }}>
-                    {clearResult.ok ? <CheckCircle2 size={15} color="#22c55e" /> : <XCircle size={15} color="#dc2626" />}
-                    <span style={{ fontSize: 13, fontWeight: 600, color: clearResult.ok ? "#16a34a" : "#dc2626" }}>{clearResult.msg}</span>
-                  </div>
-                )}
-
-                {/* Action buttons */}
-                <div style={{ display: "flex", gap: 10 }}>
-                  <button
-                    disabled={clearingData}
-                    onClick={() => { setClearDialogOpen(false); setClearResult(null); }}
-                    style={{ flex: 1, padding: "11px", borderRadius: 10, background: "#f1f5f9", border: "1px solid rgba(0,0,0,.1)", color: "#374151", fontSize: 13.5, fontWeight: 700, cursor: clearingData ? "not-allowed" : "pointer", opacity: clearingData ? 0.5 : 1 }}>
-                    Cancel
-                  </button>
-                  <button
-                    disabled={clearingData || clearResult?.ok === true}
-                    onClick={executeClearData}
-                    style={{ flex: 1, padding: "11px", borderRadius: 10, background: clearingData ? "rgba(239,68,68,.4)" : "#dc2626", border: "none", color: "white", fontSize: 13.5, fontWeight: 700, cursor: clearingData || clearResult?.ok === true ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
-                    <Trash2 size={14} />
-                    {clearingData ? "Clearing…" : "Yes, Clear All Data"}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* No clearable data for this page */}
-                <p style={{ fontSize: 13.5, color: "#64748b", margin: "10px 0 22px", lineHeight: 1.6 }}>
-                  This admin section does not have directly clearable database records. Configuration and monitoring pages do not store user-facing data that can be bulk-deleted.
-                </p>
-                <button
-                  onClick={() => setClearDialogOpen(false)}
-                  style={{ width: "100%", padding: "11px", borderRadius: 10, background: "#f1f5f9", border: "1px solid rgba(0,0,0,.1)", color: "#374151", fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}>
-                  Close
-                </button>
-              </>
-            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
