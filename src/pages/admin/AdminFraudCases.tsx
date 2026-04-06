@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
-import { Folder, Plus, Clock, CheckCircle2, AlertTriangle, User, Paperclip, MessageSquare, XCircle, ArrowRight } from "lucide-react";
+import { Folder, Plus, Paperclip, Loader2 } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -16,33 +18,82 @@ type FraudCase = { id:string; caseId:string; status:string; priority:string; des
 const statusColor = (s: string) => s==="open"?"#60a5fa":s==="investigating"?"#fbbf24":s==="resolved"?"#4ade80":"#f87171";
 const prioColor = (p: string) => p==="critical"?"#f87171":p==="high"?"#f97316":p==="medium"?"#fbbf24":"#4ade80";
 
+function timeAgo(iso: string) {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60); if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+function getPriority(action: string): string {
+  const a = action.toLowerCase();
+  if (a.includes("fraud") || a.includes("chargeback") || a.includes("block") || a.includes("ban")) return "critical";
+  if (a.includes("delete") || a.includes("restrict") || a.includes("suspend")) return "high";
+  if (a.includes("update") || a.includes("flag") || a.includes("review")) return "medium";
+  return "low";
+}
+
 export default function AdminFraudCases() {
   const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
-  const [cases, setCases] = useState<FraudCase[]>([]);
   const [selected, setSelected] = useState<FraudCase|null>(null);
   const [noteInput, setNoteInput] = useState("");
   const [resolutionInput, setResolutionInput] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [newCase, setNewCase] = useState({ description:"", priority:"high", user:"" });
   const [filterStatus, setFilterStatus] = useState("all");
+  const [localCases, setLocalCases] = useState<FraudCase[]>([]);
+  const [overrides, setOverrides] = useState<Record<string, Partial<FraudCase>>>({});
 
-  const filteredCases = filterStatus==="all"?cases:cases.filter(c=>c.status===filterStatus);
+  const { data: rawLogs = [], isLoading } = useQuery({
+    queryKey: ["admin-fraud-cases"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_audit_logs")
+        .select("id, action, admin_id, created_at, details, target_profile_id, target_profile_name")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const dbCases: FraudCase[] = rawLogs.map((l, i) => ({
+    id: l.id,
+    caseId: `CASE-${(i + 1).toString().padStart(4, "0")}`,
+    status: overrides[l.id]?.status || "open",
+    priority: overrides[l.id]?.priority || getPriority(l.action),
+    description: l.action,
+    assignedAdmin: overrides[l.id]?.assignedAdmin || "",
+    user: l.target_profile_name || "Admin",
+    createdAt: timeAgo(l.created_at),
+    updatedAt: timeAgo(l.created_at),
+    notes: overrides[l.id]?.notes || "",
+    resolution: overrides[l.id]?.resolution || "",
+    evidence: overrides[l.id]?.evidence || [],
+    timeline: [{ action:"Case opened from audit log", by:"System", time:timeAgo(l.created_at) }, ...(overrides[l.id]?.timeline?.slice(1) || [])],
+  }));
+
+  const allCases = [...localCases, ...dbCases];
+  const filteredCases = filterStatus==="all" ? allCases : allCases.filter(c=>c.status===filterStatus);
 
   const updateCase = (id: string, updates: Partial<FraudCase>) => {
-    setCases(c => c.map(x => x.id===id ? {...x,...updates} : x));
+    setOverrides(o => ({ ...o, [id]: { ...(o[id] || {}), ...updates } }));
+    setLocalCases(c => c.map(x => x.id===id ? {...x,...updates} : x));
     if (selected?.id===id) setSelected(s=>s?{...s,...updates}:null);
   };
 
   const addEvidence = (caseId: string, type: string) => {
+    const existing = allCases.find(c=>c.id===caseId)?.evidence || [];
     const ev: Evidence = { type, name:`${type}_evidence_${Date.now()}.pdf`, size:"0.8 MB", addedAt:"Just now" };
-    updateCase(caseId, { evidence:[...(cases.find(c=>c.id===caseId)?.evidence||[]),ev] });
+    updateCase(caseId, { evidence:[...existing, ev] });
   };
 
   const createCase = () => {
     const nc: FraudCase = { id:`c${Date.now()}`, caseId:`CASE-${Math.floor(Math.random()*9000+1000)}`, status:"open", priority:newCase.priority, description:newCase.description, assignedAdmin:"", user:newCase.user, createdAt:"Just now", updatedAt:"Just now", notes:"", resolution:"",
       evidence:[], timeline:[{ action:"Case Opened", by:"Admin", time:"Just now" }] };
-    setCases(c=>[nc,...c]); setShowAdd(false); setNewCase({ description:"", priority:"high", user:"" });
+    setLocalCases(c=>[nc,...c]); setShowAdd(false); setNewCase({ description:"", priority:"high", user:"" });
   };
 
   return (
@@ -62,34 +113,41 @@ export default function AdminFraudCases() {
         </div>
 
         <div style={{ display:"grid", gridTemplateColumns:"320px 1fr", gap:20 }}>
-          {/* Cases List */}
           <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:16, backdropFilter:"blur(10px)", height:"fit-content" }}>
             <div style={{ display:"flex", gap:4, marginBottom:14, flexWrap:"wrap" }}>
               {["all","open","investigating","resolved"].map(s=>(
                 <button key={s} onClick={()=>setFilterStatus(s)} style={{ padding:"4px 10px", borderRadius:6, border:"none", background:filterStatus===s?A1:"transparent", color:filterStatus===s?"#fff":T.sub, fontSize:11, cursor:"pointer", textTransform:"capitalize" }}>{s}</button>
               ))}
             </div>
-            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-              {filteredCases.map(c => (
-                <div key={c.id} onClick={()=>setSelected(c)} style={{ padding:"12px 14px", borderRadius:10, border:`1px solid ${selected?.id===c.id?A1:T.border}`, background:selected?.id===c.id?`${A1}10`:T.input, cursor:"pointer" }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
-                    <span style={{ fontSize:12, fontWeight:700, color:A1 }}>{c.caseId}</span>
-                    <span style={{ padding:"2px 7px", borderRadius:10, background:`${statusColor(c.status)}15`, color:statusColor(c.status), fontSize:10, fontWeight:700, textTransform:"capitalize" }}>{c.status}</span>
-                  </div>
-                  <div style={{ fontSize:12, color:T.text, marginBottom:4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.description}</div>
-                  <div style={{ display:"flex", justifyContent:"space-between" }}>
-                    <span style={{ padding:"2px 6px", borderRadius:5, background:`${prioColor(c.priority)}15`, color:prioColor(c.priority), fontSize:10, fontWeight:700, textTransform:"capitalize" }}>{c.priority}</span>
-                    <span style={{ fontSize:10, color:T.sub }}>{c.updatedAt}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {isLoading ? (
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"center", padding:32, gap:8 }}>
+                <Loader2 size={16} color={A1} />
+                <span style={{ color:T.sub, fontSize:13 }}>Loading cases…</span>
+              </div>
+            ) : (
+              <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                {filteredCases.length === 0
+                  ? <div style={{ textAlign:"center", padding:"32px 12px", color:T.sub, fontSize:13 }}>No cases found</div>
+                  : filteredCases.map(c => (
+                    <div key={c.id} onClick={()=>setSelected(c)} style={{ padding:"12px 14px", borderRadius:10, border:`1px solid ${selected?.id===c.id?A1:T.border}`, background:selected?.id===c.id?`${A1}10`:T.input, cursor:"pointer" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+                        <span style={{ fontSize:12, fontWeight:700, color:A1 }}>{c.caseId}</span>
+                        <span style={{ padding:"2px 7px", borderRadius:10, background:`${statusColor(c.status)}15`, color:statusColor(c.status), fontSize:10, fontWeight:700, textTransform:"capitalize" }}>{c.status}</span>
+                      </div>
+                      <div style={{ fontSize:12, color:T.text, marginBottom:4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.description}</div>
+                      <div style={{ display:"flex", justifyContent:"space-between" }}>
+                        <span style={{ padding:"2px 6px", borderRadius:5, background:`${prioColor(c.priority)}15`, color:prioColor(c.priority), fontSize:10, fontWeight:700, textTransform:"capitalize" }}>{c.priority}</span>
+                        <span style={{ fontSize:10, color:T.sub }}>{c.updatedAt}</span>
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+            )}
           </div>
 
-          {/* Case Detail */}
           {selected && (
             <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-              {/* Header */}
               <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:24, backdropFilter:"blur(10px)" }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
                   <div>
@@ -110,7 +168,6 @@ export default function AdminFraudCases() {
                 <p style={{ fontSize:13, color:T.text, lineHeight:1.6, margin:0 }}>{selected.description}</p>
               </div>
 
-              {/* Assign + Notes + Resolution */}
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
                 <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:20, backdropFilter:"blur(10px)" }}>
                   <h3 style={{ fontSize:13, fontWeight:700, color:T.text, margin:"0 0 12px" }}>Assigned Admin</h3>
@@ -125,7 +182,6 @@ export default function AdminFraudCases() {
                 </div>
               </div>
 
-              {/* Evidence */}
               <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:20, backdropFilter:"blur(10px)" }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
                   <h3 style={{ fontSize:13, fontWeight:700, color:T.text, margin:0 }}>Evidence ({selected.evidence.length})</h3>
@@ -152,7 +208,6 @@ export default function AdminFraudCases() {
                 )}
               </div>
 
-              {/* Timeline */}
               <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:20, backdropFilter:"blur(10px)" }}>
                 <h3 style={{ fontSize:13, fontWeight:700, color:T.text, margin:"0 0 14px" }}>Investigation Timeline</h3>
                 <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
@@ -172,7 +227,6 @@ export default function AdminFraudCases() {
           )}
         </div>
 
-        {/* New Case Modal */}
         {showAdd && (
           <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, backdropFilter:"blur(4px)" }}>
             <div style={{ background:theme==="black"?"#0d0d24":"#fff", border:`1px solid ${T.border}`, borderRadius:20, padding:28, width:480 }}>

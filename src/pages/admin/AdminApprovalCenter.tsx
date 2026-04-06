@@ -29,18 +29,11 @@ interface RecoveryAccount {
   isActive: boolean; lastUsed?: string; createdAt: string;
 }
 
-,
-    { id: "a2", action: "Approve Withdrawal ₹85,000 (User: DEMO)", requestedBy: "Admin B", target: "Wallet #W-0042", category: "Financial", risk: "high", status: "pending", reason: "High-value withdrawal flagged for dual approval", requestedAt: new Date(Date.now() - 7200000).toISOString() },
-    { id: "a3", action: "Grant Admin Role to freeandin@gmail.com", requestedBy: "Admin A", target: "freeandin@gmail.com", category: "Security", risk: "critical", status: "approved", reason: "New super admin required for operations", requestedAt: new Date(Date.now() - 86400000).toISOString(), resolvedAt: new Date(Date.now() - 82800000).toISOString(), resolvedBy: "Super Admin" },
-    { id: "a4", action: "Export Full User Database (CSV)", requestedBy: "Admin C", target: "profiles table", category: "System", risk: "high", status: "pending", reason: "Compliance audit requirement", requestedAt: new Date(Date.now() - 1800000).toISOString() },
-    { id: "a5", action: "Reset Platform Commission to 5%", requestedBy: "Admin B", target: "PLATFORM_COMMISSION_RATE", category: "Financial", risk: "medium", status: "rejected", reason: "Proposed change from 10% to 5%", notes: "Rejected: Requires board approval first", requestedAt: new Date(Date.now() - 172800000).toISOString(), resolvedAt: new Date(Date.now() - 169200000).toISOString(), resolvedBy: "Super Admin" },
-  ];
-}
+const APPROVALS_KEY = "admin_approvals";
+const RECOVERY_KEY = "admin_recovery";
 
-,
-    { id: "r2", name: "Emergency Recovery", email: "recovery@freelancer.in", role: "emergency", isActive: true, createdAt: new Date(Date.now() - 864e5 * 15).toISOString() },
-  ];
-}
+function seedApprovals(): ApprovalRequest[] { return []; }
+function seedRecovery(): RecoveryAccount[] { return []; }
 
 function load<T>(key: string, seed: () => T[]): T[] {
   try { const d = localStorage.getItem(key); if (d) return JSON.parse(d); } catch { /* */ }
@@ -59,8 +52,8 @@ export default function AdminApprovalCenter() {
   const { logAction } = useAdminAudit();
   const { toast } = useToast();
 
-  const [approvals, setApprovals] = useState<ApprovalRequest[]>([]);
-  const [recovery,  setRecovery]  = useState<RecoveryAccount[]>([]);
+  const [approvals, setApprovals] = useState<ApprovalRequest[]>(() => load<ApprovalRequest>(APPROVALS_KEY, seedApprovals));
+  const [recovery,  setRecovery]  = useState<RecoveryAccount[]>(() => load<RecoveryAccount>(RECOVERY_KEY, seedRecovery));
   const [tab, setTab]   = useState<"approvals" | "recovery">("approvals");
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
   const [resolveId, setResolveId] = useState<string | null>(null);

@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
-import { Ban, Lock, UserX, UserCheck, Clock, Shield, MessageSquare, CreditCard, Wallet, History } from "lucide-react";
+import { Ban, Lock, Clock, Shield, MessageSquare, CreditCard, Wallet, History, Loader2, UserCheck } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -9,9 +11,7 @@ const TH = {
   wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc" },
 };
 
-type RestrictedUser = { id:string; name:string; email:string; blockType:string; restrictions:string[]; blockedAt:string; expiresAt:string; reason:string; blockedBy:string; history:{ action:string; date:string; by:string }[] };
-
-const USERS: RestrictedUser[] = [];
+type RestrictedUser = { id:string; name:string; email:string; blockType:string; restrictions:string[]; blockedAt:string; expiresAt:string; reason:string; blockedBy:string; walletActive:boolean };
 
 const BLOCK_TYPES = [
   { id:"temp",      label:"Temporary Block",  icon:Clock,       color:"#fbbf24", desc:"Block for limited time" },
@@ -28,10 +28,11 @@ const RESTRICTION_OPTS = [
 
 const blockTypeColor = (t: string) => t==="permanent"?"#f87171":t==="temporary"?"#fbbf24":t==="freeze"?"#60a5fa":"#4ade80";
 
+const getName = (fn: string[] | null | undefined) => fn?.join(" ").trim() || "Unknown User";
+
 export default function AdminAccountRestrictions() {
   const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
-  const [users, setUsers] = useState(USERS);
   const [selected, setSelected] = useState<RestrictedUser|null>(null);
   const [actionPanel, setActionPanel] = useState<string|null>(null);
   const [blockType, setBlockType] = useState("temporary");
@@ -41,25 +42,51 @@ export default function AdminAccountRestrictions() {
   const [actionMsg, setActionMsg] = useState("");
   const [showHistory, setShowHistory] = useState(false);
 
-  const applyAction = (userId: string, action: string) => {
+  const { data: rawProfiles = [], isLoading } = useQuery({
+    queryKey: ["admin-account-restrictions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, wallet_active, user_code, created_at, user_type")
+        .eq("wallet_active", false)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data || [];
+    },
+    refetchInterval: 60000,
+  });
+
+  const users: RestrictedUser[] = rawProfiles.map(p => ({
+    id: p.id,
+    name: getName(p.full_name),
+    email: p.email || "—",
+    blockType: "freeze",
+    restrictions: ["payment", "withdrawal"],
+    blockedAt: p.created_at ? new Date(p.created_at).toLocaleDateString("en-IN") : "—",
+    expiresAt: "—",
+    reason: "Wallet inactive",
+    blockedBy: "System",
+    walletActive: p.wallet_active ?? false,
+  }));
+
+  const applyAction = (_userId: string, action: string) => {
     if (action==="Activate") {
-      setUsers(u => u.map(x => x.id===userId ? {...x, blockType:"none", restrictions:[], reason:"—", blockedBy:"—"} : x));
-      setActionMsg("Account activated successfully");
-    } else if (action==="Block") {
-      setUsers(u => u.map(x => x.id===userId ? {...x, blockType, restrictions:selectedRestrictions, reason, blockedBy:"admin@site.com"} : x));
-      setActionMsg("Restrictions applied successfully");
+      setActionMsg("To activate, enable wallet_active in user profile.");
+    } else {
+      setActionMsg("Restriction noted. Update via user profile settings.");
     }
     setActionPanel(null); setReason(""); setSelectedRestrictions([]);
-    setTimeout(()=>setActionMsg(""),3000);
+    setTimeout(()=>setActionMsg(""),4000);
   };
 
   const toggleRestriction = (id: string) => setSelectedRestrictions(r => r.includes(id)?r.filter(x=>x!==id):[...r,id]);
 
   const stats = [
-    { label:"Permanently Banned", value:users.filter(u=>u.blockType==="permanent").length, color:"#f87171" },
-    { label:"Temporarily Blocked", value:users.filter(u=>u.blockType==="temporary").length, color:"#fbbf24" },
-    { label:"Account Frozen", value:users.filter(u=>u.blockType==="freeze").length, color:"#60a5fa" },
-    { label:"Active Accounts", value:users.filter(u=>u.blockType==="none").length, color:"#4ade80" },
+    { label:"Permanently Banned", value: users.filter(u=>u.blockType==="permanent").length, color:"#f87171" },
+    { label:"Temporarily Blocked", value: users.filter(u=>u.blockType==="temporary").length, color:"#fbbf24" },
+    { label:"Account Frozen", value: users.filter(u=>u.blockType==="freeze").length, color:"#60a5fa" },
+    { label:"Total Restricted", value: users.length, color:"#f97316" },
   ];
 
   return (
@@ -76,7 +103,6 @@ export default function AdminAccountRestrictions() {
           {actionMsg && <div style={{ marginLeft:"auto", padding:"8px 16px", borderRadius:8, background:"rgba(74,222,128,.15)", border:"1px solid rgba(74,222,128,.3)", color:"#4ade80", fontSize:13 }}>{actionMsg}</div>}
         </div>
 
-        {/* Stats */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:24 }}>
           {stats.map(s => (
             <div key={s.label} style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:20, backdropFilter:"blur(10px)" }}>
@@ -87,55 +113,58 @@ export default function AdminAccountRestrictions() {
         </div>
 
         <div style={{ display:"grid", gridTemplateColumns:"1fr 340px", gap:20 }}>
-          {/* Users Table */}
           <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, overflow:"hidden", backdropFilter:"blur(10px)" }}>
-            <table style={{ width:"100%", borderCollapse:"collapse" }}>
-              <thead>
-                <tr style={{ background:T.input }}>
-                  {["User","Block Type","Restrictions","Blocked At","Expires","Reason","Actions"].map(h=>(
-                    <th key={h} style={{ padding:"11px 12px", textAlign:"left", fontSize:12, color:T.sub, fontWeight:600, borderBottom:`1px solid ${T.border}` }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {users.length === 0
-                  ? <tr><td colSpan={7} style={{ textAlign:"center", padding:"48px 20px", color:T.sub, fontSize:14 }}>No restricted accounts</td></tr>
-                  : users.map(u => (
-                    <tr key={u.id} style={{ borderBottom:`1px solid ${T.border}` }}>
-                      <td style={{ padding:"14px 12px" }}>
-                        <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{u.name}</div>
-                        <div style={{ fontSize:11, color:T.sub }}>{u.email}</div>
-                      </td>
-                      <td style={{ padding:"14px 12px" }}>
-                        <span style={{ padding:"3px 10px", borderRadius:20, background:`${blockTypeColor(u.blockType)}15`, color:blockTypeColor(u.blockType), fontSize:11, fontWeight:700, textTransform:"capitalize" }}>{u.blockType==="none"?"Active":u.blockType}</span>
-                      </td>
-                      <td style={{ padding:"14px 12px" }}>
-                        <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
-                          {u.restrictions.length===0 ? <span style={{ fontSize:11, color:T.sub }}>None</span> : u.restrictions.map(r => (
-                            <span key={r} style={{ padding:"2px 8px", borderRadius:6, background:`${A1}15`, color:A1, fontSize:10, textTransform:"capitalize" }}>{r}</span>
-                          ))}
-                        </div>
-                      </td>
-                      <td style={{ padding:"14px 12px", fontSize:12, color:T.sub }}>{u.blockedAt}</td>
-                      <td style={{ padding:"14px 12px", fontSize:12, color:T.sub }}>{u.expiresAt}</td>
-                      <td style={{ padding:"14px 12px", fontSize:12, color:T.sub, maxWidth:150 }}>
-                        <div style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{u.reason}</div>
-                      </td>
-                      <td style={{ padding:"14px 12px" }}>
-                        <div style={{ display:"flex", gap:6 }}>
-                          <button onClick={()=>{setSelected(u);setActionPanel("block");}} style={{ padding:"5px 10px", borderRadius:7, border:`1px solid #f87171`, background:"rgba(248,113,113,.1)", color:"#f87171", fontSize:12, cursor:"pointer" }}>Restrict</button>
-                          <button onClick={()=>applyAction(u.id,"Activate")} style={{ padding:"5px 10px", borderRadius:7, border:`1px solid #4ade80`, background:"rgba(74,222,128,.1)", color:"#4ade80", fontSize:12, cursor:"pointer" }}>Activate</button>
-                          <button onClick={()=>{setSelected(u);setShowHistory(true);}} style={{ padding:"5px 8px", borderRadius:7, border:`1px solid ${T.border}`, background:T.input, color:T.sub, fontSize:12, cursor:"pointer" }}><History size={13}/></button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                }
-              </tbody>
-            </table>
+            {isLoading ? (
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"center", padding:48, gap:12 }}>
+                <Loader2 size={20} color={A1} />
+                <span style={{ color:T.sub, fontSize:14 }}>Loading restricted accounts…</span>
+              </div>
+            ) : (
+              <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                <thead>
+                  <tr style={{ background:T.input }}>
+                    {["User","Block Type","Restrictions","Blocked At","Expires","Reason","Actions"].map(h=>(
+                      <th key={h} style={{ padding:"11px 12px", textAlign:"left", fontSize:12, color:T.sub, fontWeight:600, borderBottom:`1px solid ${T.border}` }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.length === 0
+                    ? <tr><td colSpan={7} style={{ textAlign:"center", padding:"48px 20px", color:T.sub, fontSize:14 }}>No restricted accounts</td></tr>
+                    : users.map(u => (
+                      <tr key={u.id} style={{ borderBottom:`1px solid ${T.border}` }}>
+                        <td style={{ padding:"14px 12px" }}>
+                          <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{u.name}</div>
+                          <div style={{ fontSize:11, color:T.sub }}>{u.email}</div>
+                        </td>
+                        <td style={{ padding:"14px 12px" }}>
+                          <span style={{ padding:"3px 10px", borderRadius:20, background:`${blockTypeColor(u.blockType)}15`, color:blockTypeColor(u.blockType), fontSize:11, fontWeight:700, textTransform:"capitalize" }}>{u.blockType}</span>
+                        </td>
+                        <td style={{ padding:"14px 12px" }}>
+                          <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
+                            {u.restrictions.map(r => (
+                              <span key={r} style={{ padding:"2px 8px", borderRadius:6, background:`${A1}15`, color:A1, fontSize:10, textTransform:"capitalize" }}>{r}</span>
+                            ))}
+                          </div>
+                        </td>
+                        <td style={{ padding:"14px 12px", fontSize:12, color:T.sub }}>{u.blockedAt}</td>
+                        <td style={{ padding:"14px 12px", fontSize:12, color:T.sub }}>{u.expiresAt}</td>
+                        <td style={{ padding:"14px 12px", fontSize:12, color:T.sub }}>{u.reason}</td>
+                        <td style={{ padding:"14px 12px" }}>
+                          <div style={{ display:"flex", gap:6 }}>
+                            <button onClick={()=>{setSelected(u);setActionPanel("block");}} style={{ padding:"5px 10px", borderRadius:7, border:`1px solid #f87171`, background:"rgba(248,113,113,.1)", color:"#f87171", fontSize:12, cursor:"pointer" }}>Restrict</button>
+                            <button onClick={()=>applyAction(u.id,"Activate")} style={{ padding:"5px 10px", borderRadius:7, border:`1px solid #4ade80`, background:"rgba(74,222,128,.1)", color:"#4ade80", fontSize:12, cursor:"pointer" }}>Activate</button>
+                            <button onClick={()=>{setSelected(u);setShowHistory(true);}} style={{ padding:"5px 8px", borderRadius:7, border:`1px solid ${T.border}`, background:T.input, color:T.sub, fontSize:12, cursor:"pointer" }}><History size={13}/></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  }
+                </tbody>
+              </table>
+            )}
           </div>
 
-          {/* Block Type Cards */}
           <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
             {BLOCK_TYPES.map(bt => {
               const Icon = bt.icon;
@@ -164,7 +193,6 @@ export default function AdminAccountRestrictions() {
           </div>
         </div>
 
-        {/* Restrict Modal */}
         {selected && actionPanel==="block" && (
           <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, backdropFilter:"blur(4px)" }}>
             <div style={{ background:theme==="black"?"#0d0d24":"#fff", border:`1px solid ${T.border}`, borderRadius:20, padding:28, width:480 }}>
@@ -205,29 +233,22 @@ export default function AdminAccountRestrictions() {
           </div>
         )}
 
-        {/* History Modal */}
         {selected && showHistory && (
           <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, backdropFilter:"blur(4px)" }}>
             <div style={{ background:theme==="black"?"#0d0d24":"#fff", border:`1px solid ${T.border}`, borderRadius:20, padding:28, width:420 }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
-                <h2 style={{ fontSize:16, fontWeight:700, color:T.text, margin:0 }}>Block History: {selected.name}</h2>
+                <h2 style={{ fontSize:16, fontWeight:700, color:T.text, margin:0 }}>Restriction History: {selected.name}</h2>
                 <button onClick={()=>{setSelected(null);setShowHistory(false);}} style={{ background:"none", border:"none", color:T.sub, cursor:"pointer", fontSize:20 }}>×</button>
               </div>
-              {selected.history.length===0 ? (
-                <div style={{ textAlign:"center", padding:24, color:T.sub }}>No history available</div>
-              ) : (
-                <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                  {selected.history.map((h,i) => (
-                    <div key={i} style={{ display:"flex", gap:12, padding:"12px", borderRadius:10, background:T.input }}>
-                      <div style={{ width:8, height:8, borderRadius:"50%", background:A1, marginTop:4, flexShrink:0 }} />
-                      <div>
-                        <div style={{ fontSize:13, color:T.text, fontWeight:600 }}>{h.action}</div>
-                        <div style={{ fontSize:12, color:T.sub }}>{h.date} · by {h.by}</div>
-                      </div>
-                    </div>
-                  ))}
+              <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                <div style={{ display:"flex", gap:12, padding:"12px", borderRadius:10, background:T.input }}>
+                  <div style={{ width:8, height:8, borderRadius:"50%", background:A1, marginTop:4, flexShrink:0 }} />
+                  <div>
+                    <div style={{ fontSize:13, color:T.text, fontWeight:600 }}>Wallet deactivated</div>
+                    <div style={{ fontSize:12, color:T.sub }}>{selected.blockedAt} · by System</div>
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         )}

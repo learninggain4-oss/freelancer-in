@@ -12,12 +12,12 @@ const TH = {
 type AutoAction = { id:string; trigger:string; action:string; enabled:boolean; delay:number; priority:number; retries:number; exceptions:string[]; triggeredCount:number; lastTriggered:string };
 
 const INIT_ACTIONS: AutoAction[] = [
-  { id:"aa1", trigger:"Risk score ≥ 90",       action:"Auto Block User",           enabled:true,  delay:0,  priority:1, retries:0, exceptions:["whitelisted_users"], triggeredCount:14, lastTriggered:"2 hrs ago" },
-  { id:"aa2", trigger:"Risk score ≥ 70",       action:"Auto Freeze Account",       enabled:true,  delay:5,  priority:2, retries:0, exceptions:[], triggeredCount:28, lastTriggered:"1 hr ago" },
-  { id:"aa3", trigger:"Duplicate payment detected", action:"Auto Flag Payment",    enabled:true,  delay:0,  priority:3, retries:2, exceptions:[], triggeredCount:38, lastTriggered:"30 min ago" },
-  { id:"aa4", trigger:"Failed login ≥ 5",      action:"Auto Require Verification", enabled:true,  delay:0,  priority:4, retries:1, exceptions:["admin_accounts"], triggeredCount:142, lastTriggered:"5 min ago" },
-  { id:"aa5", trigger:"Login from new country", action:"Auto Lock Login",          enabled:false, delay:30, priority:5, retries:0, exceptions:["trusted_devices"], triggeredCount:22, lastTriggered:"3 hrs ago" },
-  { id:"aa6", trigger:"Payment from blocked IP","action":"Auto Send Alert",        enabled:true,  delay:0,  priority:6, retries:3, exceptions:[], triggeredCount:63, lastTriggered:"15 min ago" },
+  { id:"aa1", trigger:"Risk score ≥ 90",            action:"Auto Block User",           enabled:true,  delay:0,  priority:1, retries:0, exceptions:["whitelisted_users"], triggeredCount:0, lastTriggered:"Never" },
+  { id:"aa2", trigger:"Risk score ≥ 70",            action:"Auto Freeze Account",       enabled:true,  delay:5,  priority:2, retries:0, exceptions:[], triggeredCount:0, lastTriggered:"Never" },
+  { id:"aa3", trigger:"Duplicate payment detected", action:"Auto Flag Payment",         enabled:true,  delay:0,  priority:3, retries:2, exceptions:[], triggeredCount:0, lastTriggered:"Never" },
+  { id:"aa4", trigger:"Failed login ≥ 5",           action:"Auto Require Verification", enabled:true,  delay:0,  priority:4, retries:1, exceptions:["admin_accounts"], triggeredCount:0, lastTriggered:"Never" },
+  { id:"aa5", trigger:"Login from new country",     action:"Auto Lock Login",           enabled:false, delay:30, priority:5, retries:0, exceptions:["trusted_devices"], triggeredCount:0, lastTriggered:"Never" },
+  { id:"aa6", trigger:"Payment from blocked IP",    action:"Auto Send Alert",           enabled:true,  delay:0,  priority:6, retries:3, exceptions:[], triggeredCount:0, lastTriggered:"Never" },
 ];
 
 const EXCEPTION_OPTS = ["whitelisted_users","admin_accounts","trusted_devices","verified_kyc","premium_users"];

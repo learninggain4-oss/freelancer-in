@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
-import { Bell, AlertTriangle, CheckCircle2, Eye, UserCheck, MessageSquare, X, Volume2, VolumeX, Filter } from "lucide-react";
+import { Bell, AlertTriangle, CheckCircle2, Eye, X, Volume2, VolumeX, Loader2 } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -11,21 +13,63 @@ const TH = {
 
 type Alert = { id:string; message:string; source:string; priority:string; status:string; timestamp:string; user:string; note:string; assignedTo:string };
 
-const INIT_ALERTS: Alert[] = [];
-
 const prioColor = (p: string) => p==="critical"?"#f87171":p==="high"?"#f97316":p==="medium"?"#fbbf24":"#4ade80";
 const statusColor = (s: string) => s==="new"?"#60a5fa":s==="investigating"?"#fbbf24":s==="resolved"?"#4ade80":"#94a3b8";
+
+function timeAgo(iso: string) {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60); if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+function classifyPriority(action: string): string {
+  const a = action.toLowerCase();
+  if (a.includes("fraud") || a.includes("block") || a.includes("ban") || a.includes("chargeback")) return "critical";
+  if (a.includes("delete") || a.includes("restrict") || a.includes("suspend")) return "high";
+  if (a.includes("update") || a.includes("edit") || a.includes("flag")) return "medium";
+  return "low";
+}
 
 export default function AdminFraudAlerts() {
   const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
-  const [alerts, setAlerts] = useState(INIT_ALERTS);
   const [filterPrio, setFilterPrio] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sound, setSound] = useState(true);
   const [selected, setSelected] = useState<Alert|null>(null);
   const [noteInput, setNoteInput] = useState("");
   const [assignInput, setAssignInput] = useState("");
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
+  const [noteOverrides, setNoteOverrides] = useState<Record<string, string>>({});
+  const [assignOverrides, setAssignOverrides] = useState<Record<string, string>>({});
+
+  const { data: rawLogs = [], isLoading } = useQuery({
+    queryKey: ["admin-fraud-alerts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_audit_logs")
+        .select("id, action, admin_id, created_at, details, target_profile_name")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data || [];
+    },
+    refetchInterval: 30000,
+  });
+
+  const alerts: Alert[] = rawLogs.map(l => ({
+    id: l.id,
+    message: l.action,
+    source: "Admin Audit Log",
+    priority: classifyPriority(l.action),
+    status: statusOverrides[l.id] || "new",
+    timestamp: timeAgo(l.created_at),
+    user: l.target_profile_name || "Admin",
+    note: noteOverrides[l.id] || "",
+    assignedTo: assignOverrides[l.id] || "",
+  }));
 
   const filtered = alerts.filter(a => {
     const matchPrio = filterPrio==="all"||a.priority===filterPrio;
@@ -34,15 +78,15 @@ export default function AdminFraudAlerts() {
   });
 
   const updateStatus = (id: string, status: string) => {
-    setAlerts(a => a.map(x => x.id===id ? {...x, status} : x));
+    setStatusOverrides(o => ({ ...o, [id]: status }));
     if (selected?.id===id) setSelected(s=>s?{...s,status}:null);
   };
   const saveNote = (id: string) => {
-    setAlerts(a => a.map(x => x.id===id ? {...x, note:noteInput} : x));
+    setNoteOverrides(o => ({ ...o, [id]: noteInput }));
     if (selected?.id===id) setSelected(s=>s?{...s,note:noteInput}:null);
   };
   const assignAlert = (id: string) => {
-    setAlerts(a => a.map(x => x.id===id ? {...x, assignedTo:assignInput} : x));
+    setAssignOverrides(o => ({ ...o, [id]: assignInput }));
     if (selected?.id===id) setSelected(s=>s?{...s,assignedTo:assignInput}:null);
   };
 
@@ -70,7 +114,6 @@ export default function AdminFraudAlerts() {
           </div>
         </div>
 
-        {/* Filters */}
         <div style={{ display:"flex", gap:10, marginBottom:20, flexWrap:"wrap" }}>
           <div style={{ display:"flex", gap:4, background:T.card, borderRadius:10, padding:4, border:`1px solid ${T.border}` }}>
             {["all","critical","high","medium","low"].map(p=>(
@@ -84,33 +127,38 @@ export default function AdminFraudAlerts() {
           </div>
         </div>
 
-        {/* Alerts List */}
-        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {filtered.map(a => (
-            <div key={a.id} style={{ background:T.card, border:`1px solid ${a.status==="new"?prioColor(a.priority)+"44":T.border}`, borderRadius:14, padding:"16px 20px", backdropFilter:"blur(10px)", display:"flex", alignItems:"center", gap:14 }}>
-              <div style={{ width:12, height:12, borderRadius:"50%", background:prioColor(a.priority), flexShrink:0, animation:a.status==="new"?"pulse 2s infinite":"none" }} />
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:4 }}>{a.message}</div>
-                <div style={{ display:"flex", gap:12, fontSize:12, color:T.sub }}>
-                  <span>User: <span style={{ color:A1 }}>{a.user}</span></span>
-                  <span>Source: {a.source}</span>
-                  <span>{a.timestamp}</span>
-                  {a.assignedTo && <span>Assigned: <span style={{ color:"#4ade80" }}>{a.assignedTo}</span></span>}
+        {isLoading ? (
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"center", padding:64, gap:12 }}>
+            <Loader2 size={24} color={A1} />
+            <span style={{ color:T.sub, fontSize:14 }}>Loading fraud alerts…</span>
+          </div>
+        ) : (
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {filtered.map(a => (
+              <div key={a.id} style={{ background:T.card, border:`1px solid ${a.status==="new"?prioColor(a.priority)+"44":T.border}`, borderRadius:14, padding:"16px 20px", backdropFilter:"blur(10px)", display:"flex", alignItems:"center", gap:14 }}>
+                <div style={{ width:12, height:12, borderRadius:"50%", background:prioColor(a.priority), flexShrink:0 }} />
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:4 }}>{a.message}</div>
+                  <div style={{ display:"flex", gap:12, fontSize:12, color:T.sub }}>
+                    <span>User: <span style={{ color:A1 }}>{a.user}</span></span>
+                    <span>Source: {a.source}</span>
+                    <span>{a.timestamp}</span>
+                    {a.assignedTo && <span>Assigned: <span style={{ color:"#4ade80" }}>{a.assignedTo}</span></span>}
+                  </div>
+                </div>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <span style={{ padding:"3px 10px", borderRadius:20, background:`${prioColor(a.priority)}18`, color:prioColor(a.priority), fontSize:11, fontWeight:700, textTransform:"capitalize" }}>{a.priority}</span>
+                  <span style={{ padding:"3px 10px", borderRadius:20, background:`${statusColor(a.status)}15`, color:statusColor(a.status), fontSize:11, fontWeight:700, textTransform:"capitalize" }}>{a.status}</span>
+                  <button onClick={()=>{setSelected(a);setNoteInput(a.note);setAssignInput(a.assignedTo);}} style={{ padding:"6px 12px", borderRadius:8, border:`1px solid ${T.border}`, background:T.input, color:T.text, fontSize:12, cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}><Eye size={13}/> Details</button>
+                  <button onClick={()=>updateStatus(a.id,"resolved")} disabled={a.status==="resolved"} style={{ padding:"6px 12px", borderRadius:8, border:`1px solid #4ade80`, background:"rgba(74,222,128,.1)", color:"#4ade80", fontSize:12, cursor:a.status==="resolved"?"not-allowed":"pointer", opacity:a.status==="resolved"?0.5:1 }}><CheckCircle2 size={13}/></button>
+                  <button onClick={()=>updateStatus(a.id,"ignored")} style={{ padding:"6px 10px", borderRadius:8, border:`1px solid ${T.border}`, background:T.input, color:T.sub, fontSize:12, cursor:"pointer" }}><X size={13}/></button>
                 </div>
               </div>
-              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <span style={{ padding:"3px 10px", borderRadius:20, background:`${prioColor(a.priority)}18`, color:prioColor(a.priority), fontSize:11, fontWeight:700, textTransform:"capitalize" }}>{a.priority}</span>
-                <span style={{ padding:"3px 10px", borderRadius:20, background:`${statusColor(a.status)}15`, color:statusColor(a.status), fontSize:11, fontWeight:700, textTransform:"capitalize" }}>{a.status}</span>
-                <button onClick={()=>{setSelected(a);setNoteInput(a.note);setAssignInput(a.assignedTo);}} style={{ padding:"6px 12px", borderRadius:8, border:`1px solid ${T.border}`, background:T.input, color:T.text, fontSize:12, cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}><Eye size={13}/> Details</button>
-                <button onClick={()=>updateStatus(a.id,"resolved")} disabled={a.status==="resolved"} style={{ padding:"6px 12px", borderRadius:8, border:`1px solid #4ade80`, background:"rgba(74,222,128,.1)", color:"#4ade80", fontSize:12, cursor:a.status==="resolved"?"not-allowed":"pointer", opacity:a.status==="resolved"?0.5:1 }}><CheckCircle2 size={13}/></button>
-                <button onClick={()=>updateStatus(a.id,"ignored")} style={{ padding:"6px 10px", borderRadius:8, border:`1px solid ${T.border}`, background:T.input, color:T.sub, fontSize:12, cursor:"pointer" }}><X size={13}/></button>
-              </div>
-            </div>
-          ))}
-          {filtered.length===0 && <div style={{ textAlign:"center", padding:40, color:T.sub, fontSize:14 }}>No alerts matching filters</div>}
-        </div>
+            ))}
+            {filtered.length===0 && <div style={{ textAlign:"center", padding:40, color:T.sub, fontSize:14 }}>{rawLogs.length===0?"No audit logs found":"No alerts match your filters"}</div>}
+          </div>
+        )}
 
-        {/* Detail Modal */}
         {selected && (
           <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.6)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, backdropFilter:"blur(4px)" }}>
             <div style={{ background:theme==="black"?"#0d0d24":"#fff", border:`1px solid ${T.border}`, borderRadius:20, padding:28, width:520 }}>

@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
-import { Bell, Mail, MessageSquare, Smartphone, Send, Settings, RotateCcw, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Bell, Mail, MessageSquare, Smartphone, Send, RotateCcw, CheckCircle2 } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -30,8 +32,19 @@ const DEFAULT_TEMPLATES = {
 type ChannelConfig = { enabled:boolean; priorities:string[]; template:string; retryOnFail:boolean };
 
 export default function AdminFraudNotifications() {
-  const { theme, themeKey } = useAdminTheme();
+  const { theme: _theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
+
+  const { data: notifStats } = useQuery({
+    queryKey: ["admin-fraud-notif-stats"],
+    queryFn: async () => {
+      const { count: total } = await supabase.from("notifications").select("*", { count:"exact", head:true });
+      const { count: unread } = await supabase.from("notifications").select("*", { count:"exact", head:true }).eq("is_read", false);
+      return { total: total || 0, unread: unread || 0 };
+    },
+    refetchInterval: 60000,
+  });
+
   const [configs, setConfigs] = useState<Record<string, ChannelConfig>>({
     email:    { enabled:true,  priorities:["high","critical"], template:DEFAULT_TEMPLATES.email,    retryOnFail:true },
     sms:      { enabled:true,  priorities:["critical"],        template:DEFAULT_TEMPLATES.sms,      retryOnFail:true },
@@ -76,6 +89,18 @@ export default function AdminFraudNotifications() {
             <h1 style={{ fontSize:22, fontWeight:700, color:T.text, margin:0 }}>Notification & Alert Settings</h1>
             <p style={{ fontSize:13, color:T.sub, margin:0 }}>Configure fraud alert notifications across all channels</p>
           </div>
+          {notifStats && (
+            <div style={{ marginLeft:"auto", display:"flex", gap:12 }}>
+              <div style={{ padding:"6px 14px", borderRadius:8, background:"rgba(99,102,241,.12)", border:"1px solid rgba(99,102,241,.2)", fontSize:13 }}>
+                <span style={{ color:"#a5b4fc", fontWeight:700 }}>{notifStats.total}</span>
+                <span style={{ color:"#94a3b8", marginLeft:6 }}>Total Notifications</span>
+              </div>
+              <div style={{ padding:"6px 14px", borderRadius:8, background:"rgba(248,113,113,.1)", border:"1px solid rgba(248,113,113,.2)", fontSize:13 }}>
+                <span style={{ color:"#f87171", fontWeight:700 }}>{notifStats.unread}</span>
+                <span style={{ color:"#94a3b8", marginLeft:6 }}>Unread</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div style={{ display:"grid", gridTemplateColumns:"280px 1fr", gap:20 }}>

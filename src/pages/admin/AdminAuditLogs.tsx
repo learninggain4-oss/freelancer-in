@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
-import { ClipboardList, Search, Download, User, Shield, Eye, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ClipboardList, Search, Download, User, Shield, Eye, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 
 const A1 = "#6366f1";
 const TH = {
@@ -9,9 +11,26 @@ const TH = {
   wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc" },
 };
 
-const LOGS: { id:number; action:string; actor:string; target:string; type:string; severity:string; time:string; ip:string }[] = [];
-
 const TYPES = ["all","admin","user","finance","system","security"];
+
+function timeAgo(iso: string) {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60); if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+function classifyAction(action: string): { type: string; severity: string } {
+  const a = action.toLowerCase();
+  if (a.includes("login") || a.includes("auth") || a.includes("password") || a.includes("2fa")) return { type:"security", severity:"high" };
+  if (a.includes("payment") || a.includes("wallet") || a.includes("withdraw") || a.includes("transaction")) return { type:"finance", severity:"medium" };
+  if (a.includes("delete") || a.includes("ban") || a.includes("block") || a.includes("restrict")) return { type:"admin", severity:"high" };
+  if (a.includes("update") || a.includes("edit") || a.includes("approve") || a.includes("verify")) return { type:"admin", severity:"medium" };
+  if (a.includes("user") || a.includes("profile") || a.includes("register")) return { type:"user", severity:"low" };
+  if (a.includes("system") || a.includes("setting") || a.includes("config")) return { type:"system", severity:"low" };
+  return { type:"admin", severity:"low" };
+}
 
 export default function AdminAuditLogs() {
   const { theme, themeKey } = useAdminTheme();
@@ -22,7 +41,36 @@ export default function AdminAuditLogs() {
   const [severityFilter, setSeverityFilter] = useState("all");
   const [activeTab, setActiveTab] = useState<"logs"|"settings"|"health">("logs");
 
-  const filtered = LOGS.filter(l => {
+  const { data: rawLogs = [], isLoading } = useQuery({
+    queryKey: ["admin-audit-logs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_audit_logs")
+        .select("id, action, admin_id, created_at, details, target_profile_id, target_profile_name")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return data || [];
+    },
+    refetchInterval: 30000,
+  });
+
+  const logs = rawLogs.map(l => {
+    const { type, severity } = classifyAction(l.action);
+    const det = l.details as Record<string, string> | null;
+    return {
+      id: l.id,
+      action: l.action,
+      actor: l.target_profile_name || "Admin",
+      target: l.target_profile_name || "—",
+      type,
+      severity,
+      time: timeAgo(l.created_at),
+      ip: det?.ip || det?.ip_address || "—",
+    };
+  });
+
+  const filtered = logs.filter(l => {
     const matchSearch = l.action.toLowerCase().includes(search.toLowerCase()) || l.actor.toLowerCase().includes(search.toLowerCase());
     const matchType = typeFilter === "all" || l.type === typeFilter;
     const matchSev = severityFilter === "all" || l.severity === severityFilter;
@@ -38,11 +86,14 @@ export default function AdminAuditLogs() {
     return "#94a3b8";
   };
 
+  const since24h = new Date(Date.now() - 86400000).toISOString();
+  const today = logs.filter(l => rawLogs.find(r => r.id === l.id && r.created_at >= since24h));
+
   const stats = [
-    { label:"Total Logs (24h)", value:"4,820", color:"#60a5fa", icon:ClipboardList },
-    { label:"Admin Actions", value:"142", color:A1, icon:Shield },
-    { label:"User Actions", value:"3,210", color:"#4ade80", icon:User },
-    { label:"High Severity", value:"28", color:"#f87171", icon:AlertTriangle },
+    { label:"Total Logs (24h)", value: today.length.toLocaleString(), color:"#60a5fa", icon:ClipboardList },
+    { label:"Admin Actions", value: logs.filter(l => l.type === "admin").length.toLocaleString(), color:A1, icon:Shield },
+    { label:"User Actions", value: logs.filter(l => l.type === "user").length.toLocaleString(), color:"#4ade80", icon:User },
+    { label:"High Severity", value: logs.filter(l => l.severity === "high").length.toLocaleString(), color:"#f87171", icon:AlertTriangle },
   ];
 
   return (
@@ -103,32 +154,39 @@ export default function AdminAuditLogs() {
             <div className="p-3 border-b" style={{ borderColor: T.border }}>
               <span className="text-xs font-bold uppercase tracking-widest" style={{ color: T.sub }}>{filtered.length} records</span>
             </div>
-            <div className="divide-y" style={{ borderColor: T.border }}>
-              {filtered.map(log => (
-                <div key={log.id} className="flex items-start justify-between p-4 hover:bg-white/5 transition-all">
-                  <div className="flex items-start gap-4">
-                    <div className="h-2.5 w-2.5 rounded-full mt-1.5" style={{ background: severityColor(log.severity) }} />
-                    <div>
-                      <p className="font-bold text-sm" style={{ color: T.text }}>{log.action}</p>
-                      <p className="text-xs mt-0.5" style={{ color: T.sub }}>
-                        <span style={{ color: typeColor(log.type) }}>{log.actor}</span>{" → "}{log.target}
-                      </p>
-                      <p className="text-xs mt-0.5" style={{ color: T.sub }}>IP: {log.ip} · {log.time}</p>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12 gap-3">
+                <Loader2 className="h-5 w-5 animate-spin" style={{ color: A1 }} />
+                <span className="text-sm" style={{ color: T.sub }}>Loading audit logs…</span>
+              </div>
+            ) : (
+              <div className="divide-y" style={{ borderColor: T.border }}>
+                {filtered.map(log => (
+                  <div key={log.id} className="flex items-start justify-between p-4 hover:bg-white/5 transition-all">
+                    <div className="flex items-start gap-4">
+                      <div className="h-2.5 w-2.5 rounded-full mt-1.5" style={{ background: severityColor(log.severity) }} />
+                      <div>
+                        <p className="font-bold text-sm" style={{ color: T.text }}>{log.action}</p>
+                        <p className="text-xs mt-0.5" style={{ color: T.sub }}>
+                          <span style={{ color: typeColor(log.type) }}>{log.actor}</span>{" → "}{log.target}
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: T.sub }}>IP: {log.ip} · {log.time}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background:`${typeColor(log.type)}15`, color: typeColor(log.type) }}>{log.type}</span>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background:`${severityColor(log.severity)}15`, color: severityColor(log.severity) }}>{log.severity}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background:`${typeColor(log.type)}15`, color: typeColor(log.type) }}>{log.type}</span>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background:`${severityColor(log.severity)}15`, color: severityColor(log.severity) }}>{log.severity}</span>
+                ))}
+                {filtered.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-12 gap-2">
+                    <Eye className="h-8 w-8 opacity-20" style={{ color: T.sub }} />
+                    <p className="text-sm" style={{ color: T.sub }}>No audit logs found</p>
                   </div>
-                </div>
-              ))}
-              {filtered.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 gap-2">
-                  <Eye className="h-8 w-8 opacity-20" style={{ color: T.sub }} />
-                  <p className="text-sm" style={{ color: T.sub }}>No logs match your filters</p>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         </>
       )}
@@ -173,11 +231,11 @@ export default function AdminAuditLogs() {
           <div className="rounded-2xl border p-6 space-y-3" style={{ background: T.card, borderColor: T.border }}>
             <h3 className="font-bold" style={{ color: T.text }}>Monitoring Dashboard</h3>
             {[
-              { label:"Log ingestion rate", value:"82 logs/min" },
-              { label:"Storage used", value:"14.2 GB / 50 GB" },
-              { label:"Oldest log", value:"365 days ago" },
-              { label:"Last integrity check", value:"2 hrs ago" },
-              { label:"Failed log writes", value:"0" },
+              { label:"Total audit logs", value: logs.length.toLocaleString() },
+              { label:"High severity events", value: logs.filter(l=>l.severity==="high").length.toLocaleString() },
+              { label:"Admin actions", value: logs.filter(l=>l.type==="admin").length.toLocaleString() },
+              { label:"Security events", value: logs.filter(l=>l.type==="security").length.toLocaleString() },
+              { label:"Finance events", value: logs.filter(l=>l.type==="finance").length.toLocaleString() },
             ].map(m => (
               <div key={m.label} className="flex items-center justify-between p-3 rounded-xl border" style={{ borderColor: T.border }}>
                 <span className="text-sm" style={{ color: T.sub }}>{m.label}</span>

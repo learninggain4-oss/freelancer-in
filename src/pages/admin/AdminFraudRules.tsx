@@ -12,14 +12,14 @@ const TH = {
 type Rule = { id:string; name:string; description:string; priority:number; enabled:boolean; testing:boolean; triggered:number; action:string };
 
 const INIT_RULES: Rule[] = [
-  { id:"r1", name:"Failed Login Limit",           description:"Block account after N failed logins in X minutes",          priority:1, enabled:true,  testing:false, triggered:142, action:"block_login" },
-  { id:"r2", name:"Rapid Payment Detection",      description:"Flag if user makes >N payments in X minutes",              priority:2, enabled:true,  testing:false, triggered:38,  action:"flag_payment" },
-  { id:"r3", name:"IP Change Alert",              description:"Alert if IP changes more than N times in X hours",          priority:3, enabled:true,  testing:false, triggered:91,  action:"send_alert" },
-  { id:"r4", name:"Device Change Alert",          description:"Flag account if device fingerprint changes frequently",     priority:4, enabled:true,  testing:true,  triggered:22,  action:"require_verify" },
-  { id:"r5", name:"High Risk Score Auto Block",   description:"Auto-block accounts when risk score exceeds threshold",     priority:5, enabled:true,  testing:false, triggered:14,  action:"auto_block" },
-  { id:"r6", name:"Refund Abuse Detection",       description:"Flag if refund rate exceeds N% over X days",              priority:6, enabled:false, testing:false, triggered:7,   action:"flag_payment" },
-  { id:"r7", name:"Location Mismatch Detection",  description:"Alert if payment location differs from login location",    priority:7, enabled:true,  testing:false, triggered:63,  action:"send_alert" },
-  { id:"r8", name:"Auto Freeze Threshold",        description:"Freeze account when suspicious activity score exceeds N",  priority:8, enabled:false, testing:true,  triggered:0,   action:"freeze_account" },
+  { id:"r1", name:"Failed Login Limit",           description:"Block account after N failed logins in X minutes",          priority:1, enabled:true,  testing:false, triggered:0, action:"block_login" },
+  { id:"r2", name:"Rapid Payment Detection",      description:"Flag if user makes >N payments in X minutes",              priority:2, enabled:true,  testing:false, triggered:0, action:"flag_payment" },
+  { id:"r3", name:"IP Change Alert",              description:"Alert if IP changes more than N times in X hours",          priority:3, enabled:true,  testing:false, triggered:0, action:"send_alert" },
+  { id:"r4", name:"Device Change Alert",          description:"Flag account if device fingerprint changes frequently",     priority:4, enabled:true,  testing:true,  triggered:0, action:"require_verify" },
+  { id:"r5", name:"High Risk Score Auto Block",   description:"Auto-block accounts when risk score exceeds threshold",     priority:5, enabled:true,  testing:false, triggered:0, action:"auto_block" },
+  { id:"r6", name:"Refund Abuse Detection",       description:"Flag if refund rate exceeds N% over X days",              priority:6, enabled:false, testing:false, triggered:0, action:"flag_payment" },
+  { id:"r7", name:"Location Mismatch Detection",  description:"Alert if payment location differs from login location",    priority:7, enabled:true,  testing:false, triggered:0, action:"send_alert" },
+  { id:"r8", name:"Auto Freeze Threshold",        description:"Freeze account when suspicious activity score exceeds N",  priority:8, enabled:false, testing:true,  triggered:0, action:"freeze_account" },
 ];
 
 const THRESHOLDS = [

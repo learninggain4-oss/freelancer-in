@@ -9,8 +9,8 @@ const TH = {
   wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc" },
 };
 
-const IP_WHITELIST_INIT = ["192.168.1.1","192.168.1.2","10.0.0.1"];
-const IP_BLACKLIST_INIT = ["103.22.11.4","45.77.21.3","182.74.3.2"];
+const IP_WHITELIST_INIT: string[] = [];
+const IP_BLACKLIST_INIT: string[] = [];
 
 export default function AdminFraudSecuritySettings() {
   const { theme, themeKey } = useAdminTheme();
