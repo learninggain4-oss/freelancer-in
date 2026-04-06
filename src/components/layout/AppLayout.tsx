@@ -18,6 +18,7 @@ import {
   Briefcase, Search, MessageSquare, ChevronDown, X, User, Settings,
   LogOut, IndianRupee, ArrowUpRight, Wallet, Bell, Plus,
   LayoutDashboard, FileText, ClipboardCheck, CircleHelp, Gift, Star,
+  Layers, MoreHorizontal, UserCircle, HelpCircle,
 } from "lucide-react";
 
 interface AppLayoutProps {
@@ -367,6 +368,32 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
     : pathname.startsWith("/employer") ? "/employer"
     : "/employee";
 
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== "undefined" && window.innerWidth >= 768);
+  useEffect(() => {
+    const handler = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+
+  const desktopNavItems = userType === "employee" ? [
+    { label: "Dashboard",     icon: LayoutDashboard, path: `${basePath}/dashboard` },
+    { label: "My Jobs",       icon: Briefcase,        path: `${basePath}/projects` },
+    { label: "Requests",      icon: FileText,         path: `${basePath}/requests` },
+    { label: "Attendance",    icon: ClipboardCheck,   path: `${basePath}/attendance` },
+    { label: "My Wallet",     icon: Wallet,           path: `${basePath}/wallet` },
+    { label: "Services",      icon: Layers,           path: `${basePath}/profile/services` },
+    { label: "Portfolio",     icon: Star,             path: `${basePath}/portfolio` },
+    { label: "Help & Support",icon: HelpCircle,       path: `${basePath}/help-support` },
+    { label: "Settings",      icon: Settings,         path: `${basePath}/settings` },
+  ] : [
+    { label: "Dashboard",     icon: LayoutDashboard, path: `${basePath}/dashboard` },
+    { label: "My Projects",   icon: Briefcase,        path: `${basePath}/projects` },
+    { label: "Attendance",    icon: ClipboardCheck,   path: `${basePath}/attendance` },
+    { label: "My Wallet",     icon: Wallet,           path: `${basePath}/wallet` },
+    { label: "Help & Support",icon: HelpCircle,       path: `${basePath}/help-support` },
+    { label: "Settings",      icon: Settings,         path: `${basePath}/settings` },
+  ];
+
   const { data: walletProfile } = useQuery({
     queryKey: ["app-layout-wallet", user?.id],
     queryFn: async () => {
@@ -582,12 +609,131 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="app-main-dark" style={{ flex: 1, overflowY: "auto", paddingBottom: 88, position: "relative", zIndex: 1, margin: "0 auto", width: "100%", maxWidth: 860, background: tok.mainBg }}>
-        <Outlet />
-      </main>
+      {/* ─── BODY (sidebar + content) ─────────────────────────── */}
+      <div style={{ display: "flex", flex: 1 }}>
 
-      <BottomTabBar userType={userType} onMenuClick={() => setDrawerOpen(true)} theme={theme} />
+        {/* Left Sidebar — Desktop only */}
+        {isDesktop && (
+          <aside style={{
+            width: 228, flexShrink: 0,
+            position: "sticky", top: 56, alignSelf: "flex-start",
+            height: "calc(100vh - 56px)", overflowY: "auto",
+            background: tok.header,
+            borderRight: `1px solid ${tok.headerBdr}`,
+            display: "flex", flexDirection: "column",
+            backdropFilter: "blur(20px)",
+          }}>
+            {/* User card */}
+            <div style={{ padding: "14px 14px 12px", borderBottom: `1px solid ${tok.headerBdr}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <div style={{
+                  width: 38, height: 38, borderRadius: 12,
+                  background: `linear-gradient(135deg,${A1},${A2})`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 15, fontWeight: 800, color: "white", flexShrink: 0,
+                }}>
+                  {userInitial}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontWeight: 700, fontSize: 13, color: tok.logo, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {typeof userName === "string" ? userName : Array.isArray(userName) ? userName[0] : "User"}
+                  </p>
+                  <p style={{ fontSize: 10.5, color: tok.logoSub, margin: 0, textTransform: "capitalize" }}>
+                    {userType === "employee" ? "Freelancer" : "Employer"}
+                  </p>
+                </div>
+              </div>
+              {/* Balance pill */}
+              <button onClick={() => navigate(`${basePath}/wallet`)}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: 7, padding: "7px 10px", borderRadius: 9, background: `${A1}15`, border: `1px solid ${A1}30`, cursor: "pointer" }}
+                onMouseEnter={e => (e.currentTarget.style.background = `${A1}25`)}
+                onMouseLeave={e => (e.currentTarget.style.background = `${A1}15`)}>
+                <IndianRupee size={12} color={isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : isForest ? "#16a34a" : isOcean ? "#0284c7" : "#4f46e5"} />
+                <span style={{ fontSize: 13, fontWeight: 800, color: isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : isForest ? "#16a34a" : isOcean ? "#0284c7" : "#4f46e5" }}>
+                  ₹{walletBalance.toLocaleString("en-IN")}
+                </span>
+                <span style={{ fontSize: 10, color: tok.logoSub, marginLeft: "auto" }}>Balance</span>
+              </button>
+            </div>
+
+            {/* Nav links */}
+            <nav style={{ flex: 1, padding: "8px 10px", overflowY: "auto" }}>
+              {desktopNavItems.map(item => {
+                const isActive = pathname === item.path || pathname.startsWith(item.path + "/");
+                return (
+                  <button key={item.path} onClick={() => navigate(item.path)}
+                    style={{
+                      width: "100%", display: "flex", alignItems: "center", gap: 10,
+                      padding: "9px 10px", borderRadius: 10, marginBottom: 2,
+                      background: isActive ? `${A1}18` : "none",
+                      border: isActive ? `1px solid ${A1}35` : "1px solid transparent",
+                      cursor: "pointer",
+                      color: isActive
+                        ? (isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : isForest ? "#16a34a" : isOcean ? "#0284c7" : A1)
+                        : (isHeaderDark ? "rgba(255,255,255,.55)" : isWarm ? "#78716c" : isForest ? "#4b7c5d" : isOcean ? "#4b83a3" : "#6b7280"),
+                      fontSize: 13, fontWeight: isActive ? 700 : 500,
+                      transition: "all .15s", textAlign: "left",
+                    }}
+                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = tok.iconBtn; }}
+                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "none"; }}>
+                    <item.icon size={15} strokeWidth={isActive ? 2.4 : 1.8} />
+                    <span style={{ flex: 1 }}>{item.label}</span>
+                    {isActive && (
+                      <div style={{ width: 6, height: 6, borderRadius: 3, background: isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : isForest ? "#16a34a" : isOcean ? "#0284c7" : A1 }} />
+                    )}
+                  </button>
+                );
+              })}
+
+              {/* Divider + More */}
+              <div style={{ height: 1, background: tok.headerBdr, margin: "8px 0" }} />
+              <button onClick={() => setDrawerOpen(true)}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: 10,
+                  padding: "9px 10px", borderRadius: 10, background: "none",
+                  border: "1px solid transparent", cursor: "pointer",
+                  color: isHeaderDark ? "rgba(255,255,255,.45)" : "#9ca3af",
+                  fontSize: 13, fontWeight: 500, transition: "all .15s",
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = tok.iconBtn)}
+                onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                <MoreHorizontal size={15} strokeWidth={1.8} />
+                <span>More</span>
+              </button>
+            </nav>
+
+            {/* Logout */}
+            <div style={{ padding: "10px 10px 14px", borderTop: `1px solid ${tok.headerBdr}` }}>
+              <button onClick={handleLogout}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: 10,
+                  padding: "9px 10px", borderRadius: 10,
+                  background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.15)",
+                  cursor: "pointer", color: "#ef4444", fontSize: 13, fontWeight: 600,
+                  transition: "all .15s",
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = "rgba(239,68,68,.15)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "rgba(239,68,68,.08)")}>
+                <LogOut size={15} />
+                <span>Logout</span>
+              </button>
+            </div>
+          </aside>
+        )}
+
+        {/* Main content */}
+        <main className="app-main-dark" style={{
+          flex: 1, position: "relative", zIndex: 1,
+          paddingBottom: isDesktop ? 32 : 88,
+          width: "100%",
+          background: tok.mainBg,
+          ...(!isDesktop ? { maxWidth: 860, margin: "0 auto" } : {}),
+        }}>
+          <Outlet />
+        </main>
+      </div>
+
+      {!isDesktop && <BottomTabBar userType={userType} onMenuClick={() => setDrawerOpen(true)} theme={theme} />}
       <SideDrawer open={drawerOpen} onOpenChange={setDrawerOpen} theme={theme} />
 
       {(mpinMode === "create" || mpinMode === "verify") && (
