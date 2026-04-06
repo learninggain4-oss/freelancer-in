@@ -273,7 +273,7 @@ type NavGroup = { label: string; icon: React.ElementType; directPath: string | n
 const navGroupItems: NavGroup[] = [
   { label: "Dashboard",      icon: LayoutDashboard, directPath: "/admin/dashboard", items: [] },
   { label: "Users",          icon: Users,            directPath: null, items: navSections.filter(s => s.title === "User Management").flatMap(s => s.items) },
-  { label: "Financial",      icon: Wallet,           directPath: null, items: navSections.filter(s => s.title === "Financial").flatMap(s => s.items) },
+  { label: "Financial",      icon: Wallet,           directPath: null, items: [{ label: "My Wallet", icon: Wallet, path: "/admin/wallet" }, ...navSections.filter(s => s.title === "Financial").flatMap(s => s.items)] },
   { label: "Verification",   icon: BadgeCheck,       directPath: null, items: navSections.filter(s => ["Verification","Projects & Work","Communication"].includes(s.title)).flatMap(s => s.items) },
   { label: "Security",       icon: Shield,           directPath: null, items: navSections.filter(s => ["Security & Monitoring","Risk Prevention","Advanced Security"].includes(s.title)).flatMap(s => s.items) },
   { label: "Infrastructure", icon: Server,           directPath: null, items: navSections.filter(s => ["Infrastructure","System Stability","Monitoring","Platform Safety"].includes(s.title)).flatMap(s => s.items) },
