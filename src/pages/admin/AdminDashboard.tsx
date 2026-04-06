@@ -211,80 +211,83 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const sixMonthsAgo = new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString();
-      const fourWeeksAgo = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString();
+      const sixMonthsAgo   = new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString();
+      const fourWeeksAgoMs = Date.now() - 28 * 24 * 60 * 60 * 1000;
+      const todayMidnight  = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
 
+      // ── 13 optimised queries (was 30) ─────────────────────────────────────
       const [
-        profiles, withdrawals, aadhaar, bank, recovery,
-        jobs, transactions, referredProfiles, supportMessages,
-        recentProfiles, recentWithdrawals, txHistory, profileGrowth,
-        pendingApprovalUsers, allWithdrawals, allProjects,
-        aadhaarAll, bankAll, allReferrals,
-        allTxFull, latestUsersQ, disabledQ, allMsgsQ,
-        allRecoveryQ, pendingWdFullQ, retentionQ, ipQ,
-        categoriesQ, projCatQ, recentProjectsQ,
+        allProfilesQ, allWithdrawalsQ, aadhaarAllQ, bankAllQ,
+        allRecoveryQ, allProjectsQ, txFullQ, allReferralsQ,
+        supportMsgsQ, categoriesQ, msgTotalQ, msgUnreadQ, msgTodayQ,
       ] = await Promise.all([
-        supabase.from("profiles").select("id, approval_status, user_type, edit_request_status, registration_region"),
-        supabase.from("withdrawals").select("id").eq("status", "pending"),
-        supabase.from("aadhaar_verifications").select("id").eq("status", "pending"),
-        supabase.from("bank_verifications").select("id").eq("status", "pending"),
-        supabase.from("recovery_requests").select("id").eq("status", "pending"),
-        supabase.from("projects").select("id", { count: "exact" }),
-        supabase.from("transactions").select("profile_id, amount, type"),
-        supabase.from("profiles").select("id, user_type, referred_by").not("referred_by", "is", null),
-        supabase.from("messages").select("id, is_read, chat_room_id, chat_rooms!inner(type)").eq("is_read", false).eq("chat_rooms.type", "support"),
-        supabase.from("profiles").select("id, full_name, user_type, registration_region, created_at").order("created_at", { ascending: false }).limit(5),
-        supabase.from("withdrawals").select("id, amount, employee_id, created_at, status, requested_at").order("requested_at", { ascending: false }).limit(3),
-        supabase.from("transactions").select("amount, created_at, type").gte("created_at", sixMonthsAgo).eq("type", "credit"),
-        supabase.from("profiles").select("user_type, created_at").gte("created_at", fourWeeksAgo),
-        // existing new sections
-        supabase.from("profiles").select("id, full_name, email, user_type, created_at").eq("approval_status", "pending").order("created_at", { ascending: false }).limit(8),
-        supabase.from("withdrawals").select("amount, status, requested_at"),
-        supabase.from("projects").select("status, amount, client_id, created_at"),
+        // 1. All profiles (replaces 9 separate profile queries)
+        supabase.from("profiles").select("id, full_name, email, approval_status, user_type, edit_request_status, registration_region, last_seen_at, is_disabled, disabled_reason, registration_ip, referred_by, created_at").order("created_at", { ascending: false }),
+        // 2. All withdrawals (replaces 3 withdrawal queries)
+        supabase.from("withdrawals").select("id, employee_id, amount, status, requested_at, method").order("requested_at", { ascending: false }),
+        // 3. Aadhaar statuses (replaces count-only + full query)
         supabase.from("aadhaar_verifications").select("status"),
+        // 4. Bank statuses (replaces count-only + full query)
         supabase.from("bank_verifications").select("status"),
-        supabase.from("referrals").select("referrer_id, signup_bonus_paid, job_bonus_paid"),
-        // phase 2 new queries
-        supabase.from("transactions").select("amount, created_at, type").gte("created_at", sixMonthsAgo),
-        supabase.from("profiles").select("id, full_name, user_type, created_at, registration_region").order("created_at", { ascending: false }).limit(10),
-        supabase.from("profiles").select("id, full_name, disabled_reason").eq("is_disabled", true).limit(10),
-        supabase.from("messages").select("id, is_read, created_at, chat_room_id"),
+        // 5. Recovery requests (replaces 2 recovery queries)
         supabase.from("recovery_requests").select("id, status, held_amount, created_at, resolved_at"),
-        supabase.from("withdrawals").select("id, employee_id, amount, method, requested_at").eq("status", "pending").order("requested_at", { ascending: true }).limit(15),
-        supabase.from("profiles").select("id, last_seen_at, approval_status"),
-        supabase.from("profiles").select("registration_ip").not("registration_ip", "is", null),
+        // 6. All projects (replaces 4 project queries)
+        supabase.from("projects").select("id, name, status, amount, client_id, created_at, category_id").order("created_at", { ascending: false }),
+        // 7. Transactions 6 months, both types (replaces 3 transaction queries)
+        supabase.from("transactions").select("id, profile_id, amount, created_at, type").gte("created_at", sixMonthsAgo),
+        // 8. Referrals
+        supabase.from("referrals").select("referrer_id, signup_bonus_paid, job_bonus_paid"),
+        // 9. Unread support messages
+        supabase.from("messages").select("id, is_read, chat_room_id, chat_rooms!inner(type)").eq("is_read", false).eq("chat_rooms.type", "support"),
+        // 10. Service categories
         supabase.from("service_categories").select("id, name"),
-        supabase.from("projects").select("category_id").not("category_id", "is", null),
-        supabase.from("projects").select("id, name, status, created_at").order("created_at", { ascending: false }).limit(5),
+        // 11-13. Message analytics via count-only queries (no row data transfer)
+        supabase.from("messages").select("*", { count: "exact", head: true }),
+        supabase.from("messages").select("*", { count: "exact", head: true }).eq("is_read", false),
+        supabase.from("messages").select("*", { count: "exact", head: true }).gte("created_at", todayMidnight),
       ]);
 
-      const allProfiles      = profiles.data || [];
-      const allTransactions  = transactions.data || [];
+      // ── Derive all data from the 13 combined queries ───────────────────────
+      const allProfiles    = allProfilesQ.data || [];
+      const allWd          = allWithdrawalsQ.data || [];
+      const pj             = allProjectsQ.data || [];
+      const allTx          = txFullQ.data || [];
+      const txCred         = allTx.filter(t => t.type === "credit");
+      const aAll           = aadhaarAllQ.data || [];
+      const bAll           = bankAllQ.data || [];
+      const allRec         = allRecoveryQ.data || [];
+      const refs           = allReferralsQ.data || [];
+      const cats           = categoriesQ.data || [];
       const employeeIds      = new Set(allProfiles.filter(p => p.user_type === "employee").map(p => p.id));
       const clientIds        = new Set(allProfiles.filter(p => p.user_type === "client").map(p => p.id));
-      const employeeEarnings = allTransactions.filter(t => t.type === "credit" && employeeIds.has(t.profile_id)).reduce((s, t) => s + Number(t.amount), 0);
-      const clientEarnings   = allTransactions.filter(t => t.type === "credit" && clientIds.has(t.profile_id)).reduce((s, t) => s + Number(t.amount), 0);
+      const employeeEarnings = allTx.filter(t => t.type === "credit" && employeeIds.has(t.profile_id)).reduce((s, t) => s + Number(t.amount), 0);
+      const clientEarnings   = allTx.filter(t => t.type === "credit" && clientIds.has(t.profile_id)).reduce((s, t) => s + Number(t.amount), 0);
+      const recentProfilesData = allProfiles.slice(0, 5);
+      const profileGrowthData  = allProfiles.filter(p => new Date(p.created_at).getTime() >= fourWeeksAgoMs);
+      const pendingApprData    = allProfiles.filter(p => p.approval_status === "pending");
+      const recentWdData       = allWd.slice(0, 3);
+      const pendingWdArr       = allWd.filter(w => w.status === "pending");
 
       setStats({
         totalUsers:          allProfiles.length,
-        pendingApprovals:    allProfiles.filter(p => p.approval_status === "pending").length,
+        pendingApprovals:    pendingApprData.length,
         approvedUsers:       allProfiles.filter(p => p.approval_status === "approved").length,
-        pendingWithdrawals:  withdrawals.data?.length || 0,
-        pendingAadhaar:      aadhaar.data?.length || 0,
-        pendingBank:         bank.data?.length || 0,
-        pendingRecovery:     recovery.data?.length || 0,
-        totalJobs:           jobs.count || jobs.data?.length || 0,
+        pendingWithdrawals:  pendingWdArr.length,
+        pendingAadhaar:      aAll.filter(a => a.status === "pending").length,
+        pendingBank:         bAll.filter(b => b.status === "pending").length,
+        pendingRecovery:     allRec.filter(r => r.status === "pending").length,
+        totalJobs:           pj.length,
         pendingProfileEdits: allProfiles.filter(p => p.edit_request_status === "requested").length,
         totalEmployees:      allProfiles.filter(p => p.user_type === "employee").length,
         totalClients:        allProfiles.filter(p => p.user_type === "client").length,
         employeeEarnings, clientEarnings,
-        unreadSupportChats:  supportMessages.data?.length || 0,
+        unreadSupportChats:  supportMsgsQ.data?.length || 0,
         activeUsers:         allProfiles.filter(p => p.approval_status === "approved").length,
       });
 
       /* Revenue chart */
       const revMap: Record<string, number> = {};
-      for (const tx of txHistory.data || []) {
+      for (const tx of txCred) {
         const m = monthLabel(tx.created_at);
         revMap[m] = (revMap[m] || 0) + Number(tx.amount);
       }
@@ -294,7 +297,7 @@ const AdminDashboard = () => {
 
       /* User growth chart */
       const growthMap: Record<string, { freelancers: number; employers: number }> = {};
-      for (const p of profileGrowth.data || []) {
+      for (const p of profileGrowthData) {
         const w = weekLabel(p.created_at);
         if (!growthMap[w]) growthMap[w] = { freelancers: 0, employers: 0 };
         if (p.user_type === "employee") growthMap[w].freelancers++;
@@ -304,7 +307,7 @@ const AdminDashboard = () => {
 
       /* Activity timeline */
       const events: TimelineEvent[] = [];
-      for (const p of (recentProfiles.data || []).slice(0, 4)) {
+      for (const p of recentProfilesData.slice(0, 4)) {
         events.push({
           icon: UserPlus, color: "#4ade80", bg: "rgba(34,197,94,.15)",
           label: `New ${p.user_type === "employee" ? "freelancer" : "employer"} registered`,
@@ -312,12 +315,12 @@ const AdminDashboard = () => {
           time: relTime(p.created_at),
         });
       }
-      for (const w of (recentWithdrawals.data || []).slice(0, 3)) {
+      for (const w of recentWdData.slice(0, 3)) {
         events.push({
           icon: CreditCard, color: "#f87171", bg: "rgba(239,68,68,.15)",
           label: "Withdrawal request",
           detail: `₹${Number(w.amount).toLocaleString("en-IN")} · ${w.status}`,
-          time: relTime(w.requested_at || w.created_at),
+          time: relTime(w.requested_at || ""),
         });
       }
       events.sort((a, b) => {
@@ -334,7 +337,7 @@ const AdminDashboard = () => {
       setTimeline(events.slice(0, 6));
 
       /* ── Section 1: Quick Approval Panel ── */
-      setPendingUsers((pendingApprovalUsers.data || []) as PendingUser[]);
+      setPendingUsers(pendingApprData.slice(0, 8) as PendingUser[]);
 
       /* ── Section 2: Region Breakdown ── */
       const regMap: Record<string, number> = {};
@@ -350,7 +353,7 @@ const AdminDashboard = () => {
       );
 
       /* ── Section 3: Withdrawal Summary ── */
-      const wd = allWithdrawals.data || [];
+      const wd = allWd;
       setWithdrawalSummary({
         pending:      wd.filter(w => w.status === "pending").length,
         approved:     wd.filter(w => w.status === "approved").length,
@@ -363,7 +366,7 @@ const AdminDashboard = () => {
 
       /* ── Section 4: Top Performers ── */
       const earningsMap: Record<string, number> = {};
-      for (const tx of allTransactions.filter(t => t.type === "credit")) {
+      for (const tx of txCred) {
         earningsMap[tx.profile_id] = (earningsMap[tx.profile_id] || 0) + Number(tx.amount);
       }
       const topIds = Object.entries(earningsMap)
@@ -372,14 +375,10 @@ const AdminDashboard = () => {
         .map(([id]) => id);
 
       if (topIds.length > 0) {
-        const { data: topProfiles } = await supabase
-          .from("profiles")
-          .select("id, full_name, user_type")
-          .in("id", topIds);
         setTopPerformers(
           topIds
             .map(id => {
-              const p = (topProfiles || []).find(x => x.id === id);
+              const p = allProfiles.find(x => x.id === id);
               return p ? { id, name: getName(p.full_name), earnings: earningsMap[id], type: p.user_type } : null;
             })
             .filter(Boolean) as TopPerformer[]
@@ -387,7 +386,6 @@ const AdminDashboard = () => {
       }
 
       /* ── Section 5: Job Analytics ── */
-      const pj = allProjects.data || [];
       const nowMs       = Date.now();
       const todayStart  = new Date().setHours(0, 0, 0, 0);
       const weekStart   = nowMs - 7 * 24 * 60 * 60 * 1000;
@@ -406,8 +404,6 @@ const AdminDashboard = () => {
       });
 
       /* ── Section 6: Verification Stats ── */
-      const aAll = aadhaarAll.data || [];
-      const bAll = bankAll.data || [];
       setVerificationStats({
         aadhaarVerified:     aAll.filter(a => a.status === "verified").length,
         aadhaarPending:      aAll.filter(a => a.status === "pending").length,
@@ -420,7 +416,6 @@ const AdminDashboard = () => {
       });
 
       /* ── Section 7: Referral Stats ── */
-      const refs = allReferrals.data || [];
       const uniqueReferrers = new Set(refs.map(r => r.referrer_id)).size;
       const signupBonuses   = refs.filter(r => r.signup_bonus_paid).length;
       setReferralStats({
@@ -432,7 +427,6 @@ const AdminDashboard = () => {
       });
 
       /* ── Section 8: Commission Tracker ── */
-      const txCred = txHistory.data || [];
       setCommissionStats({
         today:     Math.round(txCred.filter(t => new Date(t.created_at).getTime() >= todayStart).reduce((s, t) => s + Number(t.amount), 0) * 0.1),
         thisWeek:  Math.round(txCred.filter(t => new Date(t.created_at).getTime() >= weekStart).reduce((s, t) => s + Number(t.amount), 0) * 0.1),
@@ -445,7 +439,7 @@ const AdminDashboard = () => {
       const prevMonthRev   = txCred.filter(t => { const ts = new Date(t.created_at).getTime(); return ts >= lastMonthStart && ts <= lastMonthEnd; }).reduce((s, t) => s + Number(t.amount), 0);
       const thisMonthRev   = txCred.filter(t => new Date(t.created_at).getTime() >= monthStart).reduce((s, t) => s + Number(t.amount), 0);
       const momRevPct      = prevMonthRev > 0 ? Math.round((thisMonthRev - prevMonthRev) / prevMonthRev * 100) : 0;
-      const pg = profileGrowth.data || [];
+      const pg = profileGrowthData;
       const prevMonthUsers = pg.filter(p => { const t = new Date(p.created_at).getTime(); return t >= lastMonthStart && t <= lastMonthEnd; }).length;
       const thisMonthUsers = pg.filter(p => new Date(p.created_at).getTime() >= monthStart).length;
       const momUserPct     = prevMonthUsers > 0 ? Math.round((thisMonthUsers - prevMonthUsers) / prevMonthUsers * 100) : 0;
@@ -456,8 +450,8 @@ const AdminDashboard = () => {
 
       /* ── Section 10: Alerts ── */
       const oneDayAgo  = nowMs - 24 * 60 * 60 * 1000;
-      const pendingAadhaarCount = aadhaar.data?.length || 0;
-      const pendingBankCount    = bank.data?.length || 0;
+      const pendingAadhaarCount = aAll.filter(a => a.status === "pending").length;
+      const pendingBankCount    = bAll.filter(b => b.status === "pending").length;
       const pendingApprCount    = allProfiles.filter(p => p.approval_status === "pending").length;
       const over24hWd = wd.filter((w: { status: string; requested_at: string | null }) => w.status === "pending" && w.requested_at && new Date(w.requested_at).getTime() < oneDayAgo).length;
       const newAlerts: typeof sysAlerts = [];
@@ -468,8 +462,7 @@ const AdminDashboard = () => {
       setSysAlerts(newAlerts);
 
       /* ── Phase 2 Section A: Revenue day/week breakdown ── */
-      const allTx = allTxFull.data || [];
-      const creditTx = allTx.filter(t => t.type === "credit");
+      const creditTx = txCred;
       const dayMap: Record<string, number> = {};
       const weekMap2: Record<string, number> = {};
       for (const t of creditTx) {
@@ -483,8 +476,7 @@ const AdminDashboard = () => {
       setRevWeekData(Object.entries(weekMap2).slice(-12).map(([month, revenue]) => ({ month, revenue, commission: Math.round(revenue * 0.1) })));
 
       /* ── Phase 2 Section B: Category Analytics ── */
-      const cats = categoriesQ.data || [];
-      const projCats = projCatQ.data || [];
+      const projCats = pj;
       const catCountMap: Record<string, number> = {};
       for (const p of projCats) { if (p.category_id) catCountMap[p.category_id] = (catCountMap[p.category_id] || 0) + 1; }
       setCategoryStats(
@@ -499,7 +491,7 @@ const AdminDashboard = () => {
       );
 
       /* ── Phase 2 Section C: User Retention ── */
-      const retProfiles = retentionQ.data || [];
+      const retProfiles = allProfiles;
       const sevenDaysAgo  = nowMs - 7 * 24 * 60 * 60 * 1000;
       const thirtyDaysAgo = nowMs - 30 * 24 * 60 * 60 * 1000;
       setRetentionStats({
@@ -510,19 +502,21 @@ const AdminDashboard = () => {
       });
 
       /* ── Phase 2 Section D: New Registrations Feed ── */
-      setLatestUsers((latestUsersQ.data || []) as typeof latestUsers);
+      setLatestUsers(allProfiles.slice(0, 10) as typeof latestUsers);
 
       /* ── Phase 2 Section E: Disabled/Banned Users ── */
-      setDisabledUsers((disabledQ.data || []) as typeof disabledUsers);
+      setDisabledUsers(allProfiles.filter((p: { is_disabled?: boolean }) => p.is_disabled).slice(0, 10) as typeof disabledUsers);
 
       /* ── Phase 2 Section F: Message Analytics ── */
-      const msgs = allMsgsQ.data || [];
-      const todayMsgs = msgs.filter(m => new Date(m.created_at).getTime() >= todayStart).length;
-      const uniqueRooms = new Set(msgs.map(m => m.chat_room_id)).size;
-      setMessageStats({ total: msgs.length, unread: msgs.filter(m => !m.is_read).length, rooms: uniqueRooms, today: todayMsgs });
+      setMessageStats({
+        total:  msgTotalQ.count  || 0,
+        unread: msgUnreadQ.count || 0,
+        rooms:  0,
+        today:  msgTodayQ.count  || 0,
+      });
 
       /* ── Phase 2 Section G: Fraud Detection (Duplicate IPs) ── */
-      const ipList = (ipQ.data || []).map(p => p.registration_ip as string);
+      const ipList = allProfiles.filter(p => p.registration_ip).map(p => p.registration_ip as string);
       const ipCount: Record<string, number> = {};
       for (const ip of ipList) { ipCount[ip] = (ipCount[ip] || 0) + 1; }
       setDuplicateIPs(
@@ -534,7 +528,6 @@ const AdminDashboard = () => {
       );
 
       /* ── Phase 2 Section H: Recovery Requests ── */
-      const allRec = allRecoveryQ.data || [];
       setRecoveryData({
         open:     allRec.filter(r => r.status === "pending").length,
         resolved: allRec.filter(r => r.status === "resolved" || r.status === "approved").length,
@@ -544,13 +537,13 @@ const AdminDashboard = () => {
 
       /* ── Phase 2 Section I: Activity Feed (combined) ── */
       const feed: typeof activityFeed = [];
-      for (const p of (latestUsersQ.data || []).slice(0, 5)) {
+      for (const p of allProfiles.slice(0, 5)) {
         feed.push({ icon: UserPlus, color: "#4ade80", label: `New ${p.user_type === "employee" ? "Freelancer" : "Employer"} joined`, detail: `${getName(p.full_name)} · ${p.registration_region || "—"}`, time: relTime(p.created_at) });
       }
-      for (const w of (recentWithdrawals.data || []).slice(0, 3)) {
-        feed.push({ icon: Wallet, color: "#f87171", label: "Withdrawal requested", detail: `₹${Number(w.amount).toLocaleString("en-IN")} · ${w.status}`, time: relTime(w.requested_at || w.created_at) });
+      for (const w of recentWdData.slice(0, 3)) {
+        feed.push({ icon: Wallet, color: "#f87171", label: "Withdrawal requested", detail: `₹${Number(w.amount).toLocaleString("en-IN")} · ${w.status}`, time: relTime(w.requested_at || "") });
       }
-      for (const proj of (recentProjectsQ.data || []).slice(0, 4)) {
+      for (const proj of pj.slice(0, 4)) {
         feed.push({ icon: Briefcase, color: "#a5b4fc", label: "New job posted", detail: `${proj.name} · ${proj.status}`, time: relTime(proj.created_at) });
       }
       feed.sort((a, b) => {
@@ -568,13 +561,11 @@ const AdminDashboard = () => {
       });
 
       /* ── Phase 2 Section K: Pending Payouts Queue ── */
-      const pendingWd = pendingWdFullQ.data || [];
+      const pendingWd = pendingWdArr.slice(0, 15);
       if (pendingWd.length > 0) {
-        const empIds = [...new Set(pendingWd.map(w => w.employee_id))];
-        const { data: empNames } = await supabase.from("profiles").select("id, full_name").in("id", empIds);
         setPendingPayouts(pendingWd.map(w => ({
           id: w.id, employee_id: w.employee_id,
-          name: getName((empNames || []).find(p => p.id === w.employee_id)?.full_name),
+          name: getName(allProfiles.find(p => p.id === w.employee_id)?.full_name),
           amount: Number(w.amount), method: w.method, requested_at: w.requested_at,
         })));
       }
@@ -583,13 +574,10 @@ const AdminDashboard = () => {
       const empJobsMap: Record<string, number> = {};
       for (const p of pj) { if (p.client_id) empJobsMap[p.client_id] = (empJobsMap[p.client_id] || 0) + 1; }
       const topEmpIds = Object.entries(empJobsMap).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id]) => id);
-      if (topEmpIds.length > 0) {
-        const { data: empProfiles } = await supabase.from("profiles").select("id, full_name").in("id", topEmpIds);
-        setTopEmployers(topEmpIds.map(id => {
-          const p = (empProfiles || []).find(x => x.id === id);
-          return p ? { id, name: getName(p.full_name), jobs: empJobsMap[id] } : null;
-        }).filter(Boolean) as { id: string; name: string; jobs: number }[]);
-      }
+      setTopEmployers(topEmpIds.map(id => {
+        const p = allProfiles.find(x => x.id === id);
+        return p ? { id, name: getName(p.full_name), jobs: empJobsMap[id] } : null;
+      }).filter(Boolean) as { id: string; name: string; jobs: number }[]);
 
       setLoaded(true);
     };
