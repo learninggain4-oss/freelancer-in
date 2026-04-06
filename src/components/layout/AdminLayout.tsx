@@ -18,7 +18,7 @@ import {
   ShieldAlert, UserX, Ban, Folder, BarChart2, TrendingUp,
   Search, MessageSquare, Plus, ChevronDown,
   User, Languages, PanelRightOpen, PanelRightClose,
-  CheckCircle2, Info, XCircle, Mail,
+  CheckCircle2, Info, XCircle, Mail, Image as ImageIcon,
 } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 
@@ -238,6 +238,7 @@ const navSections = [
     { label: "Disaster Recovery",       icon: AlertTriangle, path: "/admin/disaster-recovery" },
   ]},
   { title: "Content & Config", items: [
+    { label: "App Branding",   icon: ImageIcon,          path: "/admin/branding" },
     { label: "Hero Slideshow", icon: SlidersHorizontal,  path: "/admin/hero-slides" },
     { label: "Testimonials",   icon: MessageSquareQuote, path: "/admin/testimonials" },
     { label: "User Reviews",   icon: Star,               path: "/admin/reviews" },
@@ -323,6 +324,7 @@ const AdminLayout = () => {
   const [rightOpen, setRightOpen]           = useState(false);
   const [lang, setLang]                     = useState("en");
   const [openNavGroup, setOpenNavGroup]     = useState<string | null>(null);
+  const [appLogoUrl, setAppLogoUrl]         = useState<string | null>(null);
 
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
@@ -385,6 +387,11 @@ const AdminLayout = () => {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    supabase.from("app_settings").select("value").eq("key", "app_logo_url").maybeSingle()
+      .then(({ data }) => { if (data?.value) setAppLogoUrl(data.value); });
   }, []);
 
   const { data: pendingRecoveryCount = 0 } = useQuery({
@@ -458,8 +465,10 @@ const AdminLayout = () => {
 
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 10, background: tok.logoBg, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 3px 12px ${tok.logoShadow}` }}>
-            <ShieldCheck size={16} color="white" />
+          <div style={{ width: 34, height: 34, borderRadius: 10, background: appLogoUrl ? "transparent" : tok.logoBg, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: appLogoUrl ? "none" : `0 3px 12px ${tok.logoShadow}`, overflow: "hidden" }}>
+            {appLogoUrl
+              ? <img src={appLogoUrl} alt="App Logo" style={{ width: 34, height: 34, objectFit: "contain", borderRadius: 10 }} />
+              : <ShieldCheck size={16} color="white" />}
           </div>
           <div className="hidden sm:block">
             <p style={{ fontWeight: 800, fontSize: 13, color: tok.mainText, lineHeight: 1.2, margin: 0 }}>Freelancer India</p>

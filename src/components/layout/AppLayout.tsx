@@ -325,6 +325,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
   const [searchOpen, setSearchOpen]   = useState(false);
   const [searchQ, setSearchQ]         = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
+  const [appLogoUrl, setAppLogoUrl]   = useState<string | null>(null);
   const { theme, setTheme } = useDashboardTheme();
   const { signOut, user, profile } = useAuth();
   const navigate = useNavigate();
@@ -417,6 +418,11 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
     : [];
 
   useEffect(() => {
+    supabase.from("app_settings").select("value").eq("key", "app_logo_url").maybeSingle()
+      .then(({ data }) => { if (data?.value) setAppLogoUrl(data.value); });
+  }, []);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") { e.preventDefault(); setSearchOpen(true); }
       if (e.key === "Escape") { setSearchOpen(false); setSearchQ(""); setProfileOpen(false); }
@@ -459,8 +465,10 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
 
           {/* Logo */}
           <div style={{ display: "flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 16px rgba(99,102,241,.45)" }}>
-              <Briefcase size={16} color="white" />
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: appLogoUrl ? "transparent" : `linear-gradient(135deg,${A1},${A2})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: appLogoUrl ? "none" : "0 0 16px rgba(99,102,241,.45)", overflow: "hidden" }}>
+              {appLogoUrl
+                ? <img src={appLogoUrl} alt="App Logo" style={{ width: 34, height: 34, objectFit: "contain", borderRadius: 10 }} />
+                : <Briefcase size={16} color="white" />}
             </div>
             <div className="hidden sm:block">
               <p style={{ fontWeight: 800, fontSize: 15, color: tok.logo, lineHeight: 1.1, letterSpacing: "-0.3px", margin: 0 }}>

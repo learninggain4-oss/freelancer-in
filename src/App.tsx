@@ -74,6 +74,7 @@ const AdminPaymentMethods = lazy(() => import("./pages/admin/AdminPaymentMethods
 const AdminCountdowns = lazy(() => import("./pages/admin/AdminCountdowns"));
 const AdminValidation = lazy(() => import("./pages/admin/AdminValidation"));
 const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"));
+const AdminBranding = lazy(() => import("./pages/admin/AdminBranding"));
 const AdminTestimonials = lazy(() => import("./pages/admin/AdminTestimonials"));
 const AdminReferrals = lazy(() => import("./pages/admin/AdminReferrals"));
 const AdminOnlineStatus = lazy(() => import("./pages/admin/AdminOnlineStatus"));
@@ -431,6 +432,7 @@ const AppContent = () => {
               <Route path="testimonials" element={<AdminTestimonials />} />
               <Route path="referrals" element={<AdminReferrals />} />
               <Route path="online-status" element={<AdminOnlineStatus />} />
+              <Route path="branding" element={<AdminBranding />} />
               <Route path="hero-slides" element={<AdminHeroSlides />} />
               <Route path="visitors" element={<AdminVisitors />} />
               <Route path="wallet" element={<AdminWallet />} />
