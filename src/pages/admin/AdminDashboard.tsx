@@ -632,17 +632,41 @@ const AdminDashboard = () => {
     </div>
   );
 
-  const topCards = [
-    { label: "Total Users",      value: stats.totalUsers,        icon: Users,        color: "#a5b4fc", bg: "rgba(99,102,241,.14)",  trend: "+12%", up: true,  path: "/admin/users" },
-    { label: "Active Users",     value: stats.activeUsers,       icon: Activity,     color: "#4ade80", bg: "rgba(34,197,94,.12)",   trend: "+8%",  up: true,  path: "/admin/sessions" },
-    { label: "Total Employers",  value: stats.totalClients,      icon: Building2,    color: "#c4b5fd", bg: "rgba(139,92,246,.12)",  trend: "+5%",  up: true,  path: "/admin/employers" },
-    { label: "Freelancers",      value: stats.totalEmployees,    icon: UserCheck,    color: "#a5b4fc", bg: "rgba(99,102,241,.14)",  trend: "+15%", up: true,  path: "/admin/freelancers" },
-    { label: "Total Jobs",       value: stats.totalJobs,         icon: Briefcase,    color: "#4ade80", bg: "rgba(34,197,94,.12)",   trend: "+22%", up: true,  path: "/admin/jobs" },
-    { label: "Total Revenue",    value: totalRev > 0 ? fmt(totalRev) : "₹0", icon: IndianRupee, color: "#4ade80", bg: "rgba(34,197,94,.12)", trend: "+18%", up: true, path: "/admin/wallet-management" },
-    { label: "Pending Payments", value: stats.pendingWithdrawals, icon: Clock,       color: "#fbbf24", bg: "rgba(245,158,11,.14)",  trend: "Hold", up: false, path: "/admin/withdrawals",    urgent: stats.pendingWithdrawals > 0 },
-    { label: "Support Tickets",  value: stats.unreadSupportChats, icon: MessageSquare, color: "#fbbf24", bg: "rgba(245,158,11,.14)", trend: "Open", up: false, path: "/admin/help-support",  urgent: stats.unreadSupportChats > 0 },
-    { label: "Pending Approvals",value: stats.pendingApprovals,  icon: UserCheck,    color: "#fbbf24", bg: "rgba(245,158,11,.14)",  trend: "Hold", up: false, path: "/admin/users",          urgent: stats.pendingApprovals > 0 },
-    { label: "Pending Aadhaar",  value: stats.pendingAadhaar,    icon: Fingerprint,  color: "#f87171", bg: "rgba(239,68,68,.12)",   trend: "KYC",  up: false, path: "/admin/verifications",  urgent: stats.pendingAadhaar > 0 },
+  const pendingTotal = stats.pendingApprovals + stats.pendingAadhaar + stats.pendingWithdrawals;
+  const fallSpark = (n: number) => Array.from({ length: 7 }, (_, i) => ({ v: Math.max(1, Math.round((n || 10) * (0.4 + i * 0.09))) }));
+  const valexCards = [
+    {
+      label: "Total Users",
+      value: stats.totalUsers.toLocaleString("en-IN"),
+      trend: "+12%", up: true, path: "/admin/users", icon: Users,
+      grad: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      shadow: "rgba(102,126,234,.35)",
+      spark: growthData.length >= 2 ? growthData.map(d => ({ v: d.freelancers + d.employers })) : fallSpark(stats.totalUsers),
+    },
+    {
+      label: "Total Jobs Posted",
+      value: stats.totalJobs.toLocaleString("en-IN"),
+      trend: "+22%", up: true, path: "/admin/jobs", icon: Briefcase,
+      grad: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+      shadow: "rgba(245,87,108,.35)",
+      spark: revenueData.length >= 2 ? revenueData.map((_, i) => ({ v: Math.max(1, Math.round((stats.totalJobs || 10) * (0.3 + i * 0.1))) })) : fallSpark(stats.totalJobs),
+    },
+    {
+      label: "Total Revenue",
+      value: totalRev > 0 ? fmt(totalRev) : "₹0",
+      trend: "+18%", up: true, path: "/admin/wallet-management", icon: IndianRupee,
+      grad: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+      shadow: "rgba(79,172,254,.35)",
+      spark: revenueData.length >= 2 ? revenueData.map(d => ({ v: d.revenue })) : fallSpark(totalRev || 1000),
+    },
+    {
+      label: "Pending Actions",
+      value: pendingTotal.toLocaleString("en-IN"),
+      trend: pendingTotal > 10 ? "High" : "Low", up: false, path: "/admin/users", icon: Clock,
+      grad: "linear-gradient(135deg, #f7971e 0%, #ffd200 100%)",
+      shadow: "rgba(247,151,30,.35)",
+      spark: [12, 9, 14, 11, 8, 10, Math.max(1, pendingTotal)].map(v => ({ v })),
+    },
   ];
 
   const emptyBox = (icon: React.ElementType, msg: string) => (
@@ -653,82 +677,102 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 
-      {/* ── Hero Section ── */}
-      <div style={{ position: "relative", overflow: "hidden", borderRadius: 20, padding: "26px 28px 22px", background: tok.heroGrad, border: `1px solid ${tok.heroBdr}` }}>
-        <div style={{ position: "absolute", top: -20, right: -20, width: 140, height: 140, background: tok.orbA, filter: "blur(30px)" }} />
-        <div style={{ position: "absolute", bottom: -30, left: 60, width: 100, height: 100, borderRadius: "50%", background: tok.orbB, filter: "blur(20px)" }} />
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(255,255,255,.15)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,.2)" }}>
-              <Shield size={22} color="white" />
+      {/* ── Valex Welcome Header ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, padding: "20px 24px", background: tok.cardBg, borderRadius: 16, border: `1px solid ${tok.cardBdr}`, boxShadow: "0 2px 10px rgba(0,0,0,.06)" }}>
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: tok.cardText, margin: "0 0 4px", letterSpacing: "-0.5px" }}>Hi, welcome back!</h1>
+          <p style={{ fontSize: 12.5, color: tok.cardSub, margin: 0 }}>Freelancer India · Super Admin Control Center</p>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 28, flexWrap: "wrap" }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ display: "flex", gap: 2, marginBottom: 3, justifyContent: "center" }}>
+              {[...Array(5)].map((_, i) => <span key={i} style={{ color: "#fbbf24", fontSize: 12 }}>★</span>)}
             </div>
-            <div>
-              <h1 style={{ fontSize: 21, fontWeight: 900, letterSpacing: "-0.5px", margin: 0, color: "white" }}>Super Admin Dashboard</h1>
-              <p style={{ fontSize: 11.5, color: tok.cardSub, marginTop: 2, margin: 0 }}>Enterprise control center — real-time platform management</p>
-            </div>
-            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: "rgba(34,197,94,.18)", border: "1px solid rgba(34,197,94,.3)" }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e" }} />
-                <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 700 }}>All Systems Live</span>
-              </div>
-              <button onClick={() => navigate("/admin/server-monitor")}
-                style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 10, background: "rgba(239,68,68,.2)", border: "1px solid rgba(239,68,68,.35)", color: "#f87171", fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>
-                <Zap size={12} /> Emergency
-              </button>
-            </div>
+            <p style={{ fontSize: 10, color: tok.cardSub, margin: 0, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.8px" }}>Platform Users</p>
+            <p style={{ fontSize: 18, fontWeight: 800, color: tok.cardText, margin: "2px 0 0" }}>{stats.totalUsers.toLocaleString("en-IN")}</p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10 }}>
-            {[
-              { label: "Users",   value: stats.totalUsers,         icon: Users,        color: "#a5b4fc" },
-              { label: "Pending", value: stats.pendingApprovals,   icon: Clock,        color: "#fbbf24" },
-              { label: "Revenue", value: totalRev > 0 ? fmt(totalRev) : "₹0", icon: IndianRupee, color: "#4ade80" },
-              { label: "Support", value: stats.unreadSupportChats, icon: MessageSquare,color: "#f87171" },
-            ].map(s => (
-              <div key={s.label} style={{ padding: "12px 14px", borderRadius: 14, background: tok.statBox, border: `1px solid ${tok.statBdr}` }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                  <s.icon size={13} style={{ color: s.color }} />
-                  <span style={{ fontSize: 10.5, color: tok.statSub }}>{s.label}</span>
-                </div>
-                <p style={{ fontSize: 20, fontWeight: 900, color: tok.statTxt, margin: 0 }}>
-                  {typeof s.value === "number" ? s.value.toLocaleString() : s.value}
-                </p>
-              </div>
-            ))}
+          <div style={{ width: 1, height: 42, background: tok.cardBdr }} />
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontSize: 10, color: tok.cardSub, margin: "0 0 6px", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.8px" }}>Active Jobs</p>
+            <p style={{ fontSize: 18, fontWeight: 800, color: "#22c55e", margin: 0 }}>{stats.totalJobs.toLocaleString("en-IN")}</p>
+          </div>
+          <div style={{ width: 1, height: 42, background: tok.cardBdr }} />
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontSize: 10, color: tok.cardSub, margin: "0 0 6px", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.8px" }}>Pending Actions</p>
+            <p style={{ fontSize: 18, fontWeight: 800, color: "#ef4444", margin: 0 }}>{pendingTotal.toLocaleString("en-IN")}</p>
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 20, background: "rgba(34,197,94,.1)", border: "1px solid rgba(34,197,94,.22)" }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e" }} />
+              <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>Systems Live</span>
+            </div>
+            <button onClick={() => navigate("/admin/server-monitor")}
+              style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 20, background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.22)", color: "#dc2626", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+              <Zap size={11} /> Emergency
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ── Platform Overview ── */}
-      <div style={{ opacity: loaded ? 1 : 0, transform: loaded ? "none" : "translateY(12px)", transition: "all .4s ease" }}>
-        {sectionHeader(<BarChart3 size={14} color={A1} />, "Platform Overview", "Live Data", "#4ade80")}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(155px, 1fr))", gap: 12 }}>
-          {topCards.map(c => (
-            <div key={c.label}
-              style={{ ...card, padding: "16px", cursor: "pointer", border: (c as any).urgent ? "1px solid rgba(239,68,68,.3)" : `1px solid ${tok.cardBdr}` }}
-              onClick={() => navigate(c.path)}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 10, background: c.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <c.icon size={15} style={{ color: c.color }} />
+      {/* ── Valex 4 Gradient Stat Cards ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20, opacity: loaded ? 1 : 0, transition: "opacity .5s ease" }}>
+        {valexCards.map(c => (
+          <div key={c.label} onClick={() => navigate(c.path)}
+            style={{ background: c.grad, borderRadius: 18, cursor: "pointer", overflow: "hidden", position: "relative", boxShadow: `0 10px 40px ${c.shadow}` }}>
+            <div style={{ padding: "22px 22px 10px" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 8 }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.8)", margin: 0, textTransform: "uppercase" as const, letterSpacing: "1.2px" }}>{c.label}</p>
+                <div style={{ width: 38, height: 38, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <c.icon size={18} color="white" />
                 </div>
-                <span style={{ fontSize: 9.5, fontWeight: 700, color: c.up ? "#4ade80" : "#fbbf24", background: c.up ? "rgba(34,197,94,.12)" : "rgba(245,158,11,.12)", borderRadius: 20, padding: "1px 7px" }}>
-                  {c.trend}
-                </span>
               </div>
-              <p style={{ fontWeight: 900, color: tok.cardText, fontSize: typeof c.value === "string" ? 15 : 22, letterSpacing: "-0.5px", margin: 0 }}>
-                {typeof c.value === "number" ? c.value.toLocaleString() : c.value}
-              </p>
-              <p style={{ fontSize: 10.5, color: tok.cardSub, margin: "3px 0 0" }}>{c.label}</p>
-              {(c as any).urgent && (
-                <div style={{ marginTop: 7, display: "flex", alignItems: "center", gap: 4 }}>
-                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#ef4444" }} />
-                  <span style={{ fontSize: 9.5, color: "#ef4444", fontWeight: 600 }}>Needs attention</span>
-                </div>
-              )}
+              <p style={{ fontSize: 30, fontWeight: 900, color: "white", margin: "4px 0 6px", letterSpacing: "-1px", lineHeight: 1 }}>{c.value}</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.9)" }}>{c.up ? "▲" : "▼"} {c.trend}</span>
+                <span style={{ fontSize: 10.5, color: "rgba(255,255,255,.6)" }}>vs last week</span>
+              </div>
             </div>
-          ))}
-        </div>
+            <div style={{ height: 64 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={c.spark} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id={`sg${c.label.replace(/\s/g,"")}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="rgba(255,255,255,.35)" />
+                      <stop offset="100%" stopColor="rgba(255,255,255,.02)" />
+                    </linearGradient>
+                  </defs>
+                  <Area type="monotone" dataKey="v" stroke="rgba(255,255,255,.7)" strokeWidth={2} fill={`url(#sg${c.label.replace(/\s/g,"")})`} dot={false} isAnimationActive={false} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Secondary Metrics Row ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 14, opacity: loaded ? 1 : 0, transition: "opacity .6s ease" }}>
+        {[
+          { label: "Active Users",    value: stats.activeUsers,        icon: Activity,     color: "#4ade80", bg: "rgba(34,197,94,.1)",   path: "/admin/sessions",       urgent: false },
+          { label: "Freelancers",     value: stats.totalEmployees,     icon: UserCheck,    color: "#6366f1", bg: "rgba(99,102,241,.1)",  path: "/admin/freelancers",    urgent: false },
+          { label: "Employers",       value: stats.totalClients,       icon: Building2,    color: "#8b5cf6", bg: "rgba(139,92,246,.1)",  path: "/admin/employers",      urgent: false },
+          { label: "Pending KYC",     value: stats.pendingAadhaar,     icon: Fingerprint,  color: "#f59e0b", bg: "rgba(245,158,11,.1)",  path: "/admin/verifications",  urgent: stats.pendingAadhaar > 0 },
+          { label: "Support Chats",   value: stats.unreadSupportChats, icon: MessageSquare,color: "#f87171", bg: "rgba(239,68,68,.1)",   path: "/admin/help-support",   urgent: stats.unreadSupportChats > 0 },
+          { label: "Profile Edits",   value: stats.pendingProfileEdits,icon: Edit,         color: "#60a5fa", bg: "rgba(96,165,250,.1)",  path: "/admin/profile-edits",  urgent: false },
+        ].map(c => (
+          <div key={c.label} onClick={() => navigate(c.path)}
+            style={{ ...card, padding: "18px", cursor: "pointer", border: c.urgent ? "1px solid rgba(239,68,68,.3)" : `1px solid ${tok.cardBdr}` }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: c.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <c.icon size={15} color={c.color} />
+              </div>
+              {c.urgent && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444" }} />}
+            </div>
+            <p style={{ fontSize: 26, fontWeight: 900, color: tok.cardText, margin: "0 0 3px", letterSpacing: "-0.5px" }}>{c.value.toLocaleString("en-IN")}</p>
+            <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>{c.label}</p>
+          </div>
+        ))}
       </div>
 
       {/* ══════════════════════════════════════════════════════
