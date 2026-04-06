@@ -7,6 +7,8 @@ import { createRequire } from "module";
 import path from "path";
 import { fileURLToPath } from "url";
 import { existsSync } from "fs";
+import os from "os";
+import { execSync } from "child_process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -1322,6 +1324,64 @@ if (SUPABASE_SERVICE_ROLE_KEY) {
 }
 
 app.get("/health", (_, res) => res.json({ ok: true }));
+
+// ─── Real server metrics ─────────────────────────────────────────────────────
+function getCpuUsage() {
+  return new Promise((resolve) => {
+    const cpus1 = os.cpus();
+    setTimeout(() => {
+      const cpus2 = os.cpus();
+      let totalIdle = 0, totalTick = 0;
+      for (let i = 0; i < cpus1.length; i++) {
+        const t1 = Object.values(cpus1[i].times).reduce((a, b) => a + b, 0);
+        const t2 = Object.values(cpus2[i].times).reduce((a, b) => a + b, 0);
+        const idle1 = cpus1[i].times.idle;
+        const idle2 = cpus2[i].times.idle;
+        totalIdle += idle2 - idle1;
+        totalTick += t2 - t1;
+      }
+      resolve(totalTick === 0 ? 0 : Math.round((1 - totalIdle / totalTick) * 100));
+    }, 500);
+  });
+}
+
+function getDiskUsage() {
+  try {
+    const raw = execSync("df -k / 2>/dev/null").toString().trim().split("\n")[1];
+    const parts = raw.trim().split(/\s+/);
+    const total = parseInt(parts[1]) * 1024;
+    const used  = parseInt(parts[2]) * 1024;
+    const pct   = parseInt(parts[4]);
+    return { total, used, pct };
+  } catch {
+    return { total: 0, used: 0, pct: 0 };
+  }
+}
+
+app.get("/functions/v1/server-metrics", async (req, res) => {
+  try {
+    const cpuPct  = await getCpuUsage();
+    const totalMem = os.totalmem();
+    const freeMem  = os.freemem();
+    const usedMem  = totalMem - freeMem;
+    const memPct   = Math.round((usedMem / totalMem) * 100);
+    const disk     = getDiskUsage();
+    const uptime   = os.uptime();
+    const load     = os.loadavg();
+
+    res.json({
+      cpu:    { pct: cpuPct,  cores: os.cpus().length, model: os.cpus()[0]?.model?.split(" ")[0] || "CPU" },
+      memory: { pct: memPct,  total: totalMem, used: usedMem, free: freeMem },
+      disk:   { pct: disk.pct, total: disk.total, used: disk.used },
+      uptime,
+      load:   { "1m": load[0].toFixed(2), "5m": load[1].toFixed(2), "15m": load[2].toFixed(2) },
+      platform: os.platform(),
+      hostname: os.hostname().split(".")[0],
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch metrics" });
+  }
+});
 
 // ─── Support chat: delete single message ───
 app.delete("/functions/v1/support-delete-message", async (req, res) => {

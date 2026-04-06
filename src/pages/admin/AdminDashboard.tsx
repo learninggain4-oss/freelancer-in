@@ -153,6 +153,14 @@ const AdminDashboard = () => {
   const [revenueData, setRevenueData]     = useState<RevenuePoint[]>([]);
   const [growthData, setGrowthData]       = useState<GrowthPoint[]>([]);
   const [timeline, setTimeline]           = useState<TimelineEvent[]>([]);
+  const [sysMetrics, setSysMetrics]       = useState<{
+    cpu: { pct: number; cores: number; model: string };
+    memory: { pct: number; total: number; used: number; free: number };
+    disk: { pct: number; total: number; used: number };
+    uptime: number;
+    load: { "1m": string; "5m": string; "15m": string };
+    hostname: string;
+  } | null>(null);
 
   // ── New sections state ──────────────────────────────────────
   const [pendingUsers, setPendingUsers]   = useState<PendingUser[]>([]);
@@ -341,6 +349,18 @@ const AdminDashboard = () => {
     };
     fetchAll();
   }, []);
+
+  /* ── Server metrics fetch ── */
+  const fetchMetrics = useCallback(async () => {
+    setSysRefreshing(true);
+    try {
+      const res = await fetch("/functions/v1/server-metrics");
+      if (res.ok) setSysMetrics(await res.json());
+    } catch { /* silently ignore */ }
+    setSysRefreshing(false);
+  }, []);
+
+  useEffect(() => { fetchMetrics(); }, [fetchMetrics]);
 
   /* ── Approve / Reject handlers ── */
   const handleApprove = useCallback(async (id: string) => {
@@ -812,26 +832,68 @@ const AdminDashboard = () => {
             <Server size={14} color="#4ade80" />
           </div>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: tok.secTitle, flex: 1, margin: 0 }}>System Monitoring</h2>
-          <button onClick={() => setSysRefreshing(r => !r)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 8, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: tok.cardSub, fontSize: 11, cursor: "pointer" }}>
+          {sysMetrics && (
+            <span style={{ fontSize: 10, color: "#4ade80", background: "rgba(34,197,94,.1)", border: "1px solid rgba(34,197,94,.2)", borderRadius: 20, padding: "2px 10px", fontWeight: 700 }}>
+              Live · {sysMetrics.hostname}
+            </span>
+          )}
+          <button onClick={fetchMetrics} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 8, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: tok.cardSub, fontSize: 11, cursor: "pointer" }}>
             <RefreshCw size={11} style={{ animation: sysRefreshing ? "spin 1s linear infinite" : "none" }} /> Refresh
           </button>
           <button onClick={() => navigate("/admin/server-monitor")} style={{ display: "flex", alignItems: "center", gap: 4, color: "#a5b4fc", background: "none", border: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 600 }}>
             Full View <ArrowUpRight size={11} />
           </button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 12 }}>
-          {[{ label: "CPU", icon: Cpu }, { label: "Memory", icon: Monitor }, { label: "Disk", icon: HardDrive }].map(r => (
-            <div key={r.label} style={{ padding: "14px", borderRadius: 12, background: tok.sysRowBg, border: `1px solid ${tok.alertBdr}`, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-              <r.icon size={22} color={tok.cardSub} />
-              <span style={{ fontSize: 12, fontWeight: 700, color: tok.cardText }}>{r.label}</span>
-              <span style={{ fontSize: 10, color: tok.cardSub }}>Server-side metric</span>
-            </div>
-          ))}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 14 }}>
+          {(() => {
+            const metricColor = (pct: number) => pct >= 85 ? "#f87171" : pct >= 65 ? "#fbbf24" : "#4ade80";
+            const fmtBytes = (b: number) => b > 1e9 ? `${(b / 1e9).toFixed(1)} GB` : `${(b / 1e6).toFixed(0)} MB`;
+            const items = sysMetrics ? [
+              { label: "CPU",    icon: Cpu,      pct: sysMetrics.cpu.pct,    sub: `${sysMetrics.cpu.cores} cores · load ${sysMetrics.load["1m"]}` },
+              { label: "Memory", icon: Monitor,  pct: sysMetrics.memory.pct, sub: `${fmtBytes(sysMetrics.memory.used)} / ${fmtBytes(sysMetrics.memory.total)}` },
+              { label: "Disk",   icon: HardDrive,pct: sysMetrics.disk.pct,   sub: `${fmtBytes(sysMetrics.disk.used)} / ${fmtBytes(sysMetrics.disk.total)}` },
+            ] : [
+              { label: "CPU",    icon: Cpu,       pct: -1, sub: "Fetching…" },
+              { label: "Memory", icon: Monitor,   pct: -1, sub: "Fetching…" },
+              { label: "Disk",   icon: HardDrive, pct: -1, sub: "Fetching…" },
+            ];
+            return items.map(r => {
+              const col = r.pct >= 0 ? metricColor(r.pct) : tok.cardSub;
+              return (
+                <div key={r.label} style={{ padding: "16px 14px", borderRadius: 12, background: tok.sysRowBg, border: `1px solid ${r.pct >= 85 ? "rgba(239,68,68,.3)" : tok.alertBdr}` }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                      <r.icon size={15} color={col} />
+                      <span style={{ fontSize: 12, fontWeight: 700, color: tok.cardText }}>{r.label}</span>
+                    </div>
+                    <span style={{ fontSize: 16, fontWeight: 900, color: col }}>
+                      {r.pct >= 0 ? `${r.pct}%` : "—"}
+                    </span>
+                  </div>
+                  <div style={{ height: 6, borderRadius: 3, background: tok.alertBg, overflow: "hidden", marginBottom: 6 }}>
+                    <div style={{ height: "100%", width: r.pct >= 0 ? `${r.pct}%` : "0%", background: col, borderRadius: 3, transition: "width .6s ease" }} />
+                  </div>
+                  <span style={{ fontSize: 10, color: tok.cardSub }}>{r.sub}</span>
+                </div>
+              );
+            });
+          })()}
         </div>
-        <div style={{ padding: "10px 14px", borderRadius: 10, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, display: "flex", alignItems: "center", gap: 8 }}>
-          <Info size={13} color="#a5b4fc" />
-          <span style={{ fontSize: 11.5, color: tok.cardSub }}>Server metrics require a backend agent. Use <span style={{ color: "#a5b4fc", fontWeight: 600, cursor: "pointer" }} onClick={() => navigate("/admin/server-monitor")}>Full View</span> for detailed health.</span>
-        </div>
+        {sysMetrics && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
+            {[
+              { label: "Uptime",   value: (() => { const h = Math.floor(sysMetrics.uptime / 3600); return h > 24 ? `${Math.floor(h / 24)}d ${h % 24}h` : `${h}h ${Math.floor((sysMetrics.uptime % 3600) / 60)}m`; })(), color: "#4ade80" },
+              { label: "Load 1m",  value: sysMetrics.load["1m"],  color: "#a5b4fc" },
+              { label: "Load 5m",  value: sysMetrics.load["5m"],  color: "#c4b5fd" },
+              { label: "Load 15m", value: sysMetrics.load["15m"], color: "#818cf8" },
+            ].map(s => (
+              <div key={s.label} style={{ padding: "10px 12px", borderRadius: 10, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
+                <p style={{ fontSize: 14, fontWeight: 900, color: s.color, margin: 0 }}>{s.value}</p>
+                <p style={{ fontSize: 10, color: tok.cardSub, margin: "2px 0 0" }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Pending Actions ── */}
