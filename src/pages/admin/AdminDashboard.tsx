@@ -175,6 +175,22 @@ const AdminDashboard = () => {
   const [jobStats, setJobStats]           = useState({
     total: 0, open: 0, inProgress: 0, completed: 0, cancelled: 0, totalAmt: 0,
   });
+  const [verificationStats, setVerificationStats] = useState({
+    aadhaarVerified: 0, aadhaarPending: 0, aadhaarRejected: 0, aadhaarUnderProcess: 0,
+    bankVerified: 0, bankPending: 0, bankRejected: 0, bankUnderProcess: 0,
+  });
+  const [referralStats, setReferralStats] = useState({
+    total: 0, uniqueReferrers: 0, signupBonuses: 0, jobBonuses: 0, conversionRate: 0,
+  });
+  const [commissionStats, setCommissionStats] = useState({ today: 0, thisWeek: 0, thisMonth: 0 });
+  const [growthKPIs, setGrowthKPIs] = useState({
+    momUserPct: 0, momRevPct: 0, jobCompletionRate: 0, avgWithdrawal: 0,
+  });
+  const [sysAlerts, setSysAlerts] = useState<Array<{
+    msg: string; count: number; color: string; bg: string; border: string; path: string;
+  }>>([]);
+  const [topEmployers, setTopEmployers]   = useState<Array<{ id: string; name: string; jobs: number }>>([]);
+  const [jobPeriods, setJobPeriods]       = useState({ today: 0, thisWeek: 0 });
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -186,6 +202,7 @@ const AdminDashboard = () => {
         jobs, transactions, referredProfiles, supportMessages,
         recentProfiles, recentWithdrawals, txHistory, profileGrowth,
         pendingApprovalUsers, allWithdrawals, allProjects,
+        aadhaarAll, bankAll, allReferrals,
       ] = await Promise.all([
         supabase.from("profiles").select("id, approval_status, user_type, edit_request_status, registration_region"),
         supabase.from("withdrawals").select("id").eq("status", "pending"),
@@ -202,8 +219,11 @@ const AdminDashboard = () => {
         supabase.from("profiles").select("user_type, created_at").gte("created_at", fourWeeksAgo),
         // New sections
         supabase.from("profiles").select("id, full_name, email, user_type, created_at").eq("approval_status", "pending").order("created_at", { ascending: false }).limit(8),
-        supabase.from("withdrawals").select("amount, status"),
-        supabase.from("projects").select("status, amount"),
+        supabase.from("withdrawals").select("amount, status, requested_at"),
+        supabase.from("projects").select("status, amount, client_id, created_at"),
+        supabase.from("aadhaar_verifications").select("status"),
+        supabase.from("bank_verifications").select("status"),
+        supabase.from("referrals").select("referrer_id, signup_bonus_paid, job_bonus_paid"),
       ]);
 
       const allProfiles      = profiles.data || [];
@@ -336,6 +356,10 @@ const AdminDashboard = () => {
 
       /* ── Section 5: Job Analytics ── */
       const pj = allProjects.data || [];
+      const nowMs       = Date.now();
+      const todayStart  = new Date().setHours(0, 0, 0, 0);
+      const weekStart   = nowMs - 7 * 24 * 60 * 60 * 1000;
+      const monthStart  = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
       setJobStats({
         total:      pj.length,
         open:       pj.filter(p => p.status === "open").length,
@@ -344,6 +368,84 @@ const AdminDashboard = () => {
         cancelled:  pj.filter(p => p.status === "cancelled").length,
         totalAmt:   pj.reduce((s, p) => s + Number(p.amount), 0),
       });
+      setJobPeriods({
+        today:    pj.filter(p => p.created_at && new Date(p.created_at).getTime() >= todayStart).length,
+        thisWeek: pj.filter(p => p.created_at && new Date(p.created_at).getTime() >= weekStart).length,
+      });
+
+      /* ── Section 6: Verification Stats ── */
+      const aAll = aadhaarAll.data || [];
+      const bAll = bankAll.data || [];
+      setVerificationStats({
+        aadhaarVerified:     aAll.filter(a => a.status === "verified").length,
+        aadhaarPending:      aAll.filter(a => a.status === "pending").length,
+        aadhaarRejected:     aAll.filter(a => a.status === "rejected").length,
+        aadhaarUnderProcess: aAll.filter(a => a.status === "under_process").length,
+        bankVerified:        bAll.filter(b => b.status === "verified").length,
+        bankPending:         bAll.filter(b => b.status === "pending").length,
+        bankRejected:        bAll.filter(b => b.status === "rejected").length,
+        bankUnderProcess:    bAll.filter(b => b.status === "under_process").length,
+      });
+
+      /* ── Section 7: Referral Stats ── */
+      const refs = allReferrals.data || [];
+      const uniqueReferrers = new Set(refs.map(r => r.referrer_id)).size;
+      const signupBonuses   = refs.filter(r => r.signup_bonus_paid).length;
+      setReferralStats({
+        total: refs.length,
+        uniqueReferrers,
+        signupBonuses,
+        jobBonuses:     refs.filter(r => r.job_bonus_paid).length,
+        conversionRate: refs.length > 0 ? Math.round(signupBonuses / refs.length * 100) : 0,
+      });
+
+      /* ── Section 8: Commission Tracker ── */
+      const txCred = txHistory.data || [];
+      setCommissionStats({
+        today:     Math.round(txCred.filter(t => new Date(t.created_at).getTime() >= todayStart).reduce((s, t) => s + Number(t.amount), 0) * 0.1),
+        thisWeek:  Math.round(txCred.filter(t => new Date(t.created_at).getTime() >= weekStart).reduce((s, t) => s + Number(t.amount), 0) * 0.1),
+        thisMonth: Math.round(txCred.filter(t => new Date(t.created_at).getTime() >= monthStart).reduce((s, t) => s + Number(t.amount), 0) * 0.1),
+      });
+
+      /* ── Section 9: Platform Growth KPIs ── */
+      const lastMonthStart = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).getTime();
+      const lastMonthEnd   = new Date(new Date().getFullYear(), new Date().getMonth(), 0, 23, 59, 59).getTime();
+      const prevMonthRev   = txCred.filter(t => { const ts = new Date(t.created_at).getTime(); return ts >= lastMonthStart && ts <= lastMonthEnd; }).reduce((s, t) => s + Number(t.amount), 0);
+      const thisMonthRev   = txCred.filter(t => new Date(t.created_at).getTime() >= monthStart).reduce((s, t) => s + Number(t.amount), 0);
+      const momRevPct      = prevMonthRev > 0 ? Math.round((thisMonthRev - prevMonthRev) / prevMonthRev * 100) : 0;
+      const pg = profileGrowth.data || [];
+      const prevMonthUsers = pg.filter(p => { const t = new Date(p.created_at).getTime(); return t >= lastMonthStart && t <= lastMonthEnd; }).length;
+      const thisMonthUsers = pg.filter(p => new Date(p.created_at).getTime() >= monthStart).length;
+      const momUserPct     = prevMonthUsers > 0 ? Math.round((thisMonthUsers - prevMonthUsers) / prevMonthUsers * 100) : 0;
+      const activeJobs     = pj.filter(p => p.status !== "open" && p.status !== "draft" && p.status !== "cancelled");
+      const jobCompletionRate = activeJobs.length > 0 ? Math.round(pj.filter(p => p.status === "completed").length / activeJobs.length * 100) : 0;
+      const avgWithdrawal  = wd.length > 0 ? Math.round(wd.reduce((s, w) => s + Number(w.amount), 0) / wd.length) : 0;
+      setGrowthKPIs({ momUserPct, momRevPct, jobCompletionRate, avgWithdrawal });
+
+      /* ── Section 10: Alerts ── */
+      const oneDayAgo  = nowMs - 24 * 60 * 60 * 1000;
+      const pendingAadhaarCount = aadhaar.data?.length || 0;
+      const pendingBankCount    = bank.data?.length || 0;
+      const pendingApprCount    = allProfiles.filter(p => p.approval_status === "pending").length;
+      const over24hWd = wd.filter((w: { status: string; requested_at: string | null }) => w.status === "pending" && w.requested_at && new Date(w.requested_at).getTime() < oneDayAgo).length;
+      const newAlerts: typeof sysAlerts = [];
+      if (over24hWd > 0)          newAlerts.push({ msg: `${over24hWd} withdrawal${over24hWd > 1 ? "s" : ""} pending over 24 hours`, count: over24hWd, color: "#f87171", bg: "rgba(239,68,68,.08)", border: "rgba(239,68,68,.2)", path: "/admin/withdrawals" });
+      if (pendingAadhaarCount > 0) newAlerts.push({ msg: `${pendingAadhaarCount} Aadhaar KYC awaiting review`, count: pendingAadhaarCount, color: "#fbbf24", bg: "rgba(245,158,11,.08)", border: "rgba(245,158,11,.2)", path: "/admin/verifications" });
+      if (pendingBankCount > 0)    newAlerts.push({ msg: `${pendingBankCount} bank verification pending`, count: pendingBankCount, color: "#fbbf24", bg: "rgba(245,158,11,.08)", border: "rgba(245,158,11,.2)", path: "/admin/bank-verifications" });
+      if (pendingApprCount > 5)    newAlerts.push({ msg: `${pendingApprCount} users awaiting account approval`, count: pendingApprCount, color: "#a5b4fc", bg: "rgba(99,102,241,.08)", border: "rgba(99,102,241,.2)", path: "/admin/users" });
+      setSysAlerts(newAlerts);
+
+      /* ── Section 11: Top Employers ── */
+      const empJobsMap: Record<string, number> = {};
+      for (const p of pj) { if (p.client_id) empJobsMap[p.client_id] = (empJobsMap[p.client_id] || 0) + 1; }
+      const topEmpIds = Object.entries(empJobsMap).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id]) => id);
+      if (topEmpIds.length > 0) {
+        const { data: empProfiles } = await supabase.from("profiles").select("id, full_name").in("id", topEmpIds);
+        setTopEmployers(topEmpIds.map(id => {
+          const p = (empProfiles || []).find(x => x.id === id);
+          return p ? { id, name: getName(p.full_name), jobs: empJobsMap[id] } : null;
+        }).filter(Boolean) as { id: string; name: string; jobs: number }[]);
+      }
 
       setLoaded(true);
     };
@@ -820,7 +922,18 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        <button onClick={() => navigate("/admin/jobs")} style={{ width: "100%", marginTop: 14, padding: "9px", borderRadius: 10, background: `${A1}12`, border: `1px solid ${A1}25`, color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 14 }}>
+          {[
+            { label: "Posted Today",     val: jobPeriods.today,   color: "#4ade80", bg: "rgba(34,197,94,.08)",  border: "rgba(34,197,94,.18)" },
+            { label: "Posted This Week", val: jobPeriods.thisWeek, color: "#a5b4fc", bg: "rgba(99,102,241,.08)", border: "rgba(99,102,241,.18)" },
+          ].map(j => (
+            <div key={j.label} style={{ padding: "10px 14px", borderRadius: 10, background: j.bg, border: `1px solid ${j.border}` }}>
+              <p style={{ fontSize: 20, fontWeight: 900, color: j.color, margin: 0 }}>{j.val}</p>
+              <p style={{ fontSize: 10.5, color: tok.cardSub, margin: "2px 0 0" }}>{j.label}</p>
+            </div>
+          ))}
+        </div>
+        <button onClick={() => navigate("/admin/jobs")} style={{ width: "100%", marginTop: 10, padding: "9px", borderRadius: 10, background: `${A1}12`, border: `1px solid ${A1}25`, color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
           View All Jobs →
         </button>
       </div>
@@ -970,6 +1083,228 @@ const AdminDashboard = () => {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* ══ VERIFICATION STATUS OVERVIEW + REFERRAL STATS ══ */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+
+        {/* Verification Overview */}
+        <div style={{ ...card, padding: "18px" }}>
+          {sectionHeader(<Fingerprint size={14} color="#fbbf24" />, "Verification Status Overview")}
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {/* Aadhaar */}
+            <div style={{ padding: "12px", borderRadius: 12, background: tok.sysRowBg, border: `1px solid ${tok.alertBdr}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
+                <Fingerprint size={13} color="#fbbf24" />
+                <span style={{ fontSize: 12, fontWeight: 700, color: tok.cardText }}>Aadhaar KYC</span>
+                <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: "#4ade80" }}>
+                  {verificationStats.aadhaarVerified} verified
+                </span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
+                {[
+                  { label: "Verified",     val: verificationStats.aadhaarVerified,     color: "#4ade80" },
+                  { label: "Pending",      val: verificationStats.aadhaarPending,      color: "#fbbf24" },
+                  { label: "Rejected",     val: verificationStats.aadhaarRejected,     color: "#f87171" },
+                ].map(s => (
+                  <div key={s.label} style={{ textAlign: "center", padding: "6px", borderRadius: 8, background: `${s.color}10` }}>
+                    <p style={{ fontSize: 16, fontWeight: 900, color: s.color, margin: 0 }}>{s.val}</p>
+                    <p style={{ fontSize: 9.5, color: tok.cardSub, margin: "1px 0 0" }}>{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Bank */}
+            <div style={{ padding: "12px", borderRadius: 12, background: tok.sysRowBg, border: `1px solid ${tok.alertBdr}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
+                <Landmark size={13} color="#a5b4fc" />
+                <span style={{ fontSize: 12, fontWeight: 700, color: tok.cardText }}>Bank Verification</span>
+                <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: "#4ade80" }}>
+                  {verificationStats.bankVerified} verified
+                </span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
+                {[
+                  { label: "Verified",     val: verificationStats.bankVerified,     color: "#4ade80" },
+                  { label: "Pending",      val: verificationStats.bankPending,      color: "#fbbf24" },
+                  { label: "Rejected",     val: verificationStats.bankRejected,     color: "#f87171" },
+                ].map(s => (
+                  <div key={s.label} style={{ textAlign: "center", padding: "6px", borderRadius: 8, background: `${s.color}10` }}>
+                    <p style={{ fontSize: 16, fontWeight: 900, color: s.color, margin: 0 }}>{s.val}</p>
+                    <p style={{ fontSize: 9.5, color: tok.cardSub, margin: "1px 0 0" }}>{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Referral Program Stats */}
+        <div style={{ ...card, padding: "18px" }}>
+          {sectionHeader(<UserPlus size={14} color="#4ade80" />, "Referral Program", `${referralStats.total} total`)}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+            {[
+              { label: "Total Referrals",   val: referralStats.total,          color: "#4ade80",  icon: UserPlus },
+              { label: "Unique Referrers",  val: referralStats.uniqueReferrers, color: "#a5b4fc", icon: Users },
+              { label: "Signup Bonuses",    val: referralStats.signupBonuses,  color: "#fbbf24",  icon: IndianRupee },
+              { label: "Job Bonuses Paid",  val: referralStats.jobBonuses,     color: "#c4b5fd",  icon: Briefcase },
+            ].map(s => (
+              <div key={s.label} style={{ padding: "12px", borderRadius: 10, background: `${s.color}0f`, border: `1px solid ${s.color}25` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 5 }}>
+                  <s.icon size={12} color={s.color} />
+                  <span style={{ fontSize: 10, color: tok.cardSub }}>{s.label}</span>
+                </div>
+                <p style={{ fontSize: 20, fontWeight: 900, color: s.color, margin: 0 }}>{s.val}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ padding: "10px 14px", borderRadius: 10, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+              <span style={{ fontSize: 12, color: tok.cardText, fontWeight: 600 }}>Conversion Rate</span>
+              <span style={{ fontSize: 14, fontWeight: 900, color: "#4ade80" }}>{referralStats.conversionRate}%</span>
+            </div>
+            <div style={{ height: 6, borderRadius: 3, background: tok.sysRowBg, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${referralStats.conversionRate}%`, background: "#4ade80", borderRadius: 3 }} />
+            </div>
+            <p style={{ fontSize: 10, color: tok.cardSub, margin: "4px 0 0" }}>Referred users who completed signup bonus</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ══ COMMISSION TRACKER + PLATFORM GROWTH KPIs ══ */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+
+        {/* Commission Tracker */}
+        <div style={{ ...card, padding: "18px" }}>
+          {sectionHeader(<IndianRupee size={14} color="#fbbf24" />, "Commission Tracker", "10% of revenue")}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {[
+              { label: "Today",      val: commissionStats.today,     color: "#4ade80", bg: "rgba(34,197,94,.08)",   border: "rgba(34,197,94,.2)" },
+              { label: "This Week",  val: commissionStats.thisWeek,  color: "#a5b4fc", bg: "rgba(99,102,241,.08)",  border: "rgba(99,102,241,.2)" },
+              { label: "This Month", val: commissionStats.thisMonth, color: "#fbbf24", bg: "rgba(245,158,11,.08)",  border: "rgba(245,158,11,.2)" },
+            ].map(s => (
+              <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 12, background: s.bg, border: `1px solid ${s.border}` }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 10.5, color: tok.cardSub, margin: 0 }}>{s.label}</p>
+                  <p style={{ fontSize: 20, fontWeight: 900, color: s.color, margin: "2px 0 0" }}>
+                    {fmt(s.val)}
+                  </p>
+                </div>
+                <IndianRupee size={22} color={s.color} style={{ opacity: 0.4 }} />
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: 10, color: tok.cardSub, marginTop: 10, margin: "10px 0 0" }}>
+            Commission = 10% of all credit transactions
+          </p>
+        </div>
+
+        {/* Platform Growth KPIs */}
+        <div style={{ ...card, padding: "18px" }}>
+          {sectionHeader(<TrendingUp size={14} color="#4ade80" />, "Platform Growth KPIs")}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {[
+              {
+                label: "User Growth (MoM)",
+                val: `${growthKPIs.momUserPct > 0 ? "+" : ""}${growthKPIs.momUserPct}%`,
+                color: growthKPIs.momUserPct >= 0 ? "#4ade80" : "#f87171",
+                icon: growthKPIs.momUserPct >= 0 ? TrendingUp : TrendingDown,
+                sub: "vs last month",
+              },
+              {
+                label: "Revenue Growth (MoM)",
+                val: `${growthKPIs.momRevPct > 0 ? "+" : ""}${growthKPIs.momRevPct}%`,
+                color: growthKPIs.momRevPct >= 0 ? "#4ade80" : "#f87171",
+                icon: growthKPIs.momRevPct >= 0 ? TrendingUp : TrendingDown,
+                sub: "this month vs last",
+              },
+              {
+                label: "Job Completion Rate",
+                val: `${growthKPIs.jobCompletionRate}%`,
+                color: growthKPIs.jobCompletionRate >= 70 ? "#4ade80" : growthKPIs.jobCompletionRate >= 40 ? "#fbbf24" : "#f87171",
+                icon: CheckCircle2,
+                sub: "completed / total active",
+              },
+              {
+                label: "Avg Withdrawal Amount",
+                val: fmt(growthKPIs.avgWithdrawal),
+                color: "#a5b4fc",
+                icon: Wallet,
+                sub: "per withdrawal request",
+              },
+            ].map(s => (
+              <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 11, background: tok.sysRowBg, border: `1px solid ${tok.alertBdr}` }}>
+                <div style={{ width: 32, height: 32, borderRadius: 9, background: `${s.color}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <s.icon size={14} color={s.color} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>{s.label}</p>
+                  <p style={{ fontSize: 10, color: tok.cardSub, opacity: 0.6, margin: 0 }}>{s.sub}</p>
+                </div>
+                <span style={{ fontSize: 16, fontWeight: 900, color: s.color }}>{s.val}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ══ TOP EMPLOYERS ══ */}
+      {topEmployers.length > 0 && (
+        <div style={{ ...card, padding: "18px" }}>
+          {sectionHeader(<Building2 size={14} color="#c4b5fd" />, "Most Active Employers", "By jobs posted")}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {topEmployers.map((e, i) => {
+              const maxJobs = topEmployers[0]?.jobs || 1;
+              const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
+              return (
+                <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12, background: i === 0 ? "rgba(196,181,253,.07)" : tok.sysRowBg, border: `1px solid ${i === 0 ? "rgba(196,181,253,.2)" : tok.alertBdr}` }}>
+                  <span style={{ fontSize: 18, width: 24 }}>{medals[i]}</span>
+                  <div style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(139,92,246,.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Building2 size={14} color="#c4b5fd" />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: 0 }}>{e.name}</p>
+                    <div style={{ height: 4, borderRadius: 2, background: tok.alertBg, marginTop: 5, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${Math.round(e.jobs / maxJobs * 100)}%`, background: "#c4b5fd", borderRadius: 2 }} />
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <p style={{ fontSize: 16, fontWeight: 900, color: "#c4b5fd", margin: 0 }}>{e.jobs}</p>
+                    <p style={{ fontSize: 10, color: tok.cardSub, margin: 0 }}>jobs posted</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ══ ALERT CENTER ══ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Shield size={14} color="#f87171" />, "Alert Center", sysAlerts.length > 0 ? `${sysAlerts.length} active` : "All clear", sysAlerts.length > 0 ? "#f87171" : "#4ade80")}
+        {sysAlerts.length === 0 ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px", borderRadius: 12, background: "rgba(34,197,94,.06)", border: "1px solid rgba(34,197,94,.15)" }}>
+            <CheckCircle2 size={20} color="#4ade80" />
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 700, color: "#4ade80", margin: 0 }}>No active alerts</p>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "2px 0 0" }}>Everything is running smoothly.</p>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {sysAlerts.map((a, i) => (
+              <div key={i}
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 12, background: a.bg, border: `1px solid ${a.border}`, cursor: "pointer" }}
+                onClick={() => navigate(a.path)}>
+                <div style={{ width: 32, height: 32, borderRadius: 9, background: `${a.color}20`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ fontSize: 16, fontWeight: 900, color: a.color }}>{a.count}</span>
+                </div>
+                <p style={{ fontSize: 12.5, color: tok.cardText, flex: 1, margin: 0 }}>{a.msg}</p>
+                <ArrowUpRight size={14} color={a.color} />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Quick Access ── */}
