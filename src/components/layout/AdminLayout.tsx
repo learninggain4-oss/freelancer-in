@@ -18,7 +18,7 @@ import {
   ShieldAlert, UserX, Ban, Folder, BarChart2, TrendingUp,
   Search, MessageSquare, Plus, ChevronDown,
   User, Languages, PanelRightOpen, PanelRightClose,
-  CheckCircle2, Info, XCircle, Mail, Image as ImageIcon,
+  CheckCircle2, Info, XCircle, Mail, Image as ImageIcon, RotateCcw,
 } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 
@@ -239,6 +239,7 @@ const navSections = [
   ]},
   { title: "Content & Config", items: [
     { label: "App Branding",   icon: ImageIcon,          path: "/admin/branding" },
+    { label: "Reset Center",   icon: RotateCcw,          path: "/admin/reset" },
     { label: "Hero Slideshow", icon: SlidersHorizontal,  path: "/admin/hero-slides" },
     { label: "Testimonials",   icon: MessageSquareQuote, path: "/admin/testimonials" },
     { label: "User Reviews",   icon: Star,               path: "/admin/reviews" },
