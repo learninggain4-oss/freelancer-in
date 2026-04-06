@@ -1,5 +1,6 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import "@/lib/pwa"; // register beforeinstallprompt listener at app boot
+import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -221,6 +222,20 @@ const SmartRoot = () => {
 
 const AppContent = () => {
   const { blocked, loading } = useIpBlockCheck();
+
+  useEffect(() => {
+    supabase.from("app_settings").select("key, value").in("key", ["seo_title", "seo_description"])
+      .then(({ data }) => {
+        if (!data) return;
+        const title = data.find(r => r.key === "seo_title")?.value;
+        const desc  = data.find(r => r.key === "seo_description")?.value;
+        if (title) document.title = title;
+        if (desc) {
+          const m = document.querySelector('meta[name="description"]');
+          if (m) m.setAttribute("content", desc);
+        }
+      });
+  }, []);
 
   if (loading) return <PageLoader />;
   if (blocked) return <BlockedScreen />;
