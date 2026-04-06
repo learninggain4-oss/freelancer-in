@@ -16,7 +16,7 @@ export default function AdminCacheManagement(){
   const{theme,themeKey}=useAdminTheme();const T=TH[themeKey];const{toast}=useToast();
   const[modules,setModules]=useState([]);
   const[clearing,setClearing]=useState<string|null>(null);
-  const[ttl,setTtl]=useState<Record<string,number>>({}));
+  const[ttl,setTtl]=useState<Record<string,number>>({});
 
   const clear=async(m:CacheModule)=>{
     setClearing(m.id);await new Promise(r=>setTimeout(r,800));

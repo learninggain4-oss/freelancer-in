@@ -50,6 +50,10 @@ const defaultExports: ExportRequest[] = [
   { id: "e2", admin: "Admin B", description: "Wallet reconciliation report", tables: ["wallet_transactions"], status: "approved", requestedAt: new Date(Date.now() - 86400000).toISOString(), resolvedAt: new Date(Date.now() - 82800000).toISOString() },
 ];
 
+const MASKING_KEY = "admin_dp_masking_v1";
+const RETENTION_KEY = "admin_dp_retention_v1";
+const EXPORT_KEY = "admin_dp_exports_v1";
+
 function load<T>(key: string, def: T[]): T[] {
   try { const d = localStorage.getItem(key); if (d) return JSON.parse(d); } catch { /* */ }
   localStorage.setItem(key, JSON.stringify(def)); return def;
