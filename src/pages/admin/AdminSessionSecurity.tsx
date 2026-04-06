@@ -51,18 +51,6 @@ function getOS(ua: string): string {
   return "Unknown";
 }
 
-,
-    { id: "ses2", device: "Desktop", browser: "Chrome", os: "Windows", ip: "103.21.58.44", location: "Mumbai, India", isCurrent: false, lastActive: new Date(Date.now() - 86400000).toISOString(), loginAt: new Date(Date.now() - 86400000 * 2).toISOString(), isSuspicious: false, isBlocked: false },
-    { id: "ses3", device: "Mobile",  browser: "Safari", os: "iOS",     ip: "45.79.12.200", location: "Chennai, India", isCurrent: false, lastActive: new Date(Date.now() - 3600000 * 6).toISOString(), loginAt: new Date(Date.now() - 3600000 * 8).toISOString(), isSuspicious: true, isBlocked: false },
-  ];
-}
-
-,
-    { id: "sp2", type: "Login from unusual location (Bangalore)",  ip: "49.204.xx.xx",  device: "Chrome/Linux",   timestamp: new Date(Date.now() - 7200000).toISOString(),  resolved: true },
-    { id: "sp3", type: "IP change detected during active session", ip: "45.79.12.200",  device: "Safari/iOS",     timestamp: new Date(Date.now() - 86400000).toISOString(), resolved: false },
-  ];
-}
-
 function load<T>(key: string, seed: () => T[]): T[] {
   try { const d = localStorage.getItem(key); if (d) return JSON.parse(d); } catch { /* */ }
   const s = seed(); localStorage.setItem(key, JSON.stringify(s)); return s;
