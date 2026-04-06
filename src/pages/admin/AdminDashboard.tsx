@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -393,7 +393,7 @@ const AdminDashboard = () => {
 
   const emptyBox = (icon: React.ElementType, msg: string) => (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, padding: "32px 0" }}>
-      {icon({ size: 28, color: tok.cardSub })}
+      {React.createElement(icon, { size: 28, color: tok.cardSub })}
       <p style={{ fontSize: 12, color: tok.cardSub, margin: 0 }}>{msg}</p>
     </div>
   );
