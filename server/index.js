@@ -781,11 +781,12 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
     }
 
     if (action === "generate_magic_link") {
-      const { email: targetEmail } = req.body;
+      const { email: targetEmail, redirect_to: redirectTo } = req.body;
       if (!targetEmail) return res.status(400).json({ error: "email required" });
       const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
         type: "magiclink",
         email: targetEmail,
+        options: { redirectTo: redirectTo || undefined },
       });
       if (linkErr) return res.status(500).json({ error: linkErr.message });
       const actionLink = linkData?.properties?.action_link;
