@@ -448,8 +448,8 @@ const AdminUsers = () => {
     setImpersonateUserId(u.id);
     try {
       const tkn = await getToken();
-      // Pass current origin so Supabase redirects to the latest live app after auth
-      const redirectTo = `${window.location.origin}/dashboard?_t=${Date.now()}`;
+      // Redirect to the live production domain after auth
+      const redirectTo = `https://www.freelan.space/freelancer/dashboard?_t=${Date.now()}`;
       const res = await callEdgeFunction("admin-user-management", {
         body: { action: "generate_magic_link", email: u.email, redirect_to: redirectTo },
         token: tkn,
