@@ -28,6 +28,7 @@ import {
   UserPlus, Users, KeyRound, Shield, Download, Calendar, ClipboardCopy,
   MessageSquare, Wallet, RotateCcw, SlidersHorizontal, NotebookPen,
   BadgeIndianRupee, SendHorizonal, Phone, MapPin, GraduationCap, Briefcase,
+  LogOut, ArrowLeftRight,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
@@ -97,6 +98,14 @@ const AdminUsers = () => {
   // View mode: grid cards or table
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 
+  // Force Logout
+  const [logoutUserId, setLogoutUserId] = useState<string | null>(null);
+
+  // Change User Type
+  const [changeTypeUser, setChangeTypeUser] = useState<FullProfile | null>(null);
+  const [changeTypeTo, setChangeTypeTo] = useState<string>("");
+  const [changeTypeProcessing, setChangeTypeProcessing] = useState(false);
+
   const [viewSecurityUser, setViewSecurityUser] = useState<FullProfile | null>(null);
   type SecurityData = {
     mpin: string | null;
@@ -119,7 +128,7 @@ const AdminUsers = () => {
     const [{ data }, { data: bankData }, token] = await Promise.all([
       supabase
         .from("profiles")
-        .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at")
+        .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
         .order("created_at", { ascending: false }),
       supabase.from("bank_verifications").select("profile_id, status"),
       getToken(),
@@ -230,6 +239,23 @@ const AdminUsers = () => {
     } else {
       const { toast } = await import("sonner");
       toast.success(`User ${status} successfully`);
+      // Auto-notify user about status change
+      if (selectedUser.user_id) {
+        try {
+          const tkn = await getToken();
+          await callEdgeFunction("admin-user-management", {
+            body: {
+              action: "send_notification",
+              target_user_id: selectedUser.user_id,
+              title: status === "approved" ? "🎉 Account Approved!" : "Account Application Update",
+              message: status === "approved"
+                ? "Congratulations! Your account has been approved. You now have full access to all platform features."
+                : `Your account application has been reviewed.${notes ? ` Reason: ${notes}` : " Please contact support for more information."}`,
+            },
+            token: tkn,
+          });
+        } catch { /* non-critical */ }
+      }
       fetchProfiles();
     }
     setProcessing(false);
@@ -240,6 +266,75 @@ const AdminUsers = () => {
     setSelectedUser(null);
     setActionType(null);
     setNotes("");
+  };
+
+  const handleForceLogout = async (u: FullProfile) => {
+    if (!u.user_id) return;
+    setLogoutUserId(u.id);
+    try {
+      const tkn = await getToken();
+      const res = await callEdgeFunction("admin-user-management", {
+        body: { action: "revoke_sessions", user_id: u.user_id },
+        token: tkn,
+      });
+      const { toast } = await import("sonner");
+      if (res.ok) {
+        toast.success(`${u.full_name || u.email} logged out from all sessions`);
+        // Notify user
+        try {
+          await callEdgeFunction("admin-user-management", {
+            body: {
+              action: "send_notification",
+              target_user_id: u.user_id,
+              title: "Security Alert",
+              message: "You have been logged out of all active sessions by an administrator. Please log in again.",
+            },
+            token: tkn,
+          });
+        } catch { /* non-critical */ }
+      } else {
+        toast.error("Failed to force logout");
+      }
+    } catch {
+      const { toast } = await import("sonner");
+      toast.error("Failed to force logout");
+    }
+    setLogoutUserId(null);
+  };
+
+  const handleChangeType = async () => {
+    if (!changeTypeUser || !changeTypeTo) return;
+    setChangeTypeProcessing(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ user_type: changeTypeTo })
+      .eq("id", changeTypeUser.id);
+    const { toast } = await import("sonner");
+    if (error) {
+      toast.error("Failed to change user type");
+    } else {
+      const label = changeTypeTo === "employee" ? "Freelancer" : "Employer";
+      toast.success(`User type changed to ${label}`);
+      // Auto-notify user
+      if (changeTypeUser.user_id) {
+        try {
+          const tkn = await getToken();
+          await callEdgeFunction("admin-user-management", {
+            body: {
+              action: "send_notification",
+              target_user_id: changeTypeUser.user_id,
+              title: "Account Type Updated",
+              message: `Your account type has been changed to ${label} by the admin team. Please refresh the app to see the changes.`,
+            },
+            token: tkn,
+          });
+        } catch { /* non-critical */ }
+      }
+      fetchProfiles();
+      setChangeTypeUser(null);
+      setChangeTypeTo("");
+    }
+    setChangeTypeProcessing(false);
   };
 
   const handleToggleBlock = async (user: FullProfile) => {
@@ -870,6 +965,21 @@ const AdminUsers = () => {
                               onClick={() => setConfirmAction({ type: "reset_mpin", user: u })}>
                               <KeyRound className="h-3.5 w-3.5" />
                             </Button>
+                            <Button size="icon" variant="ghost" title="Force logout all sessions"
+                              className="h-8 w-8 rounded-lg hover:bg-rose-500/10"
+                              style={{ color: "#fb7185" }}
+                              disabled={logoutUserId === u.id}
+                              onClick={() => handleForceLogout(u)}>
+                              {logoutUserId === u.id
+                                ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                : <LogOut className="h-3.5 w-3.5" />}
+                            </Button>
+                            <Button size="icon" variant="ghost" title="Change user type"
+                              className="h-8 w-8 rounded-lg hover:bg-cyan-500/10"
+                              style={{ color: "#22d3ee" }}
+                              onClick={() => { setChangeTypeUser(u); setChangeTypeTo(u.user_type === "employee" ? "client" : "employee"); }}>
+                              <ArrowLeftRight className="h-3.5 w-3.5" />
+                            </Button>
                             <Button size="icon" variant="ghost" title="Delete permanently"
                               className="h-8 w-8 rounded-lg text-red-400 hover:text-red-400 hover:bg-red-500/10"
                               onClick={() => setConfirmAction({ type: "delete", user: u })}>
@@ -1111,28 +1221,58 @@ const AdminUsers = () => {
                     <span style={{ color: isOnline ? "#34d399" : T.sub }}>👁 {fmtLastSeen(u.last_seen_at)}</span>
                   </div>
 
+                  {/* IP / Location */}
+                  {((u as any).registration_city || (u as any).registration_country || (u as any).registration_ip) && (
+                    <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px]" style={{ background: T.nav }}>
+                      <MapPin className="h-3 w-3 shrink-0" style={{ color: "#6366f1" }} />
+                      <span className="truncate font-medium" style={{ color: T.sub }}>
+                        {[(u as any).registration_city, (u as any).registration_country].filter(Boolean).join(", ") || (u as any).registration_ip}
+                      </span>
+                      {(u as any).registration_ip && (u as any).registration_city && (
+                        <span className="ml-auto font-mono shrink-0" style={{ color: T.sub }}>
+                          {(u as any).registration_ip}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
                   {/* Action buttons */}
                   {isAdmin ? (
                     <div className="rounded-xl py-2 text-center text-xs font-bold" style={{ background: isSA ? "rgba(245,158,11,.1)" : "rgba(99,102,241,.1)", color: isSA ? "#f59e0b" : "#a5b4fc" }}>
                       {isSA ? "⭐ Super Admin Protected" : "🔒 Admin Account"}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-6 gap-1 pt-1">
-                      {[
-                        { icon: <SlidersHorizontal className="h-3.5 w-3.5" />, title: "Preview",         cls: "hover:bg-indigo-500/15 text-indigo-400",  action: () => setPreviewUser(u) },
-                        { icon: <NotebookPen className="h-3.5 w-3.5" />,       title: "Notes",            cls: (u as any).approval_notes ? "text-amber-400 bg-amber-500/10 hover:bg-amber-500/20" : `hover:bg-amber-500/10 text-amber-400`, action: () => handleOpenNotes(u) },
-                        { icon: <BadgeIndianRupee className="h-3.5 w-3.5" />,  title: "Wallet",           cls: "hover:bg-emerald-500/15 text-emerald-400", action: () => { setWalletDialogUser(u); setWalletAmount(""); setWalletDir("add"); setWalletDesc(""); } },
-                        { icon: <MessageSquare className="h-3.5 w-3.5" />,     title: "Notify",           cls: "hover:bg-blue-500/15 text-blue-400",       action: () => { setMsgDialogUser(u); setMsgTitle(""); setMsgBody(""); } },
-                        { icon: <Pencil className="h-3.5 w-3.5" />,            title: "Edit",             cls: "hover:bg-white/10",                         action: () => navigate(`/admin/users/${u.id}`) },
-                        { icon: <Eye className="h-3.5 w-3.5" />,               title: "Full Details",     cls: "hover:bg-white/10",                         action: () => { setSelectedUser(u); setActionType("view"); } },
-                      ].map((btn, i) => (
-                        <button key={i} title={btn.title}
-                          className={`h-8 w-full rounded-lg flex items-center justify-center transition-colors ${btn.cls}`}
-                          style={{ color: btn.cls.includes("text-") ? undefined : T.sub }}
-                          onClick={btn.action}>
-                          {btn.icon}
-                        </button>
-                      ))}
+                    <div className="space-y-1 pt-1">
+                      {/* Row 1 — 4 main actions */}
+                      <div className="grid grid-cols-4 gap-1">
+                        {[
+                          { icon: <SlidersHorizontal className="h-3.5 w-3.5" />, title: "Preview",     cls: "hover:bg-indigo-500/15 text-indigo-400",  action: () => setPreviewUser(u) },
+                          { icon: <NotebookPen className="h-3.5 w-3.5" />,       title: "Notes",        cls: (u as any).approval_notes ? "text-amber-400 bg-amber-500/10 hover:bg-amber-500/20" : "hover:bg-amber-500/10 text-amber-400", action: () => handleOpenNotes(u) },
+                          { icon: <BadgeIndianRupee className="h-3.5 w-3.5" />,  title: "Wallet",       cls: "hover:bg-emerald-500/15 text-emerald-400", action: () => { setWalletDialogUser(u); setWalletAmount(""); setWalletDir("add"); setWalletDesc(""); } },
+                          { icon: <MessageSquare className="h-3.5 w-3.5" />,     title: "Notify",       cls: "hover:bg-blue-500/15 text-blue-400",       action: () => { setMsgDialogUser(u); setMsgTitle(""); setMsgBody(""); } },
+                        ].map((btn, i) => (
+                          <button key={i} title={btn.title}
+                            className={`h-8 w-full rounded-lg flex items-center justify-center transition-colors ${btn.cls}`}
+                            onClick={btn.action}>{btn.icon}</button>
+                        ))}
+                      </div>
+                      {/* Row 2 — 4 more actions */}
+                      <div className="grid grid-cols-4 gap-1">
+                        {[
+                          { icon: <Pencil className="h-3.5 w-3.5" />,   title: "Edit Profile",       cls: "hover:bg-white/10",           color: T.sub, action: () => navigate(`/admin/users/${u.id}`) },
+                          { icon: <Eye className="h-3.5 w-3.5" />,       title: "Full Details",       cls: "hover:bg-white/10",           color: T.sub, action: () => { setSelectedUser(u); setActionType("view"); } },
+                          { icon: logoutUserId === u.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <LogOut className="h-3.5 w-3.5" />,
+                            title: "Force Logout",  cls: "hover:bg-rose-500/10",        color: "#fb7185",
+                            action: () => handleForceLogout(u) },
+                          { icon: <ArrowLeftRight className="h-3.5 w-3.5" />, title: "Change Type",   cls: "hover:bg-cyan-500/10",        color: "#22d3ee",
+                            action: () => { setChangeTypeUser(u); setChangeTypeTo(u.user_type === "employee" ? "client" : "employee"); } },
+                        ].map((btn, i) => (
+                          <button key={i} title={btn.title} disabled={btn.title === "Force Logout" && logoutUserId === u.id}
+                            className={`h-8 w-full rounded-lg flex items-center justify-center transition-colors ${btn.cls}`}
+                            style={{ color: btn.color }}
+                            onClick={btn.action}>{btn.icon}</button>
+                        ))}
+                      </div>
                     </div>
                   )}
                   {!isAdmin && (
@@ -2049,6 +2189,62 @@ const AdminUsers = () => {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => { setViewSecurityUser(null); setSecurityData(null); }}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Change User Type Dialog ───────────────────────── */}
+      <Dialog open={!!changeTypeUser} onOpenChange={(o) => { if (!o) { setChangeTypeUser(null); setChangeTypeTo(""); } }}>
+        <DialogContent className="max-w-sm rounded-2xl" style={{ background: "#1e1e2e", borderColor: "rgba(99,102,241,.3)" }}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <ArrowLeftRight className="h-5 w-5 text-cyan-400" />
+              Change User Type
+            </DialogTitle>
+            <DialogDescription style={{ color: "rgba(199,210,254,.6)" }}>
+              Update account type for{" "}
+              <span className="font-semibold text-white">{changeTypeUser?.full_name || changeTypeUser?.email}</span>.
+              The user will be notified automatically.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Current type */}
+            <div className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: "rgba(255,255,255,.05)" }}>
+              <div>
+                <p className="text-[10px] font-medium mb-0.5" style={{ color: "rgba(199,210,254,.5)" }}>CURRENT TYPE</p>
+                <p className="text-sm font-bold text-white">
+                  {changeTypeUser?.user_type === "employee" ? "💼 Freelancer" : "🏢 Employer"}
+                </p>
+              </div>
+              <ArrowLeftRight className="h-5 w-5" style={{ color: "#22d3ee" }} />
+              <div className="text-right">
+                <p className="text-[10px] font-medium mb-0.5" style={{ color: "rgba(199,210,254,.5)" }}>CHANGE TO</p>
+                <p className="text-sm font-bold" style={{ color: "#22d3ee" }}>
+                  {changeTypeTo === "employee" ? "💼 Freelancer" : "🏢 Employer"}
+                </p>
+              </div>
+            </div>
+
+            {/* Warning */}
+            <div className="rounded-xl px-4 py-3 text-xs" style={{ background: "rgba(251,191,36,.08)", border: "1px solid rgba(251,191,36,.2)", color: "#fbbf24" }}>
+              ⚠️ This changes the user's account role. Their existing profile data will be preserved.
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="sm" className="rounded-xl border-white/20 text-white hover:bg-white/10"
+              onClick={() => { setChangeTypeUser(null); setChangeTypeTo(""); }}>
+              Cancel
+            </Button>
+            <Button size="sm"
+              className="rounded-xl font-bold"
+              style={{ background: "linear-gradient(135deg,#06b6d4,#0891b2)", color: "#fff" }}
+              disabled={changeTypeProcessing}
+              onClick={handleChangeType}>
+              {changeTypeProcessing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <ArrowLeftRight className="h-4 w-4" />}
+              {changeTypeProcessing ? "Changing…" : "Confirm Change"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
