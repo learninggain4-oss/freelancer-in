@@ -22,6 +22,7 @@ import {
   CheckCircle2, Info, XCircle, Mail, Image as ImageIcon, RotateCcw,
   Trash2, CheckSquare, Square, Timer,
   Handshake, Brain, Layout, Scale, AlertCircle,
+  FlaskConical, Award, Trophy, Gift, Smartphone, MessageCircle, Flame, Key, Link,
 } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 
@@ -403,6 +404,34 @@ const navSections = [
     { label: "Project Templates",    icon: Layout,       path: "/admin/project-templates" },
     { label: "Testimonial Approval", icon: Star,         path: "/admin/testimonial-approval" },
   ]},
+  { title: "Marketing & Growth", items: [
+    { label: "Email Campaigns",      icon: Mail,         path: "/admin/email-campaign-manager" },
+    { label: "Push Notifications",   icon: Bell,         path: "/admin/push-notification-campaigns" },
+    { label: "SMS Campaigns",        icon: MessageSquare, path: "/admin/sms-campaign-manager" },
+    { label: "Abandoned Users",      icon: UserX,        path: "/admin/abandoned-user-reengagement" },
+    { label: "A/B Test Manager",     icon: FlaskConical, path: "/admin/ab-test-manager" },
+  ]},
+  { title: "Gamification", items: [
+    { label: "Badges & Achievements",icon: Award,        path: "/admin/badge-achievement-manager" },
+    { label: "Leaderboard",          icon: Trophy,       path: "/admin/leaderboard-manager" },
+    { label: "Loyalty Points",       icon: Gift,         path: "/admin/loyalty-points-system" },
+    { label: "Level & Tier Rules",   icon: Layers,       path: "/admin/level-tier-upgrade-rules" },
+  ]},
+  { title: "Mobile App Admin", items: [
+    { label: "App Version Manager",  icon: Smartphone,   path: "/admin/app-version-manager" },
+    { label: "PWA Analytics",        icon: BarChart3,    path: "/admin/pwa-analytics" },
+    { label: "Deep Link Manager",    icon: Link,         path: "/admin/deep-link-manager" },
+    { label: "App Store Reviews",    icon: Star,         path: "/admin/app-store-review-monitor" },
+  ]},
+  { title: "Support & CRM", items: [
+    { label: "Live Chat Monitor",    icon: MessageCircle, path: "/admin/live-chat-monitor" },
+    { label: "Ticket Escalation",    icon: AlertCircle,  path: "/admin/ticket-escalation-matrix" },
+    { label: "SLA Breach Alerts",    icon: Flame,        path: "/admin/sla-breach-alerts" },
+    { label: "Onboarding Funnel",    icon: Users,        path: "/admin/user-onboarding-funnel" },
+  ]},
+  { title: "Integrations Hub", items: [
+    { label: "API Key Manager",      icon: Key,          path: "/admin/third-party-api-key-manager" },
+  ]},
 ];
 
 const allNavItems = navSections.flatMap(s => s.items);
@@ -425,6 +454,11 @@ const navGroupItems: NavGroup[] = [
   { label: "Growth",         icon: TrendingUp,       directPath: null, items: navSections.filter(s => s.title === "Business Growth").flatMap(s => s.items) },
   { label: "Legal",          icon: Scale,            directPath: null, items: navSections.filter(s => s.title === "Legal & Compliance").flatMap(s => s.items) },
   { label: "Talent",         icon: Star,             directPath: null, items: navSections.filter(s => s.title === "Talent & Projects").flatMap(s => s.items) },
+  { label: "Marketing",      icon: Megaphone,        directPath: null, items: navSections.filter(s => s.title === "Marketing & Growth").flatMap(s => s.items) },
+  { label: "Gamification",   icon: Trophy,           directPath: null, items: navSections.filter(s => s.title === "Gamification").flatMap(s => s.items) },
+  { label: "Mobile",         icon: Smartphone,       directPath: null, items: navSections.filter(s => s.title === "Mobile App Admin").flatMap(s => s.items) },
+  { label: "Support",        icon: MessageCircle,    directPath: null, items: navSections.filter(s => s.title === "Support & CRM").flatMap(s => s.items) },
+  { label: "Integrations",   icon: Key,              directPath: null, items: navSections.filter(s => s.title === "Integrations Hub").flatMap(s => s.items) },
 ];
 
 const LANGS = [

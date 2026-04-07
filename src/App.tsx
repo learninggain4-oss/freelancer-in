@@ -284,6 +284,24 @@ const AdminPortfolioReview = lazy(() => import("./pages/admin/AdminPortfolioRevi
 const AdminTimeTracking = lazy(() => import("./pages/admin/AdminTimeTracking"));
 const AdminProjectTemplates = lazy(() => import("./pages/admin/AdminProjectTemplates"));
 const AdminTestimonialApproval = lazy(() => import("./pages/admin/AdminTestimonialApproval"));
+const AdminEmailCampaignManager = lazy(() => import("./pages/admin/AdminEmailCampaignManager"));
+const AdminPushNotificationCampaigns = lazy(() => import("./pages/admin/AdminPushNotificationCampaigns"));
+const AdminSmsCampaignManager = lazy(() => import("./pages/admin/AdminSmsCampaignManager"));
+const AdminAbandonedUserReengagement = lazy(() => import("./pages/admin/AdminAbandonedUserReengagement"));
+const AdminAbTestManager = lazy(() => import("./pages/admin/AdminAbTestManager"));
+const AdminBadgeAchievementManager = lazy(() => import("./pages/admin/AdminBadgeAchievementManager"));
+const AdminLeaderboardManager = lazy(() => import("./pages/admin/AdminLeaderboardManager"));
+const AdminLoyaltyPointsSystem = lazy(() => import("./pages/admin/AdminLoyaltyPointsSystem"));
+const AdminLevelTierUpgradeRules = lazy(() => import("./pages/admin/AdminLevelTierUpgradeRules"));
+const AdminAppVersionManager = lazy(() => import("./pages/admin/AdminAppVersionManager"));
+const AdminPwaAnalytics = lazy(() => import("./pages/admin/AdminPwaAnalytics"));
+const AdminDeepLinkManager = lazy(() => import("./pages/admin/AdminDeepLinkManager"));
+const AdminAppStoreReviewMonitor = lazy(() => import("./pages/admin/AdminAppStoreReviewMonitor"));
+const AdminLiveChatMonitor = lazy(() => import("./pages/admin/AdminLiveChatMonitor"));
+const AdminTicketEscalationMatrix = lazy(() => import("./pages/admin/AdminTicketEscalationMatrix"));
+const AdminSlaBreachAlerts = lazy(() => import("./pages/admin/AdminSlaBreachAlerts"));
+const AdminUserOnboardingFunnel = lazy(() => import("./pages/admin/AdminUserOnboardingFunnel"));
+const AdminThirdPartyApiKeyManager = lazy(() => import("./pages/admin/AdminThirdPartyApiKeyManager"));
 const WalletTypes = lazy(() => import("./pages/WalletTypes"));
 const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));
@@ -776,6 +794,24 @@ const AppContent = () => {
               <Route path="time-tracking" element={<AdminTimeTracking />} />
               <Route path="project-templates" element={<AdminProjectTemplates />} />
               <Route path="testimonial-approval" element={<AdminTestimonialApproval />} />
+              <Route path="email-campaign-manager" element={<AdminEmailCampaignManager />} />
+              <Route path="push-notification-campaigns" element={<AdminPushNotificationCampaigns />} />
+              <Route path="sms-campaign-manager" element={<AdminSmsCampaignManager />} />
+              <Route path="abandoned-user-reengagement" element={<AdminAbandonedUserReengagement />} />
+              <Route path="ab-test-manager" element={<AdminAbTestManager />} />
+              <Route path="badge-achievement-manager" element={<AdminBadgeAchievementManager />} />
+              <Route path="leaderboard-manager" element={<AdminLeaderboardManager />} />
+              <Route path="loyalty-points-system" element={<AdminLoyaltyPointsSystem />} />
+              <Route path="level-tier-upgrade-rules" element={<AdminLevelTierUpgradeRules />} />
+              <Route path="app-version-manager" element={<AdminAppVersionManager />} />
+              <Route path="pwa-analytics" element={<AdminPwaAnalytics />} />
+              <Route path="deep-link-manager" element={<AdminDeepLinkManager />} />
+              <Route path="app-store-review-monitor" element={<AdminAppStoreReviewMonitor />} />
+              <Route path="live-chat-monitor" element={<AdminLiveChatMonitor />} />
+              <Route path="ticket-escalation-matrix" element={<AdminTicketEscalationMatrix />} />
+              <Route path="sla-breach-alerts" element={<AdminSlaBreachAlerts />} />
+              <Route path="user-onboarding-funnel" element={<AdminUserOnboardingFunnel />} />
+              <Route path="third-party-api-key-manager" element={<AdminThirdPartyApiKeyManager />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
