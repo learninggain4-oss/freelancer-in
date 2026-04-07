@@ -32,7 +32,9 @@ const ProtectedRoute = ({ children, requiredApproval = true }: ProtectedRoutePro
     );
   }
 
-  if (requiredApproval && profile.approval_status !== "approved") {
+  // Skip approval check when admin is previewing this account via impersonation
+  const isAdminView = sessionStorage.getItem("admin_view") === "1";
+  if (!isAdminView && requiredApproval && profile.approval_status !== "approved") {
     return <Navigate to="/verification-pending" replace />;
   }
 

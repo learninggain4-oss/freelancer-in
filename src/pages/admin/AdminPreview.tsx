@@ -15,11 +15,14 @@ const AdminPreview = () => {
       return;
     }
 
-    // Mark MPIN as verified so the gate doesn't block the impersonated user
+    // Mark session as admin-impersonated — ProtectedRoute reads this to bypass approval check
+    sessionStorage.setItem("admin_view", "1");
+    // Bypass MPIN + security question gates for this tab
     sessionStorage.setItem(`mpin_ok_${user.id}`, "1");
     sessionStorage.setItem(`sq_done_${user.id}`, "1");
+    sessionStorage.setItem(`totp_ok_${user.id}`, "1");
 
-    // Route to correct dashboard based on user_type
+    // Route directly to the correct dashboard based on user_type
     if ((profile as any).user_type === "client") {
       navigate("/employer/dashboard", { replace: true });
     } else if ((profile as any).user_type === "employee") {
