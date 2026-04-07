@@ -412,16 +412,24 @@ const AdminUsers = () => {
 
   const handlePermanentDelete = async (user: FullProfile) => {
     setActionProcessing(true);
-    const { data, error } = await supabase.functions.invoke("admin-user-management", {
-      body: { action: "permanent_delete", profile_id: user.id },
-    });
-    setActionProcessing(false);
-    setConfirmAction(null);
-    if (error || data?.error) {
-      toast.error(data?.error || error?.message || "Delete failed");
-    } else {
-      toast.success("User permanently deleted");
-      fetchProfiles();
+    try {
+      const tkn = await getToken();
+      const res = await callEdgeFunction("admin-user-management", {
+        body: { action: "permanent_delete", profile_id: user.id },
+        token: tkn,
+      });
+      const data = await res.json();
+      if (!res.ok || data?.error) {
+        toast.error(data?.error || "Delete failed");
+      } else {
+        toast.success("User permanently deleted");
+        fetchProfiles();
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Delete failed");
+    } finally {
+      setActionProcessing(false);
+      setConfirmAction(null);
     }
   };
 
@@ -447,18 +455,26 @@ const AdminUsers = () => {
   const handleInviteUser = async () => {
     if (!inviteEmail.trim()) { toast.error("Email is required"); return; }
     setInviteProcessing(true);
-    const { data, error } = await supabase.functions.invoke("admin-user-management", {
-      body: { action: "invite_user", email: inviteEmail.trim().toLowerCase(), user_type: inviteType },
-    });
-    setInviteProcessing(false);
-    if (error || data?.error) {
-      toast.error(data?.error || error?.message || "Failed to send invite");
-    } else {
-      toast.success(data?.message || "Invite sent successfully");
-      setInviteOpen(false);
-      setInviteEmail("");
-      setInviteType("freelancer");
-      fetchProfiles();
+    try {
+      const tkn = await getToken();
+      const res = await callEdgeFunction("admin-user-management", {
+        body: { action: "invite_user", email: inviteEmail.trim().toLowerCase(), user_type: inviteType },
+        token: tkn,
+      });
+      const data = await res.json();
+      if (!res.ok || data?.error) {
+        toast.error(data?.error || "Failed to send invite");
+      } else {
+        toast.success(data?.message || "Invite sent successfully");
+        setInviteOpen(false);
+        setInviteEmail("");
+        setInviteType("freelancer");
+        fetchProfiles();
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send invite");
+    } finally {
+      setInviteProcessing(false);
     }
   };
 
