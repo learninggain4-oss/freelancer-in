@@ -42,6 +42,7 @@ const ClientAttendance = lazy(() => import("./pages/employer/ClientAttendance"))
 const ChatRoom = lazy(() => import("./components/chat/ChatRoom"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
+const AdminPreview = lazy(() => import("./pages/admin/AdminPreview"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminAdmins = lazy(() => import("./pages/admin/AdminAdmins"));
@@ -410,6 +411,7 @@ const AppContent = () => {
             <Route path="/careers" element={<Careers />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/complete-profile" element={<CompleteProfile />} />
+            <Route path="/admin-preview" element={<AdminPreview />} />
             <Route path="/legal/:slug" element={<LegalDocument />} />
 
             {/* Freelancer Routes */}
