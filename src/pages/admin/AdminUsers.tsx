@@ -452,7 +452,7 @@ const AdminUsers = () => {
     if (newTab) newTab.document.write("<html><body style='background:#0f0f0f;color:#888;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0'><p>Generating secure login link…</p></body></html>");
     try {
       const tkn = await getToken();
-      const redirectTo = `https://www.freelan.space/admin-preview`;
+      const redirectTo = `${window.location.origin}/admin-preview`;
       const res = await callEdgeFunction("admin-user-management", {
         body: { action: "generate_magic_link", email: u.email, redirect_to: redirectTo },
         token: tkn,
