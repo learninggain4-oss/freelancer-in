@@ -1649,7 +1649,7 @@ const AdminDashboard = () => {
               </div>
             ))}
           </div>
-          <button onClick={() => navigate("/admin/messages")} style={{ width: "100%", padding: "8px", borderRadius: 9, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+          <button onClick={() => navigate("/admin/help-support")} style={{ width: "100%", padding: "8px", borderRadius: 9, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
             View All Messages →
           </button>
         </div>
