@@ -569,7 +569,10 @@ const AdminLayout = () => {
   useClickOutside(langRef,    () => setLangOpen(false));
   useClickOutside(quickRef,   () => setQuickOpen(false));
   useClickOutside(searchRef,  () => { if (!searchQ) setSearchOpen(false); });
-  useClickOutside(navBarRef as React.RefObject<HTMLDivElement | null>, () => setOpenNavGroup(null));
+  // NOTE: navBar dropdown close-on-outside-click is handled by the portal overlay div.
+  // Do NOT add useClickOutside for navBarRef — it fires on mousedown and unmounts the
+  // dropdown before the NavLink click event can navigate. The portal overlay onClick
+  // (closeNav) handles this correctly using the click event instead.
 
   const tok = T;
   const css = buildCss(tok);
