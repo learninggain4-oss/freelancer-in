@@ -55,6 +55,11 @@ export type FullProfile = {
   created_at: string;
   approval_notes: string | null;
   approved_at: string | null;
+  is_disabled?: boolean;
+  available_balance?: number;
+  coin_balance?: number;
+  hold_balance?: number;
+  last_seen_at?: string | null;
 };
 
 interface Props {

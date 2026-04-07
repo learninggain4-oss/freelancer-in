@@ -17,7 +17,8 @@ import {
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { CheckCircle, XCircle, Eye, EyeOff, Copy, RefreshCw, Search, X, ChevronLeft, ChevronRight, Pencil, ShieldOff, ShieldCheck, Trash2, UserPlus, Users, KeyRound, Shield } from "lucide-react";
+import { CheckCircle, XCircle, Eye, EyeOff, Copy, RefreshCw, Search, X, ChevronLeft, ChevronRight, Pencil, ShieldOff, ShieldCheck, Trash2, UserPlus, Users, KeyRound, Shield, Download, Calendar } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import UserDetailDialog, { type FullProfile } from "@/components/admin/UserDetailDialog";
@@ -52,6 +53,11 @@ const AdminUsers = () => {
   const [inviteType, setInviteType] = useState<string>("employee");
   const [inviteProcessing, setInviteProcessing] = useState(false);
   const [adminEmailMap, setAdminEmailMap] = useState<Map<string, { isSuperAdmin: boolean }>>(new Map());
+  const [bankVerifMap, setBankVerifMap] = useState<Map<string, string>>(new Map());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const [viewSecurityUser, setViewSecurityUser] = useState<FullProfile | null>(null);
   type SecurityData = {
@@ -72,14 +78,21 @@ const AdminUsers = () => {
 
   const fetchProfiles = async () => {
     setLoading(true);
-    const [{ data }, token] = await Promise.all([
+    const [{ data }, { data: bankData }, token] = await Promise.all([
       supabase
         .from("profiles")
-        .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled")
+        .select("id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at")
         .order("created_at", { ascending: false }),
+      supabase.from("bank_verifications").select("profile_id, status"),
       getToken(),
     ]);
     setProfiles((data as FullProfile[]) || []);
+    // Build bank verification map
+    const bvMap = new Map<string, string>();
+    (bankData || []).forEach((bv: { profile_id: string; status: string }) => {
+      bvMap.set(bv.profile_id, bv.status);
+    });
+    setBankVerifMap(bvMap);
     // Fetch admin list to detect admin / super admin users
     try {
       const res = await callEdgeFunction("admin-list", { method: "GET", token });
@@ -269,10 +282,111 @@ const AdminUsers = () => {
     return <Badge variant="outline" className={map[status] || ""}>{status}</Badge>;
   };
 
+  const kycBadge = (profileId: string) => {
+    const status = bankVerifMap.get(profileId);
+    if (!status) return <span style={{ color: T.sub, fontSize: 11 }}>—</span>;
+    const cfg: Record<string, { cls: string; label: string }> = {
+      approved: { cls: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30", label: "✓ KYC" },
+      pending: { cls: "bg-warning/15 text-warning border-warning/30", label: "⏳ KYC" },
+      rejected: { cls: "bg-destructive/15 text-destructive border-destructive/30", label: "✗ KYC" },
+      submitted: { cls: "bg-blue-500/15 text-blue-400 border-blue-500/30", label: "📄 KYC" },
+    };
+    const c = cfg[status] || { cls: "bg-muted text-muted-foreground", label: status };
+    return <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${c.cls}`}>{c.label}</Badge>;
+  };
+
+  const fmtDate = (iso: string | null | undefined) => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  };
+
+  const fmtLastSeen = (iso: string | null | undefined) => {
+    if (!iso) return "Never";
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 2) return "Just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 30) return `${days}d ago`;
+    return fmtDate(iso);
+  };
+
+  const handleBulkApprove = async (users: FullProfile[]) => {
+    const targets = users.filter((u) => selectedIds.has(u.id) && u.approval_status === "pending");
+    if (targets.length === 0) { toast.error("No pending users selected"); return; }
+    setBulkProcessing(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ approval_status: "approved" as any, approved_at: new Date().toISOString() })
+      .in("id", targets.map((u) => u.id));
+    setBulkProcessing(false);
+    if (error) { toast.error("Bulk approve failed"); } else {
+      toast.success(`${targets.length} user(s) approved`);
+      setSelectedIds(new Set());
+      fetchProfiles();
+    }
+  };
+
+  const handleBulkReject = async (users: FullProfile[]) => {
+    const targets = users.filter((u) => selectedIds.has(u.id) && u.approval_status === "pending");
+    if (targets.length === 0) { toast.error("No pending users selected"); return; }
+    setBulkProcessing(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ approval_status: "rejected" as any })
+      .in("id", targets.map((u) => u.id));
+    setBulkProcessing(false);
+    if (error) { toast.error("Bulk reject failed"); } else {
+      toast.success(`${targets.length} user(s) rejected`);
+      setSelectedIds(new Set());
+      fetchProfiles();
+    }
+  };
+
+  const handleExportCsv = (users: FullProfile[]) => {
+    const rows = [
+      ["Name", "Code", "Type", "Email", "Status", "Balance (₹)", "Coins", "KYC Status", "Joined", "Last Seen"],
+      ...users.map((u) => [
+        u.full_name?.[0] || "",
+        u.user_code?.[0] || "",
+        getUserTypeLabel(u.email, u.user_type),
+        u.email,
+        u.approval_status,
+        (u.available_balance ?? 0).toFixed(2),
+        (u.coin_balance ?? 0).toString(),
+        bankVerifMap.get(u.id) || "—",
+        fmtDate(u.created_at),
+        fmtLastSeen(u.last_seen_at),
+      ]),
+    ];
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `users_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${users.length} users`);
+  };
+
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     return profiles.filter((p) => {
       if (typeFilter !== "all" && p.user_type !== typeFilter) return false;
+      if (dateFrom) {
+        const joined = new Date(p.created_at);
+        if (joined < new Date(dateFrom)) return false;
+      }
+      if (dateTo) {
+        const joined = new Date(p.created_at);
+        const toDate = new Date(dateTo);
+        toDate.setDate(toDate.getDate() + 1);
+        if (joined > toDate) return false;
+      }
       if (!q) return true;
       const name = (p.full_name?.[0] || "").toLowerCase();
       const code = (p.user_code?.[0] || "").toLowerCase();
@@ -285,15 +399,67 @@ const AdminUsers = () => {
     status ? filtered.filter((p) => p.approval_status === status) : filtered;
 
   // Reset page when filters change
-  useEffect(() => { setCurrentPage(1); }, [searchQuery, typeFilter]);
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, typeFilter, dateFrom, dateTo]);
 
   const UserTable = ({ users }: { users: FullProfile[] }) => {
     const totalPages = Math.max(1, Math.ceil(users.length / PAGE_SIZE));
     const page = Math.min(currentPage, totalPages);
     const paginated = users.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    const pageIds = paginated.map((u) => u.id);
+    const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+    const anySelected = users.some((u) => selectedIds.has(u.id));
+    const selectedCount = users.filter((u) => selectedIds.has(u.id)).length;
+
+    const toggleAll = () => {
+      if (allPageSelected) {
+        setSelectedIds((prev) => { const n = new Set(prev); pageIds.forEach((id) => n.delete(id)); return n; });
+      } else {
+        setSelectedIds((prev) => { const n = new Set(prev); pageIds.forEach((id) => n.add(id)); return n; });
+      }
+    };
+
+    const toggleOne = (id: string) => {
+      setSelectedIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    };
 
     return (
       <div className="space-y-3">
+        {/* Bulk Action Bar */}
+        {anySelected && (
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border"
+               style={{ background: "rgba(99,102,241,.1)", borderColor: "rgba(99,102,241,.3)" }}>
+            <span className="text-sm font-medium" style={{ color: T.text }}>{selectedCount} selected</span>
+            <Button
+              size="sm"
+              className="h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border-none"
+              disabled={bulkProcessing}
+              onClick={() => handleBulkApprove(users)}
+            >
+              <CheckCircle className="h-3.5 w-3.5" />
+              Approve
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="h-8 gap-1.5"
+              disabled={bulkProcessing}
+              onClick={() => handleBulkReject(users)}
+            >
+              <XCircle className="h-3.5 w-3.5" />
+              Reject
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 ml-auto"
+              style={{ color: T.sub }}
+              onClick={() => setSelectedIds(new Set())}
+            >
+              Clear
+            </Button>
+          </div>
+        )}
+
         <div 
           className="overflow-x-auto rounded-xl border backdrop-blur-md"
           style={{ background: T.card, borderColor: T.border }}
@@ -301,23 +467,47 @@ const AdminUsers = () => {
           <Table>
             <TableHeader>
               <TableRow style={{ borderColor: T.border }}>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={allPageSelected}
+                    onCheckedChange={toggleAll}
+                    aria-label="Select all on page"
+                  />
+                </TableHead>
                 <TableHead style={{ color: T.sub }}>Name</TableHead>
                 <TableHead style={{ color: T.sub }}>Code</TableHead>
                 <TableHead style={{ color: T.sub }}>Type</TableHead>
-                <TableHead style={{ color: T.sub }}>Email</TableHead>
-                <TableHead style={{ color: T.sub }}>Status</TableHead>
+                <TableHead style={{ color: T.sub }}>Status / KYC</TableHead>
+                <TableHead style={{ color: T.sub }}>Balance</TableHead>
+                <TableHead style={{ color: T.sub }}>Joined</TableHead>
+                <TableHead style={{ color: T.sub }}>Last Seen</TableHead>
                 <TableHead className="text-right" style={{ color: T.sub }}>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginated.length === 0 ? (
                 <TableRow style={{ borderColor: T.border }}>
-                  <TableCell colSpan={6} className="py-8 text-center" style={{ color: T.sub }}>No users found</TableCell>
+                  <TableCell colSpan={9} className="py-8 text-center" style={{ color: T.sub }}>No users found</TableCell>
                 </TableRow>
               ) : (
                 paginated.map((u) => (
-                  <TableRow key={u.id} style={{ borderColor: T.border }}>
-                    <TableCell className="font-medium" style={{ color: T.text }}>{u.full_name?.[0] || "—"}</TableCell>
+                  <TableRow key={u.id} style={{ borderColor: T.border }}
+                    className={selectedIds.has(u.id) ? "bg-indigo-500/5" : ""}>
+                    <TableCell>
+                      {adminEmailMap.get(u.email?.toLowerCase() ?? "") ? null : (
+                        <Checkbox
+                          checked={selectedIds.has(u.id)}
+                          onCheckedChange={() => toggleOne(u.id)}
+                          aria-label="Select user"
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell className="font-medium" style={{ color: T.text }}>
+                      <div className="flex flex-col">
+                        <span>{u.full_name?.[0] || "—"}</span>
+                        <span className="text-xs truncate max-w-[140px]" style={{ color: T.sub }}>{u.email}</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="font-mono text-xs" style={{ color: T.sub }}>{u.user_code?.[0] || "—"}</TableCell>
                     <TableCell>
                       {(() => {
@@ -339,8 +529,25 @@ const AdminUsers = () => {
                         );
                       })()}
                     </TableCell>
-                    <TableCell className="max-w-[160px] truncate text-sm" style={{ color: T.sub }}>{u.email}</TableCell>
-                    <TableCell>{statusBadge(u.approval_status)}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        {statusBadge(u.approval_status)}
+                        {kycBadge(u.id)}
+                        {u.is_disabled && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-destructive/10 text-destructive border-destructive/30">🚫 Blocked</Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm font-semibold" style={{ color: T.text }}>
+                        ₹{((u.available_balance ?? 0)).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                      </div>
+                      {(u.coin_balance ?? 0) > 0 && (
+                        <div className="text-xs" style={{ color: T.sub }}>🪙 {u.coin_balance}</div>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm whitespace-nowrap" style={{ color: T.sub }}>{fmtDate(u.created_at)}</TableCell>
+                    <TableCell className="text-sm whitespace-nowrap" style={{ color: T.sub }}>{fmtLastSeen(u.last_seen_at)}</TableCell>
                     <TableCell className="text-right">
                       {adminEmailMap.get(u.email?.toLowerCase() ?? "") ? (
                         <span style={{ color: adminEmailMap.get(u.email?.toLowerCase() ?? "")?.isSuperAdmin ? "#f59e0b" : "#a5b4fc", fontSize: 11, fontWeight: 700, opacity: 0.7 }}>
@@ -389,11 +596,11 @@ const AdminUsers = () => {
                         <Button
                           size="icon"
                           variant="ghost"
-                          title={(u as any).is_disabled ? "Unblock" : "Block"}
-                          className={(u as any).is_disabled ? "text-accent hover:text-accent hover:bg-white/10" : "text-warning hover:text-warning hover:bg-white/10"}
-                          onClick={() => setConfirmAction({ type: (u as any).is_disabled ? "unblock" : "block", user: u })}
+                          title={u.is_disabled ? "Unblock" : "Block"}
+                          className={u.is_disabled ? "text-accent hover:text-accent hover:bg-white/10" : "text-warning hover:text-warning hover:bg-white/10"}
+                          onClick={() => setConfirmAction({ type: u.is_disabled ? "unblock" : "block", user: u })}
                         >
-                          {(u as any).is_disabled ? <ShieldCheck className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
+                          {u.is_disabled ? <ShieldCheck className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
                         </Button>
                         <Button
                           size="icon"
@@ -520,41 +727,85 @@ const AdminUsers = () => {
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center p-4 rounded-2xl border backdrop-blur-md"
+      <div className="flex flex-col gap-3 p-4 rounded-2xl border backdrop-blur-md"
            style={{ background: T.card, borderColor: T.border }}>
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: T.sub }} />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: T.sub }} />
+            <Input
+              placeholder="Search by name, email, or code…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-9 border-none h-11 rounded-xl"
+              style={{ background: T.input, color: T.text }}
+            />
+            {searchQuery && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+                onClick={() => setSearchQuery("")}
+              >
+                <X className="h-3.5 w-3.5" style={{ color: T.sub }} />
+              </Button>
+            )}
+          </div>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger 
+              className="w-full sm:w-[160px] border-none h-11 rounded-xl"
+              style={{ background: T.input, color: T.text }}
+            >
+              <SelectValue placeholder="User type" />
+            </SelectTrigger>
+            <SelectContent style={{ background: T.card, borderColor: T.border }}>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="employee">Freelancer</SelectItem>
+              <SelectItem value="client">Employer</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            className="h-11 gap-2 rounded-xl shrink-0"
+            style={{ borderColor: T.border, background: T.input, color: T.text }}
+            onClick={() => handleExportCsv(filtered)}
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+        </div>
+        {/* Date Range Filter */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2 shrink-0">
+            <Calendar className="h-4 w-4" style={{ color: T.sub }} />
+            <span className="text-sm" style={{ color: T.sub }}>Joined:</span>
+          </div>
           <Input
-            placeholder="Search by name, email, or code…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-9 border-none h-11 rounded-xl"
+            type="date"
+            value={dateFrom}
+            onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(1); }}
+            className="border-none h-9 rounded-xl text-sm w-full sm:w-auto"
             style={{ background: T.input, color: T.text }}
           />
-          {searchQuery && (
-            <Button
-              size="icon"
-              variant="ghost"
-              className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
-              onClick={() => setSearchQuery("")}
-            >
-              <X className="h-3.5 w-3.5" style={{ color: T.sub }} />
+          <span className="text-sm hidden sm:block" style={{ color: T.sub }}>to</span>
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(e) => { setDateTo(e.target.value); setCurrentPage(1); }}
+            className="border-none h-9 rounded-xl text-sm w-full sm:w-auto"
+            style={{ background: T.input, color: T.text }}
+          />
+          {(dateFrom || dateTo) && (
+            <Button size="sm" variant="ghost" className="h-9 px-3 rounded-xl shrink-0"
+              style={{ color: T.sub }} onClick={() => { setDateFrom(""); setDateTo(""); }}>
+              <X className="h-3.5 w-3.5 mr-1" /> Clear dates
             </Button>
           )}
+          {filtered.length !== profiles.length && (
+            <span className="text-xs ml-auto" style={{ color: T.sub }}>
+              {filtered.length} / {profiles.length} users
+            </span>
+          )}
         </div>
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger 
-            className="w-full sm:w-[160px] border-none h-11 rounded-xl"
-            style={{ background: T.input, color: T.text }}
-          >
-            <SelectValue placeholder="User type" />
-          </SelectTrigger>
-          <SelectContent style={{ background: T.card, borderColor: T.border }}>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="employee">Freelancer</SelectItem>
-            <SelectItem value="client">Employer</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       <Tabs defaultValue="pending" className="w-full">
