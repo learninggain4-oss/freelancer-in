@@ -658,7 +658,21 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
 
     if (action === "revoke_sessions") {
       if (!user_id) return res.status(400).json({ error: "user_id required" });
-      await adminClient.auth.admin.signOut(user_id, "global");
+      // Use GoTrue REST API to revoke all sessions for the user by user_id
+      const supabaseUrl = SUPABASE_URL;
+      const serviceKey = SUPABASE_SERVICE_ROLE_KEY;
+      const revokeRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${user_id}/sessions`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${serviceKey}`,
+          "apikey": serviceKey,
+          "Content-Type": "application/json",
+        },
+      });
+      if (!revokeRes.ok) {
+        const errData = await revokeRes.json().catch(() => ({}));
+        return res.status(500).json({ error: errData.message || "Failed to revoke sessions" });
+      }
       return res.json({ success: true, message: "All sessions revoked" });
     }
 
