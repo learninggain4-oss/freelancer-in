@@ -948,100 +948,98 @@ const AdminLayout = () => {
         </div>
       </header>
 
-      {/* ─── HORIZONTAL NAV BAR (scrollable + portal dropdowns) ─────── */}
-      <div ref={navBarRef} style={{ background: tok.header, borderBottom: `1px solid ${tok.headerBdr}`, display: "flex", alignItems: "stretch", overflow: "visible", zIndex: 29, position: "sticky", top: 58, flexShrink: 0, backdropFilter: "blur(20px)" }}>
+      {/* ─── ICON TAB NAV — full-width, no scroll, all 14 groups ─────── */}
+      <div ref={navBarRef} style={{ background: tok.header, borderBottom: `1px solid ${tok.headerBdr}`, position: "sticky", top: 58, zIndex: 29, flexShrink: 0, backdropFilter: "blur(20px)" }}>
 
-        {/* Left scroll arrow */}
-        <button
-          onClick={() => { navScrollRef.current?.scrollBy({ left: -200, behavior: "smooth" }); }}
-          style={{ flexShrink: 0, width: 30, display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", borderRight: `1px solid ${tok.headerBdr}`, color: tok.mainSub, cursor: "pointer", padding: 0 }}>
-          <ChevronLeft size={13} />
-        </button>
+        {/* Tab grid — each group gets equal flex-1 slot */}
+        <div style={{ display: "flex", width: "100%" }}>
+          {navGroupItems.map((group, idx) => {
+            const isGroupActive = group.directPath
+              ? location.pathname === group.directPath
+              : group.items.some(item => location.pathname === item.path);
+            const isOpen = openNavGroup === group.label;
+            const col   = isGroupActive ? A1 : isOpen ? tok.mainText : tok.mainSub;
+            const tabBg = isGroupActive ? `${A1}10` : isOpen ? `${A1}06` : "transparent";
+            const borderB = isGroupActive ? `2px solid ${A1}` : "2px solid transparent";
+            const borderR = idx < navGroupItems.length - 1 ? `1px solid ${tok.headerBdr}` : "none";
 
-        {/* Scrollable tabs strip — no overflow-y needed; dropdowns via portal */}
-        <div ref={navScrollRef} style={{ flex: 1, display: "flex", overflowX: "auto", overflowY: "hidden", scrollbarWidth: "none" }}>
-          <style>{`[data-navstrip]::-webkit-scrollbar{display:none}`}</style>
-          <div data-navstrip="" style={{ display: "flex", alignItems: "stretch", minWidth: "max-content" }}>
-            {navGroupItems.map(group => {
-              const isGroupActive = group.directPath
-                ? location.pathname === group.directPath
-                : group.items.some(item => location.pathname === item.path);
-              const isOpen = openNavGroup === group.label;
-              const tabColor = isGroupActive ? A1 : tok.mainSub;
-              const tabBorder = isGroupActive ? `2px solid ${A1}` : "2px solid transparent";
-              return (
-                <div key={group.label} style={{ flexShrink: 0 }}>
-                  {group.directPath ? (
-                    <NavLink to={group.directPath}
-                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "0 12px", height: 40, color: tabColor, fontSize: 12, fontWeight: isGroupActive ? 700 : 500, borderBottom: tabBorder, textDecoration: "none", whiteSpace: "nowrap" }}>
-                      <group.icon size={12} />
-                      <span>{group.label}</span>
-                    </NavLink>
-                  ) : (
-                    <button
-                      onClick={e => {
-                        if (isOpen) {
-                          setOpenNavGroup(null); setDropPos(null);
-                        } else {
-                          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                          setDropPos({ left: rect.left, top: rect.bottom + 2 });
-                          setOpenNavGroup(group.label);
-                        }
-                      }}
-                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "0 12px", height: 40, color: tabColor, fontSize: 12, fontWeight: isGroupActive ? 700 : 500, borderTop: "none", borderLeft: "none", borderRight: "none", borderBottom: tabBorder, background: isOpen ? `${A1}08` : "transparent", cursor: "pointer", whiteSpace: "nowrap" }}>
-                      <group.icon size={12} />
-                      <span>{group.label}</span>
-                      <ChevronDown size={9} style={{ opacity: 0.5, marginLeft: 1, transform: isOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform .15s" }} />
-                    </button>
-                  )}
+            const inner = (
+              <>
+                <div style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: isGroupActive ? `${A1}18` : isOpen ? `${A1}0d` : "transparent", transition: "background .15s", marginBottom: 2 }}>
+                  <group.icon size={14} color={col} />
                 </div>
-              );
-            })}
-          </div>
+                <span style={{ fontSize: 9.5, fontWeight: isGroupActive ? 700 : 500, color: col, lineHeight: 1.2, textAlign: "center", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{group.label}</span>
+                {group.items.length > 0 && (
+                  <ChevronDown size={8} color={col} style={{ opacity: 0.5, marginTop: 1, transform: isOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform .15s" }} />
+                )}
+              </>
+            );
+
+            const tabStyle: React.CSSProperties = {
+              flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              gap: 2, height: 56, background: tabBg, border: "none", borderBottom: borderB,
+              borderRight: borderR, cursor: "pointer", textDecoration: "none", transition: "background .15s",
+              padding: "0 2px",
+            };
+
+            return group.directPath ? (
+              <NavLink key={group.label} to={group.directPath} style={tabStyle}>
+                {inner}
+              </NavLink>
+            ) : (
+              <button
+                key={group.label}
+                onClick={e => {
+                  if (isOpen) { setOpenNavGroup(null); setDropPos(null); }
+                  else {
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    const navBottom = navBarRef.current?.getBoundingClientRect().bottom ?? rect.bottom;
+                    setDropPos({ left: rect.left, top: navBottom + 2 });
+                    setOpenNavGroup(group.label);
+                  }
+                }}
+                style={tabStyle}>
+                {inner}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Right scroll arrow */}
-        <button
-          onClick={() => { navScrollRef.current?.scrollBy({ left: 200, behavior: "smooth" }); }}
-          style={{ flexShrink: 0, width: 30, display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", borderLeft: `1px solid ${tok.headerBdr}`, color: tok.mainSub, cursor: "pointer", padding: 0 }}>
-          <ChevronDown size={13} style={{ transform: "rotate(-90deg)" }} />
-        </button>
-
-        {/* Breadcrumb + Clear Data */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: tok.mainSub, flexShrink: 0, padding: "0 10px", borderLeft: `1px solid ${tok.headerBdr}` }}>
+        {/* ── Slim breadcrumb + clear strip ── */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 14px", borderTop: `1px solid ${tok.headerBdr}`, background: `${tok.header}cc` }}>
           {isSubPage ? (
             <>
               <button onClick={() => navigate("/admin/dashboard")}
-                style={{ color: tok.mainSub, background: "none", border: "none", cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", gap: 3, padding: 0 }}
+                style={{ color: tok.mainSub, background: "none", border: "none", cursor: "pointer", fontSize: 11, display: "flex", alignItems: "center", gap: 2, padding: 0 }}
                 onMouseEnter={e => (e.currentTarget.style.color = tok.mainText)}
                 onMouseLeave={e => (e.currentTarget.style.color = tok.mainSub)}>
-                <ChevronLeft size={13} />
-                <span className="hidden sm:inline">Dashboard</span>
+                <ChevronLeft size={11} />
+                <span>Dashboard</span>
               </button>
               {currentNav && (
                 <>
-                  <span style={{ opacity: .4 }}>/</span>
-                  <span style={{ fontWeight: 600, color: tok.mainText, whiteSpace: "nowrap", maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis" }}>{currentNav.label}</span>
+                  <span style={{ opacity: .3, fontSize: 11 }}>/</span>
+                  <span style={{ fontWeight: 600, color: tok.mainText, fontSize: 11, whiteSpace: "nowrap", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }}>{currentNav.label}</span>
                 </>
               )}
             </>
           ) : (
             <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <div style={{ width: 6, height: 6, borderRadius: "50%", background: tok.statusDot, animation: "pulse-dot 2s ease-in-out infinite" }} />
-              <span style={{ fontWeight: 700, color: tok.mainText, fontSize: 12 }}>Live</span>
+              <span style={{ fontWeight: 700, color: tok.mainText, fontSize: 11 }}>Live</span>
             </div>
           )}
-
-          {/* ── Clear Data Button ── */}
-          <button
-            onClick={openClearDialog}
-            title="Clear page data"
-            style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 8, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.2)", color: "#dc2626", fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,.15)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,.08)"; }}>
-            <Trash2 size={11} />
-            <span>Clear</span>
-          </button>
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+            <button
+              onClick={openClearDialog}
+              title="Clear page data"
+              style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 7, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.2)", color: "#dc2626", fontSize: 10.5, fontWeight: 700, cursor: "pointer" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,.15)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,.08)"; }}>
+              <Trash2 size={10} />
+              <span>Clear Data</span>
+            </button>
+          </div>
         </div>
       </div>
 
