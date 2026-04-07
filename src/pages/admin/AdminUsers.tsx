@@ -106,6 +106,21 @@ const AdminUsers = () => {
   const [changeTypeTo, setChangeTypeTo] = useState<string>("");
   const [changeTypeProcessing, setChangeTypeProcessing] = useState(false);
 
+  // Impersonation (Login as User)
+  const [impersonateUserId, setImpersonateUserId] = useState<string | null>(null);
+
+  // Advanced Filters
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [kycFilter, setKycFilter] = useState<string>("all");
+  const [walletMin, setWalletMin] = useState<string>("");
+  const [walletMax, setWalletMax] = useState<string>("");
+  const [cityFilter, setCityFilter] = useState<string>("");
+
+  // Preview Transaction Summary
+  type TxnRow = { id: string; created_at: string; type: string; amount: number; description: string | null; status: string | null };
+  const [previewTxns, setPreviewTxns] = useState<TxnRow[]>([]);
+  const [previewTxnsLoading, setPreviewTxnsLoading] = useState(false);
+
   const [viewSecurityUser, setViewSecurityUser] = useState<FullProfile | null>(null);
   type SecurityData = {
     mpin: string | null;
@@ -165,6 +180,22 @@ const AdminUsers = () => {
   };
 
   useEffect(() => { fetchProfiles(); }, []);
+
+  // Fetch transaction summary whenever preview sheet opens
+  useEffect(() => {
+    if (!previewUser) { setPreviewTxns([]); return; }
+    setPreviewTxnsLoading(true);
+    supabase
+      .from("transactions")
+      .select("id, created_at, type, amount, description, status")
+      .eq("profile_id", previewUser.id)
+      .order("created_at", { ascending: false })
+      .limit(5)
+      .then(({ data }) => {
+        setPreviewTxns((data as any[]) || []);
+        setPreviewTxnsLoading(false);
+      });
+  }, [previewUser]);
 
   useEffect(() => {
     if (!viewSecurityUser) return;
@@ -335,6 +366,31 @@ const AdminUsers = () => {
       setChangeTypeTo("");
     }
     setChangeTypeProcessing(false);
+  };
+
+  const handleImpersonate = async (u: FullProfile) => {
+    if (!u.email) return;
+    setImpersonateUserId(u.id);
+    try {
+      const tkn = await getToken();
+      const res = await callEdgeFunction("admin-user-management", {
+        body: { action: "generate_magic_link", email: u.email },
+        token: tkn,
+      });
+      const data = await res.json();
+      if (data.link) {
+        window.open(data.link, "_blank", "noopener,noreferrer");
+        const { toast } = await import("sonner");
+        toast.success("Magic link opened in new tab — you are now logged in as this user");
+      } else {
+        const { toast } = await import("sonner");
+        toast.error(data.error || "Failed to generate login link");
+      }
+    } catch {
+      const { toast } = await import("sonner");
+      toast.error("Failed to generate login link");
+    }
+    setImpersonateUserId(null);
   };
 
   const handleToggleBlock = async (user: FullProfile) => {
@@ -613,19 +669,41 @@ const AdminUsers = () => {
         toDate.setDate(toDate.getDate() + 1);
         if (joined > toDate) return false;
       }
+      // Advanced: KYC filter
+      if (kycFilter !== "all") {
+        const kycStatus = bankVerifMap.get(p.id) || "not_submitted";
+        if (kycFilter === "not_submitted" ? kycStatus !== "not_submitted" && kycStatus !== undefined : kycStatus !== kycFilter) {
+          if (kycFilter === "not_submitted" && (kycStatus === "approved" || kycStatus === "pending")) return false;
+          if (kycFilter !== "not_submitted" && kycStatus !== kycFilter) return false;
+        }
+      }
+      // Advanced: wallet range
+      if (walletMin !== "" && (p.available_balance ?? 0) < parseFloat(walletMin)) return false;
+      if (walletMax !== "" && (p.available_balance ?? 0) > parseFloat(walletMax)) return false;
+      // Advanced: city
+      if (cityFilter.trim()) {
+        const city = ((p as any).registration_city || "").toLowerCase();
+        const country = ((p as any).registration_country || "").toLowerCase();
+        const region = ((p as any).registration_region || "").toLowerCase();
+        const cf = cityFilter.toLowerCase().trim();
+        if (!city.includes(cf) && !country.includes(cf) && !region.includes(cf)) return false;
+      }
       if (!q) return true;
       const name = (p.full_name?.[0] || "").toLowerCase();
       const code = (p.user_code?.[0] || "").toLowerCase();
       const email = (p.email || "").toLowerCase();
-      return name.includes(q) || code.includes(q) || email.includes(q);
+      const ip = ((p as any).registration_ip || "").toLowerCase();
+      return name.includes(q) || code.includes(q) || email.includes(q) || ip.includes(q);
     });
-  }, [profiles, searchQuery, typeFilter]);
+  }, [profiles, searchQuery, typeFilter, dateFrom, dateTo, kycFilter, walletMin, walletMax, cityFilter, bankVerifMap]);
 
   const filterByStatus = (status: string | null) =>
     status ? filtered.filter((p) => p.approval_status === status) : filtered;
 
+  const hasAdvancedFilters = kycFilter !== "all" || walletMin !== "" || walletMax !== "" || cityFilter !== "";
+
   // Reset page when filters change
-  useEffect(() => { setCurrentPage(1); }, [searchQuery, typeFilter, dateFrom, dateTo]);
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, typeFilter, dateFrom, dateTo, kycFilter, walletMin, walletMax, cityFilter]);
 
   // Avatar initials + color
   const avatarColor = (name: string) => {
@@ -980,6 +1058,15 @@ const AdminUsers = () => {
                               onClick={() => { setChangeTypeUser(u); setChangeTypeTo(u.user_type === "employee" ? "client" : "employee"); }}>
                               <ArrowLeftRight className="h-3.5 w-3.5" />
                             </Button>
+                            <Button size="icon" variant="ghost" title="Login as this user"
+                              className="h-8 w-8 rounded-lg hover:bg-indigo-500/10"
+                              style={{ color: "#a5b4fc" }}
+                              disabled={impersonateUserId === u.id}
+                              onClick={() => handleImpersonate(u)}>
+                              {impersonateUserId === u.id
+                                ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                : <Eye className="h-3.5 w-3.5" />}
+                            </Button>
                             <Button size="icon" variant="ghost" title="Delete permanently"
                               className="h-8 w-8 rounded-lg text-red-400 hover:text-red-400 hover:bg-red-500/10"
                               onClick={() => setConfirmAction({ type: "delete", user: u })}>
@@ -1273,6 +1360,22 @@ const AdminUsers = () => {
                             onClick={btn.action}>{btn.icon}</button>
                         ))}
                       </div>
+
+                      {/* Impersonate — full width featured button */}
+                      <button
+                        className="w-full h-8 rounded-lg flex items-center justify-center gap-2 text-xs font-bold transition-all hover:scale-[1.02] active:scale-[.98]"
+                        style={{
+                          background: impersonateUserId === u.id ? "rgba(99,102,241,.2)" : "rgba(99,102,241,.1)",
+                          border: "1px solid rgba(99,102,241,.25)",
+                          color: "#a5b4fc",
+                        }}
+                        disabled={impersonateUserId === u.id}
+                        onClick={() => handleImpersonate(u)}
+                        title="Login as this user in a new tab">
+                        {impersonateUserId === u.id
+                          ? <><RefreshCw className="h-3.5 w-3.5 animate-spin" /> Generating…</>
+                          : <><Eye className="h-3.5 w-3.5" /> Login as User</>}
+                      </button>
                     </div>
                   )}
                   {!isAdmin && (
@@ -1487,7 +1590,7 @@ const AdminUsers = () => {
             Export
           </Button>
         </div>
-        {/* Secondary row — date range + result count */}
+        {/* Secondary row — date range + result count + Advanced toggle */}
         <div className="flex flex-wrap items-center gap-2 px-3 py-2">
           <Calendar className="h-3.5 w-3.5 shrink-0" style={{ color: T.sub }} />
           <span className="text-xs" style={{ color: T.sub }}>From</span>
@@ -1507,12 +1610,83 @@ const AdminUsers = () => {
               <X className="h-3 w-3" /> Clear
             </button>
           )}
+          {/* Advanced Filters toggle */}
+          <button
+            className="flex items-center gap-1 text-xs font-semibold rounded-lg px-2.5 py-1.5 transition-all"
+            style={{
+              background: showAdvancedFilters ? "rgba(99,102,241,.2)" : T.input,
+              color: hasAdvancedFilters ? "#a5b4fc" : T.sub,
+              border: hasAdvancedFilters ? "1px solid rgba(99,102,241,.4)" : `1px solid ${T.border}`,
+            }}
+            onClick={() => setShowAdvancedFilters((p) => !p)}>
+            ⚙ Advanced {hasAdvancedFilters && "●"}
+          </button>
           <div className="ml-auto text-xs font-medium" style={{ color: T.sub }}>
             {filtered.length < profiles.length
               ? <><span style={{ color: T.text }}>{filtered.length}</span> / {profiles.length} users</>
               : <><span style={{ color: T.text }}>{profiles.length}</span> users total</>}
           </div>
         </div>
+
+        {/* Advanced Filters Panel */}
+        {showAdvancedFilters && (
+          <div className="border-t px-3 py-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-in slide-in-from-top-2 duration-200"
+            style={{ borderColor: T.border, background: "rgba(99,102,241,.04)" }}>
+            {/* KYC Status */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: T.sub }}>KYC Status</label>
+              <Select value={kycFilter} onValueChange={setKycFilter}>
+                <SelectTrigger className="border-none h-8 rounded-lg text-xs" style={{ background: T.input, color: T.text }}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent style={{ background: T.card, borderColor: T.border }}>
+                  <SelectItem value="all">All KYC</SelectItem>
+                  <SelectItem value="approved">✓ KYC Approved</SelectItem>
+                  <SelectItem value="pending">⏳ KYC Pending</SelectItem>
+                  <SelectItem value="not_submitted">— Not Submitted</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Wallet Min */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: T.sub }}>Wallet Min (₹)</label>
+              <Input type="number" placeholder="0" value={walletMin}
+                onChange={(e) => setWalletMin(e.target.value)}
+                className="border-none h-8 rounded-lg text-xs" style={{ background: T.input, color: T.text }} />
+            </div>
+
+            {/* Wallet Max */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: T.sub }}>Wallet Max (₹)</label>
+              <Input type="number" placeholder="99999" value={walletMax}
+                onChange={(e) => setWalletMax(e.target.value)}
+                className="border-none h-8 rounded-lg text-xs" style={{ background: T.input, color: T.text }} />
+            </div>
+
+            {/* City / Country / Region */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: T.sub }}>City / Country</label>
+              <div className="relative">
+                <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 pointer-events-none" style={{ color: T.sub }} />
+                <Input placeholder="Mumbai, India…" value={cityFilter}
+                  onChange={(e) => setCityFilter(e.target.value)}
+                  className="border-none h-8 rounded-lg text-xs pl-7" style={{ background: T.input, color: T.text }} />
+              </div>
+            </div>
+
+            {/* Clear Advanced */}
+            {hasAdvancedFilters && (
+              <div className="sm:col-span-2 lg:col-span-4 flex justify-end">
+                <button className="text-xs px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-1"
+                  style={{ color: "#a5b4fc" }}
+                  onClick={() => { setKycFilter("all"); setWalletMin(""); setWalletMax(""); setCityFilter(""); }}>
+                  <X className="h-3 w-3" /> Clear Advanced Filters
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ══════════════════════════════════════════════════
@@ -1826,6 +2000,79 @@ const AdminUsers = () => {
                       </div>
                     </>
                   )}
+
+                  <Separator style={{ background: T.border }} />
+
+                  {/* ── Transaction Summary ── */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-1.5" style={{ color: T.sub }}>
+                      <BadgeIndianRupee className="h-3.5 w-3.5 text-emerald-400" />
+                      Recent Transactions
+                    </p>
+                    {previewTxnsLoading ? (
+                      <div className="flex items-center justify-center py-6">
+                        <RefreshCw className="h-4 w-4 animate-spin" style={{ color: T.sub }} />
+                      </div>
+                    ) : previewTxns.length === 0 ? (
+                      <div className="rounded-xl py-5 text-center text-xs" style={{ background: T.nav, color: T.sub }}>
+                        No transactions yet
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {previewTxns.map((txn) => {
+                          const isCredit = txn.type?.includes("credit") || txn.type?.includes("add") || txn.type?.includes("deposit") || txn.type?.includes("earning");
+                          const amt = txn.amount ?? 0;
+                          return (
+                            <div key={txn.id}
+                              className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+                              style={{ background: T.nav }}>
+                              {/* Type icon */}
+                              <div className="h-7 w-7 rounded-lg shrink-0 flex items-center justify-center text-sm"
+                                style={{ background: isCredit ? "rgba(16,185,129,.12)" : "rgba(239,68,68,.12)" }}>
+                                {isCredit ? "↑" : "↓"}
+                              </div>
+                              {/* Details */}
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-medium truncate capitalize" style={{ color: T.text }}>
+                                  {txn.type?.replace(/_/g, " ") || "Transaction"}
+                                </p>
+                                <p className="text-[10px] truncate" style={{ color: T.sub }}>
+                                  {txn.description || fmtDate(txn.created_at)}
+                                </p>
+                              </div>
+                              {/* Amount */}
+                              <div className="text-right shrink-0">
+                                <p className="text-sm font-bold tabular-nums"
+                                  style={{ color: isCredit ? "#10b981" : "#ef4444" }}>
+                                  {isCredit ? "+" : "−"}₹{Math.abs(amt).toLocaleString("en-IN")}
+                                </p>
+                                {txn.status && (
+                                  <p className="text-[10px] capitalize" style={{ color: T.sub }}>{txn.status}</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <Separator style={{ background: T.border }} />
+
+                  {/* Login as User — inside preview */}
+                  <button
+                    className="w-full h-9 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all hover:scale-[1.01]"
+                    style={{
+                      background: impersonateUserId === pu.id ? "rgba(99,102,241,.2)" : "linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.1))",
+                      border: "1px solid rgba(99,102,241,.3)",
+                      color: "#a5b4fc",
+                    }}
+                    disabled={impersonateUserId === pu.id}
+                    onClick={() => handleImpersonate(pu)}>
+                    {impersonateUserId === pu.id
+                      ? <><RefreshCw className="h-4 w-4 animate-spin" /> Generating magic link…</>
+                      : <><Eye className="h-4 w-4" /> Login as {pu.full_name?.[0] || "User"}</>}
+                  </button>
 
                   <Separator style={{ background: T.border }} />
 
