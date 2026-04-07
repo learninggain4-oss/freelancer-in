@@ -589,9 +589,12 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
     const { data: roleData } = await adminClient.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
     if (!roleData) return res.status(403).json({ error: "Forbidden: admin role required" });
 
-    // Fetch admin's own profile id for audit logging
-    const { data: adminProfile } = await adminClient.from("profiles").select("id, full_name").eq("user_id", user.id).single().catch(() => ({ data: null }));
-    const adminProfileId = adminProfile?.id || null;
+    // Fetch admin's own profile id for audit logging (non-critical)
+    let adminProfileId = null;
+    try {
+      const { data: adminProfile } = await adminClient.from("profiles").select("id").eq("user_id", user.id).maybeSingle();
+      adminProfileId = adminProfile?.id || null;
+    } catch { /* non-critical */ }
 
     const { action, user_id, profile_id, email, user_type } = req.body;
 
@@ -680,20 +683,22 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
       // Use GoTrue REST API to revoke all sessions for the user by user_id
       const supabaseUrl = SUPABASE_URL;
       const serviceKey = SUPABASE_SERVICE_ROLE_KEY;
-      const revokeRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${user_id}/sessions`, {
-        method: "DELETE",
+      const revokeRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${user_id}/logout`, {
+        method: "POST",
         headers: {
           "Authorization": `Bearer ${serviceKey}`,
           "apikey": serviceKey,
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({ scope: "global" }),
       });
       if (!revokeRes.ok) {
         const errData = await revokeRes.json().catch(() => ({}));
         return res.status(500).json({ error: errData.message || "Failed to revoke sessions" });
       }
       // Log the force-logout action
-      const { data: targetProf } = await adminClient.from("profiles").select("id, full_name").eq("user_id", user_id).single().catch(() => ({ data: null }));
+      let targetProf = null;
+      try { const { data: tp } = await adminClient.from("profiles").select("id, full_name").eq("user_id", user_id).maybeSingle(); targetProf = tp; } catch { /* non-critical */ }
       logAudit(adminClient, adminProfileId, "force_logout", targetProf?.id || null, targetProf?.full_name?.[0] || null, { auth_user_id: user_id });
       return res.json({ success: true, message: "All sessions revoked" });
     }
@@ -785,7 +790,8 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
       if (linkErr) return res.status(500).json({ error: linkErr.message });
       const actionLink = linkData?.properties?.action_link;
       if (!actionLink) return res.status(500).json({ error: "Failed to generate link" });
-      const { data: impProf } = await adminClient.from("profiles").select("id, full_name").eq("email", targetEmail).single().catch(() => ({ data: null }));
+      let impProf = null;
+      try { const { data: ip } = await adminClient.from("profiles").select("id, full_name").eq("email", targetEmail).maybeSingle(); impProf = ip; } catch { /* non-critical */ }
       logAudit(adminClient, adminProfileId, "impersonate_user", impProf?.id || null, impProf?.full_name?.[0] || targetEmail, { email: targetEmail });
       return res.json({ success: true, link: actionLink });
     }

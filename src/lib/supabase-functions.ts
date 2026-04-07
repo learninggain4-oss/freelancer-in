@@ -21,7 +21,7 @@ export async function callEdgeFunction(
   },
 ): Promise<Response> {
   const method = options?.method ?? (options?.body ? "POST" : "GET");
-  const url = `${SUPABASE_URL}/functions/v1/${functionName}`;
+  const url = `/functions/v1/${functionName}`;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
