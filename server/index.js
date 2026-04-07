@@ -117,6 +117,21 @@ function getAnonClient() {
   return createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
+// ── Admin Audit Log helper ──────────────────────────────────────────────────
+async function logAudit(adminClient, adminProfileId, action, targetProfileId, targetName, details) {
+  if (!adminProfileId) return;
+  try {
+    await adminClient.from("admin_audit_logs").insert({
+      admin_id: adminProfileId,
+      action,
+      target_profile_id: targetProfileId || null,
+      target_profile_name: targetName || null,
+      details: details || null,
+    });
+  } catch { /* fail silently */ }
+}
+// ───────────────────────────────────────────────────────────────────────────
+
 async function getUserFromToken(authHeader) {
   if (!authHeader?.startsWith("Bearer ")) return null;
   const token = authHeader.replace("Bearer ", "");
@@ -574,6 +589,10 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
     const { data: roleData } = await adminClient.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
     if (!roleData) return res.status(403).json({ error: "Forbidden: admin role required" });
 
+    // Fetch admin's own profile id for audit logging
+    const { data: adminProfile } = await adminClient.from("profiles").select("id, full_name").eq("user_id", user.id).single().catch(() => ({ data: null }));
+    const adminProfileId = adminProfile?.id || null;
+
     const { action, user_id, profile_id, email, user_type } = req.body;
 
     if (action === "permanent_delete") {
@@ -633,7 +652,7 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
       await adminClient.from("profiles").delete().eq("id", pid);
       const { error: deleteAuthErr } = await adminClient.auth.admin.deleteUser(userId);
       if (deleteAuthErr) console.error("Auth delete error:", deleteAuthErr.message);
-
+      logAudit(adminClient, adminProfileId, "permanent_delete", null, profile.full_name?.[0] || null, { deleted_profile_id: pid, deleted_user_id: userId });
       return res.json({ success: true, message: "User permanently deleted" });
     }
 
@@ -673,6 +692,9 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
         const errData = await revokeRes.json().catch(() => ({}));
         return res.status(500).json({ error: errData.message || "Failed to revoke sessions" });
       }
+      // Log the force-logout action
+      const { data: targetProf } = await adminClient.from("profiles").select("id, full_name").eq("user_id", user_id).single().catch(() => ({ data: null }));
+      logAudit(adminClient, adminProfileId, "force_logout", targetProf?.id || null, targetProf?.full_name?.[0] || null, { auth_user_id: user_id });
       return res.json({ success: true, message: "All sessions revoked" });
     }
 
@@ -763,7 +785,94 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
       if (linkErr) return res.status(500).json({ error: linkErr.message });
       const actionLink = linkData?.properties?.action_link;
       if (!actionLink) return res.status(500).json({ error: "Failed to generate link" });
+      const { data: impProf } = await adminClient.from("profiles").select("id, full_name").eq("email", targetEmail).single().catch(() => ({ data: null }));
+      logAudit(adminClient, adminProfileId, "impersonate_user", impProf?.id || null, impProf?.full_name?.[0] || targetEmail, { email: targetEmail });
       return res.json({ success: true, link: actionLink });
+    }
+
+    // ── log_audit: frontend calls this after direct-supabase actions ──────
+    if (action === "log_audit") {
+      const { audit_action, target_profile_id: tpid, target_profile_name: tpname, details: auditDetails } = req.body;
+      if (!audit_action) return res.status(400).json({ error: "audit_action required" });
+      logAudit(adminClient, adminProfileId, audit_action, tpid || null, tpname || null, auditDetails || null);
+      return res.json({ success: true });
+    }
+
+    // ── get_audit_log: fetch audit logs (all or per-user) ─────────────────
+    if (action === "get_audit_log") {
+      const { target_profile_id: tpid } = req.body;
+      let q = adminClient
+        .from("admin_audit_logs")
+        .select("id, action, admin_id, target_profile_id, target_profile_name, details, created_at, profiles!admin_audit_logs_admin_id_fkey(full_name, email)")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (tpid) q = q.eq("target_profile_id", tpid);
+      const { data: logs, error: logErr } = await q;
+      if (logErr) return res.status(500).json({ error: logErr.message });
+      return res.json({ success: true, logs: logs || [] });
+    }
+
+    // ── get_referral_chain: fetch referrer + referrals for a profile ──────
+    if (action === "get_referral_chain") {
+      if (!profile_id) return res.status(400).json({ error: "profile_id required" });
+      const { data: prof } = await adminClient.from("profiles").select("referral_code, referred_by").eq("id", profile_id).single();
+      if (!prof) return res.status(404).json({ error: "Profile not found" });
+      let referrer = null;
+      if (prof.referred_by) {
+        const { data: r } = await adminClient.from("profiles").select("id, full_name, email, user_code, user_type").eq("referral_code", prof.referred_by).maybeSingle();
+        referrer = r || null;
+      }
+      const { data: referrals } = await adminClient.from("profiles").select("id, full_name, email, user_code, user_type, created_at").eq("referred_by", prof.referral_code).order("created_at", { ascending: false }).limit(20);
+      return res.json({ success: true, referral_code: prof.referral_code, referred_by: prof.referred_by, referrer, referrals: referrals || [] });
+    }
+
+    // ── get_kyc_docs: fetch bank_verifications record for a profile ────────
+    if (action === "get_kyc_docs") {
+      if (!profile_id) return res.status(400).json({ error: "profile_id required" });
+      const { data: bvList, error: bvErr } = await adminClient
+        .from("bank_verifications")
+        .select("id, status, rejection_reason, created_at, verified_at, document_path, document_name, attempt_count")
+        .eq("profile_id", profile_id)
+        .order("created_at", { ascending: false });
+      if (bvErr) return res.status(500).json({ error: bvErr.message });
+      // Generate signed URLs for documents
+      const docs = await Promise.all((bvList || []).map(async (bv) => {
+        let doc_url = null;
+        if (bv.document_path) {
+          const { data: signedData } = await adminClient.storage.from("kyc-documents").createSignedUrl(bv.document_path, 3600);
+          doc_url = signedData?.signedUrl || null;
+        }
+        return { ...bv, doc_url };
+      }));
+      return res.json({ success: true, docs });
+    }
+
+    // ── send_email: compose + send message to user ────────────────────────
+    if (action === "send_email") {
+      const { target_profile_id: tpid, target_user_id: tuid, subject, message: emailMsg } = req.body;
+      if (!tuid || !subject || !emailMsg) return res.status(400).json({ error: "target_user_id, subject and message required" });
+      // Always send in-app notification as primary channel
+      await adminClient.from("notifications").insert({ user_id: tuid, title: subject, message: emailMsg, type: "admin_email" }).catch(() => {});
+      // Log the action
+      if (tpid) logAudit(adminClient, adminProfileId, "send_email", tpid, null, { subject });
+      // Try SMTP if configured
+      const smtpHost = process.env.SMTP_HOST;
+      const smtpUser = process.env.SMTP_USER;
+      const smtpPass = process.env.SMTP_PASS;
+      const smtpFrom = process.env.SMTP_FROM || smtpUser;
+      if (smtpHost && smtpUser && smtpPass) {
+        try {
+          const nodemailer = await import("nodemailer");
+          const { data: targetUserAuth } = await adminClient.auth.admin.getUserById(tuid);
+          const targetEmail = targetUserAuth?.user?.email;
+          if (targetEmail) {
+            const transporter = nodemailer.default.createTransport({ host: smtpHost, port: Number(process.env.SMTP_PORT || 587), secure: false, auth: { user: smtpUser, pass: smtpPass } });
+            await transporter.sendMail({ from: smtpFrom, to: targetEmail, subject, text: emailMsg });
+            return res.json({ success: true, message: "Email sent via SMTP + in-app notification", via: "smtp" });
+          }
+        } catch (smtpErr) { console.error("SMTP send failed:", smtpErr.message); }
+      }
+      return res.json({ success: true, message: "Message sent via in-app notification", via: "in_app" });
     }
 
     return res.status(400).json({ error: "Unknown action" });

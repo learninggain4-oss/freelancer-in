@@ -28,7 +28,7 @@ import {
   UserPlus, Users, KeyRound, Shield, Download, Calendar, ClipboardCopy,
   MessageSquare, Wallet, RotateCcw, SlidersHorizontal, NotebookPen,
   BadgeIndianRupee, SendHorizonal, Phone, MapPin, GraduationCap, Briefcase,
-  LogOut, ArrowLeftRight,
+  LogOut, ArrowLeftRight, Mail, History, FileText, Link2, Network, Star,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
@@ -121,6 +121,31 @@ const AdminUsers = () => {
   const [previewTxns, setPreviewTxns] = useState<TxnRow[]>([]);
   const [previewTxnsLoading, setPreviewTxnsLoading] = useState(false);
 
+  // Send Custom Email
+  const [emailDialogUser, setEmailDialogUser] = useState<FullProfile | null>(null);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+  const [emailProcessing, setEmailProcessing] = useState(false);
+
+  // Referral Chain (Quick Preview)
+  type ReferralPerson = { id: string; full_name: string[] | null; email: string | null; user_code: string[] | null; user_type: string | null; created_at?: string };
+  type ReferralChain = { referral_code: string | null; referred_by: string | null; referrer: ReferralPerson | null; referrals: ReferralPerson[] };
+  const [previewReferral, setPreviewReferral] = useState<ReferralChain | null>(null);
+  const [previewReferralLoading, setPreviewReferralLoading] = useState(false);
+
+  // Admin Audit Log
+  type AuditLog = { id: string; action: string; admin_id: string; target_profile_id: string | null; target_profile_name: string | null; details: any; created_at: string; profiles?: { full_name: string[] | null; email: string | null } | null };
+  const [auditLogOpen, setAuditLogOpen] = useState(false);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditTargetUser, setAuditTargetUser] = useState<FullProfile | null>(null);
+
+  // KYC Document Viewer
+  type KycDoc = { id: string; status: string; rejection_reason: string | null; created_at: string; verified_at: string | null; document_path: string | null; document_name: string | null; attempt_count: number | null; doc_url: string | null };
+  const [kycDialogUser, setKycDialogUser] = useState<FullProfile | null>(null);
+  const [kycDocs, setKycDocs] = useState<KycDoc[]>([]);
+  const [kycLoading, setKycLoading] = useState(false);
+
   const [viewSecurityUser, setViewSecurityUser] = useState<FullProfile | null>(null);
   type SecurityData = {
     mpin: string | null;
@@ -181,9 +206,10 @@ const AdminUsers = () => {
 
   useEffect(() => { fetchProfiles(); }, []);
 
-  // Fetch transaction summary whenever preview sheet opens
+  // Fetch transaction summary + referral chain whenever preview sheet opens
   useEffect(() => {
-    if (!previewUser) { setPreviewTxns([]); return; }
+    if (!previewUser) { setPreviewTxns([]); setPreviewReferral(null); return; }
+    // Transactions
     setPreviewTxnsLoading(true);
     supabase
       .from("transactions")
@@ -195,6 +221,17 @@ const AdminUsers = () => {
         setPreviewTxns((data as any[]) || []);
         setPreviewTxnsLoading(false);
       });
+    // Referral chain
+    setPreviewReferralLoading(true);
+    getToken().then((token) =>
+      callEdgeFunction("admin-user-management", {
+        body: { action: "get_referral_chain", profile_id: previewUser.id },
+        token,
+      }).then((res) => res.json()).then((data) => {
+        if (data?.success) setPreviewReferral(data);
+        setPreviewReferralLoading(false);
+      }).catch(() => setPreviewReferralLoading(false))
+    );
   }, [previewUser]);
 
   useEffect(() => {
@@ -270,6 +307,8 @@ const AdminUsers = () => {
     } else {
       const { toast } = await import("sonner");
       toast.success(`User ${status} successfully`);
+      // Audit log
+      logAdminAction(status === "approved" ? "approve_user" : "reject_user", selectedUser, { notes: notes || null });
       // Auto-notify user about status change
       if (selectedUser.user_id) {
         try {
@@ -346,6 +385,7 @@ const AdminUsers = () => {
     } else {
       const label = changeTypeTo === "employee" ? "Freelancer" : "Employer";
       toast.success(`User type changed to ${label}`);
+      logAdminAction("change_user_type", changeTypeUser, { from: changeTypeUser.user_type, to: changeTypeTo });
       // Auto-notify user
       if (changeTypeUser.user_id) {
         try {
@@ -406,6 +446,7 @@ const AdminUsers = () => {
       toast.error("Failed to update status");
     } else {
       toast.success(newDisabled ? "User blocked" : "User unblocked");
+      logAdminAction(newDisabled ? "block_user" : "unblock_user", user, {});
       fetchProfiles();
     }
   };
@@ -631,6 +672,77 @@ const AdminUsers = () => {
       }
     } catch (e: any) { toast.error(e.message || "Failed"); }
     finally { setWalletProcessing(false); }
+  };
+
+  // ── Send Custom Email ────────────────────────────────────────────────────
+  const handleSendEmail = async () => {
+    if (!emailDialogUser) return;
+    if (!emailSubject.trim() || !emailBody.trim()) { toast.error("Subject and message are required"); return; }
+    if (!emailDialogUser.user_id) { toast.error("User has no auth account"); return; }
+    setEmailProcessing(true);
+    try {
+      const token = await getToken();
+      const res = await callEdgeFunction("admin-user-management", {
+        body: { action: "send_email", target_user_id: emailDialogUser.user_id, target_profile_id: emailDialogUser.id, subject: emailSubject, message: emailBody },
+        token,
+      });
+      const data = await res.json();
+      if (!res.ok || data?.error) { toast.error(data?.error || "Failed to send email"); }
+      else {
+        toast.success(data.via === "smtp" ? "Email sent successfully via SMTP" : "Message sent via in-app notification");
+        setEmailDialogUser(null);
+        setEmailSubject("");
+        setEmailBody("");
+      }
+    } catch (e: any) { toast.error(e.message || "Failed to send"); }
+    finally { setEmailProcessing(false); }
+  };
+
+  // ── Admin Audit Log ──────────────────────────────────────────────────────
+  const handleOpenAuditLog = async (u?: FullProfile | null) => {
+    setAuditTargetUser(u || null);
+    setAuditLogOpen(true);
+    setAuditLoading(true);
+    setAuditLogs([]);
+    try {
+      const token = await getToken();
+      const res = await callEdgeFunction("admin-user-management", {
+        body: { action: "get_audit_log", ...(u ? { target_profile_id: u.id } : {}) },
+        token,
+      });
+      const data = await res.json();
+      if (!res.ok || data?.error) { toast.error(data?.error || "Failed to load audit log"); }
+      else { setAuditLogs(data.logs || []); }
+    } catch (e: any) { toast.error(e.message || "Failed to load audit log"); }
+    finally { setAuditLoading(false); }
+  };
+
+  const logAdminAction = async (auditAction: string, targetUser: FullProfile, details?: Record<string, unknown>) => {
+    try {
+      const token = await getToken();
+      await callEdgeFunction("admin-user-management", {
+        body: { action: "log_audit", audit_action: auditAction, target_profile_id: targetUser.id, target_profile_name: targetUser.full_name?.[0] || targetUser.email || null, details: details || null },
+        token,
+      });
+    } catch { /* non-critical */ }
+  };
+
+  // ── KYC Document Viewer ───────────────────────────────────────────────────
+  const handleOpenKycDocs = async (u: FullProfile) => {
+    setKycDialogUser(u);
+    setKycLoading(true);
+    setKycDocs([]);
+    try {
+      const token = await getToken();
+      const res = await callEdgeFunction("admin-user-management", {
+        body: { action: "get_kyc_docs", profile_id: u.id },
+        token,
+      });
+      const data = await res.json();
+      if (!res.ok || data?.error) { toast.error(data?.error || "Failed to load KYC docs"); }
+      else { setKycDocs(data.docs || []); }
+    } catch (e: any) { toast.error(e.message || "Failed to load KYC docs"); }
+    finally { setKycLoading(false); }
   };
 
   const handlePasswordReset = async (u: FullProfile) => {
@@ -1512,6 +1624,13 @@ const AdminUsers = () => {
                 <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
                 <span className="hidden sm:inline">Refresh</span>
               </Button>
+              <Button variant="ghost" size="sm"
+                className="h-9 gap-2 rounded-xl text-white border"
+                style={{ background: "rgba(255,255,255,.08)", borderColor: "rgba(255,255,255,.15)" }}
+                onClick={() => handleOpenAuditLog(null)}>
+                <History className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Audit Log</span>
+              </Button>
               <Button size="sm"
                 className="h-9 gap-2 rounded-xl font-semibold shadow-lg"
                 style={{ background: "linear-gradient(135deg,#fff,#e0e7ff)", color: "#4f46e5" }}
@@ -2073,6 +2192,73 @@ const AdminUsers = () => {
                     )}
                   </div>
 
+                  {/* ── Referral Chain ── */}
+                  <Separator style={{ background: T.border }} />
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-1.5" style={{ color: T.sub }}>
+                      <Network className="h-3.5 w-3.5 text-violet-400" />
+                      Referral Chain
+                      {previewReferral?.referral_code && (
+                        <span className="ml-auto font-mono text-[10px] px-2 py-0.5 rounded-md" style={{ background: T.nav, color: T.sub }}>
+                          Code: {previewReferral.referral_code}
+                        </span>
+                      )}
+                    </p>
+                    {previewReferralLoading ? (
+                      <div className="flex items-center justify-center py-4">
+                        <RefreshCw className="h-4 w-4 animate-spin" style={{ color: T.sub }} />
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {/* Referrer */}
+                        <div className="rounded-xl p-3" style={{ background: T.nav }}>
+                          <p className="text-[10px] uppercase font-semibold mb-1.5" style={{ color: T.sub }}>Referred By</p>
+                          {previewReferral?.referrer ? (
+                            <div className="flex items-center gap-2">
+                              <div className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                                style={{ background: avatarColor(previewReferral.referrer.full_name?.[0] || previewReferral.referrer.email || "?") }}>
+                                {getInitials(previewReferral.referrer.full_name?.[0] || previewReferral.referrer.email || "?")}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium truncate" style={{ color: T.text }}>
+                                  {previewReferral.referrer.full_name?.[0] || previewReferral.referrer.email}
+                                </p>
+                                <p className="text-[10px] font-mono" style={{ color: T.sub }}>
+                                  {previewReferral.referrer.user_code?.[0] || "—"}
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-xs" style={{ color: T.sub }}>No referrer (organic signup)</p>
+                          )}
+                        </div>
+                        {/* Referrals */}
+                        <div className="rounded-xl p-3" style={{ background: T.nav }}>
+                          <p className="text-[10px] uppercase font-semibold mb-1.5" style={{ color: T.sub }}>
+                            Referred {previewReferral?.referrals?.length ?? 0} user{(previewReferral?.referrals?.length ?? 0) !== 1 ? "s" : ""}
+                          </p>
+                          {(previewReferral?.referrals || []).length === 0 ? (
+                            <p className="text-xs" style={{ color: T.sub }}>No referrals yet</p>
+                          ) : (
+                            <div className="space-y-1.5 max-h-28 overflow-y-auto">
+                              {(previewReferral?.referrals || []).map((r) => (
+                                <div key={r.id} className="flex items-center gap-2">
+                                  <Star className="h-3 w-3 shrink-0" style={{ color: "#a78bfa" }} />
+                                  <span className="text-xs font-medium truncate" style={{ color: T.text }}>
+                                    {r.full_name?.[0] || r.email}
+                                  </span>
+                                  <span className="text-[10px] font-mono ml-auto shrink-0" style={{ color: T.sub }}>
+                                    {r.user_code?.[0] || "—"}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <Separator style={{ background: T.border }} />
 
                   {/* Login as User — inside preview */}
@@ -2110,13 +2296,31 @@ const AdminUsers = () => {
                       style={{ borderColor: T.border, color: T.text }}
                       onClick={() => { setPreviewUser(null); setMsgDialogUser(pu); setMsgTitle(""); setMsgBody(""); }}>
                       <MessageSquare className="h-3.5 w-3.5 text-blue-400" />
-                      Send Message
+                      Send Notification
                     </Button>
                     <Button size="sm" variant="outline" className="gap-2 rounded-xl text-xs h-9"
                       style={{ borderColor: T.border, color: T.text }}
+                      onClick={() => { setPreviewUser(null); setEmailDialogUser(pu); setEmailSubject(""); setEmailBody(""); }}>
+                      <Mail className="h-3.5 w-3.5 text-rose-400" />
+                      Send Email
+                    </Button>
+                    <Button size="sm" variant="outline" className="gap-2 rounded-xl text-xs h-9"
+                      style={{ borderColor: T.border, color: T.text }}
+                      onClick={() => { setPreviewUser(null); handleOpenKycDocs(pu); }}>
+                      <FileText className="h-3.5 w-3.5 text-cyan-400" />
+                      KYC Docs
+                    </Button>
+                    <Button size="sm" variant="outline" className="gap-2 rounded-xl text-xs h-9"
+                      style={{ borderColor: T.border, color: T.text }}
+                      onClick={() => { setPreviewUser(null); handleOpenAuditLog(pu); }}>
+                      <History className="h-3.5 w-3.5 text-orange-400" />
+                      Audit Log
+                    </Button>
+                    <Button size="sm" variant="outline" className="col-span-2 gap-2 rounded-xl text-xs h-9"
+                      style={{ borderColor: T.border, color: T.text }}
                       onClick={() => { setPreviewUser(null); navigate(`/admin/users/${pu.id}`); }}>
                       <Pencil className="h-3.5 w-3.5 text-indigo-400" />
-                      Edit Profile
+                      Edit Full Profile
                     </Button>
                   </div>
                 </div>
@@ -2282,6 +2486,205 @@ const AdminUsers = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── Send Email Dialog ────────────────────────────── */}
+      <Dialog open={!!emailDialogUser} onOpenChange={(open) => !open && setEmailDialogUser(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-rose-400" />
+              Send Email / Message
+            </DialogTitle>
+            <DialogDescription>
+              Compose a message for {emailDialogUser?.full_name?.[0] || emailDialogUser?.email}.
+              Delivered via in-app notification (SMTP optional via env vars).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Subject</Label>
+              <Input
+                placeholder="e.g. Important Update, Action Required…"
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                maxLength={100}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Message Body</Label>
+              <Textarea
+                placeholder="Write your message here…"
+                value={emailBody}
+                onChange={(e) => setEmailBody(e.target.value)}
+                rows={6}
+                className="resize-none text-sm"
+                maxLength={2000}
+              />
+              <p className="text-xs text-right text-muted-foreground">{emailBody.length}/2000</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEmailDialogUser(null)} disabled={emailProcessing}>Cancel</Button>
+            <Button
+              onClick={handleSendEmail}
+              disabled={emailProcessing || !emailSubject.trim() || !emailBody.trim()}
+              className="bg-rose-600 hover:bg-rose-700 text-white gap-2">
+              {emailProcessing
+                ? <><RefreshCw className="h-4 w-4 animate-spin" />Sending…</>
+                : <><Mail className="h-4 w-4" />Send</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── KYC Document Viewer Dialog ────────────────────── */}
+      <Dialog open={!!kycDialogUser} onOpenChange={(open) => !open && setKycDialogUser(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-cyan-400" />
+              KYC Documents
+            </DialogTitle>
+            <DialogDescription>
+              Bank verification records for {kycDialogUser?.full_name?.[0] || kycDialogUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            {kycLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : kycDocs.length === 0 ? (
+              <div className="rounded-xl py-10 text-center" style={{ background: T.nav }}>
+                <FileText className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm font-medium" style={{ color: T.sub }}>No KYC documents submitted</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {kycDocs.map((doc, i) => (
+                  <div key={doc.id} className="rounded-xl border p-4 space-y-3" style={{ background: T.nav, borderColor: T.border }}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold" style={{ color: T.sub }}>Attempt #{(doc.attempt_count ?? i + 1)}</span>
+                        <Badge variant="outline" className={
+                          doc.status === "approved" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" :
+                          doc.status === "pending" ? "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" :
+                          doc.status === "rejected" ? "bg-red-500/15 text-red-400 border-red-500/30" :
+                          "bg-blue-500/15 text-blue-400 border-blue-500/30"
+                        }>{doc.status}</Badge>
+                      </div>
+                      <span className="text-xs" style={{ color: T.sub }}>{fmtDate(doc.created_at)}</span>
+                    </div>
+                    {doc.document_name && (
+                      <p className="text-xs font-mono" style={{ color: T.sub }}>
+                        <FileText className="h-3 w-3 inline mr-1" />
+                        {doc.document_name}
+                      </p>
+                    )}
+                    {doc.rejection_reason && (
+                      <p className="text-xs rounded-lg px-3 py-2 bg-red-500/10 text-red-400">
+                        Rejection: {doc.rejection_reason}
+                      </p>
+                    )}
+                    {doc.doc_url ? (
+                      <div className="space-y-2">
+                        <a href={doc.doc_url} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
+                          <Link2 className="h-3.5 w-3.5" />
+                          View Document (opens in new tab)
+                        </a>
+                        {/\.(jpg|jpeg|png|webp|gif)$/i.test(doc.document_path || "") && (
+                          <img
+                            src={doc.doc_url}
+                            alt="KYC Document"
+                            className="w-full rounded-lg object-contain max-h-48 border"
+                            style={{ borderColor: T.border }}
+                          />
+                        )}
+                      </div>
+                    ) : doc.document_path ? (
+                      <p className="text-xs" style={{ color: T.sub }}>Document exists but preview unavailable</p>
+                    ) : null}
+                    {doc.verified_at && (
+                      <p className="text-xs" style={{ color: T.sub }}>
+                        Verified: {fmtDate(doc.verified_at)}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Admin Audit Log Sheet ─────────────────────────── */}
+      <Sheet open={auditLogOpen} onOpenChange={(open) => { if (!open) { setAuditLogOpen(false); setAuditTargetUser(null); } }}>
+        <SheetContent side="right" className="w-full sm:w-[520px] overflow-y-auto p-0" style={{ background: T.card, borderColor: T.border }}>
+          <SheetHeader className="p-6 border-b" style={{ borderColor: T.border, background: "linear-gradient(135deg,rgba(249,115,22,.1),rgba(234,88,12,.06))" }}>
+            <SheetTitle className="flex items-center gap-2" style={{ color: T.text }}>
+              <History className="h-5 w-5 text-orange-400" />
+              {auditTargetUser ? `Audit: ${auditTargetUser.full_name?.[0] || auditTargetUser.email}` : "Full Admin Audit Log"}
+            </SheetTitle>
+            <SheetDescription style={{ color: T.sub }}>
+              {auditTargetUser ? "All admin actions taken on this user" : "Last 100 admin actions across the platform"}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="p-4">
+            {auditLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <RefreshCw className="h-6 w-6 animate-spin" style={{ color: T.sub }} />
+              </div>
+            ) : auditLogs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3" style={{ color: T.sub }}>
+                <History className="h-10 w-10 opacity-30" />
+                <p className="text-sm">No audit records found</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {auditLogs.map((log) => {
+                  const actionColors: Record<string, string> = {
+                    approve_user: "#10b981", reject_user: "#ef4444", block_user: "#ef4444",
+                    unblock_user: "#10b981", force_logout: "#f59e0b", permanent_delete: "#ef4444",
+                    impersonate_user: "#8b5cf6", send_email: "#3b82f6", change_user_type: "#6366f1",
+                    wallet_add: "#10b981", wallet_deduct: "#ef4444", send_notification: "#3b82f6",
+                  };
+                  const clr = actionColors[log.action] || "#94a3b8";
+                  const adminName = (log as any).profiles?.full_name?.[0] || (log as any).profiles?.email || "Admin";
+                  return (
+                    <div key={log.id} className="rounded-xl p-3 border space-y-1.5" style={{ background: T.nav, borderColor: T.border }}>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="h-2 w-2 rounded-full shrink-0" style={{ background: clr }} />
+                          <span className="text-xs font-bold capitalize truncate" style={{ color: T.text }}>
+                            {log.action.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                        <span className="text-[10px] shrink-0" style={{ color: T.sub }}>
+                          {new Date(log.created_at).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                      {log.target_profile_name && !auditTargetUser && (
+                        <p className="text-xs" style={{ color: T.sub }}>
+                          Target: <span style={{ color: T.text }}>{log.target_profile_name}</span>
+                        </p>
+                      )}
+                      <p className="text-[10px]" style={{ color: T.sub }}>
+                        By: {adminName}
+                      </p>
+                      {log.details && Object.keys(log.details).length > 0 && (
+                        <div className="rounded-lg px-2 py-1.5 text-[10px] font-mono" style={{ background: T.card, color: T.sub }}>
+                          {JSON.stringify(log.details)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Security View Dialog */}
       <Dialog open={!!viewSecurityUser} onOpenChange={(open) => { if (!open) { setViewSecurityUser(null); setSecurityData(null); setSecurityDenied(false); setShowTotpSecret(false); } }}>
