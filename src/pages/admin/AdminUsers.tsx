@@ -94,6 +94,9 @@ const AdminUsers = () => {
   // Password Reset processing per-user
   const [pwResetUserId, setPwResetUserId] = useState<string | null>(null);
 
+  // View mode: grid cards or table
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+
   const [viewSecurityUser, setViewSecurityUser] = useState<FullProfile | null>(null);
   type SecurityData = {
     mpin: string | null;
@@ -936,94 +939,381 @@ const AdminUsers = () => {
     employers:  profiles.filter((p) => p.user_type === "client").length,
   }), [profiles]);
 
-  return (
-    <div className="space-y-5">
+  // ── User Card Grid ──────────────────────────────────────
+  const UserGrid = ({ users }: { users: FullProfile[] }) => {
+    const CARD_PAGE = 18;
+    const totalPages = Math.max(1, Math.ceil(users.length / CARD_PAGE));
+    const page = Math.min(currentPage, totalPages);
+    const paginated = users.slice((page - 1) * CARD_PAGE, page * CARD_PAGE);
 
-      {/* ── Hero Header ─────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-3xl"
-           style={{ background: "linear-gradient(135deg,#4f46e5 0%,#7c3aed 60%,#a21caf 100%)" }}>
-        <div className="relative z-10 px-8 pt-8 pb-6">
-          {/* Top row */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    if (loading) return (
+      <div className="flex flex-col items-center justify-center py-32 gap-4">
+        <div className="relative h-16 w-16">
+          <div className="absolute inset-0 rounded-full border-4 border-indigo-500/20" />
+          <div className="absolute inset-0 rounded-full border-4 border-t-indigo-500 animate-spin" />
+        </div>
+        <p className="text-sm font-medium" style={{ color: T.sub }}>Loading users…</p>
+      </div>
+    );
+
+    if (users.length === 0) return (
+      <div className="flex flex-col items-center justify-center py-28 gap-4">
+        <div className="h-20 w-20 rounded-3xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.1))", border: `1px solid rgba(99,102,241,.2)` }}>
+          <Users className="h-9 w-9" style={{ color: "#6366f1" }} />
+        </div>
+        <p className="text-lg font-bold" style={{ color: T.text }}>No users found</p>
+        <p className="text-sm" style={{ color: T.sub }}>Try adjusting your search or filters</p>
+      </div>
+    );
+
+    const ROLE_GRAD: Record<string, string> = {
+      "Super Admin": "linear-gradient(135deg,#92400e,#d97706)",
+      "Admin":       "linear-gradient(135deg,#3730a3,#6366f1)",
+      "Freelancer":  "linear-gradient(135deg,#065f46,#10b981)",
+      "Employer":    "linear-gradient(135deg,#1e3a8a,#3b82f6)",
+    };
+    const STATUS_RING: Record<string, string> = {
+      approved: "#10b981",
+      pending:  "#f59e0b",
+      rejected: "#ef4444",
+    };
+
+    return (
+      <div className="space-y-5">
+        {/* Card Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {paginated.map((u) => {
+            const name = u.full_name?.[0] || u.email || "?";
+            const label = getUserTypeLabel(u.email, u.user_type);
+            const isAdmin = !!adminEmailMap.get(u.email?.toLowerCase() ?? "");
+            const isSA = adminEmailMap.get(u.email?.toLowerCase() ?? "")?.isSuperAdmin;
+            const color = avatarColor(name);
+            const initials = getInitials(name);
+            const kyvStatus = bankVerifMap.get(u.id);
+            const isOnline = u.last_seen_at && (Date.now() - new Date(u.last_seen_at).getTime()) < 5 * 60_000;
+            const ringColor = u.is_disabled ? "#ef4444" : (STATUS_RING[u.approval_status] || "#94a3b8");
+            const gradTop = ROLE_GRAD[label] || "linear-gradient(135deg,#334155,#475569)";
+            const isSelected = selectedIds.has(u.id);
+
+            return (
+              <div key={u.id}
+                className="group relative rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl"
+                style={{
+                  background: T.card,
+                  border: `1px solid ${isSelected ? "rgba(99,102,241,.6)" : T.border}`,
+                  boxShadow: isSelected ? "0 0 0 2px rgba(99,102,241,.3)" : undefined,
+                }}>
+
+                {/* Gradient Band */}
+                <div className="h-24 relative" style={{ background: gradTop }}>
+                  {/* Decorative circles */}
+                  <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10" />
+                  <div className="absolute -right-2 top-8 h-12 w-12 rounded-full bg-white/5" />
+
+                  {/* Checkbox — top left */}
+                  {!isAdmin && (
+                    <div className="absolute top-3 left-3 z-10">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => setSelectedIds((prev) => { const n = new Set(prev); n.has(u.id) ? n.delete(u.id) : n.add(u.id); return n; })}
+                        className="border-white/60 data-[state=checked]:bg-white data-[state=checked]:border-white data-[state=checked]:text-indigo-600"
+                      />
+                    </div>
+                  )}
+
+                  {/* Online badge — top right */}
+                  {isOnline && (
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-sm">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-[10px] font-semibold text-white">Online</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Avatar — overlapping band */}
+                <div className="flex justify-center -mt-10 mb-3 relative z-10">
+                  <div className="relative">
+                    <div className="h-20 w-20 rounded-2xl flex items-center justify-center text-xl font-extrabold text-white shadow-xl"
+                         style={{ background: color, border: `3px solid ${ringColor}`, boxShadow: `0 0 0 3px ${ringColor}30, 0 8px 24px rgba(0,0,0,.25)` }}>
+                      {initials}
+                    </div>
+                    {/* Status ring glow */}
+                    <div className="absolute inset-0 rounded-2xl" style={{ boxShadow: `0 0 12px ${ringColor}50` }} />
+                  </div>
+                </div>
+
+                {/* Card Body */}
+                <div className="px-5 pb-4 space-y-3">
+                  {/* Name + Email */}
+                  <div className="text-center">
+                    <h3 className="font-bold text-base truncate" style={{ color: T.text }}>{name}</h3>
+                    <p className="text-xs truncate" style={{ color: T.sub }}>{u.email}</p>
+                  </div>
+
+                  {/* Badges row */}
+                  <div className="flex flex-wrap items-center justify-center gap-1.5">
+                    <span className="font-mono text-[10px] px-2 py-0.5 rounded-md" style={{ background: T.nav, color: T.sub }}>
+                      {u.user_code?.[0] || "—"}
+                    </span>
+                    {(() => {
+                      const roleColors: Record<string, { bg: string; color: string }> = {
+                        "Super Admin": { bg: "rgba(245,158,11,.15)", color: "#f59e0b" },
+                        "Admin":       { bg: "rgba(99,102,241,.15)", color: "#a5b4fc" },
+                        "Freelancer":  { bg: "rgba(16,185,129,.12)", color: "#34d399" },
+                        "Employer":    { bg: "rgba(59,130,246,.12)", color: "#60a5fa" },
+                      };
+                      const rc = roleColors[label] || { bg: T.nav, color: T.sub };
+                      return (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md" style={{ background: rc.bg, color: rc.color }}>
+                          {isSA ? "⭐" : label === "Admin" ? "🔒" : label === "Freelancer" ? "💼" : "🏢"} {label}
+                        </span>
+                      );
+                    })()}
+                    {kyvStatus === "approved" && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400">✓ KYC</span>
+                    )}
+                    {kyvStatus === "pending" && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400">⏳ KYC</span>
+                    )}
+                    {u.is_disabled && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-500/10 text-red-400">🚫 Blocked</span>
+                    )}
+                  </div>
+
+                  {/* Status strip */}
+                  <div className="flex items-center justify-center gap-1">
+                    {[
+                      { v: u.approval_status, map: { approved:"bg-emerald-500/10 text-emerald-400", pending:"bg-amber-500/10 text-amber-400", rejected:"bg-red-500/10 text-red-400" } },
+                    ].map((s, i) => (
+                      <span key={i} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${s.map[s.v as keyof typeof s.map] || "bg-slate-500/10 text-slate-400"}`}>
+                        {s.v}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Wallet */}
+                  <div className="rounded-xl px-4 py-3 text-center" style={{ background: T.nav }}>
+                    <p className="text-[10px] uppercase tracking-wider font-medium mb-1" style={{ color: T.sub }}>Wallet Balance</p>
+                    <p className="text-xl font-extrabold tabular-nums" style={{ color: "#10b981" }}>
+                      ₹{(u.available_balance ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                    </p>
+                    {((u.coin_balance ?? 0) > 0 || (u.hold_balance ?? 0) > 0) && (
+                      <div className="flex justify-center gap-3 mt-1">
+                        {(u.coin_balance ?? 0) > 0 && <p className="text-[10px]" style={{ color: T.sub }}>🪙 {u.coin_balance}</p>}
+                        {(u.hold_balance ?? 0) > 0 && <p className="text-[10px]" style={{ color: T.sub }}>🔒 ₹{u.hold_balance}</p>}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Joined + Last seen */}
+                  <div className="flex justify-between text-[10px]" style={{ color: T.sub }}>
+                    <span>📅 {fmtDate(u.created_at)}</span>
+                    <span style={{ color: isOnline ? "#34d399" : T.sub }}>👁 {fmtLastSeen(u.last_seen_at)}</span>
+                  </div>
+
+                  {/* Action buttons */}
+                  {isAdmin ? (
+                    <div className="rounded-xl py-2 text-center text-xs font-bold" style={{ background: isSA ? "rgba(245,158,11,.1)" : "rgba(99,102,241,.1)", color: isSA ? "#f59e0b" : "#a5b4fc" }}>
+                      {isSA ? "⭐ Super Admin Protected" : "🔒 Admin Account"}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-6 gap-1 pt-1">
+                      {[
+                        { icon: <SlidersHorizontal className="h-3.5 w-3.5" />, title: "Preview",         cls: "hover:bg-indigo-500/15 text-indigo-400",  action: () => setPreviewUser(u) },
+                        { icon: <NotebookPen className="h-3.5 w-3.5" />,       title: "Notes",            cls: (u as any).approval_notes ? "text-amber-400 bg-amber-500/10 hover:bg-amber-500/20" : `hover:bg-amber-500/10 text-amber-400`, action: () => handleOpenNotes(u) },
+                        { icon: <BadgeIndianRupee className="h-3.5 w-3.5" />,  title: "Wallet",           cls: "hover:bg-emerald-500/15 text-emerald-400", action: () => { setWalletDialogUser(u); setWalletAmount(""); setWalletDir("add"); setWalletDesc(""); } },
+                        { icon: <MessageSquare className="h-3.5 w-3.5" />,     title: "Notify",           cls: "hover:bg-blue-500/15 text-blue-400",       action: () => { setMsgDialogUser(u); setMsgTitle(""); setMsgBody(""); } },
+                        { icon: <Pencil className="h-3.5 w-3.5" />,            title: "Edit",             cls: "hover:bg-white/10",                         action: () => navigate(`/admin/users/${u.id}`) },
+                        { icon: <Eye className="h-3.5 w-3.5" />,               title: "Full Details",     cls: "hover:bg-white/10",                         action: () => { setSelectedUser(u); setActionType("view"); } },
+                      ].map((btn, i) => (
+                        <button key={i} title={btn.title}
+                          className={`h-8 w-full rounded-lg flex items-center justify-center transition-colors ${btn.cls}`}
+                          style={{ color: btn.cls.includes("text-") ? undefined : T.sub }}
+                          onClick={btn.action}>
+                          {btn.icon}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {!isAdmin && (
+                    <div className="flex gap-1 pt-0">
+                      {u.approval_status === "pending" && (<>
+                        <button title="Approve"
+                          className="flex-1 h-8 rounded-lg flex items-center justify-center gap-1 text-[11px] font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors"
+                          onClick={() => { setSelectedUser(u); setActionType("approve"); }}>
+                          <CheckCircle className="h-3 w-3" /> Approve
+                        </button>
+                        <button title="Reject"
+                          className="flex-1 h-8 rounded-lg flex items-center justify-center gap-1 text-[11px] font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"
+                          onClick={() => { setSelectedUser(u); setActionType("reject"); }}>
+                          <XCircle className="h-3 w-3" /> Reject
+                        </button>
+                      </>)}
+                      {u.approval_status !== "pending" && (
+                        <div className="flex w-full gap-1">
+                          <button title={u.is_disabled ? "Unblock" : "Block"}
+                            className={`flex-1 h-8 rounded-lg flex items-center justify-center gap-1 text-[11px] font-semibold transition-colors ${u.is_disabled ? "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400" : "bg-amber-500/10 hover:bg-amber-500/20 text-amber-400"}`}
+                            onClick={() => setConfirmAction({ type: u.is_disabled ? "unblock" : "block", user: u })}>
+                            {u.is_disabled ? <ShieldCheck className="h-3 w-3" /> : <ShieldOff className="h-3 w-3" />}
+                            {u.is_disabled ? "Unblock" : "Block"}
+                          </button>
+                          <button title="Security"
+                            className="flex-1 h-8 rounded-lg flex items-center justify-center gap-1 text-[11px] font-semibold bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 transition-colors"
+                            onClick={() => handleViewSecurity(u)}>
+                            <Shield className="h-3 w-3" /> Security
+                          </button>
+                          <button title="Delete"
+                            className="h-8 w-8 rounded-lg flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors shrink-0"
+                            onClick={() => setConfirmAction({ type: "delete", user: u })}>
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Pagination */}
+        {users.length > CARD_PAGE && (
+          <div className="flex items-center justify-center gap-2">
+            <Button size="icon" variant="ghost" className="h-8 w-8 rounded-xl" disabled={page <= 1}
+              style={{ color: T.sub }} onClick={() => setCurrentPage(page - 1)}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+              .reduce<(number | "e")[]>((acc, p, idx, arr) => {
+                if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("e");
+                acc.push(p); return acc;
+              }, [])
+              .map((p, i) => p === "e"
+                ? <span key={`e${i}`} className="w-6 text-center text-xs" style={{ color: T.sub }}>…</span>
+                : <Button key={p} size="icon" variant="ghost" className="h-8 w-8 rounded-xl text-xs font-bold"
+                    onClick={() => setCurrentPage(p)}
+                    style={p === page ? { background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff" } : { color: T.sub }}>
+                    {p}
+                  </Button>
+              )}
+            <Button size="icon" variant="ghost" className="h-8 w-8 rounded-xl" disabled={page >= totalPages}
+              style={{ color: T.sub }} onClick={() => setCurrentPage(page + 1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+
+      {/* ══════════════════════════════════════════════════
+           HERO — Mission Control Header
+      ══════════════════════════════════════════════════ */}
+      <div className="relative overflow-hidden rounded-3xl" style={{ minHeight: 220, background: "linear-gradient(125deg,#0f0c29 0%,#302b63 40%,#24243e 100%)" }}>
+        {/* Animated blobs */}
+        <div className="absolute -top-20 -left-20 h-72 w-72 rounded-full blur-3xl pointer-events-none" style={{ background: "rgba(99,102,241,.35)" }} />
+        <div className="absolute -bottom-16 right-10 h-56 w-56 rounded-full blur-3xl pointer-events-none" style={{ background: "rgba(139,92,246,.3)" }} />
+        <div className="absolute top-10 right-1/3 h-40 w-40 rounded-full blur-2xl pointer-events-none" style={{ background: "rgba(236,72,153,.15)" }} />
+        {/* Grid overlay */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none"
+          style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px)", backgroundSize: "40px 40px" }} />
+
+        <div className="relative z-10 px-6 sm:px-8 pt-7 pb-6">
+          {/* Title row */}
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5 mb-7">
             <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center shadow-lg">
-                <Users className="h-7 w-7 text-white" />
+              <div className="relative shrink-0">
+                <div className="h-14 w-14 rounded-2xl flex items-center justify-center shadow-2xl" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", boxShadow: "0 8px 32px rgba(99,102,241,.45)" }}>
+                  <Users className="h-7 w-7 text-white" />
+                </div>
+                <div className="absolute -inset-1 rounded-2xl opacity-30 blur-md" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }} />
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
-                  User Management
-                </h1>
-                <p className="text-indigo-200 text-sm mt-0.5">Manage, approve and oversee platform users</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">User Management</h1>
+                  <span className="hidden sm:inline-flex h-6 items-center px-2 rounded-full text-[10px] font-bold" style={{ background: "rgba(99,102,241,.3)", color: "#a5b4fc", border: "1px solid rgba(99,102,241,.4)" }}>
+                    COMMAND CENTER
+                  </span>
+                </div>
+                <p className="text-sm" style={{ color: "rgba(199,210,254,.7)" }}>
+                  Manage, approve, and oversee all platform users in real-time
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <Button
-                variant="ghost"
-                className="h-10 gap-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20"
-                onClick={() => fetchProfiles()}
-                disabled={loading}
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-                Refresh
+              <Button variant="ghost" size="sm"
+                className="h-9 gap-2 rounded-xl text-white border"
+                style={{ background: "rgba(255,255,255,.08)", borderColor: "rgba(255,255,255,.15)" }}
+                onClick={() => fetchProfiles()} disabled={loading}>
+                <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+                <span className="hidden sm:inline">Refresh</span>
               </Button>
-              <Button
-                onClick={() => setInviteOpen(true)}
-                className="h-10 gap-2 rounded-xl bg-white text-indigo-700 hover:bg-indigo-50 border-none font-semibold shadow-lg"
-              >
-                <UserPlus className="h-4 w-4" />
+              <Button size="sm"
+                className="h-9 gap-2 rounded-xl font-semibold shadow-lg"
+                style={{ background: "linear-gradient(135deg,#fff,#e0e7ff)", color: "#4f46e5" }}
+                onClick={() => setInviteOpen(true)}>
+                <UserPlus className="h-3.5 w-3.5" />
                 Invite User
               </Button>
             </div>
           </div>
 
-          {/* Stats row embedded in hero */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          {/* Stats grid — 7 tiles */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
             {[
-              { label: "Total",       value: stats.total,       icon: "👥", accent: "rgba(255,255,255,.25)" },
-              { label: "Pending",     value: stats.pending,     icon: "⏳", accent: "rgba(251,191,36,.3)" },
-              { label: "Approved",    value: stats.approved,    icon: "✅", accent: "rgba(52,211,153,.3)" },
-              { label: "Rejected",    value: stats.rejected,    icon: "❌", accent: "rgba(248,113,113,.3)" },
-              { label: "Blocked",     value: stats.blocked,     icon: "🚫", accent: "rgba(248,113,113,.25)" },
-              { label: "Freelancers", value: stats.freelancers, icon: "💼", accent: "rgba(96,165,250,.3)" },
-              { label: "Employers",   value: stats.employers,   icon: "🏢", accent: "rgba(192,132,252,.3)" },
+              { label: "Total Users",  value: stats.total,       icon: "👥", from: "#6366f1", to: "#8b5cf6" },
+              { label: "Pending",      value: stats.pending,     icon: "⏳", from: "#d97706", to: "#f59e0b" },
+              { label: "Approved",     value: stats.approved,    icon: "✅", from: "#059669", to: "#10b981" },
+              { label: "Rejected",     value: stats.rejected,    icon: "❌", from: "#dc2626", to: "#ef4444" },
+              { label: "Blocked",      value: stats.blocked,     icon: "🚫", from: "#9f1239", to: "#e11d48" },
+              { label: "Freelancers",  value: stats.freelancers, icon: "💼", from: "#0284c7", to: "#38bdf8" },
+              { label: "Employers",    value: stats.employers,   icon: "🏢", from: "#7e22ce", to: "#c084fc" },
             ].map((s) => (
-              <div key={s.label}
-                   className="rounded-xl px-4 py-3 backdrop-blur-sm"
-                   style={{ background: s.accent, border: "1px solid rgba(255,255,255,.12)" }}>
-                <p className="text-lg font-bold text-white leading-none">{s.icon} {s.value}</p>
-                <p className="text-xs text-indigo-200 mt-1 font-medium">{s.label}</p>
+              <div key={s.label} className="relative rounded-xl p-3 overflow-hidden cursor-default group/stat"
+                style={{ background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", backdropFilter: "blur(12px)" }}>
+                <div className="absolute inset-0 opacity-0 group-hover/stat:opacity-100 transition-opacity duration-300 rounded-xl"
+                  style={{ background: `linear-gradient(135deg,${s.from}22,${s.to}22)` }} />
+                <div className="relative">
+                  <p className="text-xl font-black text-white leading-none tabular-nums">{s.value}</p>
+                  <p className="text-[10px] font-medium mt-1" style={{ color: "rgba(199,210,254,.65)" }}>{s.icon} {s.label}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
-        {/* Decorative blobs */}
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 h-72 w-72 rounded-full bg-white/5 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/2 -mb-10 h-40 w-80 rounded-full bg-purple-500/20 blur-3xl pointer-events-none" />
       </div>
 
-      {/* ── Filter Bar ──────────────────────────────────── */}
-      <div className="rounded-2xl border p-4 space-y-3" style={{ background: T.card, borderColor: T.border }}>
-        {/* Row 1: Search + Type + Export */}
-        <div className="flex flex-col sm:flex-row gap-2">
+      {/* ══════════════════════════════════════════════════
+           COMMAND BAR — Search + Filters + View Toggle
+      ══════════════════════════════════════════════════ */}
+      <div className="rounded-2xl border overflow-hidden" style={{ background: T.card, borderColor: T.border }}>
+        {/* Primary row */}
+        <div className="flex flex-col sm:flex-row gap-2 p-3 border-b" style={{ borderColor: T.border }}>
+          {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 pointer-events-none" style={{ color: T.sub }} />
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 pointer-events-none" style={{ color: T.sub }} />
             <Input
-              placeholder="Search by name, email or code…"
+              placeholder="Search name, email, user code…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-9 border-none h-10 rounded-xl text-sm"
+              className="pl-10 pr-9 border-none h-10 rounded-xl text-sm font-medium"
               style={{ background: T.input, color: T.text }}
             />
             {searchQuery && (
-              <Button size="icon" variant="ghost"
-                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 rounded-lg"
+              <button className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 hover:bg-white/10 transition-colors"
                 onClick={() => setSearchQuery("")}>
                 <X className="h-3.5 w-3.5" style={{ color: T.sub }} />
-              </Button>
+              </button>
             )}
           </div>
+          {/* Type filter */}
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-full sm:w-[150px] border-none h-10 rounded-xl text-sm"
+            <SelectTrigger className="w-full sm:w-[145px] border-none h-10 rounded-xl text-sm font-medium"
               style={{ background: T.input, color: T.text }}>
               <SelectValue />
             </SelectTrigger>
@@ -1033,72 +1323,115 @@ const AdminUsers = () => {
               <SelectItem value="client">Employers</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" className="h-10 gap-2 rounded-xl text-sm shrink-0"
-            style={{ borderColor: T.border, background: T.input, color: T.text }}
+          {/* View toggle */}
+          <div className="flex items-center gap-1 rounded-xl p-1 h-10" style={{ background: T.input }}>
+            <button
+              className="h-8 px-3 rounded-lg text-xs font-bold transition-all"
+              style={viewMode === "grid" ? { background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff" } : { color: T.sub }}
+              onClick={() => setViewMode("grid")}>
+              ⊞ Grid
+            </button>
+            <button
+              className="h-8 px-3 rounded-lg text-xs font-bold transition-all"
+              style={viewMode === "table" ? { background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff" } : { color: T.sub }}
+              onClick={() => setViewMode("table")}>
+              ≡ Table
+            </button>
+          </div>
+          {/* Export */}
+          <Button variant="outline" size="sm"
+            className="h-10 gap-2 rounded-xl text-sm shrink-0"
+            style={{ borderColor: T.border, color: T.text }}
             onClick={() => handleExportCsv(filtered)}>
             <Download className="h-4 w-4" />
-            Export CSV
+            Export
           </Button>
         </div>
-        {/* Row 2: Date range */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5 shrink-0">
-            <Calendar className="h-3.5 w-3.5" style={{ color: T.sub }} />
-            <span className="text-xs font-medium" style={{ color: T.sub }}>Joined from</span>
-          </div>
+        {/* Secondary row — date range + result count */}
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2">
+          <Calendar className="h-3.5 w-3.5 shrink-0" style={{ color: T.sub }} />
+          <span className="text-xs" style={{ color: T.sub }}>From</span>
           <Input type="date" value={dateFrom}
             onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(1); }}
-            className="border-none h-8 rounded-xl text-xs w-auto"
+            className="border-none h-7 rounded-lg text-xs px-2 w-auto"
             style={{ background: T.input, color: T.text }} />
           <span className="text-xs" style={{ color: T.sub }}>to</span>
           <Input type="date" value={dateTo}
             onChange={(e) => { setDateTo(e.target.value); setCurrentPage(1); }}
-            className="border-none h-8 rounded-xl text-xs w-auto"
+            className="border-none h-7 rounded-lg text-xs px-2 w-auto"
             style={{ background: T.input, color: T.text }} />
           {(dateFrom || dateTo) && (
-            <Button size="sm" variant="ghost" className="h-8 px-2 rounded-xl text-xs gap-1"
-              style={{ color: T.sub }} onClick={() => { setDateFrom(""); setDateTo(""); }}>
+            <button className="flex items-center gap-1 text-xs rounded-lg px-2 py-1 transition-colors hover:bg-white/10"
+              style={{ color: T.sub }}
+              onClick={() => { setDateFrom(""); setDateTo(""); }}>
               <X className="h-3 w-3" /> Clear
-            </Button>
+            </button>
           )}
-          {filtered.length !== profiles.length && (
-            <span className="text-xs ml-auto font-medium" style={{ color: T.sub }}>
-              {filtered.length} of {profiles.length} users
-            </span>
-          )}
+          <div className="ml-auto text-xs font-medium" style={{ color: T.sub }}>
+            {filtered.length < profiles.length
+              ? <><span style={{ color: T.text }}>{filtered.length}</span> / {profiles.length} users</>
+              : <><span style={{ color: T.text }}>{profiles.length}</span> users total</>}
+          </div>
         </div>
       </div>
 
-      {/* ── Tabs + Table ────────────────────────────────── */}
-      <Tabs defaultValue="pending" className="w-full" onValueChange={() => setSelectedIds(new Set())}>
-        <TabsList className="h-auto p-1 rounded-xl gap-1 w-full sm:w-auto" style={{ background: T.nav }}>
-          {[
-            { value: "pending",  label: "Pending",  count: filterByStatus("pending").length,  dot: "#f59e0b" },
-            { value: "approved", label: "Approved", count: filterByStatus("approved").length, dot: "#10b981" },
-            { value: "rejected", label: "Rejected", count: filterByStatus("rejected").length, dot: "#ef4444" },
-            { value: "all",      label: "All Users",count: filterByStatus(null).length,       dot: "#6366f1" },
-          ].map((tab) => (
-            <TabsTrigger
-              key={tab.value}
-              value={tab.value}
-              className="rounded-lg px-4 py-2 text-sm font-medium gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white transition-all"
-              style={{ color: T.sub }}
-            >
-              <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: tab.dot }} />
-              {tab.label}
-              <span className="ml-0.5 text-xs font-bold px-1.5 py-0.5 rounded-md"
-                    style={{ background: "rgba(255,255,255,.08)", color: T.text }}>
-                {tab.count}
-              </span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      {/* ══════════════════════════════════════════════════
+           STATUS TABS + USER GRID / TABLE
+      ══════════════════════════════════════════════════ */}
+      <Tabs defaultValue="pending" className="w-full" onValueChange={() => { setSelectedIds(new Set()); setCurrentPage(1); }}>
+        {/* Tab pills */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <TabsList className="h-auto p-1 rounded-2xl gap-1" style={{ background: T.nav }}>
+            {[
+              { value: "pending",  label: "Pending",   count: filterByStatus("pending").length,  dot: "#f59e0b", glow: "rgba(245,158,11,.3)" },
+              { value: "approved", label: "Approved",  count: filterByStatus("approved").length, dot: "#10b981", glow: "rgba(16,185,129,.3)" },
+              { value: "rejected", label: "Rejected",  count: filterByStatus("rejected").length, dot: "#ef4444", glow: "rgba(239,68,68,.3)" },
+              { value: "all",      label: "All Users", count: filterByStatus(null).length,       dot: "#6366f1", glow: "rgba(99,102,241,.3)" },
+            ].map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value}
+                className="rounded-xl px-4 py-2 text-sm font-semibold gap-2 transition-all data-[state=active]:shadow-md"
+                style={{ color: T.sub }}>
+                <span className="h-2 w-2 rounded-full shrink-0 transition-all" style={{ background: tab.dot }} />
+                {tab.label}
+                <span className="text-[11px] font-black px-2 py-0.5 rounded-lg min-w-[24px] text-center"
+                  style={{ background: T.card, color: T.text }}>
+                  {tab.count}
+                </span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        <div className="mt-3">
-          <TabsContent value="pending"><UserTable users={filterByStatus("pending")} /></TabsContent>
-          <TabsContent value="approved"><UserTable users={filterByStatus("approved")} /></TabsContent>
-          <TabsContent value="rejected"><UserTable users={filterByStatus("rejected")} /></TabsContent>
-          <TabsContent value="all"><UserTable users={filterByStatus(null)} /></TabsContent>
+          {/* Bulk action strip (shown when items selected) */}
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl border animate-in slide-in-from-right-3 duration-200"
+              style={{ background: "rgba(99,102,241,.1)", borderColor: "rgba(99,102,241,.3)" }}>
+              <span className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-black text-white"
+                style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>{selectedIds.size}</span>
+              <span className="text-sm font-medium" style={{ color: T.text }}>selected</span>
+              <Button size="sm" className="h-7 gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white border-none text-xs"
+                disabled={bulkProcessing} onClick={() => handleBulkApprove(filterByStatus(null))}>
+                <CheckCircle className="h-3 w-3" /> Approve
+              </Button>
+              <Button size="sm" variant="destructive" className="h-7 gap-1 rounded-lg text-xs"
+                disabled={bulkProcessing} onClick={() => handleBulkReject(filterByStatus(null))}>
+                <XCircle className="h-3 w-3" /> Reject
+              </Button>
+              <button className="text-xs rounded-lg px-2 py-1 hover:bg-white/10 transition-colors" style={{ color: T.sub }}
+                onClick={() => setSelectedIds(new Set())}>
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4">
+          {["pending", "approved", "rejected", "all"].map((tab) => (
+            <TabsContent key={tab} value={tab}>
+              {viewMode === "grid"
+                ? <UserGrid users={filterByStatus(tab === "all" ? null : tab)} />
+                : <UserTable users={filterByStatus(tab === "all" ? null : tab)} />}
+            </TabsContent>
+          ))}
         </div>
       </Tabs>
 
