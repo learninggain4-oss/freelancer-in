@@ -51,6 +51,25 @@ function checkRateLimit(userId: string): boolean {
   return true;
 }
 
+function validateAmount(amount: unknown, maxAmount = 10000000): number {
+  if (typeof amount !== 'number' || !Number.isFinite(amount)) {
+    throw new Error('Amount must be a valid number');
+  }
+  if (amount <= 0) {
+    throw new Error('Amount must be positive');
+  }
+  if (amount > maxAmount) {
+    throw new Error(`Amount exceeds maximum limit of ₹${maxAmount.toLocaleString('en-IN')}`);
+  }
+  if (Math.round(amount * 100) !== amount * 100) {
+    throw new Error('Amount can have maximum 2 decimal places');
+  }
+  if (!Number.isSafeInteger(amount * 100)) {
+    throw new Error('Amount value is too large');
+  }
+  return amount;
+}
+
 function generateWithdrawalOrderId(length: number): string {
   const safeLength = Number.isFinite(length) ? Math.max(5, Math.floor(length)) : 15;
   const now = new Date();
@@ -132,9 +151,9 @@ Deno.serve(async (req) => {
       case "add_money": {
         if (callerProfile.user_type !== "client")
           throw new Error("Only clients can add money");
-        if (!amount || amount <= 0) throw new Error("Invalid amount");
+        const validAmount = validateAmount(amount, 500000);
 
-        const newBalance = Number(callerProfile.available_balance) + amount;
+        const newBalance = Number(callerProfile.available_balance) + validAmount;
         const { error: updateErr } = await supabase
           .from("profiles")
           .update({ available_balance: newBalance })
@@ -156,7 +175,7 @@ Deno.serve(async (req) => {
         // Employee requests withdrawal — deduct from available_balance immediately
         if (callerProfile.user_type !== "employee")
           throw new Error("Only employees can request withdrawals");
-        if (!amount || amount <= 0) throw new Error("Invalid amount");
+        validateAmount(amount, 100000);
 
         const requestedAmount = Number(amount);
         const originalBalance = Number(callerProfile.available_balance);
