@@ -854,6 +854,31 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
       return res.json({ success: true, docs });
     }
 
+    // ── get_aadhaar_docs: fetch aadhaar_verifications record + signed image URLs ─
+    if (action === "get_aadhaar_docs") {
+      if (!profile_id) return res.status(400).json({ error: "profile_id required" });
+      const { data: avList, error: avErr } = await adminClient
+        .from("aadhaar_verifications")
+        .select("id, status, rejection_reason, is_cleared, created_at, verified_at, aadhaar_number, name_on_aadhaar, dob_on_aadhaar, address_on_aadhaar, front_image_path, back_image_path")
+        .eq("profile_id", profile_id)
+        .order("created_at", { ascending: false });
+      if (avErr) return res.status(500).json({ error: avErr.message });
+      const records = await Promise.all((avList || []).map(async (av) => {
+        let front_url = null, back_url = null;
+        if (av.front_image_path) {
+          const { data: fd } = await adminClient.storage.from("aadhaar-documents").createSignedUrl(av.front_image_path, 3600);
+          front_url = fd?.signedUrl || null;
+        }
+        if (av.back_image_path) {
+          const { data: bd } = await adminClient.storage.from("aadhaar-documents").createSignedUrl(av.back_image_path, 3600);
+          back_url = bd?.signedUrl || null;
+        }
+        return { ...av, front_url, back_url };
+      }));
+      logAudit(adminClient, adminProfileId, "view_aadhaar_docs", profile_id, null, {});
+      return res.json({ success: true, records });
+    }
+
     // ── send_email: compose + send message to user ────────────────────────
     if (action === "send_email") {
       const { target_profile_id: tpid, target_user_id: tuid, subject, message: emailMsg } = req.body;

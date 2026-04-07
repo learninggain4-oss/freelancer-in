@@ -29,7 +29,7 @@ import {
   MessageSquare, Wallet, RotateCcw, SlidersHorizontal, NotebookPen,
   BadgeIndianRupee, SendHorizonal, Phone, MapPin, GraduationCap, Briefcase,
   LogOut, ArrowLeftRight, Mail, History, FileText, Link2, Network, Star,
-  AlertTriangle, Megaphone, BarChart3, TrendingUp, Activity, Zap,
+  AlertTriangle, Megaphone, BarChart3, TrendingUp, Activity, Zap, Fingerprint,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
@@ -146,6 +146,12 @@ const AdminUsers = () => {
   const [kycDialogUser, setKycDialogUser] = useState<FullProfile | null>(null);
   const [kycDocs, setKycDocs] = useState<KycDoc[]>([]);
   const [kycLoading, setKycLoading] = useState(false);
+
+  // Aadhaar Verification Viewer
+  type AadhaarRecord = { id: string; status: string; is_cleared: boolean; rejection_reason: string | null; created_at: string; verified_at: string | null; aadhaar_number: string; name_on_aadhaar: string; dob_on_aadhaar: string; address_on_aadhaar: string; front_image_path: string | null; back_image_path: string | null; front_url: string | null; back_url: string | null };
+  const [aadhaarDialogUser, setAadhaarDialogUser] = useState<FullProfile | null>(null);
+  const [aadhaarRecords, setAadhaarRecords] = useState<AadhaarRecord[]>([]);
+  const [aadhaarLoading, setAadhaarLoading] = useState(false);
 
   // User Statistics (Quick Preview)
   type UserStats = { projects_posted: number; services_listed: number; review_count: number; avg_rating: string | null; total_earned: number };
@@ -822,6 +828,24 @@ const AdminUsers = () => {
       else { setKycDocs(data.docs || []); }
     } catch (e: any) { toast.error(e.message || "Failed to load KYC docs"); }
     finally { setKycLoading(false); }
+  };
+
+  // ── Aadhaar Verification Viewer ──────────────────────────────────────────
+  const handleOpenAadhaarDocs = async (u: FullProfile) => {
+    setAadhaarDialogUser(u);
+    setAadhaarLoading(true);
+    setAadhaarRecords([]);
+    try {
+      const token = await getToken();
+      const res = await callEdgeFunction("admin-user-management", {
+        body: { action: "get_aadhaar_docs", profile_id: u.id },
+        token,
+      });
+      const data = await res.json();
+      if (!res.ok || data?.error) { toast.error(data?.error || "Failed to load Aadhaar records"); }
+      else { setAadhaarRecords(data.records || []); }
+    } catch (e: any) { toast.error(e.message || "Failed to load Aadhaar records"); }
+    finally { setAadhaarLoading(false); }
   };
 
   const handlePasswordReset = async (u: FullProfile) => {
@@ -2471,6 +2495,12 @@ const AdminUsers = () => {
                     </Button>
                     <Button size="sm" variant="outline" className="gap-2 rounded-xl text-xs h-9"
                       style={{ borderColor: T.border, color: T.text }}
+                      onClick={() => { setPreviewUser(null); handleOpenAadhaarDocs(pu); }}>
+                      <Fingerprint className="h-3.5 w-3.5 text-violet-400" />
+                      Aadhaar
+                    </Button>
+                    <Button size="sm" variant="outline" className="gap-2 rounded-xl text-xs h-9"
+                      style={{ borderColor: T.border, color: T.text }}
                       onClick={() => { setPreviewUser(null); handleOpenAuditLog(pu); }}>
                       <History className="h-3.5 w-3.5 text-orange-400" />
                       Audit Log
@@ -2893,6 +2923,98 @@ const AdminUsers = () => {
                         Verified: {fmtDate(doc.verified_at)}
                       </p>
                     )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Aadhaar Verification Viewer ───────────────────── */}
+      <Dialog open={!!aadhaarDialogUser} onOpenChange={(open) => !open && setAadhaarDialogUser(null)}>
+        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Fingerprint className="h-5 w-5 text-violet-400" />
+              Aadhaar Verification
+            </DialogTitle>
+            <DialogDescription>
+              Aadhaar records for {aadhaarDialogUser?.full_name?.[0] || aadhaarDialogUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            {aadhaarLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : aadhaarRecords.length === 0 ? (
+              <div className="rounded-xl py-10 text-center" style={{ background: T.nav }}>
+                <Fingerprint className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm font-medium" style={{ color: T.sub }}>No Aadhaar records submitted</p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {aadhaarRecords.map((rec, i) => (
+                  <div key={rec.id} className="rounded-xl border p-4 space-y-3" style={{ background: T.nav, borderColor: T.border }}>
+                    {/* Header row */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold" style={{ color: T.sub }}>Record #{i + 1}</span>
+                        <Badge variant="outline" className={
+                          rec.status === "verified" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" :
+                          rec.status === "pending"  ? "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" :
+                          rec.status === "rejected" ? "bg-red-500/15 text-red-400 border-red-500/30" :
+                          "bg-blue-500/15 text-blue-400 border-blue-500/30"
+                        }>{rec.status}</Badge>
+                        {rec.is_cleared && <Badge variant="outline" className="bg-slate-500/15 text-slate-400 border-slate-500/30 text-[10px]">Cleared</Badge>}
+                      </div>
+                      <span className="text-xs" style={{ color: T.sub }}>{fmtDate(rec.created_at)}</span>
+                    </div>
+                    {/* Details grid */}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                      <div><span className="font-semibold" style={{ color: T.sub }}>Name: </span><span style={{ color: T.text }}>{rec.name_on_aadhaar || "—"}</span></div>
+                      <div><span className="font-semibold" style={{ color: T.sub }}>DOB: </span><span style={{ color: T.text }}>{rec.dob_on_aadhaar || "—"}</span></div>
+                      <div className="col-span-2"><span className="font-semibold" style={{ color: T.sub }}>Aadhaar No: </span><span style={{ color: T.text }} className="font-mono tracking-widest">{rec.aadhaar_number ? `${rec.aadhaar_number.slice(0, 4)} ${rec.aadhaar_number.slice(4, 8)} ${rec.aadhaar_number.slice(8)}` : "—"}</span></div>
+                      <div className="col-span-2"><span className="font-semibold" style={{ color: T.sub }}>Address: </span><span style={{ color: T.text }}>{rec.address_on_aadhaar || "—"}</span></div>
+                    </div>
+                    {/* Rejection reason */}
+                    {rec.rejection_reason && (
+                      <p className="text-xs rounded-lg px-3 py-2 bg-red-500/10 text-red-400">Rejection: {rec.rejection_reason}</p>
+                    )}
+                    {/* Images */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-semibold" style={{ color: T.sub }}>Front Side</p>
+                        {rec.front_url ? (
+                          <a href={rec.front_url} target="_blank" rel="noopener noreferrer">
+                            <img src={rec.front_url} alt="Aadhaar Front" className="w-full rounded-lg object-cover border max-h-36 hover:opacity-90 transition-opacity cursor-zoom-in" style={{ borderColor: T.border }} />
+                          </a>
+                        ) : (
+                          <div className="w-full rounded-lg flex items-center justify-center max-h-36 h-24 text-xs" style={{ background: T.card, color: T.sub, borderColor: T.border, border: `1px dashed ${T.border}` }}>
+                            {rec.front_image_path ? "Preview unavailable" : "Not uploaded"}
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-semibold" style={{ color: T.sub }}>Back Side</p>
+                        {rec.back_url ? (
+                          <a href={rec.back_url} target="_blank" rel="noopener noreferrer">
+                            <img src={rec.back_url} alt="Aadhaar Back" className="w-full rounded-lg object-cover border max-h-36 hover:opacity-90 transition-opacity cursor-zoom-in" style={{ borderColor: T.border }} />
+                          </a>
+                        ) : (
+                          <div className="w-full rounded-lg flex items-center justify-center max-h-36 h-24 text-xs" style={{ background: T.card, color: T.sub, borderColor: T.border, border: `1px dashed ${T.border}` }}>
+                            {rec.back_image_path ? "Preview unavailable" : "Not uploaded"}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {/* Click-to-open links */}
+                    <div className="flex gap-3">
+                      {rec.front_url && <a href={rec.front_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-300"><Link2 className="h-3 w-3" />Open Front</a>}
+                      {rec.back_url && <a href={rec.back_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-300"><Link2 className="h-3 w-3" />Open Back</a>}
+                    </div>
+                    {rec.verified_at && <p className="text-xs" style={{ color: T.sub }}>Verified: {fmtDate(rec.verified_at)}</p>}
                   </div>
                 ))}
               </div>
