@@ -107,8 +107,6 @@ const AdminUsers = () => {
   const [changeTypeTo, setChangeTypeTo] = useState<string>("");
   const [changeTypeProcessing, setChangeTypeProcessing] = useState(false);
 
-  // Impersonation (Login as User)
-  const [impersonateUserId, setImpersonateUserId] = useState<string | null>(null);
 
   // Advanced Filters
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -441,51 +439,6 @@ const AdminUsers = () => {
       setChangeTypeTo("");
     }
     setChangeTypeProcessing(false);
-  };
-
-  const handleImpersonate = async (u: FullProfile) => {
-    if (!u.email) return;
-    setImpersonateUserId(u.id);
-    // Pre-open the new tab synchronously (inside the click event) to avoid
-    // browser popup blocking — then point it to the magic link once ready
-    const newTab = window.open("", "_blank");
-    if (newTab) newTab.document.write("<html><body style='background:#0f0f0f;color:#888;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0'><p>Generating secure login link…</p></body></html>");
-    try {
-      const tkn = await getToken();
-      const res = await callEdgeFunction("admin-user-management", {
-        body: { action: "generate_magic_link", email: u.email },
-        token: tkn,
-      });
-      const data = await res.json();
-      if (data.link) {
-        // Extract token_hash from the Supabase verify URL and navigate the new
-        // tab DIRECTLY to the user's own dashboard — no intermediate page.
-        const dashPath = u.user_type === "client" ? "employer" : "freelancer";
-        let targetUrl = `${window.location.origin}/${dashPath}/dashboard`;
-        try {
-          const linkUrl = new URL(data.link);
-          const tokenHash = linkUrl.searchParams.get("token") || linkUrl.searchParams.get("token_hash");
-          const otpType = linkUrl.searchParams.get("type") || "magiclink";
-          if (tokenHash) {
-            targetUrl = `${window.location.origin}/${dashPath}/dashboard?token_hash=${encodeURIComponent(tokenHash)}&type=${encodeURIComponent(otpType)}`;
-          }
-        } catch { /* keep plain targetUrl if URL parse fails */ }
-
-        if (newTab) {
-          newTab.location.href = targetUrl;
-        } else {
-          window.open(targetUrl, "_blank", "noopener,noreferrer");
-        }
-        toast.success("Login link opened in new tab — logged in as this user");
-      } else {
-        if (newTab) newTab.close();
-        toast.error(data.error || "Failed to generate login link");
-      }
-    } catch {
-      if (newTab) newTab.close();
-      toast.error("Failed to generate login link");
-    }
-    setImpersonateUserId(null);
   };
 
   const handleToggleBlock = async (user: FullProfile) => {
@@ -1319,15 +1272,6 @@ const AdminUsers = () => {
                               onClick={() => { setChangeTypeUser(u); setChangeTypeTo(u.user_type === "employee" ? "client" : "employee"); }}>
                               <ArrowLeftRight className="h-3.5 w-3.5" />
                             </Button>
-                            <Button size="icon" variant="ghost" title="Login as this user"
-                              className="h-8 w-8 rounded-lg hover:bg-indigo-500/10"
-                              style={{ color: "#a5b4fc" }}
-                              disabled={impersonateUserId === u.id}
-                              onClick={() => handleImpersonate(u)}>
-                              {impersonateUserId === u.id
-                                ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                                : <Eye className="h-3.5 w-3.5" />}
-                            </Button>
                             <Button size="icon" variant="ghost" title="Delete permanently"
                               className="h-8 w-8 rounded-lg text-red-400 hover:text-red-400 hover:bg-red-500/10"
                               onClick={() => setConfirmAction({ type: "delete", user: u })}>
@@ -1622,21 +1566,6 @@ const AdminUsers = () => {
                         ))}
                       </div>
 
-                      {/* Impersonate — full width featured button */}
-                      <button
-                        className="w-full h-8 rounded-lg flex items-center justify-center gap-2 text-xs font-bold transition-all hover:scale-[1.02] active:scale-[.98]"
-                        style={{
-                          background: impersonateUserId === u.id ? "rgba(99,102,241,.2)" : "rgba(99,102,241,.1)",
-                          border: "1px solid rgba(99,102,241,.25)",
-                          color: "#a5b4fc",
-                        }}
-                        disabled={impersonateUserId === u.id}
-                        onClick={() => handleImpersonate(u)}
-                        title="Login as this user in a new tab">
-                        {impersonateUserId === u.id
-                          ? <><RefreshCw className="h-3.5 w-3.5 animate-spin" /> Generating…</>
-                          : <><Eye className="h-3.5 w-3.5" /> Login as User</>}
-                      </button>
                     </div>
                   )}
                   {!isAdmin && (
@@ -2459,23 +2388,6 @@ const AdminUsers = () => {
                       </div>
                     )}
                   </div>
-
-                  <Separator style={{ background: T.border }} />
-
-                  {/* Login as User — inside preview */}
-                  <button
-                    className="w-full h-9 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all hover:scale-[1.01]"
-                    style={{
-                      background: impersonateUserId === pu.id ? "rgba(99,102,241,.2)" : "linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.1))",
-                      border: "1px solid rgba(99,102,241,.3)",
-                      color: "#a5b4fc",
-                    }}
-                    disabled={impersonateUserId === pu.id}
-                    onClick={() => handleImpersonate(pu)}>
-                    {impersonateUserId === pu.id
-                      ? <><RefreshCw className="h-4 w-4 animate-spin" /> Generating magic link…</>
-                      : <><Eye className="h-4 w-4" /> Login as {pu.full_name?.[0] || "User"}</>}
-                  </button>
 
                   <Separator style={{ background: T.border }} />
 
