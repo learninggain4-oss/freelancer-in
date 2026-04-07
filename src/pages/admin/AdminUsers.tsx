@@ -446,9 +446,12 @@ const AdminUsers = () => {
   const handleImpersonate = async (u: FullProfile) => {
     if (!u.email) return;
     setImpersonateUserId(u.id);
+    // Pre-open the new tab synchronously (inside the click event) to avoid
+    // browser popup blocking — then point it to the magic link once ready
+    const newTab = window.open("", "_blank");
+    if (newTab) newTab.document.write("<html><body style='background:#0f0f0f;color:#888;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0'><p>Generating secure login link…</p></body></html>");
     try {
       const tkn = await getToken();
-      // Redirect to the live production domain after auth
       const redirectTo = `https://www.freelan.space/freelancer/dashboard?_t=${Date.now()}`;
       const res = await callEdgeFunction("admin-user-management", {
         body: { action: "generate_magic_link", email: u.email, redirect_to: redirectTo },
@@ -456,15 +459,19 @@ const AdminUsers = () => {
       });
       const data = await res.json();
       if (data.link) {
-        window.open(data.link, "_blank", "noopener,noreferrer");
-        const { toast } = await import("sonner");
-        toast.success("Magic link opened in new tab — you are now logged in as this user");
+        if (newTab) {
+          newTab.location.href = data.link;
+        } else {
+          // Fallback: popup was blocked — show copyable link
+          window.open(data.link, "_blank", "noopener,noreferrer");
+        }
+        toast.success("Login link opened in new tab — logged in as this user");
       } else {
-        const { toast } = await import("sonner");
+        if (newTab) newTab.close();
         toast.error(data.error || "Failed to generate login link");
       }
     } catch {
-      const { toast } = await import("sonner");
+      if (newTab) newTab.close();
       toast.error("Failed to generate login link");
     }
     setImpersonateUserId(null);
