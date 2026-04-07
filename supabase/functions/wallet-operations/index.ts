@@ -151,9 +151,9 @@ Deno.serve(async (req) => {
       case "add_money": {
         if (callerProfile.user_type !== "client")
           throw new Error("Only clients can add money");
-        if (!amount || amount <= 0) throw new Error("Invalid amount");
+        const validAmount = validateAmount(amount, 500000);
 
-        const newBalance = Number(callerProfile.available_balance) + amount;
+        const newBalance = Number(callerProfile.available_balance) + validAmount;
         const { error: updateErr } = await supabase
           .from("profiles")
           .update({ available_balance: newBalance })
@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
         // Employee requests withdrawal — deduct from available_balance immediately
         if (callerProfile.user_type !== "employee")
           throw new Error("Only employees can request withdrawals");
-        if (!amount || amount <= 0) throw new Error("Invalid amount");
+        validateAmount(amount, 100000);
 
         const requestedAmount = Number(amount);
         const originalBalance = Number(callerProfile.available_balance);
