@@ -112,7 +112,7 @@ export default function AdminSecretsManager() {
                     {s.inLogs&&<span style={{ fontSize:10,fontWeight:700,color:"#f87171",background:"rgba(248,113,113,.1)",padding:"2px 8px",borderRadius:5 }}>⚠ FOUND IN LOGS</span>}
                   </div>
                   <div style={{ display:"flex",alignItems:"center",gap:8,background:T.input,borderRadius:8,padding:"6px 12px",marginBottom:6 }}>
-                    <span style={{ fontFamily:"monospace",fontSize:12,color:T.text,flex:1 }}>{visible.has(s.id)?s.maskedValue.replace(/•+/,"[masked — view in Replit secrets]"):s.maskedValue}</span>
+                    <span style={{ fontFamily:"monospace",fontSize:12,color:T.text,flex:1 }}>{visible.has(s.id)?s.maskedValue.replace(/•+/,"[masked — manage via server environment]"):s.maskedValue}</span>
                     <button onClick={()=>toggleVisible(s.id)} style={{ background:"none",border:"none",cursor:"pointer",padding:2,color:T.sub }}>
                       {visible.has(s.id)?<EyeOff size={13}/>:<Eye size={13}/>}
                     </button>

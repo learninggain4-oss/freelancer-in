@@ -102,7 +102,7 @@ export default function AdminServerMonitor() {
       "version": { ts: t, level: "info", msg: "> Freelancer-in v1.0.0 | Vite 5.4.21 | React 18 | Supabase" },
       "clear": { ts: t, level: "info", msg: "__CLEAR__" },
     };
-    const resp = responses[line.toLowerCase()] || { ts: t, level: "warn" as const, msg: `> Command "${line}" requires server access. Use Replit shell for full terminal.` };
+    const resp = responses[line.toLowerCase()] || { ts: t, level: "warn" as const, msg: `> Command "${line}" requires server access. Use a server shell for full terminal.` };
     if (resp.msg === "__CLEAR__") { setCmdHistory([]); setCmdInput(""); return; }
     setCmdHistory(h => [...h, { ts: t, level: "info", msg: `$ ${line}` }, resp]);
     setCmdInput("");
@@ -232,9 +232,9 @@ export default function AdminServerMonitor() {
               <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
                 <Power size={13} color="#f87171" />
                 <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>Server Restart</span>
-                <span style={{ fontSize: 10, color: "#f87171", background: "rgba(248,113,113,.1)", padding: "2px 7px", borderRadius: 5 }}>Replit Only</span>
+                <span style={{ fontSize: 10, color: "#f87171", background: "rgba(248,113,113,.1)", padding: "2px 7px", borderRadius: 5 }}>Server Only</span>
               </div>
-              <p style={{ fontSize: 11, color: T.sub, margin: 0 }}>Full server restart is managed via Replit's workflow controls or the Replit dashboard.</p>
+              <p style={{ fontSize: 11, color: T.sub, margin: 0 }}>Full server restart is managed via the server dashboard or deployment controls.</p>
             </div>
           </div>
         </div>

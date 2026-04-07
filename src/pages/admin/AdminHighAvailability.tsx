@@ -181,7 +181,7 @@ export default function AdminHighAvailability() {
       {tab==="infra"&&(
         <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
           <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10 }}>
-            {[{l:"Load Balancing",v:"Single node (Replit)",note:"Upgrade to multi-region for HA",ok:false},{l:"DB Replication",v:"Manual backup (daily)",note:"Consider Supabase Pro for streaming replication",ok:false},{l:"SSL/TLS",v:"Enforced (mTLS)",note:"All traffic encrypted in transit",ok:true},{l:"Firewall / WAF",v:"Supabase RLS + Replit",note:"Row-level security on all tables",ok:true},{l:"Uptime Monitoring",v:"Live health checks",note:"5-minute interval checks via scheduler",ok:true},{l:"Backup Frequency",v:"Daily at 2:00 AM IST",note:"Stored in secondary region",ok:true}].map(item=>(
+            {[{l:"Load Balancing",v:"Single node",note:"Upgrade to multi-region for HA",ok:false},{l:"DB Replication",v:"Manual backup (daily)",note:"Consider Supabase Pro for streaming replication",ok:false},{l:"SSL/TLS",v:"Enforced (mTLS)",note:"All traffic encrypted in transit",ok:true},{l:"Firewall / WAF",v:"Supabase RLS",note:"Row-level security on all tables",ok:true},{l:"Uptime Monitoring",v:"Live health checks",note:"5-minute interval checks via scheduler",ok:true},{l:"Backup Frequency",v:"Daily at 2:00 AM IST",note:"Stored in secondary region",ok:true}].map(item=>(
               <div key={item.l} style={{ background:T.card,border:`1px solid ${item.ok?T.border:"rgba(251,191,36,.2)"}`,borderRadius:13,padding:"14px 16px" }}>
                 <div style={{ display:"flex",alignItems:"center",gap:6,marginBottom:5 }}>
                   {item.ok?<CheckCircle2 size={13} color="#4ade80"/>:<AlertTriangle size={13} color="#fbbf24"/>}

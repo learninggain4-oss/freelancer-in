@@ -77,7 +77,7 @@ export default function AdminVersionControl() {
     localStorage.setItem(DEPLOY_KEY, JSON.stringify(updated));
     setDeployments(updated);
     logAction("Deployment Rolled Back", `${dep.version} — ${dep.label}`, "System", "warning");
-    toast({ title: `${dep.version} marked as rolled back`, description: "Deploy history updated. Manual rollback via Replit checkpoints." });
+    toast({ title: `${dep.version} marked as rolled back`, description: "Deploy history updated. Manual rollback via version backup." });
     setConfirmRollback(null);
   };
 
@@ -215,13 +215,13 @@ export default function AdminVersionControl() {
             ))}
           </div>
           <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 12, background: "rgba(99,102,241,.05)", border: "1px solid rgba(99,102,241,.12)" }}>
-            <p style={{ fontSize: 12, color: T.sub, margin: 0, lineHeight: 1.7 }}>Full automated checks (build verification, test suite, staging deploy) are available via GitHub Actions CI/CD pipeline or Replit's deployment system. These manual checks serve as a pre-flight reminder checklist.</p>
+            <p style={{ fontSize: 12, color: T.sub, margin: 0, lineHeight: 1.7 }}>Full automated checks (build verification, test suite, staging deploy) are available via GitHub Actions CI/CD pipeline. These manual checks serve as a pre-flight reminder checklist.</p>
           </div>
         </div>
       )}
 
       <ConfirmActionDialog open={!!confirmRollback} onOpenChange={o => !o && setConfirmRollback(null)} onConfirm={() => confirmRollback && rollback(confirmRollback)}
-        title={`Rollback ${confirmRollback?.version}`} description={`Mark "${confirmRollback?.label}" as rolled back. To fully restore a previous state, use Replit's checkpoint system or restore from backup ${confirmRollback?.backupId || ""}. This updates the deployment history.`}
+        title={`Rollback ${confirmRollback?.version}`} description={`Mark "${confirmRollback?.label}" as rolled back. To fully restore a previous state, restore from backup ${confirmRollback?.backupId || ""}. This updates the deployment history.`}
         confirmLabel="Mark as Rolled Back" variant="warning" />
     </div>
   );

@@ -202,7 +202,7 @@ export default function AdminBackups() {
               <AlertTriangle size={12} color="#fbbf24" />
               <span style={{ fontSize: 11, color: "#fbbf24", fontWeight: 600 }}>Full scheduling requires server-side cron job</span>
             </div>
-            <p style={{ fontSize: 11, color: T.sub, margin: "4px 0 0" }}>This configuration is saved locally. For automatic execution, set up a Supabase scheduled function or Replit cron.</p>
+            <p style={{ fontSize: 11, color: T.sub, margin: "4px 0 0" }}>This configuration is saved locally. For automatic execution, set up a Supabase scheduled function or server-side cron job.</p>
           </div>
         </div>
       </div>
