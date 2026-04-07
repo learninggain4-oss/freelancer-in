@@ -51,6 +51,25 @@ function checkRateLimit(userId: string): boolean {
   return true;
 }
 
+function validateAmount(amount: unknown, maxAmount = 10000000): number {
+  if (typeof amount !== 'number' || !Number.isFinite(amount)) {
+    throw new Error('Amount must be a valid number');
+  }
+  if (amount <= 0) {
+    throw new Error('Amount must be positive');
+  }
+  if (amount > maxAmount) {
+    throw new Error(`Amount exceeds maximum limit of ₹${maxAmount.toLocaleString('en-IN')}`);
+  }
+  if (Math.round(amount * 100) !== amount * 100) {
+    throw new Error('Amount can have maximum 2 decimal places');
+  }
+  if (!Number.isSafeInteger(amount * 100)) {
+    throw new Error('Amount value is too large');
+  }
+  return amount;
+}
+
 function generateWithdrawalOrderId(length: number): string {
   const safeLength = Number.isFinite(length) ? Math.max(5, Math.floor(length)) : 15;
   const now = new Date();
