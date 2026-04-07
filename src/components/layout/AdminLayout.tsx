@@ -20,6 +20,7 @@ import {
   User, Languages, PanelRightOpen, PanelRightClose,
   CheckCircle2, Info, XCircle, Mail, Image as ImageIcon, RotateCcw,
   Trash2, CheckSquare, Square, Timer,
+  Handshake, Brain, Layout, Scale, AlertCircle,
 } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 
@@ -367,6 +368,40 @@ const navSections = [
     { label: "Fraud Reports",         icon: BarChart2,      path: "/admin/fraud-reports" },
     { label: "Security Settings",     icon: Settings,       path: "/admin/fraud-security" },
   ]},
+  { title: "AI / ML", items: [
+    { label: "AI Fraud Detection",   icon: ShieldAlert,  path: "/admin/ai-fraud-detection" },
+    { label: "Smart Match Algorithm",icon: Zap,          path: "/admin/smart-match-algorithm" },
+    { label: "Sentiment Analysis",   icon: MessageSquare,path: "/admin/sentiment-analysis" },
+    { label: "Spam Detection",       icon: Ban,          path: "/admin/spam-detection" },
+  ]},
+  { title: "Advanced Analytics", items: [
+    { label: "Cohort Analysis",      icon: Users,        path: "/admin/cohort-analysis" },
+    { label: "Funnel Analytics",     icon: TrendingUp,   path: "/admin/funnel-analytics" },
+    { label: "Revenue Forecasting",  icon: BarChart3,    path: "/admin/revenue-forecasting" },
+    { label: "Geographic Analytics", icon: Globe,        path: "/admin/geographic-analytics" },
+    { label: "Peak Hour Monitor",    icon: Activity,     path: "/admin/peak-hour-monitor" },
+  ]},
+  { title: "Business Growth", items: [
+    { label: "Partner / Reseller",   icon: Handshake,    path: "/admin/partner-reseller" },
+    { label: "B2B Clients",          icon: Briefcase,    path: "/admin/b2b-clients" },
+    { label: "Affiliate Payouts",    icon: Wallet,       path: "/admin/affiliate-payouts" },
+    { label: "Referral Leaderboard", icon: Star,         path: "/admin/referral-leaderboard" },
+    { label: "Marketplace Trends",   icon: TrendingUp,   path: "/admin/marketplace-trends" },
+  ]},
+  { title: "Legal & Compliance", items: [
+    { label: "Contract Templates",   icon: FileText,     path: "/admin/contract-templates" },
+    { label: "NDA Management",       icon: Lock,         path: "/admin/nda-management" },
+    { label: "GDPR / IT Act",        icon: Shield,       path: "/admin/gdpr-compliance" },
+    { label: "Grievance Redressal",  icon: AlertCircle,  path: "/admin/grievance-redressal" },
+    { label: "Court Orders",         icon: Scale,        path: "/admin/court-orders" },
+  ]},
+  { title: "Talent & Projects", items: [
+    { label: "Skill Assessment",     icon: Brain,        path: "/admin/skill-assessment" },
+    { label: "Portfolio Review",     icon: ImageIcon,    path: "/admin/portfolio-review" },
+    { label: "Time Tracking",        icon: Clock,        path: "/admin/time-tracking" },
+    { label: "Project Templates",    icon: Layout,       path: "/admin/project-templates" },
+    { label: "Testimonial Approval", icon: Star,         path: "/admin/testimonial-approval" },
+  ]},
 ];
 
 const allNavItems = navSections.flatMap(s => s.items);
@@ -384,6 +419,11 @@ const navGroupItems: NavGroup[] = [
   { label: "Operations",     icon: Activity,         directPath: null, items: navSections.filter(s => ["Reliability","Operations","Data Safety","Time & Backup","System Health","Advanced Ops"].includes(s.title)).flatMap(s => s.items) },
   { label: "Fraud",          icon: ShieldAlert,      directPath: null, items: navSections.filter(s => s.title === "Fraud Detection").flatMap(s => s.items) },
   { label: "Content",        icon: Layers,           directPath: null, items: navSections.filter(s => s.title === "Content & Config").flatMap(s => s.items) },
+  { label: "AI / ML",        icon: Brain,            directPath: null, items: navSections.filter(s => s.title === "AI / ML").flatMap(s => s.items) },
+  { label: "Analytics+",     icon: BarChart3,        directPath: null, items: navSections.filter(s => s.title === "Advanced Analytics").flatMap(s => s.items) },
+  { label: "Growth",         icon: TrendingUp,       directPath: null, items: navSections.filter(s => s.title === "Business Growth").flatMap(s => s.items) },
+  { label: "Legal",          icon: Scale,            directPath: null, items: navSections.filter(s => s.title === "Legal & Compliance").flatMap(s => s.items) },
+  { label: "Talent",         icon: Star,             directPath: null, items: navSections.filter(s => s.title === "Talent & Projects").flatMap(s => s.items) },
 ];
 
 const LANGS = [

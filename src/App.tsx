@@ -260,6 +260,30 @@ const AdminBannerManager = lazy(() => import("./pages/admin/AdminBannerManager")
 const AdminHolidayCalendar = lazy(() => import("./pages/admin/AdminHolidayCalendar"));
 const AdminRateCards = lazy(() => import("./pages/admin/AdminRateCards"));
 const AdminActivityLog = lazy(() => import("./pages/admin/AdminActivityLog"));
+const AdminAiFraudDetection = lazy(() => import("./pages/admin/AdminAiFraudDetection"));
+const AdminSmartMatchAlgorithm = lazy(() => import("./pages/admin/AdminSmartMatchAlgorithm"));
+const AdminSentimentAnalysis = lazy(() => import("./pages/admin/AdminSentimentAnalysis"));
+const AdminSpamDetection = lazy(() => import("./pages/admin/AdminSpamDetection"));
+const AdminCohortAnalysis = lazy(() => import("./pages/admin/AdminCohortAnalysis"));
+const AdminFunnelAnalytics = lazy(() => import("./pages/admin/AdminFunnelAnalytics"));
+const AdminRevenueForecasting = lazy(() => import("./pages/admin/AdminRevenueForecasting"));
+const AdminGeographicAnalytics = lazy(() => import("./pages/admin/AdminGeographicAnalytics"));
+const AdminPeakHourMonitor = lazy(() => import("./pages/admin/AdminPeakHourMonitor"));
+const AdminPartnerReseller = lazy(() => import("./pages/admin/AdminPartnerReseller"));
+const AdminB2BClients = lazy(() => import("./pages/admin/AdminB2BClients"));
+const AdminAffiliatePayouts = lazy(() => import("./pages/admin/AdminAffiliatePayouts"));
+const AdminReferralLeaderboard = lazy(() => import("./pages/admin/AdminReferralLeaderboard"));
+const AdminMarketplaceTrends = lazy(() => import("./pages/admin/AdminMarketplaceTrends"));
+const AdminContractTemplates = lazy(() => import("./pages/admin/AdminContractTemplates"));
+const AdminNdaManagement = lazy(() => import("./pages/admin/AdminNdaManagement"));
+const AdminGdprCompliance = lazy(() => import("./pages/admin/AdminGdprCompliance"));
+const AdminGrievanceRedressal = lazy(() => import("./pages/admin/AdminGrievanceRedressal"));
+const AdminCourtOrders = lazy(() => import("./pages/admin/AdminCourtOrders"));
+const AdminSkillAssessment = lazy(() => import("./pages/admin/AdminSkillAssessment"));
+const AdminPortfolioReview = lazy(() => import("./pages/admin/AdminPortfolioReview"));
+const AdminTimeTracking = lazy(() => import("./pages/admin/AdminTimeTracking"));
+const AdminProjectTemplates = lazy(() => import("./pages/admin/AdminProjectTemplates"));
+const AdminTestimonialApproval = lazy(() => import("./pages/admin/AdminTestimonialApproval"));
 const WalletTypes = lazy(() => import("./pages/WalletTypes"));
 const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));
@@ -728,6 +752,30 @@ const AppContent = () => {
               <Route path="holiday-calendar" element={<AdminHolidayCalendar />} />
               <Route path="rate-cards" element={<AdminRateCards />} />
               <Route path="activity-log" element={<AdminActivityLog />} />
+              <Route path="ai-fraud-detection" element={<AdminAiFraudDetection />} />
+              <Route path="smart-match-algorithm" element={<AdminSmartMatchAlgorithm />} />
+              <Route path="sentiment-analysis" element={<AdminSentimentAnalysis />} />
+              <Route path="spam-detection" element={<AdminSpamDetection />} />
+              <Route path="cohort-analysis" element={<AdminCohortAnalysis />} />
+              <Route path="funnel-analytics" element={<AdminFunnelAnalytics />} />
+              <Route path="revenue-forecasting" element={<AdminRevenueForecasting />} />
+              <Route path="geographic-analytics" element={<AdminGeographicAnalytics />} />
+              <Route path="peak-hour-monitor" element={<AdminPeakHourMonitor />} />
+              <Route path="partner-reseller" element={<AdminPartnerReseller />} />
+              <Route path="b2b-clients" element={<AdminB2BClients />} />
+              <Route path="affiliate-payouts" element={<AdminAffiliatePayouts />} />
+              <Route path="referral-leaderboard" element={<AdminReferralLeaderboard />} />
+              <Route path="marketplace-trends" element={<AdminMarketplaceTrends />} />
+              <Route path="contract-templates" element={<AdminContractTemplates />} />
+              <Route path="nda-management" element={<AdminNdaManagement />} />
+              <Route path="gdpr-compliance" element={<AdminGdprCompliance />} />
+              <Route path="grievance-redressal" element={<AdminGrievanceRedressal />} />
+              <Route path="court-orders" element={<AdminCourtOrders />} />
+              <Route path="skill-assessment" element={<AdminSkillAssessment />} />
+              <Route path="portfolio-review" element={<AdminPortfolioReview />} />
+              <Route path="time-tracking" element={<AdminTimeTracking />} />
+              <Route path="project-templates" element={<AdminProjectTemplates />} />
+              <Route path="testimonial-approval" element={<AdminTestimonialApproval />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
