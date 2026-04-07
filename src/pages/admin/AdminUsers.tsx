@@ -29,6 +29,7 @@ import {
   MessageSquare, Wallet, RotateCcw, SlidersHorizontal, NotebookPen,
   BadgeIndianRupee, SendHorizonal, Phone, MapPin, GraduationCap, Briefcase,
   LogOut, ArrowLeftRight, Mail, History, FileText, Link2, Network, Star,
+  AlertTriangle, Megaphone, BarChart3, TrendingUp, Activity, Zap,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
@@ -146,6 +147,23 @@ const AdminUsers = () => {
   const [kycDocs, setKycDocs] = useState<KycDoc[]>([]);
   const [kycLoading, setKycLoading] = useState(false);
 
+  // User Statistics (Quick Preview)
+  type UserStats = { projects_posted: number; services_listed: number; review_count: number; avg_rating: string | null; total_earned: number };
+  const [previewStats, setPreviewStats] = useState<UserStats | null>(null);
+  const [previewStatsLoading, setPreviewStatsLoading] = useState(false);
+
+  // Warning System
+  const [warningDialogUser, setWarningDialogUser] = useState<FullProfile | null>(null);
+  const [warningLevel, setWarningLevel] = useState<string>("minor");
+  const [warningReason, setWarningReason] = useState("");
+  const [warningProcessing, setWarningProcessing] = useState(false);
+
+  // Bulk Notify
+  const [bulkNotifyOpen, setBulkNotifyOpen] = useState(false);
+  const [bulkNotifyTitle, setBulkNotifyTitle] = useState("");
+  const [bulkNotifyMsg, setBulkNotifyMsg] = useState("");
+  const [bulkNotifyProcessing, setBulkNotifyProcessing] = useState(false);
+
   const [viewSecurityUser, setViewSecurityUser] = useState<FullProfile | null>(null);
   type SecurityData = {
     mpin: string | null;
@@ -206,9 +224,9 @@ const AdminUsers = () => {
 
   useEffect(() => { fetchProfiles(); }, []);
 
-  // Fetch transaction summary + referral chain whenever preview sheet opens
+  // Fetch transaction summary + referral chain + user stats whenever preview sheet opens
   useEffect(() => {
-    if (!previewUser) { setPreviewTxns([]); setPreviewReferral(null); return; }
+    if (!previewUser) { setPreviewTxns([]); setPreviewReferral(null); setPreviewStats(null); return; }
     // Transactions
     setPreviewTxnsLoading(true);
     supabase
@@ -231,6 +249,17 @@ const AdminUsers = () => {
         if (data?.success) setPreviewReferral(data);
         setPreviewReferralLoading(false);
       }).catch(() => setPreviewReferralLoading(false))
+    );
+    // User stats
+    setPreviewStatsLoading(true);
+    getToken().then((token) =>
+      callEdgeFunction("admin-user-management", {
+        body: { action: "get_user_stats", profile_id: previewUser.id },
+        token,
+      }).then((res) => res.json()).then((data) => {
+        if (data?.success) setPreviewStats(data as UserStats);
+        setPreviewStatsLoading(false);
+      }).catch(() => setPreviewStatsLoading(false))
     );
   }, [previewUser]);
 
@@ -717,6 +746,54 @@ const AdminUsers = () => {
     finally { setAuditLoading(false); }
   };
 
+  // ── Profile Completion % ─────────────────────────────────────────────────
+  const calcProfileCompletion = (p: FullProfile): number => {
+    const fields = [
+      p.full_name?.[0], p.email, p.mobile_number, p.date_of_birth,
+      p.gender, p.education_level, p.work_experience, p.previous_job_details,
+      p.education_background, p.emergency_contact_name,
+    ];
+    const filled = fields.filter(Boolean).length;
+    return Math.round((filled / fields.length) * 100);
+  };
+
+  // ── Issue Warning ────────────────────────────────────────────────────────
+  const handleIssueWarning = async () => {
+    if (!warningDialogUser || !warningReason.trim()) return;
+    setWarningProcessing(true);
+    try {
+      const token = await getToken();
+      const res = await callEdgeFunction("admin-user-management", {
+        body: { action: "issue_warning", target_profile_id: warningDialogUser.id, target_user_id: warningDialogUser.user_id, warning_level: warningLevel, reason: warningReason.trim() },
+        token,
+      });
+      const data = await res.json();
+      if (!res.ok || data?.error) { toast.error(data?.error || "Failed to issue warning"); }
+      else { toast.success(data.message || "Warning issued"); setWarningDialogUser(null); setWarningReason(""); setWarningLevel("minor"); }
+    } catch (e: any) { toast.error(e.message || "Failed to issue warning"); }
+    finally { setWarningProcessing(false); }
+  };
+
+  // ── Bulk Notify ──────────────────────────────────────────────────────────
+  const handleBulkNotify = async () => {
+    if (!bulkNotifyTitle.trim() || !bulkNotifyMsg.trim()) return;
+    const targetUserIds = filtered.map((p) => p.user_id).filter(Boolean) as string[];
+    if (targetUserIds.length === 0) { toast.error("No users with accounts in current filter"); return; }
+    if (targetUserIds.length > 500) { toast.error("Too many users (max 500). Narrow your filter."); return; }
+    setBulkNotifyProcessing(true);
+    try {
+      const token = await getToken();
+      const res = await callEdgeFunction("admin-user-management", {
+        body: { action: "bulk_notify", target_user_ids: targetUserIds, title: bulkNotifyTitle.trim(), message: bulkNotifyMsg.trim() },
+        token,
+      });
+      const data = await res.json();
+      if (!res.ok || data?.error) { toast.error(data?.error || "Failed to send"); }
+      else { toast.success(`Notification sent to ${data.sent} users`); setBulkNotifyOpen(false); setBulkNotifyTitle(""); setBulkNotifyMsg(""); }
+    } catch (e: any) { toast.error(e.message || "Failed to send"); }
+    finally { setBulkNotifyProcessing(false); }
+  };
+
   const logAdminAction = async (auditAction: string, targetUser: FullProfile, details?: Record<string, unknown>) => {
     try {
       const token = await getToken();
@@ -976,6 +1053,18 @@ const AdminUsers = () => {
                           <div className="min-w-0">
                             <p className="font-semibold text-sm truncate max-w-[160px]" style={{ color: T.text }}>{name}</p>
                             <p className="text-xs truncate max-w-[160px]" style={{ color: T.sub }}>{u.email}</p>
+                            {(() => {
+                              const pct = calcProfileCompletion(u);
+                              const clr = pct >= 80 ? "#10b981" : pct >= 50 ? "#f59e0b" : "#ef4444";
+                              return (
+                                <div className="flex items-center gap-1.5 mt-1">
+                                  <div className="h-1 w-16 rounded-full overflow-hidden" style={{ background: T.border }}>
+                                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: clr }} />
+                                  </div>
+                                  <span className="text-[10px]" style={{ color: clr }}>{pct}%</span>
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
                       </TableCell>
@@ -1756,10 +1845,21 @@ const AdminUsers = () => {
             onClick={() => setShowAdvancedFilters((p) => !p)}>
             ⚙ Advanced {hasAdvancedFilters && "●"}
           </button>
-          <div className="ml-auto text-xs font-medium" style={{ color: T.sub }}>
-            {filtered.length < profiles.length
-              ? <><span style={{ color: T.text }}>{filtered.length}</span> / {profiles.length} users</>
-              : <><span style={{ color: T.text }}>{profiles.length}</span> users total</>}
+          <div className="ml-auto flex items-center gap-2">
+            {filtered.length > 0 && (
+              <button
+                className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all"
+                style={{ background: "rgba(139,92,246,.15)", color: "#a78bfa", border: "1px solid rgba(139,92,246,.3)" }}
+                onClick={() => { setBulkNotifyOpen(true); setBulkNotifyTitle(""); setBulkNotifyMsg(""); }}>
+                <Megaphone className="h-3.5 w-3.5" />
+                Notify {filtered.length < profiles.length ? `${filtered.length} Filtered` : "All"} Users
+              </button>
+            )}
+            <span className="text-xs font-medium" style={{ color: T.sub }}>
+              {filtered.length < profiles.length
+                ? <><span style={{ color: T.text }}>{filtered.length}</span> / {profiles.length} users</>
+                : <><span style={{ color: T.text }}>{profiles.length}</span> users total</>}
+            </span>
           </div>
         </div>
 
@@ -2041,6 +2141,22 @@ const AdminUsers = () => {
                         </span>
                         {isOnline && <span className="text-xs text-emerald-400 font-medium">● Online</span>}
                       </div>
+                      {/* Profile Completion Bar */}
+                      {(() => {
+                        const pct = calcProfileCompletion(pu);
+                        const clr = pct >= 80 ? "#10b981" : pct >= 50 ? "#f59e0b" : "#ef4444";
+                        return (
+                          <div className="mt-2 space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: T.sub }}>Profile Completion</span>
+                              <span className="text-[10px] font-bold" style={{ color: clr }}>{pct}%</span>
+                            </div>
+                            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: T.border }}>
+                              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: clr }} />
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -2062,6 +2178,47 @@ const AdminUsers = () => {
                         </div>
                       </div>
                     ))}
+                  </div>
+
+                  <Separator style={{ background: T.border }} />
+
+                  {/* ── User Statistics ── */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-1.5" style={{ color: T.sub }}>
+                      <BarChart3 className="h-3.5 w-3.5 text-indigo-400" />
+                      Activity Stats
+                    </p>
+                    {previewStatsLoading ? (
+                      <div className="flex items-center justify-center py-4">
+                        <RefreshCw className="h-4 w-4 animate-spin" style={{ color: T.sub }} />
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { label: "Projects Posted", value: previewStats?.projects_posted ?? 0, icon: <Briefcase className="h-3.5 w-3.5" />, color: "#6366f1" },
+                          { label: "Services Listed", value: previewStats?.services_listed ?? 0, icon: <Zap className="h-3.5 w-3.5" />, color: "#8b5cf6" },
+                          { label: "Reviews Received", value: previewStats?.review_count ?? 0, icon: <Star className="h-3.5 w-3.5" />, color: "#f59e0b" },
+                          { label: "Avg Rating", value: previewStats?.avg_rating ? `${previewStats.avg_rating} ⭐` : "—", icon: <TrendingUp className="h-3.5 w-3.5" />, color: "#10b981" },
+                        ].map((s) => (
+                          <div key={s.label} className="rounded-xl p-3" style={{ background: T.nav }}>
+                            <div className="flex items-center gap-1.5 mb-1" style={{ color: s.color }}>
+                              {s.icon}
+                              <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: T.sub }}>{s.label}</span>
+                            </div>
+                            <p className="text-sm font-bold" style={{ color: T.text }}>{typeof s.value === "number" ? s.value.toLocaleString("en-IN") : s.value}</p>
+                          </div>
+                        ))}
+                        <div className="col-span-2 rounded-xl p-3" style={{ background: T.nav }}>
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <Activity className="h-3.5 w-3.5 text-emerald-400" />
+                            <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: T.sub }}>Total Earned (Credits)</span>
+                          </div>
+                          <p className="text-sm font-bold text-emerald-400">
+                            ₹{(previewStats?.total_earned ?? 0).toLocaleString("en-IN")}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <Separator style={{ background: T.border }} />
@@ -2316,6 +2473,12 @@ const AdminUsers = () => {
                       <History className="h-3.5 w-3.5 text-orange-400" />
                       Audit Log
                     </Button>
+                    <Button size="sm" variant="outline" className="gap-2 rounded-xl text-xs h-9"
+                      style={{ borderColor: T.border, color: T.text }}
+                      onClick={() => { setPreviewUser(null); setWarningDialogUser(pu); setWarningLevel("minor"); setWarningReason(""); }}>
+                      <AlertTriangle className="h-3.5 w-3.5 text-yellow-400" />
+                      Issue Warning
+                    </Button>
                     <Button size="sm" variant="outline" className="col-span-2 gap-2 rounded-xl text-xs h-9"
                       style={{ borderColor: T.border, color: T.text }}
                       onClick={() => { setPreviewUser(null); navigate(`/admin/users/${pu.id}`); }}>
@@ -2482,6 +2645,124 @@ const AdminUsers = () => {
               {msgProcessing
                 ? <><RefreshCw className="h-4 w-4 animate-spin" />Sending…</>
                 : <><SendHorizonal className="h-4 w-4" />Send Notification</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Issue Warning Dialog ─────────────────────────── */}
+      <Dialog open={!!warningDialogUser} onOpenChange={(open) => !open && setWarningDialogUser(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-400" />
+              Issue Formal Warning
+            </DialogTitle>
+            <DialogDescription>
+              Issue an official warning to {warningDialogUser?.full_name?.[0] || warningDialogUser?.email}. The user will receive an in-app notification.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Warning Level</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { val: "minor", label: "⚠️ Minor", desc: "First notice", color: "#f59e0b" },
+                  { val: "moderate", label: "🔶 Moderate", desc: "Second notice", color: "#fb923c" },
+                  { val: "severe", label: "🔴 Severe", desc: "Serious breach", color: "#ef4444" },
+                  { val: "final", label: "🚫 Final", desc: "Last warning", color: "#dc2626" },
+                ].map((opt) => (
+                  <button
+                    key={opt.val}
+                    onClick={() => setWarningLevel(opt.val)}
+                    className="flex flex-col items-start p-3 rounded-xl border text-left transition-all"
+                    style={{
+                      borderColor: warningLevel === opt.val ? opt.color : "rgba(255,255,255,.1)",
+                      background: warningLevel === opt.val ? `${opt.color}20` : "transparent",
+                    }}>
+                    <span className="text-sm font-semibold" style={{ color: warningLevel === opt.val ? opt.color : "#94a3b8" }}>{opt.label}</span>
+                    <span className="text-[10px] mt-0.5" style={{ color: "#94a3b8" }}>{opt.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Reason / Message to User</Label>
+              <Textarea
+                placeholder="Explain the reason for this warning. This will be sent to the user as an in-app notification…"
+                value={warningReason}
+                onChange={(e) => setWarningReason(e.target.value)}
+                rows={4}
+                className="resize-none text-sm"
+                maxLength={1000}
+              />
+              <p className="text-xs text-right text-muted-foreground">{warningReason.length}/1000</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setWarningDialogUser(null)} disabled={warningProcessing}>Cancel</Button>
+            <Button
+              onClick={handleIssueWarning}
+              disabled={warningProcessing || !warningReason.trim()}
+              className="gap-2"
+              style={{ background: "#d97706", color: "#fff" }}>
+              {warningProcessing
+                ? <><RefreshCw className="h-4 w-4 animate-spin" />Sending…</>
+                : <><AlertTriangle className="h-4 w-4" />Issue Warning</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Bulk Notify Dialog ────────────────────────────── */}
+      <Dialog open={bulkNotifyOpen} onOpenChange={(open) => { if (!open) setBulkNotifyOpen(false); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Megaphone className="h-5 w-5 text-violet-400" />
+              Notify {filtered.length < profiles.length ? `${filtered.length} Filtered` : "All"} Users
+            </DialogTitle>
+            <DialogDescription>
+              Send an in-app notification to all users currently matching the active search/filter ({filtered.length} users). Max 500 users per send.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Notification Title</Label>
+              <Input
+                placeholder="e.g. Platform Update, Action Required…"
+                value={bulkNotifyTitle}
+                onChange={(e) => setBulkNotifyTitle(e.target.value)}
+                maxLength={100}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Message</Label>
+              <Textarea
+                placeholder="Write your announcement or message here…"
+                value={bulkNotifyMsg}
+                onChange={(e) => setBulkNotifyMsg(e.target.value)}
+                rows={5}
+                className="resize-none text-sm"
+                maxLength={1000}
+              />
+              <p className="text-xs text-right text-muted-foreground">{bulkNotifyMsg.length}/1000</p>
+            </div>
+            {filtered.length > 500 && (
+              <p className="text-xs rounded-lg px-3 py-2 bg-red-500/10 text-red-400">
+                ⚠ Current filter has {filtered.length} users. Bulk send is limited to 500. Please narrow your filter.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkNotifyOpen(false)} disabled={bulkNotifyProcessing}>Cancel</Button>
+            <Button
+              onClick={handleBulkNotify}
+              disabled={bulkNotifyProcessing || !bulkNotifyTitle.trim() || !bulkNotifyMsg.trim() || filtered.length > 500}
+              className="gap-2 bg-violet-600 hover:bg-violet-700 text-white">
+              {bulkNotifyProcessing
+                ? <><RefreshCw className="h-4 w-4 animate-spin" />Sending…</>
+                : <><Megaphone className="h-4 w-4" />Send to {Math.min(filtered.length, 500)} users</>}
             </Button>
           </DialogFooter>
         </DialogContent>

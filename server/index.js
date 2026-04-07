@@ -881,6 +881,52 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
       return res.json({ success: true, message: "Message sent via in-app notification", via: "in_app" });
     }
 
+    // ── get_user_stats: project/review/service counts for a profile ──────
+    if (action === "get_user_stats") {
+      if (!profile_id) return res.status(400).json({ error: "profile_id required" });
+      const [
+        { count: projectsPosted },
+        { count: servicesListed },
+        { data: reviewsData },
+        { data: txnData },
+      ] = await Promise.all([
+        adminClient.from("projects").select("*", { count: "exact", head: true }).eq("client_id", profile_id),
+        adminClient.from("employee_services").select("*", { count: "exact", head: true }).eq("profile_id", profile_id),
+        adminClient.from("reviews").select("rating").eq("reviewee_id", profile_id),
+        adminClient.from("transactions").select("amount, type").eq("profile_id", profile_id),
+      ]);
+      const reviewCount = reviewsData?.length ?? 0;
+      const avgRating = reviewCount > 0 ? (reviewsData.reduce((s, r) => s + r.rating, 0) / reviewCount).toFixed(1) : null;
+      const totalEarned = (txnData || []).filter(t => t.type?.includes("credit") || t.type?.includes("earn") || t.type?.includes("add")).reduce((s, t) => s + (t.amount ?? 0), 0);
+      return res.json({ success: true, projects_posted: projectsPosted ?? 0, services_listed: servicesListed ?? 0, review_count: reviewCount, avg_rating: avgRating, total_earned: totalEarned });
+    }
+
+    // ── issue_warning: issue formal warning + notify user ─────────────────
+    if (action === "issue_warning") {
+      const { target_profile_id: tpid, target_user_id: tuid, warning_level, reason } = req.body;
+      if (!tpid || !tuid || !warning_level || !reason) return res.status(400).json({ error: "target_profile_id, target_user_id, warning_level, and reason required" });
+      const warnLabels = { minor: "Minor Warning", moderate: "Moderate Warning", severe: "Severe Warning", final: "Final Warning" };
+      const warnEmojis = { minor: "⚠️", moderate: "🔶", severe: "🔴", final: "🚫" };
+      const label = warnLabels[warning_level] || "Warning";
+      const emoji = warnEmojis[warning_level] || "⚠️";
+      await adminClient.from("notifications").insert({ user_id: tuid, title: `${emoji} Official ${label}`, message: reason, type: "admin_warning" });
+      logAudit(adminClient, adminProfileId, "issue_warning", tpid, null, { warning_level, reason });
+      return res.json({ success: true, message: `${label} issued and user notified` });
+    }
+
+    // ── bulk_notify: send notification to multiple users ──────────────────
+    if (action === "bulk_notify") {
+      const { target_user_ids, title: bulkTitle, message: bulkMsg } = req.body;
+      if (!Array.isArray(target_user_ids) || !bulkTitle || !bulkMsg) return res.status(400).json({ error: "target_user_ids (array), title, and message required" });
+      if (target_user_ids.length === 0) return res.status(400).json({ error: "No users selected" });
+      if (target_user_ids.length > 500) return res.status(400).json({ error: "Max 500 users per bulk send" });
+      const rows = target_user_ids.map((uid) => ({ user_id: uid, title: bulkTitle, message: bulkMsg, type: "admin_bulk" }));
+      const { error: bulkErr } = await adminClient.from("notifications").insert(rows);
+      if (bulkErr) return res.status(500).json({ error: bulkErr.message });
+      logAudit(adminClient, adminProfileId, "bulk_notify", null, null, { count: target_user_ids.length, title: bulkTitle });
+      return res.json({ success: true, sent: target_user_ids.length });
+    }
+
     return res.status(400).json({ error: "Unknown action" });
   } catch (err) {
     console.error("admin-user-management error:", err);
