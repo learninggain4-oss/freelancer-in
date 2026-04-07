@@ -789,8 +789,16 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
         options: { redirectTo: redirectTo || undefined },
       });
       if (linkErr) return res.status(500).json({ error: linkErr.message });
-      const actionLink = linkData?.properties?.action_link;
+      let actionLink = linkData?.properties?.action_link;
       if (!actionLink) return res.status(500).json({ error: "Failed to generate link" });
+      // Force-inject redirectTo into the action_link URL regardless of Supabase whitelist
+      if (redirectTo) {
+        try {
+          const linkUrl = new URL(actionLink);
+          linkUrl.searchParams.set("redirect_to", redirectTo);
+          actionLink = linkUrl.toString();
+        } catch { /* keep original if URL parse fails */ }
+      }
       let impProf = null;
       try { const { data: ip } = await adminClient.from("profiles").select("id, full_name").eq("email", targetEmail).maybeSingle(); impProf = ip; } catch { /* non-critical */ }
       logAudit(adminClient, adminProfileId, "impersonate_user", impProf?.id || null, impProf?.full_name?.[0] || targetEmail, { email: targetEmail });
