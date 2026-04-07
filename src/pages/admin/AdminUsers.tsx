@@ -458,22 +458,23 @@ const AdminUsers = () => {
       });
       const data = await res.json();
       if (data.link) {
-        // Extract token_hash from the Supabase verify URL so we can verify
-        // the OTP directly inside this app — no redirect-URL whitelist needed.
-        let previewUrl = `${window.location.origin}/admin-preview`;
+        // Extract token_hash from the Supabase verify URL and navigate the new
+        // tab DIRECTLY to the user's own dashboard — no intermediate page.
+        const dashPath = u.user_type === "client" ? "employer" : "freelancer";
+        let targetUrl = `${window.location.origin}/${dashPath}/dashboard`;
         try {
           const linkUrl = new URL(data.link);
           const tokenHash = linkUrl.searchParams.get("token") || linkUrl.searchParams.get("token_hash");
           const otpType = linkUrl.searchParams.get("type") || "magiclink";
           if (tokenHash) {
-            previewUrl = `${window.location.origin}/admin-preview?token_hash=${encodeURIComponent(tokenHash)}&type=${encodeURIComponent(otpType)}`;
+            targetUrl = `${window.location.origin}/${dashPath}/dashboard?token_hash=${encodeURIComponent(tokenHash)}&type=${encodeURIComponent(otpType)}`;
           }
-        } catch { /* keep plain previewUrl if URL parse fails */ }
+        } catch { /* keep plain targetUrl if URL parse fails */ }
 
         if (newTab) {
-          newTab.location.href = previewUrl;
+          newTab.location.href = targetUrl;
         } else {
-          window.open(previewUrl, "_blank", "noopener,noreferrer");
+          window.open(targetUrl, "_blank", "noopener,noreferrer");
         }
         toast.success("Login link opened in new tab — logged in as this user");
       } else {
