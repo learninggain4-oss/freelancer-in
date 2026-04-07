@@ -151,6 +151,17 @@ const AdminUsers = () => {
   const [aadhaarRecords, setAadhaarRecords] = useState<AadhaarRecord[]>([]);
   const [aadhaarLoading, setAadhaarLoading] = useState(false);
 
+  // Wallet Transaction History
+  type WalletTx = { id: string; amount: number; type: string; description: string; created_at: string; is_cleared: boolean; reference_id: string | null };
+  const [walletTxUser, setWalletTxUser] = useState<FullProfile | null>(null);
+  const [walletTxData, setWalletTxData] = useState<WalletTx[]>([]);
+  const [walletTxLoading, setWalletTxLoading] = useState(false);
+
+  // User Projects / Applications View
+  const [userProjectsUser, setUserProjectsUser] = useState<FullProfile | null>(null);
+  const [userProjectsData, setUserProjectsData] = useState<any[]>([]);
+  const [userProjectsLoading, setUserProjectsLoading] = useState(false);
+
   // User Statistics (Quick Preview)
   type UserStats = { projects_posted: number; services_listed: number; review_count: number; avg_rating: string | null; total_earned: number };
   const [previewStats, setPreviewStats] = useState<UserStats | null>(null);
@@ -817,6 +828,46 @@ const AdminUsers = () => {
       else { setAadhaarRecords(data.records || []); }
     } catch (e: any) { toast.error(e.message || "Failed to load Aadhaar records"); }
     finally { setAadhaarLoading(false); }
+  };
+
+  const handleOpenWalletTx = async (u: FullProfile) => {
+    setWalletTxUser(u);
+    setWalletTxLoading(true);
+    setWalletTxData([]);
+    const { data } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("profile_id", u.id)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setWalletTxData((data || []) as any[]);
+    setWalletTxLoading(false);
+  };
+
+  const handleOpenUserProjects = async (u: FullProfile) => {
+    setUserProjectsUser(u);
+    setUserProjectsLoading(true);
+    setUserProjectsData([]);
+    try {
+      if (u.user_type === "employee") {
+        const { data } = await supabase
+          .from("project_applications")
+          .select("id, applied_at, status, project_id, projects(title, status, budget_min, budget_max)")
+          .eq("employee_id", u.id)
+          .order("applied_at", { ascending: false })
+          .limit(30);
+        setUserProjectsData(data || []);
+      } else {
+        const { data } = await supabase
+          .from("projects")
+          .select("id, title, status, budget_min, budget_max, created_at")
+          .eq("client_id", u.id)
+          .order("created_at", { ascending: false })
+          .limit(30);
+        setUserProjectsData(data || []);
+      }
+    } catch { /* ignore */ }
+    setUserProjectsLoading(false);
   };
 
   const handlePasswordReset = async (u: FullProfile) => {
@@ -2441,6 +2492,18 @@ const AdminUsers = () => {
                       <AlertTriangle className="h-3.5 w-3.5 text-yellow-400" />
                       Issue Warning
                     </Button>
+                    <Button size="sm" variant="outline" className="gap-2 rounded-xl text-xs h-9"
+                      style={{ borderColor: T.border, color: T.text }}
+                      onClick={() => { setPreviewUser(null); handleOpenWalletTx(pu); }}>
+                      <History className="h-3.5 w-3.5 text-emerald-400" />
+                      Wallet History
+                    </Button>
+                    <Button size="sm" variant="outline" className="gap-2 rounded-xl text-xs h-9"
+                      style={{ borderColor: T.border, color: T.text }}
+                      onClick={() => { setPreviewUser(null); handleOpenUserProjects(pu); }}>
+                      <Briefcase className="h-3.5 w-3.5 text-blue-400" />
+                      {pu.user_type === "client" ? "Projects Posted" : "Applications"}
+                    </Button>
                     <Button size="sm" variant="outline" className="col-span-2 gap-2 rounded-xl text-xs h-9"
                       style={{ borderColor: T.border, color: T.text }}
                       onClick={() => { setPreviewUser(null); navigate(`/admin/users/${pu.id}`); }}>
@@ -3249,6 +3312,93 @@ const AdminUsers = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* ── Wallet Transaction History Dialog ─────────────────────── */}
+      <Dialog open={!!walletTxUser} onOpenChange={(open) => !open && setWalletTxUser(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5 text-emerald-400" />
+              Wallet History — {walletTxUser?.full_name?.[0] || walletTxUser?.email}
+            </DialogTitle>
+            <DialogDescription>Last 50 transactions</DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+            {walletTxLoading ? (
+              <div className="flex justify-center py-8"><RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            ) : walletTxData.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground py-8">No transactions found</p>
+            ) : walletTxData.map((tx) => (
+              <div key={tx.id} className="flex items-center justify-between rounded-lg border p-3 text-sm" style={{ borderColor: T.border, background: T.card }}>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate" style={{ color: T.text }}>{tx.description}</p>
+                  <p className="text-xs mt-0.5" style={{ color: T.sub }}>{new Date(tx.created_at).toLocaleString("en-IN")}</p>
+                </div>
+                <div className="ml-3 text-right shrink-0">
+                  <p className={`font-bold text-sm ${tx.type === "credit" || tx.type === "release" ? "text-emerald-400" : "text-red-400"}`}>
+                    {tx.type === "credit" || tx.type === "release" ? "+" : "-"}₹{Math.abs(tx.amount).toLocaleString("en-IN")}
+                  </p>
+                  <Badge variant="outline" className="text-[10px] mt-0.5 capitalize">{tx.type}</Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setWalletTxUser(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── User Projects / Applications Dialog ────────────────────── */}
+      <Dialog open={!!userProjectsUser} onOpenChange={(open) => !open && setUserProjectsUser(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5 text-blue-400" />
+              {userProjectsUser?.user_type === "client" ? "Projects Posted" : "Job Applications"} — {userProjectsUser?.full_name?.[0] || userProjectsUser?.email}
+            </DialogTitle>
+            <DialogDescription>Last 30 records</DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+            {userProjectsLoading ? (
+              <div className="flex justify-center py-8"><RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            ) : userProjectsData.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground py-8">No records found</p>
+            ) : userProjectsUser?.user_type === "employee" ? (
+              userProjectsData.map((app: any) => (
+                <div key={app.id} className="flex items-center justify-between rounded-lg border p-3 text-sm" style={{ borderColor: T.border, background: T.card }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate" style={{ color: T.text }}>{app.projects?.title || "Untitled Project"}</p>
+                    <p className="text-xs mt-0.5" style={{ color: T.sub }}>Applied: {new Date(app.applied_at).toLocaleDateString("en-IN")}</p>
+                    {(app.projects?.budget_min || app.projects?.budget_max) && (
+                      <p className="text-xs" style={{ color: T.sub }}>
+                        ₹{app.projects?.budget_min?.toLocaleString("en-IN")} – ₹{app.projects?.budget_max?.toLocaleString("en-IN")}
+                      </p>
+                    )}
+                  </div>
+                  <Badge variant="outline" className="ml-3 capitalize text-[10px] shrink-0">{app.status}</Badge>
+                </div>
+              ))
+            ) : (
+              userProjectsData.map((proj: any) => (
+                <div key={proj.id} className="flex items-center justify-between rounded-lg border p-3 text-sm" style={{ borderColor: T.border, background: T.card }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate" style={{ color: T.text }}>{proj.title || "Untitled"}</p>
+                    <p className="text-xs mt-0.5" style={{ color: T.sub }}>Posted: {new Date(proj.created_at).toLocaleDateString("en-IN")}</p>
+                    {(proj.budget_min || proj.budget_max) && (
+                      <p className="text-xs" style={{ color: T.sub }}>₹{proj.budget_min?.toLocaleString("en-IN")} – ₹{proj.budget_max?.toLocaleString("en-IN")}</p>
+                    )}
+                  </div>
+                  <Badge variant="outline" className="ml-3 capitalize text-[10px] shrink-0">{proj.status}</Badge>
+                </div>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUserProjectsUser(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 };
