@@ -70,7 +70,12 @@ const ensureOneSignal = (): Promise<any> => {
 };
 
 export const initOneSignal = () => {
-  ensureOneSignal().catch((e) => console.warn("OneSignal init error:", e));
+  ensureOneSignal().catch((e) => {
+    // Silently skip domain-restriction errors (dev / Replit environments)
+    const msg = e?.message || String(e);
+    if (msg.includes("Can only be used on")) return;
+    console.warn("OneSignal init error:", e);
+  });
 };
 
 export const loginOneSignal = (userId: string) => {
