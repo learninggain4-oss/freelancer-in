@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -510,6 +511,7 @@ const AdminLayout = () => {
   const [rightOpen, setRightOpen]           = useState(false);
   const [lang, setLang]                     = useState("en");
   const [openNavGroup, setOpenNavGroup]     = useState<string | null>(null);
+  const [dropPos, setDropPos]               = useState<{ left: number; top: number } | null>(null);
   const [appLogoUrl, setAppLogoUrl]         = useState<string | null>(null);
   const [appName, setAppName]               = useState("Freelancer India");
 
@@ -525,7 +527,8 @@ const AdminLayout = () => {
   const langRef    = useRef<HTMLDivElement>(null);
   const quickRef   = useRef<HTMLDivElement>(null);
   const searchRef  = useRef<HTMLDivElement>(null);
-  const navBarRef  = useRef<HTMLDivElement | null>(null);
+  const navBarRef    = useRef<HTMLDivElement | null>(null);
+  const navScrollRef = useRef<HTMLDivElement | null>(null);
 
   useClickOutside(profileRef, () => setProfileOpen(false));
   useClickOutside(notifRef,   () => setNotifOpen(false));
@@ -945,64 +948,67 @@ const AdminLayout = () => {
         </div>
       </header>
 
-      {/* ─── HORIZONTAL NAV BAR ─────────────────────────────────────── */}
-      {/* overflow:visible is critical — lets absolute dropdowns escape the bar */}
-      <div ref={navBarRef} style={{ background: tok.header, borderBottom: `1px solid ${tok.headerBdr}`, padding: "0 20px", display: "flex", alignItems: "stretch", overflow: "visible", zIndex: 29, position: "sticky", top: 58, flexShrink: 0, backdropFilter: "blur(20px)" }}>
-        {navGroupItems.map(group => {
-          const isGroupActive = group.directPath
-            ? location.pathname === group.directPath
-            : group.items.some(item => location.pathname === item.path);
-          const isOpen = openNavGroup === group.label;
-          const tabColor = isGroupActive ? A1 : tok.mainSub;
-          const tabBorder = isGroupActive ? `2px solid ${A1}` : "2px solid transparent";
-          return (
-            <div key={group.label} style={{ position: "relative", flexShrink: 0 }}>
-              {group.directPath ? (
-                <NavLink to={group.directPath}
-                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 16px", height: 44, color: tabColor, fontSize: 13, fontWeight: isGroupActive ? 700 : 500, borderBottom: tabBorder, textDecoration: "none", whiteSpace: "nowrap" }}>
-                  <group.icon size={13} />
-                  <span>{group.label}</span>
-                </NavLink>
-              ) : (
-                <button
-                  onClick={() => setOpenNavGroup(isOpen ? null : group.label)}
-                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 16px", height: 44, color: tabColor, fontSize: 13, fontWeight: isGroupActive ? 700 : 500, borderTop: "none", borderLeft: "none", borderRight: "none", borderBottom: tabBorder, background: "transparent", cursor: "pointer", whiteSpace: "nowrap" }}>
-                  <group.icon size={13} />
-                  <span>{group.label}</span>
-                  <ChevronDown size={10} style={{ opacity: 0.5, marginLeft: 2 }} />
-                </button>
-              )}
-              {isOpen && group.items.length > 0 && (
-                <div className="admin-drop" style={{ position: "absolute", top: "calc(100% + 2px)", left: 0, zIndex: 9999, background: tok.dropBg, border: `1px solid ${tok.dropBdr}`, borderRadius: 14, boxShadow: "0 20px 60px rgba(0,0,0,.2)", minWidth: 220, maxHeight: 480, overflowY: "auto" }}>
-                  <div style={{ padding: "8px 14px 6px", borderBottom: `1px solid ${tok.dropBdr}` }}>
-                    <p style={{ fontSize: 10, fontWeight: 700, color: tok.mainSub, textTransform: "uppercase", letterSpacing: 1, margin: 0 }}>{group.label}</p>
-                  </div>
-                  <div style={{ padding: 6 }}>
-                    {group.items.map(item => {
-                      const isItemActive = location.pathname === item.path;
-                      return (
-                        <NavLink key={item.path} to={item.path}
-                          onClick={() => setOpenNavGroup(null)}
-                          style={{ display: "flex", alignItems: "center", gap: 9, padding: "7px 12px", borderRadius: 9, fontSize: 12.5, fontWeight: isItemActive ? 600 : 400, color: isItemActive ? A1 : tok.mainText, background: isItemActive ? `${A1}12` : "none", textDecoration: "none", border: isItemActive ? `1px solid ${A1}25` : "1px solid transparent" }}>
-                          <item.icon size={13} color={isItemActive ? A1 : tok.mainSub} style={{ flexShrink: 0 }} />
-                          <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {item.label}
-                            {item.path === "/admin/recovery-requests" && pendingRecoveryCount > 0 && (
-                              <span style={{ marginLeft: 5, fontSize: 9, fontWeight: 700, color: "white", background: tok.badgeBg, borderRadius: 8, padding: "1px 5px" }}>{pendingRecoveryCount}</span>
-                            )}
-                          </span>
-                        </NavLink>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+      {/* ─── HORIZONTAL NAV BAR (scrollable + portal dropdowns) ─────── */}
+      <div ref={navBarRef} style={{ background: tok.header, borderBottom: `1px solid ${tok.headerBdr}`, display: "flex", alignItems: "stretch", overflow: "visible", zIndex: 29, position: "sticky", top: 58, flexShrink: 0, backdropFilter: "blur(20px)" }}>
 
-        {/* Breadcrumb + Clear Data on right */}
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10, fontSize: 12, color: tok.mainSub, flexShrink: 0, padding: "0 4px" }}>
+        {/* Left scroll arrow */}
+        <button
+          onClick={() => { navScrollRef.current?.scrollBy({ left: -200, behavior: "smooth" }); }}
+          style={{ flexShrink: 0, width: 30, display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", borderRight: `1px solid ${tok.headerBdr}`, color: tok.mainSub, cursor: "pointer", padding: 0 }}>
+          <ChevronLeft size={13} />
+        </button>
+
+        {/* Scrollable tabs strip — no overflow-y needed; dropdowns via portal */}
+        <div ref={navScrollRef} style={{ flex: 1, display: "flex", overflowX: "auto", overflowY: "hidden", scrollbarWidth: "none" }}>
+          <style>{`[data-navstrip]::-webkit-scrollbar{display:none}`}</style>
+          <div data-navstrip="" style={{ display: "flex", alignItems: "stretch", minWidth: "max-content" }}>
+            {navGroupItems.map(group => {
+              const isGroupActive = group.directPath
+                ? location.pathname === group.directPath
+                : group.items.some(item => location.pathname === item.path);
+              const isOpen = openNavGroup === group.label;
+              const tabColor = isGroupActive ? A1 : tok.mainSub;
+              const tabBorder = isGroupActive ? `2px solid ${A1}` : "2px solid transparent";
+              return (
+                <div key={group.label} style={{ flexShrink: 0 }}>
+                  {group.directPath ? (
+                    <NavLink to={group.directPath}
+                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "0 12px", height: 40, color: tabColor, fontSize: 12, fontWeight: isGroupActive ? 700 : 500, borderBottom: tabBorder, textDecoration: "none", whiteSpace: "nowrap" }}>
+                      <group.icon size={12} />
+                      <span>{group.label}</span>
+                    </NavLink>
+                  ) : (
+                    <button
+                      onClick={e => {
+                        if (isOpen) {
+                          setOpenNavGroup(null); setDropPos(null);
+                        } else {
+                          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                          setDropPos({ left: rect.left, top: rect.bottom + 2 });
+                          setOpenNavGroup(group.label);
+                        }
+                      }}
+                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "0 12px", height: 40, color: tabColor, fontSize: 12, fontWeight: isGroupActive ? 700 : 500, borderTop: "none", borderLeft: "none", borderRight: "none", borderBottom: tabBorder, background: isOpen ? `${A1}08` : "transparent", cursor: "pointer", whiteSpace: "nowrap" }}>
+                      <group.icon size={12} />
+                      <span>{group.label}</span>
+                      <ChevronDown size={9} style={{ opacity: 0.5, marginLeft: 1, transform: isOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform .15s" }} />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right scroll arrow */}
+        <button
+          onClick={() => { navScrollRef.current?.scrollBy({ left: 200, behavior: "smooth" }); }}
+          style={{ flexShrink: 0, width: 30, display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", borderLeft: `1px solid ${tok.headerBdr}`, color: tok.mainSub, cursor: "pointer", padding: 0 }}>
+          <ChevronDown size={13} style={{ transform: "rotate(-90deg)" }} />
+        </button>
+
+        {/* Breadcrumb + Clear Data */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: tok.mainSub, flexShrink: 0, padding: "0 10px", borderLeft: `1px solid ${tok.headerBdr}` }}>
           {isSubPage ? (
             <>
               <button onClick={() => navigate("/admin/dashboard")}
@@ -1015,7 +1021,7 @@ const AdminLayout = () => {
               {currentNav && (
                 <>
                   <span style={{ opacity: .4 }}>/</span>
-                  <span style={{ fontWeight: 600, color: tok.mainText }}>{currentNav.label}</span>
+                  <span style={{ fontWeight: 600, color: tok.mainText, whiteSpace: "nowrap", maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis" }}>{currentNav.label}</span>
                 </>
               )}
             </>
@@ -1030,14 +1036,55 @@ const AdminLayout = () => {
           <button
             onClick={openClearDialog}
             title="Clear page data"
-            style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 11px", borderRadius: 8, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.2)", color: "#dc2626", fontSize: 11.5, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}
+            style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 8, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.2)", color: "#dc2626", fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,.15)"; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,.08)"; }}>
-            <Trash2 size={12} />
-            <span>Clear Data</span>
+            <Trash2 size={11} />
+            <span>Clear</span>
           </button>
         </div>
       </div>
+
+      {/* ─── PORTAL DROPDOWN (rendered at body level, never clipped) ──── */}
+      {openNavGroup && dropPos && (() => {
+        const group = navGroupItems.find(g => g.label === openNavGroup);
+        if (!group || group.items.length === 0) return null;
+        const closeNav = () => { setOpenNavGroup(null); setDropPos(null); };
+        return createPortal(
+          <>
+            {/* Transparent overlay — click outside closes the dropdown */}
+            <div style={{ position: "fixed", inset: 0, zIndex: 99998 }} onClick={closeNav} />
+            {/* Dropdown panel */}
+            <div
+              style={{ position: "fixed", left: Math.min(dropPos.left, window.innerWidth - 250), top: dropPos.top, zIndex: 99999, background: tok.dropBg, border: `1px solid ${tok.dropBdr}`, borderRadius: 14, boxShadow: "0 20px 60px rgba(0,0,0,.3)", minWidth: 240, maxHeight: 440, overflowY: "auto" }}>
+              <div style={{ padding: "8px 14px 6px", borderBottom: `1px solid ${tok.dropBdr}`, display: "flex", alignItems: "center", gap: 6, position: "sticky", top: 0, background: tok.dropBg, zIndex: 1 }}>
+                <group.icon size={11} color={A1} />
+                <p style={{ fontSize: 10, fontWeight: 700, color: A1, textTransform: "uppercase", letterSpacing: 1, margin: 0 }}>{group.label}</p>
+                <span style={{ marginLeft: "auto", fontSize: 10, color: tok.mainSub }}>{group.items.length} pages</span>
+              </div>
+              <div style={{ padding: 6 }}>
+                {group.items.map(item => {
+                  const isItemActive = location.pathname === item.path;
+                  return (
+                    <NavLink key={item.path} to={item.path}
+                      onClick={closeNav}
+                      style={{ display: "flex", alignItems: "center", gap: 9, padding: "7px 12px", borderRadius: 9, fontSize: 12.5, fontWeight: isItemActive ? 600 : 400, color: isItemActive ? A1 : tok.mainText, background: isItemActive ? `${A1}12` : "transparent", textDecoration: "none", border: isItemActive ? `1px solid ${A1}25` : "1px solid transparent" }}>
+                      <item.icon size={13} color={isItemActive ? A1 : tok.mainSub} style={{ flexShrink: 0 }} />
+                      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {item.label}
+                        {item.path === "/admin/recovery-requests" && pendingRecoveryCount > 0 && (
+                          <span style={{ marginLeft: 5, fontSize: 9, fontWeight: 700, color: "white", background: tok.badgeBg, borderRadius: 8, padding: "1px 5px" }}>{pendingRecoveryCount}</span>
+                        )}
+                      </span>
+                    </NavLink>
+                  );
+                })}
+              </div>
+            </div>
+          </>,
+          document.body
+        );
+      })()}
 
       {/* ─── MAIN AREA ──────────────────────────────────────────────── */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, position: "relative", zIndex: 1 }}>
