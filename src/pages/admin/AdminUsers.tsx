@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -17,7 +19,16 @@ import {
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { CheckCircle, XCircle, Eye, EyeOff, Copy, RefreshCw, Search, X, ChevronLeft, ChevronRight, Pencil, ShieldOff, ShieldCheck, Trash2, UserPlus, Users, KeyRound, Shield, Download, Calendar } from "lucide-react";
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from "@/components/ui/sheet";
+import {
+  CheckCircle, XCircle, Eye, EyeOff, Copy, RefreshCw, Search, X,
+  ChevronLeft, ChevronRight, Pencil, ShieldOff, ShieldCheck, Trash2,
+  UserPlus, Users, KeyRound, Shield, Download, Calendar, ClipboardCopy,
+  MessageSquare, Wallet, RotateCcw, SlidersHorizontal, NotebookPen,
+  BadgeIndianRupee, SendHorizonal, Phone, MapPin, GraduationCap, Briefcase,
+} from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -58,6 +69,30 @@ const AdminUsers = () => {
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
+  // Quick Preview
+  const [previewUser, setPreviewUser] = useState<FullProfile | null>(null);
+
+  // Admin Notes
+  const [notesDialogUser, setNotesDialogUser] = useState<FullProfile | null>(null);
+  const [notesText, setNotesText] = useState("");
+  const [notesProcessing, setNotesProcessing] = useState(false);
+
+  // Wallet Adjustment
+  const [walletDialogUser, setWalletDialogUser] = useState<FullProfile | null>(null);
+  const [walletAmount, setWalletAmount] = useState("");
+  const [walletDir, setWalletDir] = useState<"add" | "deduct">("add");
+  const [walletDesc, setWalletDesc] = useState("");
+  const [walletProcessing, setWalletProcessing] = useState(false);
+
+  // Send Notification
+  const [msgDialogUser, setMsgDialogUser] = useState<FullProfile | null>(null);
+  const [msgTitle, setMsgTitle] = useState("");
+  const [msgBody, setMsgBody] = useState("");
+  const [msgProcessing, setMsgProcessing] = useState(false);
+
+  // Password Reset processing per-user
+  const [pwResetUserId, setPwResetUserId] = useState<string | null>(null);
 
   const [viewSecurityUser, setViewSecurityUser] = useState<FullProfile | null>(null);
   type SecurityData = {
@@ -373,6 +408,99 @@ const AdminUsers = () => {
     toast.success(`Exported ${users.length} users`);
   };
 
+  const handleCopyId = (id: string) => {
+    navigator.clipboard.writeText(id);
+    toast.success("User ID copied to clipboard");
+  };
+
+  const handleOpenNotes = (u: FullProfile) => {
+    setNotesDialogUser(u);
+    setNotesText((u as any).approval_notes || "");
+  };
+
+  const handleSaveNotes = async () => {
+    if (!notesDialogUser) return;
+    setNotesProcessing(true);
+    try {
+      const token = await getToken();
+      const res = await callEdgeFunction("admin-user-management", {
+        body: { action: "save_admin_notes", profile_id: notesDialogUser.id, notes: notesText },
+        token,
+      });
+      const data = await res.json();
+      if (!res.ok || data?.error) { toast.error(data?.error || "Failed to save notes"); }
+      else {
+        toast.success("Notes saved");
+        setProfiles((prev) => prev.map((p) => p.id === notesDialogUser.id ? { ...p, approval_notes: notesText } : p));
+        setNotesDialogUser(null);
+      }
+    } catch (e: any) { toast.error(e.message || "Failed"); }
+    finally { setNotesProcessing(false); }
+  };
+
+  const handleWalletAdjust = async () => {
+    if (!walletDialogUser) return;
+    const amt = parseFloat(walletAmount);
+    if (!amt || amt <= 0) { toast.error("Enter a valid amount"); return; }
+    setWalletProcessing(true);
+    try {
+      const token = await getToken();
+      const action = walletDir === "add" ? "admin_wallet_add" : "admin_wallet_deduct";
+      const res = await callEdgeFunction("wallet-operations", {
+        body: { action, target_profile_id: walletDialogUser.id, amount: amt, description: walletDesc || undefined },
+        token,
+      });
+      const data = await res.json();
+      if (!res.ok || data?.error) { toast.error(data?.error || "Wallet operation failed"); }
+      else {
+        toast.success(`₹${amt.toLocaleString("en-IN")} ${walletDir === "add" ? "added to" : "deducted from"} wallet`);
+        setProfiles((prev) => prev.map((p) => p.id === walletDialogUser.id ? { ...p, available_balance: data.new_balance ?? p.available_balance } : p));
+        setWalletDialogUser(null);
+        setWalletAmount("");
+        setWalletDesc("");
+      }
+    } catch (e: any) { toast.error(e.message || "Failed"); }
+    finally { setWalletProcessing(false); }
+  };
+
+  const handlePasswordReset = async (u: FullProfile) => {
+    if (!u.email) { toast.error("User has no email"); return; }
+    setPwResetUserId(u.id);
+    try {
+      const token = await getToken();
+      const res = await callEdgeFunction("admin-user-management", {
+        body: { action: "send_password_reset", email: u.email },
+        token,
+      });
+      const data = await res.json();
+      if (!res.ok || data?.error) { toast.error(data?.error || "Failed to send reset email"); }
+      else { toast.success(`Password reset email sent to ${u.email}`); }
+    } catch (e: any) { toast.error(e.message || "Failed"); }
+    finally { setPwResetUserId(null); }
+  };
+
+  const handleSendNotification = async () => {
+    if (!msgDialogUser) return;
+    if (!msgTitle.trim() || !msgBody.trim()) { toast.error("Title and message are required"); return; }
+    setMsgProcessing(true);
+    try {
+      const token = await getToken();
+      const res = await callEdgeFunction("admin-user-management", {
+        body: { action: "send_notification", target_user_id: msgDialogUser.user_id, title: msgTitle, message: msgBody },
+        token,
+      });
+      const data = await res.json();
+      if (!res.ok || data?.error) { toast.error(data?.error || "Failed to send notification"); }
+      else {
+        toast.success("Notification sent successfully");
+        setMsgDialogUser(null);
+        setMsgTitle("");
+        setMsgBody("");
+      }
+    } catch (e: any) { toast.error(e.message || "Failed"); }
+    finally { setMsgProcessing(false); }
+  };
+
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     return profiles.filter((p) => {
@@ -656,14 +784,55 @@ const AdminUsers = () => {
                             {isSA ? "⭐ Protected" : "🔒 Admin"}
                           </span>
                         ) : (
-                          <div className="flex justify-end items-center gap-0.5">
+                          <div className="flex justify-end items-center gap-0.5 flex-wrap">
+                            {/* Copy User ID */}
+                            <Button size="icon" variant="ghost" title="Copy User ID"
+                              className="h-8 w-8 rounded-lg hover:bg-white/10"
+                              style={{ color: T.sub }}
+                              onClick={() => handleCopyId(u.id)}>
+                              <ClipboardCopy className="h-3.5 w-3.5" />
+                            </Button>
+                            {/* Quick Preview */}
+                            <Button size="icon" variant="ghost" title="Quick preview"
+                              className="h-8 w-8 rounded-lg hover:bg-indigo-500/10 text-indigo-400"
+                              onClick={() => setPreviewUser(u)}>
+                              <SlidersHorizontal className="h-3.5 w-3.5" />
+                            </Button>
+                            {/* Admin Notes */}
+                            <Button size="icon" variant="ghost" title="Admin notes"
+                              className="h-8 w-8 rounded-lg hover:bg-amber-500/10"
+                              style={{ color: (u as any).approval_notes ? "#f59e0b" : T.sub }}
+                              onClick={() => handleOpenNotes(u)}>
+                              <NotebookPen className="h-3.5 w-3.5" />
+                            </Button>
+                            {/* Wallet Adjustment */}
+                            <Button size="icon" variant="ghost" title="Wallet adjustment"
+                              className="h-8 w-8 rounded-lg hover:bg-emerald-500/10 text-emerald-400"
+                              onClick={() => { setWalletDialogUser(u); setWalletAmount(""); setWalletDir("add"); setWalletDesc(""); }}>
+                              <BadgeIndianRupee className="h-3.5 w-3.5" />
+                            </Button>
+                            {/* Send Notification */}
+                            <Button size="icon" variant="ghost" title="Send notification"
+                              className="h-8 w-8 rounded-lg hover:bg-blue-500/10 text-blue-400"
+                              onClick={() => { setMsgDialogUser(u); setMsgTitle(""); setMsgBody(""); }}>
+                              <MessageSquare className="h-3.5 w-3.5" />
+                            </Button>
+                            {/* Force Password Reset */}
+                            <Button size="icon" variant="ghost" title="Send password reset email"
+                              className="h-8 w-8 rounded-lg hover:bg-orange-500/10 text-orange-400"
+                              disabled={pwResetUserId === u.id}
+                              onClick={() => handlePasswordReset(u)}>
+                              {pwResetUserId === u.id
+                                ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                : <RotateCcw className="h-3.5 w-3.5" />}
+                            </Button>
                             <Button size="icon" variant="ghost" title="Edit profile"
                               className="h-8 w-8 rounded-lg hover:bg-white/10"
                               style={{ color: T.sub }}
                               onClick={() => navigate(`/admin/users/${u.id}`)}>
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
-                            <Button size="icon" variant="ghost" title="View details"
+                            <Button size="icon" variant="ghost" title="View full details"
                               className="h-8 w-8 rounded-lg hover:bg-white/10"
                               style={{ color: T.sub }}
                               onClick={() => { setSelectedUser(u); setActionType("view"); }}>
@@ -1037,6 +1206,342 @@ const AdminUsers = () => {
             </Button>
             <Button onClick={handleInviteUser} disabled={inviteProcessing || !inviteEmail.trim()}>
               {inviteProcessing ? "Sending…" : "Send Invite"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Quick Preview Sheet ────────────────────────── */}
+      <Sheet open={!!previewUser} onOpenChange={(open) => !open && setPreviewUser(null)}>
+        <SheetContent side="right" className="w-full sm:w-[440px] overflow-y-auto p-0"
+          style={{ background: T.card, borderColor: T.border }}>
+          {previewUser && (() => {
+            const pu = previewUser;
+            const name = pu.full_name?.[0] || pu.email || "?";
+            const color = avatarColor(name);
+            const initials = getInitials(name);
+            const label = getUserTypeLabel(pu.email, pu.user_type);
+            const kyvStatus = bankVerifMap.get(pu.id);
+            const isOnline = pu.last_seen_at && (Date.now() - new Date(pu.last_seen_at).getTime()) < 5 * 60 * 1000;
+            const roleMap: Record<string, { bg: string; color: string }> = {
+              "Super Admin": { bg: "rgba(245,158,11,.12)", color: "#f59e0b" },
+              "Admin": { bg: "rgba(99,102,241,.12)", color: "#a5b4fc" },
+              "Freelancer": { bg: "rgba(16,185,129,.1)", color: "#34d399" },
+              "Employer": { bg: "rgba(59,130,246,.1)", color: "#60a5fa" },
+            };
+            const r = roleMap[label] || { bg: T.nav, color: T.sub };
+            return (
+              <>
+                {/* Header */}
+                <div className="p-6 border-b" style={{ borderColor: T.border, background: "linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.1))" }}>
+                  <SheetHeader className="mb-0">
+                    <SheetTitle style={{ color: T.text }} className="sr-only">User Preview</SheetTitle>
+                    <SheetDescription className="sr-only">Quick preview of user profile</SheetDescription>
+                  </SheetHeader>
+                  <div className="flex items-center gap-4">
+                    <div className="relative shrink-0">
+                      <div className="h-16 w-16 rounded-2xl flex items-center justify-center text-lg font-bold text-white shadow-lg"
+                           style={{ background: color }}>
+                        {initials}
+                      </div>
+                      {isOnline && <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 bg-emerald-400" style={{ borderColor: T.card }} />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="font-bold text-lg truncate" style={{ color: T.text }}>{name}</h2>
+                      <p className="text-sm truncate" style={{ color: T.sub }}>{pu.email}</p>
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                              style={{ background: r.bg, color: r.color }}>
+                          {label}
+                        </span>
+                        <span className="font-mono text-xs px-2 py-0.5 rounded-md" style={{ background: T.nav, color: T.sub }}>
+                          {pu.user_code?.[0] || "—"}
+                        </span>
+                        {isOnline && <span className="text-xs text-emerald-400 font-medium">● Online</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Body */}
+                <div className="p-6 space-y-5">
+                  {/* Status row */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: "Approval", value: pu.approval_status, dot: pu.approval_status === "approved" ? "#10b981" : pu.approval_status === "pending" ? "#f59e0b" : "#ef4444" },
+                      { label: "KYC", value: kyvStatus || "—", dot: kyvStatus === "approved" ? "#10b981" : kyvStatus === "pending" ? "#f59e0b" : "#94a3b8" },
+                      { label: "Account", value: pu.is_disabled ? "Blocked" : "Active", dot: pu.is_disabled ? "#ef4444" : "#10b981" },
+                    ].map((s) => (
+                      <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: T.nav }}>
+                        <p className="text-xs capitalize" style={{ color: T.sub }}>{s.label}</p>
+                        <div className="flex items-center justify-center gap-1 mt-1">
+                          <span className="h-1.5 w-1.5 rounded-full" style={{ background: s.dot }} />
+                          <p className="text-xs font-semibold capitalize" style={{ color: T.text }}>{s.value}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Separator style={{ background: T.border }} />
+
+                  {/* Wallet */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: T.sub }}>
+                      <Wallet className="h-3.5 w-3.5 inline mr-1.5" />Wallet
+                    </p>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { label: "Available", value: `₹${(pu.available_balance ?? 0).toLocaleString("en-IN")}`, color: "#10b981" },
+                        { label: "Hold", value: `₹${(pu.hold_balance ?? 0).toLocaleString("en-IN")}`, color: "#f59e0b" },
+                        { label: "Coins", value: `${pu.coin_balance ?? 0} 🪙`, color: "#a78bfa" },
+                      ].map((w) => (
+                        <div key={w.label} className="rounded-xl p-3" style={{ background: T.nav }}>
+                          <p className="text-xs" style={{ color: T.sub }}>{w.label}</p>
+                          <p className="font-bold text-sm mt-0.5" style={{ color: w.color }}>{w.value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Separator style={{ background: T.border }} />
+
+                  {/* Details */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: T.sub }}>Details</p>
+                    <div className="space-y-2">
+                      {[
+                        { icon: <Phone className="h-3.5 w-3.5" />, label: "Phone", value: pu.mobile_number || "—" },
+                        { icon: <GraduationCap className="h-3.5 w-3.5" />, label: "Education", value: pu.education_level || "—" },
+                        { icon: <Briefcase className="h-3.5 w-3.5" />, label: "Experience", value: pu.work_experience || "—" },
+                        { icon: <MapPin className="h-3.5 w-3.5" />, label: "City", value: pu.registration_city || "—" },
+                        { icon: <Calendar className="h-3.5 w-3.5" />, label: "Joined", value: fmtDate(pu.created_at) },
+                        { icon: <Eye className="h-3.5 w-3.5" />, label: "Last seen", value: fmtLastSeen(pu.last_seen_at) },
+                      ].map((d) => (
+                        <div key={d.label} className="flex items-center justify-between gap-2 py-1.5">
+                          <div className="flex items-center gap-2" style={{ color: T.sub }}>
+                            {d.icon}
+                            <span className="text-xs">{d.label}</span>
+                          </div>
+                          <span className="text-xs font-medium text-right" style={{ color: T.text }}>{d.value}</span>
+                        </div>
+                      ))}
+                      <div className="flex items-center justify-between gap-2 py-1.5">
+                        <div className="flex items-center gap-2" style={{ color: T.sub }}>
+                          <ClipboardCopy className="h-3.5 w-3.5" />
+                          <span className="text-xs">User ID</span>
+                        </div>
+                        <button className="font-mono text-xs truncate max-w-[160px] text-right hover:text-indigo-400 transition-colors"
+                          style={{ color: T.sub }}
+                          onClick={() => handleCopyId(pu.id)}>
+                          {pu.id.substring(0, 16)}… <Copy className="h-2.5 w-2.5 inline" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Admin Notes preview */}
+                  {(pu as any).approval_notes && (
+                    <>
+                      <Separator style={{ background: T.border }} />
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: T.sub }}>
+                          <NotebookPen className="h-3.5 w-3.5 inline mr-1.5 text-amber-400" />Admin Notes
+                        </p>
+                        <p className="text-sm rounded-xl p-3 whitespace-pre-wrap" style={{ background: T.nav, color: T.text }}>
+                          {(pu as any).approval_notes}
+                        </p>
+                      </div>
+                    </>
+                  )}
+
+                  <Separator style={{ background: T.border }} />
+
+                  {/* Quick actions inside preview */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button size="sm" variant="outline" className="gap-2 rounded-xl text-xs h-9"
+                      style={{ borderColor: T.border, color: T.text }}
+                      onClick={() => { setPreviewUser(null); handleOpenNotes(pu); }}>
+                      <NotebookPen className="h-3.5 w-3.5 text-amber-400" />
+                      Edit Notes
+                    </Button>
+                    <Button size="sm" variant="outline" className="gap-2 rounded-xl text-xs h-9"
+                      style={{ borderColor: T.border, color: T.text }}
+                      onClick={() => { setPreviewUser(null); setWalletDialogUser(pu); setWalletAmount(""); setWalletDir("add"); setWalletDesc(""); }}>
+                      <BadgeIndianRupee className="h-3.5 w-3.5 text-emerald-400" />
+                      Adjust Wallet
+                    </Button>
+                    <Button size="sm" variant="outline" className="gap-2 rounded-xl text-xs h-9"
+                      style={{ borderColor: T.border, color: T.text }}
+                      onClick={() => { setPreviewUser(null); setMsgDialogUser(pu); setMsgTitle(""); setMsgBody(""); }}>
+                      <MessageSquare className="h-3.5 w-3.5 text-blue-400" />
+                      Send Message
+                    </Button>
+                    <Button size="sm" variant="outline" className="gap-2 rounded-xl text-xs h-9"
+                      style={{ borderColor: T.border, color: T.text }}
+                      onClick={() => { setPreviewUser(null); navigate(`/admin/users/${pu.id}`); }}>
+                      <Pencil className="h-3.5 w-3.5 text-indigo-400" />
+                      Edit Profile
+                    </Button>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </SheetContent>
+      </Sheet>
+
+      {/* ── Admin Notes Dialog ─────────────────────────── */}
+      <Dialog open={!!notesDialogUser} onOpenChange={(open) => !open && setNotesDialogUser(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <NotebookPen className="h-5 w-5 text-amber-400" />
+              Admin Internal Notes
+            </DialogTitle>
+            <DialogDescription>
+              {notesDialogUser?.full_name?.[0] || notesDialogUser?.email} — Notes are admin-only, never shown to the user.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Textarea
+              value={notesText}
+              onChange={(e) => setNotesText(e.target.value)}
+              placeholder="Add internal notes about this user (e.g. 'Verified via phone call on 5 Apr', 'Suspicious activity suspected'…)"
+              rows={6}
+              className="resize-none text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              These notes are stored as internal admin records and are not visible to the user.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNotesDialogUser(null)} disabled={notesProcessing}>Cancel</Button>
+            <Button onClick={handleSaveNotes} disabled={notesProcessing} className="bg-amber-500 hover:bg-amber-600 text-white">
+              {notesProcessing ? <><RefreshCw className="h-4 w-4 animate-spin mr-2" />Saving…</> : "Save Notes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Wallet Adjustment Dialog ───────────────────── */}
+      <Dialog open={!!walletDialogUser} onOpenChange={(open) => !open && setWalletDialogUser(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BadgeIndianRupee className="h-5 w-5 text-emerald-400" />
+              Wallet Adjustment
+            </DialogTitle>
+            <DialogDescription>
+              {walletDialogUser?.full_name?.[0] || walletDialogUser?.email}
+              {walletDialogUser && (
+                <span className="ml-1 font-semibold text-foreground">
+                  — Current: ₹{(walletDialogUser.available_balance ?? 0).toLocaleString("en-IN")}
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {/* Add / Deduct toggle */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant={walletDir === "add" ? "default" : "outline"}
+                className={`h-10 gap-2 rounded-xl ${walletDir === "add" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}`}
+                onClick={() => setWalletDir("add")}>
+                <CheckCircle className="h-4 w-4" /> Add
+              </Button>
+              <Button
+                variant={walletDir === "deduct" ? "default" : "outline"}
+                className={`h-10 gap-2 rounded-xl ${walletDir === "deduct" ? "bg-red-600 hover:bg-red-700 text-white" : ""}`}
+                onClick={() => setWalletDir("deduct")}>
+                <XCircle className="h-4 w-4" /> Deduct
+              </Button>
+            </div>
+            <div className="space-y-2">
+              <Label>Amount (₹)</Label>
+              <Input
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="0.00"
+                value={walletAmount}
+                onChange={(e) => setWalletAmount(e.target.value)}
+                className="text-lg font-bold"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Reason / Description (optional)</Label>
+              <Input
+                placeholder="e.g. Bonus, Refund, Penalty…"
+                value={walletDesc}
+                onChange={(e) => setWalletDesc(e.target.value)}
+              />
+            </div>
+            {walletAmount && parseFloat(walletAmount) > 0 && (
+              <div className="rounded-xl p-3 text-center text-sm font-medium"
+                   style={{ background: walletDir === "add" ? "rgba(16,185,129,.1)" : "rgba(239,68,68,.1)", color: walletDir === "add" ? "#10b981" : "#ef4444" }}>
+                {walletDir === "add" ? "+" : "−"}₹{parseFloat(walletAmount).toLocaleString("en-IN")} will be {walletDir === "add" ? "credited to" : "deducted from"} wallet
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setWalletDialogUser(null)} disabled={walletProcessing}>Cancel</Button>
+            <Button
+              onClick={handleWalletAdjust}
+              disabled={walletProcessing || !walletAmount || parseFloat(walletAmount) <= 0}
+              className={walletDir === "add" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"}>
+              {walletProcessing
+                ? <><RefreshCw className="h-4 w-4 animate-spin mr-2" />Processing…</>
+                : walletDir === "add" ? "Add to Wallet" : "Deduct from Wallet"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Send Notification Dialog ───────────────────── */}
+      <Dialog open={!!msgDialogUser} onOpenChange={(open) => !open && setMsgDialogUser(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-blue-400" />
+              Send Notification
+            </DialogTitle>
+            <DialogDescription>
+              Send an in-app notification to {msgDialogUser?.full_name?.[0] || msgDialogUser?.email}.
+              They will see this in their notification bell.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Notification Title</Label>
+              <Input
+                placeholder="e.g. Account Update, Important Notice…"
+                value={msgTitle}
+                onChange={(e) => setMsgTitle(e.target.value)}
+                maxLength={100}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Message</Label>
+              <Textarea
+                placeholder="Write your message here…"
+                value={msgBody}
+                onChange={(e) => setMsgBody(e.target.value)}
+                rows={4}
+                className="resize-none text-sm"
+                maxLength={500}
+              />
+              <p className="text-xs text-right text-muted-foreground">{msgBody.length}/500</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMsgDialogUser(null)} disabled={msgProcessing}>Cancel</Button>
+            <Button
+              onClick={handleSendNotification}
+              disabled={msgProcessing || !msgTitle.trim() || !msgBody.trim()}
+              className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+              {msgProcessing
+                ? <><RefreshCw className="h-4 w-4 animate-spin" />Sending…</>
+                : <><SendHorizonal className="h-4 w-4" />Send Notification</>}
             </Button>
           </DialogFooter>
         </DialogContent>

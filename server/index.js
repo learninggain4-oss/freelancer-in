@@ -707,6 +707,38 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
       return res.json({ success: true, message: "Full security reset done. User will be prompted to create M-Pin, Security Questions, and setup Google Auth on next login." });
     }
 
+    if (action === "send_password_reset") {
+      const targetEmail = req.body.email;
+      if (!targetEmail) return res.status(400).json({ error: "email required" });
+      const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
+        type: "recovery",
+        email: targetEmail,
+      });
+      if (linkErr) return res.status(400).json({ error: linkErr.message });
+      return res.json({ success: true, message: `Password reset link sent to ${targetEmail}`, action_link: linkData?.properties?.action_link });
+    }
+
+    if (action === "save_admin_notes") {
+      const { profile_id: pid, notes } = req.body;
+      if (!pid) return res.status(400).json({ error: "profile_id required" });
+      const { error: nErr } = await adminClient.from("profiles").update({ approval_notes: notes ?? null }).eq("id", pid);
+      if (nErr) return res.status(500).json({ error: nErr.message });
+      return res.json({ success: true, message: "Notes saved" });
+    }
+
+    if (action === "send_notification") {
+      const { target_user_id, title, message: notifMsg } = req.body;
+      if (!target_user_id || !title || !notifMsg) return res.status(400).json({ error: "target_user_id, title and message required" });
+      const { error: nErr } = await adminClient.from("notifications").insert({
+        user_id: target_user_id,
+        title,
+        message: notifMsg,
+        type: "info",
+      });
+      if (nErr) return res.status(500).json({ error: nErr.message });
+      return res.json({ success: true, message: "Notification sent" });
+    }
+
     return res.status(400).json({ error: "Unknown action" });
   } catch (err) {
     console.error("admin-user-management error:", err);
