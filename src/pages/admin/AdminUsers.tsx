@@ -401,6 +401,17 @@ const AdminUsers = () => {
   // Reset page when filters change
   useEffect(() => { setCurrentPage(1); }, [searchQuery, typeFilter, dateFrom, dateTo]);
 
+  // Avatar initials + color
+  const avatarColor = (name: string) => {
+    const colors = ["#6366f1","#8b5cf6","#ec4899","#f59e0b","#10b981","#3b82f6","#ef4444","#14b8a6"];
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffffffff;
+    return colors[Math.abs(h) % colors.length];
+  };
+
+  const getInitials = (name: string) =>
+    name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
+
   const UserTable = ({ users }: { users: FullProfile[] }) => {
     const totalPages = Math.max(1, Math.ceil(users.length / PAGE_SIZE));
     const page = Math.min(currentPage, totalPages);
@@ -422,430 +433,504 @@ const AdminUsers = () => {
       setSelectedIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
     };
 
+    if (loading) return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <RefreshCw className="h-8 w-8 animate-spin" style={{ color: "#6366f1" }} />
+        <p className="text-sm" style={{ color: T.sub }}>Loading users…</p>
+      </div>
+    );
+
+    if (users.length === 0) return (
+      <div className="flex flex-col items-center justify-center py-20 gap-3 rounded-2xl border"
+           style={{ background: T.card, borderColor: T.border }}>
+        <div className="p-4 rounded-2xl" style={{ background: T.nav }}>
+          <Users className="h-8 w-8" style={{ color: T.sub }} />
+        </div>
+        <p className="font-semibold" style={{ color: T.text }}>No users found</p>
+        <p className="text-sm" style={{ color: T.sub }}>Try adjusting your filters</p>
+      </div>
+    );
+
     return (
       <div className="space-y-3">
         {/* Bulk Action Bar */}
         {anySelected && (
-          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border"
-               style={{ background: "rgba(99,102,241,.1)", borderColor: "rgba(99,102,241,.3)" }}>
-            <span className="text-sm font-medium" style={{ color: T.text }}>{selectedCount} selected</span>
-            <Button
-              size="sm"
-              className="h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border-none"
-              disabled={bulkProcessing}
-              onClick={() => handleBulkApprove(users)}
-            >
-              <CheckCircle className="h-3.5 w-3.5" />
-              Approve
-            </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              className="h-8 gap-1.5"
-              disabled={bulkProcessing}
-              onClick={() => handleBulkReject(users)}
-            >
-              <XCircle className="h-3.5 w-3.5" />
-              Reject
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 ml-auto"
-              style={{ color: T.sub }}
-              onClick={() => setSelectedIds(new Set())}
-            >
-              Clear
-            </Button>
-          </div>
-        )}
-
-        <div 
-          className="overflow-x-auto rounded-xl border backdrop-blur-md"
-          style={{ background: T.card, borderColor: T.border }}
-        >
-          <Table>
-            <TableHeader>
-              <TableRow style={{ borderColor: T.border }}>
-                <TableHead className="w-10">
-                  <Checkbox
-                    checked={allPageSelected}
-                    onCheckedChange={toggleAll}
-                    aria-label="Select all on page"
-                  />
-                </TableHead>
-                <TableHead style={{ color: T.sub }}>Name</TableHead>
-                <TableHead style={{ color: T.sub }}>Code</TableHead>
-                <TableHead style={{ color: T.sub }}>Type</TableHead>
-                <TableHead style={{ color: T.sub }}>Status / KYC</TableHead>
-                <TableHead style={{ color: T.sub }}>Balance</TableHead>
-                <TableHead style={{ color: T.sub }}>Joined</TableHead>
-                <TableHead style={{ color: T.sub }}>Last Seen</TableHead>
-                <TableHead className="text-right" style={{ color: T.sub }}>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginated.length === 0 ? (
-                <TableRow style={{ borderColor: T.border }}>
-                  <TableCell colSpan={9} className="py-8 text-center" style={{ color: T.sub }}>No users found</TableCell>
-                </TableRow>
-              ) : (
-                paginated.map((u) => (
-                  <TableRow key={u.id} style={{ borderColor: T.border }}
-                    className={selectedIds.has(u.id) ? "bg-indigo-500/5" : ""}>
-                    <TableCell>
-                      {adminEmailMap.get(u.email?.toLowerCase() ?? "") ? null : (
-                        <Checkbox
-                          checked={selectedIds.has(u.id)}
-                          onCheckedChange={() => toggleOne(u.id)}
-                          aria-label="Select user"
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell className="font-medium" style={{ color: T.text }}>
-                      <div className="flex flex-col">
-                        <span>{u.full_name?.[0] || "—"}</span>
-                        <span className="text-xs truncate max-w-[140px]" style={{ color: T.sub }}>{u.email}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs" style={{ color: T.sub }}>{u.user_code?.[0] || "—"}</TableCell>
-                    <TableCell>
-                      {(() => {
-                        const label = getUserTypeLabel(u.email, u.user_type);
-                        const isSA = label === "Super Admin";
-                        const isAdmin = label === "Admin";
-                        return (
-                          <Badge
-                            variant="secondary"
-                            className="capitalize"
-                            style={{
-                              background: isSA ? "rgba(245,158,11,.15)" : isAdmin ? "rgba(99,102,241,.15)" : T.nav,
-                              color: isSA ? "#f59e0b" : isAdmin ? "#a5b4fc" : T.text,
-                              border: isSA ? "1px solid rgba(245,158,11,.3)" : isAdmin ? "1px solid rgba(99,102,241,.3)" : "none",
-                            }}
-                          >
-                            {isSA && "⭐ "}{label}
-                          </Badge>
-                        );
-                      })()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        {statusBadge(u.approval_status)}
-                        {kycBadge(u.id)}
-                        {u.is_disabled && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-destructive/10 text-destructive border-destructive/30">🚫 Blocked</Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm font-semibold" style={{ color: T.text }}>
-                        ₹{((u.available_balance ?? 0)).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                      </div>
-                      {(u.coin_balance ?? 0) > 0 && (
-                        <div className="text-xs" style={{ color: T.sub }}>🪙 {u.coin_balance}</div>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm whitespace-nowrap" style={{ color: T.sub }}>{fmtDate(u.created_at)}</TableCell>
-                    <TableCell className="text-sm whitespace-nowrap" style={{ color: T.sub }}>{fmtLastSeen(u.last_seen_at)}</TableCell>
-                    <TableCell className="text-right">
-                      {adminEmailMap.get(u.email?.toLowerCase() ?? "") ? (
-                        <span style={{ color: adminEmailMap.get(u.email?.toLowerCase() ?? "")?.isSuperAdmin ? "#f59e0b" : "#a5b4fc", fontSize: 11, fontWeight: 700, opacity: 0.7 }}>
-                          {adminEmailMap.get(u.email?.toLowerCase() ?? "")?.isSuperAdmin ? "⭐ Protected" : "🔒 Admin"}
-                        </span>
-                      ) : (
-                      <div className="flex justify-end gap-1">
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
-                          onClick={() => navigate(`/admin/users/${u.id}`)}
-                          style={{ color: T.sub }}
-                          className="hover:bg-white/10"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
-                          onClick={() => { setSelectedUser(u); setActionType("view"); }}
-                          style={{ color: T.sub }}
-                          className="hover:bg-white/10"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {u.approval_status === "pending" && (
-                          <>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="text-accent hover:text-accent hover:bg-white/10" 
-                              onClick={() => { setSelectedUser(u); setActionType("approve"); }}
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="text-destructive hover:text-destructive hover:bg-white/10" 
-                              onClick={() => { setSelectedUser(u); setActionType("reject"); }}
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          title={u.is_disabled ? "Unblock" : "Block"}
-                          className={u.is_disabled ? "text-accent hover:text-accent hover:bg-white/10" : "text-warning hover:text-warning hover:bg-white/10"}
-                          onClick={() => setConfirmAction({ type: u.is_disabled ? "unblock" : "block", user: u })}
-                        >
-                          {u.is_disabled ? <ShieldCheck className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          title="Reset Security (M-Pin / SQ / TOTP)"
-                          className="hover:bg-white/10"
-                          style={{ color: "#a78bfa" }}
-                          onClick={() => setConfirmAction({ type: "reset_mpin", user: u })}
-                        >
-                          <KeyRound className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          title="View Security Details"
-                          className="hover:bg-white/10"
-                          style={{ color: "#34d399" }}
-                          onClick={() => handleViewSecurity(u)}
-                        >
-                          <Shield className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          title="Delete Permanently"
-                          className="text-destructive hover:text-destructive hover:bg-white/10"
-                          onClick={() => setConfirmAction({ type: "delete", user: u })}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-
-        {/* Pagination */}
-        {users.length > PAGE_SIZE && (
-          <div className="flex items-center justify-between">
-            <p className="text-sm" style={{ color: T.sub }}>
-              Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, users.length)} of {users.length}
-            </p>
-            <div className="flex items-center gap-1">
-              <Button 
-                size="icon" 
-                variant="outline" 
-                className="h-8 w-8" 
-                disabled={page <= 1} 
-                onClick={() => setCurrentPage(page - 1)}
-                style={{ borderColor: T.border, background: T.nav, color: T.text }}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-                .reduce<(number | "ellipsis")[]>((acc, p, idx, arr) => {
-                  if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("ellipsis");
-                  acc.push(p);
-                  return acc;
-                }, [])
-                .map((p, i) =>
-                  p === "ellipsis" ? (
-                    <span key={`e${i}`} className="px-1 text-sm" style={{ color: T.sub }}>…</span>
-                  ) : (
-                    <Button 
-                      key={p} 
-                      size="icon" 
-                      variant={p === page ? "default" : "outline"} 
-                      className="h-8 w-8 text-xs" 
-                      onClick={() => setCurrentPage(p)}
-                      style={p === page ? { background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)", border: "none" } : { borderColor: T.border, background: T.nav, color: T.text }}
-                    >
-                      {p}
-                    </Button>
-                  )
-                )}
-              <Button 
-                size="icon" 
-                variant="outline" 
-                className="h-8 w-8" 
-                disabled={page >= totalPages} 
-                onClick={() => setCurrentPage(page + 1)}
-                style={{ borderColor: T.border, background: T.nav, color: T.text }}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+          <div className="flex items-center gap-2 px-5 py-3 rounded-2xl border backdrop-blur-md animate-in slide-in-from-top-2 duration-200"
+               style={{ background: "rgba(99,102,241,.12)", borderColor: "rgba(99,102,241,.35)" }}>
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                   style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
+                {selectedCount}
+              </div>
+              <span className="text-sm font-medium" style={{ color: T.text }}>users selected</span>
             </div>
+            <div className="h-4 w-px mx-1" style={{ background: T.border }} />
+            <Button size="sm" className="h-8 gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-sm"
+              disabled={bulkProcessing} onClick={() => handleBulkApprove(users)}>
+              <CheckCircle className="h-3.5 w-3.5" />
+              Bulk Approve
+            </Button>
+            <Button size="sm" variant="destructive" className="h-8 gap-1.5 rounded-lg shadow-sm"
+              disabled={bulkProcessing} onClick={() => handleBulkReject(users)}>
+              <XCircle className="h-3.5 w-3.5" />
+              Bulk Reject
+            </Button>
+            <Button size="sm" variant="ghost" className="h-8 ml-auto rounded-lg text-xs" style={{ color: T.sub }}
+              onClick={() => setSelectedIds(new Set())}>
+              <X className="h-3.5 w-3.5 mr-1" /> Clear
+            </Button>
           </div>
         )}
+
+        {/* Table */}
+        <div className="rounded-2xl border overflow-hidden" style={{ background: T.card, borderColor: T.border }}>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow style={{ borderColor: T.border, background: T.nav }}>
+                  <TableHead className="w-12 pl-4">
+                    <Checkbox checked={allPageSelected} onCheckedChange={toggleAll} aria-label="Select all" />
+                  </TableHead>
+                  <TableHead className="min-w-[200px]" style={{ color: T.sub, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>User</TableHead>
+                  <TableHead style={{ color: T.sub, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>Code</TableHead>
+                  <TableHead style={{ color: T.sub, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>Role</TableHead>
+                  <TableHead style={{ color: T.sub, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>Status</TableHead>
+                  <TableHead style={{ color: T.sub, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>Wallet</TableHead>
+                  <TableHead style={{ color: T.sub, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>Joined</TableHead>
+                  <TableHead style={{ color: T.sub, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>Last Seen</TableHead>
+                  <TableHead className="text-right pr-4" style={{ color: T.sub, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginated.map((u, idx) => {
+                  const name = u.full_name?.[0] || u.email || "?";
+                  const isAdmin = !!adminEmailMap.get(u.email?.toLowerCase() ?? "");
+                  const isSA = adminEmailMap.get(u.email?.toLowerCase() ?? "")?.isSuperAdmin;
+                  const label = getUserTypeLabel(u.email, u.user_type);
+                  const color = avatarColor(name);
+                  const initials = getInitials(name);
+                  const kyvStatus = bankVerifMap.get(u.id);
+                  const isOnline = u.last_seen_at && (Date.now() - new Date(u.last_seen_at).getTime()) < 5 * 60 * 1000;
+
+                  return (
+                    <TableRow
+                      key={u.id}
+                      style={{
+                        borderColor: T.border,
+                        background: selectedIds.has(u.id) ? "rgba(99,102,241,.06)" : "transparent",
+                      }}
+                      className="transition-colors hover:bg-white/[0.03]"
+                    >
+                      {/* Checkbox */}
+                      <TableCell className="pl-4 w-12">
+                        {!isAdmin ? (
+                          <Checkbox checked={selectedIds.has(u.id)} onCheckedChange={() => toggleOne(u.id)} aria-label="Select" />
+                        ) : <span />}
+                      </TableCell>
+
+                      {/* User */}
+                      <TableCell className="py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="relative shrink-0">
+                            <div className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm"
+                                 style={{ background: color }}>
+                              {initials}
+                            </div>
+                            {isOnline && (
+                              <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 bg-emerald-400"
+                                    style={{ borderColor: T.card }} />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm truncate max-w-[160px]" style={{ color: T.text }}>{name}</p>
+                            <p className="text-xs truncate max-w-[160px]" style={{ color: T.sub }}>{u.email}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+
+                      {/* Code */}
+                      <TableCell>
+                        <span className="font-mono text-xs px-2 py-1 rounded-md" style={{ background: T.nav, color: T.sub }}>
+                          {u.user_code?.[0] || "—"}
+                        </span>
+                      </TableCell>
+
+                      {/* Role */}
+                      <TableCell>
+                        {(() => {
+                          const roleMap: Record<string, { bg: string; color: string; border: string }> = {
+                            "Super Admin": { bg: "rgba(245,158,11,.12)", color: "#f59e0b", border: "rgba(245,158,11,.3)" },
+                            "Admin": { bg: "rgba(99,102,241,.12)", color: "#a5b4fc", border: "rgba(99,102,241,.3)" },
+                            "Freelancer": { bg: "rgba(16,185,129,.1)", color: "#34d399", border: "rgba(16,185,129,.25)" },
+                            "Employer": { bg: "rgba(59,130,246,.1)", color: "#60a5fa", border: "rgba(59,130,246,.25)" },
+                          };
+                          const r = roleMap[label] || { bg: T.nav, color: T.sub, border: T.border };
+                          return (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border"
+                                  style={{ background: r.bg, color: r.color, borderColor: r.border }}>
+                              {isSA ? "⭐" : label === "Admin" ? "🔒" : label === "Freelancer" ? "💼" : "🏢"} {label}
+                            </span>
+                          );
+                        })()}
+                      </TableCell>
+
+                      {/* Status */}
+                      <TableCell>
+                        <div className="flex flex-col gap-1.5">
+                          {/* Approval */}
+                          {(() => {
+                            const s = u.approval_status;
+                            const cfg: Record<string, { dot: string; label: string; cls: string }> = {
+                              approved: { dot: "#10b981", label: "Approved", cls: "text-emerald-400" },
+                              pending:  { dot: "#f59e0b", label: "Pending",  cls: "text-amber-400" },
+                              rejected: { dot: "#ef4444", label: "Rejected", cls: "text-red-400" },
+                            };
+                            const c = cfg[s] || { dot: "#94a3b8", label: s, cls: "text-slate-400" };
+                            return (
+                              <span className="flex items-center gap-1.5 text-xs font-medium">
+                                <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: c.dot }} />
+                                <span className={c.cls}>{c.label}</span>
+                              </span>
+                            );
+                          })()}
+                          {/* KYC */}
+                          {kyvStatus && (() => {
+                            const kCfg: Record<string, { dot: string; label: string; cls: string }> = {
+                              approved: { dot: "#10b981", label: "KYC ✓", cls: "text-emerald-400" },
+                              pending:  { dot: "#f59e0b", label: "KYC Pending", cls: "text-amber-400" },
+                              submitted:{ dot: "#3b82f6", label: "KYC Submitted", cls: "text-blue-400" },
+                              rejected: { dot: "#ef4444", label: "KYC ✗", cls: "text-red-400" },
+                            };
+                            const k = kCfg[kyvStatus] || { dot: "#94a3b8", label: `KYC ${kyvStatus}`, cls: "text-slate-400" };
+                            return (
+                              <span className="flex items-center gap-1.5 text-xs font-medium">
+                                <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: k.dot }} />
+                                <span className={k.cls}>{k.label}</span>
+                              </span>
+                            );
+                          })()}
+                          {/* Blocked */}
+                          {u.is_disabled && (
+                            <span className="flex items-center gap-1.5 text-xs font-medium">
+                              <span className="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" />
+                              <span className="text-red-400">Blocked</span>
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      {/* Wallet */}
+                      <TableCell>
+                        <div className="space-y-0.5">
+                          <p className="text-sm font-bold tabular-nums" style={{ color: T.text }}>
+                            ₹{(u.available_balance ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                          </p>
+                          {(u.coin_balance ?? 0) > 0 && (
+                            <p className="text-xs" style={{ color: T.sub }}>🪙 {u.coin_balance} coins</p>
+                          )}
+                          {(u.hold_balance ?? 0) > 0 && (
+                            <p className="text-xs" style={{ color: T.sub }}>🔒 ₹{u.hold_balance} hold</p>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      {/* Joined */}
+                      <TableCell>
+                        <p className="text-sm whitespace-nowrap" style={{ color: T.text }}>{fmtDate(u.created_at)}</p>
+                      </TableCell>
+
+                      {/* Last Seen */}
+                      <TableCell>
+                        <div className="flex items-center gap-1.5">
+                          {isOnline && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0 animate-pulse" />}
+                          <p className="text-sm whitespace-nowrap" style={{ color: isOnline ? "#34d399" : T.sub }}>
+                            {fmtLastSeen(u.last_seen_at)}
+                          </p>
+                        </div>
+                      </TableCell>
+
+                      {/* Actions */}
+                      <TableCell className="text-right pr-4">
+                        {isAdmin ? (
+                          <span className="text-xs font-bold px-2 py-1 rounded-md" style={{ color: isSA ? "#f59e0b" : "#a5b4fc", background: isSA ? "rgba(245,158,11,.1)" : "rgba(99,102,241,.1)" }}>
+                            {isSA ? "⭐ Protected" : "🔒 Admin"}
+                          </span>
+                        ) : (
+                          <div className="flex justify-end items-center gap-0.5">
+                            <Button size="icon" variant="ghost" title="Edit profile"
+                              className="h-8 w-8 rounded-lg hover:bg-white/10"
+                              style={{ color: T.sub }}
+                              onClick={() => navigate(`/admin/users/${u.id}`)}>
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button size="icon" variant="ghost" title="View details"
+                              className="h-8 w-8 rounded-lg hover:bg-white/10"
+                              style={{ color: T.sub }}
+                              onClick={() => { setSelectedUser(u); setActionType("view"); }}>
+                              <Eye className="h-3.5 w-3.5" />
+                            </Button>
+                            {u.approval_status === "pending" && (<>
+                              <Button size="icon" variant="ghost" title="Approve"
+                                className="h-8 w-8 rounded-lg text-emerald-400 hover:text-emerald-400 hover:bg-emerald-500/10"
+                                onClick={() => { setSelectedUser(u); setActionType("approve"); }}>
+                                <CheckCircle className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button size="icon" variant="ghost" title="Reject"
+                                className="h-8 w-8 rounded-lg text-red-400 hover:text-red-400 hover:bg-red-500/10"
+                                onClick={() => { setSelectedUser(u); setActionType("reject"); }}>
+                                <XCircle className="h-3.5 w-3.5" />
+                              </Button>
+                            </>)}
+                            <Button size="icon" variant="ghost"
+                              title={u.is_disabled ? "Unblock user" : "Block user"}
+                              className={`h-8 w-8 rounded-lg ${u.is_disabled ? "text-emerald-400 hover:bg-emerald-500/10" : "text-amber-400 hover:bg-amber-500/10"}`}
+                              onClick={() => setConfirmAction({ type: u.is_disabled ? "unblock" : "block", user: u })}>
+                              {u.is_disabled ? <ShieldCheck className="h-3.5 w-3.5" /> : <ShieldOff className="h-3.5 w-3.5" />}
+                            </Button>
+                            <Button size="icon" variant="ghost" title="Security details"
+                              className="h-8 w-8 rounded-lg text-emerald-400 hover:bg-emerald-500/10"
+                              onClick={() => handleViewSecurity(u)}>
+                              <Shield className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button size="icon" variant="ghost" title="Reset security"
+                              className="h-8 w-8 rounded-lg hover:bg-violet-500/10"
+                              style={{ color: "#a78bfa" }}
+                              onClick={() => setConfirmAction({ type: "reset_mpin", user: u })}>
+                              <KeyRound className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button size="icon" variant="ghost" title="Delete permanently"
+                              className="h-8 w-8 rounded-lg text-red-400 hover:text-red-400 hover:bg-red-500/10"
+                              onClick={() => setConfirmAction({ type: "delete", user: u })}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Pagination inside the card */}
+          {users.length > PAGE_SIZE && (
+            <div className="flex items-center justify-between px-5 py-3 border-t" style={{ borderColor: T.border }}>
+              <p className="text-xs" style={{ color: T.sub }}>
+                {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, users.length)} of <span className="font-semibold" style={{ color: T.text }}>{users.length}</span> users
+              </p>
+              <div className="flex items-center gap-1">
+                <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg" disabled={page <= 1}
+                  style={{ color: T.sub }} onClick={() => setCurrentPage(page - 1)}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                  .reduce<(number | "ellipsis")[]>((acc, p, idx, arr) => {
+                    if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("ellipsis");
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, i) =>
+                    p === "ellipsis" ? (
+                      <span key={`e${i}`} className="px-1 text-xs" style={{ color: T.sub }}>…</span>
+                    ) : (
+                      <Button key={p} size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-xs font-medium"
+                        onClick={() => setCurrentPage(p)}
+                        style={p === page
+                          ? { background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff" }
+                          : { color: T.sub }}>
+                        {p}
+                      </Button>
+                    )
+                  )}
+                <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg" disabled={page >= totalPages}
+                  style={{ color: T.sub }} onClick={() => setCurrentPage(page + 1)}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     );
   };
 
+  // Stats derived from ALL profiles (not filtered)
+  const stats = useMemo(() => ({
+    total:      profiles.length,
+    pending:    profiles.filter((p) => p.approval_status === "pending").length,
+    approved:   profiles.filter((p) => p.approval_status === "approved" && !p.is_disabled).length,
+    rejected:   profiles.filter((p) => p.approval_status === "rejected").length,
+    blocked:    profiles.filter((p) => p.is_disabled).length,
+    freelancers:profiles.filter((p) => p.user_type === "employee").length,
+    employers:  profiles.filter((p) => p.user_type === "client").length,
+  }), [profiles]);
+
   return (
-    <div className="space-y-6">
-      <div 
-        className="relative overflow-hidden rounded-3xl p-8 mb-8"
-        style={{ background: `linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)` }}
-      >
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
-              <Users className="h-8 w-8 text-white" />
+    <div className="space-y-5">
+
+      {/* ── Hero Header ─────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-3xl"
+           style={{ background: "linear-gradient(135deg,#4f46e5 0%,#7c3aed 60%,#a21caf 100%)" }}>
+        <div className="relative z-10 px-8 pt-8 pb-6">
+          {/* Top row */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div className="flex items-center gap-4">
+              <div className="h-14 w-14 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center shadow-lg">
+                <Users className="h-7 w-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
+                  User Management
+                </h1>
+                <p className="text-indigo-200 text-sm mt-0.5">Manage, approve and oversee platform users</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-3xl font-bold text-white tracking-tight">User Management</h2>
-              <p className="text-indigo-100 opacity-80">Manage and oversee all platform users</p>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="ghost"
+                className="h-10 gap-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                onClick={() => fetchProfiles()}
+                disabled={loading}
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+              <Button
+                onClick={() => setInviteOpen(true)}
+                className="h-10 gap-2 rounded-xl bg-white text-indigo-700 hover:bg-indigo-50 border-none font-semibold shadow-lg"
+              >
+                <UserPlus className="h-4 w-4" />
+                Invite User
+              </Button>
             </div>
           </div>
-          <Button 
-            onClick={() => setInviteOpen(true)} 
-            className="gap-2 bg-white text-indigo-600 hover:bg-indigo-50 border-none rounded-xl h-12 px-6 font-semibold transition-all shadow-lg"
-          >
-            <UserPlus className="h-5 w-5" />
-            Invite User
-          </Button>
+
+          {/* Stats row embedded in hero */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+            {[
+              { label: "Total",       value: stats.total,       icon: "👥", accent: "rgba(255,255,255,.25)" },
+              { label: "Pending",     value: stats.pending,     icon: "⏳", accent: "rgba(251,191,36,.3)" },
+              { label: "Approved",    value: stats.approved,    icon: "✅", accent: "rgba(52,211,153,.3)" },
+              { label: "Rejected",    value: stats.rejected,    icon: "❌", accent: "rgba(248,113,113,.3)" },
+              { label: "Blocked",     value: stats.blocked,     icon: "🚫", accent: "rgba(248,113,113,.25)" },
+              { label: "Freelancers", value: stats.freelancers, icon: "💼", accent: "rgba(96,165,250,.3)" },
+              { label: "Employers",   value: stats.employers,   icon: "🏢", accent: "rgba(192,132,252,.3)" },
+            ].map((s) => (
+              <div key={s.label}
+                   className="rounded-xl px-4 py-3 backdrop-blur-sm"
+                   style={{ background: s.accent, border: "1px solid rgba(255,255,255,.12)" }}>
+                <p className="text-lg font-bold text-white leading-none">{s.icon} {s.value}</p>
+                <p className="text-xs text-indigo-200 mt-1 font-medium">{s.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl" />
+        {/* Decorative blobs */}
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 h-72 w-72 rounded-full bg-white/5 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/2 -mb-10 h-40 w-80 rounded-full bg-purple-500/20 blur-3xl pointer-events-none" />
       </div>
 
-      {/* Search & Filter Bar */}
-      <div className="flex flex-col gap-3 p-4 rounded-2xl border backdrop-blur-md"
-           style={{ background: T.card, borderColor: T.border }}>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      {/* ── Filter Bar ──────────────────────────────────── */}
+      <div className="rounded-2xl border p-4 space-y-3" style={{ background: T.card, borderColor: T.border }}>
+        {/* Row 1: Search + Type + Export */}
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: T.sub }} />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 pointer-events-none" style={{ color: T.sub }} />
             <Input
-              placeholder="Search by name, email, or code…"
+              placeholder="Search by name, email or code…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-9 border-none h-11 rounded-xl"
+              className="pl-9 pr-9 border-none h-10 rounded-xl text-sm"
               style={{ background: T.input, color: T.text }}
             />
             {searchQuery && (
-              <Button
-                size="icon"
-                variant="ghost"
-                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
-                onClick={() => setSearchQuery("")}
-              >
+              <Button size="icon" variant="ghost"
+                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 rounded-lg"
+                onClick={() => setSearchQuery("")}>
                 <X className="h-3.5 w-3.5" style={{ color: T.sub }} />
               </Button>
             )}
           </div>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger 
-              className="w-full sm:w-[160px] border-none h-11 rounded-xl"
-              style={{ background: T.input, color: T.text }}
-            >
-              <SelectValue placeholder="User type" />
+            <SelectTrigger className="w-full sm:w-[150px] border-none h-10 rounded-xl text-sm"
+              style={{ background: T.input, color: T.text }}>
+              <SelectValue />
             </SelectTrigger>
             <SelectContent style={{ background: T.card, borderColor: T.border }}>
               <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="employee">Freelancer</SelectItem>
-              <SelectItem value="client">Employer</SelectItem>
+              <SelectItem value="employee">Freelancers</SelectItem>
+              <SelectItem value="client">Employers</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            variant="outline"
-            className="h-11 gap-2 rounded-xl shrink-0"
+          <Button variant="outline" className="h-10 gap-2 rounded-xl text-sm shrink-0"
             style={{ borderColor: T.border, background: T.input, color: T.text }}
-            onClick={() => handleExportCsv(filtered)}
-          >
+            onClick={() => handleExportCsv(filtered)}>
             <Download className="h-4 w-4" />
             Export CSV
           </Button>
         </div>
-        {/* Date Range Filter */}
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2 shrink-0">
-            <Calendar className="h-4 w-4" style={{ color: T.sub }} />
-            <span className="text-sm" style={{ color: T.sub }}>Joined:</span>
+        {/* Row 2: Date range */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Calendar className="h-3.5 w-3.5" style={{ color: T.sub }} />
+            <span className="text-xs font-medium" style={{ color: T.sub }}>Joined from</span>
           </div>
-          <Input
-            type="date"
-            value={dateFrom}
+          <Input type="date" value={dateFrom}
             onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(1); }}
-            className="border-none h-9 rounded-xl text-sm w-full sm:w-auto"
-            style={{ background: T.input, color: T.text }}
-          />
-          <span className="text-sm hidden sm:block" style={{ color: T.sub }}>to</span>
-          <Input
-            type="date"
-            value={dateTo}
+            className="border-none h-8 rounded-xl text-xs w-auto"
+            style={{ background: T.input, color: T.text }} />
+          <span className="text-xs" style={{ color: T.sub }}>to</span>
+          <Input type="date" value={dateTo}
             onChange={(e) => { setDateTo(e.target.value); setCurrentPage(1); }}
-            className="border-none h-9 rounded-xl text-sm w-full sm:w-auto"
-            style={{ background: T.input, color: T.text }}
-          />
+            className="border-none h-8 rounded-xl text-xs w-auto"
+            style={{ background: T.input, color: T.text }} />
           {(dateFrom || dateTo) && (
-            <Button size="sm" variant="ghost" className="h-9 px-3 rounded-xl shrink-0"
+            <Button size="sm" variant="ghost" className="h-8 px-2 rounded-xl text-xs gap-1"
               style={{ color: T.sub }} onClick={() => { setDateFrom(""); setDateTo(""); }}>
-              <X className="h-3.5 w-3.5 mr-1" /> Clear dates
+              <X className="h-3 w-3" /> Clear
             </Button>
           )}
           {filtered.length !== profiles.length && (
-            <span className="text-xs ml-auto" style={{ color: T.sub }}>
-              {filtered.length} / {profiles.length} users
+            <span className="text-xs ml-auto font-medium" style={{ color: T.sub }}>
+              {filtered.length} of {profiles.length} users
             </span>
           )}
         </div>
       </div>
 
-      <Tabs defaultValue="pending" className="w-full">
-        <TabsList 
-          className="p-1 rounded-xl mb-4"
-          style={{ background: T.nav }}
-        >
-          <TabsTrigger 
-            value="pending" 
-            className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white"
-            style={{ color: T.sub }}
-          >
-            Pending ({filterByStatus("pending").length})
-          </TabsTrigger>
-          <TabsTrigger 
-            value="approved"
-            className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white"
-            style={{ color: T.sub }}
-          >
-            Approved
-          </TabsTrigger>
-          <TabsTrigger 
-            value="rejected"
-            className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white"
-            style={{ color: T.sub }}
-          >
-            Rejected
-          </TabsTrigger>
-          <TabsTrigger 
-            value="all"
-            className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white"
-            style={{ color: T.sub }}
-          >
-            All
-          </TabsTrigger>
+      {/* ── Tabs + Table ────────────────────────────────── */}
+      <Tabs defaultValue="pending" className="w-full" onValueChange={() => setSelectedIds(new Set())}>
+        <TabsList className="h-auto p-1 rounded-xl gap-1 w-full sm:w-auto" style={{ background: T.nav }}>
+          {[
+            { value: "pending",  label: "Pending",  count: filterByStatus("pending").length,  dot: "#f59e0b" },
+            { value: "approved", label: "Approved", count: filterByStatus("approved").length, dot: "#10b981" },
+            { value: "rejected", label: "Rejected", count: filterByStatus("rejected").length, dot: "#ef4444" },
+            { value: "all",      label: "All Users",count: filterByStatus(null).length,       dot: "#6366f1" },
+          ].map((tab) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              className="rounded-lg px-4 py-2 text-sm font-medium gap-2 data-[state=active]:bg-white/10 data-[state=active]:text-white transition-all"
+              style={{ color: T.sub }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: tab.dot }} />
+              {tab.label}
+              <span className="ml-0.5 text-xs font-bold px-1.5 py-0.5 rounded-md"
+                    style={{ background: "rgba(255,255,255,.08)", color: T.text }}>
+                {tab.count}
+              </span>
+            </TabsTrigger>
+          ))}
         </TabsList>
-        <TabsContent value="pending"><UserTable users={filterByStatus("pending")} /></TabsContent>
-        <TabsContent value="approved"><UserTable users={filterByStatus("approved")} /></TabsContent>
-        <TabsContent value="rejected"><UserTable users={filterByStatus("rejected")} /></TabsContent>
-        <TabsContent value="all"><UserTable users={filterByStatus(null)} /></TabsContent>
+
+        <div className="mt-3">
+          <TabsContent value="pending"><UserTable users={filterByStatus("pending")} /></TabsContent>
+          <TabsContent value="approved"><UserTable users={filterByStatus("approved")} /></TabsContent>
+          <TabsContent value="rejected"><UserTable users={filterByStatus("rejected")} /></TabsContent>
+          <TabsContent value="all"><UserTable users={filterByStatus(null)} /></TabsContent>
+        </div>
       </Tabs>
 
       <UserDetailDialog
