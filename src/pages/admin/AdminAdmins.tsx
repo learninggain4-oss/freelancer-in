@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -12,11 +11,12 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Search, ShieldOff, ShieldCheck, UserMinus, UserPlus, Crown,
   RefreshCw, Star, Mail, Phone, Clock, Shield, ChevronLeft, ChevronRight, X,
+  Download, Lock, History, KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
@@ -45,6 +45,14 @@ type AdminRow = {
   is_super_admin: boolean;
 };
 
+type AuditLog = {
+  id: string;
+  action: string;
+  created_at: string;
+  target_profile_name: string | null;
+  details: any;
+};
+
 async function callAdmin(fnName: string, body?: object) {
   const token = await getToken();
   const res = await callEdgeFunction(fnName, body ? { method: "POST", body, token } : { method: "GET", token });
@@ -56,6 +64,10 @@ async function callAdmin(fnName: string, body?: object) {
 function fmt(date: string | null) {
   if (!date) return "—";
   return new Date(date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function fmtAction(action: string) {
+  return action.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
 
 const AdminAdmins = () => {
@@ -72,11 +84,32 @@ const AdminAdmins = () => {
   const [confirmRevoke, setConfirmRevoke] = useState<AdminRow | null>(null);
   const [confirmBlock, setConfirmBlock] = useState<AdminRow | null>(null);
 
+  // Audit log dialog
+  const [auditAdmin, setAuditAdmin] = useState<AdminRow | null>(null);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+
+  // Password reset
+  const [resetLoadingId, setResetLoadingId] = useState<string | null>(null);
+
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin-list"],
     queryFn: async () => {
       const d = await callAdmin("admin-list");
       return d.admins as AdminRow[];
+    },
+  });
+
+  // Fetch 2FA status for all admins
+  const { data: totpData } = useQuery({
+    queryKey: ["admin-totp-statuses"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("admin_totp_secrets")
+        .select("user_id, is_enabled");
+      const map = new Map<string, boolean>();
+      (data || []).forEach(r => map.set(r.user_id, r.is_enabled));
+      return map;
     },
   });
 
@@ -140,6 +173,64 @@ const AdminAdmins = () => {
     }
   };
 
+  const handleOpenAuditLog = async (admin: AdminRow) => {
+    if (!admin.profile_id) { toast.error("No profile linked to this admin"); return; }
+    setAuditAdmin(admin);
+    setAuditLoading(true);
+    setAuditLogs([]);
+    const { data: logs } = await supabase
+      .from("admin_audit_logs")
+      .select("id, action, created_at, target_profile_name, details")
+      .eq("admin_id", admin.profile_id)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setAuditLogs((logs || []) as AuditLog[]);
+    setAuditLoading(false);
+  };
+
+  const handlePasswordReset = async (admin: AdminRow) => {
+    if (!admin.email) { toast.error("No email found"); return; }
+    setResetLoadingId(admin.user_id);
+    try {
+      const token = await getToken();
+      const res = await callEdgeFunction("admin-user-management", {
+        method: "POST",
+        body: { action: "password_reset", email: admin.email },
+        token,
+      });
+      const d = await res.json();
+      if (!res.ok || d?.error) throw new Error(d?.error || "Failed");
+      toast.success(`Password reset link sent to ${admin.email}`);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to send reset link");
+    } finally {
+      setResetLoadingId(null);
+    }
+  };
+
+  const handleExportCsv = () => {
+    const headers = ["Name", "Email", "Phone", "Role", "Status", "2FA", "Last Login", "Added On"];
+    const rows = filtered.map(a => [
+      a.full_name || "",
+      a.email,
+      a.mobile_number || "",
+      a.is_super_admin ? "Super Admin" : "Admin",
+      a.is_disabled ? "Blocked" : "Active",
+      totpData?.get(a.user_id) ? "Enabled" : "Disabled",
+      a.last_sign_in ? new Date(a.last_sign_in).toLocaleString("en-IN") : "",
+      new Date(a.role_created_at).toLocaleString("en-IN"),
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `admin-list-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Admin list exported");
+  };
+
   const card = { background: T.card, border: `1px solid ${T.border}`, borderRadius: 16 };
   const inp  = { background: T.input, border: `1px solid ${T.border}`, borderRadius: 10, color: T.text, outline: "none", padding: "9px 14px", fontSize: 14, width: "100%" };
 
@@ -158,6 +249,9 @@ const AdminAdmins = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button size="sm" variant="ghost" onClick={handleExportCsv} disabled={admins.length === 0} style={{ color: T.sub }}>
+            <Download className="h-4 w-4 mr-1" /> Export CSV
+          </Button>
           <Button size="sm" variant="ghost" onClick={() => refetch()} disabled={isLoading} style={{ color: T.sub }}>
             <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? "animate-spin" : ""}`} /> Refresh
           </Button>
@@ -168,11 +262,12 @@ const AdminAdmins = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Total Admins", value: admins.length, icon: Crown, color: "#6366f1" },
-          { label: "Super Admins", value: admins.filter(a => a.is_super_admin).length, icon: Star, color: "#f59e0b" },
-          { label: "Blocked",      value: admins.filter(a => a.is_disabled).length,    icon: ShieldOff, color: "#ef4444" },
+          { label: "Total Admins",  value: admins.length,                                              icon: Crown,     color: "#6366f1" },
+          { label: "Super Admins",  value: admins.filter(a => a.is_super_admin).length,               icon: Star,      color: "#f59e0b" },
+          { label: "Blocked",       value: admins.filter(a => a.is_disabled).length,                  icon: ShieldOff, color: "#ef4444" },
+          { label: "2FA Enabled",   value: admins.filter(a => totpData?.get(a.user_id)).length,       icon: Lock,      color: "#10b981" },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} style={{ ...card, padding: "18px 20px" }} className="flex items-center gap-3">
             <div style={{ background: `${color}18`, borderRadius: 10, padding: 9 }}>
@@ -194,7 +289,7 @@ const AdminAdmins = () => {
           <input
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Search by name or email…"
+            placeholder="Search by name, email or phone…"
             style={{ ...inp, padding: "6px 0", border: "none", background: "transparent", flexGrow: 1 }}
           />
           {search && (
@@ -217,105 +312,130 @@ const AdminAdmins = () => {
           <Table>
             <TableHeader>
               <TableRow style={{ borderColor: T.border }}>
-                {["Admin", "Role", "Status", "Last Login", "Added On", "Actions"].map(h => (
+                {["Admin", "Role", "Status / 2FA", "Last Login", "Added On", "Actions"].map(h => (
                   <TableHead key={h} style={{ color: T.sub, fontSize: 11, fontWeight: 700, textTransform: "uppercase" }}>{h}</TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pageData.map(admin => (
-                <TableRow key={admin.user_id} style={{ borderColor: T.border }}>
-                  {/* Admin info */}
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div style={{ width: 38, height: 38, borderRadius: "50%", background: admin.is_super_admin ? "rgba(245,158,11,.15)" : "rgba(99,102,241,.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        {admin.is_super_admin
-                          ? <Star className="h-5 w-5 text-amber-400" />
-                          : <Crown className="h-4 w-4 text-indigo-400" />}
-                      </div>
-                      <div>
-                        <div style={{ color: T.text, fontWeight: 600, fontSize: 14 }}>
-                          {admin.full_name || "—"}
+              {pageData.map(admin => {
+                const has2fa = totpData?.get(admin.user_id) === true;
+                return (
+                  <TableRow key={admin.user_id} style={{ borderColor: T.border }}>
+                    {/* Admin info */}
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div style={{ width: 38, height: 38, borderRadius: "50%", background: admin.is_super_admin ? "rgba(245,158,11,.15)" : "rgba(99,102,241,.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          {admin.is_super_admin
+                            ? <Star className="h-5 w-5 text-amber-400" />
+                            : <Crown className="h-4 w-4 text-indigo-400" />}
                         </div>
-                        <div className="flex items-center gap-1" style={{ color: T.sub, fontSize: 12 }}>
-                          <Mail className="h-3 w-3" />
-                          {admin.email}
-                        </div>
-                        {admin.mobile_number && (
-                          <div className="flex items-center gap-1" style={{ color: T.sub, fontSize: 11 }}>
-                            <Phone className="h-3 w-3" />
-                            {admin.mobile_number}
+                        <div>
+                          <div style={{ color: T.text, fontWeight: 600, fontSize: 14 }}>
+                            {admin.full_name || "—"}
                           </div>
+                          <div className="flex items-center gap-1" style={{ color: T.sub, fontSize: 12 }}>
+                            <Mail className="h-3 w-3" />
+                            {admin.email}
+                          </div>
+                          {admin.mobile_number && (
+                            <div className="flex items-center gap-1" style={{ color: T.sub, fontSize: 11 }}>
+                              <Phone className="h-3 w-3" />
+                              {admin.mobile_number}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    {/* Role */}
+                    <TableCell>
+                      {admin.is_super_admin ? (
+                        <Badge className="bg-amber-500/15 text-amber-500 border-amber-500/30 border text-xs font-semibold">
+                          <Star className="h-3 w-3 mr-1" /> Super Admin
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-indigo-500/15 text-indigo-400 border-indigo-500/30 border text-xs font-semibold">
+                          <Crown className="h-3 w-3 mr-1" /> Admin
+                        </Badge>
+                      )}
+                    </TableCell>
+
+                    {/* Status + 2FA */}
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        {admin.is_disabled ? (
+                          <Badge variant="destructive" className="text-xs w-fit">Blocked</Badge>
+                        ) : (
+                          <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 border text-xs w-fit">Active</Badge>
                         )}
+                        <div className="flex items-center gap-1">
+                          <Lock className={`h-3 w-3 ${has2fa ? "text-emerald-400" : "text-muted-foreground"}`} />
+                          <span className="text-[11px]" style={{ color: has2fa ? "#10b981" : T.sub }}>
+                            2FA {has2fa ? "On" : "Off"}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
+                    </TableCell>
 
-                  {/* Role */}
-                  <TableCell>
-                    {admin.is_super_admin ? (
-                      <Badge className="bg-amber-500/15 text-amber-500 border-amber-500/30 border text-xs font-semibold">
-                        <Star className="h-3 w-3 mr-1" /> Super Admin
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-indigo-500/15 text-indigo-400 border-indigo-500/30 border text-xs font-semibold">
-                        <Crown className="h-3 w-3 mr-1" /> Admin
-                      </Badge>
-                    )}
-                  </TableCell>
-
-                  {/* Status */}
-                  <TableCell>
-                    {admin.is_disabled ? (
-                      <Badge variant="destructive" className="text-xs">Blocked</Badge>
-                    ) : (
-                      <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 border text-xs">Active</Badge>
-                    )}
-                  </TableCell>
-
-                  {/* Last login */}
-                  <TableCell>
-                    <div className="flex items-center gap-1" style={{ color: T.sub, fontSize: 12 }}>
-                      <Clock className="h-3 w-3" />
-                      {fmt(admin.last_sign_in)}
-                    </div>
-                  </TableCell>
-
-                  {/* Role added */}
-                  <TableCell style={{ color: T.sub, fontSize: 12 }}>
-                    {fmt(admin.role_created_at)}
-                  </TableCell>
-
-                  {/* Actions */}
-                  <TableCell>
-                    {admin.is_super_admin ? (
-                      <span style={{ color: T.sub, fontSize: 11, fontStyle: "italic" }}>Protected</span>
-                    ) : (
-                      <div className="flex items-center gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 text-xs gap-1"
-                          style={{ color: admin.is_disabled ? "#10b981" : "#ef4444" }}
-                          onClick={() => setConfirmBlock(admin)}
-                        >
-                          {admin.is_disabled
-                            ? <><ShieldCheck className="h-3 w-3" /> Unblock</>
-                            : <><ShieldOff className="h-3 w-3" /> Block</>}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 text-xs gap-1 text-red-500 hover:text-red-600"
-                          onClick={() => setConfirmRevoke(admin)}
-                        >
-                          <UserMinus className="h-3 w-3" /> Remove Role
-                        </Button>
+                    {/* Last login */}
+                    <TableCell>
+                      <div className="flex items-center gap-1" style={{ color: T.sub, fontSize: 12 }}>
+                        <Clock className="h-3 w-3" />
+                        {fmt(admin.last_sign_in)}
                       </div>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+
+                    {/* Role added */}
+                    <TableCell style={{ color: T.sub, fontSize: 12 }}>
+                      {fmt(admin.role_created_at)}
+                    </TableCell>
+
+                    {/* Actions */}
+                    <TableCell>
+                      {admin.is_super_admin ? (
+                        <div className="flex flex-col gap-1">
+                          <span style={{ color: T.sub, fontSize: 11, fontStyle: "italic" }}>Protected</span>
+                          <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 px-2" style={{ color: T.sub }}
+                            onClick={() => handleOpenAuditLog(admin)}>
+                            <History className="h-3 w-3" /> Actions
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1">
+                            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 px-2"
+                              style={{ color: admin.is_disabled ? "#10b981" : "#ef4444" }}
+                              onClick={() => setConfirmBlock(admin)}>
+                              {admin.is_disabled
+                                ? <><ShieldCheck className="h-3 w-3" /> Unblock</>
+                                : <><ShieldOff className="h-3 w-3" /> Block</>}
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 px-2 text-red-500 hover:text-red-600"
+                              onClick={() => setConfirmRevoke(admin)}>
+                              <UserMinus className="h-3 w-3" /> Remove
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 px-2" style={{ color: T.sub }}
+                              onClick={() => handleOpenAuditLog(admin)}>
+                              <History className="h-3 w-3" /> Actions
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 px-2" style={{ color: T.sub }}
+                              disabled={resetLoadingId === admin.user_id}
+                              onClick={() => handlePasswordReset(admin)}>
+                              {resetLoadingId === admin.user_id
+                                ? <RefreshCw className="h-3 w-3 animate-spin" />
+                                : <KeyRound className="h-3 w-3" />}
+                              Reset PW
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}
@@ -339,7 +459,7 @@ const AdminAdmins = () => {
         )}
       </div>
 
-      {/* Add Admin Dialog */}
+      {/* ── Add Admin Dialog ───────────────────────────────────────── */}
       <Dialog open={addOpen} onOpenChange={o => { if (!o) { setAddOpen(false); setAddEmail(""); } }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
@@ -372,7 +492,7 @@ const AdminAdmins = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Revoke Confirm */}
+      {/* ── Revoke Confirm ─────────────────────────────────────────── */}
       <AlertDialog open={!!confirmRevoke} onOpenChange={o => { if (!o) setConfirmRevoke(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -395,7 +515,7 @@ const AdminAdmins = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Block Confirm */}
+      {/* ── Block Confirm ──────────────────────────────────────────── */}
       <AlertDialog open={!!confirmBlock} onOpenChange={o => { if (!o) setConfirmBlock(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -419,6 +539,51 @@ const AdminAdmins = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Admin Audit Log Dialog ─────────────────────────────────── */}
+      <Dialog open={!!auditAdmin} onOpenChange={o => !o && setAuditAdmin(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5 text-indigo-400" />
+              Admin Actions — {auditAdmin?.full_name || auditAdmin?.email}
+            </DialogTitle>
+            <DialogDescription>Last 50 actions performed by this admin</DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+            {auditLoading ? (
+              <div className="flex justify-center py-8">
+                <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : auditLogs.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground py-8">No actions recorded for this admin</p>
+            ) : auditLogs.map(log => (
+              <div key={log.id} className="rounded-lg border p-3 text-sm"
+                style={{ borderColor: "rgba(99,102,241,.2)", background: "rgba(99,102,241,.04)" }}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-indigo-400">{fmtAction(log.action)}</p>
+                    {log.target_profile_name && (
+                      <p className="text-xs mt-0.5 text-muted-foreground">Target: {log.target_profile_name}</p>
+                    )}
+                    {log.details && typeof log.details === "object" && Object.keys(log.details).length > 0 && (
+                      <p className="text-xs mt-0.5 text-muted-foreground truncate">
+                        {Object.entries(log.details).map(([k, v]) => `${k}: ${v}`).join(" · ")}
+                      </p>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-muted-foreground shrink-0">
+                    {new Date(log.created_at).toLocaleString("en-IN")}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAuditAdmin(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
