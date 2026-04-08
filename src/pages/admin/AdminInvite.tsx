@@ -7,6 +7,7 @@ import {
   Mail, Users, Link2, Clock, Copy, Check, Send, RefreshCw,
   MessageCircle, Smartphone, Upload, X, UserCheck, Building2,
   CheckCircle2, XCircle, AlertCircle, QrCode, Share2, ChevronDown,
+  Download, RotateCcw, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
@@ -17,7 +18,7 @@ const TH = {
   wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", inputBorder:"rgba(0,0,0,.12)", tab:"#f1f5f9", tabActive:"rgba(99,102,241,.12)", tabActiveFg:"#4f46e5" },
 };
 
-const APP_URL = typeof window !== "undefined" ? window.location.origin : "https://freelancer-india.lovable.app";
+const APP_URL = typeof window !== "undefined" ? window.location.origin : "https://www.freelan.space";
 
 async function callServer(body: object) {
   const res = await callEdgeFunction("admin-invite", { method: "POST", body, token: await getToken() });
@@ -76,6 +77,8 @@ const AdminInvite = () => {
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
 
   const card = { background: T.card, border: `1px solid ${T.border}`, borderRadius: 16 };
   const inp = { background: T.input, border: `1px solid ${T.inputBorder}`, borderRadius: 10, color: T.text, padding: "10px 14px", fontSize: 14, width: "100%", outline: "none" };
@@ -167,6 +170,38 @@ const AdminInvite = () => {
       setHistoryLoaded(true);
     } catch (e: any) { toast.error(e.message); }
     finally { setHistoryLoading(false); }
+  };
+
+  // ── Resend invite
+  const handleResend = async (h: HistoryRow) => {
+    setResendingId(h.id);
+    try {
+      await callUserMgmt({ action: "invite_user", email: h.email, user_type: h.user_type });
+      toast.success(`Invitation resent to ${h.email}`);
+    } catch (e: any) { toast.error(e.message || "Failed to resend"); }
+    finally { setResendingId(null); }
+  };
+
+  // ── Revoke invite (delete from invited_users)
+  const handleRevoke = async (h: HistoryRow) => {
+    setRevokingId(h.id);
+    try {
+      const { error } = await supabase.from("invited_users").delete().eq("id", h.id);
+      if (error) throw error;
+      setHistory(prev => prev.filter(r => r.id !== h.id));
+      toast.success(`Invitation to ${h.email} revoked`);
+    } catch (e: any) { toast.error(e.message || "Failed to revoke"); }
+    finally { setRevokingId(null); }
+  };
+
+  // ── Export history CSV
+  const exportHistoryCSV = () => {
+    const headers = ["Email","User Type","Status","Invited Date"];
+    const rows = history.map(h => [h.email, h.user_type === "employee" ? "Freelancer" : "Employer", h.approval_status || "pending", fmt(h.created_at)]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `invite_history_${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url);
+    toast.success("History exported");
   };
 
   // ── UserType selector
@@ -456,14 +491,37 @@ const AdminInvite = () => {
           {/* ── HISTORY ── */}
           {tab === "history" && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-3">
                 <p style={{ color: T.sub, fontSize: 13, margin: 0 }}>
-                  Users who received invitations (pending registration completion).
+                  Users who received invitations (pending registration).
                 </p>
-                <Button size="sm" variant="ghost" onClick={loadHistory} disabled={historyLoading} style={{ color: T.sub }}>
-                  <RefreshCw className={`h-4 w-4 mr-1 ${historyLoading ? "animate-spin" : ""}`} /> Refresh
-                </Button>
+                <div className="flex items-center gap-2">
+                  {history.length > 0 && (
+                    <Button size="sm" variant="ghost" onClick={exportHistoryCSV} style={{ color: T.sub, fontSize: 12 }}>
+                      <Download className="h-3.5 w-3.5 mr-1 text-indigo-400" /> Export CSV
+                    </Button>
+                  )}
+                  <Button size="sm" variant="ghost" onClick={loadHistory} disabled={historyLoading} style={{ color: T.sub }}>
+                    <RefreshCw className={`h-4 w-4 mr-1 ${historyLoading ? "animate-spin" : ""}`} /> Refresh
+                  </Button>
+                </div>
               </div>
+
+              {/* Stats */}
+              {historyLoaded && history.length > 0 && (
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: "Total Invited", value: history.length, color: "#6366f1" },
+                    { label: "Freelancers", value: history.filter(h => h.user_type === "employee").length, color: "#6366f1" },
+                    { label: "Employers", value: history.filter(h => h.user_type === "client").length, color: "#f59e0b" },
+                  ].map(s => (
+                    <div key={s.label} style={{ background: T.tab, borderRadius: 10, padding: "12px 16px", textAlign: "center", border: `1px solid ${T.border}` }}>
+                      <div style={{ fontWeight: 800, fontSize: 22, color: s.color }}>{s.value}</div>
+                      <div style={{ color: T.sub, fontSize: 11, marginTop: 2 }}>{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {historyLoading ? (
                 <div className="flex items-center justify-center py-12 gap-2" style={{ color: T.sub }}>
@@ -485,22 +543,44 @@ const AdminInvite = () => {
                         flexWrap: "wrap", gap: 8,
                       }}
                     >
-                      <div className="flex items-center gap-3">
-                        <div style={{ width: 36, height: 36, borderRadius: "50%", background: h.user_type === "employee" ? "rgba(99,102,241,.15)" : "rgba(245,158,11,.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div style={{ width: 36, height: 36, borderRadius: "50%", background: h.user_type === "employee" ? "rgba(99,102,241,.15)" : "rgba(245,158,11,.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           {h.user_type === "employee"
                             ? <UserCheck className="h-4 w-4 text-indigo-400" />
                             : <Building2 className="h-4 w-4 text-amber-400" />}
                         </div>
-                        <div>
-                          <div style={{ color: T.text, fontSize: 14, fontWeight: 600 }}>{h.email}</div>
+                        <div className="min-w-0">
+                          <div style={{ color: T.text, fontSize: 14, fontWeight: 600 }} className="truncate">{h.email}</div>
                           <div style={{ color: T.sub, fontSize: 12 }}>
                             {h.user_type === "employee" ? "Freelancer" : "Employer"} · Invited {fmt(h.created_at)}
                           </div>
                         </div>
                       </div>
-                      <Badge className="bg-amber-500/15 text-amber-500 border-amber-500/30 border text-xs">
-                        Pending Registration
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-amber-500/15 text-amber-500 border-amber-500/30 border text-xs">
+                          Pending
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleResend(h)}
+                          disabled={resendingId === h.id}
+                          style={{ color: "#6366f1", fontSize: 12, height: 32, padding: "0 10px" }}
+                          title="Resend invitation"
+                        >
+                          {resendingId === h.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <><RotateCcw className="h-3.5 w-3.5 mr-1" />Resend</>}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleRevoke(h)}
+                          disabled={revokingId === h.id}
+                          style={{ color: "#ef4444", fontSize: 12, height: 32, padding: "0 10px" }}
+                          title="Revoke invitation"
+                        >
+                          {revokingId === h.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
