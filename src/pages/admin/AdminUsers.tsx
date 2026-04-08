@@ -27,7 +27,7 @@ import {
   ChevronLeft, ChevronRight, Pencil, ShieldOff, ShieldCheck, Trash2,
   UserPlus, Users, KeyRound, Shield, Download, Calendar, ClipboardCopy,
   MessageSquare, Wallet, RotateCcw, SlidersHorizontal, NotebookPen,
-  BadgeIndianRupee, SendHorizonal, Phone, MapPin, GraduationCap, Briefcase,
+  BadgeIndianRupee, SendHorizonal, Phone, MapPin, GraduationCap, Briefcase, Building2,
   LogOut, ArrowLeftRight, Mail, History, FileText, Link2, Network, Star,
   AlertTriangle, Megaphone, BarChart3, TrendingUp, Activity, Zap, Fingerprint,
 } from "lucide-react";
@@ -167,6 +167,20 @@ const AdminUsers = () => {
   const [userServicesUser, setUserServicesUser] = useState<FullProfile | null>(null);
   const [userServicesData, setUserServicesData] = useState<EmployeeService[]>([]);
   const [userServicesLoading, setUserServicesLoading] = useState(false);
+
+  // Bank Account Details View
+  type BankAccount = { id: string; bank_name: string; bank_holder_name: string; bank_account_number: string; bank_ifsc_code: string; is_locked: boolean; created_at: string };
+  type BankVerif = { status: string; rejection_reason: string | null; verified_at: string | null; document_path: string | null };
+  const [userBankUser, setUserBankUser] = useState<FullProfile | null>(null);
+  const [userBankAccounts, setUserBankAccounts] = useState<BankAccount[]>([]);
+  const [userBankVerif, setUserBankVerif] = useState<BankVerif | null>(null);
+  const [userBankLoading, setUserBankLoading] = useState(false);
+
+  // Work Experience View
+  type WorkExp = { id: string; company_name: string; company_type: string; start_year: number; end_year: number | null; is_current: boolean; work_description: string | null };
+  const [userWorkUser, setUserWorkUser] = useState<FullProfile | null>(null);
+  const [userWorkData, setUserWorkData] = useState<WorkExp[]>([]);
+  const [userWorkLoading, setUserWorkLoading] = useState(false);
 
   // Reviews & Ratings View
   type ReviewRow = { id: string; rating: number; comment: string | null; created_at: string; project_id: string; reviewer_id: string; reviewee_id: string; reviewer: { full_name: string[] | null } | null; reviewee: { full_name: string[] | null } | null; project: { title: string } | null };
@@ -894,6 +908,33 @@ const AdminUsers = () => {
       .order("created_at", { ascending: false });
     setUserServicesData((data || []) as any[]);
     setUserServicesLoading(false);
+  };
+
+  const handleOpenUserBank = async (u: FullProfile) => {
+    setUserBankUser(u);
+    setUserBankLoading(true);
+    setUserBankAccounts([]);
+    setUserBankVerif(null);
+    const [{ data: accounts }, { data: verif }] = await Promise.all([
+      supabase.from("user_bank_accounts").select("id, bank_name, bank_holder_name, bank_account_number, bank_ifsc_code, is_locked, created_at").eq("profile_id", u.id).order("created_at", { ascending: false }),
+      supabase.from("bank_verifications").select("status, rejection_reason, verified_at, document_path").eq("profile_id", u.id).maybeSingle(),
+    ]);
+    setUserBankAccounts((accounts || []) as any[]);
+    setUserBankVerif(verif as any);
+    setUserBankLoading(false);
+  };
+
+  const handleOpenUserWork = async (u: FullProfile) => {
+    setUserWorkUser(u);
+    setUserWorkLoading(true);
+    setUserWorkData([]);
+    const { data } = await supabase
+      .from("work_experiences")
+      .select("id, company_name, company_type, start_year, end_year, is_current, work_description")
+      .eq("profile_id", u.id)
+      .order("start_year", { ascending: false });
+    setUserWorkData((data || []) as any[]);
+    setUserWorkLoading(false);
   };
 
   const handleOpenUserReviews = async (u: FullProfile) => {
@@ -2559,6 +2600,20 @@ const AdminUsers = () => {
                       <Star className="h-3.5 w-3.5 text-orange-400" />
                       Reviews
                     </Button>
+                    <Button size="sm" variant="outline" className="gap-2 rounded-xl text-xs h-9"
+                      style={{ borderColor: T.border, color: T.text }}
+                      onClick={() => { setPreviewUser(null); handleOpenUserBank(pu); }}>
+                      <Building2 className="h-3.5 w-3.5 text-cyan-400" />
+                      Bank Details
+                    </Button>
+                    {pu.user_type === "employee" && (
+                      <Button size="sm" variant="outline" className="gap-2 rounded-xl text-xs h-9"
+                        style={{ borderColor: T.border, color: T.text }}
+                        onClick={() => { setPreviewUser(null); handleOpenUserWork(pu); }}>
+                        <GraduationCap className="h-3.5 w-3.5 text-purple-400" />
+                        Work Experience
+                      </Button>
+                    )}
                     <Button size="sm" variant="outline" className="col-span-2 gap-2 rounded-xl text-xs h-9"
                       style={{ borderColor: T.border, color: T.text }}
                       onClick={() => { setPreviewUser(null); navigate(`/admin/users/${pu.id}`); }}>
@@ -3399,6 +3454,101 @@ const AdminUsers = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setWalletTxUser(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Bank Account Details Dialog ───────────────────────────── */}
+      <Dialog open={!!userBankUser} onOpenChange={(open) => !open && setUserBankUser(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-cyan-400" />
+              Bank Details — {userBankUser?.full_name?.[0] || userBankUser?.email}
+            </DialogTitle>
+            <DialogDescription>Registered bank accounts and verification status</DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+            {userBankLoading ? (
+              <div className="flex justify-center py-8"><RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            ) : (
+              <>
+                {userBankVerif && (
+                  <div className="rounded-lg border p-3 text-sm" style={{ borderColor: T.border, background: T.card }}>
+                    <p className="text-xs font-semibold mb-2" style={{ color: T.sub }}>KYC Verification Status</p>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className={`capitalize text-xs ${userBankVerif.status === "verified" ? "border-emerald-500 text-emerald-400" : userBankVerif.status === "rejected" ? "border-red-500 text-red-400" : "border-yellow-500 text-yellow-400"}`}>
+                        {userBankVerif.status}
+                      </Badge>
+                      {userBankVerif.verified_at && (
+                        <span className="text-xs" style={{ color: T.sub }}>Verified: {new Date(userBankVerif.verified_at).toLocaleDateString("en-IN")}</span>
+                      )}
+                    </div>
+                    {userBankVerif.rejection_reason && (
+                      <p className="text-xs mt-1 text-red-400">Reason: {userBankVerif.rejection_reason}</p>
+                    )}
+                  </div>
+                )}
+                {userBankAccounts.length === 0 ? (
+                  <p className="text-center text-sm text-muted-foreground py-6">No bank accounts found</p>
+                ) : userBankAccounts.map((acc) => (
+                  <div key={acc.id} className="rounded-lg border p-3 text-sm space-y-1" style={{ borderColor: T.border, background: T.card }}>
+                    <div className="flex items-center justify-between">
+                      <p className="font-semibold" style={{ color: T.text }}>{acc.bank_name}</p>
+                      {acc.is_locked && <Badge variant="outline" className="text-[10px] border-red-500 text-red-400">Locked</Badge>}
+                    </div>
+                    <p className="text-xs" style={{ color: T.sub }}>Holder: {acc.bank_holder_name}</p>
+                    <p className="text-xs font-mono" style={{ color: T.text }}>A/C: {acc.bank_account_number}</p>
+                    <p className="text-xs" style={{ color: T.sub }}>IFSC: {acc.bank_ifsc_code}</p>
+                    <p className="text-xs" style={{ color: T.sub }}>Added: {new Date(acc.created_at).toLocaleDateString("en-IN")}</p>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUserBankUser(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Work Experience Dialog ─────────────────────────────────── */}
+      <Dialog open={!!userWorkUser} onOpenChange={(open) => !open && setUserWorkUser(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5 text-purple-400" />
+              Work Experience — {userWorkUser?.full_name?.[0] || userWorkUser?.email}
+            </DialogTitle>
+            <DialogDescription>Freelancer's employment history</DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+            {userWorkLoading ? (
+              <div className="flex justify-center py-8"><RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            ) : userWorkData.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground py-8">No work experience listed</p>
+            ) : userWorkData.map((exp) => (
+              <div key={exp.id} className="rounded-lg border p-3 text-sm" style={{ borderColor: T.border, background: T.card }}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold truncate" style={{ color: T.text }}>{exp.company_name}</p>
+                    <p className="text-xs mt-0.5" style={{ color: T.sub }}>{exp.company_type}</p>
+                    {exp.work_description && (
+                      <p className="text-xs mt-1 leading-relaxed" style={{ color: T.sub }}>{exp.work_description}</p>
+                    )}
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-medium" style={{ color: T.text }}>
+                      {exp.start_year} — {exp.is_current ? "Present" : (exp.end_year ?? "?")}
+                    </p>
+                    {exp.is_current && <Badge variant="outline" className="text-[10px] border-emerald-500 text-emerald-400 mt-0.5">Current</Badge>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUserWorkUser(null)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
