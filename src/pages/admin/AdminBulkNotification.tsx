@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Bell, Send, RefreshCw, CheckCircle2, XCircle, AlertTriangle, BarChart3, Users } from "lucide-react";
 
@@ -23,6 +25,18 @@ export default function AdminBulkNotification() {
   const [retrying, setRetrying] = useState<string|null>(null);
   const [activeTab, setActiveTab] = useState<"campaigns"|"metrics"|"queue">("campaigns");
 
+  const { data: profileCounts } = useQuery({
+    queryKey: ["admin-bulk-notif-counts"],
+    queryFn: async () => {
+      const [total, freelancers, employers] = await Promise.all([
+        supabase.from("profiles").select("id", { count:"exact", head:true }),
+        supabase.from("profiles").select("id", { count:"exact", head:true }).eq("user_type","employee"),
+        supabase.from("profiles").select("id", { count:"exact", head:true }).eq("user_type","client"),
+      ]);
+      return { total: total.count || 0, freelancers: freelancers.count || 0, employers: employers.count || 0 };
+    },
+  });
+
   const retry = (id: string) => {
     setRetrying(id);
     setTimeout(() => setRetrying(null), 2000);
@@ -30,11 +44,12 @@ export default function AdminBulkNotification() {
 
   const statusColor = (s: string) => s === "completed" ? "#4ade80" : s === "in_progress" ? "#60a5fa" : s === "queued" ? "#94a3b8" : "#f87171";
 
+  const totalUsers = profileCounts?.total || 0;
   const stats = [
-    { label:"Total Sent Today", value:"22,342", color:"#60a5fa", icon:Bell },
-    { label:"Delivery Rate", value:"98.7%", color:"#4ade80", icon:CheckCircle2 },
-    { label:"Total Failed", value:"218", color:"#f87171", icon:XCircle },
-    { label:"Active Campaigns", value:CAMPAIGNS.filter(c=>c.status==="in_progress").length, color:A1, icon:Users },
+    { label:"Total Registered Users", value: totalUsers.toLocaleString(), color:"#60a5fa", icon:Bell },
+    { label:"Freelancers", value: (profileCounts?.freelancers || 0).toLocaleString(), color:"#4ade80", icon:CheckCircle2 },
+    { label:"Employers", value: (profileCounts?.employers || 0).toLocaleString(), color:"#f97316", icon:Users },
+    { label:"Active Campaigns", value:CAMPAIGNS.filter(c=>c.status==="in_progress").length, color:A1, icon:BarChart3 },
   ];
 
   return (

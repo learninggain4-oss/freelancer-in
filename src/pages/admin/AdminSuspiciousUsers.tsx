@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
-import { Users, Search, Eye, Flag, Ban, AlertTriangle, Loader2 } from "lucide-react";
+import { Users, Search, Eye, Flag, Ban, AlertTriangle, Loader2, Download } from "lucide-react";
+import { toast } from "sonner";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -21,6 +22,7 @@ const getName = (fn: string[] | null | undefined) => fn?.join(" ").trim() || "Un
 export default function AdminSuspiciousUsers() {
   const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
+  const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [filterLevel, setFilterLevel] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -74,10 +76,42 @@ export default function AdminSuspiciousUsers() {
     return matchSearch && matchLevel && matchStatus && matchCountry;
   });
 
-  const doAction = (_id: string, action: string) => {
-    setActionMsg(`${action} action noted — update status in user profile.`);
-    setTimeout(() => setActionMsg(""), 3000);
-    setSelected(null);
+  const actionMutation = useMutation({
+    mutationFn: async ({ id, action }: { id: string; action: string }) => {
+      if (action === "Block" || action === "Suspend") {
+        const { error } = await supabase.from("profiles").update({ wallet_active: false }).eq("id", id);
+        if (error) throw error;
+      } else if (action === "Verify") {
+        const { error } = await supabase.from("profiles").update({ wallet_active: true }).eq("id", id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, vars) => {
+      toast.success(`${vars.action} action applied`);
+      qc.invalidateQueries({ queryKey: ["admin-suspicious-users"] });
+      setSelected(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const doAction = (id: string, action: string) => {
+    if (action === "Flag") {
+      setActionMsg("User flagged for review");
+      setTimeout(() => setActionMsg(""), 3000);
+      setSelected(null);
+    } else {
+      actionMutation.mutate({ id, action });
+    }
+  };
+
+  const exportCSV = () => {
+    const rows = [["Name","Email","Risk Level","Score","Indicators","Status","Region","Registered"]];
+    filtered.forEach(u => rows.push([u.name, u.email, u.level, String(u.score), u.indicators.join("; "), u.status, u.country, u.registered]));
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const el = document.createElement("a");
+    el.href = URL.createObjectURL(new Blob([csv], { type:"text/csv" }));
+    el.download = `suspicious-users-${new Date().toISOString().slice(0,10)}.csv`;
+    el.click();
   };
 
   return (
@@ -108,7 +142,10 @@ export default function AdminSuspiciousUsers() {
               {f.opts.map(o => <option key={o} value={o}>{o==="all"?`All ${f.label}s`:o.charAt(0).toUpperCase()+o.slice(1)}</option>)}
             </select>
           ))}
-          <div style={{ marginLeft:"auto", fontSize:13, color:T.sub }}>{filtered.length} users</div>
+          <button onClick={exportCSV} style={{ display:"flex", alignItems:"center", gap:6, padding:"8px 14px", borderRadius:8, background:`${A1}15`, border:`1px solid ${A1}33`, color:A1, fontSize:12, fontWeight:600, cursor:"pointer" }}>
+            <Download size={13}/> Export CSV
+          </button>
+          <div style={{ fontSize:13, color:T.sub }}>{filtered.length} users</div>
         </div>
 
         <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, overflow:"hidden", backdropFilter:"blur(10px)" }}>

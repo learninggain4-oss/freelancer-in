@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { ShieldCheck, CheckCircle2, XCircle, Clock, Search, Eye, User, Pencil, Trash2, Loader2 } from "lucide-react";
+import { ShieldCheck, CheckCircle2, XCircle, Clock, Search, Eye, User, Pencil, Trash2, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 
@@ -209,6 +209,25 @@ const AdminVerifications = () => {
     }
   };
 
+  const exportCSV = () => {
+    const rows = [["Name on Aadhaar","Aadhaar (last 4)","User Name","User Code","Email","Status","Submitted","Verified At"]];
+    filtered.forEach(v => rows.push([
+      v.name_on_aadhaar || "—",
+      v.aadhaar_number ? "****" + v.aadhaar_number.slice(-4) : "—",
+      v.profiles?.full_name?.[0] || "—",
+      v.profiles?.user_code?.[0] || "—",
+      v.profiles?.email || "—",
+      v.status,
+      v.created_at ? new Date(v.created_at).toLocaleDateString("en-IN") : "—",
+      v.verified_at ? new Date(v.verified_at).toLocaleDateString("en-IN") : "—",
+    ]));
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const el = document.createElement("a");
+    el.href = URL.createObjectURL(new Blob([csv], { type:"text/csv" }));
+    el.download = `aadhaar-verifications-${new Date().toISOString().slice(0,10)}.csv`;
+    el.click();
+  };
+
   const statusBadge = (status: string) => {
     const map: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
       pending: { variant: "secondary", label: "Pending" },
@@ -232,10 +251,15 @@ const AdminVerifications = () => {
           </div>
           <p style={{ color: T.sub }}>Review and manage identity verification submissions</p>
         </div>
-        <div className="flex items-center gap-4 bg-black/20 p-3 rounded-xl border border-white/5">
-          <div className="flex items-center gap-2">
-            <Switch checked={showCleared} onCheckedChange={setShowCleared} id="show-cleared-aadhaar" />
-            <Label htmlFor="show-cleared-aadhaar" className="text-xs cursor-pointer" style={{ color: T.sub }}>Show cleared</Label>
+        <div className="flex items-center gap-3">
+          <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold" style={{ background:"rgba(99,102,241,.15)", border:"1px solid rgba(99,102,241,.3)", color:"#6366f1" }}>
+            <Download className="h-4 w-4" /> Export CSV
+          </button>
+          <div className="flex items-center gap-4 bg-black/20 p-3 rounded-xl border border-white/5">
+            <div className="flex items-center gap-2">
+              <Switch checked={showCleared} onCheckedChange={setShowCleared} id="show-cleared-aadhaar" />
+              <Label htmlFor="show-cleared-aadhaar" className="text-xs cursor-pointer" style={{ color: T.sub }}>Show cleared</Label>
+            </div>
           </div>
         </div>
       </div>
