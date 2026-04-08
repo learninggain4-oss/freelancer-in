@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, AlertTriangle, CheckCircle2, Clock, RefreshCw, ToggleLeft, ToggleRight, Layers, Zap, Activity } from "lucide-react";
+import { Bell, AlertTriangle, CheckCircle2, Clock, RefreshCw, ToggleLeft, ToggleRight, Layers, Zap, Activity, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
@@ -82,6 +82,16 @@ export default function AdminNotificationCenter() {
     setEditId(null);
   };
 
+  const exportLogsCSV = () => {
+    const rows = [["Title","Type","Recipients","Delivered","Failed","Triggered By","Timestamp"]];
+    logs.forEach(l=>rows.push([l.title,l.type,String(l.recipients),String(l.delivered),String(l.failed),l.triggeredBy,l.timestamp]));
+    const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+    a.download = `notification-history-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  };
+
   const toggleSetting = (id:string) => {
     const updated = settings.map(s=>s.id===id?{...s,value:!s.value}:s);
     localStorage.setItem("admin_notif_settings_v1",JSON.stringify(updated));
@@ -157,6 +167,12 @@ export default function AdminNotificationCenter() {
 
       {tab==="logs"&&(
         <div style={{ background:T.card,border:`1px solid ${T.border}`,borderRadius:16,overflow:"hidden" }}>
+          <div style={{ padding:"12px 18px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+            <span style={{ fontSize:12,fontWeight:700,color:T.sub,textTransform:"uppercase",letterSpacing:1 }}>{logs.length} entries</span>
+            <button onClick={exportLogsCSV} style={{ display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:`${T.input}`,border:`1px solid ${T.border}`,borderRadius:8,cursor:"pointer",color:T.text,fontSize:12,fontWeight:600 }}>
+              <Download size={12}/> Export CSV
+            </button>
+          </div>
           {logs.map((l,i)=>(
             <div key={l.id} style={{ display:"flex",gap:12,padding:"14px 18px",borderBottom:i<logs.length-1?`1px solid ${T.border}`:"none",alignItems:"center" }}>
               <div style={{ flex:1 }}>

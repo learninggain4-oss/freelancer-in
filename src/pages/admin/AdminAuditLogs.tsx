@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
-import { ClipboardList, Search, Download, User, Shield, Eye, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { ClipboardList, Search, Download, User, Shield, Eye, AlertTriangle, CheckCircle2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+
+const PAGE_SIZE = 50;
 
 const A1 = "#6366f1";
 const TH = {
@@ -40,6 +42,7 @@ export default function AdminAuditLogs() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
   const [activeTab, setActiveTab] = useState<"logs"|"settings"|"health">("logs");
+  const [page, setPage] = useState(1);
 
   const { data: rawLogs = [], isLoading } = useQuery({
     queryKey: ["admin-audit-logs"],
@@ -89,6 +92,19 @@ export default function AdminAuditLogs() {
   const since24h = new Date(Date.now() - 86400000).toISOString();
   const today = logs.filter(l => rawLogs.find(r => r.id === l.id && r.created_at >= since24h));
 
+  const exportCSV = () => {
+    const rows = [["Action","Actor","Target","Type","Severity","IP","Time"]];
+    filtered.forEach(l => rows.push([l.action, l.actor, l.target, l.type, l.severity, l.ip, l.time]));
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type:"text/csv" }));
+    a.download = `audit-logs-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  };
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   const stats = [
     { label:"Total Logs (24h)", value: today.length.toLocaleString(), color:"#60a5fa", icon:ClipboardList },
     { label:"Admin Actions", value: logs.filter(l => l.type === "admin").length.toLocaleString(), color:A1, icon:Shield },
@@ -103,8 +119,8 @@ export default function AdminAuditLogs() {
           <h1 className="text-2xl font-bold" style={{ color: T.text }}>Comprehensive Audit Logging</h1>
           <p className="text-sm mt-1" style={{ color: T.sub }}>Track all admin and user actions with full change history and export capability.</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold" style={{ background: A1, color:"#fff" }}>
-          <Download className="h-4 w-4" /> Export Logs
+        <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold" style={{ background: A1, color:"#fff" }}>
+          <Download className="h-4 w-4" /> Export CSV
         </button>
       </div>
 
@@ -138,21 +154,21 @@ export default function AdminAuditLogs() {
           <div className="flex gap-3 flex-wrap">
             <div className="flex items-center gap-2 flex-1 min-w-[200px] px-3 py-2 rounded-xl border" style={{ background: T.input, borderColor: T.border }}>
               <Search className="h-4 w-4" style={{ color: T.sub }} />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search actions or actors…"
+              <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search actions or actors…"
                 className="bg-transparent flex-1 text-sm outline-none" style={{ color: T.text }} />
             </div>
-            <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+            <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }}
               className="px-3 py-2 rounded-xl border text-sm font-bold outline-none" style={{ background: T.input, borderColor: T.border, color: T.text }}>
               {TYPES.map(t => <option key={t} value={t}>{t === "all" ? "All Types" : t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
             </select>
-            <select value={severityFilter} onChange={e => setSeverityFilter(e.target.value)}
+            <select value={severityFilter} onChange={e => { setSeverityFilter(e.target.value); setPage(1); }}
               className="px-3 py-2 rounded-xl border text-sm font-bold outline-none" style={{ background: T.input, borderColor: T.border, color: T.text }}>
               {["all","high","medium","low"].map(s => <option key={s} value={s}>{s === "all" ? "All Severity" : s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
             </select>
           </div>
           <div className="rounded-2xl border overflow-hidden" style={{ background: T.card, borderColor: T.border }}>
             <div className="p-3 border-b" style={{ borderColor: T.border }}>
-              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: T.sub }}>{filtered.length} records</span>
+              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: T.sub }}>{filtered.length} records · page {page}/{totalPages||1}</span>
             </div>
             {isLoading ? (
               <div className="flex items-center justify-center py-12 gap-3">
@@ -161,7 +177,7 @@ export default function AdminAuditLogs() {
               </div>
             ) : (
               <div className="divide-y" style={{ borderColor: T.border }}>
-                {filtered.map(log => (
+                {paginated.map(log => (
                   <div key={log.id} className="flex items-start justify-between p-4 hover:bg-white/5 transition-all">
                     <div className="flex items-start gap-4">
                       <div className="h-2.5 w-2.5 rounded-full mt-1.5" style={{ background: severityColor(log.severity) }} />
@@ -179,12 +195,22 @@ export default function AdminAuditLogs() {
                     </div>
                   </div>
                 ))}
-                {filtered.length === 0 && (
+                {paginated.length === 0 && !isLoading && (
                   <div className="flex flex-col items-center justify-center py-12 gap-2">
                     <Eye className="h-8 w-8 opacity-20" style={{ color: T.sub }} />
                     <p className="text-sm" style={{ color: T.sub }}>No audit logs found</p>
                   </div>
                 )}
+              </div>
+            )}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between p-3 border-t" style={{ borderColor: T.border }}>
+                <span className="text-xs" style={{ color: T.sub }}>Showing {((page-1)*PAGE_SIZE)+1}–{Math.min(page*PAGE_SIZE,filtered.length)} of {filtered.length}</span>
+                <div className="flex gap-2">
+                  <button disabled={page<=1} onClick={()=>setPage(p=>p-1)} className="p-1 rounded-lg border disabled:opacity-30" style={{ background:T.input,borderColor:T.border,color:T.text }}><ChevronLeft className="h-4 w-4"/></button>
+                  <span className="text-xs px-2 py-1" style={{ color:T.sub }}>{page}/{totalPages}</span>
+                  <button disabled={page>=totalPages} onClick={()=>setPage(p=>p+1)} className="p-1 rounded-lg border disabled:opacity-30" style={{ background:T.input,borderColor:T.border,color:T.text }}><ChevronRight className="h-4 w-4"/></button>
+                </div>
               </div>
             )}
           </div>

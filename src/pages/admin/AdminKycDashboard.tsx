@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ShieldCheck, Search, CheckCircle2, XCircle, Clock, Eye, ChevronLeft, ChevronRight, Fingerprint, Landmark, User } from "lucide-react";
+import { ShieldCheck, Search, CheckCircle2, XCircle, Clock, Eye, ChevronLeft, ChevronRight, Fingerprint, Landmark, User, Download, ExternalLink } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { safeFmt } from "@/lib/admin-date";
 
@@ -24,6 +24,7 @@ const AdminKycDashboard = () => {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<any>(null);
   const [comment, setComment] = useState("");
+  const [docLoading, setDocLoading] = useState(false);
 
   const { data: aadhaarItems=[], isLoading: loadingA } = useQuery({
     queryKey:["admin-kyc-aadhaar"],
@@ -77,14 +78,53 @@ const AdminKycDashboard = () => {
     setSelected(null); setComment("");
   };
 
+  const exportCSV = () => {
+    const rows = [tab==="aadhaar"
+      ? ["Name","User Code","Type","Aadhaar (last 4)","Name on Aadhaar","DOB","Gender","Status","Submitted"]
+      : ["Name","User Code","Type","Account (last 4)","IFSC","Bank Name","Account Holder","Status","Submitted"]];
+    filtered.forEach((i:any) => {
+      const name = (i.profile?.full_name||[]).join(" ")||"—";
+      const code = (i.profile?.user_code||[]).join("")||"—";
+      const utype = i.profile?.user_type||"—";
+      const submitted = safeFmt(i.created_at,"dd MMM yyyy");
+      if(tab==="aadhaar") rows.push([name,code,utype,i.aadhaar_number?"****"+i.aadhaar_number.slice(-4):"—",i.name_on_aadhaar||"—",i.date_of_birth||"—",i.gender||"—",i.status,submitted]);
+      else rows.push([name,code,utype,i.account_number?"****"+String(i.account_number).slice(-4):"—",i.ifsc_code||"—",i.bank_name||"—",i.account_holder_name||"—",i.status,submitted]);
+    });
+    const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+    a.download = `kyc-${tab}-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  };
+
+  const getDocUrl = async (item:any): Promise<string|null> => {
+    const bucket = tab==="aadhaar"?"aadhaar-documents":"bank-documents";
+    const fileField = tab==="aadhaar" ? item.document_url : item.document_url;
+    if(fileField) return fileField;
+    const path = tab==="aadhaar"
+      ? `${item.profile_id}/aadhaar`
+      : `${item.profile_id}/bank`;
+    const { data } = await supabase.storage.from(bucket).list(item.profile_id);
+    if(data && data.length>0) {
+      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(`${item.profile_id}/${data[0].name}`);
+      return urlData.publicUrl;
+    }
+    return null;
+  };
+
   const bs=(c:string,bg:string)=>({background:bg,color:c,border:`1px solid ${c}33`,borderRadius:6,padding:"2px 9px",fontSize:11,fontWeight:700 as any});
   const statusStyle=(s:string)=>{const m:Record<string,any>={pending:{c:"#fbbf24",bg:"rgba(251,191,36,.12)"},approved:{c:"#4ade80",bg:"rgba(74,222,128,.12)"},rejected:{c:"#f87171",bg:"rgba(248,113,113,.12)"}};return bs(m[s]?.c||"#94a3b8",m[s]?.bg||"rgba(148,163,184,.12)")};
 
   return (
     <div style={{ padding:"24px 16px", maxWidth:980, margin:"0 auto" }}>
-      <div style={{ marginBottom:24 }}>
-        <h1 style={{ fontWeight:800, fontSize:22, color:T.text, margin:0 }}>KYC Unified Dashboard</h1>
-        <p style={{ color:T.sub, fontSize:13, marginTop:4 }}>Review and approve Aadhaar + Bank verifications in one place</p>
+      <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:24,flexWrap:"wrap",gap:10 }}>
+        <div>
+          <h1 style={{ fontWeight:800, fontSize:22, color:T.text, margin:0 }}>KYC Unified Dashboard</h1>
+          <p style={{ color:T.sub, fontSize:13, marginTop:4 }}>Review and approve Aadhaar + Bank verifications in one place</p>
+        </div>
+        <button onClick={exportCSV} style={{ display:"flex",alignItems:"center",gap:6,padding:"8px 16px",background:A1,border:"none",borderRadius:10,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer" }}>
+          <Download size={14}/> Export CSV
+        </button>
       </div>
 
       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:20 }}>
@@ -186,7 +226,18 @@ const AdminKycDashboard = () => {
                   </div>
                 ))
             }
-            <div style={{ marginTop:16 }}>
+            <div style={{ marginTop:14 }}>
+              <button onClick={async()=>{
+                setDocLoading(true);
+                const url = await getDocUrl(selected);
+                setDocLoading(false);
+                if(url) window.open(url,"_blank");
+                else toast.error("No document found in storage");
+              }} style={{ display:"flex",alignItems:"center",gap:6,width:"100%",padding:"9px",background:`${A1}12`,border:`1px solid ${A1}33`,borderRadius:8,cursor:"pointer",color:A1,fontSize:13,fontWeight:600,justifyContent:"center" }}>
+                {docLoading?<span>Loading…</span>:<><ExternalLink size={14}/> View Uploaded Document</>}
+              </button>
+            </div>
+            <div style={{ marginTop:12 }}>
               <label style={{ fontSize:12,color:T.sub,display:"block",marginBottom:6 }}>Admin Comment</label>
               <textarea value={comment} onChange={e=>setComment(e.target.value)} rows={3} placeholder="Reason for approval/rejection..." style={{ width:"100%",background:T.input,border:`1px solid ${T.border}`,borderRadius:8,color:T.text,padding:"8px 12px",fontSize:13,resize:"vertical",boxSizing:"border-box" as any }}/>
             </div>
