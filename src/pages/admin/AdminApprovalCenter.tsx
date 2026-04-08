@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GitPullRequest, CheckCircle2, XCircle, Clock, Users, ShieldAlert, UserPlus, History, AlertTriangle, Lock, Unlock, RefreshCw, Eye, MessageSquare, Star, Zap } from "lucide-react";
+import { GitPullRequest, CheckCircle2, XCircle, Clock, Users, ShieldAlert, UserPlus, History, AlertTriangle, Lock, Unlock, RefreshCw, Eye, MessageSquare, Star, Zap, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { useAdminAudit } from "@/hooks/use-admin-audit";
@@ -95,6 +95,15 @@ export default function AdminApprovalCenter() {
     setShowAddRecovery(false); setNewRecovery({ name: "", email: "", role: "emergency" });
   };
 
+  const exportCSV = () => {
+    const headers = ["Action","Category","Risk","Status","Requested By","Reason","Notes","Requested At","Resolved By","Resolved At"];
+    const rows = approvals.map(a => [a.action, a.category, a.risk, a.status, a.requestedBy, a.reason, a.notes || "", safeFmt(a.requestedAt, "dd MMM yyyy HH:mm"), a.resolvedBy || "", a.resolvedAt ? safeFmt(a.resolvedAt, "dd MMM yyyy HH:mm") : ""]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `approval_log_${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url);
+    toast({ title: "Approval log exported" });
+  };
+
   const filtered = approvals.filter(a => filter === "all" || a.status === filter);
   const pending = approvals.filter(a => a.status === "pending").length;
   const inp = (s?: object) => ({ background: T.input, border: `1px solid ${T.border}`, color: T.text, borderRadius: 10, ...s });
@@ -113,6 +122,9 @@ export default function AdminApprovalCenter() {
             <p style={{ color: T.sub, fontSize: 13, margin: "3px 0 0" }}>Dual-approval workflow for sensitive actions · Emergency recovery account management</p>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={exportCSV} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, background: T.card, border: `1px solid ${T.border}`, color: T.text, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+              <Download size={13} style={{ color: A1 }} /> Export Log
+            </button>
             <button onClick={() => setShowNewRequest(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, border: "none", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
               <GitPullRequest size={13} /> New Request
             </button>

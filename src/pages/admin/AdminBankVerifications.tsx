@@ -15,7 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { Landmark, CheckCircle2, XCircle, Clock, Search, Eye, User, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Landmark, CheckCircle2, XCircle, Clock, Search, Eye, User, Loader2, Pencil, Trash2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 
@@ -204,6 +204,30 @@ const AdminBankVerifications = () => {
     }
   };
 
+  const exportCSV = () => {
+    const headers = ["Name","Email","User Code","User Type","Status","Bank Holder","Bank Name","Account No","IFSC","UPI ID","Attempt Count","Created At","Verified At","Rejection Reason"];
+    const rows = verifications.map(v => [
+      v.profiles?.full_name?.[0] || "",
+      v.profiles?.email || "",
+      v.profiles?.user_code?.[0] || "",
+      v.profiles?.user_type || "",
+      v.status,
+      v.profiles?.bank_holder_name || "",
+      v.profiles?.bank_name || "",
+      v.profiles?.bank_account_number || "",
+      v.profiles?.bank_ifsc_code || "",
+      v.profiles?.upi_id || "",
+      v.attempt_count,
+      new Date(v.created_at).toLocaleString("en-IN"),
+      v.verified_at ? new Date(v.verified_at).toLocaleString("en-IN") : "",
+      v.rejection_reason || "",
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `bank_verifications_${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url);
+    toast.success("CSV exported");
+  };
+
   const renderBadge = (status: string) => {
     const cfg = statusBadgeConfig[status] ?? statusBadgeConfig.pending;
     return <Badge variant={cfg.variant}>{cfg.label}</Badge>;
@@ -221,12 +245,30 @@ const AdminBankVerifications = () => {
           </div>
           <p style={{ color: T.sub }}>Review and manage bank detail verifications</p>
         </div>
-        <div className="flex items-center gap-4 bg-black/20 p-3 rounded-xl border border-white/5">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 bg-black/20 p-3 rounded-xl border border-white/5">
             <Switch checked={showCleared} onCheckedChange={setShowCleared} id="show-cleared-bank" />
             <Label htmlFor="show-cleared-bank" className="text-xs cursor-pointer" style={{ color: T.sub }}>Show cleared</Label>
           </div>
+          <Button variant="outline" size="sm" onClick={exportCSV} className="flex items-center gap-2 rounded-xl h-10 px-4" style={{ borderColor: T.border, background: T.card, color: T.text }}>
+            <Download className="h-4 w-4 text-indigo-500" /> Export CSV
+          </Button>
         </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {([
+          { label: "Pending", status: "pending", color: "#fbbf24" },
+          { label: "Under Process", status: "under_process", color: "#60a5fa" },
+          { label: "Verified", status: "verified", color: "#4ade80" },
+          { label: "Rejected", status: "rejected", color: "#f87171" },
+        ] as { label: string; status: string; color: string }[]).map(s => (
+          <div key={s.label} className="rounded-2xl border p-4 text-center cursor-pointer transition-all hover:scale-105" style={{ background: T.card, borderColor: tab === s.status ? s.color + "60" : T.border }} onClick={() => setTab(s.status)}>
+            <div className="text-2xl font-bold" style={{ color: s.color }}>{verifications.filter(v => v.status === s.status).length}</div>
+            <div className="text-xs mt-1" style={{ color: T.sub }}>{s.label}</div>
+          </div>
+        ))}
       </div>
 
       <div className="relative group">

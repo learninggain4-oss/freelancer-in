@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Search, Wallet, IndianRupee, Clock, PlusCircle, MinusCircle, Loader2,
-  Lock, ArrowRightLeft, Pencil, Trash2, User, ChevronLeft, ChevronRight, EyeOff, Unlock, LayoutDashboard,
+  Lock, ArrowRightLeft, Pencil, Trash2, User, ChevronLeft, ChevronRight, EyeOff, Unlock, LayoutDashboard, Download,
 } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { cn } from "@/lib/utils";
@@ -545,7 +545,7 @@ const AdminWalletManagement = () => {
 
           {/* Tabs: Transactions & Withdrawals */}
           <Tabs defaultValue="transactions" className="w-full">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
               <TabsList className="h-10 bg-transparent border p-0 gap-1 rounded-xl" style={{ borderColor: T.border }}>
                 <TabsTrigger value="transactions" className="rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white px-6" style={{ color: T.sub }}>
                   Transactions ({transactions.length})
@@ -554,6 +554,16 @@ const AdminWalletManagement = () => {
                   Withdrawals ({withdrawals.length})
                 </TabsTrigger>
               </TabsList>
+              <Button variant="outline" size="sm" className="flex items-center gap-2 rounded-xl h-9 px-4" style={{ borderColor: T.border, background: T.card, color: T.text }} onClick={() => {
+                const headers = ["Type","Amount","Description","Reference ID","Date","Cleared"];
+                const rows = transactions.map(t => [t.type, t.amount, t.description, t.reference_id || "", new Date(t.created_at).toLocaleString("en-IN"), t.is_cleared ? "Yes" : "No"]);
+                const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+                const blob = new Blob([csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `wallet_txns_${displayUser?.user_code?.[0] || "user"}_${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url);
+                toast.success("Transactions exported");
+              }}>
+                <Download className="h-3.5 w-3.5 text-indigo-500" /> Export Transactions
+              </Button>
             </div>
 
             <TabsContent value="transactions" className="space-y-4">

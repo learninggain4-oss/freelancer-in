@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, BadgeCheck, Pencil, Save, EyeOff, ChevronDown, ChevronUp, Wallet, Clock, TrendingDown, Copy, Landmark, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, BadgeCheck, Pencil, Save, EyeOff, ChevronDown, ChevronUp, Wallet, Clock, TrendingDown, Copy, Landmark, Loader2, Search, Download, X } from "lucide-react";
 import { WithdrawalCountdown } from "@/components/withdrawal/WithdrawalCountdown";
 import { cn } from "@/lib/utils";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
@@ -46,6 +46,7 @@ const AdminWithdrawals = () => {
   const [showCleared, setShowCleared] = useState(false);
   const [expandedEdit, setExpandedEdit] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
+  const [search, setSearch] = useState("");
 
   const fetchWithdrawals = async () => {
     setLoading(true);
@@ -105,6 +106,31 @@ const AdminWithdrawals = () => {
     setExpandedEdit(w.id);
   };
 
+  const exportCSV = () => {
+    const headers = ["Order ID","Freelancer","Email","User Code","Amount","Method","Status","UPI ID","Bank Account","IFSC","Holder Name","Requested At","Bank Verified"];
+    const rows = withdrawals.map(w => [
+      w.order_id || "",
+      w.freelancer?.full_name?.[0] || "",
+      w.freelancer?.email || "",
+      w.freelancer?.user_code?.[0] || "",
+      w.amount,
+      w.method,
+      w.status,
+      w.upi_id || "",
+      w.bank_account_number || "",
+      w.bank_ifsc_code || "",
+      w.bank_holder_name || "",
+      new Date(w.requested_at).toLocaleString("en-IN"),
+      w.bankVerified ? "Yes" : "No",
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `withdrawals_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV exported");
+  };
+
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
       pending: "bg-amber-500/20 text-amber-500 border-amber-500/30",
@@ -115,7 +141,23 @@ const AdminWithdrawals = () => {
     return <Badge variant="outline" className={cn("backdrop-blur-md", map[status] || "")}>{status}</Badge>;
   };
 
-  const filterByStatus = (status: string | null) => status ? withdrawals.filter(w => w.status === status) : withdrawals;
+  const applySearch = (items: Withdrawal[]) => {
+    if (!search.trim()) return items;
+    const q = search.toLowerCase();
+    return items.filter(w =>
+      (w.freelancer?.full_name?.[0] || "").toLowerCase().includes(q) ||
+      (w.freelancer?.email || "").toLowerCase().includes(q) ||
+      (w.freelancer?.user_code?.[0] || "").toLowerCase().includes(q) ||
+      (w.order_id || "").toLowerCase().includes(q) ||
+      (w.upi_id || "").toLowerCase().includes(q) ||
+      (w.bank_account_number || "").toLowerCase().includes(q)
+    );
+  };
+
+  const filterByStatus = (status: string | null) => {
+    const base = status ? withdrawals.filter(w => w.status === status) : withdrawals;
+    return applySearch(base);
+  };
 
   const totalPending = filterByStatus("pending").length;
   const totalApproved = filterByStatus("approved").length;
@@ -287,9 +329,24 @@ const AdminWithdrawals = () => {
 
       {/* Header Actions */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2 rounded-2xl border p-2 px-4" style={{ borderColor: T.border, background: T.card, backdropFilter: "blur(12px)" }}>
-          <Switch checked={showCleared} onCheckedChange={setShowCleared} id="show-cleared-w" />
-          <Label htmlFor="show-cleared-w" className="text-sm font-medium" style={{ color: T.text }}>Show Cleared Records</Label>
+        <div className="flex items-center gap-2 flex-1 min-w-[200px] rounded-2xl border px-4 py-2" style={{ borderColor: T.border, background: T.card, backdropFilter: "blur(12px)" }}>
+          <Search className="h-4 w-4 flex-shrink-0" style={{ color: T.sub }} />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search by name, email, order ID, UPI, account…"
+            style={{ background: "none", border: "none", outline: "none", color: T.text, fontSize: 13, flex: 1, minWidth: 0 }}
+          />
+          {search && <button onClick={() => setSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: T.sub, padding: 0 }}><X className="h-3.5 w-3.5" /></button>}
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-2xl border p-2 px-4" style={{ borderColor: T.border, background: T.card, backdropFilter: "blur(12px)" }}>
+            <Switch checked={showCleared} onCheckedChange={setShowCleared} id="show-cleared-w" />
+            <Label htmlFor="show-cleared-w" className="text-sm font-medium" style={{ color: T.text }}>Show Cleared</Label>
+          </div>
+          <button onClick={exportCSV} className="flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-indigo-500/10" style={{ borderColor: T.border, background: T.card, color: T.text, backdropFilter: "blur(12px)" }}>
+            <Download className="h-4 w-4" style={{ color: "#6366f1" }} /> Export CSV
+          </button>
         </div>
       </div>
 
