@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { IndianRupee, Percent, TrendingUp, Edit2, Save, X, RefreshCw, BarChart3, Layers } from "lucide-react";
+import { IndianRupee, Percent, TrendingUp, Edit2, Save, X, RefreshCw, BarChart3, Layers, Download } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { safeFmt } from "@/lib/admin-date";
 
@@ -69,6 +69,16 @@ const AdminCommissionManagement = () => {
     },
   });
 
+  const exportCSV = () => {
+    const rows = [["Category","Rate (%)","Min Amount (₹)","Max Cap (₹)","Status"]];
+    rules.forEach(r => rows.push([r.category, String(r.rate), String(r.minAmount), String(r.maxCap), r.active ? "Active" : "Inactive"]));
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const el = document.createElement("a");
+    el.href = URL.createObjectURL(new Blob([csv], { type:"text/csv" }));
+    el.download = `commission-rules-${new Date().toISOString().slice(0,10)}.csv`;
+    el.click();
+  };
+
   const startEdit = (r: CommRule) => {
     setEditId(r.id); setEditRate(String(r.rate)); setEditMin(String(r.minAmount)); setEditCap(String(r.maxCap));
   };
@@ -115,11 +125,16 @@ const AdminCommissionManagement = () => {
       </div>
 
       <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 14, overflow: "hidden" }}>
-        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${T.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${T.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:8 }}>
           <div style={{ fontWeight: 700, fontSize: 15, color: T.text, display:"flex", alignItems:"center", gap: 8 }}>
             <Percent size={16} color={A1} /> Commission Rules
           </div>
-          <span style={{ fontSize: 12, color: T.sub }}>{rules.filter(r => r.active).length} active categories</span>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize: 12, color: T.sub }}>{rules.filter(r => r.active).length} active categories</span>
+            <button onClick={exportCSV} style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", background:`${A1}15`, border:`1px solid ${A1}33`, borderRadius:8, cursor:"pointer", color:A1, fontSize:12, fontWeight:600 }}>
+              <Download size={13}/> Export CSV
+            </button>
+          </div>
         </div>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>

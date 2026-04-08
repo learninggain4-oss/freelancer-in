@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Megaphone, Plus, Trash2, Loader2, Clock, CalendarClock, Pencil, Send } from "lucide-react";
+import { Megaphone, Plus, Trash2, Loader2, Clock, CalendarClock, Pencil, Send, Download, Search } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import AnnouncementForm from "@/components/admin/AnnouncementForm";
 import {
@@ -44,6 +44,8 @@ const AdminAnnouncements = () => {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<any>(null);
+  const [search, setSearch] = useState("");
+  const [audienceFilter, setAudienceFilter] = useState("all");
 
   const { data: announcements = [], isLoading } = useQuery({
     queryKey: ["admin-announcements"],
@@ -117,6 +119,29 @@ const AdminAnnouncements = () => {
     setShowForm(!showForm);
   };
 
+  const filteredAnnouncements = announcements.filter((a: any) => {
+    const matchSearch = !search || a.title?.toLowerCase().includes(search.toLowerCase()) || a.message?.toLowerCase().includes(search.toLowerCase());
+    const matchAudience = audienceFilter === "all" || a.target_audience === audienceFilter;
+    return matchSearch && matchAudience;
+  });
+
+  const exportCSV = () => {
+    const rows = [["Title","Message","Audience","Active","Created","Scheduled","Expires"]];
+    filteredAnnouncements.forEach((a: any) => rows.push([
+      a.title || "—", a.message || "—",
+      audienceLabel[a.target_audience] || a.target_audience || "—",
+      a.is_active ? "Yes" : "No",
+      new Date(a.created_at).toLocaleDateString("en-IN"),
+      a.scheduled_at ? new Date(a.scheduled_at).toLocaleDateString("en-IN") : "—",
+      a.expires_at ? new Date(a.expires_at).toLocaleDateString("en-IN") : "—",
+    ]));
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const el = document.createElement("a");
+    el.href = URL.createObjectURL(new Blob([csv], { type:"text/csv" }));
+    el.download = `announcements-${new Date().toISOString().slice(0,10)}.csv`;
+    el.click();
+  };
+
   return (
     <div className="space-y-6">
       <div className="relative overflow-hidden rounded-3xl bg-indigo-600 p-8 text-white shadow-2xl shadow-indigo-500/20">
@@ -174,11 +199,21 @@ const AdminAnnouncements = () => {
         className="rounded-3xl border overflow-hidden"
         style={{ background: T.card, borderColor: T.border }}
       >
-        <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: T.border }}>
-          <h2 className="text-lg font-bold flex items-center gap-2" style={{ color: T.text }}>
-            <Send className="h-5 w-5 opacity-50" />
-            Active Broadcasts
-          </h2>
+        <div className="p-4 border-b flex flex-wrap items-center gap-3" style={{ borderColor: T.border }}>
+          <div className="flex items-center gap-2 flex-1 min-w-[180px] px-3 py-2 rounded-xl border" style={{ background: T.input, borderColor: T.border }}>
+            <Search className="h-3.5 w-3.5 flex-shrink-0" style={{ color: T.sub }} />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search title or message…" className="bg-transparent flex-1 text-sm outline-none" style={{ color: T.text }} />
+          </div>
+          <select value={audienceFilter} onChange={e => setAudienceFilter(e.target.value)} className="px-3 py-2 rounded-xl border text-sm font-bold outline-none" style={{ background: T.input, borderColor: T.border, color: T.text }}>
+            <option value="all">All Audiences</option>
+            <option value="everyone">Everyone</option>
+            <option value="freelancers">Freelancers</option>
+            <option value="employers">Employers</option>
+          </select>
+          <button onClick={exportCSV} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-bold" style={{ background: T.input, borderColor: T.border, color: T.text }}>
+            <Download className="h-3.5 w-3.5" /> Export CSV
+          </button>
+          <span className="text-xs font-bold ml-auto" style={{ color: T.sub }}>{filteredAnnouncements.length} announcement(s)</span>
         </div>
         <div className="p-6">
           {isLoading ? (
@@ -186,16 +221,16 @@ const AdminAnnouncements = () => {
               <Loader2 className="h-10 w-10 animate-spin text-indigo-500 mb-4" />
               <p style={{ color: T.sub }}>Fetching announcements...</p>
             </div>
-          ) : announcements.length === 0 ? (
+          ) : filteredAnnouncements.length === 0 ? (
             <div className="flex flex-col items-center py-20 text-center">
               <div className="h-16 w-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
                 <Megaphone className="h-8 w-8 opacity-20" style={{ color: T.text }} />
               </div>
-              <p className="text-sm font-medium" style={{ color: T.sub }}>No announcements yet</p>
+              <p className="text-sm font-medium" style={{ color: T.sub }}>{announcements.length === 0 ? "No announcements yet" : "No results match your search"}</p>
             </div>
           ) : (
             <div className="grid gap-4">
-              {announcements.map((a: any) => (
+              {filteredAnnouncements.map((a: any) => (
                 <div
                   key={a.id}
                   className="group relative flex items-start justify-between gap-4 rounded-3xl border p-5 transition-all hover:scale-[1.01]"

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
-import { Bell, AlertTriangle, CheckCircle2, Eye, X, Volume2, VolumeX, Loader2 } from "lucide-react";
+import { Bell, AlertTriangle, CheckCircle2, Eye, X, Volume2, VolumeX, Loader2, Search, Download } from "lucide-react";
 
 const A1 = "#6366f1", A2 = "#8b5cf6";
 const TH = {
@@ -35,6 +35,7 @@ function classifyPriority(action: string): string {
 export default function AdminFraudAlerts() {
   const { theme, themeKey } = useAdminTheme();
   const T = TH[themeKey];
+  const [search, setSearch] = useState("");
   const [filterPrio, setFilterPrio] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sound, setSound] = useState(true);
@@ -74,8 +75,19 @@ export default function AdminFraudAlerts() {
   const filtered = alerts.filter(a => {
     const matchPrio = filterPrio==="all"||a.priority===filterPrio;
     const matchStatus = filterStatus==="all"||a.status===filterStatus;
-    return matchPrio && matchStatus;
+    const matchSearch = !search || a.message.toLowerCase().includes(search.toLowerCase()) || a.user.toLowerCase().includes(search.toLowerCase());
+    return matchPrio && matchStatus && matchSearch;
   });
+
+  const exportCSV = () => {
+    const rows = [["Message","User","Priority","Status","Source","Time","Assigned To","Notes"]];
+    filtered.forEach(a => rows.push([a.message, a.user, a.priority, a.status, a.source, a.timestamp, a.assignedTo, a.note]));
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const el = document.createElement("a");
+    el.href = URL.createObjectURL(new Blob([csv], { type:"text/csv" }));
+    el.download = `fraud-alerts-${new Date().toISOString().slice(0,10)}.csv`;
+    el.click();
+  };
 
   const updateStatus = (id: string, status: string) => {
     setStatusOverrides(o => ({ ...o, [id]: status }));
@@ -108,10 +120,18 @@ export default function AdminFraudAlerts() {
             </div>
           </div>
           <div style={{ display:"flex", gap:10 }}>
+            <button onClick={exportCSV} style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${T.border}`, background:T.input, color:T.text, display:"flex", alignItems:"center", gap:6, fontSize:13, cursor:"pointer" }}>
+              <Download size={14}/> Export CSV
+            </button>
             <button onClick={()=>setSound(x=>!x)} style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${T.border}`, background:T.input, color:T.text, display:"flex", alignItems:"center", gap:6, fontSize:13, cursor:"pointer" }}>
               {sound?<Volume2 size={14}/>:<VolumeX size={14}/>} Sound {sound?"On":"Off"}
             </button>
           </div>
+        </div>
+
+        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14, background:T.card, border:`1px solid ${T.border}`, borderRadius:10, padding:"7px 14px" }}>
+          <Search size={14} color={T.sub}/>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search alerts by message or user…" style={{ background:"none",border:"none",outline:"none",color:T.text,fontSize:13,flex:1 }}/>
         </div>
 
         <div style={{ display:"flex", gap:10, marginBottom:20, flexWrap:"wrap" }}>
