@@ -162,6 +162,19 @@ const AdminUsers = () => {
   const [userProjectsData, setUserProjectsData] = useState<any[]>([]);
   const [userProjectsLoading, setUserProjectsLoading] = useState(false);
 
+  // Service Listings View
+  type EmployeeService = { id: string; service_title: string; hourly_rate: number; minimum_budget: number; created_at: string; service_categories: { name: string } | null };
+  const [userServicesUser, setUserServicesUser] = useState<FullProfile | null>(null);
+  const [userServicesData, setUserServicesData] = useState<EmployeeService[]>([]);
+  const [userServicesLoading, setUserServicesLoading] = useState(false);
+
+  // Reviews & Ratings View
+  type ReviewRow = { id: string; rating: number; comment: string | null; created_at: string; project_id: string; reviewer_id: string; reviewee_id: string; reviewer: { full_name: string[] | null } | null; reviewee: { full_name: string[] | null } | null; project: { title: string } | null };
+  const [userReviewsUser, setUserReviewsUser] = useState<FullProfile | null>(null);
+  const [userReviewsData, setUserReviewsData] = useState<ReviewRow[]>([]);
+  const [userReviewsLoading, setUserReviewsLoading] = useState(false);
+  const [reviewsTab, setReviewsTab] = useState<"received" | "given">("received");
+
   // User Statistics (Quick Preview)
   type UserStats = { projects_posted: number; services_listed: number; review_count: number; avg_rating: string | null; total_earned: number };
   const [previewStats, setPreviewStats] = useState<UserStats | null>(null);
@@ -868,6 +881,34 @@ const AdminUsers = () => {
       }
     } catch { /* ignore */ }
     setUserProjectsLoading(false);
+  };
+
+  const handleOpenUserServices = async (u: FullProfile) => {
+    setUserServicesUser(u);
+    setUserServicesLoading(true);
+    setUserServicesData([]);
+    const { data } = await supabase
+      .from("employee_services")
+      .select("id, service_title, hourly_rate, minimum_budget, created_at, service_categories(name)")
+      .eq("profile_id", u.id)
+      .order("created_at", { ascending: false });
+    setUserServicesData((data || []) as any[]);
+    setUserServicesLoading(false);
+  };
+
+  const handleOpenUserReviews = async (u: FullProfile) => {
+    setUserReviewsUser(u);
+    setReviewsTab("received");
+    setUserReviewsLoading(true);
+    setUserReviewsData([]);
+    const { data } = await supabase
+      .from("reviews")
+      .select("id, rating, comment, created_at, project_id, reviewer_id, reviewee_id, reviewer:profiles!reviews_reviewer_id_fkey(full_name), reviewee:profiles!reviews_reviewee_id_fkey(full_name), project:projects(title)")
+      .or(`reviewer_id.eq.${u.id},reviewee_id.eq.${u.id}`)
+      .order("created_at", { ascending: false })
+      .limit(60);
+    setUserReviewsData((data || []) as any[]);
+    setUserReviewsLoading(false);
   };
 
   const handlePasswordReset = async (u: FullProfile) => {
@@ -2504,6 +2545,20 @@ const AdminUsers = () => {
                       <Briefcase className="h-3.5 w-3.5 text-blue-400" />
                       {pu.user_type === "client" ? "Projects Posted" : "Applications"}
                     </Button>
+                    {pu.user_type === "employee" && (
+                      <Button size="sm" variant="outline" className="gap-2 rounded-xl text-xs h-9"
+                        style={{ borderColor: T.border, color: T.text }}
+                        onClick={() => { setPreviewUser(null); handleOpenUserServices(pu); }}>
+                        <Star className="h-3.5 w-3.5 text-yellow-400" />
+                        Services Listed
+                      </Button>
+                    )}
+                    <Button size="sm" variant="outline" className={`gap-2 rounded-xl text-xs h-9 ${pu.user_type === "client" ? "col-span-1" : ""}`}
+                      style={{ borderColor: T.border, color: T.text }}
+                      onClick={() => { setPreviewUser(null); handleOpenUserReviews(pu); }}>
+                      <Star className="h-3.5 w-3.5 text-orange-400" />
+                      Reviews
+                    </Button>
                     <Button size="sm" variant="outline" className="col-span-2 gap-2 rounded-xl text-xs h-9"
                       style={{ borderColor: T.border, color: T.text }}
                       onClick={() => { setPreviewUser(null); navigate(`/admin/users/${pu.id}`); }}>
@@ -3344,6 +3399,101 @@ const AdminUsers = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setWalletTxUser(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Service Listings Dialog ────────────────────────────────── */}
+      <Dialog open={!!userServicesUser} onOpenChange={(open) => !open && setUserServicesUser(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Star className="h-5 w-5 text-yellow-400" />
+              Services Listed — {userServicesUser?.full_name?.[0] || userServicesUser?.email}
+            </DialogTitle>
+            <DialogDescription>All services posted by this freelancer</DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+            {userServicesLoading ? (
+              <div className="flex justify-center py-8"><RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            ) : userServicesData.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground py-8">No services found</p>
+            ) : userServicesData.map((svc) => (
+              <div key={svc.id} className="rounded-lg border p-3 text-sm" style={{ borderColor: T.border, background: T.card }}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate" style={{ color: T.text }}>{svc.service_title}</p>
+                    <p className="text-xs mt-0.5" style={{ color: T.sub }}>Category: {(svc as any).service_categories?.name || "—"}</p>
+                    <p className="text-xs" style={{ color: T.sub }}>Added: {new Date(svc.created_at).toLocaleDateString("en-IN")}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-semibold text-emerald-400">₹{svc.hourly_rate?.toLocaleString("en-IN")}/hr</p>
+                    <p className="text-xs" style={{ color: T.sub }}>Min: ₹{svc.minimum_budget?.toLocaleString("en-IN")}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUserServicesUser(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Reviews & Ratings Dialog ───────────────────────────────── */}
+      <Dialog open={!!userReviewsUser} onOpenChange={(open) => !open && setUserReviewsUser(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Star className="h-5 w-5 text-orange-400" />
+              Reviews — {userReviewsUser?.full_name?.[0] || userReviewsUser?.email}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex gap-2 px-1 pb-2">
+            <Button size="sm" variant={reviewsTab === "received" ? "default" : "outline"} className="rounded-lg text-xs h-8" onClick={() => setReviewsTab("received")}>
+              Received ({userReviewsData.filter(r => r.reviewee_id === userReviewsUser?.id).length})
+            </Button>
+            <Button size="sm" variant={reviewsTab === "given" ? "default" : "outline"} className="rounded-lg text-xs h-8" onClick={() => setReviewsTab("given")}>
+              Given ({userReviewsData.filter(r => r.reviewer_id === userReviewsUser?.id).length})
+            </Button>
+          </div>
+          <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+            {userReviewsLoading ? (
+              <div className="flex justify-center py-8"><RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            ) : (() => {
+              const filtered = userReviewsData.filter(r =>
+                reviewsTab === "received" ? r.reviewee_id === userReviewsUser?.id : r.reviewer_id === userReviewsUser?.id
+              );
+              return filtered.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground py-8">No reviews found</p>
+              ) : filtered.map((rv) => {
+                const otherName = reviewsTab === "received"
+                  ? (rv.reviewer?.full_name?.[0] || "Unknown")
+                  : (rv.reviewee?.full_name?.[0] || "Unknown");
+                return (
+                  <div key={rv.id} className="rounded-lg border p-3 text-sm" style={{ borderColor: T.border, background: T.card }}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium" style={{ color: T.sub }}>
+                          {reviewsTab === "received" ? "From: " : "To: "}{otherName}
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: T.sub }}>Project: {(rv as any).project?.title || "—"}</p>
+                        {rv.comment && <p className="mt-1 text-xs leading-relaxed" style={{ color: T.text }}>{rv.comment}</p>}
+                        <p className="text-xs mt-1" style={{ color: T.sub }}>{new Date(rv.created_at).toLocaleDateString("en-IN")}</p>
+                      </div>
+                      <div className="flex items-center gap-0.5 shrink-0 ml-2">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star key={i} className={`h-3 w-3 ${i < rv.rating ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground"}`} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUserReviewsUser(null)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
