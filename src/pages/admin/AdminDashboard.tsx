@@ -11,7 +11,7 @@ import {
   ClipboardList, Monitor, BarChart3, Zap, XCircle,
   Check, X, Trophy, Star, Globe, TrendingDown,
   AlertTriangle, Ban, Calendar, Mail, Package,
-  MessageCircle, RotateCcw, Tag, ArrowLeftRight, DollarSign,
+  MessageCircle, RotateCcw, Tag, ArrowLeftRight, DollarSign, Search,
 } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import {
@@ -261,6 +261,26 @@ const AdminDashboard = () => {
   const [pfeeMin, setPfeeMin]               = useState(10);
   const [pfeeMax, setPfeeMax]               = useState(5000);
   const [pfeeSaving, setPfeeSaving]         = useState(false);
+
+  // ── KPI Goal Tracker ───────────────────────────────────────────
+  const [kpiGoals, setKpiGoals]         = useState([
+    { id: "users",     label: "Total Users",      icon: "👤", goal: 1000,  current: 0, color: "#6366f1" },
+    { id: "revenue",   label: "Monthly Revenue",  icon: "💰", goal: 50000, current: 0, color: "#4ade80", prefix: "₹" },
+    { id: "projects",  label: "Active Projects",  icon: "💼", goal: 200,   current: 0, color: "#fbbf24" },
+    { id: "verified",  label: "Verified Users",   icon: "✅", goal: 500,   current: 0, color: "#34d399" },
+  ]);
+  const [kpiEditing, setKpiEditing]     = useState<string | null>(null);
+  const [kpiEditVal, setKpiEditVal]     = useState("");
+
+  // ── Admin Activity Log ─────────────────────────────────────────
+  const [activityLog, setActivityLog]   = useState<Array<{ id: string; action: string; created_at: string; metadata: Record<string, unknown> | null }>>([]);
+  const [actLogLoading, setActLogLoading] = useState(false);
+
+  // ── Quick Global Search ────────────────────────────────────────
+  const [qsQuery, setQsQuery]           = useState("");
+  const [qsResults, setQsResults]       = useState<Array<{ type: string; label: string; sub: string; id: string }>>([]);
+  const [qsSearching, setQsSearching]   = useState(false);
+  const [qsOpen, setQsOpen]             = useState(false);
 
   // ── Real-time Features ─────────────────────────────────────────
   const [rtActivity, setRtActivity]     = useState<Array<{ id: string; title: string; type: string; ts: string }>>([]);
@@ -1342,6 +1362,84 @@ const AdminDashboard = () => {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ── KPI Goal Tracker callbacks ───────────────────────────────
+  // Populate current values from live data after fetchAll
+  const updateKpiCurrents = useCallback((usersCount: number, revenueSum: number, projectsCount: number, verifiedCount: number) => {
+    setKpiGoals(prev => prev.map(k => {
+      if (k.id === "users")    return { ...k, current: usersCount };
+      if (k.id === "revenue")  return { ...k, current: revenueSum };
+      if (k.id === "projects") return { ...k, current: projectsCount };
+      if (k.id === "verified") return { ...k, current: verifiedCount };
+      return k;
+    }));
+  }, []);
+
+  const saveKpiGoal = useCallback((id: string, val: string) => {
+    const n = parseInt(val.replace(/,/g, ""), 10);
+    if (isNaN(n) || n <= 0) return;
+    setKpiGoals(prev => {
+      const updated = prev.map(k => k.id === id ? { ...k, goal: n } : k);
+      localStorage.setItem("kpi_goals", JSON.stringify(updated.map(k => ({ id: k.id, goal: k.goal }))));
+      return updated;
+    });
+    setKpiEditing(null);
+  }, []);
+
+  // Load KPI goals from localStorage + live data on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("kpi_goals");
+    if (saved) {
+      try {
+        const s = JSON.parse(saved) as Array<{ id: string; goal: number }>;
+        setKpiGoals(prev => prev.map(k => { const f = s.find(x => x.id === k.id); return f ? { ...k, goal: f.goal } : k; }));
+      } catch { /* ignore */ }
+    }
+    // Fetch current values
+    Promise.all([
+      supabase.from("profiles").select("*", { count: "exact", head: true }),
+      supabase.from("transactions").select("amount").eq("type", "credit").gte("created_at", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+      supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "open"),
+      supabase.from("aadhaar_verifications").select("*", { count: "exact", head: true }).eq("status", "verified"),
+    ]).then(([uRes, rRes, pRes, vRes]) => {
+      const rev = (rRes.data || []).reduce((s: number, t: { amount: number }) => s + (t.amount || 0), 0);
+      updateKpiCurrents(uRes.count ?? 0, Math.round(rev), pRes.count ?? 0, vRes.count ?? 0);
+    });
+  }, [updateKpiCurrents]);
+
+  // ── Admin Activity Log callbacks ──────────────────────────────
+  const loadActivityLog = useCallback(async () => {
+    setActLogLoading(true);
+    const { data } = await supabase.from("admin_audit_logs").select("id, action, metadata, created_at").order("created_at", { ascending: false }).limit(30);
+    setActivityLog((data || []) as typeof activityLog);
+    setActLogLoading(false);
+  }, []);
+
+  useEffect(() => { loadActivityLog(); }, [loadActivityLog]);
+
+  // ── Quick Global Search callbacks ─────────────────────────────
+  useEffect(() => {
+    if (!qsQuery.trim() || qsQuery.length < 2) { setQsResults([]); setQsOpen(false); return; }
+    const timer = setTimeout(async () => {
+      setQsSearching(true);
+      const q = qsQuery.toLowerCase().trim();
+      const results: typeof qsResults = [];
+      try {
+        const [uRes, pRes, wRes] = await Promise.all([
+          supabase.from("profiles").select("id, full_name, email").or(`email.ilike.%${q}%`).limit(5),
+          supabase.from("projects").select("id, title").ilike("title", `%${q}%`).limit(5),
+          supabase.from("withdrawals").select("id, amount, status").limit(0),
+        ]);
+        (uRes.data || []).forEach(u => results.push({ type: "User", label: (u.full_name || []).join(" ").trim() || u.email || "Unknown", sub: u.email || "—", id: u.id }));
+        (pRes.data || []).forEach(p => results.push({ type: "Project", label: p.title || "Untitled", sub: p.id.slice(0, 8) + "…", id: p.id }));
+        void wRes;
+      } catch { /* ignore */ }
+      setQsResults(results);
+      setQsOpen(results.length > 0);
+      setQsSearching(false);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [qsQuery]);
 
   // ── Real-time Features callbacks ─────────────────────────────
   useEffect(() => {
@@ -3725,6 +3823,153 @@ const AdminDashboard = () => {
           </div>
 
         </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          QUICK GLOBAL SEARCH
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Search size={14} color="#60a5fa" />, "Quick Global Search", "Users · Projects · Withdrawals")}
+        <div style={{ position: "relative" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", borderRadius: 14, background: tok.alertBg, border: `1px solid ${qsOpen ? "#6366f1" : tok.alertBdr}`, transition: "border-color .2s" }}>
+            <Search size={15} color={tok.cardSub} />
+            <input
+              value={qsQuery}
+              onChange={e => setQsQuery(e.target.value)}
+              onFocus={() => qsResults.length > 0 && setQsOpen(true)}
+              placeholder="Search users by email, projects by title…"
+              style={{ flex: 1, background: "none", border: "none", outline: "none", color: tok.cardText, fontSize: 13.5 }}
+            />
+            {qsSearching && <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid #6366f1", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.6s linear infinite" }} />}
+            {qsQuery && !qsSearching && (
+              <button onClick={() => { setQsQuery(""); setQsResults([]); setQsOpen(false); }} style={{ background: "none", border: "none", color: tok.cardSub, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+            )}
+          </div>
+
+          {/* Dropdown results */}
+          {qsOpen && qsResults.length > 0 && (
+            <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: tok.cardBg, border: `1px solid ${tok.cardBdr}`, borderRadius: 14, zIndex: 200, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,.4)" }}>
+              {qsResults.map(r => (
+                <div key={r.id} onClick={() => { setQsOpen(false); navigate(r.type === "User" ? "/admin/users" : "/admin/projects"); }}
+                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", cursor: "pointer", borderBottom: `1px solid ${tok.alertBdr}` }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(99,102,241,.08)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                  <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, fontWeight: 700, background: r.type === "User" ? "rgba(99,102,241,.12)" : "rgba(251,191,36,.12)", color: r.type === "User" ? "#a5b4fc" : "#fbbf24" }}>{r.type}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{r.label}</p>
+                    <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>{r.sub}</p>
+                  </div>
+                  <span style={{ fontSize: 11, color: tok.cardSub }}>→</span>
+                </div>
+              ))}
+              {qsResults.length === 0 && (
+                <p style={{ padding: "14px 16px", fontSize: 13, color: tok.cardSub, margin: 0 }}>No results found.</p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          KPI GOAL TRACKER
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<TrendingUp size={14} color="#fbbf24" />, "KPI Goal Tracker", "Click goal to edit")}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 14 }}>
+          {kpiGoals.map(k => {
+            const pct = k.goal > 0 ? Math.min(100, Math.round((k.current / k.goal) * 100)) : 0;
+            const onTrack = pct >= 75;
+            return (
+              <div key={k.id} style={{ background: tok.alertBg, border: `1px solid ${pct >= 100 ? k.color + "44" : tok.alertBdr}`, borderRadius: 14, padding: 16, transition: "border-color .3s" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 18 }}>{k.icon}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: tok.cardText }}>{k.label}</span>
+                  </div>
+                  <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, fontWeight: 700,
+                    background: pct >= 100 ? "rgba(74,222,128,.15)" : onTrack ? "rgba(251,191,36,.12)" : "rgba(107,114,128,.1)",
+                    color: pct >= 100 ? "#4ade80" : onTrack ? "#fbbf24" : tok.cardSub }}>
+                    {pct >= 100 ? "🎯 Done" : onTrack ? "On Track" : "Behind"}
+                  </span>
+                </div>
+
+                {/* Progress ring-style display */}
+                <div style={{ textAlign: "center" as const, marginBottom: 10 }}>
+                  <p style={{ fontSize: 28, fontWeight: 900, color: k.color, margin: "0 0 2px" }}>
+                    {k.prefix ?? ""}{k.current.toLocaleString("en-IN")}
+                  </p>
+                  <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>
+                    of {kpiEditing === k.id ? (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <input value={kpiEditVal} onChange={e => setKpiEditVal(e.target.value)} onKeyDown={e => { if (e.key === "Enter") saveKpiGoal(k.id, kpiEditVal); if (e.key === "Escape") setKpiEditing(null); }} autoFocus
+                          style={{ width: 80, padding: "2px 6px", borderRadius: 6, border: `1px solid ${k.color}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none" }} />
+                        <button onClick={() => saveKpiGoal(k.id, kpiEditVal)} style={{ fontSize: 11, color: "#4ade80", background: "none", border: "none", cursor: "pointer" }}>✓</button>
+                      </span>
+                    ) : (
+                      <button onClick={() => { setKpiEditing(k.id); setKpiEditVal(String(k.goal)); }} style={{ fontSize: 11, color: k.color, fontWeight: 700, background: "none", border: "none", cursor: "pointer", textDecoration: "underline dotted" }}>
+                        {k.prefix ?? ""}{k.goal.toLocaleString("en-IN")} goal ✏
+                      </button>
+                    )}
+                  </p>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{ height: 8, borderRadius: 4, background: tok.alertBdr, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${pct}%`, background: pct >= 100 ? "#4ade80" : k.color, borderRadius: 4, transition: "width 0.6s ease" }} />
+                </div>
+                <p style={{ fontSize: 11, color: tok.cardSub, textAlign: "right" as const, marginTop: 5 }}>{pct}% complete</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          ADMIN ACTIVITY LOG
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<ClipboardList size={14} color="#a78bfa" />, "Admin Activity Log", `${activityLog.length} recent actions`)}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+          <button onClick={loadActivityLog} disabled={actLogLoading}
+            style={{ padding: "6px 14px", borderRadius: 9, background: "rgba(167,139,250,.1)", border: "1px solid rgba(167,139,250,.25)", color: "#a78bfa", fontSize: 12, fontWeight: 700, cursor: actLogLoading ? "not-allowed" : "pointer" }}>
+            {actLogLoading ? "…" : "↻ Refresh"}
+          </button>
+        </div>
+
+        {activityLog.length === 0 ? (
+          <p style={{ fontSize: 13, color: tok.cardSub, textAlign: "center" as const, padding: "28px 0" }}>
+            {actLogLoading ? "Loading activity…" : "No admin activity logged yet."}
+          </p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column" as const, gap: 6, maxHeight: 360, overflowY: "auto" as const }}>
+            {activityLog.map((log, i) => {
+              const actionColor = log.action.toLowerCase().includes("delete") || log.action.toLowerCase().includes("ban") ? "#f87171"
+                : log.action.toLowerCase().includes("approve") || log.action.toLowerCase().includes("verify") ? "#4ade80"
+                : log.action.toLowerCase().includes("reject") ? "#f97316"
+                : "#a5b4fc";
+              const icon = log.action.toLowerCase().includes("delete") || log.action.toLowerCase().includes("ban") ? "🚫"
+                : log.action.toLowerCase().includes("approve") || log.action.toLowerCase().includes("verify") ? "✅"
+                : log.action.toLowerCase().includes("reject") ? "❌"
+                : "🔹";
+              return (
+                <div key={log.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 12px", borderRadius: 10, background: i === 0 ? "rgba(167,139,250,.06)" : tok.cardBg, border: `1px solid ${i === 0 ? "rgba(167,139,250,.2)" : tok.alertBdr}` }}>
+                  <span style={{ fontSize: 14, marginTop: 1, flexShrink: 0 }}>{icon}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 12.5, fontWeight: 700, color: actionColor, margin: "0 0 2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{log.action}</p>
+                    {log.metadata && Object.keys(log.metadata).length > 0 && (
+                      <p style={{ fontSize: 10.5, color: tok.cardSub, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+                        {JSON.stringify(log.metadata).slice(0, 90)}
+                      </p>
+                    )}
+                  </div>
+                  <span style={{ fontSize: 10.5, color: tok.cardSub, flexShrink: 0 }}>
+                    {new Date(log.created_at).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ══════════════════════════════════════════════════════

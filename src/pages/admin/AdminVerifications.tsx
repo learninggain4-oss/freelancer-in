@@ -264,6 +264,22 @@ const AdminVerifications = () => {
         </div>
       </div>
 
+      {/* Stats Bar */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: "Pending",      count: verifications.filter(v => v.status === "pending").length,       color: "#fbbf24", icon: <Clock className="h-4 w-4" />, tab: "pending" },
+          { label: "Under Process",count: verifications.filter(v => v.status === "under_process").length, color: "#60a5fa", icon: <Loader2 className="h-4 w-4" />, tab: "under_process" },
+          { label: "Verified",     count: verifications.filter(v => v.status === "verified").length,      color: "#4ade80", icon: <CheckCircle2 className="h-4 w-4" />, tab: "verified" },
+          { label: "Rejected",     count: verifications.filter(v => v.status === "rejected").length,      color: "#f87171", icon: <XCircle className="h-4 w-4" />, tab: "rejected" },
+        ].map(s => (
+          <button key={s.label} onClick={() => setTab(s.tab)}
+            style={{ padding: "14px 16px", borderRadius: 12, background: tab === s.tab ? `${s.color}14` : T.card, border: `1px solid ${tab === s.tab ? s.color + "50" : T.border}`, cursor: "pointer", textAlign: "left", transition: "all .2s", width: "100%" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, color: s.color }}>{s.icon}<span style={{ fontSize: 11, fontWeight: 700, letterSpacing: .4 }}>{s.label.toUpperCase()}</span></div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: s.color }}>{s.count}</div>
+          </button>
+        ))}
+      </div>
+
       <div className="relative group">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors group-focus-within:text-indigo-500" style={{ color: T.sub }} />
         <Input 
