@@ -173,6 +173,7 @@ const AdminDashboard = () => {
   const [feedResetting, setFeedResetting]   = useState(false);
   const [revResetting, setRevResetting]     = useState(false);
   const [revClearing, setRevClearing]       = useState(false);
+  const [growthClearing, setGrowthClearing] = useState(false);
   const [regionData, setRegionData]       = useState<RegionPoint[]>([]);
   const [withdrawalSummary, setWithdrawalSummary] = useState({
     pending: 0, approved: 0, rejected: 0, completed: 0,
@@ -1059,14 +1060,30 @@ const AdminDashboard = () => {
               </ResponsiveContainer>
             </div>
           )}
-          <div style={{ display: "flex", gap: 16, marginTop: 10 }}>
-            {[{ c: A1, l: "Freelancers" }, { c: "#4ade80", l: "Employers" }].map(x => (
-              <div key={x.l} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 8, height: 8, borderRadius: 2, background: x.c }} />
-                <span style={{ fontSize: 10, color: tok.cardSub }}>{x.l}</span>
-              </div>
-            ))}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10, marginBottom: 10 }}>
+            <div style={{ display: "flex", gap: 16 }}>
+              {[{ c: A1, l: "Freelancers" }, { c: "#4ade80", l: "Employers" }].map(x => (
+                <div key={x.l} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 2, background: x.c }} />
+                  <span style={{ fontSize: 10, color: tok.cardSub }}>{x.l}</span>
+                </div>
+              ))}
+            </div>
           </div>
+          <button
+            onClick={() => {
+              const ok = window.confirm("User Growth chart data clear ചെയ്യണോ?\n\nChart view empty ആകും (user accounts delete ആകില്ല).");
+              if (!ok) return;
+              setGrowthClearing(true);
+              setTimeout(() => { setGrowthData([]); setGrowthClearing(false); }, 400);
+            }}
+            disabled={growthClearing || growthData.length === 0}
+            style={{ width: "100%", padding: "8px", borderRadius: 9, background: growthData.length > 0 ? "rgba(239,68,68,.08)" : tok.alertBg, border: `1px solid ${growthData.length > 0 ? "rgba(239,68,68,.25)" : tok.alertBdr}`, color: growthData.length > 0 ? "#f87171" : tok.cardSub, fontSize: 12, fontWeight: 700, cursor: (growthClearing || growthData.length === 0) ? "not-allowed" : "pointer", opacity: growthClearing ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+            {growthClearing
+              ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Clearing…</>
+              : <>✕ Clear Chart Data</>
+            }
+          </button>
         </div>
       </div>
 
