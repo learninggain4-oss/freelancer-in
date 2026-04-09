@@ -177,6 +177,7 @@ const AdminDashboard = () => {
   const [jobClearing, setJobClearing]       = useState(false);
   const [timelineClearing, setTimelineClearing] = useState(false);
   const [kpiClearing, setKpiClearing]           = useState(false);
+  const [regFeedClearing, setRegFeedClearing]   = useState(false);
   const [regionData, setRegionData]       = useState<RegionPoint[]>([]);
   const [withdrawalSummary, setWithdrawalSummary] = useState({
     pending: 0, approved: 0, rejected: 0, completed: 0,
@@ -1799,9 +1800,25 @@ const AdminDashboard = () => {
               ))}
             </div>
           )}
-          <button onClick={() => navigate("/admin/users")} style={{ width: "100%", marginTop: 10, padding: "8px", borderRadius: 9, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-            View All Users →
-          </button>
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button onClick={() => navigate("/admin/users")} style={{ flex: 1, padding: "8px", borderRadius: 9, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+              View All Users →
+            </button>
+            <button
+              onClick={() => {
+                const ok = window.confirm("New Registrations Feed clear ചെയ്യണോ?\n\nFeed view empty ആകും (user accounts delete ആകില്ല).");
+                if (!ok) return;
+                setRegFeedClearing(true);
+                setTimeout(() => { setLatestUsers([]); setRegFeedClearing(false); }, 400);
+              }}
+              disabled={regFeedClearing || latestUsers.length === 0}
+              style={{ flex: 1, padding: "8px", borderRadius: 9, background: latestUsers.length > 0 ? "rgba(239,68,68,.08)" : tok.alertBg, border: `1px solid ${latestUsers.length > 0 ? "rgba(239,68,68,.25)" : tok.alertBdr}`, color: latestUsers.length > 0 ? "#f87171" : tok.cardSub, fontSize: 12, fontWeight: 700, cursor: (regFeedClearing || latestUsers.length === 0) ? "not-allowed" : "pointer", opacity: regFeedClearing ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+              {regFeedClearing
+                ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Clearing…</>
+                : <>✕ Clear Feed</>
+              }
+            </button>
+          </div>
         </div>
 
         {/* Banned/Suspended Accounts */}
