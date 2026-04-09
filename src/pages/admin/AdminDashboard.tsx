@@ -17,6 +17,7 @@ import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import {
   AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis,
   BarChart, Bar, PieChart, Pie, Cell,
+  ComposedChart, Line, ReferenceLine,
 } from "recharts";
 
 const A1 = "#6366f1";
@@ -196,6 +197,11 @@ const AdminDashboard = () => {
   const [autoRefreshSecs, setAutoRefreshSecs]     = useState<30 | 60>(30);
   const [revDateStart, setRevDateStart]           = useState("");
   const [revDateEnd, setRevDateEnd]               = useState("");
+  // ── Analytics & Charts ────────────────────────────────────────
+  const [heatmapData, setHeatmapData] = useState<Array<{ date: string; count: number; label: string }>>([]);
+  const [funnelData,  setFunnelData]  = useState<Array<{ step: string; value: number; color: string; pct: number }>>([]);
+  const [cohortData,  setCohortData]  = useState<Array<{ month: string; total: number; active: number; rate: number }>>([]);
+  const [forecastData, setForecastData] = useState<Array<{ month: string; revenue?: number; forecast?: number }>>([]);
   const [regionData, setRegionData]       = useState<RegionPoint[]>([]);
   const [withdrawalSummary, setWithdrawalSummary] = useState({
     pending: 0, approved: 0, rejected: 0, completed: 0,
@@ -619,6 +625,92 @@ const AdminDashboard = () => {
         const p = allProfiles.find(x => x.id === id);
         return p ? { id, name: getName(p.full_name), jobs: empJobsMap[id] } : null;
       }).filter(Boolean) as { id: string; name: string; jobs: number }[]);
+
+      /* ── Analytics: Activity Heatmap (last 84 days) ── */
+      const heatMap: Record<string, number> = {};
+      const heatDays = 84;
+      for (let i = heatDays - 1; i >= 0; i--) {
+        const d = new Date(Date.now() - i * 86400000);
+        const key = d.toISOString().slice(0, 10);
+        heatMap[key] = 0;
+      }
+      for (const p of allProfiles) {
+        const key = p.created_at.slice(0, 10);
+        if (key in heatMap) heatMap[key]++;
+      }
+      setHeatmapData(Object.entries(heatMap).map(([date, count]) => {
+        const d = new Date(date);
+        return { date, count, label: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) };
+      }));
+
+      /* ── Analytics: Conversion Funnel ── */
+      const totalReg   = allProfiles.length;
+      const approved   = allProfiles.filter(p => p.approval_status === "approved").length;
+      const kycStarted = new Set([...(aadhaarAllQ.data || []).map(() => 1), ...(bankAllQ.data || []).map(() => 1)]).size > 0
+        ? (aadhaarAllQ.data?.length || 0) + (bankAllQ.data?.length || 0)
+        : 0;
+      const kycVerified = Math.min(
+        aAll.filter(a => a.status === "verified").length,
+        bAll.filter(b => b.status === "verified").length,
+      );
+      const hasPostedJob = new Set(pj.map(p => p.client_id)).size;
+      const fSteps = [
+        { step: "Registered",    value: totalReg,   color: "#6366f1" },
+        { step: "Approved",      value: approved,   color: "#a5b4fc" },
+        { step: "KYC Started",   value: kycStarted, color: "#fbbf24" },
+        { step: "KYC Verified",  value: kycVerified,color: "#4ade80" },
+        { step: "Job Posted",    value: hasPostedJob,color: "#34d399" },
+      ];
+      const maxF = totalReg || 1;
+      setFunnelData(fSteps.map(s => ({ ...s, pct: Math.round(s.value / maxF * 100) })));
+
+      /* ── Analytics: Cohort Analysis (last 6 months) ── */
+      const now30 = Date.now() - 30 * 86400000;
+      const cohortMap: Record<string, { total: number; active: number }> = {};
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(1); d.setMonth(d.getMonth() - i);
+        const k = d.toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
+        cohortMap[k] = { total: 0, active: 0 };
+      }
+      for (const p of allProfiles) {
+        const d = new Date(p.created_at);
+        d.setDate(1);
+        const k = d.toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
+        if (k in cohortMap) {
+          cohortMap[k].total++;
+          if (p.last_seen_at && new Date(p.last_seen_at).getTime() > now30) cohortMap[k].active++;
+        }
+      }
+      setCohortData(Object.entries(cohortMap).map(([month, v]) => ({
+        month, total: v.total, active: v.active, rate: v.total > 0 ? Math.round(v.active / v.total * 100) : 0,
+      })));
+
+      /* ── Analytics: Revenue Forecast (linear regression + 3-month projection) ── */
+      const revMonthly: Record<string, number> = {};
+      for (const tx of txCred) {
+        const k = new Date(tx.created_at).toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
+        revMonthly[k] = (revMonthly[k] || 0) + Number(tx.amount);
+      }
+      const revPoints = Object.entries(revMonthly).map(([month, revenue]) => ({ month, revenue }));
+      if (revPoints.length >= 2) {
+        const n = revPoints.length;
+        const sumX = (n * (n - 1)) / 2;
+        const sumY = revPoints.reduce((s, p) => s + p.revenue, 0);
+        const sumXY = revPoints.reduce((s, p, i) => s + i * p.revenue, 0);
+        const sumXX = revPoints.reduce((s, _p, i) => s + i * i, 0);
+        const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+        const intercept = (sumY - slope * sumX) / n;
+        const historyEntries = revPoints.map((p, i) => ({ month: p.month, revenue: p.revenue, forecast: Math.max(0, Math.round(slope * i + intercept)) }));
+        const futureEntries = [1, 2, 3].map(ahead => {
+          const d = new Date(); d.setMonth(d.getMonth() + ahead);
+          const label = d.toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
+          return { month: label, revenue: undefined, forecast: Math.max(0, Math.round(slope * (n - 1 + ahead) + intercept)) };
+        });
+        setForecastData([...historyEntries, ...futureEntries]);
+      } else {
+        setForecastData(revPoints.map(p => ({ month: p.month, revenue: p.revenue })));
+      }
 
       setLoaded(true);
     };
@@ -2428,6 +2520,190 @@ const AdminDashboard = () => {
           </button>
         </div>
       </div>
+
+      {/* ══════════════════════════════════════════════════════
+          ANALYTICS 1 — ACTIVITY HEATMAP CALENDAR
+          ══════════════════════════════════════════════════════ */}
+      {heatmapData.length > 0 && (
+        <div style={{ ...card, padding: "18px" }}>
+          {sectionHeader(<Calendar size={14} color="#a5b4fc" />, "Activity Heatmap Calendar", "Daily user registrations · last 12 weeks")}
+          <div style={{ overflowX: "auto" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 600 }}>
+              {/* Week day labels */}
+              <div style={{ display: "flex", gap: 4, marginBottom: 2 }}>
+                <div style={{ width: 28 }} />
+                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(d => (
+                  <div key={d} style={{ flex: 1, textAlign: "center", fontSize: 9, color: tok.cardSub, fontWeight: 600 }}>{d}</div>
+                ))}
+              </div>
+              {/* Heatmap grid — 12 weeks */}
+              {Array.from({ length: 12 }).map((_, wk) => {
+                const weekDays = heatmapData.slice(wk * 7, wk * 7 + 7);
+                const maxDay = Math.max(1, ...weekDays.map(d => d.count));
+                return (
+                  <div key={wk} style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                    <div style={{ width: 28, fontSize: 9, color: tok.cardSub, textAlign: "right", paddingRight: 4, whiteSpace: "nowrap" as const }}>
+                      {weekDays[0]?.label || ""}
+                    </div>
+                    {weekDays.map((day) => {
+                      const intensity = day.count === 0 ? 0 : Math.max(0.15, day.count / maxDay);
+                      const bg = day.count === 0
+                        ? tok.alertBg
+                        : `rgba(99,102,241,${intensity.toFixed(2)})`;
+                      return (
+                        <div key={day.date} title={`${day.label}: ${day.count} registrations`}
+                          style={{ flex: 1, aspectRatio: "1", borderRadius: 3, background: bg, border: `1px solid ${day.count > 0 ? "rgba(99,102,241,.3)" : tok.alertBdr}`, cursor: "default", minHeight: 16, transition: "transform .1s" }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = "scale(1.3)"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = "scale(1)"; }}
+                        />
+                      );
+                    })}
+                  </div>
+                );
+              })}
+              {/* Legend */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, justifyContent: "flex-end" }}>
+                <span style={{ fontSize: 9, color: tok.cardSub }}>Less</span>
+                {[0, 0.15, 0.35, 0.6, 1].map((v, i) => (
+                  <div key={i} style={{ width: 12, height: 12, borderRadius: 2, background: v === 0 ? tok.alertBg : `rgba(99,102,241,${v})`, border: `1px solid ${v > 0 ? "rgba(99,102,241,.3)" : tok.alertBdr}` }} />
+                ))}
+                <span style={{ fontSize: 9, color: tok.cardSub }}>More</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════
+          ANALYTICS 2+3 — FUNNEL + REVENUE FORECAST
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+
+        {/* User Conversion Funnel */}
+        <div style={{ ...card, padding: "18px" }}>
+          {sectionHeader(<TrendingDown size={14} color="#a5b4fc" />, "User Conversion Funnel", "Registration to job posting")}
+          {funnelData.length === 0 ? emptyBox(TrendingDown, "No funnel data yet") : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
+              {funnelData.map((step, i) => (
+                <div key={step.step}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 11.5, color: tok.cardText, fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: step.color, display: "inline-block" }} />
+                      {step.step}
+                    </span>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <span style={{ fontSize: 13, fontWeight: 900, color: step.color }}>{step.value.toLocaleString("en-IN")}</span>
+                      <span style={{ fontSize: 10, color: tok.cardSub, background: `${step.color}15`, padding: "1px 6px", borderRadius: 6, fontWeight: 700 }}>{step.pct}%</span>
+                    </div>
+                  </div>
+                  <div style={{ height: 8, borderRadius: 4, background: tok.sysRowBg, overflow: "hidden", position: "relative" }}>
+                    <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: `${step.pct}%`, background: step.color, borderRadius: 4, transition: "width .6s ease" }} />
+                  </div>
+                  {i < funnelData.length - 1 && funnelData[i + 1].value < step.value && step.value > 0 && (
+                    <p style={{ fontSize: 9.5, color: tok.cardSub, margin: "3px 0 0", textAlign: "right" }}>
+                      Drop-off: {Math.round((step.value - funnelData[i + 1].value) / step.value * 100)}%
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Revenue Forecasting */}
+        <div style={{ ...card, padding: "18px" }}>
+          {sectionHeader(<TrendingUp size={14} color="#4ade80" />, "Revenue Forecasting", "Actual + 3-month projection")}
+          {forecastData.length === 0 ? emptyBox(TrendingUp, "Not enough data for forecast") : (
+            <>
+              <div style={{ height: 180 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={forecastData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="fcActGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#4ade80" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#4ade80" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="month" tick={{ fontSize: 9, fill: tok.chartAxis }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                    <YAxis tick={{ fontSize: 9, fill: tok.chartAxis }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip contentStyle={{ ...tok.chartTip, borderRadius: 10, fontSize: 11 }}
+                      formatter={(v: number, name: string) => [`₹${v.toLocaleString("en-IN")}`, name === "revenue" ? "Actual" : "Forecast"]} />
+                    <ReferenceLine x={forecastData.findIndex(d => d.revenue === undefined) > 0 ? forecastData[forecastData.findIndex(d => d.revenue === undefined) - 1]?.month : undefined}
+                      stroke="rgba(255,255,255,.2)" strokeDasharray="4 4" label={{ value: "Forecast →", fill: tok.cardSub, fontSize: 9 }} />
+                    <Area type="monotone" dataKey="revenue" stroke="#4ade80" strokeWidth={2} fill="url(#fcActGrad)" dot={false} connectNulls={false} />
+                    <Line type="monotone" dataKey="forecast" stroke="#a5b4fc" strokeWidth={2} strokeDasharray="5 4" dot={{ fill: "#a5b4fc", r: 3 }} connectNulls />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+              <div style={{ display: "flex", gap: 16, marginTop: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <div style={{ width: 20, height: 2, background: "#4ade80", borderRadius: 1 }} />
+                  <span style={{ fontSize: 10, color: tok.cardSub }}>Actual Revenue</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <div style={{ width: 20, height: 2, background: "#a5b4fc", borderRadius: 1, backgroundImage: "repeating-linear-gradient(90deg,#a5b4fc 0,#a5b4fc 4px,transparent 4px,transparent 8px)" }} />
+                  <span style={{ fontSize: 10, color: tok.cardSub }}>3-Month Forecast</span>
+                </div>
+              </div>
+              {forecastData.slice(-3).some(d => d.forecast !== undefined) && (
+                <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: "rgba(165,180,252,.06)", border: "1px solid rgba(165,180,252,.2)" }}>
+                  <p style={{ fontSize: 10.5, color: "#a5b4fc", margin: 0 }}>
+                    Projected next month: <strong>₹{(forecastData.find(d => d.revenue === undefined)?.forecast || 0).toLocaleString("en-IN")}</strong>
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          ANALYTICS 4 — COHORT RETENTION ANALYSIS
+          ══════════════════════════════════════════════════════ */}
+      {cohortData.length > 0 && (
+        <div style={{ ...card, padding: "18px" }}>
+          {sectionHeader(<BarChart3 size={14} color="#fbbf24" />, "Cohort Retention Analysis", "Users active in last 30 days · by signup month")}
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: 12 }}>
+              <thead>
+                <tr>
+                  {["Signup Month", "Total Users", "Active (30d)", "Retention Rate", "Visual"].map(h => (
+                    <th key={h} style={{ padding: "8px 10px", textAlign: "left" as const, fontSize: 10, color: tok.cardSub, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.7px", borderBottom: `1px solid ${tok.cardBdr}` }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {cohortData.map((row, i) => {
+                  const rateColor = row.rate >= 60 ? "#4ade80" : row.rate >= 30 ? "#fbbf24" : "#f87171";
+                  return (
+                    <tr key={row.month} style={{ background: i % 2 === 0 ? tok.alertBg : "transparent" }}>
+                      <td style={{ padding: "10px 10px", color: tok.cardText, fontWeight: 700, borderBottom: `1px solid ${tok.alertBdr}` }}>{row.month}</td>
+                      <td style={{ padding: "10px 10px", color: tok.cardText, borderBottom: `1px solid ${tok.alertBdr}` }}>{row.total.toLocaleString("en-IN")}</td>
+                      <td style={{ padding: "10px 10px", color: "#4ade80", fontWeight: 700, borderBottom: `1px solid ${tok.alertBdr}` }}>{row.active.toLocaleString("en-IN")}</td>
+                      <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tok.alertBdr}` }}>
+                        <span style={{ fontSize: 14, fontWeight: 900, color: rateColor }}>{row.rate}%</span>
+                      </td>
+                      <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tok.alertBdr}` }}>
+                        <div style={{ height: 8, borderRadius: 4, background: tok.sysRowBg, overflow: "hidden", minWidth: 80 }}>
+                          <div style={{ height: "100%", width: `${row.rate}%`, background: rateColor, borderRadius: 4, transition: "width .5s" }} />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ display: "flex", gap: 16, marginTop: 10 }}>
+            {[{ color: "#4ade80", label: "≥ 60% — Excellent" }, { color: "#fbbf24", label: "30–59% — Average" }, { color: "#f87171", label: "< 30% — Low" }].map(l => (
+              <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ width: 8, height: 8, borderRadius: 2, background: l.color }} />
+                <span style={{ fontSize: 10, color: tok.cardSub }}>{l.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ══ ANNOUNCEMENT BROADCAST ══ */}
       <div style={{ ...card, padding: "18px" }}>
