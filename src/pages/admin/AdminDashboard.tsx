@@ -168,7 +168,8 @@ const AdminDashboard = () => {
   const [pendingUsers, setPendingUsers]   = useState<PendingUser[]>([]);
   const [approvingId, setApprovingId]     = useState<string | null>(null);
   const [rejectingId, setRejectingId]     = useState<string | null>(null);
-  const [msgResetting, setMsgResetting]   = useState(false);
+  const [msgResetting, setMsgResetting]     = useState(false);
+  const [payResetting, setPayResetting]     = useState(false);
   const [regionData, setRegionData]       = useState<RegionPoint[]>([]);
   const [withdrawalSummary, setWithdrawalSummary] = useState({
     pending: 0, approved: 0, rejected: 0, completed: 0,
@@ -617,6 +618,26 @@ const AdminDashboard = () => {
     setPendingUsers(prev => prev.filter(u => u.id !== id));
     setStats(prev => ({ ...prev, pendingApprovals: prev.pendingApprovals - 1, approvedUsers: prev.approvedUsers + 1, activeUsers: prev.activeUsers + 1 }));
     setApprovingId(null);
+  }, []);
+
+  const resetPaymentStats = useCallback(async () => {
+    setPayResetting(true);
+    try {
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      const { data: txns } = await supabase
+        .from("transactions")
+        .select("amount, type")
+        .gte("created_at", sixMonthsAgo.toISOString());
+      const all = txns || [];
+      setPaymentStats({
+        creditAmt:   all.filter(t => t.type === "credit").reduce((s, t) => s + Number(t.amount), 0),
+        debitAmt:    all.filter(t => t.type === "debit").reduce((s, t) => s + Number(t.amount), 0),
+        creditCount: all.filter(t => t.type === "credit").length,
+        debitCount:  all.filter(t => t.type === "debit").length,
+      });
+    } catch { /* silently ignore */ }
+    setPayResetting(false);
   }, []);
 
   const resetUnreadMessages = useCallback(async () => {
@@ -1789,7 +1810,7 @@ const AdminDashboard = () => {
             ))}
           </div>
           {paymentStats.creditCount + paymentStats.debitCount > 0 && (
-            <div>
+            <div style={{ marginBottom: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
                 <span style={{ fontSize: 11, color: tok.cardSub }}>Credit/Debit ratio</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#4ade80" }}>
@@ -1801,6 +1822,20 @@ const AdminDashboard = () => {
               </div>
             </div>
           )}
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={resetPaymentStats}
+              disabled={payResetting}
+              style={{ flex: 1, padding: "8px", borderRadius: 9, background: "rgba(99,102,241,.1)", border: "1px solid rgba(99,102,241,.3)", color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: payResetting ? "not-allowed" : "pointer", opacity: payResetting ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+              {payResetting
+                ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Refreshing…</>
+                : <>↺ Refresh Stats</>
+              }
+            </button>
+            <button onClick={() => navigate("/admin/wallet-management")} style={{ flex: 1, padding: "8px", borderRadius: 9, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: "#4ade80", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+              View Transactions →
+            </button>
+          </div>
         </div>
 
         {/* Pending Payouts Queue */}
