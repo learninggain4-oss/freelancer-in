@@ -380,8 +380,8 @@ const AdminDashboard = () => {
   const [showAbForm, setShowAbForm]     = useState(false);
 
   // ── Skill Verification Panel ──────────────────────────────────
-  const [skillClaims, setSkillClaims]   = useState<Array<{ id: string; user: string; skill: string; proof: string; status: string; created_at: string }>>([]);
-  const [skillLoading, setSkillLoading] = useState(false);
+  const [skillClaims, setSkillClaims]         = useState<Array<{ id: string; user: string; skill: string; proof: string; status: string; created_at: string }>>([]);
+  const [skillVerifyLoading, setSkillVerifyLoading] = useState(false);
 
   // ── Bid Analytics ─────────────────────────────────────────────
   const [bidStats, setBidStats]         = useState<{ totalBids: number; avgBidAmount: number; acceptanceRate: number; avgBidsPerProject: number; topBidders: Array<{ name: string; bids: number }> } | null>(null);
@@ -2086,7 +2086,7 @@ const AdminDashboard = () => {
 
   // ── Skill Verification callbacks ─────────────────────────────
   useEffect(() => {
-    setSkillLoading(true);
+    setSkillVerifyLoading(true);
     supabase.from("profiles").select("id, full_name, user_type, bio, updated_at")
       .eq("user_type", "employee").not("bio", "is", null).limit(20)
       .then(({ data }) => {
@@ -2098,7 +2098,7 @@ const AdminDashboard = () => {
           }));
         });
         setSkillClaims(claims);
-        setSkillLoading(false);
+        setSkillVerifyLoading(false);
       });
   }, []);
 
@@ -6615,7 +6615,7 @@ const AdminDashboard = () => {
           ══════════════════════════════════════════════════════ */}
       <div style={{ ...card, padding: "18px" }}>
         {sectionHeader(<Award size={14} color="#fbbf24" />, "Skill Verification Panel", `${skillClaims.filter(c => c.status === "pending").length} pending reviews`)}
-        {skillLoading ? (
+        {skillVerifyLoading ? (
           <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading skill claims…</p>
         ) : skillClaims.length === 0 ? (
           <p style={{ textAlign: "center", color: "#4ade80", padding: "28px 0", fontSize: 13 }}>✓ No skill claims to review</p>
