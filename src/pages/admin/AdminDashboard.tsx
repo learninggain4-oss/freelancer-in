@@ -11,7 +11,7 @@ import {
   ClipboardList, Monitor, BarChart3, Zap, XCircle,
   Check, X, Trophy, Star, Globe, TrendingDown,
   AlertTriangle, Ban, Calendar, Mail, Package,
-  MessageCircle, RotateCcw, Tag, ArrowLeftRight,
+  MessageCircle, RotateCcw, Tag, ArrowLeftRight, DollarSign,
 } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import {
@@ -214,6 +214,30 @@ const AdminDashboard = () => {
   const [umExporting, setUmExporting]   = useState(false);
   const [umPage, setUmPage]             = useState(1);
   const UM_PER_PAGE                     = 12;
+
+  // ── Finance & Payments ─────────────────────────────────────────
+  // Payout Scheduler
+  const [payoutEnabled, setPayoutEnabled]       = useState(false);
+  const [payoutDay, setPayoutDay]               = useState(1);
+  const [payoutMinAmt, setPayoutMinAmt]         = useState(500);
+  const [payoutAutoApprove, setPayoutAutoApprove] = useState(false);
+  const [payoutSaving, setPayoutSaving]         = useState(false);
+  // Commission Rule Editor
+  const [commRate, setCommRate]                 = useState(10);
+  const [commRateInput, setCommRateInput]       = useState("10");
+  const [commSaving, setCommSaving]             = useState(false);
+  // Wallet Top-Up
+  const [topupEmail, setTopupEmail]             = useState("");
+  const [topupUserId, setTopupUserId]           = useState<string | null>(null);
+  const [topupUserName, setTopupUserName]       = useState("");
+  const [topupAmount, setTopupAmount]           = useState("");
+  const [topupNote, setTopupNote]               = useState("");
+  const [topupSearching, setTopupSearching]     = useState(false);
+  const [topupProcessing, setTopupProcessing]   = useState(false);
+  const [topupMsg, setTopupMsg]                 = useState<{ ok: boolean; text: string } | null>(null);
+  // Tax Summary
+  const [taxData, setTaxData] = useState({ gst: 0, tds: 0, totalCommission: 0, totalRevenue: 0 });
+
   // ── Analytics & Charts ────────────────────────────────────────
   const [heatmapData, setHeatmapData] = useState<Array<{ date: string; count: number; label: string }>>([]);
   const [funnelData,  setFunnelData]  = useState<Array<{ step: string; value: number; color: string; pct: number }>>([]);
@@ -1026,6 +1050,81 @@ const AdminDashboard = () => {
     } catch { /* ignore */ }
     setUmExporting(false);
   }, [umFiltered]);
+
+  // ── Finance & Payments callbacks ──────────────────────────────
+  const savePayoutSchedule = useCallback(() => {
+    setPayoutSaving(true);
+    localStorage.setItem("fp_payout_schedule", JSON.stringify({ enabled: payoutEnabled, dayOfMonth: payoutDay, minAmount: payoutMinAmt, autoApprove: payoutAutoApprove }));
+    setTimeout(() => setPayoutSaving(false), 800);
+  }, [payoutEnabled, payoutDay, payoutMinAmt, payoutAutoApprove]);
+
+  const saveCommissionRate = useCallback(async () => {
+    const rate = parseFloat(commRateInput);
+    if (isNaN(rate) || rate < 0 || rate > 100) return;
+    setCommSaving(true);
+    try {
+      await supabase.from("app_settings").upsert({ key: "platform_commission_rate", value: String(rate), updated_at: new Date().toISOString() }, { onConflict: "key" });
+      setCommRate(rate);
+    } catch { /* ignore */ }
+    setCommSaving(false);
+  }, [commRateInput]);
+
+  const searchTopupUser = useCallback(async () => {
+    if (!topupEmail.trim()) return;
+    setTopupSearching(true);
+    setTopupUserId(null); setTopupUserName("");
+    try {
+      const { data } = await supabase.from("profiles").select("id, full_name, email").ilike("email", topupEmail.trim()).limit(1).single();
+      if (data) {
+        setTopupUserId(data.id);
+        setTopupUserName((data.full_name || []).join(" ").trim() || data.email || "Unknown");
+      } else {
+        setTopupMsg({ ok: false, text: "User not found with that email." });
+        setTimeout(() => setTopupMsg(null), 3000);
+      }
+    } catch { setTopupMsg({ ok: false, text: "User not found." }); setTimeout(() => setTopupMsg(null), 3000); }
+    setTopupSearching(false);
+  }, [topupEmail]);
+
+  const processTopup = useCallback(async () => {
+    const amt = parseFloat(topupAmount);
+    if (!topupUserId || isNaN(amt) || amt <= 0) return;
+    setTopupProcessing(true);
+    try {
+      await supabase.from("wallet_transactions").insert({ user_id: topupUserId, amount: amt, type: "credit", description: topupNote || "Admin wallet top-up", status: "completed", created_at: new Date().toISOString() });
+      setTopupMsg({ ok: true, text: `₹${amt.toLocaleString("en-IN")} added to ${topupUserName}'s wallet.` });
+      setTopupEmail(""); setTopupUserId(null); setTopupUserName(""); setTopupAmount(""); setTopupNote("");
+    } catch { setTopupMsg({ ok: false, text: "Top-up failed. Check DB permissions." }); }
+    setTimeout(() => setTopupMsg(null), 4000);
+    setTopupProcessing(false);
+  }, [topupUserId, topupAmount, topupNote, topupUserName]);
+
+  // Compute tax summary from revenue data
+  const computeTaxSummary = useCallback(() => {
+    const totalRev = revenueData.reduce((s, r) => s + (r.revenue || 0), 0);
+    const commission = totalRev * (commRate / 100);
+    const gst = commission * 0.18;
+    const tds = totalRev * 0.02;
+    setTaxData({ gst: Math.round(gst), tds: Math.round(tds), totalCommission: Math.round(commission), totalRevenue: Math.round(totalRev) });
+  }, [revenueData, commRate]);
+
+  // Load saved payout schedule & commission on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("fp_payout_schedule");
+    if (saved) {
+      try {
+        const p = JSON.parse(saved);
+        setPayoutEnabled(p.enabled ?? false);
+        setPayoutDay(p.dayOfMonth ?? 1);
+        setPayoutMinAmt(p.minAmount ?? 500);
+        setPayoutAutoApprove(p.autoApprove ?? false);
+      } catch { /* ignore */ }
+    }
+    supabase.from("app_settings").select("value").eq("key", "platform_commission_rate").single()
+      .then(({ data }) => { if (data?.value) { setCommRate(parseFloat(data.value)); setCommRateInput(data.value); } });
+  }, []);
+
+  useEffect(() => { computeTaxSummary(); }, [computeTaxSummary]);
 
   const applyDateRangeFilter = useCallback(async () => {
     if (!revDateStart && !revDateEnd) return;
@@ -3003,6 +3102,196 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* ══════════════════════════════════════════════════════
+          FINANCE & PAYMENTS
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<DollarSign size={14} color="#4ade80" />, "Finance & Payments", "Payout · Commission · Wallet · Tax")}
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 14 }}>
+
+          {/* ── 1. Payout Scheduler ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 16 }}>📅</span> Payout Scheduler
+            </p>
+
+            {/* Enable toggle */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <span style={{ fontSize: 12, color: tok.cardSub }}>Auto Payouts Enabled</span>
+              <button onClick={() => setPayoutEnabled(v => !v)}
+                style={{ width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer", position: "relative",
+                  background: payoutEnabled ? "#22c55e" : tok.alertBdr, transition: "background .2s" }}>
+                <span style={{ position: "absolute", top: 3, left: payoutEnabled ? 22 : 3, width: 18, height: 18,
+                  borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
+              </button>
+            </div>
+
+            {/* Day of month */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <span style={{ fontSize: 11.5, color: tok.cardSub, flex: 1 }}>Day of Month</span>
+              <input type="number" min={1} max={28} value={payoutDay} onChange={e => setPayoutDay(Number(e.target.value))}
+                style={{ width: 60, padding: "5px 8px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, textAlign: "center", outline: "none" }} />
+            </div>
+
+            {/* Min amount */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <span style={{ fontSize: 11.5, color: tok.cardSub, flex: 1 }}>Min Amount (₹)</span>
+              <input type="number" min={0} value={payoutMinAmt} onChange={e => setPayoutMinAmt(Number(e.target.value))}
+                style={{ width: 80, padding: "5px 8px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, textAlign: "center", outline: "none" }} />
+            </div>
+
+            {/* Auto-approve toggle */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <span style={{ fontSize: 11.5, color: tok.cardSub }}>Auto-Approve Payouts</span>
+              <button onClick={() => setPayoutAutoApprove(v => !v)}
+                style={{ width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer", position: "relative",
+                  background: payoutAutoApprove ? "#22c55e" : tok.alertBdr, transition: "background .2s" }}>
+                <span style={{ position: "absolute", top: 3, left: payoutAutoApprove ? 22 : 3, width: 18, height: 18,
+                  borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
+              </button>
+            </div>
+
+            <button onClick={savePayoutSchedule} disabled={payoutSaving}
+              style={{ width: "100%", padding: "9px", borderRadius: 10, background: "rgba(74,222,128,.15)", border: "1px solid rgba(74,222,128,.3)", color: "#4ade80", fontSize: 13, fontWeight: 700, cursor: payoutSaving ? "not-allowed" : "pointer" }}>
+              {payoutSaving ? "Saved ✓" : "Save Schedule"}
+            </button>
+          </div>
+
+          {/* ── 2. Commission Rule Editor ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 16 }}>⚙️</span> Commission Rule Editor
+            </p>
+            <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 14px" }}>
+              Platform commission charged on each successful project. Currently: <strong style={{ color: "#fbbf24" }}>{commRate}%</strong>
+            </p>
+
+            {/* Rate input */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+              <input type="number" min={0} max={100} step={0.5} value={commRateInput}
+                onChange={e => setCommRateInput(e.target.value)}
+                style={{ flex: 1, padding: "8px 12px", borderRadius: 10, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 14, fontWeight: 700, outline: "none" }} />
+              <span style={{ fontSize: 16, color: "#fbbf24", fontWeight: 900 }}>%</span>
+            </div>
+
+            {/* Commission impact preview */}
+            {(() => {
+              const r = parseFloat(commRateInput);
+              const rev = taxData.totalRevenue;
+              const comm = isNaN(r) ? 0 : Math.round(rev * (r / 100));
+              return (
+                <div style={{ background: "rgba(251,191,36,.06)", border: "1px solid rgba(251,191,36,.2)", borderRadius: 10, padding: "10px 12px", marginBottom: 14 }}>
+                  <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Projected commission on current revenue</p>
+                  <p style={{ fontSize: 18, fontWeight: 900, color: "#fbbf24", margin: 0 }}>₹{comm.toLocaleString("en-IN")}</p>
+                </div>
+              );
+            })()}
+
+            <button onClick={saveCommissionRate} disabled={commSaving}
+              style={{ width: "100%", padding: "9px", borderRadius: 10, background: "rgba(251,191,36,.12)", border: "1px solid rgba(251,191,36,.3)", color: "#fbbf24", fontSize: 13, fontWeight: 700, cursor: commSaving ? "not-allowed" : "pointer" }}>
+              {commSaving ? "Saving…" : "Update Commission Rate"}
+            </button>
+          </div>
+
+          {/* ── 3. Wallet Top-Up ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 16 }}>💰</span> Wallet Top-Up
+            </p>
+
+            {/* Email search */}
+            <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+              <input value={topupEmail} onChange={e => { setTopupEmail(e.target.value); setTopupUserId(null); setTopupUserName(""); }}
+                placeholder="User email…"
+                style={{ flex: 1, padding: "7px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none" }} />
+              <button onClick={searchTopupUser} disabled={topupSearching || !topupEmail.trim()}
+                style={{ padding: "7px 12px", borderRadius: 9, background: "rgba(99,102,241,.12)", border: "1px solid rgba(99,102,241,.25)", color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: (topupSearching || !topupEmail.trim()) ? "not-allowed" : "pointer" }}>
+                {topupSearching ? "…" : "Find"}
+              </button>
+            </div>
+
+            {/* User found badge */}
+            {topupUserId && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 9, background: "rgba(74,222,128,.08)", border: "1px solid rgba(74,222,128,.2)", marginBottom: 10 }}>
+                <span style={{ fontSize: 12 }}>✅</span>
+                <span style={{ fontSize: 11.5, color: "#4ade80", fontWeight: 700 }}>{topupUserName}</span>
+              </div>
+            )}
+
+            {/* Amount */}
+            <div style={{ position: "relative", marginBottom: 8 }}>
+              <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: tok.cardSub }}>₹</span>
+              <input type="number" min={1} value={topupAmount} onChange={e => setTopupAmount(e.target.value)}
+                placeholder="Amount"
+                style={{ width: "100%", padding: "8px 10px 8px 22px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 13, outline: "none", boxSizing: "border-box" as const }} />
+            </div>
+
+            {/* Note */}
+            <input value={topupNote} onChange={e => setTopupNote(e.target.value)}
+              placeholder="Note (optional)…"
+              style={{ width: "100%", padding: "7px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", boxSizing: "border-box" as const, marginBottom: 12 }} />
+
+            {/* Message */}
+            {topupMsg && (
+              <div style={{ padding: "7px 10px", borderRadius: 9, marginBottom: 10,
+                background: topupMsg.ok ? "rgba(74,222,128,.08)" : "rgba(239,68,68,.08)",
+                border: `1px solid ${topupMsg.ok ? "rgba(74,222,128,.25)" : "rgba(239,68,68,.2)"}`,
+                color: topupMsg.ok ? "#4ade80" : "#f87171", fontSize: 12 }}>
+                {topupMsg.text}
+              </div>
+            )}
+
+            <button onClick={processTopup} disabled={topupProcessing || !topupUserId || !topupAmount}
+              style={{ width: "100%", padding: "9px", borderRadius: 10, background: (!topupUserId || !topupAmount) ? "rgba(74,222,128,.05)" : "rgba(74,222,128,.18)", border: "1px solid rgba(74,222,128,.3)", color: "#4ade80", fontSize: 13, fontWeight: 700, cursor: (topupProcessing || !topupUserId || !topupAmount) ? "not-allowed" : "pointer" }}>
+              {topupProcessing ? "Processing…" : "Add Funds to Wallet"}
+            </button>
+          </div>
+
+          {/* ── 4. Tax Summary Report ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 14px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 16 }}>🧾</span> Tax Summary Report
+              <span style={{ fontSize: 10, color: tok.cardSub, fontWeight: 400, marginLeft: "auto" }}>GST 18% · TDS 2%</span>
+            </p>
+
+            {[
+              { label: "Total Platform Revenue", value: taxData.totalRevenue, color: "#60a5fa" },
+              { label: `Platform Commission (${commRate}%)`, value: taxData.totalCommission, color: "#fbbf24" },
+              { label: "GST Collected (18% on commission)", value: taxData.gst, color: "#f97316" },
+              { label: "TDS Withheld (2% of revenue)", value: taxData.tds, color: "#a78bfa" },
+              { label: "Total Tax Liability", value: taxData.gst + taxData.tds, color: "#f87171" },
+            ].map(row => (
+              <div key={row.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${tok.alertBdr}` }}>
+                <span style={{ fontSize: 11.5, color: tok.cardSub }}>{row.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: row.color }}>₹{row.value.toLocaleString("en-IN")}</span>
+              </div>
+            ))}
+
+            {/* Export Tax CSV */}
+            <button onClick={() => {
+              const rows = [
+                ["Metric", "Amount (INR)"],
+                ["Total Revenue", taxData.totalRevenue],
+                [`Commission (${commRate}%)`, taxData.totalCommission],
+                ["GST 18% on commission", taxData.gst],
+                ["TDS 2% on revenue", taxData.tds],
+                ["Total Tax Liability", taxData.gst + taxData.tds],
+              ];
+              const csv = rows.map(r => r.join(",")).join("\n");
+              const blob = new Blob([csv], { type: "text/csv" });
+              const a = document.createElement("a");
+              a.href = URL.createObjectURL(blob);
+              a.download = `freelan-tax-report-${new Date().toISOString().slice(0,7)}.csv`;
+              a.click();
+            }} style={{ marginTop: 14, width: "100%", padding: "9px", borderRadius: 10, background: "rgba(139,92,246,.12)", border: "1px solid rgba(139,92,246,.3)", color: "#a78bfa", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+              ⬇ Export Tax Report CSV
+            </button>
+          </div>
+
+        </div>
+      </div>
 
       {/* ══ ANNOUNCEMENT BROADCAST ══ */}
       <div style={{ ...card, padding: "18px" }}>
