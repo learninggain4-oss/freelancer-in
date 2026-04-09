@@ -175,6 +175,7 @@ const AdminDashboard = () => {
   const [revClearing, setRevClearing]       = useState(false);
   const [growthClearing, setGrowthClearing] = useState(false);
   const [jobClearing, setJobClearing]       = useState(false);
+  const [timelineClearing, setTimelineClearing] = useState(false);
   const [regionData, setRegionData]       = useState<RegionPoint[]>([]);
   const [withdrawalSummary, setWithdrawalSummary] = useState({
     pending: 0, approved: 0, rejected: 0, completed: 0,
@@ -1431,7 +1432,7 @@ const AdminDashboard = () => {
         <div style={{ ...card, padding: "18px" }}>
           {sectionHeader(<Activity size={14} color="#fbbf24" />, "Activity Timeline", "Live")}
           {timeline.length === 0 ? emptyBox(Activity, "No recent activity") : (
-            <div style={{ position: "relative", paddingLeft: 28 }}>
+            <div style={{ position: "relative", paddingLeft: 28, marginBottom: 12 }}>
               <div style={{ position: "absolute", left: 10, top: 0, bottom: 0, width: 1, background: tok.timelineLine }} />
               {timeline.map((ev, i) => (
                 <div key={i} style={{ position: "relative", paddingBottom: i < timeline.length - 1 ? 16 : 0 }}>
@@ -1447,6 +1448,20 @@ const AdminDashboard = () => {
               ))}
             </div>
           )}
+          <button
+            onClick={() => {
+              const ok = window.confirm("Activity Timeline clear ചെയ്യണോ?\n\nTimeline view empty ആകും.");
+              if (!ok) return;
+              setTimelineClearing(true);
+              setTimeout(() => { setTimeline([]); setTimelineClearing(false); }, 400);
+            }}
+            disabled={timelineClearing || timeline.length === 0}
+            style={{ width: "100%", marginTop: timeline.length === 0 ? 12 : 0, padding: "8px", borderRadius: 9, background: timeline.length > 0 ? "rgba(239,68,68,.08)" : tok.alertBg, border: `1px solid ${timeline.length > 0 ? "rgba(239,68,68,.25)" : tok.alertBdr}`, color: timeline.length > 0 ? "#f87171" : tok.cardSub, fontSize: 12, fontWeight: 700, cursor: (timelineClearing || timeline.length === 0) ? "not-allowed" : "pointer", opacity: timelineClearing ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+            {timelineClearing
+              ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Clearing…</>
+              : <>✕ Clear Timeline</>
+            }
+          </button>
         </div>
         <div style={{ ...card, padding: "18px" }}>
           {sectionHeader(<IndianRupee size={14} color="#4ade80" />, "Financial Overview")}
