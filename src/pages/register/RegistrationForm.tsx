@@ -227,6 +227,10 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
     { label: "Wallet Account Activated",    emoji: "💳", threshold: 10,  tickAt: "0m:10s" },
   ];
   const activeIdx = REG_STEPS.findIndex(s => countdownUnits > s.threshold);
+  const stepsDoneCount = REG_STEPS.filter(s => countdownUnits <= s.threshold).length;
+  const isAllDone = stepsDoneCount === REG_STEPS.length;
+  const CONFETTI_COLORS = ["#6366f1","#22c55e","#f59e0b","#ec4899","#818cf8","#38bdf8","#a78bfa"];
+  const CONFETTI_LEFT = [4,9,15,22,29,36,43,50,57,63,69,75,81,87,92,96,12,34,56,78,25,47,65,83];
 
   if (submitted) return (
     <div style={{ background: "linear-gradient(160deg,#0a0e1a 0%,#0f1629 40%,#0d1220 100%)", color: "white", minHeight: "100vh", fontFamily: "Inter,system-ui,sans-serif", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 16px" }}>
@@ -242,7 +246,30 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
         @keyframes ringRotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
         @keyframes doneRowGlow{from{background:rgba(34,197,94,0.18)}to{background:rgba(34,197,94,0.07)}}
         @keyframes rowCollapse{0%{opacity:1;max-height:60px;padding-top:9px;padding-bottom:9px;margin-bottom:0}60%{opacity:1}85%{opacity:0;max-height:60px;padding-top:9px;padding-bottom:9px}100%{opacity:0;max-height:0;padding-top:0;padding-bottom:0;margin-bottom:-6px}}
+        @keyframes digitFlip{0%{transform:translateY(-60%);opacity:0}60%{transform:translateY(8%)}100%{transform:translateY(0);opacity:1}}
+        @keyframes cardBorderFlash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+        @keyframes particleFloat{0%{transform:translateY(0) scale(1);opacity:0.7}50%{opacity:0.35}100%{transform:translateY(-110px) scale(0.5);opacity:0}}
+        @keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(800deg);opacity:0}}
+        @keyframes stepBadgeFlip{0%{transform:translateY(-10px) scale(0.8);opacity:0}70%{transform:translateY(2px) scale(1.05)}100%{transform:translateY(0) scale(1);opacity:1}}
+        @keyframes textReveal{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0% 0 0)}}
+        @keyframes celebPulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.6),0 0 40px rgba(34,197,94,0.2)}50%{box-shadow:0 0 0 18px rgba(34,197,94,0),0 0 60px rgba(34,197,94,0.35)}}
       `}</style>
+
+      {/* Confetti burst when all steps done */}
+      {isAllDone && !showSuccess && (
+        <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 9999, overflow: "hidden" }}>
+          {CONFETTI_LEFT.map((left, i) => (
+            <div key={i} style={{
+              position: "absolute", top: "-12px", left: `${left}%`,
+              width: i % 3 === 0 ? 10 : i % 3 === 1 ? 7 : 5,
+              height: i % 3 === 0 ? 10 : i % 3 === 1 ? 7 : 5,
+              borderRadius: i % 4 === 0 ? "50%" : i % 4 === 1 ? 2 : "1px",
+              background: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+              animation: `confettiFall ${1.4 + (i % 5) * 0.25}s cubic-bezier(.2,.8,.4,1) forwards ${i * 0.07}s`
+            }} />
+          ))}
+        </div>
+      )}
 
       <div style={{ width: "100%", maxWidth: 440, animation: "fadeUp .5s ease both" }}>
         {/* Logo */}
@@ -281,9 +308,21 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
         ) : (
           /* ── COUNTDOWN SCREEN ── */
           <div>
-            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 24, padding: "28px 24px", marginBottom: 12 }}>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 24, padding: "28px 24px", marginBottom: 12, position: "relative", overflow: "hidden" }}>
+
+              {/* Floating background particles */}
+              {[0,1,2,3,4,5,6,7].map(i => (
+                <div key={i} style={{ position: "absolute", bottom: "-8px", left: `${8 + i * 11}%`, width: i%2===0?4:3, height: i%2===0?4:3, borderRadius: "50%",
+                  background: i%3===0?"rgba(99,102,241,0.55)":i%3===1?"rgba(139,92,246,0.45)":"rgba(34,197,94,0.45)",
+                  animation: `particleFloat ${3.2 + i*0.65}s ease-in-out infinite ${i*0.45}s`, pointerEvents: "none" }} />
+              ))}
+
+              {/* Card border flash on step change */}
+              <div key={`flash-${activeIdx}`} style={{ position: "absolute", inset: 0, borderRadius: 24, border: "1.5px solid rgba(99,102,241,0.75)",
+                animation: "cardBorderFlash 1.1s ease forwards", pointerEvents: "none", zIndex: 2 }} />
+
               {/* Header */}
-              <div style={{ textAlign: "center", marginBottom: 24 }}>
+              <div style={{ textAlign: "center", marginBottom: 24, position: "relative", zIndex: 1 }}>
                 <div style={{ width: 64, height: 64, borderRadius: 20, background: "rgba(99,102,241,0.15)", border: "2px solid rgba(99,102,241,0.35)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px", animation: "pulse 3s ease-in-out infinite" }}>
                   <Loader2 size={28} color="#818cf8" style={{ animation: "spin 2s linear infinite" }} />
                 </div>
@@ -291,14 +330,14 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                 <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, margin: 0 }}>Please stay on this page. Do not close the browser.</p>
               </div>
 
-              {/* Timer */}
+              {/* Timer with digit flip */}
               <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 10, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", textAlign: "center", margin: "0 0 14px" }}>Time Remaining</p>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 20 }}>
                 {[{ val: cMins, label: "MIN" }, { val: cSecs, label: "SEC" }].map(({ val, label }, i) => (
                   <div key={label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", borderRadius: 16, padding: "14px 0", width: 90, textAlign: "center", boxShadow: "0 4px 20px rgba(99,102,241,0.35),inset 0 1px 0 rgba(255,255,255,0.15)", position: "relative", overflow: "hidden" }}>
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent)", backgroundSize: "200% 100%", animation: "shimmer 2s infinite" }} />
-                      <p style={{ fontSize: 36, fontWeight: 900, color: "#ffffff", fontFamily: "Inter,monospace", lineHeight: 1, margin: 0, letterSpacing: "-1px", textShadow: "0 1px 4px rgba(0,0,0,0.3)", position: "relative" }}>
+                      <p key={`${label}-${val}`} style={{ fontSize: 36, fontWeight: 900, color: "#ffffff", fontFamily: "Inter,monospace", lineHeight: 1, margin: 0, letterSpacing: "-1px", textShadow: "0 1px 4px rgba(0,0,0,0.3)", position: "relative", animation: "digitFlip 0.25s ease both" }}>
                         {String(val).padStart(2, "0")}
                       </p>
                       <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 10, fontWeight: 700, letterSpacing: 1.5, margin: "4px 0 0", position: "relative" }}>{label}</p>
@@ -308,16 +347,33 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                 ))}
               </div>
 
-              {/* Progress bar */}
-              <div style={{ height: 6, borderRadius: 6, background: "rgba(255,255,255,0.07)", overflow: "hidden", marginBottom: 6 }}>
-                <div style={{ height: "100%", borderRadius: 6, background: "linear-gradient(90deg,#6366f1,#8b5cf6)", width: `${cProgress}%`, transition: "width 1s linear", boxShadow: "0 0 10px rgba(99,102,241,0.5)" }} />
+              {/* Step progress dots bar */}
+              <div style={{ display: "flex", gap: 4, justifyContent: "center", marginBottom: 16 }}>
+                {REG_STEPS.map((_, i) => {
+                  const isDotDone = i < stepsDoneCount;
+                  const isDotActive = i === activeIdx;
+                  return (
+                    <div key={i} style={{ height: 5, borderRadius: 3,
+                      width: isDotActive ? 20 : 8,
+                      background: isDotDone ? "linear-gradient(90deg,#22c55e,#4ade80)" : isDotActive ? "linear-gradient(90deg,#6366f1,#8b5cf6)" : "rgba(255,255,255,0.1)",
+                      boxShadow: isDotActive ? "0 0 8px rgba(99,102,241,0.7)" : isDotDone ? "0 0 6px rgba(34,197,94,0.4)" : "none",
+                      transition: "all 0.4s ease" }} />
+                  );
+                })}
               </div>
-              <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, textAlign: "center", margin: "0 0 20px" }}>
-                Account setup in progress — {Math.round(cProgress)}% complete
-              </p>
+
+              {/* Step counter badge */}
+              <div style={{ textAlign: "center", marginBottom: 14 }}>
+                <span key={`badge-${activeIdx}`} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 20,
+                  background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.25)",
+                  fontSize: 11, fontWeight: 700, color: "#a5b4fc", letterSpacing: 0.5,
+                  animation: "stepBadgeFlip 0.4s cubic-bezier(.36,1.56,.64,1) both" }}>
+                  Step {Math.min(activeIdx + 1, REG_STEPS.length)} <span style={{ color: "rgba(255,255,255,0.3)" }}>of</span> {REG_STEPS.length}
+                </span>
+              </div>
 
               {/* Steps */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, position: "relative", zIndex: 1 }}>
                 {REG_STEPS.map(({ label, emoji, threshold }, idx) => {
                   const done = countdownUnits <= threshold;
                   const active = idx === activeIdx;
@@ -349,9 +405,11 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                         </div>
                       </div>
 
-                      {/* Label */}
-                      <p style={{ flex: 1, fontSize: 12, fontWeight: active ? 700 : done ? 600 : 500,
-                        color: done ? "#86efac" : active ? "#c7d2fe" : "rgba(255,255,255,0.28)", margin: 0, lineHeight: 1.3 }}>
+                      {/* Label with typewriter reveal */}
+                      <p key={`lbl-${label}`} style={{ flex: 1, fontSize: 12, fontWeight: active ? 700 : done ? 600 : 500,
+                        color: done ? "#86efac" : active ? "#c7d2fe" : "rgba(255,255,255,0.28)", margin: 0, lineHeight: 1.3,
+                        display: "inline-block", overflow: "hidden", whiteSpace: "nowrap",
+                        animation: active ? "textReveal 0.55s steps(28) both" : "none" }}>
                         {emoji} {label}
                         {active && (
                           <span style={{ display: "inline-flex", gap: 3, marginLeft: 6 }}>
