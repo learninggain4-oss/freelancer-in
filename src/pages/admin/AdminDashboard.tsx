@@ -215,6 +215,21 @@ const AdminDashboard = () => {
   const [umPage, setUmPage]             = useState(1);
   const UM_PER_PAGE                     = 12;
 
+  // ── Security & Moderation ──────────────────────────────────────
+  // IP Ban Manager
+  const [bannedIPs, setBannedIPs]               = useState<Array<{ id: string; ip_address: string; reason: string | null; created_at: string; is_active: boolean }>>([]);
+  const [ipBanInput, setIpBanInput]             = useState("");
+  const [ipBanReason, setIpBanReason]           = useState("");
+  const [ipBanning, setIpBanning]               = useState(false);
+  const [ipLoading, setIpLoading]               = useState(false);
+  // Suspicious Login Alerts
+  const [suspLogins, setSuspLogins]             = useState<Array<{ id: string; action: string; metadata: Record<string, unknown> | null; created_at: string }>>([]);
+  // Content Flagging Queue
+  const [flaggedItems, setFlaggedItems]         = useState<Array<{ id: string; type: string; title: string; created_at: string; status: string }>>([]);
+  const [flagResolving, setFlagResolving]       = useState<string | null>(null);
+  // Rate Limit Stats
+  const [rlStats, setRlStats]                   = useState({ totalBans: 0, activeBans: 0, last24h: 0, topReasons: [] as Array<{ reason: string; count: number }> });
+
   // ── Finance & Payments ─────────────────────────────────────────
   // Payout Scheduler
   const [payoutEnabled, setPayoutEnabled]       = useState(false);
@@ -1050,6 +1065,69 @@ const AdminDashboard = () => {
     } catch { /* ignore */ }
     setUmExporting(false);
   }, [umFiltered]);
+
+  // ── Security & Moderation callbacks ──────────────────────────
+  const loadSecurityData = useCallback(async () => {
+    setIpLoading(true);
+    try {
+      // IP bans
+      const { data: ips } = await supabase.from("blocked_ips").select("id, ip_address, reason, created_at, is_active").order("created_at", { ascending: false }).limit(50);
+      setBannedIPs((ips || []) as typeof bannedIPs);
+
+      // Compute RL stats from the loaded IPs
+      const ipList = (ips || []) as typeof bannedIPs;
+      const active = ipList.filter(i => i.is_active).length;
+      const last24h = ipList.filter(i => {
+        const created = new Date(i.created_at).getTime();
+        return Date.now() - created < 86_400_000;
+      }).length;
+      const reasonMap: Record<string, number> = {};
+      ipList.forEach(i => { const r = i.reason || "Unknown"; reasonMap[r] = (reasonMap[r] || 0) + 1; });
+      const topReasons = Object.entries(reasonMap).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([reason, count]) => ({ reason, count }));
+      setRlStats({ totalBans: ipList.length, activeBans: active, last24h, topReasons });
+
+      // Suspicious login alerts from audit logs
+      const { data: logs } = await supabase.from("admin_audit_logs").select("id, action, metadata, created_at").or("action.ilike.%login%,action.ilike.%suspicious%,action.ilike.%failed%,action.ilike.%block%").order("created_at", { ascending: false }).limit(20);
+      setSuspLogins((logs || []) as typeof suspLogins);
+
+      // Content flags — projects flagged or reported
+      const { data: flagged } = await supabase.from("projects").select("id, title, created_at, status").eq("status", "flagged").order("created_at", { ascending: false }).limit(20);
+      const items = (flagged || []).map(p => ({ id: p.id, type: "Project", title: p.title || "Untitled", created_at: p.created_at, status: "pending" }));
+      setFlaggedItems(items);
+    } catch { /* ignore */ }
+    setIpLoading(false);
+  }, []);
+
+  const addIPBan = useCallback(async () => {
+    const ip = ipBanInput.trim();
+    if (!ip || !ipBanReason.trim()) return;
+    setIpBanning(true);
+    try {
+      await supabase.from("blocked_ips").insert({ ip_address: ip, reason: ipBanReason.trim(), is_active: true, created_at: new Date().toISOString() });
+      setIpBanInput(""); setIpBanReason("");
+      await loadSecurityData();
+    } catch { /* ignore */ }
+    setIpBanning(false);
+  }, [ipBanInput, ipBanReason, loadSecurityData]);
+
+  const removeIPBan = useCallback(async (id: string) => {
+    try {
+      await supabase.from("blocked_ips").update({ is_active: false }).eq("id", id);
+      setBannedIPs(prev => prev.map(ip => ip.id === id ? { ...ip, is_active: false } : ip));
+      setRlStats(prev => ({ ...prev, activeBans: Math.max(0, prev.activeBans - 1) }));
+    } catch { /* ignore */ }
+  }, []);
+
+  const resolveFlag = useCallback(async (id: string) => {
+    setFlagResolving(id);
+    try {
+      await supabase.from("projects").update({ status: "active" }).eq("id", id);
+      setFlaggedItems(prev => prev.filter(f => f.id !== id));
+    } catch { setFlaggedItems(prev => prev.filter(f => f.id !== id)); }
+    setFlagResolving(null);
+  }, []);
+
+  useEffect(() => { loadSecurityData(); }, [loadSecurityData]);
 
   // ── Finance & Payments callbacks ──────────────────────────────
   const savePayoutSchedule = useCallback(() => {
@@ -3102,6 +3180,188 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* ══════════════════════════════════════════════════════
+          SECURITY & MODERATION
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Shield size={14} color="#f87171" />, "Security & Moderation",
+          ipLoading ? "Loading…" : `${rlStats.activeBans} active IP bans`)}
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 14 }}>
+
+          {/* ── 1. IP Ban Manager ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 15 }}>🚫</span> IP Ban Manager
+              </p>
+              <button onClick={loadSecurityData} disabled={ipLoading}
+                style={{ padding: "4px 10px", borderRadius: 8, background: tok.cardBg, border: `1px solid ${tok.alertBdr}`, color: tok.cardSub, fontSize: 11, cursor: "pointer" }}>
+                {ipLoading ? "…" : "↻ Refresh"}
+              </button>
+            </div>
+
+            {/* Add new ban */}
+            <div style={{ display: "flex", flexDirection: "column" as const, gap: 6, marginBottom: 12, padding: "12px", borderRadius: 10, background: "rgba(239,68,68,.05)", border: "1px solid rgba(239,68,68,.15)" }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#f87171", margin: "0 0 6px" }}>Block New IP</p>
+              <input value={ipBanInput} onChange={e => setIpBanInput(e.target.value)}
+                placeholder="IP address (e.g. 192.168.1.1)…"
+                style={{ padding: "7px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none" }} />
+              <input value={ipBanReason} onChange={e => setIpBanReason(e.target.value)}
+                placeholder="Reason…"
+                style={{ padding: "7px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none" }} />
+              <button onClick={addIPBan} disabled={ipBanning || !ipBanInput.trim() || !ipBanReason.trim()}
+                style={{ padding: "8px", borderRadius: 9, background: "rgba(239,68,68,.15)", border: "1px solid rgba(239,68,68,.35)", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: (ipBanning || !ipBanInput.trim() || !ipBanReason.trim()) ? "not-allowed" : "pointer" }}>
+                {ipBanning ? "Banning…" : "Block IP"}
+              </button>
+            </div>
+
+            {/* Banned IP list */}
+            <div style={{ display: "flex", flexDirection: "column" as const, gap: 6, maxHeight: 220, overflowY: "auto" as const }}>
+              {bannedIPs.length === 0 ? (
+                <p style={{ fontSize: 12, color: tok.cardSub, textAlign: "center" as const, padding: "16px 0" }}>No blocked IPs.</p>
+              ) : bannedIPs.map(ip => (
+                <div key={ip.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 9, background: tok.cardBg, border: `1px solid ${ip.is_active ? "rgba(239,68,68,.2)" : tok.alertBdr}` }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: tok.cardText, margin: 0, fontFamily: "monospace" }}>{ip.ip_address}</p>
+                    <p style={{ fontSize: 10.5, color: tok.cardSub, margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{ip.reason || "—"}</p>
+                  </div>
+                  <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, fontWeight: 700,
+                    background: ip.is_active ? "rgba(239,68,68,.12)" : "rgba(107,114,128,.1)",
+                    color: ip.is_active ? "#f87171" : tok.cardSub }}>
+                    {ip.is_active ? "Active" : "Lifted"}
+                  </span>
+                  {ip.is_active && (
+                    <button onClick={() => removeIPBan(ip.id)}
+                      style={{ padding: "4px 9px", borderRadius: 7, background: "rgba(74,222,128,.08)", border: "1px solid rgba(74,222,128,.2)", color: "#4ade80", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" as const }}>
+                      Unban
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── 2. Suspicious Login Alerts ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 15 }}>⚠️</span> Suspicious Login Alerts
+              <span style={{ marginLeft: "auto", fontSize: 10, padding: "2px 7px", borderRadius: 5, background: "rgba(251,191,36,.1)", color: "#fbbf24", fontWeight: 700 }}>
+                {suspLogins.length} alerts
+              </span>
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column" as const, gap: 6, maxHeight: 280, overflowY: "auto" as const }}>
+              {suspLogins.length === 0 ? (
+                <div style={{ padding: "24px 0", textAlign: "center" as const }}>
+                  <p style={{ fontSize: 20, margin: "0 0 6px" }}>✅</p>
+                  <p style={{ fontSize: 12, color: tok.cardSub, margin: 0 }}>No suspicious activity detected.</p>
+                </div>
+              ) : suspLogins.map(log => (
+                <div key={log.id} style={{ padding: "9px 12px", borderRadius: 10, background: "rgba(251,191,36,.05)", border: "1px solid rgba(251,191,36,.15)" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#fbbf24" }}>{log.action}</span>
+                    <span style={{ fontSize: 10, color: tok.cardSub }}>
+                      {new Date(log.created_at).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                  {log.metadata && Object.keys(log.metadata).length > 0 && (
+                    <p style={{ fontSize: 10.5, color: tok.cardSub, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+                      {JSON.stringify(log.metadata).slice(0, 80)}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── 3. Content Flagging Queue ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 15 }}>🚩</span> Content Flagging Queue
+              <span style={{ marginLeft: "auto", fontSize: 10, padding: "2px 7px", borderRadius: 5, background: "rgba(239,68,68,.1)", color: "#f87171", fontWeight: 700 }}>
+                {flaggedItems.length} pending
+              </span>
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column" as const, gap: 6, maxHeight: 280, overflowY: "auto" as const }}>
+              {flaggedItems.length === 0 ? (
+                <div style={{ padding: "24px 0", textAlign: "center" as const }}>
+                  <p style={{ fontSize: 20, margin: "0 0 6px" }}>✅</p>
+                  <p style={{ fontSize: 12, color: tok.cardSub, margin: 0 }}>No flagged content in queue.</p>
+                </div>
+              ) : flaggedItems.map(item => (
+                <div key={item.id} style={{ padding: "10px 12px", borderRadius: 10, background: tok.cardBg, border: "1px solid rgba(239,68,68,.18)" }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                    <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, background: "rgba(139,92,246,.1)", color: "#a78bfa", fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{item.type}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: tok.cardText, margin: "0 0 2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{item.title}</p>
+                      <p style={{ fontSize: 10.5, color: tok.cardSub, margin: 0 }}>
+                        Flagged {new Date(item.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
+                      </p>
+                    </div>
+                    <button onClick={() => resolveFlag(item.id)} disabled={flagResolving === item.id}
+                      style={{ padding: "4px 10px", borderRadius: 7, background: "rgba(74,222,128,.1)", border: "1px solid rgba(74,222,128,.25)", color: "#4ade80", fontSize: 11, fontWeight: 700, cursor: flagResolving === item.id ? "not-allowed" : "pointer", flexShrink: 0 }}>
+                      {flagResolving === item.id ? "…" : "Resolve"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── 4. Rate Limit Stats ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 14px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 15 }}>📊</span> Security Stats
+            </p>
+
+            {/* Summary cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+              {[
+                { label: "Total IP Bans", value: rlStats.totalBans, color: "#f87171", bg: "rgba(239,68,68,.08)" },
+                { label: "Active Bans", value: rlStats.activeBans, color: "#fb923c", bg: "rgba(251,146,60,.08)" },
+                { label: "Last 24h Bans", value: rlStats.last24h, color: "#fbbf24", bg: "rgba(251,191,36,.08)" },
+                { label: "Susp. Alerts", value: suspLogins.length, color: "#a78bfa", bg: "rgba(139,92,246,.08)" },
+              ].map(s => (
+                <div key={s.label} style={{ padding: "10px 12px", borderRadius: 10, background: s.bg, border: `1px solid ${s.color}25` }}>
+                  <p style={{ fontSize: 20, fontWeight: 900, color: s.color, margin: "0 0 2px" }}>{s.value}</p>
+                  <p style={{ fontSize: 10.5, color: tok.cardSub, margin: 0 }}>{s.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Top ban reasons */}
+            {rlStats.topReasons.length > 0 && (
+              <>
+                <p style={{ fontSize: 11, fontWeight: 700, color: tok.cardSub, margin: "0 0 8px", textTransform: "uppercase" as const, letterSpacing: "0.6px" }}>Top Ban Reasons</p>
+                <div style={{ display: "flex", flexDirection: "column" as const, gap: 5 }}>
+                  {rlStats.topReasons.map(r => {
+                    const pct = rlStats.totalBans > 0 ? Math.round((r.count / rlStats.totalBans) * 100) : 0;
+                    return (
+                      <div key={r.reason}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                          <span style={{ fontSize: 11, color: tok.cardSub, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const, maxWidth: "70%" }}>{r.reason}</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "#f87171" }}>{r.count}</span>
+                        </div>
+                        <div style={{ height: 4, borderRadius: 3, background: tok.alertBdr, overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${pct}%`, background: "#f87171", borderRadius: 3 }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {rlStats.topReasons.length === 0 && (
+              <p style={{ fontSize: 12, color: tok.cardSub, textAlign: "center" as const, padding: "16px 0" }}>No ban data available yet.</p>
+            )}
+          </div>
+
+        </div>
+      </div>
 
       {/* ══════════════════════════════════════════════════════
           FINANCE & PAYMENTS
