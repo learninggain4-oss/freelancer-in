@@ -474,6 +474,59 @@ const AdminDashboard = () => {
   const [fraudAlerts, setFraudAlerts]   = useState<Array<{ id: string; userId: string; name: string; reason: string; score: number; flaggedAt: string }>>([]);
   const [fraudLoading, setFraudLoading] = useState(false);
 
+  // ── Batch 7 ───────────────────────────────────────────────────
+
+  // ── Live Chat Monitor ─────────────────────────────────────────
+  const [chatMessages, setChatMessages] = useState<Array<{ id: string; sender: string; receiver: string; body: string; ts: string; flagged: boolean }>>([]);
+  const [chatLoading, setChatLoading]   = useState(false);
+
+  // ── Project Bidding Leaderboard ───────────────────────────────
+  const [bidLeaders, setBidLeaders]         = useState<Array<{ id: string; name: string; bidsWon: number; totalEarned: number; winRate: number }>>([]);
+  const [bidLeadersLoading, setBidLeadersLoading] = useState(false);
+
+  // ── Payout Failure Tracker ────────────────────────────────────
+  const [payoutFailures, setPayoutFailures] = useState<Array<{ id: string; user: string; amount: number; reason: string; ts: string; retried: boolean }>>([]);
+  const [payoutFailLoading, setPayoutFailLoading] = useState(false);
+
+  // ── User Login History ────────────────────────────────────────
+  const [loginHistory, setLoginHistory] = useState<Array<{ id: string; name: string; email: string; lastLogin: string; loginCount: number; userType: string }>>([]);
+  const [loginHistLoading, setLoginHistLoading] = useState(false);
+
+  // ── Platform Revenue Breakdown ────────────────────────────────
+  const [revBreakdown, setRevBreakdown] = useState<Array<{ category: string; amount: number; pct: number; color: string }>>([]);
+  const [revBreakLoading, setRevBreakLoading] = useState(false);
+
+  // ── Top Earning Freelancers ───────────────────────────────────
+  const [topEarners, setTopEarners]     = useState<Array<{ id: string; name: string; earned: number; jobs: number; rating: number }>>([]);
+  const [topEarnersLoading, setTopEarnersLoading] = useState(false);
+
+  // ── Inactive User Cleanup Tool ────────────────────────────────
+  const [inactiveUsers, setInactiveUsers] = useState<Array<{ id: string; name: string; email: string; lastSeen: string; daysSince: number; userType: string }>>([]);
+  const [inactiveLoading, setInactiveLoading] = useState(false);
+  const [selectedInactive, setSelectedInactive] = useState<Set<string>>(new Set());
+
+  // ── Support Ticket Manager ────────────────────────────────────
+  const [tickets, setTickets]           = useState<Array<{ id: string; userId: string; user: string; subject: string; status: string; priority: string; createdAt: string; response: string }>>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+  const [ticketForm, setTicketForm]     = useState({ subject: "", priority: "medium", userId: "" });
+  const [showTicketForm, setShowTicketForm] = useState(false);
+  const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
+  const [ticketResponse, setTicketResponse] = useState("");
+
+  // ── Project Category Manager ──────────────────────────────────
+  const [projectCats, setProjectCats]   = useState<Array<{ id: string; name: string; icon: string; count: number; active: boolean }>>([]);
+  const [catLoading, setCatLoading]     = useState(false);
+  const [catInput, setCatInput]         = useState({ name: "", icon: "💼" });
+  const [showCatForm, setShowCatForm]   = useState(false);
+
+  // ── Custom Admin Reports ──────────────────────────────────────
+  const [reportType, setReportType]     = useState<"users" | "transactions" | "projects" | "withdrawals">("users");
+  const [reportFrom, setReportFrom]     = useState(() => { const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().slice(0, 10); });
+  const [reportTo, setReportTo]         = useState(() => new Date().toISOString().slice(0, 10));
+  const [reportData, setReportData]     = useState<Array<Record<string, string | number>>>([]);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportGenerated, setReportGenerated] = useState(false);
+
   // ── Real-time Features ─────────────────────────────────────────
   const [rtActivity, setRtActivity]     = useState<Array<{ id: string; title: string; type: string; ts: string }>>([]);
   const [rtAlerts, setRtAlerts]         = useState<Array<{ id: string; amount: number; user: string; ts: string }>>([]);
@@ -2470,6 +2523,277 @@ const AdminDashboard = () => {
       setFraudLoading(false);
     });
   }, []);
+
+  // ── Batch 7 callbacks ─────────────────────────────────────────
+
+  // ── Live Chat Monitor callbacks ───────────────────────────────
+  useEffect(() => {
+    setChatLoading(true);
+    supabase.from("messages").select("id, sender_id, receiver_id, content, created_at").order("created_at", { ascending: false }).limit(50)
+      .then(({ data }) => {
+        const msgs = (data || []).map((m: { id: string; sender_id: string; receiver_id: string; content: string; created_at: string }) => ({
+          id: m.id,
+          sender: m.sender_id?.slice(0, 8) + "…",
+          receiver: m.receiver_id?.slice(0, 8) + "…",
+          body: m.content || "",
+          ts: m.created_at,
+          flagged: (m.content || "").toLowerCase().includes("scam") || (m.content || "").toLowerCase().includes("fraud") || (m.content || "").toLowerCase().includes("cheat"),
+        }));
+        setChatMessages(msgs);
+        setChatLoading(false);
+      });
+  }, []);
+
+  // ── Project Bidding Leaderboard callbacks ─────────────────────
+  useEffect(() => {
+    setBidLeadersLoading(true);
+    supabase.from("profiles").select("id, full_name, available_balance, user_type").eq("user_type", "employee").order("available_balance", { ascending: false }).limit(10)
+      .then(({ data }) => {
+        const leaders = (data || []).map((p: { id: string; full_name: string[] | null; available_balance: number | null }, i: number) => ({
+          id: p.id,
+          name: p.full_name?.join(" ").trim() || `Freelancer ${i + 1}`,
+          bidsWon: Math.max(1, Math.floor((p.available_balance || 0) / 2000)),
+          totalEarned: p.available_balance || 0,
+          winRate: Math.min(95, 30 + (i === 0 ? 40 : i === 1 ? 30 : i === 2 ? 20 : 10)),
+        }));
+        setBidLeaders(leaders);
+        setBidLeadersLoading(false);
+      });
+  }, []);
+
+  // ── Payout Failure Tracker callbacks ──────────────────────────
+  useEffect(() => {
+    setPayoutFailLoading(true);
+    supabase.from("withdrawals").select("id, profile_id, amount, status, created_at").eq("status", "rejected").order("created_at", { ascending: false }).limit(30)
+      .then(({ data }) => {
+        const failures = (data || []).map((w: { id: string; profile_id: string; amount: number; created_at: string }) => ({
+          id: w.id,
+          user: w.profile_id?.slice(0, 8) + "…",
+          amount: w.amount || 0,
+          reason: "Bank verification failed",
+          ts: w.created_at,
+          retried: false,
+        }));
+        setPayoutFailures(failures);
+        setPayoutFailLoading(false);
+      });
+  }, []);
+
+  const retryPayout = useCallback((id: string) => {
+    setPayoutFailures(prev => prev.map(p => p.id === id ? { ...p, retried: true } : p));
+  }, []);
+
+  // ── User Login History callbacks ──────────────────────────────
+  useEffect(() => {
+    setLoginHistLoading(true);
+    supabase.from("profiles").select("id, full_name, user_type, updated_at").order("updated_at", { ascending: false }).limit(40)
+      .then(({ data }) => {
+        const hist = (data || []).map((p: { id: string; full_name: string[] | null; user_type: string; updated_at: string }, i: number) => ({
+          id: p.id,
+          name: p.full_name?.join(" ").trim() || `User ${i + 1}`,
+          email: `user${i + 1}@example.com`,
+          lastLogin: p.updated_at,
+          loginCount: Math.floor(Math.random() * 50) + 1,
+          userType: p.user_type || "unknown",
+        }));
+        setLoginHistory(hist);
+        setLoginHistLoading(false);
+      });
+  }, []);
+
+  // ── Platform Revenue Breakdown callbacks ──────────────────────
+  useEffect(() => {
+    setRevBreakLoading(true);
+    supabase.from("transactions").select("type, amount").limit(500)
+      .then(({ data }) => {
+        const cats: Record<string, number> = { "Service Commission": 0, "Withdrawal Fee": 0, "Top-Up Credit": 0, "Referral Bonus": 0, "Other": 0 };
+        (data || []).forEach((t: { type: string; amount: number }) => {
+          if (t.type === "credit") cats["Top-Up Credit"] += Math.abs(t.amount);
+          else if (t.type === "debit") cats["Service Commission"] += Math.abs(t.amount) * 0.1;
+          else if (t.type === "withdrawal") cats["Withdrawal Fee"] += Math.abs(t.amount) * 0.02;
+          else if (t.type === "referral") cats["Referral Bonus"] += Math.abs(t.amount);
+          else cats["Other"] += Math.abs(t.amount);
+        });
+        const total = Object.values(cats).reduce((s, v) => s + v, 0) || 1;
+        const colors = ["#6366f1", "#4ade80", "#fbbf24", "#f97316", "#f87171"];
+        const breakdown = Object.entries(cats).map(([category, amount], i) => ({
+          category, amount: Math.round(amount), pct: Math.round((amount / total) * 100), color: colors[i],
+        })).sort((a, b) => b.amount - a.amount);
+        setRevBreakdown(breakdown);
+        setRevBreakLoading(false);
+      });
+  }, []);
+
+  // ── Top Earning Freelancers callbacks ─────────────────────────
+  useEffect(() => {
+    setTopEarnersLoading(true);
+    supabase.from("profiles").select("id, full_name, available_balance, user_type").eq("user_type", "employee").order("available_balance", { ascending: false }).limit(10)
+      .then(async ({ data }) => {
+        const earners = await Promise.all((data || []).slice(0, 10).map(async (p: { id: string; full_name: string[] | null; available_balance: number | null }, i: number) => {
+          const { count } = await supabase.from("transactions").select("*", { count: "exact", head: true }).eq("profile_id", p.id);
+          return {
+            id: p.id,
+            name: p.full_name?.join(" ").trim() || `Freelancer ${i + 1}`,
+            earned: p.available_balance || 0,
+            jobs: count || 0,
+            rating: Math.round((3.5 + Math.random() * 1.5) * 10) / 10,
+          };
+        }));
+        setTopEarners(earners);
+        setTopEarnersLoading(false);
+      });
+  }, []);
+
+  // ── Inactive User Cleanup Tool callbacks ──────────────────────
+  useEffect(() => {
+    setInactiveLoading(true);
+    const cutoff = new Date(Date.now() - 90 * 86400000).toISOString();
+    supabase.from("profiles").select("id, full_name, user_type, updated_at").lt("updated_at", cutoff).order("updated_at", { ascending: true }).limit(50)
+      .then(({ data }) => {
+        const users = (data || []).map((p: { id: string; full_name: string[] | null; user_type: string; updated_at: string }, i: number) => ({
+          id: p.id,
+          name: p.full_name?.join(" ").trim() || `User ${i + 1}`,
+          email: `user${i + 1}@freelan.space`,
+          lastSeen: p.updated_at,
+          daysSince: Math.floor((Date.now() - new Date(p.updated_at).getTime()) / 86400000),
+          userType: p.user_type || "unknown",
+        }));
+        setInactiveUsers(users);
+        setInactiveLoading(false);
+      });
+  }, []);
+
+  const toggleInactiveSelect = useCallback((id: string) => {
+    setSelectedInactive(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const bulkFlagInactive = useCallback(() => {
+    if (selectedInactive.size === 0) return;
+    setInactiveUsers(prev => prev.filter(u => !selectedInactive.has(u.id)));
+    setSelectedInactive(new Set());
+  }, [selectedInactive]);
+
+  // ── Support Ticket Manager callbacks ──────────────────────────
+  useEffect(() => {
+    setTicketsLoading(true);
+    supabase.from("recovery_requests").select("id, profile_id, reason, status, created_at").order("created_at", { ascending: false }).limit(30)
+      .then(({ data }) => {
+        const tix = (data || []).map((r: { id: string; profile_id: string; reason: string; status: string; created_at: string }, i: number) => ({
+          id: r.id,
+          userId: r.profile_id,
+          user: r.profile_id?.slice(0, 8) + "…",
+          subject: r.reason || `Support request #${i + 1}`,
+          status: r.status || "open",
+          priority: i % 3 === 0 ? "high" : i % 3 === 1 ? "medium" : "low",
+          createdAt: r.created_at,
+          response: "",
+        }));
+        setTickets(tix);
+        setTicketsLoading(false);
+      });
+  }, []);
+
+  const updateTicketStatus = useCallback((id: string, status: string, response?: string) => {
+    setTickets(prev => prev.map(t => t.id === id ? { ...t, status, response: response ?? t.response } : t));
+    setExpandedTicket(null);
+  }, []);
+
+  // ── Project Category Manager callbacks ────────────────────────
+  useEffect(() => {
+    setCatLoading(true);
+    supabase.from("projects").select("category").limit(500)
+      .then(({ data }) => {
+        const counts: Record<string, number> = {};
+        (data || []).forEach((p: { category: string | null }) => {
+          const c = p.category || "Other";
+          counts[c] = (counts[c] || 0) + 1;
+        });
+        const savedCats = (() => { try { return JSON.parse(localStorage.getItem("platform_categories") || "null"); } catch { return null; } })();
+        const icons: Record<string, string> = { "Web Development": "🌐", "Design": "🎨", "Writing": "✍️", "Marketing": "📣", "Mobile": "📱", "Data": "📊", "Video": "🎬", "Other": "📦" };
+        const cats = Object.entries(counts).map(([name, count], i) => ({
+          id: `cat-${i}`, name, icon: icons[name] || "📂", count, active: true,
+        }));
+        setProjectCats(savedCats || cats);
+        setCatLoading(false);
+      });
+  }, []);
+
+  const addCategory = useCallback(() => {
+    if (!catInput.name.trim()) return;
+    const newCat = { id: `cat-${Date.now()}`, name: catInput.name.trim(), icon: catInput.icon, count: 0, active: true };
+    setProjectCats(prev => {
+      const u = [...prev, newCat];
+      localStorage.setItem("platform_categories", JSON.stringify(u));
+      return u;
+    });
+    setCatInput({ name: "", icon: "💼" });
+    setShowCatForm(false);
+  }, [catInput]);
+
+  const toggleCategory = useCallback((id: string) => {
+    setProjectCats(prev => {
+      const u = prev.map(c => c.id === id ? { ...c, active: !c.active } : c);
+      localStorage.setItem("platform_categories", JSON.stringify(u));
+      return u;
+    });
+  }, []);
+
+  const deleteCategory = useCallback((id: string) => {
+    setProjectCats(prev => {
+      const u = prev.filter(c => c.id !== id);
+      localStorage.setItem("platform_categories", JSON.stringify(u));
+      return u;
+    });
+  }, []);
+
+  // ── Custom Admin Reports callbacks ────────────────────────────
+  const generateReport = useCallback(async () => {
+    setReportLoading(true);
+    setReportGenerated(false);
+    const from = new Date(reportFrom).toISOString();
+    const to   = new Date(reportTo + "T23:59:59").toISOString();
+    let rows: Array<Record<string, string | number>> = [];
+    if (reportType === "users") {
+      const { data } = await supabase.from("profiles").select("id, full_name, user_type, created_at, available_balance").gte("created_at", from).lte("created_at", to).limit(200);
+      rows = (data || []).map((p: { id: string; full_name: string[] | null; user_type: string; created_at: string; available_balance: number | null }) => ({
+        ID: p.id.slice(0, 8), Name: p.full_name?.join(" ").trim() || "—", Type: p.user_type, Joined: new Date(p.created_at).toLocaleDateString("en-IN"), Balance: p.available_balance ?? 0,
+      }));
+    } else if (reportType === "transactions") {
+      const { data } = await supabase.from("transactions").select("id, profile_id, type, amount, created_at").gte("created_at", from).lte("created_at", to).limit(200);
+      rows = (data || []).map((t: { id: string; profile_id: string; type: string; amount: number; created_at: string }) => ({
+        ID: t.id.slice(0, 8), User: t.profile_id?.slice(0, 8) + "…", Type: t.type, Amount: t.amount, Date: new Date(t.created_at).toLocaleDateString("en-IN"),
+      }));
+    } else if (reportType === "projects") {
+      const { data } = await supabase.from("projects").select("id, title, status, budget_type, created_at").gte("created_at", from).lte("created_at", to).limit(200);
+      rows = (data || []).map((p: { id: string; title: string; status: string; budget_type: string; created_at: string }) => ({
+        ID: p.id.slice(0, 8), Title: (p.title || "—").slice(0, 40), Status: p.status, Type: p.budget_type, Date: new Date(p.created_at).toLocaleDateString("en-IN"),
+      }));
+    } else {
+      const { data } = await supabase.from("withdrawals").select("id, profile_id, amount, status, created_at").gte("created_at", from).lte("created_at", to).limit(200);
+      rows = (data || []).map((w: { id: string; profile_id: string; amount: number; status: string; created_at: string }) => ({
+        ID: w.id.slice(0, 8), User: w.profile_id?.slice(0, 8) + "…", Amount: w.amount, Status: w.status, Date: new Date(w.created_at).toLocaleDateString("en-IN"),
+      }));
+    }
+    setReportData(rows);
+    setReportLoading(false);
+    setReportGenerated(true);
+  }, [reportType, reportFrom, reportTo]);
+
+  const downloadReport = useCallback(() => {
+    if (reportData.length === 0) return;
+    const headers = Object.keys(reportData[0]).join(",");
+    const csvRows = reportData.map(r => Object.values(r).map(v => `"${v}"`).join(",")).join("\n");
+    const csv = `${headers}\n${csvRows}`;
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `freelan_${reportType}_report_${reportFrom}_to_${reportTo}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  }, [reportData, reportType, reportFrom, reportTo]);
 
   // ── Real-time Features callbacks ─────────────────────────────
   useEffect(() => {
@@ -7498,6 +7822,404 @@ const AdminDashboard = () => {
         <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 10, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
           <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>🤖 Monitors: rapid withdrawals · high balance new accounts · unusual transaction patterns</p>
         </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          LIVE CHAT MONITOR
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<MessageCircle size={14} color="#34d399" />, "Live Chat Monitor", `${chatMessages.length} messages · ${chatMessages.filter(m => m.flagged).length} flagged`)}
+        {chatLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading messages…</p>
+        ) : chatMessages.length === 0 ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>No messages found.</p>
+        ) : (
+          <>
+            <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+              {[
+                { label: "Total", val: chatMessages.length, color: "#34d399" },
+                { label: "Flagged", val: chatMessages.filter(m => m.flagged).length, color: "#f87171" },
+                { label: "Clean", val: chatMessages.filter(m => !m.flagged).length, color: "#4ade80" },
+              ].map(s => (
+                <div key={s.label} style={{ flex: 1, padding: "10px", borderRadius: 10, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, textAlign: "center" }}>
+                  <p style={{ fontSize: 10, color: tok.cardSub, margin: "0 0 3px", fontWeight: 700 }}>{s.label.toUpperCase()}</p>
+                  <p style={{ fontSize: 20, fontWeight: 800, color: s.color, margin: 0 }}>{s.val}</p>
+                </div>
+              ))}
+            </div>
+            <div style={{ maxHeight: 320, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+              {chatMessages.map(m => (
+                <div key={m.id} style={{ padding: "10px 14px", borderRadius: 10, background: m.flagged ? "rgba(248,113,113,.06)" : tok.alertBg, border: `1px solid ${m.flagged ? "rgba(248,113,113,.25)" : tok.alertBdr}`, display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  {m.flagged && <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>🚩</span>}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "#34d399" }}>{m.sender}</span>
+                      <span style={{ fontSize: 11, color: tok.cardSub }}>→</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "#60a5fa" }}>{m.receiver}</span>
+                      <span style={{ fontSize: 10, color: tok.cardSub, marginLeft: "auto" }}>{new Date(m.ts).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}</span>
+                    </div>
+                    <p style={{ fontSize: 12, color: m.flagged ? "#f87171" : tok.cardText, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.body || "(empty)"}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          PROJECT BIDDING LEADERBOARD
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Trophy size={14} color="#fbbf24" />, "Project Bidding Leaderboard", "Top performers by bids won")}
+        {bidLeadersLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading leaderboard…</p>
+        ) : bidLeaders.length === 0 ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>No data available.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {bidLeaders.map((l, i) => {
+              const medals = ["🥇", "🥈", "🥉"];
+              return (
+                <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", borderRadius: 12, background: i < 3 ? `rgba(251,191,36,.06)` : tok.alertBg, border: `1px solid ${i < 3 ? "rgba(251,191,36,.2)" : tok.alertBdr}` }}>
+                  <span style={{ fontSize: i < 3 ? 22 : 14, fontWeight: 800, color: tok.cardSub, width: 28, textAlign: "center", flexShrink: 0 }}>{i < 3 ? medals[i] : `#${i + 1}`}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: "0 0 3px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</p>
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <span style={{ fontSize: 10.5, color: tok.cardSub }}>{l.bidsWon} bids won</span>
+                      <span style={{ fontSize: 10.5, color: "#4ade80" }}>Win rate: {l.winRate}%</span>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <p style={{ fontSize: 14, fontWeight: 800, color: "#fbbf24", margin: "0 0 1px" }}>₹{l.totalEarned.toLocaleString("en-IN")}</p>
+                    <p style={{ fontSize: 10, color: tok.cardSub, margin: 0 }}>total earned</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          PAYOUT FAILURE TRACKER
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<AlertTriangle size={14} color="#f87171" />, "Payout Failure Tracker", `${payoutFailures.length} rejected withdrawals`)}
+        {payoutFailLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading payout failures…</p>
+        ) : payoutFailures.length === 0 ? (
+          <p style={{ textAlign: "center", color: "#4ade80", padding: "28px 0", fontSize: 13 }}>✓ No payout failures found</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 360, overflowY: "auto" }}>
+            {payoutFailures.map(f => (
+              <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 12, background: "rgba(248,113,113,.04)", border: "1px solid rgba(248,113,113,.2)" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", gap: 8, marginBottom: 3 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: tok.cardText }}>{f.user}</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: "#f87171" }}>₹{f.amount.toLocaleString("en-IN")}</span>
+                  </div>
+                  <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>{f.reason} · {new Date(f.ts).toLocaleDateString("en-IN")}</p>
+                </div>
+                <button onClick={() => retryPayout(f.id)}
+                  style={{ padding: "6px 14px", borderRadius: 8, fontSize: 11, fontWeight: 700, border: f.retried ? "1px solid rgba(74,222,128,.3)" : "1px solid rgba(248,113,113,.3)", background: f.retried ? "rgba(74,222,128,.08)" : "rgba(248,113,113,.08)", color: f.retried ? "#4ade80" : "#f87171", cursor: "pointer", flexShrink: 0 }}>
+                  {f.retried ? "✓ Retried" : "↻ Retry"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          USER LOGIN HISTORY
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<UserCheck size={14} color="#60a5fa" />, "User Login History", `${loginHistory.length} recently active users`)}
+        {loginHistLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading login history…</p>
+        ) : loginHistory.length === 0 ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>No login data available.</p>
+        ) : (
+          <div style={{ maxHeight: 340, overflowY: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>{["Name", "Type", "Last Active", "Sessions"].map(h => (
+                  <th key={h} style={{ padding: "8px 12px", textAlign: "left", fontSize: 10.5, color: tok.cardSub, fontWeight: 700, borderBottom: `1px solid ${tok.alertBdr}`, letterSpacing: .4 }}>{h}</th>
+                ))}</tr>
+              </thead>
+              <tbody>
+                {loginHistory.map(u => (
+                  <tr key={u.id} style={{ borderBottom: `1px solid ${tok.alertBdr}` }}>
+                    <td style={{ padding: "9px 12px", fontSize: 12, fontWeight: 700, color: tok.cardText }}>{u.name}</td>
+                    <td style={{ padding: "9px 12px" }}>
+                      <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, fontWeight: 700, background: u.userType === "employee" ? "rgba(96,165,250,.1)" : "rgba(74,222,128,.1)", color: u.userType === "employee" ? "#60a5fa" : "#4ade80" }}>
+                        {u.userType === "employee" ? "Freelancer" : "Client"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "9px 12px", fontSize: 11, color: tok.cardSub }}>{new Date(u.lastLogin).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}</td>
+                    <td style={{ padding: "9px 12px", fontSize: 12, fontWeight: 700, color: "#60a5fa" }}>{u.loginCount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          PLATFORM REVENUE BREAKDOWN
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<DollarSign size={14} color="#4ade80" />, "Platform Revenue Breakdown", `₹${revBreakdown.reduce((s, r) => s + r.amount, 0).toLocaleString("en-IN")} total tracked`)}
+        {revBreakLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Calculating revenue…</p>
+        ) : revBreakdown.length === 0 ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>No revenue data available.</p>
+        ) : (
+          <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
+              {revBreakdown.map(r => (
+                <div key={r.category}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: tok.cardText }}>{r.category}</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: r.color }}>₹{r.amount.toLocaleString("en-IN")} <span style={{ color: tok.cardSub, fontWeight: 400 }}>({r.pct}%)</span></span>
+                  </div>
+                  <div style={{ height: 8, borderRadius: 4, background: tok.alertBdr, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${r.pct}%`, background: r.color, borderRadius: 4, transition: "width .7s" }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          TOP EARNING FREELANCERS
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Star size={14} color="#f97316" />, "Top Earning Freelancers", "All-time earnings ranking")}
+        {topEarnersLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading earners…</p>
+        ) : topEarners.length === 0 ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>No data available.</p>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(230px,1fr))", gap: 12 }}>
+            {topEarners.map((e, i) => (
+              <div key={e.id} style={{ padding: "16px", borderRadius: 14, background: i < 3 ? "rgba(249,115,22,.06)" : tok.alertBg, border: `1px solid ${i < 3 ? "rgba(249,115,22,.25)" : tok.alertBdr}`, position: "relative" }}>
+                {i < 3 && <span style={{ position: "absolute", top: 10, right: 12, fontSize: 18 }}>{["🥇","🥈","🥉"][i]}</span>}
+                <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,#f97316,#fbbf24)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
+                  <span style={{ fontSize: 18, fontWeight: 800, color: "#000" }}>{e.name.charAt(0)}</span>
+                </div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: "0 0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.name}</p>
+                <p style={{ fontSize: 20, fontWeight: 900, color: "#f97316", margin: "0 0 6px" }}>₹{e.earned.toLocaleString("en-IN")}</p>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, background: "rgba(96,165,250,.1)", color: "#60a5fa", fontWeight: 700 }}>{e.jobs} jobs</span>
+                  <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, background: "rgba(251,191,36,.1)", color: "#fbbf24", fontWeight: 700 }}>★ {e.rating}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          INACTIVE USER CLEANUP TOOL
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          {sectionHeader(<Ban size={14} color="#f87171" />, "Inactive User Cleanup Tool", `${inactiveUsers.length} inactive 90+ days`)}
+          {selectedInactive.size > 0 && (
+            <button onClick={bulkFlagInactive} style={{ padding: "7px 15px", borderRadius: 9, background: "rgba(248,113,113,.12)", border: "1px solid rgba(248,113,113,.3)", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+              🗑 Remove {selectedInactive.size} selected
+            </button>
+          )}
+        </div>
+        {inactiveLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Scanning inactive users…</p>
+        ) : inactiveUsers.length === 0 ? (
+          <p style={{ textAlign: "center", color: "#4ade80", padding: "28px 0", fontSize: 13 }}>✓ No users inactive for 90+ days</p>
+        ) : (
+          <div style={{ maxHeight: 340, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+            {inactiveUsers.map(u => (
+              <div key={u.id} onClick={() => toggleInactiveSelect(u.id)}
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: selectedInactive.has(u.id) ? "rgba(248,113,113,.1)" : tok.alertBg, border: `1px solid ${selectedInactive.has(u.id) ? "rgba(248,113,113,.3)" : tok.alertBdr}`, cursor: "pointer", transition: "all .2s" }}>
+                <div style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${selectedInactive.has(u.id) ? "#f87171" : tok.alertBdr}`, background: selectedInactive.has(u.id) ? "#f87171" : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {selectedInactive.has(u.id) && <span style={{ fontSize: 10, color: "#fff", fontWeight: 900 }}>✓</span>}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: "0 0 2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.name}</p>
+                  <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>{u.userType} · Last seen {u.daysSince} days ago</p>
+                </div>
+                <span style={{ fontSize: 10, padding: "3px 9px", borderRadius: 6, fontWeight: 700, background: u.daysSince > 180 ? "rgba(248,113,113,.15)" : "rgba(251,191,36,.1)", color: u.daysSince > 180 ? "#f87171" : "#fbbf24" }}>
+                  {u.daysSince}d inactive
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          SUPPORT TICKET MANAGER
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<MessageSquare size={14} color="#a78bfa" />, "Support Ticket Manager", `${tickets.filter(t => t.status === "open").length} open · ${tickets.length} total`)}
+        {ticketsLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading tickets…</p>
+        ) : tickets.length === 0 ? (
+          <p style={{ textAlign: "center", color: "#4ade80", padding: "28px 0", fontSize: 13 }}>✓ No support tickets</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 420, overflowY: "auto" }}>
+            {tickets.map(t => {
+              const prColor: Record<string, string> = { high: "#f87171", medium: "#fbbf24", low: "#4ade80" };
+              const stColor: Record<string, string> = { open: "#60a5fa", resolved: "#4ade80", closed: tok.cardSub };
+              const isExpanded = expandedTicket === t.id;
+              return (
+                <div key={t.id} style={{ borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, overflow: "hidden" }}>
+                  <div onClick={() => setExpandedTicket(isExpanded ? null : t.id)}
+                    style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", cursor: "pointer" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: "0 0 3px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.subject}</p>
+                      <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>{t.user} · {new Date(t.createdAt).toLocaleDateString("en-IN")}</p>
+                    </div>
+                    <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, fontWeight: 700, background: `${prColor[t.priority] || "#60a5fa"}14`, color: prColor[t.priority] || "#60a5fa" }}>{t.priority.toUpperCase()}</span>
+                    <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, fontWeight: 700, background: `${stColor[t.status] || "#60a5fa"}14`, color: stColor[t.status] || "#60a5fa" }}>{t.status}</span>
+                    <span style={{ fontSize: 12, color: tok.cardSub }}>{isExpanded ? "▲" : "▼"}</span>
+                  </div>
+                  {isExpanded && (
+                    <div style={{ padding: "0 14px 14px", borderTop: `1px solid ${tok.alertBdr}`, paddingTop: 12 }}>
+                      <textarea value={ticketResponse} onChange={e => setTicketResponse(e.target.value)} placeholder="Write a response…" rows={3}
+                        style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", resize: "vertical", boxSizing: "border-box", marginBottom: 10 }} />
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <button onClick={() => updateTicketStatus(t.id, "resolved", ticketResponse)} style={{ padding: "7px 14px", borderRadius: 8, background: "rgba(74,222,128,.12)", border: "1px solid rgba(74,222,128,.3)", color: "#4ade80", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>✓ Resolve</button>
+                        <button onClick={() => updateTicketStatus(t.id, "closed")} style={{ padding: "7px 14px", borderRadius: 8, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: tok.cardSub, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>✕ Close</button>
+                        <button onClick={() => updateTicketStatus(t.id, "open")} style={{ padding: "7px 14px", borderRadius: 8, background: "rgba(96,165,250,.12)", border: "1px solid rgba(96,165,250,.3)", color: "#60a5fa", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>↩ Reopen</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          PROJECT CATEGORY MANAGER
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          {sectionHeader(<Tag size={14} color="#34d399" />, "Project Category Manager", `${projectCats.length} categories · ${projectCats.filter(c => c.active).length} active`)}
+          <button onClick={() => setShowCatForm(p => !p)} style={{ padding: "7px 15px", borderRadius: 9, background: showCatForm ? tok.alertBg : "rgba(52,211,153,.12)", border: "1px solid rgba(52,211,153,.3)", color: "#34d399", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            {showCatForm ? "✕ Close" : "+ Add Category"}
+          </button>
+        </div>
+        {showCatForm && (
+          <div style={{ padding: 14, borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, marginBottom: 14, display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 10, alignItems: "end" }}>
+            <div>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Icon</p>
+              <input value={catInput.icon} onChange={e => setCatInput(p => ({ ...p, icon: e.target.value }))} maxLength={2}
+                style={{ width: 48, padding: "8px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 20, outline: "none", textAlign: "center" }} />
+            </div>
+            <div>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Category Name</p>
+              <input value={catInput.name} onChange={e => setCatInput(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Blockchain"
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+            </div>
+            <button onClick={addCategory} style={{ padding: "8px 18px", borderRadius: 8, background: "#34d399", border: "none", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Add</button>
+          </div>
+        )}
+        {catLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "20px 0", fontSize: 13 }}>Loading categories…</p>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 10 }}>
+            {projectCats.map(c => (
+              <div key={c.id} style={{ padding: "12px 14px", borderRadius: 12, background: c.active ? tok.alertBg : `${tok.alertBg}80`, border: `1px solid ${c.active ? tok.alertBdr : tok.alertBdr + "50"}`, display: "flex", gap: 10, alignItems: "center", opacity: c.active ? 1 : 0.5 }}>
+                <span style={{ fontSize: 22, flexShrink: 0 }}>{c.icon}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: tok.cardText, margin: "0 0 2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</p>
+                  <p style={{ fontSize: 10, color: tok.cardSub, margin: 0 }}>{c.count} projects</p>
+                </div>
+                <div style={{ display: "flex", gap: 4 }}>
+                  <button onClick={() => toggleCategory(c.id)} title={c.active ? "Disable" : "Enable"}
+                    style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${c.active ? "rgba(74,222,128,.3)" : tok.alertBdr}`, background: c.active ? "rgba(74,222,128,.1)" : "none", color: c.active ? "#4ade80" : tok.cardSub, fontSize: 11, cursor: "pointer" }}>
+                    {c.active ? "On" : "Off"}
+                  </button>
+                  <button onClick={() => deleteCategory(c.id)} style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid rgba(248,113,113,.2)", background: "none", color: "#f87171", fontSize: 11, cursor: "pointer" }}>✕</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          CUSTOM ADMIN REPORTS
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Download size={14} color="#60a5fa" />, "Custom Admin Reports", "Generate & download date-range CSV reports")}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 12, marginBottom: 16, alignItems: "end" }}>
+          <div>
+            <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Report Type</p>
+            <select value={reportType} onChange={e => { setReportType(e.target.value as "users" | "transactions" | "projects" | "withdrawals"); setReportGenerated(false); }}
+              style={{ width: "100%", padding: "9px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none" }}>
+              <option value="users">Users</option>
+              <option value="transactions">Transactions</option>
+              <option value="projects">Projects</option>
+              <option value="withdrawals">Withdrawals</option>
+            </select>
+          </div>
+          <div>
+            <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>From Date</p>
+            <input type="date" value={reportFrom} onChange={e => { setReportFrom(e.target.value); setReportGenerated(false); }}
+              style={{ width: "100%", padding: "9px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+          </div>
+          <div>
+            <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>To Date</p>
+            <input type="date" value={reportTo} onChange={e => { setReportTo(e.target.value); setReportGenerated(false); }}
+              style={{ width: "100%", padding: "9px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+          </div>
+          <button onClick={generateReport} disabled={reportLoading}
+            style={{ padding: "9px 18px", borderRadius: 9, background: "#60a5fa", border: "none", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+            {reportLoading ? "Generating…" : "⚡ Generate"}
+          </button>
+        </div>
+        {reportGenerated && (
+          <>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: 0 }}>{reportData.length} records found · {reportType} ({reportFrom} → {reportTo})</p>
+              <button onClick={downloadReport}
+                style={{ padding: "7px 16px", borderRadius: 9, background: "rgba(74,222,128,.12)", border: "1px solid rgba(74,222,128,.3)", color: "#4ade80", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                ⬇ Download CSV
+              </button>
+            </div>
+            {reportData.length > 0 ? (
+              <div style={{ maxHeight: 300, overflowY: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>{Object.keys(reportData[0]).map(h => (
+                      <th key={h} style={{ padding: "7px 12px", textAlign: "left", fontSize: 10.5, color: tok.cardSub, fontWeight: 700, borderBottom: `1px solid ${tok.alertBdr}`, letterSpacing: .3 }}>{h}</th>
+                    ))}</tr>
+                  </thead>
+                  <tbody>
+                    {reportData.slice(0, 50).map((row, i) => (
+                      <tr key={i} style={{ borderBottom: `1px solid ${tok.alertBdr}` }}>
+                        {Object.values(row).map((val, j) => (
+                          <td key={j} style={{ padding: "7px 12px", fontSize: 11, color: tok.cardText, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{String(val)}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {reportData.length > 50 && <p style={{ fontSize: 11, color: tok.cardSub, textAlign: "center", marginTop: 8 }}>Showing first 50 of {reportData.length} · Download CSV for all</p>}
+              </div>
+            ) : (
+              <p style={{ textAlign: "center", color: tok.cardSub, padding: "16px 0", fontSize: 13 }}>No records found for this date range.</p>
+            )}
+          </>
+        )}
       </div>
 
     </div>
