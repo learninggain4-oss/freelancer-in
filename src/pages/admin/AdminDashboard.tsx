@@ -174,6 +174,7 @@ const AdminDashboard = () => {
   const [revResetting, setRevResetting]     = useState(false);
   const [revClearing, setRevClearing]       = useState(false);
   const [growthClearing, setGrowthClearing] = useState(false);
+  const [jobClearing, setJobClearing]       = useState(false);
   const [regionData, setRegionData]       = useState<RegionPoint[]>([]);
   const [withdrawalSummary, setWithdrawalSummary] = useState({
     pending: 0, approved: 0, rejected: 0, completed: 0,
@@ -656,6 +657,19 @@ const AdminDashboard = () => {
       setRevWeekData(Object.entries(weekMap).slice(-12).map(([month, revenue]) => ({ month, revenue, commission: Math.round(revenue * 0.1) })));
     } catch { /* silently ignore */ }
     setRevResetting(false);
+  }, []);
+
+  const clearJobData = useCallback(async () => {
+    const ok = window.confirm("Job Analytics data delete ചെയ്യണോ?\n\nഈ action undo ചെയ്യാൻ കഴിയില്ല — projects table-ൽ നിന്ന് permanently remove ആകും.");
+    if (!ok) return;
+    setJobClearing(true);
+    try {
+      await supabase.from("projects").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      setJobStats({ total: 0, open: 0, inProgress: 0, completed: 0, cancelled: 0, totalAmt: 0 });
+      setJobPeriods({ today: 0, thisWeek: 0 });
+      setJobGrowthSpark([]);
+    } catch { /* silently ignore */ }
+    setJobClearing(false);
   }, []);
 
   const clearRevenueData = useCallback(async () => {
@@ -1297,9 +1311,20 @@ const AdminDashboard = () => {
             </div>
           ))}
         </div>
-        <button onClick={() => navigate("/admin/jobs")} style={{ width: "100%", marginTop: 10, padding: "9px", borderRadius: 10, background: `${A1}12`, border: `1px solid ${A1}25`, color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-          View All Jobs →
-        </button>
+        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+          <button onClick={() => navigate("/admin/jobs")} style={{ flex: 1, padding: "9px", borderRadius: 10, background: `${A1}12`, border: `1px solid ${A1}25`, color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            View All Jobs →
+          </button>
+          <button
+            onClick={clearJobData}
+            disabled={jobClearing || jobStats.total === 0}
+            style={{ flex: 1, padding: "9px", borderRadius: 10, background: jobStats.total > 0 ? "rgba(239,68,68,.08)" : tok.alertBg, border: `1px solid ${jobStats.total > 0 ? "rgba(239,68,68,.25)" : tok.alertBdr}`, color: jobStats.total > 0 ? "#f87171" : tok.cardSub, fontSize: 12, fontWeight: 700, cursor: (jobClearing || jobStats.total === 0) ? "not-allowed" : "pointer", opacity: jobClearing ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+            {jobClearing
+              ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Clearing…</>
+              : <>✕ Clear Job Data</>
+            }
+          </button>
+        </div>
       </div>
 
       {/* ── System Monitoring ── */}
