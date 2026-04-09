@@ -172,6 +172,7 @@ const AdminDashboard = () => {
   const [payResetting, setPayResetting]     = useState(false);
   const [feedResetting, setFeedResetting]   = useState(false);
   const [revResetting, setRevResetting]     = useState(false);
+  const [revClearing, setRevClearing]       = useState(false);
   const [regionData, setRegionData]       = useState<RegionPoint[]>([]);
   const [withdrawalSummary, setWithdrawalSummary] = useState({
     pending: 0, approved: 0, rejected: 0, completed: 0,
@@ -656,6 +657,19 @@ const AdminDashboard = () => {
     setRevResetting(false);
   }, []);
 
+  const clearRevenueData = useCallback(async () => {
+    const ok = window.confirm("Revenue Analytics data delete ചെയ്യണോ?\n\nഈ action undo ചെയ്യാൻ കഴിയില്ല — transactions table-ൽ നിന്ന് permanently remove ആകും.");
+    if (!ok) return;
+    setRevClearing(true);
+    try {
+      await supabase.from("transactions").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      setRevenueData([]);
+      setRevDayData([]);
+      setRevWeekData([]);
+    } catch { /* silently ignore */ }
+    setRevClearing(false);
+  }, []);
+
   const resetActivityFeed = useCallback(async () => {
     setFeedResetting(true);
     try {
@@ -1009,15 +1023,26 @@ const AdminDashboard = () => {
               </div>
             ))}
           </div>
-          <button
-            onClick={resetRevenueData}
-            disabled={revResetting}
-            style={{ width: "100%", padding: "8px", borderRadius: 9, background: "rgba(74,222,128,.08)", border: "1px solid rgba(74,222,128,.25)", color: "#4ade80", fontSize: 12, fontWeight: 700, cursor: revResetting ? "not-allowed" : "pointer", opacity: revResetting ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
-            {revResetting
-              ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Refreshing…</>
-              : <>↺ Refresh Revenue Data</>
-            }
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={resetRevenueData}
+              disabled={revResetting || revClearing}
+              style={{ flex: 1, padding: "8px", borderRadius: 9, background: "rgba(74,222,128,.08)", border: "1px solid rgba(74,222,128,.25)", color: "#4ade80", fontSize: 12, fontWeight: 700, cursor: (revResetting || revClearing) ? "not-allowed" : "pointer", opacity: (revResetting || revClearing) ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+              {revResetting
+                ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Refreshing…</>
+                : <>↺ Refresh Data</>
+              }
+            </button>
+            <button
+              onClick={clearRevenueData}
+              disabled={revClearing || revResetting}
+              style={{ flex: 1, padding: "8px", borderRadius: 9, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.25)", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: (revClearing || revResetting) ? "not-allowed" : "pointer", opacity: (revClearing || revResetting) ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+              {revClearing
+                ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Clearing…</>
+                : <>✕ Clear Data</>
+              }
+            </button>
+          </div>
         </div>
         <div style={{ ...card, padding: "18px" }}>
           {sectionHeader(<Users size={14} color={A1} />, "User Growth", "4 weeks")}
