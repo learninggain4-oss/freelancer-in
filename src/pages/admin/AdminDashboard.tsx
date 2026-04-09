@@ -255,6 +255,14 @@ const AdminDashboard = () => {
   const [pfeeMax, setPfeeMax]               = useState(5000);
   const [pfeeSaving, setPfeeSaving]         = useState(false);
 
+  // ── Performance & Monitoring ───────────────────────────────────
+  const [perfLoading, setPerfLoading]   = useState(false);
+  const [perfResults, setPerfResults]   = useState<Array<{ table: string; ms: number; rows: number; status: "fast" | "ok" | "slow" }>>([]);
+  const [uptimeLog, setUptimeLog]       = useState<Array<{ ts: string; ms: number; ok: boolean }>>([]);
+  const [dbStats, setDbStats]           = useState<Array<{ table: string; rows: number; label: string }>>([]);
+  const [errorRateData, setErrorRateData] = useState<Array<{ hour: string; errors: number }>>([]);
+  const [lastPerfRun, setLastPerfRun]   = useState<string | null>(null);
+
   // ── Finance & Payments ─────────────────────────────────────────
   // Payout Scheduler
   const [payoutEnabled, setPayoutEnabled]       = useState(false);
@@ -1298,6 +1306,67 @@ const AdminDashboard = () => {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ── Performance & Monitoring callbacks ───────────────────────
+  const runPerfCheck = useCallback(async () => {
+    setPerfLoading(true);
+    const tables = [
+      { key: "profiles",            label: "Users" },
+      { key: "projects",            label: "Projects" },
+      { key: "transactions",        label: "Transactions" },
+      { key: "withdrawals",         label: "Withdrawals" },
+      { key: "messages",            label: "Messages" },
+      { key: "admin_audit_logs",    label: "Audit Logs" },
+    ];
+    const results: typeof perfResults = [];
+    const dbRows: typeof dbStats = [];
+
+    for (const t of tables) {
+      const t0 = performance.now();
+      const { count } = await supabase.from(t.key as "profiles").select("*", { count: "exact", head: true });
+      const ms = Math.round(performance.now() - t0);
+      const rows = count ?? 0;
+      const status: "fast" | "ok" | "slow" = ms < 120 ? "fast" : ms < 350 ? "ok" : "slow";
+      results.push({ table: t.label, ms, rows, status });
+      dbRows.push({ table: t.label, rows, label: t.label });
+    }
+
+    setPerfResults(results);
+    setDbStats(dbRows);
+    const now = new Date().toISOString();
+    const totalMs = results.reduce((s, r) => s + r.ms, 0);
+    const ok = results.every(r => r.status !== "slow");
+    const newEntry = { ts: now, ms: Math.round(totalMs / results.length), ok };
+    setUptimeLog(prev => {
+      const updated = [...prev.slice(-23), newEntry];
+      localStorage.setItem("perf_uptime_log", JSON.stringify(updated));
+      return updated;
+    });
+    setLastPerfRun(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+
+    // Build error rate — count audit log errors per 4-hour bucket today
+    const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+    const { data: errLogs } = await supabase.from("admin_audit_logs").select("created_at").gte("created_at", startOfDay.toISOString()).order("created_at");
+    const buckets: Record<string, number> = {};
+    for (let h = 0; h < 24; h += 4) {
+      const key = `${String(h).padStart(2, "0")}:00`;
+      buckets[key] = 0;
+    }
+    (errLogs || []).forEach(log => {
+      const h = new Date(log.created_at).getHours();
+      const bucket = `${String(Math.floor(h / 4) * 4).padStart(2, "0")}:00`;
+      if (buckets[bucket] !== undefined) buckets[bucket]++;
+    });
+    setErrorRateData(Object.entries(buckets).map(([hour, errors]) => ({ hour, errors })));
+    setPerfLoading(false);
+  }, []);
+
+  // Load uptime log from localStorage and run initial perf check on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("perf_uptime_log");
+    if (saved) { try { setUptimeLog(JSON.parse(saved)); } catch { /* ignore */ } }
+    runPerfCheck();
+  }, [runPerfCheck]);
 
   const applyDateRangeFilter = useCallback(async () => {
     if (!revDateStart && !revDateEnd) return;
@@ -3275,6 +3344,170 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* ══════════════════════════════════════════════════════
+          PERFORMANCE & MONITORING
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Activity size={14} color="#34d399" />, "Performance & Monitoring",
+          lastPerfRun ? `Last check: ${lastPerfRun}` : "Checking…")}
+
+        {/* Run button */}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
+          <button onClick={runPerfCheck} disabled={perfLoading}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 10, background: "rgba(52,211,153,.1)", border: "1px solid rgba(52,211,153,.3)", color: "#34d399", fontSize: 12, fontWeight: 700, cursor: perfLoading ? "not-allowed" : "pointer" }}>
+            {perfLoading ? <><span style={{ display: "inline-block", width: 10, height: 10, border: "2px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.6s linear infinite" }} /> Running…</> : "↻ Run Perf Check"}
+          </button>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 14 }}>
+
+          {/* ── 1. API Response Time Chart ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 14px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 15 }}>⚡</span> API Response Times
+            </p>
+            {perfResults.length === 0 ? (
+              <p style={{ fontSize: 12, color: tok.cardSub, textAlign: "center" as const, padding: "24px 0" }}>{perfLoading ? "Running queries…" : "Click 'Run Perf Check' to start."}</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column" as const, gap: 8 }}>
+                {perfResults.map(r => {
+                  const barColor = r.status === "fast" ? "#34d399" : r.status === "ok" ? "#fbbf24" : "#f87171";
+                  const maxMs = Math.max(...perfResults.map(x => x.ms), 1);
+                  const barPct = Math.min(100, Math.round((r.ms / maxMs) * 100));
+                  return (
+                    <div key={r.table}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: tok.cardText }}>{r.table}</span>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: barColor, fontFamily: "monospace" }}>{r.ms}ms</span>
+                      </div>
+                      <div style={{ height: 8, borderRadius: 4, background: tok.alertBdr, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${barPct}%`, background: barColor, borderRadius: 4, transition: "width 0.5s ease" }} />
+                      </div>
+                    </div>
+                  );
+                })}
+                <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
+                  {[{ color: "#34d399", label: "Fast (<120ms)" }, { color: "#fbbf24", label: "OK (<350ms)" }, { color: "#f87171", label: "Slow (>350ms)" }].map(l => (
+                    <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: l.color }} />
+                      <span style={{ fontSize: 10, color: tok.cardSub }}>{l.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── 2. DB Query Stats ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 14px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 15 }}>🗄️</span> Database Row Counts
+            </p>
+            {dbStats.length === 0 ? (
+              <p style={{ fontSize: 12, color: tok.cardSub, textAlign: "center" as const, padding: "24px 0" }}>{perfLoading ? "Counting rows…" : "Click 'Run Perf Check'."}</p>
+            ) : (
+              <>
+                {(() => {
+                  const max = Math.max(...dbStats.map(d => d.rows), 1);
+                  return (
+                    <div style={{ display: "flex", flexDirection: "column" as const, gap: 10 }}>
+                      {dbStats.map(d => (
+                        <div key={d.table}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                            <span style={{ fontSize: 11.5, fontWeight: 600, color: tok.cardText }}>{d.table}</span>
+                            <span style={{ fontSize: 11.5, fontWeight: 800, color: "#a5b4fc", fontFamily: "monospace" }}>
+                              {d.rows.toLocaleString("en-IN")} rows
+                            </span>
+                          </div>
+                          <div style={{ height: 6, borderRadius: 3, background: tok.alertBdr, overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${Math.max(2, Math.round((d.rows / max) * 100))}%`, background: "linear-gradient(90deg,#6366f1,#a5b4fc)", borderRadius: 3, transition: "width 0.6s ease" }} />
+                          </div>
+                        </div>
+                      ))}
+                      <p style={{ fontSize: 10.5, color: tok.cardSub, margin: "4px 0 0", textAlign: "right" as const }}>
+                        Total: {dbStats.reduce((s, d) => s + d.rows, 0).toLocaleString("en-IN")} rows across {dbStats.length} tables
+                      </p>
+                    </div>
+                  );
+                })()}
+              </>
+            )}
+          </div>
+
+          {/* ── 3. Error Rate Tracker ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 14px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 15 }}>📉</span> Audit Log Activity Today
+              <span style={{ marginLeft: "auto", fontSize: 10, color: tok.cardSub }}>4-hour buckets</span>
+            </p>
+            {errorRateData.length === 0 ? (
+              <p style={{ fontSize: 12, color: tok.cardSub, textAlign: "center" as const, padding: "24px 0" }}>{perfLoading ? "Loading…" : "Run perf check first."}</p>
+            ) : (
+              <div style={{ height: 140 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={errorRateData} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
+                    <XAxis dataKey="hour" tick={{ fontSize: 9, fill: tok.cardSub }} />
+                    <YAxis tick={{ fontSize: 9, fill: tok.cardSub }} allowDecimals={false} />
+                    <Tooltip contentStyle={{ background: tok.cardBg, border: `1px solid ${tok.cardBdr}`, borderRadius: 8, fontSize: 12 }}
+                      formatter={(v: number) => [`${v} entries`, "Audit Logs"]} />
+                    <Bar dataKey="errors" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+
+          {/* ── 4. Uptime History Log ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 6px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 15 }}>📡</span> Uptime History
+              {uptimeLog.length > 0 && (
+                <span style={{ marginLeft: "auto", fontSize: 10, padding: "2px 7px", borderRadius: 5, fontWeight: 700,
+                  background: uptimeLog[uptimeLog.length - 1]?.ok ? "rgba(52,211,153,.12)" : "rgba(239,68,68,.12)",
+                  color: uptimeLog[uptimeLog.length - 1]?.ok ? "#34d399" : "#f87171" }}>
+                  {uptimeLog[uptimeLog.length - 1]?.ok ? "● Healthy" : "● Degraded"}
+                </span>
+              )}
+            </p>
+            <p style={{ fontSize: 10.5, color: tok.cardSub, margin: "0 0 12px" }}>Each square = one perf check run</p>
+
+            {/* GitHub-style uptime grid */}
+            {uptimeLog.length === 0 ? (
+              <p style={{ fontSize: 12, color: tok.cardSub, textAlign: "center" as const, padding: "20px 0" }}>No history yet — run a perf check.</p>
+            ) : (
+              <>
+                <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 5, marginBottom: 12 }}>
+                  {uptimeLog.map((entry, i) => (
+                    <div key={i} title={`${new Date(entry.ts).toLocaleString("en-IN")} — ${entry.ms}ms avg — ${entry.ok ? "Healthy" : "Degraded"}`}
+                      style={{ width: 20, height: 20, borderRadius: 4, background: entry.ok ? "#34d399" : "#f87171",
+                        opacity: 0.5 + (i / uptimeLog.length) * 0.5, cursor: "default" }} />
+                  ))}
+                </div>
+                <div style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(52,211,153,.06)", border: "1px solid rgba(52,211,153,.15)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 11, color: tok.cardSub }}>Uptime rate</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#34d399" }}>
+                      {Math.round((uptimeLog.filter(u => u.ok).length / uptimeLog.length) * 100)}%
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                    <span style={{ fontSize: 11, color: tok.cardSub }}>Avg response</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#a5b4fc" }}>
+                      {Math.round(uptimeLog.reduce((s, u) => s + u.ms, 0) / uptimeLog.length)}ms
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                    <span style={{ fontSize: 11, color: tok.cardSub }}>Total checks</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: tok.cardText }}>{uptimeLog.length}</span>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+        </div>
+      </div>
 
       {/* ══════════════════════════════════════════════════════
           PLATFORM SETTINGS
