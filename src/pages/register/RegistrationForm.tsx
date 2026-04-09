@@ -241,6 +241,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
         @keyframes dotPulse{0%,100%{opacity:0.4;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
         @keyframes ringRotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
         @keyframes doneRowGlow{from{background:rgba(34,197,94,0.18)}to{background:rgba(34,197,94,0.07)}}
+        @keyframes rowCollapse{0%{opacity:1;max-height:60px;padding-top:9px;padding-bottom:9px;margin-bottom:0}60%{opacity:1}85%{opacity:0;max-height:60px;padding-top:9px;padding-bottom:9px}100%{opacity:0;max-height:0;padding-top:0;padding-bottom:0;margin-bottom:-6px}}
       `}</style>
 
       <div style={{ width: "100%", maxWidth: 440, animation: "fadeUp .5s ease both" }}>
@@ -321,24 +322,25 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                   const done = countdownUnits <= threshold;
                   const active = idx === activeIdx;
                   return (
-                    <div key={`${label}-${done}`}
-                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 12,
+                    <div key={label}
+                      style={{ display: "flex", alignItems: "center", gap: 10, borderRadius: 12, overflow: "hidden",
+                        padding: "9px 12px",
                         background: done ? "rgba(34,197,94,0.07)" : active ? "rgba(99,102,241,0.10)" : "rgba(255,255,255,0.02)",
                         border: `1px solid ${done ? "rgba(34,197,94,0.22)" : active ? "rgba(99,102,241,0.28)" : "rgba(255,255,255,0.05)"}`,
-                        animation: done ? "doneRowGlow 0.6s ease both, stepSlideIn 0.35s ease both" : active ? "stepSlideIn 0.35s ease both" : "none",
-                        transition: "all 0.4s ease" }}>
+                        animation: done
+                          ? "rowCollapse 0.7s ease forwards 0.5s"
+                          : active ? "stepSlideIn 0.35s ease both" : "none" }}>
 
                       {/* Icon circle */}
                       <div style={{ position: "relative", width: 32, height: 32, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        {/* Spinning ring for active */}
                         {active && (
                           <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid transparent", borderTopColor: "#818cf8", borderRightColor: "rgba(129,140,248,0.3)", animation: "ringRotate 1s linear infinite" }} />
                         )}
-                        <div style={{ width: 26, height: 26, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13,
+                        <div key={`icon-${done}`} style={{ width: 26, height: 26, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13,
                           background: done ? "rgba(34,197,94,0.18)" : active ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.04)",
                           animation: active ? "activeGlow 1.8s ease-in-out infinite" : "none" }}>
                           {done
-                            ? <CheckCircle2 size={15} color="#22c55e" style={{ animation: "checkBounce 0.45s cubic-bezier(.36,1.56,.64,1) both" }} />
+                            ? <CheckCircle2 size={15} color="#22c55e" style={{ animation: "checkBounce 0.4s cubic-bezier(.36,1.56,.64,1) both" }} />
                             : active
                               ? <Loader2 size={13} color="#818cf8" style={{ animation: "spin 1.2s linear infinite" }} />
                               : <span style={{ fontSize: 13, opacity: 0.35 }}>{emoji}</span>
