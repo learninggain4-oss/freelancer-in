@@ -327,7 +327,7 @@ export default function ProjectsPage() {
             <Filter className="h-4 w-4" />
             <span className="hidden sm:inline">Filters</span>
           </button>
-          <Link to="/register/employee" className="shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)", boxShadow: "0 0 16px rgba(99,102,241,0.35)" }}>
+          <Link to="/register/freelancer" className="shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)", boxShadow: "0 0 16px rgba(99,102,241,0.35)" }}>
             Post Profile
           </Link>
         </div>
@@ -498,7 +498,7 @@ export default function ProjectsPage() {
                 {/* Budget + CTA */}
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-lg font-black" style={{ color }}>{p.budget}</span>
-                  <Link to="/register/employee">
+                  <Link to="/register/freelancer">
                     <button
                       className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold text-white transition-all hover:scale-105"
                       style={{ background: `linear-gradient(135deg, ${color}cc, ${color}88)`, boxShadow: `0 4px 12px ${color}30` }}
@@ -551,7 +551,7 @@ export default function ProjectsPage() {
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-white mb-3">Ready to bid on projects?</h2>
             <p className="text-white/55 mb-6 max-w-md mx-auto text-sm">Create your freelancer profile in minutes and start winning projects today.</p>
-            <Link to="/register/employee">
+            <Link to="/register/freelancer">
               <button
                 className="inline-flex items-center gap-2 rounded-2xl px-8 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:brightness-110"
                 style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 36px rgba(var(--t-a1-rgb),0.5), 0 4px 20px rgba(var(--t-a1-rgb),0.3)" }}

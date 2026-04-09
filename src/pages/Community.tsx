@@ -87,7 +87,7 @@ export default function Community() {
           <Link to="/" className="flex items-center gap-1.5 font-black text-white text-lg">
             <span className="text-xl">💼</span> Freelancer<span style={{ color: "var(--t-a1)" }}>.</span>
           </Link>
-          <Link to="/register/employee"><button className="rounded-xl px-4 py-1.5 text-xs font-semibold text-white" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>Join Community</button></Link>
+          <Link to="/register/freelancer"><button className="rounded-xl px-4 py-1.5 text-xs font-semibold text-white" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>Join Community</button></Link>
         </div>
       </div>
 
@@ -152,7 +152,7 @@ export default function Community() {
                   <h3 className="text-sm font-bold text-white truncate">{g.name}</h3>
                   <p className="text-xs text-white/40">{g.members.toLocaleString("en-IN")} members · {g.lang}</p>
                 </div>
-                <Link to="/register/employee">
+                <Link to="/register/freelancer">
                   <button className="shrink-0 rounded-xl px-3 py-1.5 text-xs font-bold text-white" style={{ background: g.color }}>Join</button>
                 </Link>
               </div>
@@ -178,7 +178,7 @@ export default function Community() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-white/40 flex items-center gap-1"><Users className="h-3 w-3" /> {w.attendees} registered</span>
-                  <Link to="/register/employee">
+                  <Link to="/register/freelancer">
                     <button className="rounded-xl px-4 py-1.5 text-xs font-bold text-white whitespace-nowrap" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>Register Free</button>
                   </Link>
                 </div>
@@ -203,7 +203,7 @@ export default function Community() {
                   <span className="text-xs font-bold rounded-full px-3 py-1" style={{ background: `${m.color}18`, color: m.color }}>{m.date}</span>
                 </div>
                 <p className="text-xs text-white/45 mb-3">{m.members} freelancers attending</p>
-                <Link to="/register/employee">
+                <Link to="/register/freelancer">
                   <button className="w-full rounded-xl py-1.5 text-xs font-bold text-white" style={{ background: m.color }}>RSVP Free</button>
                 </Link>
               </div>
@@ -242,7 +242,7 @@ export default function Community() {
             <div className="text-4xl mb-3">🤝</div>
             <h2 className="text-2xl font-black text-white mb-2">Join 25,000+ Freelancers</h2>
             <p className="text-white/50 text-sm mb-6">Free membership. Access all groups, webinars, and meetups.</p>
-            <Link to="/register/employee">
+            <Link to="/register/freelancer">
               <button className="rounded-2xl px-8 py-3.5 text-sm font-semibold text-white hover:scale-105 transition-all" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 24px rgba(var(--t-a1-rgb),0.3)" }}>
                 Join the Community →
               </button>

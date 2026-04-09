@@ -1683,7 +1683,7 @@ const RegisterModal = ({ open, onClose }: { open: boolean; onClose: () => void }
           <p className="text-sm text-white/50">{t.registerModal.sub}</p>
         </div>
         <div className="grid grid-cols-1 gap-4">
-          <Link to="/register/employee" onClick={onClose} className="group relative flex items-center gap-4 rounded-2xl p-5 text-left transition-all duration-300 hover:scale-[1.02]" style={{ background: "rgba(var(--t-a1-rgb),0.1)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
+          <Link to="/register/freelancer" onClick={onClose} className="group relative flex items-center gap-4 rounded-2xl p-5 text-left transition-all duration-300 hover:scale-[1.02]" style={{ background: "rgba(var(--t-a1-rgb),0.1)", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
             <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.15), rgba(var(--t-a2-rgb),0.1))" }} />
             <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))", boxShadow: "0 8px 20px rgba(var(--t-a1-rgb),0.35)" }}>
               <Briefcase className="h-6 w-6 text-white" />
@@ -1995,7 +1995,7 @@ const HeroSection = ({ stats: heroStats }: { stats: typeof stats }) => {
           <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-10" style={{ animation: "slide-up 0.7s ease 0.3s both" }}>
             <MagneticWrapper>
               <div onClick={fireConfetti}>
-                <SparkleBtn to="/register/employee" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
+                <SparkleBtn to="/register/freelancer" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
                   <Briefcase className="h-5 w-5" />
                   {t.hero.joinFreelancer}
                   <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -2506,7 +2506,7 @@ const LiveProjectsStrip = () => (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
         {LIVE_PROJECTS.slice(0, 8).map((p, i) => (
           <Reveal key={p.title} delay={i * 60}>
-            <Link to="/register/employee">
+            <Link to="/register/freelancer">
               <div className="group rounded-2xl p-4 cursor-pointer transition-all duration-300 hover:translate-y-[-2px]" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <span className="rounded-lg px-2 py-0.5 text-[10px] font-bold" style={{ background: `${p.color}18`, color: p.color, border: `1px solid ${p.color}28` }}>{p.tag}</span>
@@ -2904,7 +2904,7 @@ const OfferBanner = ({ onDismiss }: { onDismiss: () => void }) => (
     <span className="inline-flex items-center gap-2">
       <span className="hidden sm:inline animate-pulse">🎉</span>
       <span><strong>Launch Offer:</strong> Zero Commission for your first 3 months —</span>
-      <Link to="/register/employee" className="underline underline-offset-2 hover:text-white/80 font-black whitespace-nowrap">Claim Now</Link>
+      <Link to="/register/freelancer" className="underline underline-offset-2 hover:text-white/80 font-black whitespace-nowrap">Claim Now</Link>
     </span>
     <button onClick={onDismiss} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors">
       <X className="h-4 w-4" />
@@ -3084,7 +3084,7 @@ const EarningsCalculatorSection = () => {
                   </div>
                 ))}
               </div>
-              <Link to="/register/employee">
+              <Link to="/register/freelancer">
                 <button className="mt-2 w-full rounded-2xl py-3.5 text-sm font-semibold text-white transition-all hover:scale-[1.02]" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 24px rgba(var(--t-a1-rgb),0.35)" }}>
                   Start Earning Today →
                 </button>
@@ -3161,7 +3161,7 @@ const PricingSection = () => (
                   </li>
                 ))}
               </ul>
-              <Link to="/register/employee">
+              <Link to="/register/freelancer">
                 <button className="w-full rounded-2xl py-3 text-sm font-semibold text-white transition-all hover:scale-[1.02]" style={{ background: plan.popular ? `linear-gradient(135deg, ${plan.color}cc, ${plan.color}88)` : "rgba(255,255,255,0.07)", border: plan.popular ? "none" : "1px solid rgba(255,255,255,0.12)" }}>
                   {plan.cta}
                 </button>
@@ -3256,7 +3256,7 @@ const ReferralBannerSection = () => (
             </p>
             <p className="text-white/30 text-xs mb-6">* Referral Terms &amp; Conditions apply.</p>
             <div className="flex flex-wrap gap-4">
-              <Link to="/register/employee">
+              <Link to="/register/freelancer">
                 <button className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg, #fbbf24, #f97316)", boxShadow: "0 0 24px rgba(251,191,36,0.35)" }}>
                   <Gift className="h-4 w-4" /> Start Referring
                 </button>
@@ -3401,7 +3401,7 @@ const SkillVerificationSection = () => (
                 <span className="text-base font-black text-amber-400">{s.stat}</span>
               </div>
             ))}
-            <Link to="/register/employee">
+            <Link to="/register/freelancer">
               <button className="mt-5 w-full rounded-2xl py-3 text-sm font-semibold text-white transition-all hover:scale-[1.02]" style={{ background: "linear-gradient(135deg, #fbbf24, #f97316)", boxShadow: "0 0 20px rgba(251,191,36,0.3)" }}>
                 Get Verified Now
               </button>
@@ -3634,7 +3634,7 @@ const GSTToolsSection = () => (
       <Reveal className="mt-10 rounded-3xl p-6 text-center" style={{ background: "linear-gradient(135deg, rgba(52,211,153,0.08), rgba(var(--t-a1-rgb),0.08))", border: "1px solid rgba(52,211,153,0.2)" }}>
         <p className="text-sm font-semibold text-white mb-1">No other Indian freelance platform does this.</p>
         <p className="text-xs text-white/45 mb-4">Upwork, Fiverr, and Freelancer.com don't support Indian GST invoicing or TDS compliance. We do.</p>
-        <Link to="/register/employee">
+        <Link to="/register/freelancer">
           <button className="inline-flex items-center gap-2 rounded-2xl px-6 py-2.5 text-sm font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg, #34d399, rgba(var(--t-a1-rgb),0.8))" }}>
             Start Filing Smarter →
           </button>
@@ -3701,7 +3701,7 @@ const CareerPathSection = () => (
         </div>
       </div>
       <Reveal className="mt-10 text-center">
-        <Link to="/register/employee">
+        <Link to="/register/freelancer">
           <button className="inline-flex items-center gap-2 rounded-2xl px-8 py-3.5 text-sm font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 24px rgba(var(--t-a1-rgb),0.3)" }}>
             Start Your Journey Today →
           </button>
@@ -3824,7 +3824,7 @@ const SalaryCalcSection = () => {
                 <p className="text-xs text-white/40 mt-0.5">per month · <span className="text-amber-400 font-bold">₹{(extraPerYear/100000).toFixed(1)}L extra per year</span></p>
               </div>
               <p className="text-[10px] text-white/30 text-center">Based on average freelancer earnings in your skill category. Actual results vary.</p>
-              <Link to="/register/employee">
+              <Link to="/register/freelancer">
                 <button className="w-full rounded-2xl py-3 text-sm font-semibold text-white transition-all hover:scale-[1.02]" style={{ background: "linear-gradient(135deg, #ec4899, var(--t-a2))", boxShadow: "0 0 24px rgba(236,72,153,0.3)" }}>
                   Start Freelancing →
                 </button>
@@ -3894,7 +3894,7 @@ const CommunitySection = () => (
               <h3 className="text-sm font-bold text-white mb-1">{c.title}</h3>
               <p className="text-xs text-white/45 leading-relaxed">{c.desc}</p>
             </div>
-            <Link to="/register/employee">
+            <Link to="/register/freelancer">
               <button className="shrink-0 rounded-xl px-4 py-2 text-xs font-bold text-white whitespace-nowrap" style={{ background: c.color }}>
                 {c.cta}
               </button>
@@ -4022,7 +4022,7 @@ const LegalContractsSection = () => (
       <Reveal className="rounded-3xl p-6 text-center" style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.1), rgba(var(--t-a1-rgb),0.1))", border: "1px solid rgba(168,85,247,0.2)" }}>
         <p className="text-sm font-semibold text-white mb-2">All templates are free for registered members. Auto-filled with project details.</p>
         <p className="text-xs text-white/40 mb-4">Compliant with Indian Contract Act 1872 · IT Act 2000 · DPDP Act 2023</p>
-        <Link to="/register/employee">
+        <Link to="/register/freelancer">
           <button className="inline-flex items-center gap-2 rounded-2xl px-6 py-2.5 text-sm font-semibold text-white hover:scale-105 transition-all" style={{ background: "linear-gradient(135deg, #a855f7, var(--t-a1))" }}>
             Access Templates Free →
           </button>
@@ -4341,7 +4341,7 @@ const BadgeSystemSection = () => (
       <Reveal className="mt-10 rounded-3xl p-6 md:p-8 text-center" style={{ background: "linear-gradient(135deg, rgba(251,191,36,0.08), rgba(var(--t-a1-rgb),0.1))", border: "1px solid rgba(251,191,36,0.2)" }}>
         <p className="text-base font-black text-white mb-2">Profiles with 3+ badges get <span className="text-amber-400">2.5× more views</span></p>
         <p className="text-white/40 text-sm mb-5">Badges are displayed prominently on your profile and in search results. Employers filter by badge type.</p>
-        <Link to="/register/employee">
+        <Link to="/register/freelancer">
           <button className="inline-flex items-center gap-2 rounded-2xl px-7 py-3 text-sm font-semibold text-white hover:scale-105 transition-all" style={{ background: "linear-gradient(135deg, #fbbf24, var(--t-a1))", boxShadow: "0 0 24px rgba(251,191,36,0.3)" }}>
             <Award className="h-4 w-4" /> Start Earning Badges
           </button>
@@ -4524,7 +4524,7 @@ const CTASection = () => {
             </h2>
             <p className="text-white/60 mb-6 max-w-md mx-auto">{t.cta.sub}</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/register/employee">
+              <Link to="/register/freelancer">
                 <RippleBtn onClick={fireConfetti as any} className="group shimmer-btn magnetic-btn flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-base font-semibold text-white w-full sm:w-auto" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))", boxShadow: "0 0 30px rgba(var(--t-a1-rgb),0.4)" }}>
                   <Briefcase className="h-4 w-4" /> {t.cta.joinFreelancer} <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </RippleBtn>
@@ -4997,7 +4997,7 @@ const LeaderboardSection = () => (
       <Reveal className="mt-8 text-center">
         <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
           <p className="text-sm text-white/60 mb-3">Your name could be here next month.</p>
-          <Link to="/register/employee">
+          <Link to="/register/freelancer">
             <button className="rounded-2xl px-7 py-3 text-sm font-semibold text-white hover:scale-105 transition-all" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 20px rgba(var(--t-a1-rgb),0.3)" }}>
               Start Earning Free →
             </button>
@@ -5070,7 +5070,7 @@ const FounderStorySection = () => (
               </div>
             ))}
           </div>
-          <Link to="/register/employee">
+          <Link to="/register/freelancer">
             <button className="inline-flex items-center gap-2 rounded-2xl px-6 py-2.5 text-sm font-semibold text-white hover:scale-105 transition-all" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>
               Join the platform Anil built for you →
             </button>

@@ -107,7 +107,7 @@ export default function Blog() {
           <Link to="/" className="flex items-center gap-1.5 font-black text-white text-lg">
             <span className="text-xl">💼</span> Freelancer<span style={{ color: "var(--t-a1)" }}>.</span>
           </Link>
-          <Link to="/register/employee">
+          <Link to="/register/freelancer">
             <button className="rounded-xl px-4 py-1.5 text-xs font-semibold text-white" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>
               Get Started
             </button>

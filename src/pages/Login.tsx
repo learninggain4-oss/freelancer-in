@@ -247,7 +247,7 @@ const Login = () => {
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <Link to="/" style={{ color: "rgba(255,255,255,.6)", fontSize: 13, textDecoration: "none", fontWeight: 500 }} onMouseEnter={e => (e.currentTarget.style.color = "white")} onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,.6)")}>Home</Link>
-          <Link to="/register/employee" style={{ padding: "8px 20px", borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, color: "white", fontSize: 13, fontWeight: 700, textDecoration: "none", boxShadow: `0 4px 20px rgba(99,102,241,.4)` }}>Register</Link>
+          <Link to="/register/freelancer" style={{ padding: "8px 20px", borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, color: "white", fontSize: 13, fontWeight: 700, textDecoration: "none", boxShadow: `0 4px 20px rgba(99,102,241,.4)` }}>Register</Link>
         </div>
       </nav>
 
@@ -429,7 +429,7 @@ const Login = () => {
 
             <p style={{ marginTop: 20, textAlign: "center", fontSize: 13, color: "rgba(255,255,255,.4)" }}>
               Don't have an account?{" "}
-              <Link to="/register/employee" style={{ color: A1, fontWeight: 700, textDecoration: "none" }}>Register here</Link>
+              <Link to="/register/freelancer" style={{ color: A1, fontWeight: 700, textDecoration: "none" }}>Register here</Link>
             </p>
           </div>
         </div>
@@ -587,7 +587,7 @@ const Login = () => {
             Join 12,000+ professionals already earning on India's most trusted freelance platform.
           </p>
           <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
-            <Link to="/register/employee" style={{ padding: "14px 32px", borderRadius: 14, background: `linear-gradient(135deg,${A1},${A2})`, color: "white", fontWeight: 700, textDecoration: "none", display: "flex", alignItems: "center", gap: 8, boxShadow: `0 8px 24px rgba(99,102,241,.4)` }}>
+            <Link to="/register/freelancer" style={{ padding: "14px 32px", borderRadius: 14, background: `linear-gradient(135deg,${A1},${A2})`, color: "white", fontWeight: 700, textDecoration: "none", display: "flex", alignItems: "center", gap: 8, boxShadow: `0 8px 24px rgba(99,102,241,.4)` }}>
               Join as Freelancer <ArrowRight size={16} />
             </Link>
             <Link to="/register/employer" style={{ padding: "14px 32px", borderRadius: 14, border: "1px solid rgba(255,255,255,.2)", color: "white", fontWeight: 700, textDecoration: "none", background: "rgba(255,255,255,.06)", backdropFilter: "blur(8px)" }}>

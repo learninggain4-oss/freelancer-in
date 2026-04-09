@@ -106,7 +106,7 @@ const VerificationPending = () => {
                   </p>
                 )}
               </div>
-              <Link to="/register/employee" style={{
+              <Link to="/register/freelancer" style={{
                 display: "inline-block", padding: "13px 32px", borderRadius: 14,
                 background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
                 color: "white", fontWeight: 700, fontSize: 14, textDecoration: "none",

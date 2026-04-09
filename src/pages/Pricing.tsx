@@ -121,7 +121,7 @@ export default function Pricing() {
             <span className="text-xl">💼</span> Freelancer<span style={{ color: "var(--t-a1)" }}>.</span>
           </Link>
           <div className="flex gap-2">
-            <Link to="/register/employee"><button className="rounded-xl px-4 py-1.5 text-xs font-semibold text-white" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>Get Started</button></Link>
+            <Link to="/register/freelancer"><button className="rounded-xl px-4 py-1.5 text-xs font-semibold text-white" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>Get Started</button></Link>
           </div>
         </div>
       </div>
@@ -257,7 +257,7 @@ export default function Pricing() {
             <h2 className="text-2xl font-black text-white mb-2">Start Free Today</h2>
             <p className="text-white/50 text-sm mb-6">Zero commission for 3 months. No credit card required.</p>
             <div className="flex gap-3 justify-center">
-              <Link to="/register/employee"><button className="rounded-2xl px-7 py-3 text-sm font-semibold text-white hover:scale-105 transition-all" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>Join as Freelancer</button></Link>
+              <Link to="/register/freelancer"><button className="rounded-2xl px-7 py-3 text-sm font-semibold text-white hover:scale-105 transition-all" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>Join as Freelancer</button></Link>
               <Link to="/register/employer"><button className="rounded-2xl px-7 py-3 text-sm font-semibold text-white hover:scale-105 transition-all" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)" }}>Hire Talent</button></Link>
             </div>
           </div>

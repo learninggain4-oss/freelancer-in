@@ -63,7 +63,7 @@ export default function About() {
           <Link to="/" className="flex items-center gap-1.5 font-black text-white text-lg">
             <span className="text-xl">💼</span> Freelancer<span style={{ color: "var(--t-a1)" }}>.</span>
           </Link>
-          <Link to="/register/employee">
+          <Link to="/register/freelancer">
             <button className="rounded-xl px-4 py-1.5 text-xs font-semibold text-white" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>
               Get Started
             </button>
@@ -163,7 +163,7 @@ export default function About() {
           <h2 className="text-2xl font-black text-white">Join the Community</h2>
           <p className="text-white/50 max-w-lg mx-auto">500+ professionals trust Freelancer India. Be part of the story.</p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <Link to="/register/employee">
+            <Link to="/register/freelancer">
               <button className="rounded-2xl px-6 py-3 font-semibold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>
                 Start as Freelancer
               </button>

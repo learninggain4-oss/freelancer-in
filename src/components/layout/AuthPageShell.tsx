@@ -64,7 +64,7 @@ const AuthPageShell = ({ children, maxWidth = 480, centerContent = true }: AuthP
           onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,.5)")}>
           Login
         </Link>
-        <Link to="/register/employee" style={{ padding: "8px 20px", borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, color: "white", fontSize: 13, fontWeight: 700, textDecoration: "none", boxShadow: `0 4px 20px rgba(99,102,241,.4)` }}>
+        <Link to="/register/freelancer" style={{ padding: "8px 20px", borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, color: "white", fontSize: 13, fontWeight: 700, textDecoration: "none", boxShadow: `0 4px 20px rgba(99,102,241,.4)` }}>
           Register
         </Link>
       </div>

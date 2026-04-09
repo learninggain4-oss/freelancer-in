@@ -74,7 +74,7 @@ export default function HowItWorks() {
           <Link to="/" className="flex items-center gap-1.5 font-black text-white text-lg">
             <span className="text-xl">💼</span> Freelancer<span style={{ color: "var(--t-a1)" }}>.</span>
           </Link>
-          <Link to="/register/employee"><button className="rounded-xl px-4 py-1.5 text-xs font-semibold text-white" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>Get Started</button></Link>
+          <Link to="/register/freelancer"><button className="rounded-xl px-4 py-1.5 text-xs font-semibold text-white" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))" }}>Get Started</button></Link>
         </div>
       </div>
 
@@ -178,7 +178,7 @@ export default function HowItWorks() {
           <div className="rounded-3xl p-8" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.12), rgba(var(--t-a2-rgb),0.12))", border: "1px solid rgba(var(--t-a1-rgb),0.25)" }}>
             <h2 className="text-2xl font-black text-white mb-2">Ready to {tab === "freelancer" ? "Start Earning?" : "Hire Top Talent?"}</h2>
             <p className="text-white/50 text-sm mb-6">{tab === "freelancer" ? "Create your free profile in 5 minutes." : "Post your project for free in 3 minutes."}</p>
-            <Link to={tab === "freelancer" ? "/register/employee" : "/register/employer"}>
+            <Link to={tab === "freelancer" ? "/register/freelancer" : "/register/employer"}>
               <button className="rounded-2xl px-8 py-3.5 text-sm font-semibold text-white hover:scale-105 transition-all" style={{ background: "linear-gradient(135deg, var(--t-a1), var(--t-a2))", boxShadow: "0 0 24px rgba(var(--t-a1-rgb),0.3)" }}>
                 {tab === "freelancer" ? "Join as Freelancer →" : "Post a Project Free →"}
               </button>
