@@ -140,7 +140,7 @@ const getName = (fn: string[] | null | undefined) =>
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { theme, themeKey } = useAdminTheme();
+  const { theme, themeKey, setTheme } = useAdminTheme();
   const tok = TH[themeKey];
 
   const [stats, setStats] = useState({
@@ -180,6 +180,22 @@ const AdminDashboard = () => {
   const [regFeedClearing, setRegFeedClearing]   = useState(false);
   const [msgClearing, setMsgClearing]           = useState(false);
   const [recoveryClearing, setRecoveryClearing] = useState(false);
+  const [wdRefreshing, setWdRefreshing]           = useState(false);
+  const [wdClearing, setWdClearing]               = useState(false);
+  const [verRefreshing, setVerRefreshing]         = useState(false);
+  const [refRefreshing, setRefRefreshing]         = useState(false);
+  const [refClearing, setRefClearing]             = useState(false);
+  const [topEmpRefreshing, setTopEmpRefreshing]   = useState(false);
+  const [fraudClearing, setFraudClearing]         = useState(false);
+  const [pendingClearing, setPendingClearing]     = useState(false);
+  const [csvExporting, setCsvExporting]           = useState(false);
+  const [announcementText, setAnnouncementText]   = useState("");
+  const [announceSending, setAnnounceSending]     = useState(false);
+  const [liveOnline, setLiveOnline]               = useState(0);
+  const [autoRefresh, setAutoRefresh]             = useState(false);
+  const [autoRefreshSecs, setAutoRefreshSecs]     = useState<30 | 60>(30);
+  const [revDateStart, setRevDateStart]           = useState("");
+  const [revDateEnd, setRevDateEnd]               = useState("");
   const [regionData, setRegionData]       = useState<RegionPoint[]>([]);
   const [withdrawalSummary, setWithdrawalSummary] = useState({
     pending: 0, approved: 0, rejected: 0, completed: 0,
@@ -621,6 +637,205 @@ const AdminDashboard = () => {
 
   useEffect(() => { fetchMetrics(); }, [fetchMetrics]);
 
+  /* ── Live Online Users (Supabase realtime presence) ── */
+  useEffect(() => {
+    const ch = supabase.channel("online-count");
+    ch.on("presence", { event: "sync" }, () => {
+      setLiveOnline(Object.keys(ch.presenceState()).length);
+    }).subscribe(async (s) => {
+      if (s === "SUBSCRIBED") await ch.track({ uid: "admin" });
+    });
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
+  /* ── Auto-refresh interval ── */
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const id = setInterval(() => {
+      const ev = new CustomEvent("admin-dashboard-refresh");
+      window.dispatchEvent(ev);
+    }, autoRefreshSecs * 1000);
+    const handler = () => { window.location.reload(); };
+    window.addEventListener("admin-dashboard-refresh", handler);
+    return () => { clearInterval(id); window.removeEventListener("admin-dashboard-refresh", handler); };
+  }, [autoRefresh, autoRefreshSecs]);
+
+  /* ── Refresh Callbacks ── */
+  const refreshWithdrawal = useCallback(async () => {
+    setWdRefreshing(true);
+    try {
+      const { data: wd } = await supabase.from("withdrawals").select("amount, status");
+      const w = wd || [];
+      setWithdrawalSummary({
+        pending:      w.filter(x => x.status === "pending").length,
+        approved:     w.filter(x => x.status === "approved").length,
+        rejected:     w.filter(x => x.status === "rejected").length,
+        completed:    w.filter(x => x.status === "completed").length,
+        pendingAmt:   w.filter(x => x.status === "pending").reduce((s, x) => s + Number(x.amount), 0),
+        approvedAmt:  w.filter(x => x.status === "approved").reduce((s, x) => s + Number(x.amount), 0),
+        completedAmt: w.filter(x => x.status === "completed").reduce((s, x) => s + Number(x.amount), 0),
+      });
+    } catch { /* ignore */ }
+    setWdRefreshing(false);
+  }, []);
+
+  const clearWithdrawal = useCallback(async () => {
+    if (!window.confirm("Withdrawal data delete ചെയ്യണോ?\n\nUndo ചെയ്യാൻ കഴിയില്ല — withdrawals table permanently delete ആകും.")) return;
+    setWdClearing(true);
+    try {
+      await supabase.from("withdrawals").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      setWithdrawalSummary({ pending: 0, approved: 0, rejected: 0, completed: 0, pendingAmt: 0, approvedAmt: 0, completedAmt: 0 });
+    } catch { /* ignore */ }
+    setWdClearing(false);
+  }, []);
+
+  const refreshVerification = useCallback(async () => {
+    setVerRefreshing(true);
+    try {
+      const [{ data: aAll }, { data: bAll }] = await Promise.all([
+        supabase.from("aadhaar_verifications").select("status"),
+        supabase.from("bank_verifications").select("status"),
+      ]);
+      const a = aAll || []; const b = bAll || [];
+      setVerificationStats({
+        aadhaarVerified:     a.filter(x => x.status === "verified").length,
+        aadhaarPending:      a.filter(x => x.status === "pending").length,
+        aadhaarRejected:     a.filter(x => x.status === "rejected").length,
+        aadhaarUnderProcess: a.filter(x => x.status === "under_process").length,
+        bankVerified:        b.filter(x => x.status === "verified").length,
+        bankPending:         b.filter(x => x.status === "pending").length,
+        bankRejected:        b.filter(x => x.status === "rejected").length,
+        bankUnderProcess:    b.filter(x => x.status === "under_process").length,
+      });
+    } catch { /* ignore */ }
+    setVerRefreshing(false);
+  }, []);
+
+  const refreshReferrals = useCallback(async () => {
+    setRefRefreshing(true);
+    try {
+      const { data: refs } = await supabase.from("referrals").select("referrer_id, signup_bonus_paid, job_bonus_paid");
+      const r = refs || [];
+      const unique = new Set(r.map(x => x.referrer_id)).size;
+      const sb = r.filter(x => x.signup_bonus_paid).length;
+      setReferralStats({ total: r.length, uniqueReferrers: unique, signupBonuses: sb, jobBonuses: r.filter(x => x.job_bonus_paid).length, conversionRate: r.length > 0 ? Math.round(sb / r.length * 100) : 0 });
+    } catch { /* ignore */ }
+    setRefRefreshing(false);
+  }, []);
+
+  const clearReferrals = useCallback(async () => {
+    if (!window.confirm("Referral data delete ചെയ്യണോ?\n\nUndo ചെയ്യാൻ കഴിയില്ല — referrals table permanently delete ആകും.")) return;
+    setRefClearing(true);
+    try {
+      await supabase.from("referrals").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      setReferralStats({ total: 0, uniqueReferrers: 0, signupBonuses: 0, jobBonuses: 0, conversionRate: 0 });
+    } catch { /* ignore */ }
+    setRefClearing(false);
+  }, []);
+
+  const refreshTopEmployers = useCallback(async () => {
+    setTopEmpRefreshing(true);
+    try {
+      const { data: pj } = await supabase.from("projects").select("client_id");
+      const map: Record<string, number> = {};
+      for (const p of pj || []) { if (p.client_id) map[p.client_id] = (map[p.client_id] || 0) + 1; }
+      const topIds = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id]) => id);
+      if (topIds.length > 0) {
+        const { data: profiles } = await supabase.from("profiles").select("id, full_name").in("id", topIds);
+        setTopEmployers(topIds.map(id => {
+          const p = profiles?.find(x => x.id === id);
+          return { id, name: p ? (p.full_name || []).join(" ").trim() || "Unknown" : "Unknown", jobs: map[id] };
+        }));
+      } else { setTopEmployers([]); }
+    } catch { /* ignore */ }
+    setTopEmpRefreshing(false);
+  }, []);
+
+  const clearFraud = useCallback(() => {
+    if (!window.confirm("Fraud Detection alerts clear ചെയ്യണോ?\n\nList-ൽ നിന്ന് remove ആകും.")) return;
+    setFraudClearing(true);
+    setTimeout(() => { setDuplicateIPs([]); setFraudClearing(false); }, 400);
+  }, []);
+
+  const clearPendingApprovals = useCallback(() => {
+    if (!window.confirm("Pending Approvals queue clear ചെയ്യണോ?\n\nApproval queue empty ആകും (profiles delete ആകില്ല).")) return;
+    setPendingClearing(true);
+    setTimeout(() => { setPendingUsers([]); setStats(prev => ({ ...prev, pendingApprovals: 0 })); setPendingClearing(false); }, 400);
+  }, []);
+
+  const exportDashboardCSV = useCallback(() => {
+    setCsvExporting(true);
+    try {
+      const rev = stats.employeeEarnings + stats.clientEarnings;
+      const rows = [
+        ["Section", "Metric", "Value"],
+        ["Platform", "Total Users", stats.totalUsers],
+        ["Platform", "Freelancers", stats.totalEmployees],
+        ["Platform", "Employers", stats.totalClients],
+        ["Platform", "Active Users", stats.activeUsers],
+        ["Platform", "Approved Users", stats.approvedUsers],
+        ["Platform", "Pending Approvals", stats.pendingApprovals],
+        ["Revenue", "Total Revenue", rev],
+        ["Revenue", "Platform Commission (10%)", Math.round(rev * 0.1)],
+        ["Jobs", "Total Jobs", jobStats.total],
+        ["Jobs", "Open", jobStats.open],
+        ["Jobs", "In Progress", jobStats.inProgress],
+        ["Jobs", "Completed", jobStats.completed],
+        ["Jobs", "Cancelled", jobStats.cancelled],
+        ["Withdrawal", "Pending", withdrawalSummary.pending],
+        ["Withdrawal", "Approved", withdrawalSummary.approved],
+        ["Withdrawal", "Completed", withdrawalSummary.completed],
+        ["Verification", "Aadhaar Verified", verificationStats.aadhaarVerified],
+        ["Verification", "Bank Verified", verificationStats.bankVerified],
+        ["Referral", "Total Referrals", referralStats.total],
+        ["Referral", "Conversion Rate", `${referralStats.conversionRate}%`],
+        ["Messages", "Total Messages", messageStats.total],
+        ["Messages", "Unread", messageStats.unread],
+        ["Recovery", "Total Requests", recoveryData.total],
+        ["Recovery", "Resolved", recoveryData.resolved],
+        ["KPI", "User Growth MoM", `${growthKPIs.momUserPct}%`],
+        ["KPI", "Revenue Growth MoM", `${growthKPIs.momRevPct}%`],
+        ["KPI", "Job Completion Rate", `${growthKPIs.jobCompletionRate}%`],
+      ];
+      const csv = rows.map(r => r.join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `freelan-dashboard-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click(); URL.revokeObjectURL(url);
+    } catch { /* ignore */ }
+    setCsvExporting(false);
+  }, [stats, jobStats, withdrawalSummary, verificationStats, referralStats, messageStats, recoveryData, growthKPIs]);
+
+  const sendAnnouncement = useCallback(async () => {
+    if (!announcementText.trim()) return;
+    setAnnounceSending(true);
+    try {
+      await supabase.from("announcements").insert({ title: "Admin Announcement", content: announcementText.trim(), created_at: new Date().toISOString() });
+      setAnnouncementText("");
+      alert("Announcement sent successfully!");
+    } catch { /* ignore */ }
+    setAnnounceSending(false);
+  }, [announcementText]);
+
+  const applyDateRangeFilter = useCallback(async () => {
+    if (!revDateStart && !revDateEnd) return;
+    setRevResetting(true);
+    try {
+      let q = supabase.from("transactions").select("amount, created_at").eq("type", "credit");
+      if (revDateStart) q = q.gte("created_at", new Date(revDateStart).toISOString());
+      if (revDateEnd) q = q.lte("created_at", new Date(revDateEnd + "T23:59:59").toISOString());
+      const { data: txns } = await q;
+      const revMap: Record<string, number> = {};
+      for (const t of txns || []) {
+        const mKey = new Date(t.created_at).toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
+        revMap[mKey] = (revMap[mKey] || 0) + Number(t.amount);
+      }
+      setRevenueData(Object.entries(revMap).map(([month, revenue]) => ({ month, revenue, commission: Math.round(revenue * 0.1) })));
+    } catch { /* ignore */ }
+    setRevResetting(false);
+  }, [revDateStart, revDateEnd]);
+
   /* ── Approve / Reject handlers ── */
   const handleApprove = useCallback(async (id: string) => {
     setApprovingId(id);
@@ -857,11 +1072,37 @@ const AdminDashboard = () => {
             <p style={{ fontSize: 10, color: tok.cardSub, margin: "0 0 6px", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.8px" }}>Pending Actions</p>
             <p style={{ fontSize: 18, fontWeight: 800, color: "#ef4444", margin: 0 }}>{pendingTotal.toLocaleString("en-IN")}</p>
           </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" as const }}>
+            {liveOnline > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 20, background: "rgba(99,102,241,.12)", border: "1px solid rgba(99,102,241,.3)" }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#6366f1", animation: "ping 1.5s infinite" }} />
+                <span style={{ fontSize: 10.5, color: "#a5b4fc", fontWeight: 700 }}>{liveOnline} Online</span>
+              </div>
+            )}
             <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 20, background: "rgba(34,197,94,.1)", border: "1px solid rgba(34,197,94,.22)" }}>
               <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e" }} />
               <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 700 }}>Systems Live</span>
             </div>
+            <button onClick={() => setTheme(theme === "black" ? "white" : "black")}
+              style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 20, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: tok.cardSub, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+              {theme === "black" ? "☀ Light" : "☾ Dark"}
+            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 20, background: autoRefresh ? "rgba(74,222,128,.1)" : tok.alertBg, border: `1px solid ${autoRefresh ? "rgba(74,222,128,.3)" : tok.alertBdr}` }}>
+              <button onClick={() => setAutoRefresh(p => !p)} style={{ background: "none", border: "none", color: autoRefresh ? "#4ade80" : tok.cardSub, fontSize: 10.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>
+                ↺ {autoRefresh ? "Auto ON" : "Auto OFF"}
+              </button>
+              {autoRefresh && (
+                <select value={autoRefreshSecs} onChange={e => setAutoRefreshSecs(Number(e.target.value) as 30 | 60)}
+                  style={{ background: "none", border: "none", color: "#4ade80", fontSize: 10, cursor: "pointer", outline: "none" }}>
+                  <option value={30}>30s</option>
+                  <option value={60}>60s</option>
+                </select>
+              )}
+            </div>
+            <button onClick={exportDashboardCSV} disabled={csvExporting}
+              style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 20, background: "rgba(99,102,241,.1)", border: "1px solid rgba(99,102,241,.25)", color: "#a5b4fc", fontSize: 11, fontWeight: 700, cursor: csvExporting ? "not-allowed" : "pointer" }}>
+              ⬇ {csvExporting ? "Exporting…" : "CSV Export"}
+            </button>
             <button onClick={() => navigate("/admin/server-monitor")}
               style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 20, background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.22)", color: "#dc2626", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
               <Zap size={11} /> Emergency
@@ -992,19 +1233,42 @@ const AdminDashboard = () => {
             )}
           </div>
         )}
+        {pendingUsers.length > 0 && (
+          <button onClick={clearPendingApprovals} disabled={pendingClearing}
+            style={{ width: "100%", marginTop: 10, padding: "8px", borderRadius: 9, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.25)", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: pendingClearing ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+            {pendingClearing ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Clearing…</> : <>✕ Clear Approval Queue</>}
+          </button>
+        )}
       </div>
 
       {/* ── Revenue Chart + User Growth ── */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div style={{ ...card, padding: "18px" }}>
           {sectionHeader(<TrendingUp size={14} color="#4ade80" />, "Revenue Analytics")}
-          <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
+          <div style={{ display: "flex", gap: 4, marginBottom: 8, flexWrap: "wrap" as const, alignItems: "center" }}>
             {(["day", "week", "month"] as const).map(m => (
               <button key={m} onClick={() => setRevenueMode(m)}
                 style={{ padding: "4px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer", border: `1px solid ${revenueMode === m ? "#4ade80" : tok.alertBdr}`, background: revenueMode === m ? "rgba(74,222,128,.12)" : "transparent", color: revenueMode === m ? "#4ade80" : tok.cardSub }}>
                 {m === "day" ? "Daily" : m === "week" ? "Weekly" : "Monthly"}
               </button>
             ))}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10, flexWrap: "wrap" as const }}>
+            <input type="date" value={revDateStart} onChange={e => setRevDateStart(e.target.value)}
+              style={{ padding: "4px 8px", borderRadius: 7, border: `1px solid ${tok.alertBdr}`, background: tok.alertBg, color: tok.cardText, fontSize: 11, outline: "none" }} />
+            <span style={{ fontSize: 11, color: tok.cardSub }}>to</span>
+            <input type="date" value={revDateEnd} onChange={e => setRevDateEnd(e.target.value)}
+              style={{ padding: "4px 8px", borderRadius: 7, border: `1px solid ${tok.alertBdr}`, background: tok.alertBg, color: tok.cardText, fontSize: 11, outline: "none" }} />
+            <button onClick={applyDateRangeFilter} disabled={!revDateStart && !revDateEnd}
+              style={{ padding: "4px 12px", borderRadius: 7, background: "rgba(74,222,128,.12)", border: "1px solid rgba(74,222,128,.3)", color: "#4ade80", fontSize: 11, fontWeight: 700, cursor: (!revDateStart && !revDateEnd) ? "not-allowed" : "pointer" }}>
+              Apply
+            </button>
+            {(revDateStart || revDateEnd) && (
+              <button onClick={() => { setRevDateStart(""); setRevDateEnd(""); }}
+                style={{ padding: "4px 10px", borderRadius: 7, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: tok.cardSub, fontSize: 11, cursor: "pointer" }}>
+                ✕
+              </button>
+            )}
           </div>
           {(revenueMode === "month" ? revenueData : revenueMode === "week" ? revWeekData : revDayData).length === 0
             ? emptyBox(BarChart3, "No transaction data yet")
@@ -1211,7 +1475,7 @@ const AdminDashboard = () => {
             </div>
           ))}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, marginBottom: 10 }}>
           <IndianRupee size={13} color="#4ade80" />
           <span style={{ fontSize: 12, color: tok.cardText }}>
             Total disbursed: <strong style={{ color: "#4ade80" }}>{fmt(withdrawalSummary.completedAmt + withdrawalSummary.approvedAmt)}</strong>
@@ -1219,6 +1483,16 @@ const AdminDashboard = () => {
           </span>
           <button onClick={() => navigate("/admin/withdrawals")} style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4, color: "#a5b4fc", background: "none", border: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 600 }}>
             Manage <ArrowUpRight size={11} />
+          </button>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={refreshWithdrawal} disabled={wdRefreshing || wdClearing}
+            style={{ flex: 1, padding: "8px", borderRadius: 9, background: "rgba(99,102,241,.1)", border: "1px solid rgba(99,102,241,.3)", color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: (wdRefreshing || wdClearing) ? "not-allowed" : "pointer", opacity: wdRefreshing ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+            {wdRefreshing ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Refreshing…</> : <>↺ Refresh Data</>}
+          </button>
+          <button onClick={clearWithdrawal} disabled={wdClearing || wdRefreshing || withdrawalSummary.pending + withdrawalSummary.approved + withdrawalSummary.completed + withdrawalSummary.rejected === 0}
+            style={{ flex: 1, padding: "8px", borderRadius: 9, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.25)", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: (wdClearing || wdRefreshing) ? "not-allowed" : "pointer", opacity: wdClearing ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+            {wdClearing ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Clearing…</> : <>✕ Clear All</>}
           </button>
         </div>
       </div>
@@ -1499,7 +1773,7 @@ const AdminDashboard = () => {
         {/* Verification Overview */}
         <div style={{ ...card, padding: "18px" }}>
           {sectionHeader(<Fingerprint size={14} color="#fbbf24" />, "Verification Status Overview")}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }} id="ver-body">
             {/* Aadhaar */}
             <div style={{ padding: "12px", borderRadius: 12, background: tok.sysRowBg, border: `1px solid ${tok.alertBdr}` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
@@ -1545,10 +1819,14 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
+          <button onClick={refreshVerification} disabled={verRefreshing}
+            style={{ width: "100%", marginTop: 10, padding: "8px", borderRadius: 9, background: "rgba(251,191,36,.08)", border: "1px solid rgba(251,191,36,.25)", color: "#fbbf24", fontSize: 12, fontWeight: 700, cursor: verRefreshing ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+            {verRefreshing ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Refreshing…</> : <>↺ Refresh Stats</>}
+          </button>
         </div>
 
         {/* Referral Program Stats */}
-        <div style={{ ...card, padding: "18px" }}>
+        <div style={{ ...card, padding: "18px" }} id="referral-card">
           {sectionHeader(<UserPlus size={14} color="#4ade80" />, "Referral Program", `${referralStats.total} total`)}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
             {[
@@ -1566,7 +1844,7 @@ const AdminDashboard = () => {
               </div>
             ))}
           </div>
-          <div style={{ padding: "10px 14px", borderRadius: 10, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
+          <div style={{ padding: "10px 14px", borderRadius: 10, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, marginBottom: 10 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
               <span style={{ fontSize: 12, color: tok.cardText, fontWeight: 600 }}>Conversion Rate</span>
               <span style={{ fontSize: 14, fontWeight: 900, color: "#4ade80" }}>{referralStats.conversionRate}%</span>
@@ -1575,6 +1853,16 @@ const AdminDashboard = () => {
               <div style={{ height: "100%", width: `${referralStats.conversionRate}%`, background: "#4ade80", borderRadius: 3 }} />
             </div>
             <p style={{ fontSize: 10, color: tok.cardSub, margin: "4px 0 0" }}>Referred users who completed signup bonus</p>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={refreshReferrals} disabled={refRefreshing || refClearing}
+              style={{ flex: 1, padding: "8px", borderRadius: 9, background: "rgba(74,222,128,.08)", border: "1px solid rgba(74,222,128,.25)", color: "#4ade80", fontSize: 12, fontWeight: 700, cursor: (refRefreshing||refClearing) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+              {refRefreshing ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Refreshing…</> : <>↺ Refresh</>}
+            </button>
+            <button onClick={clearReferrals} disabled={refClearing || refRefreshing || referralStats.total === 0}
+              style={{ flex: 1, padding: "8px", borderRadius: 9, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.25)", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: (refClearing||refRefreshing) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+              {refClearing ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Clearing…</> : <>✕ Clear All</>}
+            </button>
           </div>
         </div>
       </div>
@@ -1674,10 +1962,15 @@ const AdminDashboard = () => {
       </div>
 
       {/* ══ TOP EMPLOYERS ══ */}
-      {topEmployers.length > 0 && (
-        <div style={{ ...card, padding: "18px" }}>
-          {sectionHeader(<Building2 size={14} color="#c4b5fd" />, "Most Active Employers", "By jobs posted")}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Building2 size={14} color="#c4b5fd" />, "Most Active Employers", topEmployers.length > 0 ? "By jobs posted" : "No data yet")}
+        {topEmployers.length === 0 ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "20px 16px", borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
+            <Building2 size={20} color={tok.cardSub} />
+            <p style={{ fontSize: 12, color: tok.cardSub, margin: 0 }}>No employer data yet. Refresh to load.</p>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
             {topEmployers.map((e, i) => {
               const maxJobs = topEmployers[0]?.jobs || 1;
               const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
@@ -1701,8 +1994,12 @@ const AdminDashboard = () => {
               );
             })}
           </div>
-        </div>
-      )}
+        )}
+        <button onClick={refreshTopEmployers} disabled={topEmpRefreshing}
+          style={{ width: "100%", padding: "8px", borderRadius: 9, background: "rgba(196,181,253,.1)", border: "1px solid rgba(196,181,253,.3)", color: "#c4b5fd", fontSize: 12, fontWeight: 700, cursor: topEmpRefreshing ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+          {topEmpRefreshing ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Refreshing…</> : <>↺ Refresh Employers</>}
+        </button>
+      </div>
 
       {/* ══ ALERT CENTER ══ */}
       <div style={{ ...card, padding: "18px" }}>
@@ -1942,9 +2239,17 @@ const AdminDashboard = () => {
               ))}
             </div>
           )}
-          <button onClick={() => navigate("/admin/users")} style={{ width: "100%", marginTop: 10, padding: "8px", borderRadius: 9, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: "#f87171", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-            Review Users →
-          </button>
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button onClick={() => navigate("/admin/users")} style={{ flex: 1, padding: "8px", borderRadius: 9, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: "#f87171", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+              Review Users →
+            </button>
+            {duplicateIPs.length > 0 && (
+              <button onClick={clearFraud} disabled={fraudClearing}
+                style={{ flex: 1, padding: "8px", borderRadius: 9, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.25)", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: fraudClearing ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+                {fraudClearing ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Clearing…</> : <>✕ Clear Alerts</>}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -2121,6 +2426,33 @@ const AdminDashboard = () => {
           <button onClick={() => navigate("/admin/withdrawals")} style={{ width: "100%", marginTop: 10, padding: "8px", borderRadius: 9, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: "#fbbf24", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
             Process Payouts →
           </button>
+        </div>
+      </div>
+
+      {/* ══ ANNOUNCEMENT BROADCAST ══ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Mail size={14} color="#60a5fa" />, "Announcement Broadcast", "Send to all users")}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <textarea value={announcementText} onChange={e => setAnnouncementText(e.target.value)}
+            placeholder="Type your announcement here… (will be sent to all users)"
+            rows={3}
+            style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: `1px solid ${tok.alertBdr}`, background: tok.alertBg, color: tok.cardText, fontSize: 12.5, resize: "vertical", outline: "none", fontFamily: "inherit", boxSizing: "border-box" as const }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button onClick={sendAnnouncement} disabled={announceSending || !announcementText.trim()}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 20px", borderRadius: 9, background: announceSending || !announcementText.trim() ? "rgba(96,165,250,.08)" : "rgba(96,165,250,.15)", border: "1px solid rgba(96,165,250,.3)", color: "#60a5fa", fontSize: 12.5, fontWeight: 700, cursor: (announceSending || !announcementText.trim()) ? "not-allowed" : "pointer" }}>
+              {announceSending ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Sending…</> : <><Mail size={12} /> Send Announcement</>}
+            </button>
+            {announcementText.length > 0 && (
+              <button onClick={() => setAnnouncementText("")}
+                style={{ padding: "9px 14px", borderRadius: 9, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: tok.cardSub, fontSize: 12, cursor: "pointer" }}>
+                ✕ Clear
+              </button>
+            )}
+            <span style={{ fontSize: 10.5, color: tok.cardSub, marginLeft: "auto" }}>{announcementText.length} chars</span>
+          </div>
+          <div style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(96,165,250,.06)", border: "1px solid rgba(96,165,250,.15)" }}>
+            <p style={{ fontSize: 10.5, color: "#93c5fd", margin: 0 }}>Announcements are stored in the database and visible to all platform users. Use responsibly.</p>
+          </div>
         </div>
       </div>
 
