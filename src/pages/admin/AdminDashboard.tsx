@@ -171,6 +171,7 @@ const AdminDashboard = () => {
   const [msgResetting, setMsgResetting]     = useState(false);
   const [payResetting, setPayResetting]     = useState(false);
   const [feedResetting, setFeedResetting]   = useState(false);
+  const [revResetting, setRevResetting]     = useState(false);
   const [regionData, setRegionData]       = useState<RegionPoint[]>([]);
   const [withdrawalSummary, setWithdrawalSummary] = useState({
     pending: 0, approved: 0, rejected: 0, completed: 0,
@@ -621,6 +622,40 @@ const AdminDashboard = () => {
     setApprovingId(null);
   }, []);
 
+  const resetRevenueData = useCallback(async () => {
+    setRevResetting(true);
+    try {
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      const { data: txns } = await supabase
+        .from("transactions")
+        .select("amount, created_at, type")
+        .gte("created_at", sixMonthsAgo.toISOString())
+        .eq("type", "credit");
+      const all = txns || [];
+      const weekLabel = (iso: string) => {
+        const d = new Date(iso);
+        const wk = Math.ceil(d.getDate() / 7);
+        return `W${wk} ${d.toLocaleDateString("en-IN", { month: "short" })}`;
+      };
+      const revMap: Record<string, number> = {};
+      const dayMap: Record<string, number> = {};
+      const weekMap: Record<string, number> = {};
+      for (const t of all) {
+        const mKey = new Date(t.created_at).toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
+        revMap[mKey] = (revMap[mKey] || 0) + Number(t.amount);
+        const dKey = new Date(t.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+        dayMap[dKey] = (dayMap[dKey] || 0) + Number(t.amount);
+        const wKey = weekLabel(t.created_at);
+        weekMap[wKey] = (weekMap[wKey] || 0) + Number(t.amount);
+      }
+      setRevenueData(Object.entries(revMap).map(([month, revenue]) => ({ month, revenue, commission: Math.round(revenue * 0.1) })));
+      setRevDayData(Object.entries(dayMap).slice(-30).map(([month, revenue]) => ({ month, revenue, commission: Math.round(revenue * 0.1) })));
+      setRevWeekData(Object.entries(weekMap).slice(-12).map(([month, revenue]) => ({ month, revenue, commission: Math.round(revenue * 0.1) })));
+    } catch { /* silently ignore */ }
+    setRevResetting(false);
+  }, []);
+
   const resetActivityFeed = useCallback(async () => {
     setFeedResetting(true);
     try {
@@ -963,7 +998,7 @@ const AdminDashboard = () => {
               </ResponsiveContainer>
             </div>
           )}
-          <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
+          <div style={{ display: "flex", gap: 14, marginTop: 10, marginBottom: 10 }}>
             {[
               { label: "Total Revenue",    value: fmt(totalRev),                   color: "#4ade80" },
               { label: "Commission (10%)", value: fmt(Math.round(totalRev * 0.1)), color: "#a5b4fc" },
@@ -974,6 +1009,15 @@ const AdminDashboard = () => {
               </div>
             ))}
           </div>
+          <button
+            onClick={resetRevenueData}
+            disabled={revResetting}
+            style={{ width: "100%", padding: "8px", borderRadius: 9, background: "rgba(74,222,128,.08)", border: "1px solid rgba(74,222,128,.25)", color: "#4ade80", fontSize: 12, fontWeight: 700, cursor: revResetting ? "not-allowed" : "pointer", opacity: revResetting ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+            {revResetting
+              ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Refreshing…</>
+              : <>↺ Refresh Revenue Data</>
+            }
+          </button>
         </div>
         <div style={{ ...card, padding: "18px" }}>
           {sectionHeader(<Users size={14} color={A1} />, "User Growth", "4 weeks")}
