@@ -11,10 +11,10 @@ const A1 = "#6366f1";
 
 const chats = [
   { id:"CH001", user:"Rahul Mehta", type:"Freelancer", topic:"Payment not received", agent:"Priya (Support)", status:"Active", waiting:"2m", messages:8, priority:"High" },
-  { id:"CH002", user:"Sunita Gupta", type:"Client", topic:"How to post a job?", agent:"Bot", status:"Bot", waiting:"0m", messages:4, priority:"Low" },
+  { id:"CH002", user:"Sunita Gupta", type:"Employer", topic:"How to post a job?", agent:"Bot", status:"Bot", waiting:"0m", messages:4, priority:"Low" },
   { id:"CH003", user:"Arjun Verma", type:"Freelancer", topic:"KYC rejection reason", agent:"Ravi (Support)", status:"Active", waiting:"5m", messages:12, priority:"Medium" },
   { id:"CH004", user:"Meera Pillai", type:"Freelancer", topic:"Bid limit exceeded", agent:"Unassigned", status:"Waiting", waiting:"12m", messages:2, priority:"Medium" },
-  { id:"CH005", user:"Kiran Nair", type:"Client", topic:"Dispute with freelancer", agent:"Unassigned", status:"Waiting", waiting:"18m", messages:6, priority:"High" },
+  { id:"CH005", user:"Kiran Nair", type:"Employer", topic:"Dispute with freelancer", agent:"Unassigned", status:"Waiting", waiting:"18m", messages:6, priority:"High" },
   { id:"CH006", user:"Deepa Sharma", type:"Freelancer", topic:"Invoice download", agent:"Bot", status:"Resolved", waiting:"0m", messages:3, priority:"Low" },
 ];
 

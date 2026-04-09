@@ -19,7 +19,7 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
 const EmployeeRegister = lazy(() => import("./pages/register/FreelancerRegister"));
-const ClientRegister = lazy(() => import("./pages/register/EmployerRegister"));
+const EmployerRegisterComp = lazy(() => import("./pages/register/EmployerRegister"));
 const VerificationPending = lazy(() => import("./pages/VerificationPending"));
 const EmployeeDashboard = lazy(() => import("./pages/freelancer/EmployeeDashboard"));
 const EmployeeProjects = lazy(() => import("./pages/freelancer/EmployeeProjects"));
@@ -32,13 +32,13 @@ const EmployeeEarnings = lazy(() => import("./pages/freelancer/EmployeeEarnings"
 const EmployeeReviews = lazy(() => import("./pages/freelancer/EmployeeReviews"));
 const EmployeeBadges = lazy(() => import("./pages/freelancer/EmployeeBadges"));
 const EmployeePortfolio = lazy(() => import("./pages/freelancer/EmployeePortfolio"));
-const ClientDashboard = lazy(() => import("./pages/employer/ClientDashboard"));
-const ClientWallet = lazy(() => import("./pages/employer/ClientWallet"));
-const ClientProjects = lazy(() => import("./pages/employer/ClientProjects"));
+const EmployerDashboard = lazy(() => import("./pages/employer/ClientDashboard"));
+const EmployerWallet = lazy(() => import("./pages/employer/ClientWallet"));
+const EmployerProjects = lazy(() => import("./pages/employer/ClientProjects"));
 const CreateProject = lazy(() => import("./pages/employer/CreateProject"));
-const ClientWithdrawals = lazy(() => import("./pages/employer/ClientWithdrawals"));
-const ClientProfile = lazy(() => import("./pages/employer/ClientProfile"));
-const ClientAttendance = lazy(() => import("./pages/employer/ClientAttendance"));
+const EmployerWithdrawals = lazy(() => import("./pages/employer/ClientWithdrawals"));
+const EmployerProfile = lazy(() => import("./pages/employer/ClientProfile"));
+const EmployerAttendance = lazy(() => import("./pages/employer/ClientAttendance"));
 const ChatRoom = lazy(() => import("./components/chat/ChatRoom"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
@@ -397,8 +397,8 @@ const AppContent = () => {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/register/employee" element={<EmployeeRegister />} />
             <Route path="/register/freelancer" element={<EmployeeRegister />} />
-            <Route path="/register/employer" element={<ClientRegister />} />
-            <Route path="/register/client" element={<ClientRegister />} />
+            <Route path="/register/employer" element={<EmployerRegisterComp />} />
+            <Route path="/register/client" element={<EmployerRegisterComp />} />
             <Route path="/verification-pending" element={<VerificationPending />} />
             <Route path="/install" element={<InstallApp />} />
             <Route path="/categories" element={<Categories />} />
@@ -519,19 +519,19 @@ const AppContent = () => {
                 </ProtectedRoute>
               }
             >
-              <Route path="dashboard" element={<ClientDashboard />} />
-              <Route path="attendance" element={<ClientAttendance />} />
-              <Route path="wallet" element={<ClientWallet />} />
+              <Route path="dashboard" element={<EmployerDashboard />} />
+              <Route path="attendance" element={<EmployerAttendance />} />
+              <Route path="wallet" element={<EmployerWallet />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
               <Route path="wallet/qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
-              <Route path="projects" element={<ClientProjects />} />
+              <Route path="projects" element={<EmployerProjects />} />
               <Route path="projects/create" element={<CreateProject />} />
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
-              <Route path="withdrawals" element={<ClientWithdrawals />} />
-              <Route path="profile" element={<ClientProfile />} />
+              <Route path="withdrawals" element={<EmployerWithdrawals />} />
+              <Route path="profile" element={<EmployerProfile />} />
               <Route path="profile/personal" element={<ProfilePersonalInfo />} />
               <Route path="profile/professional" element={<ProfileProfessional />} />
               <Route path="profile/bank-details" element={<ProfileBankDetails />} />

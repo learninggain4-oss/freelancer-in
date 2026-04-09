@@ -67,7 +67,7 @@ export default function AdminUserOnboardingFunnel() {
       </div>
 
       <div className="rounded-2xl border p-6" style={{ background:T.card, borderColor:T.border }}>
-        <h3 className="font-bold mb-6" style={{ color:T.text }}>Step-by-Step Funnel — {type==="freelancer"?"Freelancer":"Client"} Onboarding</h3>
+        <h3 className="font-bold mb-6" style={{ color:T.text }}>Step-by-Step Funnel — {type==="freelancer"?"Freelancer":"Employer"} Onboarding</h3>
         <div className="space-y-3">
           {funnel.map((s,i)=>(
             <div key={i}>

@@ -5041,9 +5041,9 @@ const AdminDashboard = () => {
       const clientIds = [...new Set((data || []).map((p: { client_id: string }) => p.client_id))];
       const { data: pds } = await supabase.from("profiles").select("id, full_name, email").in("id", clientIds);
       const pMap: Record<string, string> = {};
-      for (const p of pds || []) pMap[p.id] = (p.full_name as string[] | null)?.join(" ") || (p.email as string | null)?.split("@")[0] || "Client";
+      for (const p of pds || []) pMap[p.id] = (p.full_name as string[] | null)?.join(" ") || (p.email as string | null)?.split("@")[0] || "Employer";
       setInvoiceGenList((data || []).map((p: { id: string; name: string; amount: number; client_id: string }) => ({
-        id: `INV-${p.id.slice(0, 6).toUpperCase()}`, client: pMap[p.client_id] || "Client", freelancer: "Platform",
+        id: `INV-${p.id.slice(0, 6).toUpperCase()}`, client: pMap[p.client_id] || "Employer", freelancer: "Platform",
         amount: Number(p.amount), status: "Paid", date: new Date().toLocaleDateString("en-IN"),
       })));
       setInvoiceGenLoad(false);
@@ -5629,9 +5629,9 @@ const AdminDashboard = () => {
 
   // 189. Client Satisfaction Index
   useEffect(() => {
-    supabase.from("profiles").select("id, full_name, email").eq("user_type", "employer").limit(6).then(({ data }) => {
+    supabase.from("profiles").select("id, full_name, email").eq("user_type", "client").limit(6).then(({ data }) => {
       const items = (data || []).map((p: { full_name: string[] | null; email: string | null }) => ({
-        name: (p.full_name as string[] | null)?.join(" ") || (p.email as string | null)?.split("@")[0] || "Client",
+        name: (p.full_name as string[] | null)?.join(" ") || (p.email as string | null)?.split("@")[0] || "Employer",
         avgRating: Math.round((Math.random() * 1.5 + 3.5) * 10) / 10,
         reviews: Math.floor(Math.random() * 40 + 5),
       }));
@@ -9567,7 +9567,7 @@ const AdminDashboard = () => {
                         <td style={{ padding: "9px 12px", fontSize: 11, color: tok.cardSub }}>{u.email}</td>
                         <td style={{ padding: "9px 12px", fontSize: 12, color: "#4ade80", fontWeight: 700 }}>₹{u.balance.toLocaleString("en-IN")}</td>
                         <td style={{ padding: "9px 12px", fontSize: 11, color: tok.cardSub }}>{u.region}</td>
-                        <td style={{ padding: "9px 12px" }}><span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, background: u.type === "employee" ? "rgba(99,102,241,.12)" : "rgba(251,191,36,.12)", color: u.type === "employee" ? "#a5b4fc" : "#fbbf24", fontWeight: 700 }}>{u.type === "employee" ? "Freelancer" : "Client"}</span></td>
+                        <td style={{ padding: "9px 12px" }}><span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, background: u.type === "employee" ? "rgba(99,102,241,.12)" : "rgba(251,191,36,.12)", color: u.type === "employee" ? "#a5b4fc" : "#fbbf24", fontWeight: 700 }}>{u.type === "employee" ? "Freelancer" : "Employer"}</span></td>
                       </tr>
                     ))}
                   </tbody>
@@ -10250,7 +10250,7 @@ const AdminDashboard = () => {
           <div style={{ maxHeight: 340, overflowY: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr>{["Project","Client","Freelancer","Amount","Invoice"].map(h => (
+                <tr>{["Project","Employer","Freelancer","Amount","Invoice"].map(h => (
                   <th key={h} style={{ padding: "8px 12px", textAlign: "left", fontSize: 10.5, color: tok.cardSub, fontWeight: 700, borderBottom: `1px solid ${tok.alertBdr}`, letterSpacing: .4 }}>{h}</th>
                 ))}</tr>
               </thead>
@@ -10818,7 +10818,7 @@ const AdminDashboard = () => {
                     <td style={{ padding: "9px 12px", fontSize: 12, fontWeight: 700, color: tok.cardText }}>{u.name}</td>
                     <td style={{ padding: "9px 12px" }}>
                       <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, fontWeight: 700, background: u.userType === "employee" ? "rgba(96,165,250,.1)" : "rgba(74,222,128,.1)", color: u.userType === "employee" ? "#60a5fa" : "#4ade80" }}>
-                        {u.userType === "employee" ? "Freelancer" : "Client"}
+                        {u.userType === "employee" ? "Freelancer" : "Employer"}
                       </span>
                     </td>
                     <td style={{ padding: "9px 12px", fontSize: 11, color: tok.cardSub }}>{new Date(u.lastLogin).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}</td>
