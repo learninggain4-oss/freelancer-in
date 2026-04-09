@@ -139,6 +139,13 @@ const weekLabel = (iso: string) => {
 const getName = (fn: string[] | null | undefined) =>
   fn?.join(" ").trim() || "Unknown User";
 
+const EMAIL_TEMPLATES: Record<string, { subject: string; body: string }> = {
+  custom:    { subject: "", body: "" },
+  welcome:   { subject: "Welcome to Freelan.space!", body: "Dear User,\n\nWelcome to Freelan.space — India's leading freelance platform. Complete your profile to start earning or hiring today.\n\nBest regards,\nFreelan Team" },
+  reminder:  { subject: "Complete Your Profile — Action Required", body: "Dear User,\n\nWe noticed your profile is incomplete. Please update your details to get the most out of Freelan.space.\n\nClick here to complete your profile.\n\nFreelan Team" },
+  promotion: { subject: "Special Offer — 0% Commission This Weekend!", body: "Dear User,\n\nThis weekend only — post or accept projects with ZERO platform commission.\n\nOffer valid: Friday to Sunday.\n\nFreelan Team" },
+};
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { theme, themeKey, setTheme } = useAdminTheme();
@@ -254,6 +261,35 @@ const AdminDashboard = () => {
   const [pfeeMin, setPfeeMin]               = useState(10);
   const [pfeeMax, setPfeeMax]               = useState(5000);
   const [pfeeSaving, setPfeeSaving]         = useState(false);
+
+  // ── Real-time Features ─────────────────────────────────────────
+  const [rtActivity, setRtActivity]     = useState<Array<{ id: string; title: string; type: string; ts: string }>>([]);
+  const [rtAlerts, setRtAlerts]         = useState<Array<{ id: string; amount: number; user: string; ts: string }>>([]);
+  const [rtJobsToday, setRtJobsToday]   = useState(0);
+
+  // ── Communication ──────────────────────────────────────────────
+  // Push notification sender
+  const [pushTitle, setPushTitle]       = useState("");
+  const [pushBody, setPushBody]         = useState("");
+  const [pushTarget, setPushTarget]     = useState<"all" | "employee" | "client">("all");
+  const [pushSending, setPushSending]   = useState(false);
+  const [pushMsg, setPushMsg]           = useState<{ ok: boolean; text: string } | null>(null);
+  // Email broadcast
+  const [emailTemplate, setEmailTemplate] = useState("custom");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody]       = useState("");
+  const [emailTarget, setEmailTarget]   = useState<"all" | "employee" | "client">("all");
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailMsg, setEmailMsg]         = useState<{ ok: boolean; text: string } | null>(null);
+  // In-app message
+  const [imEmail, setImEmail]           = useState("");
+  const [imUserId, setImUserId]         = useState<string | null>(null);
+  const [imUserName, setImUserName]     = useState("");
+  const [imBody, setImBody]             = useState("");
+  const [imSearching, setImSearching]   = useState(false);
+  const [imSending, setImSending]       = useState(false);
+  const [imMsg, setImMsg]               = useState<{ ok: boolean; text: string } | null>(null);
+  const [imHistory, setImHistory]       = useState<Array<{ to: string; body: string; ts: string }>>([]);
 
   // ── Performance & Monitoring ───────────────────────────────────
   const [perfLoading, setPerfLoading]   = useState(false);
@@ -1306,6 +1342,111 @@ const AdminDashboard = () => {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ── Real-time Features callbacks ─────────────────────────────
+  useEffect(() => {
+    // Load initial recent projects (today)
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    supabase.from("projects").select("id, title, budget_type, created_at")
+      .gte("created_at", today.toISOString()).order("created_at", { ascending: false }).limit(20)
+      .then(({ data }) => {
+        setRtActivity((data || []).map(p => ({ id: p.id, title: p.title || "Untitled Project", type: p.budget_type || "fixed", ts: p.created_at })));
+        setRtJobsToday((data || []).length);
+      });
+    // Load recent pending withdrawals
+    supabase.from("withdrawals").select("id, amount, user_id, created_at").eq("status", "pending").order("created_at", { ascending: false }).limit(10)
+      .then(({ data }) => {
+        setRtAlerts((data || []).map(w => ({ id: w.id, amount: w.amount, user: w.user_id?.slice(0, 8) ?? "—", ts: w.created_at })));
+      });
+
+    // Subscribe to new projects (live ticker)
+    const projSub = supabase.channel("rt-projects")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "projects" }, payload => {
+        const p = payload.new as { id: string; title?: string; budget_type?: string; created_at: string };
+        setRtActivity(prev => [{ id: p.id, title: p.title || "New Project", type: p.budget_type || "fixed", ts: p.created_at }, ...prev.slice(0, 19)]);
+        setRtJobsToday(prev => prev + 1);
+      }).subscribe();
+
+    // Subscribe to new withdrawals
+    const wdSub = supabase.channel("rt-withdrawals")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "withdrawals" }, payload => {
+        const w = payload.new as { id: string; amount: number; user_id?: string; created_at: string };
+        setRtAlerts(prev => [{ id: w.id, amount: w.amount, user: w.user_id?.slice(0, 8) ?? "—", ts: w.created_at }, ...prev.slice(0, 9)]);
+      }).subscribe();
+
+    return () => { projSub.unsubscribe(); wdSub.unsubscribe(); };
+  }, []);
+
+  // ── Communication callbacks ───────────────────────────────────
+  const sendPushNotification = useCallback(async () => {
+    if (!pushTitle.trim() || !pushBody.trim()) return;
+    setPushSending(true);
+    try {
+      await supabase.from("announcements").insert({
+        title: pushTitle.trim(),
+        content: pushBody.trim(),
+        target_type: pushTarget,
+        type: "push",
+        created_at: new Date().toISOString(),
+        is_active: true,
+      });
+      setPushMsg({ ok: true, text: `Push sent to ${pushTarget === "all" ? "all users" : pushTarget === "employee" ? "freelancers" : "employers"}.` });
+      setPushTitle(""); setPushBody("");
+    } catch { setPushMsg({ ok: false, text: "Failed to send push notification." }); }
+    setTimeout(() => setPushMsg(null), 4000);
+    setPushSending(false);
+  }, [pushTitle, pushBody, pushTarget]);
+
+  const applyEmailTemplate = useCallback((tpl: string) => {
+    setEmailTemplate(tpl);
+    const t = EMAIL_TEMPLATES[tpl];
+    if (t && tpl !== "custom") { setEmailSubject(t.subject); setEmailBody(t.body); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const sendEmailBroadcast = useCallback(async () => {
+    if (!emailSubject.trim() || !emailBody.trim()) return;
+    setEmailSending(true);
+    try {
+      await supabase.from("announcements").insert({
+        title: emailSubject.trim(),
+        content: emailBody.trim(),
+        target_type: emailTarget,
+        type: "email",
+        created_at: new Date().toISOString(),
+        is_active: true,
+      });
+      setEmailMsg({ ok: true, text: `Email queued for ${emailTarget === "all" ? "all users" : emailTarget === "employee" ? "freelancers" : "employers"}.` });
+      setEmailSubject(""); setEmailBody(""); setEmailTemplate("custom");
+    } catch { setEmailMsg({ ok: false, text: "Failed to queue email." }); }
+    setTimeout(() => setEmailMsg(null), 4000);
+    setEmailSending(false);
+  }, [emailSubject, emailBody, emailTarget]);
+
+  const searchImUser = useCallback(async () => {
+    if (!imEmail.trim()) return;
+    setImSearching(true); setImUserId(null); setImUserName("");
+    try {
+      const { data } = await supabase.from("profiles").select("id, full_name, email").ilike("email", imEmail.trim()).limit(1).single();
+      if (data) { setImUserId(data.id); setImUserName((data.full_name || []).join(" ").trim() || data.email || "Unknown"); }
+      else { setImMsg({ ok: false, text: "User not found." }); setTimeout(() => setImMsg(null), 3000); }
+    } catch { setImMsg({ ok: false, text: "User not found." }); setTimeout(() => setImMsg(null), 3000); }
+    setImSearching(false);
+  }, [imEmail]);
+
+  const sendInAppMessage = useCallback(async () => {
+    if (!imUserId || !imBody.trim()) return;
+    setImSending(true);
+    try {
+      await supabase.from("messages").insert({ sender_id: null, receiver_id: imUserId, content: imBody.trim(), created_at: new Date().toISOString(), is_read: false });
+      const entry = { to: imUserName, body: imBody.trim(), ts: new Date().toISOString() };
+      setImHistory(prev => [entry, ...prev.slice(0, 9)]);
+      setImMsg({ ok: true, text: `Message sent to ${imUserName}.` });
+      setImBody(""); setImEmail(""); setImUserId(null); setImUserName("");
+    } catch { setImMsg({ ok: false, text: "Failed to send message." }); }
+    setTimeout(() => setImMsg(null), 4000);
+    setImSending(false);
+  }, [imUserId, imBody, imUserName]);
 
   // ── Performance & Monitoring callbacks ───────────────────────
   const runPerfCheck = useCallback(async () => {
@@ -3344,6 +3485,247 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* ══════════════════════════════════════════════════════
+          REAL-TIME FEATURES
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Zap size={14} color="#fbbf24" />, "Real-time Activity", `${rtJobsToday} jobs posted today`)}
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 14 }}>
+
+          {/* ── 1. Live Job Activity Ticker ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 15 }}>📋</span> Live Job Activity
+              <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "#4ade80", fontWeight: 700 }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ade80", animation: "pulse 2s infinite", display: "inline-block" }} />
+                LIVE
+              </span>
+            </p>
+            <div style={{ display: "flex", flexDirection: "column" as const, gap: 5, maxHeight: 280, overflowY: "auto" as const }}>
+              {rtActivity.length === 0 ? (
+                <p style={{ fontSize: 12, color: tok.cardSub, textAlign: "center" as const, padding: "28px 0" }}>No job activity today yet.</p>
+              ) : rtActivity.map((a, i) => (
+                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 9,
+                  background: i === 0 ? "rgba(251,191,36,.06)" : tok.cardBg, border: `1px solid ${i === 0 ? "rgba(251,191,36,.2)" : tok.alertBdr}`,
+                  animation: i === 0 ? "fadeIn 0.4s ease" : "none" }}>
+                  <span style={{ fontSize: 14, flexShrink: 0 }}>{a.type === "hourly" ? "⏱" : "💼"}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: tok.cardText, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{a.title}</p>
+                    <p style={{ fontSize: 10, color: tok.cardSub, margin: "1px 0 0" }}>
+                      {a.type} · {new Date(a.ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                  {i === 0 && <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "rgba(251,191,36,.15)", color: "#fbbf24", fontWeight: 700, flexShrink: 0 }}>NEW</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── 2. Real-time Withdrawal Alerts ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 15 }}>💸</span> Withdrawal Alerts
+              <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "#f87171", fontWeight: 700 }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#f87171", animation: "pulse 2s infinite", display: "inline-block" }} />
+                LIVE
+              </span>
+            </p>
+            {rtAlerts.length === 0 ? (
+              <div style={{ padding: "28px 0", textAlign: "center" as const }}>
+                <p style={{ fontSize: 18, margin: "0 0 6px" }}>✅</p>
+                <p style={{ fontSize: 12, color: tok.cardSub, margin: 0 }}>No pending withdrawal requests.</p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column" as const, gap: 6, maxHeight: 280, overflowY: "auto" as const }}>
+                {rtAlerts.map((a, i) => (
+                  <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10,
+                    background: i === 0 ? "rgba(239,68,68,.06)" : tok.cardBg, border: `1px solid ${i === 0 ? "rgba(239,68,68,.25)" : tok.alertBdr}` }}>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: "#f87171", margin: 0 }}>₹{Number(a.amount).toLocaleString("en-IN")}</p>
+                      <p style={{ fontSize: 10.5, color: tok.cardSub, margin: "2px 0 0" }}>User {a.user}… · {new Date(a.ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</p>
+                    </div>
+                    {i === 0 && <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "rgba(239,68,68,.12)", color: "#f87171", fontWeight: 700 }}>PENDING</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── 3. Online Users by Region ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16, gridColumn: "span 1" }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 15 }}>🗺️</span> Users by Region
+            </p>
+            {regionData.length === 0 ? (
+              <p style={{ fontSize: 12, color: tok.cardSub, textAlign: "center" as const, padding: "28px 0" }}>No region data available.</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column" as const, gap: 7 }}>
+                {(() => {
+                  const max = Math.max(...regionData.map(r => r.users), 1);
+                  const total = regionData.reduce((s, r) => s + r.users, 0);
+                  return regionData.slice(0, 8).map(r => (
+                    <div key={r.region}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                        <span style={{ fontSize: 11.5, fontWeight: 600, color: tok.cardText }}>{r.region}</span>
+                        <span style={{ fontSize: 11.5, color: tok.cardSub }}>
+                          {r.users} <span style={{ fontSize: 10, color: tok.cardSub }}>({Math.round((r.users / total) * 100)}%)</span>
+                        </span>
+                      </div>
+                      <div style={{ height: 6, borderRadius: 3, background: tok.alertBdr, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${Math.round((r.users / max) * 100)}%`, background: "linear-gradient(90deg,#6366f1,#a78bfa)", borderRadius: 3 }} />
+                      </div>
+                    </div>
+                  ));
+                })()}
+                <p style={{ fontSize: 10.5, color: tok.cardSub, marginTop: 4, textAlign: "right" as const }}>
+                  {regionData.reduce((s, r) => s + r.users, 0)} total users across {regionData.length} regions
+                </p>
+              </div>
+            )}
+          </div>
+
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          COMMUNICATION CENTER
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<MessageCircle size={14} color="#60a5fa" />, "Communication Center", "Push · Email · In-App")}
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 14 }}>
+
+          {/* ── 1. Push Notification Sender ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 14px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 15 }}>🔔</span> Push Notification
+            </p>
+            <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 12px" }}>Send a push-style announcement — stored and delivered in-app.</p>
+
+            {/* Target */}
+            <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+              {(["all", "employee", "client"] as const).map(t => (
+                <button key={t} onClick={() => setPushTarget(t)}
+                  style={{ flex: 1, padding: "6px", borderRadius: 8, border: `1px solid ${pushTarget === t ? "#6366f1" : tok.alertBdr}`, background: pushTarget === t ? "rgba(99,102,241,.15)" : "none", color: pushTarget === t ? "#a5b4fc" : tok.cardSub, fontSize: 11, fontWeight: pushTarget === t ? 700 : 400, cursor: "pointer" }}>
+                  {t === "all" ? "All" : t === "employee" ? "Freelancers" : "Employers"}
+                </button>
+              ))}
+            </div>
+
+            <input value={pushTitle} onChange={e => setPushTitle(e.target.value)} placeholder="Notification title…"
+              style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", boxSizing: "border-box" as const, marginBottom: 8 }} />
+            <textarea value={pushBody} onChange={e => setPushBody(e.target.value)} placeholder="Notification body…" rows={3}
+              style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", resize: "none", fontFamily: "inherit", boxSizing: "border-box" as const, marginBottom: 10 }} />
+
+            {pushMsg && (
+              <div style={{ padding: "7px 10px", borderRadius: 9, marginBottom: 10, background: pushMsg.ok ? "rgba(74,222,128,.08)" : "rgba(239,68,68,.08)", border: `1px solid ${pushMsg.ok ? "rgba(74,222,128,.25)" : "rgba(239,68,68,.2)"}`, color: pushMsg.ok ? "#4ade80" : "#f87171", fontSize: 12 }}>{pushMsg.text}</div>
+            )}
+
+            <button onClick={sendPushNotification} disabled={pushSending || !pushTitle.trim() || !pushBody.trim()}
+              style={{ width: "100%", padding: "9px", borderRadius: 10, background: (!pushTitle.trim() || !pushBody.trim()) ? "rgba(99,102,241,.05)" : "rgba(99,102,241,.18)", border: "1px solid rgba(99,102,241,.35)", color: "#a5b4fc", fontSize: 13, fontWeight: 700, cursor: (pushSending || !pushTitle.trim() || !pushBody.trim()) ? "not-allowed" : "pointer" }}>
+              {pushSending ? "Sending…" : "🔔 Send Push Notification"}
+            </button>
+          </div>
+
+          {/* ── 2. Email Broadcast ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 15 }}>📧</span> Email Broadcast
+            </p>
+
+            {/* Template picker */}
+            <div style={{ marginBottom: 10 }}>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 5px", fontWeight: 600 }}>Template</p>
+              <select value={emailTemplate} onChange={e => applyEmailTemplate(e.target.value)}
+                style={{ width: "100%", padding: "7px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", cursor: "pointer" }}>
+                <option value="custom">Custom</option>
+                <option value="welcome">Welcome Email</option>
+                <option value="reminder">Profile Reminder</option>
+                <option value="promotion">Promotion / Offer</option>
+              </select>
+            </div>
+
+            {/* Target */}
+            <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+              {(["all", "employee", "client"] as const).map(t => (
+                <button key={t} onClick={() => setEmailTarget(t)}
+                  style={{ flex: 1, padding: "6px", borderRadius: 8, border: `1px solid ${emailTarget === t ? "#60a5fa" : tok.alertBdr}`, background: emailTarget === t ? "rgba(96,165,250,.12)" : "none", color: emailTarget === t ? "#60a5fa" : tok.cardSub, fontSize: 11, fontWeight: emailTarget === t ? 700 : 400, cursor: "pointer" }}>
+                  {t === "all" ? "All" : t === "employee" ? "Freelancers" : "Employers"}
+                </button>
+              ))}
+            </div>
+
+            <input value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Subject…"
+              style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", boxSizing: "border-box" as const, marginBottom: 8 }} />
+            <textarea value={emailBody} onChange={e => setEmailBody(e.target.value)} placeholder="Email body…" rows={4}
+              style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", resize: "none", fontFamily: "inherit", boxSizing: "border-box" as const, marginBottom: 10 }} />
+
+            {emailMsg && (
+              <div style={{ padding: "7px 10px", borderRadius: 9, marginBottom: 10, background: emailMsg.ok ? "rgba(74,222,128,.08)" : "rgba(239,68,68,.08)", border: `1px solid ${emailMsg.ok ? "rgba(74,222,128,.25)" : "rgba(239,68,68,.2)"}`, color: emailMsg.ok ? "#4ade80" : "#f87171", fontSize: 12 }}>{emailMsg.text}</div>
+            )}
+
+            <button onClick={sendEmailBroadcast} disabled={emailSending || !emailSubject.trim() || !emailBody.trim()}
+              style={{ width: "100%", padding: "9px", borderRadius: 10, background: (!emailSubject.trim() || !emailBody.trim()) ? "rgba(96,165,250,.05)" : "rgba(96,165,250,.15)", border: "1px solid rgba(96,165,250,.3)", color: "#60a5fa", fontSize: 13, fontWeight: 700, cursor: (emailSending || !emailSubject.trim() || !emailBody.trim()) ? "not-allowed" : "pointer" }}>
+              {emailSending ? "Queuing…" : "📧 Send Email Broadcast"}
+            </button>
+          </div>
+
+          {/* ── 3. In-App Message Center ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 12px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 15 }}>💬</span> In-App Message Center
+            </p>
+
+            {/* User search */}
+            <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+              <input value={imEmail} onChange={e => { setImEmail(e.target.value); setImUserId(null); setImUserName(""); }}
+                placeholder="Recipient email…"
+                style={{ flex: 1, padding: "7px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none" }} />
+              <button onClick={searchImUser} disabled={imSearching || !imEmail.trim()}
+                style={{ padding: "7px 12px", borderRadius: 9, background: "rgba(99,102,241,.12)", border: "1px solid rgba(99,102,241,.25)", color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: (imSearching || !imEmail.trim()) ? "not-allowed" : "pointer" }}>
+                {imSearching ? "…" : "Find"}
+              </button>
+            </div>
+
+            {imUserId && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 9, background: "rgba(74,222,128,.08)", border: "1px solid rgba(74,222,128,.2)", marginBottom: 8 }}>
+                <span>✅</span>
+                <span style={{ fontSize: 11.5, color: "#4ade80", fontWeight: 700 }}>{imUserName}</span>
+              </div>
+            )}
+
+            <textarea value={imBody} onChange={e => setImBody(e.target.value)} placeholder="Write your message…" rows={3}
+              style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", resize: "none", fontFamily: "inherit", boxSizing: "border-box" as const, marginBottom: 8 }} />
+
+            {imMsg && (
+              <div style={{ padding: "7px 10px", borderRadius: 9, marginBottom: 8, background: imMsg.ok ? "rgba(74,222,128,.08)" : "rgba(239,68,68,.08)", border: `1px solid ${imMsg.ok ? "rgba(74,222,128,.25)" : "rgba(239,68,68,.2)"}`, color: imMsg.ok ? "#4ade80" : "#f87171", fontSize: 12 }}>{imMsg.text}</div>
+            )}
+
+            <button onClick={sendInAppMessage} disabled={imSending || !imUserId || !imBody.trim()}
+              style={{ width: "100%", padding: "9px", borderRadius: 10, marginBottom: 12, background: (!imUserId || !imBody.trim()) ? "rgba(74,222,128,.04)" : "rgba(74,222,128,.15)", border: "1px solid rgba(74,222,128,.3)", color: "#4ade80", fontSize: 13, fontWeight: 700, cursor: (imSending || !imUserId || !imBody.trim()) ? "not-allowed" : "pointer" }}>
+              {imSending ? "Sending…" : "💬 Send Message"}
+            </button>
+
+            {/* Sent history */}
+            {imHistory.length > 0 && (
+              <>
+                <p style={{ fontSize: 11, fontWeight: 700, color: tok.cardSub, margin: "0 0 8px", textTransform: "uppercase" as const, letterSpacing: "0.5px" }}>Recently Sent</p>
+                <div style={{ display: "flex", flexDirection: "column" as const, gap: 5, maxHeight: 130, overflowY: "auto" as const }}>
+                  {imHistory.map((h, i) => (
+                    <div key={i} style={{ padding: "7px 10px", borderRadius: 9, background: tok.cardBg, border: `1px solid ${tok.alertBdr}` }}>
+                      <p style={{ fontSize: 11, fontWeight: 700, color: "#a5b4fc", margin: "0 0 2px" }}>→ {h.to}</p>
+                      <p style={{ fontSize: 11, color: tok.cardSub, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{h.body}</p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+        </div>
+      </div>
 
       {/* ══════════════════════════════════════════════════════
           PERFORMANCE & MONITORING
