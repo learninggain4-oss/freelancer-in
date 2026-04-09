@@ -178,6 +178,7 @@ const AdminDashboard = () => {
   const [timelineClearing, setTimelineClearing] = useState(false);
   const [kpiClearing, setKpiClearing]           = useState(false);
   const [regFeedClearing, setRegFeedClearing]   = useState(false);
+  const [msgClearing, setMsgClearing]           = useState(false);
   const [regionData, setRegionData]       = useState<RegionPoint[]>([]);
   const [withdrawalSummary, setWithdrawalSummary] = useState({
     pending: 0, approved: 0, rejected: 0, completed: 0,
@@ -1875,7 +1876,7 @@ const AdminDashboard = () => {
               </div>
             ))}
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
             <button
               onClick={resetUnreadMessages}
               disabled={msgResetting || messageStats.unread === 0}
@@ -1889,6 +1890,24 @@ const AdminDashboard = () => {
               View All Messages →
             </button>
           </div>
+          <button
+            onClick={async () => {
+              const ok = window.confirm("Message Analytics data delete ചെയ്യണോ?\n\nഈ action undo ചെയ്യാൻ കഴിയില്ല — messages table-ൽ നിന്ന് permanently remove ആകും.");
+              if (!ok) return;
+              setMsgClearing(true);
+              try {
+                await supabase.from("messages").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+                setMessageStats({ total: 0, unread: 0, rooms: 0, today: 0 });
+              } catch { /* silently ignore */ }
+              setMsgClearing(false);
+            }}
+            disabled={msgClearing || messageStats.total === 0}
+            style={{ width: "100%", padding: "8px", borderRadius: 9, background: messageStats.total > 0 ? "rgba(239,68,68,.08)" : tok.alertBg, border: `1px solid ${messageStats.total > 0 ? "rgba(239,68,68,.25)" : tok.alertBdr}`, color: messageStats.total > 0 ? "#f87171" : tok.cardSub, fontSize: 12, fontWeight: 700, cursor: (msgClearing || messageStats.total === 0) ? "not-allowed" : "pointer", opacity: msgClearing ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+            {msgClearing
+              ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Clearing…</>
+              : <>✕ Clear All Messages</>
+            }
+          </button>
         </div>
 
         {/* Fraud Detection Panel */}
