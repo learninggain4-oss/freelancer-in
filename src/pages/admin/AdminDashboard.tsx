@@ -11,7 +11,7 @@ import {
   ClipboardList, Monitor, BarChart3, Zap, XCircle,
   Check, X, Trophy, Star, Globe, TrendingDown,
   AlertTriangle, Ban, Calendar, Mail, Package,
-  MessageCircle, RotateCcw, Tag, ArrowLeftRight, DollarSign, Search,
+  MessageCircle, RotateCcw, Tag, ArrowLeftRight, DollarSign, Search, Flag,
 } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import {
@@ -281,6 +281,53 @@ const AdminDashboard = () => {
   const [qsResults, setQsResults]       = useState<Array<{ type: string; label: string; sub: string; id: string }>>([]);
   const [qsSearching, setQsSearching]   = useState(false);
   const [qsOpen, setQsOpen]             = useState(false);
+
+  // ── Revenue Analytics ──────────────────────────────────────────
+  const [revChartData, setRevChartData] = useState<Array<{ month: string; income: number; commission: number; projects: number }>>([]);
+  const [revLoading, setRevLoading]     = useState(false);
+
+  // ── User Growth Timeline ───────────────────────────────────────
+  const [growthTimelineData, setGrowthTimelineData] = useState<Array<{ week: string; freelancers: number; clients: number; total: number }>>([]);
+  const [growthLoading, setGrowthLoading] = useState(false);
+  const [growthPeriod, setGrowthPeriod] = useState<"weekly"|"monthly">("weekly");
+
+  // ── Top Freelancers Leaderboard ────────────────────────────────
+  const [topFreelancers, setTopFreelancers] = useState<Array<{ id: string; name: string; email: string; balance: number; projects: number; rank: number }>>([]);
+  const [topFLLoading, setTopFLLoading] = useState(false);
+
+  // ── Withdrawal Queue ──────────────────────────────────────────
+  const [wdQueue, setWdQueue]           = useState<Array<{ id: string; profile_id: string; amount: number; status: string; created_at: string; userName: string; userEmail: string }>>([]);
+  const [wdLoading, setWdLoading]       = useState(false);
+  const [wdProcessing, setWdProcessing] = useState<string | null>(null);
+
+  // ── Referral Analytics ────────────────────────────────────────
+  const [refStats, setRefStats]         = useState({ total: 0, converted: 0, pending: 0, bonusPaid: 0 });
+  const [refTopReferrers, setRefTopReferrers] = useState<Array<{ id: string; name: string; count: number }>>([]);
+  const [refLoading, setRefLoading]     = useState(false);
+
+  // ── Geo Analytics ────────────────────────────────────────────
+  const [geoData, setGeoData]           = useState<Array<{ region: string; count: number; pct: number }>>([]);
+  const [geoLoading, setGeoLoading]     = useState(false);
+
+  // ── Skill & Category Analytics ───────────────────────────────
+  const [skillData, setSkillData]       = useState<Array<{ name: string; count: number; color: string }>>([]);
+  const [skillLoading, setSkillLoading] = useState(false);
+
+  // ── Coupon / Promo Manager ────────────────────────────────────
+  const [coupons, setCoupons]           = useState<Array<{ code: string; discount: number; type: "pct"|"flat"; uses: number; maxUses: number; expires: string; active: boolean }>>([]);
+  const [couponForm, setCouponForm]     = useState({ code: "", discount: "", type: "pct" as "pct"|"flat", maxUses: "100", expires: "" });
+  const [couponAdding, setCouponAdding] = useState(false);
+  const [showCouponForm, setShowCouponForm] = useState(false);
+
+  // ── Review Moderation ─────────────────────────────────────────
+  const [flaggedReviews, setFlaggedReviews] = useState<Array<{ id: string; reviewer: string; reviewee: string; rating: number; comment: string; created_at: string; flagReason: string }>>([]);
+  const [reviewLoading, setReviewLoading] = useState(false);
+
+  // ── Tax Report Generator ──────────────────────────────────────
+  const [taxYear, setTaxYear]           = useState(new Date().getFullYear().toString());
+  const [taxQuarter, setTaxQuarter]     = useState("all");
+  const [taxReportData, setTaxReportData] = useState<{ tds: number; gst: number; totalTransactions: number; totalAmount: number } | null>(null);
+  const [taxLoading, setTaxLoading]     = useState(false);
 
   // ── Real-time Features ─────────────────────────────────────────
   const [rtActivity, setRtActivity]     = useState<Array<{ id: string; title: string; type: string; ts: string }>>([]);
@@ -1362,6 +1409,247 @@ const AdminDashboard = () => {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ── Revenue Analytics callbacks ──────────────────────────────
+  useEffect(() => {
+    setRevLoading(true);
+    const months: Record<string, { income: number; commission: number; projects: number }> = {};
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = d.toLocaleString("en-IN", { month: "short", year: "2-digit" });
+      months[key] = { income: 0, commission: 0, projects: 0 };
+    }
+    Promise.all([
+      supabase.from("transactions").select("amount, type, created_at").gte("created_at", new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString()),
+      supabase.from("projects").select("created_at, budget_min, budget_max").gte("created_at", new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString()),
+    ]).then(([txRes, prRes]) => {
+      (txRes.data || []).forEach((t: { amount: number; type: string; created_at: string }) => {
+        const key = new Date(t.created_at).toLocaleString("en-IN", { month: "short", year: "2-digit" });
+        if (months[key]) {
+          if (t.type === "credit") months[key].income += t.amount || 0;
+          if (t.type === "commission") months[key].commission += t.amount || 0;
+        }
+      });
+      (prRes.data || []).forEach((p: { created_at: string }) => {
+        const key = new Date(p.created_at).toLocaleString("en-IN", { month: "short", year: "2-digit" });
+        if (months[key]) months[key].projects += 1;
+      });
+      setRevChartData(Object.entries(months).map(([month, v]) => ({ month, ...v })));
+      setRevLoading(false);
+    });
+  }, []);
+
+  // ── User Growth Timeline callbacks ───────────────────────────
+  const loadGrowthData = useCallback(async () => {
+    setGrowthLoading(true);
+    const since = new Date();
+    since.setDate(since.getDate() - (growthPeriod === "weekly" ? 56 : 180));
+    const { data } = await supabase.from("profiles").select("user_type, created_at").gte("created_at", since.toISOString()).order("created_at");
+    const buckets: Record<string, { freelancers: number; clients: number }> = {};
+    (data || []).forEach((p: { user_type: string; created_at: string }) => {
+      const d = new Date(p.created_at);
+      let key: string;
+      if (growthPeriod === "weekly") {
+        const weekStart = new Date(d); weekStart.setDate(d.getDate() - d.getDay());
+        key = weekStart.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+      } else {
+        key = d.toLocaleString("en-IN", { month: "short", year: "2-digit" });
+      }
+      if (!buckets[key]) buckets[key] = { freelancers: 0, clients: 0 };
+      if (p.user_type === "employee") buckets[key].freelancers++;
+      else if (p.user_type === "client") buckets[key].clients++;
+    });
+    setGrowthTimelineData(Object.entries(buckets).map(([week, v]) => ({ week, ...v, total: v.freelancers + v.clients })));
+    setGrowthLoading(false);
+  }, [growthPeriod]);
+
+  useEffect(() => { loadGrowthData(); }, [loadGrowthData]);
+
+  // ── Top Freelancers Leaderboard callbacks ────────────────────
+  useEffect(() => {
+    setTopFLLoading(true);
+    supabase.from("profiles").select("id, full_name, email, available_balance").eq("user_type", "employee").order("available_balance", { ascending: false }).limit(10)
+      .then(({ data }) => {
+        setTopFreelancers((data || []).map((p: { id: string; full_name: string[] | null; email: string | null; available_balance: number | null }, i: number) => ({
+          id: p.id, name: p.full_name?.join(" ").trim() || "Unknown", email: p.email || "—", balance: p.available_balance || 0, projects: 0, rank: i + 1,
+        })));
+        setTopFLLoading(false);
+      });
+  }, []);
+
+  // ── Withdrawal Queue callbacks ────────────────────────────────
+  const loadWdQueue = useCallback(async () => {
+    setWdLoading(true);
+    const { data } = await supabase.from("withdrawals").select("id, profile_id, amount, status, created_at").eq("status", "pending").order("created_at").limit(20);
+    if (!data) { setWdLoading(false); return; }
+    const profileIds = [...new Set(data.map((w: { profile_id: string }) => w.profile_id))];
+    const { data: profiles } = await supabase.from("profiles").select("id, full_name, email").in("id", profileIds);
+    const pMap = Object.fromEntries((profiles || []).map((p: { id: string; full_name: string[] | null; email: string | null }) => [p.id, p]));
+    setWdQueue(data.map((w: { id: string; profile_id: string; amount: number; status: string; created_at: string }) => ({
+      ...w, userName: pMap[w.profile_id]?.full_name?.join(" ").trim() || "Unknown", userEmail: pMap[w.profile_id]?.email || "—",
+    })));
+    setWdLoading(false);
+  }, []);
+
+  useEffect(() => { loadWdQueue(); }, [loadWdQueue]);
+
+  const approveWithdrawal = useCallback(async (id: string, approve: boolean) => {
+    setWdProcessing(id);
+    await supabase.from("withdrawals").update({ status: approve ? "approved" : "rejected" }).eq("id", id);
+    await loadWdQueue();
+    setWdProcessing(null);
+  }, [loadWdQueue]);
+
+  // ── Referral Analytics callbacks ──────────────────────────────
+  useEffect(() => {
+    setRefLoading(true);
+    Promise.all([
+      supabase.from("referrals").select("id, referred_id, status, bonus_amount"),
+      supabase.from("referrals").select("referrer_id, id").limit(200),
+    ]).then(([rRes, topRes]) => {
+      const all = rRes.data || [];
+      const converted = all.filter((r: { status: string }) => r.status === "converted").length;
+      const bonusPaid = all.reduce((s: number, r: { bonus_amount: number | null }) => s + (r.bonus_amount || 0), 0);
+      setRefStats({ total: all.length, converted, pending: all.length - converted, bonusPaid: Math.round(bonusPaid) });
+      const counts: Record<string, number> = {};
+      (topRes.data || []).forEach((r: { referrer_id: string }) => { counts[r.referrer_id] = (counts[r.referrer_id] || 0) + 1; });
+      const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      setRefTopReferrers(sorted.map(([id, count]) => ({ id, name: id.slice(0, 8) + "…", count })));
+      setRefLoading(false);
+    });
+  }, []);
+
+  // ── Geo Analytics callbacks ───────────────────────────────────
+  useEffect(() => {
+    setGeoLoading(true);
+    supabase.from("profiles").select("registration_region").then(({ data }) => {
+      const counts: Record<string, number> = {};
+      (data || []).forEach((p: { registration_region: string | null }) => {
+        const r = p.registration_region || "Unknown";
+        counts[r] = (counts[r] || 0) + 1;
+      });
+      const total = Object.values(counts).reduce((s, n) => s + n, 0) || 1;
+      const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+      setGeoData(sorted.map(([region, count]) => ({ region, count, pct: Math.round((count / total) * 100) })));
+      setGeoLoading(false);
+    });
+  }, []);
+
+  // ── Skill & Category Analytics callbacks ─────────────────────
+  useEffect(() => {
+    setSkillLoading(true);
+    const COLORS = ["#6366f1","#8b5cf6","#4ade80","#fbbf24","#f87171","#60a5fa","#34d399","#f97316","#c4b5fd","#a3e635"];
+    supabase.from("projects").select("category, skills").limit(500).then(({ data }) => {
+      const counts: Record<string, number> = {};
+      (data || []).forEach((p: { category: string | null; skills: string[] | null }) => {
+        const cat = p.category || "Other";
+        counts[cat] = (counts[cat] || 0) + 1;
+        (p.skills || []).forEach((s: string) => { counts[s] = (counts[s] || 0) + 0.5; });
+      });
+      const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+      setSkillData(sorted.map(([name, count], i) => ({ name, count: Math.round(count), color: COLORS[i % COLORS.length] })));
+      setSkillLoading(false);
+    });
+  }, []);
+
+  // ── Coupon Manager callbacks ──────────────────────────────────
+  useEffect(() => {
+    const saved = localStorage.getItem("admin_coupons");
+    if (saved) { try { setCoupons(JSON.parse(saved)); } catch { /* ignore */ } }
+  }, []);
+
+  const saveCoupon = useCallback(() => {
+    if (!couponForm.code.trim() || !couponForm.discount) return;
+    setCouponAdding(true);
+    const newCoupon = {
+      code: couponForm.code.toUpperCase().trim(), discount: parseFloat(couponForm.discount), type: couponForm.type,
+      uses: 0, maxUses: parseInt(couponForm.maxUses) || 100, expires: couponForm.expires || "2099-12-31", active: true,
+    };
+    setCoupons(prev => {
+      const updated = [newCoupon, ...prev];
+      localStorage.setItem("admin_coupons", JSON.stringify(updated));
+      return updated;
+    });
+    setCouponForm({ code: "", discount: "", type: "pct", maxUses: "100", expires: "" });
+    setShowCouponForm(false);
+    setCouponAdding(false);
+  }, [couponForm]);
+
+  const toggleCoupon = useCallback((code: string) => {
+    setCoupons(prev => {
+      const updated = prev.map(c => c.code === code ? { ...c, active: !c.active } : c);
+      localStorage.setItem("admin_coupons", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const deleteCoupon = useCallback((code: string) => {
+    setCoupons(prev => {
+      const updated = prev.filter(c => c.code !== code);
+      localStorage.setItem("admin_coupons", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  // ── Review Moderation callbacks ───────────────────────────────
+  useEffect(() => {
+    setReviewLoading(true);
+    supabase.from("messages").select("id, sender_id, receiver_id, content, created_at").ilike("content", "%scam%").limit(30)
+      .then(({ data }) => {
+        setFlaggedReviews((data || []).map((m: { id: string; sender_id: string; receiver_id: string | null; content: string | null; created_at: string }) => ({
+          id: m.id, reviewer: m.sender_id.slice(0, 8) + "…", reviewee: (m.receiver_id || "").slice(0, 8) + "…",
+          rating: 1, comment: m.content || "—", created_at: m.created_at, flagReason: "Keyword: scam",
+        })));
+        setReviewLoading(false);
+      });
+  }, []);
+
+  const dismissReview = useCallback((id: string) => {
+    setFlaggedReviews(prev => prev.filter(r => r.id !== id));
+  }, []);
+
+  // ── Tax Report callbacks ──────────────────────────────────────
+  const generateTaxReport = useCallback(async () => {
+    setTaxLoading(true);
+    const year = parseInt(taxYear);
+    let startDate: string, endDate: string;
+    if (taxQuarter === "all") {
+      startDate = `${year}-01-01T00:00:00Z`;
+      endDate   = `${year}-12-31T23:59:59Z`;
+    } else {
+      const q = parseInt(taxQuarter);
+      const startMonth = (q - 1) * 3;
+      startDate = new Date(year, startMonth, 1).toISOString();
+      endDate   = new Date(year, startMonth + 3, 0, 23, 59, 59).toISOString();
+    }
+    const { data } = await supabase.from("transactions").select("amount, type, created_at").gte("created_at", startDate).lte("created_at", endDate);
+    const txs = data || [];
+    const totalAmount = txs.filter((t: { type: string }) => t.type === "credit").reduce((s: number, t: { amount: number }) => s + (t.amount || 0), 0);
+    const commission  = txs.filter((t: { type: string }) => t.type === "commission").reduce((s: number, t: { amount: number }) => s + (t.amount || 0), 0);
+    const tds = Math.round(totalAmount * 0.01);
+    const gst = Math.round(commission * 0.18);
+    setTaxReportData({ tds, gst, totalTransactions: txs.length, totalAmount: Math.round(totalAmount) });
+    setTaxLoading(false);
+  }, [taxYear, taxQuarter]);
+
+  const downloadTaxCSV = useCallback(() => {
+    if (!taxReportData) return;
+    const rows = [
+      ["Tax Report", `FY ${taxYear} ${taxQuarter === "all" ? "Full Year" : "Q" + taxQuarter}`],
+      [],
+      ["Metric", "Amount (₹)"],
+      ["Total Credited", taxReportData.totalAmount],
+      ["TDS @ 1% (Sec 194C)", taxReportData.tds],
+      ["GST on Commission @ 18%", taxReportData.gst],
+      ["Total Transactions", taxReportData.totalTransactions],
+    ];
+    const csv = rows.map(r => r.join(",")).join("\n");
+    const el = document.createElement("a");
+    el.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    el.download = `tax-report-${taxYear}-Q${taxQuarter}.csv`;
+    el.click();
+  }, [taxReportData, taxYear, taxQuarter]);
 
   // ── KPI Goal Tracker callbacks ───────────────────────────────
   // Populate current values from live data after fetchAll
@@ -4722,6 +5010,431 @@ const AdminDashboard = () => {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          REVENUE ANALYTICS
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<BarChart3 size={14} color="#4ade80" />, "Revenue Analytics", "Last 6 months — income vs commission")}
+        {revLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "32px 0", fontSize: 13 }}>Loading chart…</p>
+        ) : (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 16 }}>
+              {[
+                { label: "Total Income",    val: `₹${revChartData.reduce((s,d)=>s+d.income,0).toLocaleString("en-IN")}`,      color: "#4ade80" },
+                { label: "Commission Earned", val: `₹${revChartData.reduce((s,d)=>s+d.commission,0).toLocaleString("en-IN")}`, color: "#6366f1" },
+                { label: "Projects Created",  val: revChartData.reduce((s,d)=>s+d.projects,0).toLocaleString("en-IN"),         color: "#fbbf24" },
+              ].map(s => (
+                <div key={s.label} style={{ padding: "12px 14px", borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
+                  <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>{s.label}</p>
+                  <p style={{ fontSize: 20, fontWeight: 800, color: s.color, margin: 0 }}>{s.val}</p>
+                </div>
+              ))}
+            </div>
+            <ResponsiveContainer width="100%" height={220}>
+              <ComposedChart data={revChartData}>
+                <XAxis dataKey="month" tick={{ fill: tok.chartAxis, fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: tok.chartAxis, fontSize: 11 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={tok.chartTip} formatter={(v: number) => [`₹${v.toLocaleString("en-IN")}`, ""]} />
+                <Bar dataKey="income" fill="#4ade80" radius={[4,4,0,0]} name="Income" opacity={0.85} />
+                <Bar dataKey="commission" fill="#6366f1" radius={[4,4,0,0]} name="Commission" opacity={0.85} />
+                <Line type="monotone" dataKey="projects" stroke="#fbbf24" strokeWidth={2} dot={{ fill:"#fbbf24", r:3 }} name="Projects" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          USER GROWTH TIMELINE
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          {sectionHeader(<TrendingUp size={14} color="#8b5cf6" />, "User Growth Timeline", `${growthTimelineData.reduce((s,d)=>s+d.total,0)} new users in period`)}
+          <div style={{ display: "flex", gap: 6 }}>
+            {(["weekly","monthly"] as const).map(p => (
+              <button key={p} onClick={() => setGrowthPeriod(p)}
+                style={{ padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700, border: "none", cursor: "pointer", background: growthPeriod===p ? "#8b5cf6" : tok.alertBg, color: growthPeriod===p ? "#fff" : tok.cardSub, transition: "all .2s" }}>
+                {p.charAt(0).toUpperCase() + p.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+        {growthLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "32px 0", fontSize: 13 }}>Loading…</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={210}>
+            <ComposedChart data={growthTimelineData}>
+              <XAxis dataKey="week" tick={{ fill: tok.chartAxis, fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+              <YAxis tick={{ fill: tok.chartAxis, fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={tok.chartTip} />
+              <Bar dataKey="freelancers" fill="#8b5cf6" radius={[4,4,0,0]} name="Freelancers" stackId="a" />
+              <Bar dataKey="clients"     fill="#60a5fa" radius={[4,4,0,0]} name="Clients"     stackId="a" />
+              <Line type="monotone" dataKey="total" stroke="#fbbf24" strokeWidth={2.5} dot={false} name="Total" />
+            </ComposedChart>
+          </ResponsiveContainer>
+        )}
+        <div style={{ display: "flex", gap: 16, marginTop: 10 }}>
+          {[["#8b5cf6","Freelancers"],["#60a5fa","Clients"],["#fbbf24","Total"]].map(([c,l]) => (
+            <span key={l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: tok.cardSub }}>
+              <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 2, background: c }} />{l}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          TOP FREELANCERS LEADERBOARD
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Trophy size={14} color="#fbbf24" />, "Top Freelancers Leaderboard", "Ranked by wallet balance")}
+        {topFLLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading leaderboard…</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {topFreelancers.map((f, i) => {
+              const medals = ["🥇","🥈","🥉"];
+              const barWidth = topFreelancers[0].balance > 0 ? Math.round((f.balance / topFreelancers[0].balance) * 100) : 0;
+              return (
+                <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 12, background: i === 0 ? "rgba(251,191,36,.06)" : tok.alertBg, border: `1px solid ${i < 3 ? "rgba(251,191,36,.2)" : tok.alertBdr}` }}>
+                  <span style={{ fontSize: i < 3 ? 18 : 13, width: 28, textAlign: "center", fontWeight: 800, color: i < 3 ? "#fbbf24" : tok.cardSub }}>
+                    {i < 3 ? medals[i] : `#${i + 1}`}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: "0 0 2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</p>
+                    <p style={{ fontSize: 10.5, color: tok.cardSub, margin: 0 }}>{f.email}</p>
+                    <div style={{ height: 4, borderRadius: 2, background: tok.alertBdr, marginTop: 5, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${barWidth}%`, background: i === 0 ? "#fbbf24" : i === 1 ? "#94a3b8" : i === 2 ? "#cd7c2f" : "#6366f1", borderRadius: 2 }} />
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: "#4ade80", flexShrink: 0 }}>₹{f.balance.toLocaleString("en-IN")}</span>
+                </div>
+              );
+            })}
+            {topFreelancers.length === 0 && <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>No freelancer data yet.</p>}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          WITHDRAWAL QUEUE
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          {sectionHeader(<Wallet size={14} color="#f97316" />, "Withdrawal Queue", `${wdQueue.length} pending approvals`)}
+          <button onClick={loadWdQueue} style={{ padding: "6px 14px", borderRadius: 9, background: "rgba(249,115,22,.1)", border: "1px solid rgba(249,115,22,.25)", color: "#f97316", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>↻ Refresh</button>
+        </div>
+        {wdLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading queue…</p>
+        ) : wdQueue.length === 0 ? (
+          <p style={{ textAlign: "center", color: "#4ade80", padding: "28px 0", fontSize: 13 }}>✓ No pending withdrawals</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {wdQueue.map(w => (
+              <div key={w.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: "0 0 2px" }}>{w.userName}</p>
+                  <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>{w.userEmail} · {new Date(w.created_at).toLocaleDateString("en-IN")}</p>
+                </div>
+                <span style={{ fontSize: 15, fontWeight: 800, color: "#f97316", flexShrink: 0 }}>₹{w.amount.toLocaleString("en-IN")}</span>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button onClick={() => approveWithdrawal(w.id, true)} disabled={wdProcessing === w.id}
+                    style={{ padding: "6px 13px", borderRadius: 8, border: "1px solid #4ade80", background: "rgba(74,222,128,.1)", color: "#4ade80", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                    ✓ Approve
+                  </button>
+                  <button onClick={() => approveWithdrawal(w.id, false)} disabled={wdProcessing === w.id}
+                    style={{ padding: "6px 13px", borderRadius: 8, border: "1px solid #f87171", background: "rgba(248,113,113,.1)", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                    ✗ Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          REFERRAL ANALYTICS
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Users size={14} color="#34d399" />, "Referral Analytics", "Conversion & bonus tracking")}
+        {refLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading…</p>
+        ) : (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 18 }}>
+              {[
+                { label: "Total Referrals", val: refStats.total,     color: "#34d399" },
+                { label: "Converted",       val: refStats.converted, color: "#4ade80" },
+                { label: "Pending",         val: refStats.pending,   color: "#fbbf24" },
+                { label: "Bonus Paid",      val: `₹${refStats.bonusPaid.toLocaleString("en-IN")}`, color: "#6366f1" },
+              ].map(s => (
+                <div key={s.label} style={{ padding: "13px 14px", borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
+                  <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>{s.label}</p>
+                  <p style={{ fontSize: 22, fontWeight: 800, color: s.color, margin: 0 }}>{s.val}</p>
+                </div>
+              ))}
+            </div>
+            {refStats.total > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <p style={{ fontSize: 12, color: tok.cardSub, marginBottom: 6 }}>Conversion Rate</p>
+                <div style={{ height: 10, borderRadius: 5, background: tok.alertBdr, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.round((refStats.converted / refStats.total) * 100)}%`, background: "linear-gradient(90deg,#34d399,#4ade80)", borderRadius: 5 }} />
+                </div>
+                <p style={{ fontSize: 11, color: "#4ade80", marginTop: 5 }}>{Math.round((refStats.converted / refStats.total) * 100)}% conversion</p>
+              </div>
+            )}
+            {refTopReferrers.length > 0 && (
+              <div>
+                <p style={{ fontSize: 12, fontWeight: 700, color: tok.cardText, marginBottom: 8 }}>Top Referrers</p>
+                {refTopReferrers.map((r, i) => (
+                  <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 9, background: tok.alertBg, marginBottom: 5 }}>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: "#fbbf24", width: 20 }}>#{i+1}</span>
+                    <span style={{ fontSize: 12, color: tok.cardText, flex: 1, fontFamily: "monospace" }}>{r.name}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#34d399" }}>{r.count} refs</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          GEO ANALYTICS
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Globe size={14} color="#60a5fa" />, "Geo Analytics", "User distribution by region")}
+        {geoLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading…</p>
+        ) : geoData.length === 0 ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>No regional data found.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {geoData.map((g, i) => (
+              <div key={g.region} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 11, color: tok.cardSub, width: 130, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.region}</span>
+                <div style={{ flex: 1, height: 8, borderRadius: 4, background: tok.alertBdr, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${g.pct}%`, background: REGION_COLORS[i % REGION_COLORS.length], borderRadius: 4, transition: "width .6s ease" }} />
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: tok.cardText, width: 52, textAlign: "right", flexShrink: 0 }}>{g.count} <span style={{ fontSize: 10, color: tok.cardSub }}>({g.pct}%)</span></span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          SKILL & CATEGORY ANALYTICS
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Star size={14} color="#c4b5fd" />, "Skill & Category Analytics", "Most popular across all projects")}
+        {skillLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading…</p>
+        ) : skillData.length === 0 ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>No project data available.</p>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, alignItems: "start" }}>
+            <div>
+              {skillData.map((s, i) => (
+                <div key={s.name} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                  <span style={{ fontSize: 11, color: tok.cardSub, width: 18, flexShrink: 0 }}>{i+1}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 12.5, fontWeight: 700, color: tok.cardText, margin: "0 0 3px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</p>
+                    <div style={{ height: 5, borderRadius: 3, background: tok.alertBdr, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${Math.round((s.count / (skillData[0]?.count || 1)) * 100)}%`, background: s.color, borderRadius: 3 }} />
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: s.color, flexShrink: 0 }}>{s.count}</span>
+                </div>
+              ))}
+            </div>
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie data={skillData} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={85} innerRadius={45} paddingAngle={3}>
+                  {skillData.map((s, i) => <Cell key={i} fill={s.color} />)}
+                </Pie>
+                <Tooltip contentStyle={tok.chartTip} formatter={(v: number, n: string) => [v, n]} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          COUPON / PROMO MANAGER
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          {sectionHeader(<Tag size={14} color="#f97316" />, "Coupon & Promo Manager", `${coupons.filter(c=>c.active).length} active codes`)}
+          <button onClick={() => setShowCouponForm(p => !p)}
+            style={{ padding: "7px 15px", borderRadius: 9, background: showCouponForm ? tok.alertBg : "rgba(249,115,22,.12)", border: "1px solid rgba(249,115,22,.3)", color: "#f97316", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            {showCouponForm ? "✕ Close" : "+ New Coupon"}
+          </button>
+        </div>
+
+        {showCouponForm && (
+          <div style={{ padding: "14px", borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, marginBottom: 16, display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 10, alignItems: "end" }}>
+            {[
+              { label: "Code",    key: "code",     placeholder: "FLAT50" },
+              { label: "Discount",key: "discount", placeholder: "50" },
+              { label: "Max Uses",key: "maxUses",  placeholder: "100" },
+              { label: "Expires", key: "expires",  placeholder: "", type: "date" },
+            ].map(f => (
+              <div key={f.key}>
+                <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>{f.label}</p>
+                <input type={f.type || "text"} value={(couponForm as Record<string,string>)[f.key]} placeholder={f.placeholder}
+                  onChange={e => setCouponForm(p => ({ ...p, [f.key]: e.target.value }))}
+                  style={{ width: "100%", padding: "7px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+              </div>
+            ))}
+            <div>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Type</p>
+              <select value={couponForm.type} onChange={e => setCouponForm(p => ({ ...p, type: e.target.value as "pct"|"flat" }))}
+                style={{ width: "100%", padding: "7px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none" }}>
+                <option value="pct">% Discount</option>
+                <option value="flat">₹ Flat Off</option>
+              </select>
+            </div>
+            <button onClick={saveCoupon} disabled={couponAdding}
+              style={{ padding: "8px 0", borderRadius: 9, background: "#f97316", border: "none", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+              Save Coupon
+            </button>
+          </div>
+        )}
+
+        {coupons.length === 0 ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>No coupons yet. Create one above.</p>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  {["Code","Discount","Type","Uses","Expires","Status","Actions"].map(h => (
+                    <th key={h} style={{ padding: "9px 12px", textAlign: "left", fontSize: 10.5, color: tok.cardSub, fontWeight: 700, borderBottom: `1px solid ${tok.alertBdr}`, letterSpacing: .4 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {coupons.map(c => (
+                  <tr key={c.code} style={{ borderBottom: `1px solid ${tok.alertBdr}` }}>
+                    <td style={{ padding: "10px 12px", fontSize: 13, fontWeight: 800, color: "#f97316", fontFamily: "monospace" }}>{c.code}</td>
+                    <td style={{ padding: "10px 12px", fontSize: 13, color: tok.cardText }}>{c.type === "pct" ? `${c.discount}%` : `₹${c.discount}`}</td>
+                    <td style={{ padding: "10px 12px" }}>
+                      <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, background: c.type==="pct" ? "rgba(99,102,241,.12)" : "rgba(249,115,22,.12)", color: c.type==="pct" ? "#a5b4fc" : "#f97316", fontWeight: 700 }}>{c.type === "pct" ? "Percent" : "Flat"}</span>
+                    </td>
+                    <td style={{ padding: "10px 12px", fontSize: 12, color: tok.cardSub }}>{c.uses}/{c.maxUses}</td>
+                    <td style={{ padding: "10px 12px", fontSize: 12, color: tok.cardSub }}>{c.expires || "—"}</td>
+                    <td style={{ padding: "10px 12px" }}>
+                      <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, fontWeight: 700, background: c.active ? "rgba(74,222,128,.12)" : "rgba(107,114,128,.1)", color: c.active ? "#4ade80" : tok.cardSub }}>
+                        {c.active ? "Active" : "Disabled"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "10px 12px" }}>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button onClick={() => toggleCoupon(c.code)} style={{ padding: "4px 10px", borderRadius: 7, fontSize: 11, border: `1px solid ${c.active?"#f87171":"#4ade80"}`, background: c.active?"rgba(248,113,113,.1)":"rgba(74,222,128,.1)", color: c.active?"#f87171":"#4ade80", cursor: "pointer" }}>
+                          {c.active ? "Disable" : "Enable"}
+                        </button>
+                        <button onClick={() => deleteCoupon(c.code)} style={{ padding: "4px 10px", borderRadius: 7, fontSize: 11, border: "1px solid rgba(248,113,113,.3)", background: "rgba(248,113,113,.07)", color: "#f87171", cursor: "pointer" }}>
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          REVIEW MODERATION
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Flag size={14} color="#f87171" />, "Review & Message Moderation", `${flaggedReviews.length} flagged items`)}
+        {reviewLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading…</p>
+        ) : flaggedReviews.length === 0 ? (
+          <p style={{ textAlign: "center", color: "#4ade80", padding: "28px 0", fontSize: 13 }}>✓ No flagged content detected</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {flaggedReviews.map(r => (
+              <div key={r.id} style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(248,113,113,.05)", border: "1px solid rgba(248,113,113,.15)", display: "flex", gap: 12, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 16, flexShrink: 0 }}>🚩</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 12.5, color: tok.cardText, fontWeight: 700, margin: "0 0 3px" }}>From: <span style={{ fontFamily: "monospace", color: "#f87171" }}>{r.reviewer}</span></p>
+                  <p style={{ fontSize: 12, color: tok.cardSub, margin: "0 0 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.comment}</p>
+                  <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, background: "rgba(248,113,113,.12)", color: "#f87171", fontWeight: 700 }}>{r.flagReason}</span>
+                </div>
+                <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                  <button onClick={() => dismissReview(r.id)} style={{ padding: "5px 11px", borderRadius: 7, border: "1px solid rgba(74,222,128,.3)", background: "rgba(74,222,128,.08)", color: "#4ade80", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                    Dismiss
+                  </button>
+                  <button onClick={async () => { await supabase.from("messages").delete().eq("id", r.id); dismissReview(r.id); }}
+                    style={{ padding: "5px 11px", borderRadius: 7, border: "1px solid rgba(248,113,113,.3)", background: "rgba(248,113,113,.08)", color: "#f87171", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          TAX REPORT GENERATOR
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<DollarSign size={14} color="#4ade80" />, "Tax Report Generator", "TDS & GST auto-calculation")}
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 16 }}>
+          <div>
+            <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 5px" }}>Financial Year</p>
+            <select value={taxYear} onChange={e => setTaxYear(e.target.value)}
+              style={{ padding: "8px 12px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.alertBg, color: tok.cardText, fontSize: 13, outline: "none" }}>
+              {[2022,2023,2024,2025,2026].map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+          <div>
+            <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 5px" }}>Quarter</p>
+            <select value={taxQuarter} onChange={e => setTaxQuarter(e.target.value)}
+              style={{ padding: "8px 12px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.alertBg, color: tok.cardText, fontSize: 13, outline: "none" }}>
+              <option value="all">Full Year</option>
+              {["1","2","3","4"].map(q => <option key={q} value={q}>Q{q} (Apr-{["Jun","Sep","Dec","Mar"][parseInt(q)-1]})</option>)}
+            </select>
+          </div>
+          <button onClick={generateTaxReport} disabled={taxLoading}
+            style={{ padding: "9px 20px", borderRadius: 9, background: "#4ade80", border: "none", color: "#000", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
+            {taxLoading ? "Calculating…" : "Generate Report"}
+          </button>
+          {taxReportData && (
+            <button onClick={downloadTaxCSV}
+              style={{ padding: "9px 16px", borderRadius: 9, background: "rgba(74,222,128,.1)", border: "1px solid rgba(74,222,128,.3)", color: "#4ade80", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+              ↓ Export CSV
+            </button>
+          )}
+        </div>
+
+        {taxReportData && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
+            {[
+              { label: "Total Credited (Gross)", val: `₹${taxReportData.totalAmount.toLocaleString("en-IN")}`,    color: "#4ade80" },
+              { label: "TDS @ 1% (Sec 194C)",   val: `₹${taxReportData.tds.toLocaleString("en-IN")}`,           color: "#fbbf24" },
+              { label: "GST on Commission @18%", val: `₹${taxReportData.gst.toLocaleString("en-IN")}`,           color: "#f97316" },
+              { label: "Total Transactions",     val: taxReportData.totalTransactions.toLocaleString("en-IN"),    color: "#60a5fa" },
+            ].map(s => (
+              <div key={s.label} style={{ padding: "14px 16px", borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
+                <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 6px", lineHeight: 1.3 }}>{s.label}</p>
+                <p style={{ fontSize: 20, fontWeight: 800, color: s.color, margin: 0 }}>{s.val}</p>
+              </div>
+            ))}
+          </div>
+        )}
+        {!taxReportData && !taxLoading && (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "20px 0", fontSize: 13 }}>Select year & quarter then generate to see TDS/GST breakdown.</p>
+        )}
       </div>
 
     </div>
