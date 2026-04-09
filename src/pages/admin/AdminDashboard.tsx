@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -197,6 +197,23 @@ const AdminDashboard = () => {
   const [autoRefreshSecs, setAutoRefreshSecs]     = useState<30 | 60>(30);
   const [revDateStart, setRevDateStart]           = useState("");
   const [revDateEnd, setRevDateEnd]               = useState("");
+  // ── User Management Tools ─────────────────────────────────────
+  const [umAllUsers, setUmAllUsers] = useState<Array<{
+    id: string; full_name: string[] | null; email: string | null; user_type: string;
+    approval_status: string; is_disabled: boolean | null; disabled_reason: string | null;
+    registration_region: string | null; created_at: string;
+  }>>([]);
+  const [umSearch, setUmSearch]         = useState("");
+  const [umType, setUmType]             = useState<"all" | "employee" | "client">("all");
+  const [umStatus, setUmStatus]         = useState("all");
+  const [umSelected, setUmSelected]     = useState<Set<string>>(new Set());
+  const [umBulking, setUmBulking]       = useState<"approve" | "reject" | null>(null);
+  const [umBanId, setUmBanId]           = useState<string | null>(null);
+  const [umBanReason, setUmBanReason]   = useState("");
+  const [umBanning, setUmBanning]       = useState(false);
+  const [umExporting, setUmExporting]   = useState(false);
+  const [umPage, setUmPage]             = useState(1);
+  const UM_PER_PAGE                     = 12;
   // ── Analytics & Charts ────────────────────────────────────────
   const [heatmapData, setHeatmapData] = useState<Array<{ date: string; count: number; label: string }>>([]);
   const [funnelData,  setFunnelData]  = useState<Array<{ step: string; value: number; color: string; pct: number }>>([]);
@@ -617,6 +634,19 @@ const AdminDashboard = () => {
         })));
       }
 
+      /* ── User Management Tools: store all profiles ── */
+      setUmAllUsers(allProfiles.map(p => ({
+        id: p.id,
+        full_name: p.full_name,
+        email: p.email,
+        user_type: p.user_type,
+        approval_status: p.approval_status,
+        is_disabled: p.is_disabled ?? false,
+        disabled_reason: p.disabled_reason,
+        registration_region: p.registration_region,
+        created_at: p.created_at,
+      })));
+
       /* ── Section 11: Top Employers ── */
       const empJobsMap: Record<string, number> = {};
       for (const p of pj) { if (p.client_id) empJobsMap[p.client_id] = (empJobsMap[p.client_id] || 0) + 1; }
@@ -909,6 +939,93 @@ const AdminDashboard = () => {
     } catch { /* ignore */ }
     setAnnounceSending(false);
   }, [announcementText]);
+
+  /* ── User Management Tools ── */
+  const umFiltered = useMemo(() => {
+    let u = umAllUsers;
+    if (umSearch.trim()) {
+      const s = umSearch.toLowerCase();
+      u = u.filter(p =>
+        (p.email || "").toLowerCase().includes(s) ||
+        (p.full_name || []).join(" ").toLowerCase().includes(s)
+      );
+    }
+    if (umType !== "all") u = u.filter(p => p.user_type === umType);
+    if (umStatus === "disabled") u = u.filter(p => p.is_disabled);
+    else if (umStatus !== "all") u = u.filter(p => p.approval_status === umStatus);
+    return u;
+  }, [umAllUsers, umSearch, umType, umStatus]);
+
+  const umPaged = useMemo(() => {
+    return umFiltered.slice((umPage - 1) * UM_PER_PAGE, umPage * UM_PER_PAGE);
+  }, [umFiltered, umPage, UM_PER_PAGE]);
+
+  const umTotalPages = Math.max(1, Math.ceil(umFiltered.length / UM_PER_PAGE));
+
+  const bulkAction = useCallback(async (action: "approve" | "reject") => {
+    if (umSelected.size === 0) return;
+    setUmBulking(action);
+    try {
+      const ids = Array.from(umSelected);
+      const newStatus = action === "approve" ? "approved" : "rejected";
+      await supabase.from("profiles").update({ approval_status: newStatus }).in("id", ids);
+      setUmAllUsers(prev => prev.map(u => ids.includes(u.id) ? { ...u, approval_status: newStatus } : u));
+      setPendingUsers(prev => prev.filter(u => !ids.includes(u.id)));
+      setStats(prev => ({
+        ...prev,
+        pendingApprovals: Math.max(0, prev.pendingApprovals - ids.length),
+        approvedUsers: action === "approve" ? prev.approvedUsers + ids.length : prev.approvedUsers,
+      }));
+      setUmSelected(new Set());
+    } catch { /* ignore */ }
+    setUmBulking(null);
+  }, [umSelected]);
+
+  const banUser = useCallback(async () => {
+    if (!umBanId || !umBanReason.trim()) return;
+    setUmBanning(true);
+    try {
+      await supabase.from("profiles").update({ is_disabled: true, disabled_reason: umBanReason.trim() }).eq("id", umBanId);
+      setUmAllUsers(prev => prev.map(u => u.id === umBanId ? { ...u, is_disabled: true, disabled_reason: umBanReason.trim() } : u));
+      setUmBanId(null); setUmBanReason("");
+    } catch { /* ignore */ }
+    setUmBanning(false);
+  }, [umBanId, umBanReason]);
+
+  const unbanUser = useCallback(async (id: string) => {
+    try {
+      await supabase.from("profiles").update({ is_disabled: false, disabled_reason: null }).eq("id", id);
+      setUmAllUsers(prev => prev.map(u => u.id === id ? { ...u, is_disabled: false, disabled_reason: null } : u));
+    } catch { /* ignore */ }
+  }, []);
+
+  const exportUsersCSV = useCallback(() => {
+    setUmExporting(true);
+    try {
+      const rows = [
+        ["ID", "Name", "Email", "Type", "Status", "Banned", "Ban Reason", "Region", "Joined"],
+        ...umFiltered.map(u => [
+          u.id,
+          (u.full_name || []).join(" ").trim() || "—",
+          u.email || "—",
+          u.user_type === "employee" ? "Freelancer" : "Employer",
+          u.approval_status,
+          u.is_disabled ? "Yes" : "No",
+          u.disabled_reason || "—",
+          u.registration_region || "—",
+          new Date(u.created_at).toLocaleDateString("en-IN"),
+        ]),
+      ];
+      const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `freelan-users-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click(); URL.revokeObjectURL(url);
+    } catch { /* ignore */ }
+    setUmExporting(false);
+  }, [umFiltered]);
 
   const applyDateRangeFilter = useCallback(async () => {
     if (!revDateStart && !revDateEnd) return;
@@ -2520,6 +2637,188 @@ const AdminDashboard = () => {
           </button>
         </div>
       </div>
+
+      {/* ══════════════════════════════════════════════════════
+          USER MANAGEMENT TOOLS
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Users size={14} color="#a5b4fc" />, "User Management Tools",
+          `${umFiltered.length} / ${umAllUsers.length} users`)}
+
+        {/* ── Search + Filters ── */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" as const, alignItems: "center" }}>
+          <input
+            value={umSearch} onChange={e => { setUmSearch(e.target.value); setUmPage(1); }}
+            placeholder="Search name or email…"
+            style={{ flex: "1 1 180px", padding: "7px 12px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.alertBg, color: tok.cardText, fontSize: 12, outline: "none" }}
+          />
+          <select value={umType} onChange={e => { setUmType(e.target.value as typeof umType); setUmPage(1); }}
+            style={{ padding: "7px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.alertBg, color: tok.cardText, fontSize: 12, outline: "none", cursor: "pointer" }}>
+            <option value="all">All Types</option>
+            <option value="employee">Freelancer</option>
+            <option value="client">Employer</option>
+          </select>
+          <select value={umStatus} onChange={e => { setUmStatus(e.target.value); setUmPage(1); }}
+            style={{ padding: "7px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.alertBg, color: tok.cardText, fontSize: 12, outline: "none", cursor: "pointer" }}>
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="disabled">Banned</option>
+          </select>
+          <button onClick={exportUsersCSV} disabled={umExporting || umFiltered.length === 0}
+            style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 9, background: "rgba(99,102,241,.1)", border: "1px solid rgba(99,102,241,.3)", color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: (umExporting || umFiltered.length === 0) ? "not-allowed" : "pointer" }}>
+            ⬇ {umExporting ? "Exporting…" : `Export CSV (${umFiltered.length})`}
+          </button>
+        </div>
+
+        {/* ── Bulk Actions ── */}
+        {umSelected.size > 0 && (
+          <div style={{ display: "flex", gap: 8, marginBottom: 10, padding: "10px 14px", borderRadius: 10, background: "rgba(99,102,241,.08)", border: "1px solid rgba(99,102,241,.25)", alignItems: "center", flexWrap: "wrap" as const }}>
+            <span style={{ fontSize: 12, color: "#a5b4fc", fontWeight: 700, marginRight: 4 }}>{umSelected.size} selected</span>
+            <button onClick={() => bulkAction("approve")} disabled={umBulking !== null}
+              style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 8, background: "rgba(74,222,128,.12)", border: "1px solid rgba(74,222,128,.3)", color: "#4ade80", fontSize: 12, fontWeight: 700, cursor: umBulking ? "not-allowed" : "pointer" }}>
+              {umBulking === "approve" ? <><span style={{ display:"inline-block", width:8, height:8, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Approving…</> : <><Check size={11} /> Bulk Approve</>}
+            </button>
+            <button onClick={() => bulkAction("reject")} disabled={umBulking !== null}
+              style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 8, background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.25)", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: umBulking ? "not-allowed" : "pointer" }}>
+              {umBulking === "reject" ? <><span style={{ display:"inline-block", width:8, height:8, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Rejecting…</> : <><X size={11} /> Bulk Reject</>}
+            </button>
+            <button onClick={() => setUmSelected(new Set())}
+              style={{ padding: "6px 12px", borderRadius: 8, background: "none", border: `1px solid ${tok.alertBdr}`, color: tok.cardSub, fontSize: 12, cursor: "pointer" }}>
+              Clear
+            </button>
+          </div>
+        )}
+
+        {/* ── User Table ── */}
+        {umPaged.length === 0 ? (
+          <div style={{ padding: "28px 0", textAlign: "center" as const, color: tok.cardSub, fontSize: 13 }}>No users match the filters.</div>
+        ) : (
+          <>
+            {/* Table header */}
+            <div style={{ display: "grid", gridTemplateColumns: "28px 1fr 1fr 90px 90px 130px", gap: 8, padding: "6px 10px", marginBottom: 4 }}>
+              <input type="checkbox"
+                checked={umPaged.every(u => umSelected.has(u.id))}
+                onChange={e => {
+                  const next = new Set(umSelected);
+                  if (e.target.checked) umPaged.forEach(u => next.add(u.id));
+                  else umPaged.forEach(u => next.delete(u.id));
+                  setUmSelected(next);
+                }}
+                style={{ cursor: "pointer", width: 14, height: 14, marginTop: 1 }}
+              />
+              {["Name / Email", "Type", "Status", "Joined", "Actions"].map(h => (
+                <span key={h} style={{ fontSize: 10, color: tok.cardSub, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.7px" }}>{h}</span>
+              ))}
+            </div>
+
+            {/* User rows */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {umPaged.map(u => {
+                const name = (u.full_name || []).join(" ").trim() || "—";
+                const isBanned = !!u.is_disabled;
+                const statusColor = isBanned ? "#f87171" : u.approval_status === "approved" ? "#4ade80" : u.approval_status === "rejected" ? "#f87171" : "#fbbf24";
+                const statusLabel = isBanned ? "Banned" : u.approval_status.charAt(0).toUpperCase() + u.approval_status.slice(1);
+                return (
+                  <div key={u.id} style={{ display: "grid", gridTemplateColumns: "28px 1fr 1fr 90px 90px 130px", gap: 8, padding: "10px 10px", borderRadius: 10, background: umSelected.has(u.id) ? "rgba(99,102,241,.08)" : tok.sysRowBg, border: `1px solid ${umSelected.has(u.id) ? "rgba(99,102,241,.25)" : tok.alertBdr}`, alignItems: "center" }}>
+                    <input type="checkbox" checked={umSelected.has(u.id)}
+                      onChange={e => {
+                        const next = new Set(umSelected);
+                        e.target.checked ? next.add(u.id) : next.delete(u.id);
+                        setUmSelected(next);
+                      }}
+                      style={{ cursor: "pointer", width: 14, height: 14 }}
+                    />
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: 12.5, fontWeight: 700, color: tok.cardText, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{name}</p>
+                      <p style={{ fontSize: 10.5, color: tok.cardSub, margin: "1px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{u.email || "—"}</p>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 6,
+                        background: u.user_type === "employee" ? "rgba(99,102,241,.12)" : "rgba(139,92,246,.12)",
+                        color: u.user_type === "employee" ? "#a5b4fc" : "#c4b5fd" }}>
+                        {u.user_type === "employee" ? "Freelancer" : "Employer"}
+                      </span>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: `${statusColor}18`, color: statusColor }}>
+                        {statusLabel}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 10.5, color: tok.cardSub }}>
+                      {new Date(u.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" })}
+                    </span>
+                    <div style={{ display: "flex", gap: 5 }}>
+                      {isBanned ? (
+                        <button onClick={() => unbanUser(u.id)}
+                          style={{ padding: "4px 10px", borderRadius: 7, background: "rgba(74,222,128,.1)", border: "1px solid rgba(74,222,128,.25)", color: "#4ade80", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                          Unban
+                        </button>
+                      ) : (
+                        <button onClick={() => { setUmBanId(u.id); setUmBanReason(""); }}
+                          style={{ padding: "4px 10px", borderRadius: 7, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.2)", color: "#f87171", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                          Ban
+                        </button>
+                      )}
+                      <button onClick={() => navigate(`/admin/users`)}
+                        style={{ padding: "4px 10px", borderRadius: 7, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: tok.cardSub, fontSize: 11, cursor: "pointer" }}>
+                        View
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Pagination */}
+            {umTotalPages > 1 && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 12 }}>
+                <button onClick={() => setUmPage(p => Math.max(1, p - 1))} disabled={umPage === 1}
+                  style={{ padding: "5px 12px", borderRadius: 8, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: umPage === 1 ? tok.cardSub : tok.cardText, fontSize: 12, cursor: umPage === 1 ? "not-allowed" : "pointer" }}>
+                  ←
+                </button>
+                <span style={{ fontSize: 11.5, color: tok.cardSub }}>Page {umPage} of {umTotalPages}</span>
+                <button onClick={() => setUmPage(p => Math.min(umTotalPages, p + 1))} disabled={umPage === umTotalPages}
+                  style={{ padding: "5px 12px", borderRadius: 8, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: umPage === umTotalPages ? tok.cardSub : tok.cardText, fontSize: 12, cursor: umPage === umTotalPages ? "not-allowed" : "pointer" }}>
+                  →
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* ── Ban User Modal ── */}
+      {umBanId && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={e => { if (e.target === e.currentTarget) { setUmBanId(null); setUmBanReason(""); } }}>
+          <div style={{ background: tok.cardBg, border: `1px solid ${tok.cardBdr}`, borderRadius: 18, padding: "24px", width: 380, maxWidth: "90vw" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: "#f87171", margin: "0 0 8px", display: "flex", alignItems: "center", gap: 8 }}>
+              <Ban size={16} color="#f87171" /> Ban User
+            </h3>
+            <p style={{ fontSize: 12, color: tok.cardSub, margin: "0 0 16px" }}>
+              User ID: <code style={{ fontSize: 11, background: tok.alertBg, padding: "2px 6px", borderRadius: 4, color: tok.cardText }}>{umBanId.slice(0, 8)}…</code>
+            </p>
+            <textarea
+              value={umBanReason} onChange={e => setUmBanReason(e.target.value)}
+              placeholder="Reason for ban (required)…"
+              rows={3}
+              style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: `1px solid ${tok.alertBdr}`, background: tok.alertBg, color: tok.cardText, fontSize: 12.5, resize: "none", outline: "none", fontFamily: "inherit", boxSizing: "border-box" as const, marginBottom: 14 }}
+            />
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={banUser} disabled={umBanning || !umBanReason.trim()}
+                style={{ flex: 1, padding: "10px", borderRadius: 10, background: umBanning || !umBanReason.trim() ? "rgba(239,68,68,.08)" : "rgba(239,68,68,.2)", border: "1px solid rgba(239,68,68,.4)", color: "#f87171", fontSize: 13, fontWeight: 700, cursor: (umBanning || !umBanReason.trim()) ? "not-allowed" : "pointer" }}>
+                {umBanning ? "Banning…" : "Confirm Ban"}
+              </button>
+              <button onClick={() => { setUmBanId(null); setUmBanReason(""); }}
+                style={{ flex: 1, padding: "10px", borderRadius: 10, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: tok.cardSub, fontSize: 13, cursor: "pointer" }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ══════════════════════════════════════════════════════
           ANALYTICS 1 — ACTIVITY HEATMAP CALENDAR
