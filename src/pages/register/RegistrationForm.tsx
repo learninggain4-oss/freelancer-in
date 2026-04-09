@@ -65,7 +65,7 @@ const emptyWorkExp = (): WorkExperienceEntry => ({ company_name: "", company_typ
 const emptyContact = (): EmergencyContactEntry => ({ contact_name: "", contact_phone: "", relationship: "" });
 const emptyService = (): ServiceEntry => ({ category_id: "", service_title: "", hourly_rate: "", minimum_budget: "", skill_ids: [] });
 
-const stepConfig = [
+const freelancerStepConfig = [
   { label: "Personal Info",    icon: User,      description: "Tell us about yourself",    color: A1 },
   { label: "Contact Details",  icon: Phone,     description: "How can we reach you?",      color: "#0ea5e9" },
   { label: "Work Experience",  icon: Building2, description: "Your professional journey",  color: "#22c55e" },
@@ -73,11 +73,17 @@ const stepConfig = [
   { label: "Services",         icon: Wrench,    description: "What do you offer?",         color: "#f59e0b" },
 ];
 
+const employerStepConfig = [
+  { label: "Personal Info",    icon: User,      description: "Tell us about yourself",    color: A1 },
+  { label: "Contact Details",  icon: Phone,     description: "How can we reach you?",      color: "#0ea5e9" },
+];
+
 /* Shared input style prop */
 const inp: React.CSSProperties = { background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", color: "white", borderRadius: 10 };
 
 const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const isFreelancer = userType === "employee";
+  const stepConfig = isFreelancer ? freelancerStepConfig : employerStepConfig;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -197,7 +203,13 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       }
       setSubmitted(true);
     } catch (error: any) {
-      toast({ title: "Registration failed", description: error.message, variant: "destructive" });
+      const msg: string = error?.message || "";
+      const friendlyMsg = msg.includes("already registered") || msg.includes("already exists") || msg.includes("duplicate") || msg.includes("unique")
+        ? "This email is already registered. Please login or use a different email."
+        : msg.includes("invalid input value for enum")
+        ? "Account type error — please contact support."
+        : msg || "Something went wrong. Please try again.";
+      toast({ title: "Registration failed", description: friendlyMsg, variant: "destructive" });
     } finally { setSubmitting(false); }
   };
 
