@@ -170,6 +170,7 @@ const AdminDashboard = () => {
   const [rejectingId, setRejectingId]     = useState<string | null>(null);
   const [msgResetting, setMsgResetting]     = useState(false);
   const [payResetting, setPayResetting]     = useState(false);
+  const [feedResetting, setFeedResetting]   = useState(false);
   const [regionData, setRegionData]       = useState<RegionPoint[]>([]);
   const [withdrawalSummary, setWithdrawalSummary] = useState({
     pending: 0, approved: 0, rejected: 0, completed: 0,
@@ -619,6 +620,39 @@ const AdminDashboard = () => {
     setStats(prev => ({ ...prev, pendingApprovals: prev.pendingApprovals - 1, approvedUsers: prev.approvedUsers + 1, activeUsers: prev.activeUsers + 1 }));
     setApprovingId(null);
   }, []);
+
+  const resetActivityFeed = useCallback(async () => {
+    setFeedResetting(true);
+    try {
+      const [profilesQ, withdrawalsQ, projectsQ] = await Promise.all([
+        supabase.from("profiles").select("id, full_name, user_type, registration_region, created_at").order("created_at", { ascending: false }).limit(5),
+        supabase.from("withdrawals").select("amount, status, requested_at").order("requested_at", { ascending: false }).limit(3),
+        supabase.from("projects").select("name, status, created_at").order("created_at", { ascending: false }).limit(4),
+      ]);
+      const relTime = (iso: string) => {
+        const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+        if (s < 60) return `${s}s ago`;
+        const m = Math.floor(s / 60); if (m < 60) return `${m}m ago`;
+        const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`;
+        return `${Math.floor(h / 24)}d ago`;
+      };
+      const getName = (fn: string[] | null | undefined) => fn?.join(" ").trim() || "Unknown";
+      const feed: typeof activityFeed = [];
+      for (const p of profilesQ.data || []) {
+        feed.push({ icon: UserPlus, color: "#4ade80", label: `New ${p.user_type === "employee" ? "Freelancer" : "Employer"} joined`, detail: `${getName(p.full_name)} · ${p.registration_region || "—"}`, time: relTime(p.created_at) });
+      }
+      for (const w of withdrawalsQ.data || []) {
+        feed.push({ icon: Wallet, color: "#f87171", label: "Withdrawal requested", detail: `₹${Number(w.amount).toLocaleString("en-IN")} · ${w.status}`, time: relTime(w.requested_at || "") });
+      }
+      for (const proj of projectsQ.data || []) {
+        feed.push({ icon: Briefcase, color: "#a5b4fc", label: "New job posted", detail: `${proj.name} · ${proj.status}`, time: relTime(proj.created_at) });
+      }
+      const toMs = (t: string) => { const m = t.match(/(\d+)\s*(s|m|h|d)/); if (!m) return 0; const n = Number(m[1]); return m[2] === "s" ? n * 1000 : m[2] === "m" ? n * 60000 : m[2] === "h" ? n * 3600000 : n * 86400000; };
+      feed.sort((a, b) => toMs(a.time) - toMs(b.time));
+      setActivityFeed(feed.slice(0, 15));
+    } catch { /* silently ignore */ }
+    setFeedResetting(false);
+  }, [activityFeed]);
 
   const resetPaymentStats = useCallback(async () => {
     setPayResetting(true);
@@ -1771,7 +1805,7 @@ const AdminDashboard = () => {
       <div style={{ ...card, padding: "18px" }}>
         {sectionHeader(<Activity size={14} color="#a5b4fc" />, "Recent Activity Log", `${activityFeed.length} events`)}
         {activityFeed.length === 0 ? emptyBox(Activity, "No recent activity") : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 7, marginBottom: 12 }}>
             {activityFeed.map((e, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", borderRadius: 11, background: tok.sysRowBg, border: `1px solid ${tok.alertBdr}` }}>
                 <div style={{ width: 30, height: 30, borderRadius: 9, background: `${e.color}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -1786,6 +1820,23 @@ const AdminDashboard = () => {
             ))}
           </div>
         )}
+        <div style={{ display: "flex", gap: 8, marginTop: activityFeed.length === 0 ? 12 : 0 }}>
+          <button
+            onClick={resetActivityFeed}
+            disabled={feedResetting}
+            style={{ flex: 1, padding: "8px", borderRadius: 9, background: "rgba(99,102,241,.1)", border: "1px solid rgba(99,102,241,.3)", color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: feedResetting ? "not-allowed" : "pointer", opacity: feedResetting ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+            {feedResetting
+              ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Refreshing…</>
+              : <>↺ Refresh Log</>
+            }
+          </button>
+          <button
+            onClick={() => setActivityFeed([])}
+            disabled={activityFeed.length === 0}
+            style={{ flex: 1, padding: "8px", borderRadius: 9, background: activityFeed.length > 0 ? "rgba(239,68,68,.08)" : tok.alertBg, border: `1px solid ${activityFeed.length > 0 ? "rgba(239,68,68,.25)" : tok.alertBdr}`, color: activityFeed.length > 0 ? "#f87171" : tok.cardSub, fontSize: 12, fontWeight: 700, cursor: activityFeed.length > 0 ? "pointer" : "not-allowed" }}>
+            ✕ Clear Log
+          </button>
+        </div>
       </div>
 
       {/* ══ PAYMENT ANALYTICS + PENDING PAYOUTS ══ */}
