@@ -321,6 +321,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                 {REG_STEPS.map(({ label, emoji, threshold }, idx) => {
                   const done = countdownUnits <= threshold;
                   const active = idx === activeIdx;
+                  if (!done && !active) return null;
                   return (
                     <div key={label}
                       style={{ display: "flex", alignItems: "center", gap: 10, borderRadius: 12, overflow: "hidden",
