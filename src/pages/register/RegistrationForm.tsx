@@ -339,7 +339,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                           background: done ? "rgba(34,197,94,0.18)" : active ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.04)",
                           animation: active ? "activeGlow 1.8s ease-in-out infinite" : "none" }}>
                           {done
-                            ? <span style={{ animation: "checkBounce 0.45s cubic-bezier(.36,1.56,.64,1) both", display: "inline-block", fontSize: 14, lineHeight: 1 }}>✅</span>
+                            ? <CheckCircle2 size={15} color="#22c55e" style={{ animation: "checkBounce 0.45s cubic-bezier(.36,1.56,.64,1) both" }} />
                             : active
                               ? <Loader2 size={13} color="#818cf8" style={{ animation: "spin 1.2s linear infinite" }} />
                               : <span style={{ fontSize: 13, opacity: 0.35 }}>{emoji}</span>
@@ -360,7 +360,9 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
 
                       {/* Tick time badge */}
                       {done
-                        ? <span style={{ fontSize: 9, color: "#4ade80", fontWeight: 800, padding: "2px 7px", borderRadius: 6, background: "rgba(74,222,128,0.12)", flexShrink: 0 }}>✓ {tickAt}</span>
+                        ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 9, color: "#4ade80", fontWeight: 800, padding: "2px 7px", borderRadius: 6, background: "rgba(74,222,128,0.12)", flexShrink: 0 }}>
+                            <Check size={9} color="#4ade80" strokeWidth={3} /> {tickAt}
+                          </span>
                         : <span style={{ fontSize: 9, color: pending ? "rgba(255,255,255,0.18)" : "rgba(129,140,248,0.7)", fontWeight: 600, padding: "2px 7px", borderRadius: 6, background: "rgba(255,255,255,0.04)", flexShrink: 0 }}>{tickAt}</span>
                       }
                     </div>
