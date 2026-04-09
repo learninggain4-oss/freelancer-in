@@ -180,9 +180,9 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       if (authError) throw authError;
       if (!authData.user) throw new Error("Registration failed");
       const userId = authData.user.id;
-      const { error: profileError } = await supabase.from("profiles").insert([{ user_id: userId, user_type: userType, full_name: [data.full_name.toUpperCase()], user_code: [], email: data.email, gender: data.gender, date_of_birth: data.date_of_birth, marital_status: data.marital_status, education_level: data.education_level, mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number, education_background: data.education_background || null, referred_by: referralCode.trim() || null, approval_status: "approved" } as any]);
+      const { data: profileData, error: profileError } = await supabase.from("profiles").insert([{ user_id: userId, user_type: userType, full_name: [data.full_name.toUpperCase()], user_code: [], email: data.email, gender: data.gender, date_of_birth: data.date_of_birth, marital_status: data.marital_status, education_level: data.education_level, mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number, education_background: data.education_background || null, referred_by: referralCode.trim() || null, approval_status: "approved" } as any]).select("id").single();
       if (profileError) throw profileError;
-      const profileId = userId;
+      const profileId = (profileData as any)?.id || userId;
       await supabase.from("registration_metadata" as any).insert([{ profile_id: profileId, ip_address: geoData.ip||null, city: geoData.city||null, region: geoData.region||null, country: geoData.country||null, latitude: geoData.lat||null, longitude: geoData.lon||null }] as any);
       for (const w of workExperiences.filter(w => w.company_name.trim())) {
         let certPath: string | null = null, certName: string | null = null;
