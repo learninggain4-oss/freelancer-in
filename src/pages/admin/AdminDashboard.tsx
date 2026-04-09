@@ -176,6 +176,7 @@ const AdminDashboard = () => {
   const [growthClearing, setGrowthClearing] = useState(false);
   const [jobClearing, setJobClearing]       = useState(false);
   const [timelineClearing, setTimelineClearing] = useState(false);
+  const [kpiClearing, setKpiClearing]           = useState(false);
   const [regionData, setRegionData]       = useState<RegionPoint[]>([]);
   const [withdrawalSummary, setWithdrawalSummary] = useState({
     pending: 0, approved: 0, rejected: 0, completed: 0,
@@ -1606,7 +1607,7 @@ const AdminDashboard = () => {
         {/* Platform Growth KPIs */}
         <div style={{ ...card, padding: "18px" }}>
           {sectionHeader(<TrendingUp size={14} color="#4ade80" />, "Platform Growth KPIs")}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
             {[
               {
                 label: "User Growth (MoM)",
@@ -1649,6 +1650,23 @@ const AdminDashboard = () => {
               </div>
             ))}
           </div>
+          <button
+            onClick={() => {
+              const ok = window.confirm("Platform Growth KPIs clear ചെയ്യണോ?\n\nKPI values 0 ആകും (underlying data delete ആകില്ല).");
+              if (!ok) return;
+              setKpiClearing(true);
+              setTimeout(() => {
+                setGrowthKPIs({ momUserPct: 0, momRevPct: 0, momJobPct: 0, jobCompletionRate: 0, avgWithdrawal: 0 });
+                setKpiClearing(false);
+              }, 400);
+            }}
+            disabled={kpiClearing}
+            style={{ width: "100%", padding: "8px", borderRadius: 9, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.25)", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: kpiClearing ? "not-allowed" : "pointer", opacity: kpiClearing ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+            {kpiClearing
+              ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Clearing…</>
+              : <>✕ Clear KPI Data</>
+            }
+          </button>
         </div>
       </div>
 
