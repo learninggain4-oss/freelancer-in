@@ -230,6 +230,31 @@ const AdminDashboard = () => {
   // Rate Limit Stats
   const [rlStats, setRlStats]                   = useState({ totalBans: 0, activeBans: 0, last24h: 0, topReasons: [] as Array<{ reason: string; count: number }> });
 
+  // ── Platform Settings ──────────────────────────────────────────
+  // Maintenance Mode
+  const [maintMode, setMaintMode]           = useState(false);
+  const [maintMsg, setMaintMsg]             = useState("Platform is under maintenance. We'll be back shortly.");
+  const [maintSaving, setMaintSaving]       = useState(false);
+  // Feature Flags
+  const [featureFlags, setFeatureFlags]     = useState<Record<string, boolean>>({
+    enable_referral_system: true,
+    enable_wallet_topup: true,
+    enable_aadhaar_verification: true,
+    enable_freelancer_registration: true,
+    enable_employer_registration: true,
+    enable_job_posting: true,
+  });
+  const [flagSaving, setFlagSaving]         = useState<string | null>(null);
+  // Referral Bonus Config
+  const [referralBonus, setReferralBonus]   = useState(100);
+  const [referralMinPay, setReferralMinPay] = useState(500);
+  const [referralSaving, setReferralSaving] = useState(false);
+  // Platform Fee Editor
+  const [pfeeRate, setPfeeRate]             = useState(5);
+  const [pfeeMin, setPfeeMin]               = useState(10);
+  const [pfeeMax, setPfeeMax]               = useState(5000);
+  const [pfeeSaving, setPfeeSaving]         = useState(false);
+
   // ── Finance & Payments ─────────────────────────────────────────
   // Payout Scheduler
   const [payoutEnabled, setPayoutEnabled]       = useState(false);
@@ -1203,6 +1228,76 @@ const AdminDashboard = () => {
   }, []);
 
   useEffect(() => { computeTaxSummary(); }, [computeTaxSummary]);
+
+  // ── Platform Settings callbacks ───────────────────────────────
+  const saveMaintMode = useCallback(async () => {
+    setMaintSaving(true);
+    try {
+      await supabase.from("app_settings").upsert([
+        { key: "maintenance_mode", value: String(maintMode), updated_at: new Date().toISOString() },
+        { key: "maintenance_message", value: maintMsg, updated_at: new Date().toISOString() },
+      ], { onConflict: "key" });
+    } catch { /* ignore */ }
+    setTimeout(() => setMaintSaving(false), 800);
+  }, [maintMode, maintMsg]);
+
+  const toggleFeatureFlag = useCallback(async (key: string) => {
+    setFlagSaving(key);
+    const newVal = !featureFlags[key];
+    setFeatureFlags(prev => ({ ...prev, [key]: newVal }));
+    try {
+      await supabase.from("app_settings").upsert({ key, value: String(newVal), updated_at: new Date().toISOString() }, { onConflict: "key" });
+    } catch { /* ignore */ }
+    setTimeout(() => setFlagSaving(null), 500);
+  }, [featureFlags]);
+
+  const saveReferralConfig = useCallback(async () => {
+    setReferralSaving(true);
+    try {
+      await supabase.from("app_settings").upsert([
+        { key: "referral_bonus_amount", value: String(referralBonus), updated_at: new Date().toISOString() },
+        { key: "referral_min_payout", value: String(referralMinPay), updated_at: new Date().toISOString() },
+      ], { onConflict: "key" });
+    } catch { /* ignore */ }
+    setTimeout(() => setReferralSaving(false), 800);
+  }, [referralBonus, referralMinPay]);
+
+  const savePlatformFee = useCallback(async () => {
+    setPfeeSaving(true);
+    try {
+      await supabase.from("app_settings").upsert([
+        { key: "platform_fee_rate", value: String(pfeeRate), updated_at: new Date().toISOString() },
+        { key: "platform_fee_min", value: String(pfeeMin), updated_at: new Date().toISOString() },
+        { key: "platform_fee_max", value: String(pfeeMax), updated_at: new Date().toISOString() },
+      ], { onConflict: "key" });
+    } catch { /* ignore */ }
+    setTimeout(() => setPfeeSaving(false), 800);
+  }, [pfeeRate, pfeeMin, pfeeMax]);
+
+  // Load platform settings on mount
+  useEffect(() => {
+    supabase.from("app_settings").select("key, value").in("key", [
+      "maintenance_mode", "maintenance_message",
+      "referral_bonus_amount", "referral_min_payout",
+      "platform_fee_rate", "platform_fee_min", "platform_fee_max",
+      ...Object.keys(featureFlags),
+    ]).then(({ data }) => {
+      if (!data) return;
+      const map: Record<string, string> = {};
+      data.forEach(r => { map[r.key] = r.value; });
+      if (map.maintenance_mode !== undefined) setMaintMode(map.maintenance_mode === "true");
+      if (map.maintenance_message) setMaintMsg(map.maintenance_message);
+      if (map.referral_bonus_amount) setReferralBonus(Number(map.referral_bonus_amount));
+      if (map.referral_min_payout) setReferralMinPay(Number(map.referral_min_payout));
+      if (map.platform_fee_rate) setPfeeRate(Number(map.platform_fee_rate));
+      if (map.platform_fee_min) setPfeeMin(Number(map.platform_fee_min));
+      if (map.platform_fee_max) setPfeeMax(Number(map.platform_fee_max));
+      const flagUpdates: Record<string, boolean> = {};
+      Object.keys(featureFlags).forEach(k => { if (map[k] !== undefined) flagUpdates[k] = map[k] === "true"; });
+      if (Object.keys(flagUpdates).length) setFeatureFlags(prev => ({ ...prev, ...flagUpdates }));
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const applyDateRangeFilter = useCallback(async () => {
     if (!revDateStart && !revDateEnd) return;
@@ -3180,6 +3275,166 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* ══════════════════════════════════════════════════════
+          PLATFORM SETTINGS
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Server size={14} color="#a78bfa" />, "Platform Settings", "Maintenance · Flags · Referral · Fees")}
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 14 }}>
+
+          {/* ── 1. Maintenance Mode ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${maintMode ? "rgba(239,68,68,.4)" : tok.alertBdr}`, borderRadius: 14, padding: 16, transition: "border-color .3s" }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 14px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 15 }}>🔧</span> Maintenance Mode
+              {maintMode && <span style={{ marginLeft: "auto", fontSize: 10, padding: "2px 8px", borderRadius: 5, background: "rgba(239,68,68,.15)", color: "#f87171", fontWeight: 700, animation: "pulse 2s infinite" }}>● ACTIVE</span>}
+            </p>
+
+            {/* Big toggle */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, padding: "12px 14px", borderRadius: 10, background: maintMode ? "rgba(239,68,68,.07)" : "rgba(74,222,128,.05)", border: `1px solid ${maintMode ? "rgba(239,68,68,.2)" : "rgba(74,222,128,.15)"}` }}>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: maintMode ? "#f87171" : "#4ade80", margin: 0 }}>
+                  {maintMode ? "Platform is DOWN" : "Platform is LIVE"}
+                </p>
+                <p style={{ fontSize: 11, color: tok.cardSub, margin: "2px 0 0" }}>Toggle to enable maintenance mode</p>
+              </div>
+              <button onClick={() => setMaintMode(v => !v)}
+                style={{ width: 52, height: 28, borderRadius: 14, border: "none", cursor: "pointer", position: "relative", flexShrink: 0,
+                  background: maintMode ? "#ef4444" : "#22c55e", transition: "background .25s" }}>
+                <span style={{ position: "absolute", top: 4, left: maintMode ? 26 : 4, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "left .25s", boxShadow: "0 1px 3px rgba(0,0,0,.3)" }} />
+              </button>
+            </div>
+
+            {/* Custom message */}
+            <p style={{ fontSize: 11, fontWeight: 700, color: tok.cardSub, margin: "0 0 6px", textTransform: "uppercase" as const, letterSpacing: "0.6px" }}>Maintenance Message</p>
+            <textarea value={maintMsg} onChange={e => setMaintMsg(e.target.value)} rows={3}
+              style={{ width: "100%", padding: "9px 12px", borderRadius: 10, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, resize: "none", outline: "none", fontFamily: "inherit", boxSizing: "border-box" as const, marginBottom: 12 }} />
+
+            <button onClick={saveMaintMode} disabled={maintSaving}
+              style={{ width: "100%", padding: "9px", borderRadius: 10, background: "rgba(167,139,250,.12)", border: "1px solid rgba(167,139,250,.3)", color: "#a78bfa", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+              {maintSaving ? "Saved ✓" : "Save Settings"}
+            </button>
+          </div>
+
+          {/* ── 2. Feature Flags Panel ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 14px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 15 }}>🚀</span> Feature Flags
+              <span style={{ marginLeft: "auto", fontSize: 10, color: tok.cardSub }}>{Object.values(featureFlags).filter(Boolean).length}/{Object.keys(featureFlags).length} enabled</span>
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column" as const, gap: 8 }}>
+              {Object.entries(featureFlags).map(([key, enabled]) => {
+                const label = key.replace(/^enable_/, "").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+                const isSaving = flagSaving === key;
+                return (
+                  <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", borderRadius: 10, background: tok.cardBg, border: `1px solid ${enabled ? "rgba(74,222,128,.2)" : tok.alertBdr}`, transition: "border-color .2s" }}>
+                    <div>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: tok.cardText, margin: 0 }}>{label}</p>
+                      <p style={{ fontSize: 10, color: tok.cardSub, margin: "1px 0 0", fontFamily: "monospace" }}>{key}</p>
+                    </div>
+                    <button onClick={() => toggleFeatureFlag(key)} disabled={isSaving}
+                      style={{ width: 44, height: 24, borderRadius: 12, border: "none", cursor: isSaving ? "not-allowed" : "pointer", position: "relative", flexShrink: 0,
+                        background: enabled ? "#22c55e" : tok.alertBdr, transition: "background .2s", opacity: isSaving ? 0.6 : 1 }}>
+                      <span style={{ position: "absolute", top: 3, left: enabled ? 22 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── 3. Referral Bonus Config ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 14px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 15 }}>🎁</span> Referral Bonus Config
+            </p>
+
+            {/* Bonus amount */}
+            <div style={{ marginBottom: 12 }}>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 6px", fontWeight: 600 }}>Bonus per Referral (₹)</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 13, color: tok.cardSub }}>₹</span>
+                <input type="number" min={0} value={referralBonus} onChange={e => setReferralBonus(Number(e.target.value))}
+                  style={{ flex: 1, padding: "8px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 13, fontWeight: 700, outline: "none" }} />
+              </div>
+            </div>
+
+            {/* Minimum payout */}
+            <div style={{ marginBottom: 14 }}>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 6px", fontWeight: 600 }}>Min. Referral Earnings for Payout (₹)</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 13, color: tok.cardSub }}>₹</span>
+                <input type="number" min={0} value={referralMinPay} onChange={e => setReferralMinPay(Number(e.target.value))}
+                  style={{ flex: 1, padding: "8px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 13, fontWeight: 700, outline: "none" }} />
+              </div>
+            </div>
+
+            {/* Live preview */}
+            <div style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(99,102,241,.06)", border: "1px solid rgba(99,102,241,.15)", marginBottom: 14 }}>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>A user needs <strong style={{ color: "#a5b4fc" }}>{Math.ceil(referralMinPay / Math.max(1, referralBonus))} referrals</strong> before payout</p>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>Each referral earns <strong style={{ color: "#4ade80" }}>₹{referralBonus.toLocaleString("en-IN")}</strong></p>
+            </div>
+
+            <button onClick={saveReferralConfig} disabled={referralSaving}
+              style={{ width: "100%", padding: "9px", borderRadius: 10, background: "rgba(99,102,241,.12)", border: "1px solid rgba(99,102,241,.3)", color: "#a5b4fc", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+              {referralSaving ? "Saved ✓" : "Save Referral Config"}
+            </button>
+          </div>
+
+          {/* ── 4. Platform Fee Editor ── */}
+          <div style={{ background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, borderRadius: 14, padding: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: tok.cardText, margin: "0 0 14px", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 15 }}>💳</span> Platform Fee Editor
+            </p>
+
+            {/* Fee Rate */}
+            <div style={{ marginBottom: 12 }}>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 6px", fontWeight: 600 }}>Transaction Fee Rate (%)</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <input type="number" min={0} max={50} step={0.5} value={pfeeRate} onChange={e => setPfeeRate(Number(e.target.value))}
+                  style={{ flex: 1, padding: "8px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 13, fontWeight: 700, outline: "none" }} />
+                <span style={{ fontSize: 14, fontWeight: 900, color: "#fbbf24" }}>%</span>
+              </div>
+            </div>
+
+            {/* Min Fee */}
+            <div style={{ marginBottom: 12 }}>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 6px", fontWeight: 600 }}>Minimum Fee (₹)</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 13, color: tok.cardSub }}>₹</span>
+                <input type="number" min={0} value={pfeeMin} onChange={e => setPfeeMin(Number(e.target.value))}
+                  style={{ flex: 1, padding: "8px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 13, fontWeight: 700, outline: "none" }} />
+              </div>
+            </div>
+
+            {/* Max Fee */}
+            <div style={{ marginBottom: 14 }}>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 6px", fontWeight: 600 }}>Maximum Fee Cap (₹)</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 13, color: tok.cardSub }}>₹</span>
+                <input type="number" min={0} value={pfeeMax} onChange={e => setPfeeMax(Number(e.target.value))}
+                  style={{ flex: 1, padding: "8px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 13, fontWeight: 700, outline: "none" }} />
+              </div>
+            </div>
+
+            {/* Fee preview band */}
+            <div style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(251,191,36,.06)", border: "1px solid rgba(251,191,36,.15)", marginBottom: 14 }}>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 2px" }}>For a ₹10,000 project:</p>
+              <p style={{ fontSize: 14, fontWeight: 900, color: "#fbbf24", margin: 0 }}>
+                ₹{Math.min(pfeeMax, Math.max(pfeeMin, Math.round(10000 * pfeeRate / 100))).toLocaleString("en-IN")} fee
+              </p>
+            </div>
+
+            <button onClick={savePlatformFee} disabled={pfeeSaving}
+              style={{ width: "100%", padding: "9px", borderRadius: 10, background: "rgba(251,191,36,.12)", border: "1px solid rgba(251,191,36,.3)", color: "#fbbf24", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+              {pfeeSaving ? "Saved ✓" : "Save Platform Fees"}
+            </button>
+          </div>
+
+        </div>
+      </div>
 
       {/* ══════════════════════════════════════════════════════
           SECURITY & MODERATION
