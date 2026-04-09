@@ -179,6 +179,7 @@ const AdminDashboard = () => {
   const [kpiClearing, setKpiClearing]           = useState(false);
   const [regFeedClearing, setRegFeedClearing]   = useState(false);
   const [msgClearing, setMsgClearing]           = useState(false);
+  const [recoveryClearing, setRecoveryClearing] = useState(false);
   const [regionData, setRegionData]       = useState<RegionPoint[]>([]);
   const [withdrawalSummary, setWithdrawalSummary] = useState({
     pending: 0, approved: 0, rejected: 0, completed: 0,
@@ -1965,7 +1966,7 @@ const AdminDashboard = () => {
             </div>
           ))}
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
           <div style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "rgba(245,158,11,.06)", border: "1px solid rgba(245,158,11,.15)" }}>
             <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>Resolution rate</p>
             <div style={{ height: 5, borderRadius: 3, background: tok.alertBg, marginTop: 6, overflow: "hidden" }}>
@@ -1979,6 +1980,24 @@ const AdminDashboard = () => {
             Manage →
           </button>
         </div>
+        <button
+          onClick={async () => {
+            const ok = window.confirm("Recovery Requests data delete ചെയ്യണോ?\n\nഈ action undo ചെയ്യാൻ കഴിയില്ല — recovery_requests table-ൽ നിന്ന് permanently remove ആകും.");
+            if (!ok) return;
+            setRecoveryClearing(true);
+            try {
+              await supabase.from("recovery_requests").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+              setRecoveryData({ open: 0, resolved: 0, total: 0, totalAmt: 0 });
+            } catch { /* silently ignore */ }
+            setRecoveryClearing(false);
+          }}
+          disabled={recoveryClearing || recoveryData.total === 0}
+          style={{ width: "100%", padding: "8px", borderRadius: 9, background: recoveryData.total > 0 ? "rgba(239,68,68,.08)" : tok.alertBg, border: `1px solid ${recoveryData.total > 0 ? "rgba(239,68,68,.25)" : tok.alertBdr}`, color: recoveryData.total > 0 ? "#f87171" : tok.cardSub, fontSize: 12, fontWeight: 700, cursor: (recoveryClearing || recoveryData.total === 0) ? "not-allowed" : "pointer", opacity: recoveryClearing ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+          {recoveryClearing
+            ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Clearing…</>
+            : <>✕ Clear All Recovery Requests</>
+          }
+        </button>
       </div>
 
       {/* ══ RECENT ACTIVITY LOG ══ */}
