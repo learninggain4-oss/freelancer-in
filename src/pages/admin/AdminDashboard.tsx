@@ -168,6 +168,7 @@ const AdminDashboard = () => {
   const [pendingUsers, setPendingUsers]   = useState<PendingUser[]>([]);
   const [approvingId, setApprovingId]     = useState<string | null>(null);
   const [rejectingId, setRejectingId]     = useState<string | null>(null);
+  const [msgResetting, setMsgResetting]   = useState(false);
   const [regionData, setRegionData]       = useState<RegionPoint[]>([]);
   const [withdrawalSummary, setWithdrawalSummary] = useState({
     pending: 0, approved: 0, rejected: 0, completed: 0,
@@ -616,6 +617,15 @@ const AdminDashboard = () => {
     setPendingUsers(prev => prev.filter(u => u.id !== id));
     setStats(prev => ({ ...prev, pendingApprovals: prev.pendingApprovals - 1, approvedUsers: prev.approvedUsers + 1, activeUsers: prev.activeUsers + 1 }));
     setApprovingId(null);
+  }, []);
+
+  const resetUnreadMessages = useCallback(async () => {
+    setMsgResetting(true);
+    try {
+      await supabase.from("messages").update({ is_read: true }).eq("is_read", false);
+      setMessageStats(prev => ({ ...prev, unread: 0 }));
+    } catch { /* silently ignore */ }
+    setMsgResetting(false);
   }, []);
 
   const handleReject = useCallback(async (id: string) => {
@@ -1649,9 +1659,20 @@ const AdminDashboard = () => {
               </div>
             ))}
           </div>
-          <button onClick={() => navigate("/admin/help-support")} style={{ width: "100%", padding: "8px", borderRadius: 9, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-            View All Messages →
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={resetUnreadMessages}
+              disabled={msgResetting || messageStats.unread === 0}
+              style={{ flex: 1, padding: "8px", borderRadius: 9, background: messageStats.unread > 0 ? "rgba(251,191,36,.1)" : tok.alertBg, border: `1px solid ${messageStats.unread > 0 ? "rgba(251,191,36,.3)" : tok.alertBdr}`, color: messageStats.unread > 0 ? "#fbbf24" : tok.cardSub, fontSize: 12, fontWeight: 700, cursor: messageStats.unread > 0 ? "pointer" : "not-allowed", opacity: msgResetting ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+              {msgResetting
+                ? <><span style={{ display:"inline-block", width:10, height:10, border:"2px solid currentColor", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> Resetting…</>
+                : <>↺ Reset Unread ({messageStats.unread})</>
+              }
+            </button>
+            <button onClick={() => navigate("/admin/help-support")} style={{ flex: 1, padding: "8px", borderRadius: 9, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, color: "#a5b4fc", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+              View All Messages →
+            </button>
+          </div>
         </div>
 
         {/* Fraud Detection Panel */}
