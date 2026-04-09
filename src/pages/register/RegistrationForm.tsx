@@ -7,7 +7,7 @@ import {
   Briefcase, ArrowLeft, ArrowRight, Loader2, Plus, Trash2,
   User, Phone, Building2, Heart, Wrench, CheckCircle2, Shield,
   GraduationCap, Calendar, Mail, Lock, Share2, Upload, FileText,
-  Sparkles, Check,
+  Sparkles, Check, Factory, IndianRupee, MapPin, Tag,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -76,6 +76,27 @@ const freelancerStepConfig = [
 const employerStepConfig = [
   { label: "Personal Info",    icon: User,      description: "Tell us about yourself",    color: A1 },
   { label: "Contact Details",  icon: Phone,     description: "How can we reach you?",      color: "#0ea5e9" },
+  { label: "Business Info",    icon: Factory,   description: "About your company",         color: "#f59e0b" },
+];
+
+const INDIAN_STATES = [
+  "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana",
+  "Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur",
+  "Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana",
+  "Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Delhi","Jammu & Kashmir","Ladakh",
+  "Puducherry","Chandigarh","Andaman & Nicobar Islands","Lakshadweep",
+  "Dadra & Nagar Haveli and Daman & Diu",
+];
+
+const INDUSTRY_SECTORS = [
+  "Information Technology","Finance & Banking","Healthcare","Education","Manufacturing",
+  "Retail & E-commerce","Construction & Real Estate","Hospitality & Tourism","Media & Entertainment",
+  "Logistics & Supply Chain","Agriculture","Legal Services","Marketing & Advertising","Other",
+];
+
+const BUSINESS_TYPES = [
+  "Sole Proprietorship","Partnership Firm","LLP","Private Limited (Pvt. Ltd.)",
+  "Public Limited (Ltd.)","OPC (One Person Company)","NGO / Trust","Startup","Other",
 ];
 
 /* Shared input style prop */
@@ -95,6 +116,12 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const [arrayErrors, setArrayErrors] = useState<string[]>([]);
   const [referralCode, setReferralCode] = useState(() => searchParams.get("ref")?.toUpperCase() || "");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [employerBiz, setEmployerBiz] = useState({
+    company_name: "", business_type: "", industry_sector: "",
+    gst_number: "", business_description: "",
+    typical_budget_min: "", typical_budget_max: "",
+    preferred_categories: [] as string[], city: "", state: "",
+  });
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [submitted, setSubmitted] = useState(false);
   const [countdownUnits, setCountdownUnits] = useState(300);
@@ -124,7 +151,10 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const { data: categories = [] } = useQuery({ queryKey: ["service-categories"], queryFn: async () => { const { data } = await supabase.from("service_categories").select("*").order("name"); return data || []; } });
   const { data: allSkills = [] } = useQuery({ queryKey: ["service-skills"], queryFn: async () => { const { data } = await supabase.from("service_skills").select("*").order("name"); return data || []; } });
 
-  const getStepType = (s: number) => ["personal","contact","work","emergency","services"][s] || "personal";
+  const getStepType = (s: number) => {
+    if (!isFreelancer) return (["personal","contact","business"] as const)[s] ?? "personal";
+    return (["personal","contact","work","emergency","services"] as const)[s] ?? "personal";
+  };
 
   const formFieldsForStep = (s: number): string[] => {
     if (s === 0) return ["full_name","gender","date_of_birth","marital_status","education_level"];
@@ -190,6 +220,23 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       if (profileError) throw profileError;
       const profileId = (profileData as any)?.id || userId;
       await supabase.from("registration_metadata" as any).insert([{ profile_id: profileId, ip_address: geoData.ip||null, city: geoData.city||null, region: geoData.region||null, country: geoData.country||null, latitude: geoData.lat||null, longitude: geoData.lon||null }] as any);
+      if (!isFreelancer) {
+        try {
+          await supabase.from("employer_profiles" as any).insert([{
+            profile_id: profileId,
+            company_name: employerBiz.company_name || null,
+            business_type: employerBiz.business_type || null,
+            industry_sector: employerBiz.industry_sector || null,
+            gst_number: employerBiz.gst_number || null,
+            business_description: employerBiz.business_description || null,
+            typical_budget_min: employerBiz.typical_budget_min ? Number(employerBiz.typical_budget_min) : null,
+            typical_budget_max: employerBiz.typical_budget_max ? Number(employerBiz.typical_budget_max) : null,
+            preferred_categories: employerBiz.preferred_categories.length ? employerBiz.preferred_categories : null,
+            city: employerBiz.city || null,
+            state: employerBiz.state || null,
+          }] as any);
+        } catch (bizErr) { console.warn("Employer profile save deferred:", bizErr); }
+      }
       for (const w of workExperiences.filter(w => w.company_name.trim())) {
         let certPath: string | null = null, certName: string | null = null;
         if (w.certificate_file) { const ext = w.certificate_file.name.split(".").pop(); const path = `${profileId}/${crypto.randomUUID()}.${ext}`; const { error: ue } = await supabase.storage.from("work-certificates").upload(path, w.certificate_file); if (!ue) { certPath = path; certName = w.certificate_file.name; } }
@@ -690,6 +737,171 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                     </Label>
                     <Input placeholder="Enter referral code" value={referralCode} onChange={e => setReferralCode(e.target.value.toUpperCase())} className="reg-input" style={{ ...inp, textTransform: "uppercase" }} />
                     <p style={{ color: "rgba(255,255,255,.3)", fontSize: 11, marginTop: 6 }}>Got a referral code? Enter it to earn bonus coins!</p>
+                  </div>
+                </div>
+              )}
+
+              {/* ── STEP 2 (Employer): Business Info ── */}
+              {stepType === "business" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                  <div className="reg-section-badge">
+                    <Factory size={15} color="#f59e0b" />
+                    <span style={{ color: "#f59e0b", fontSize: 13, fontWeight: 600 }}>Company / Business Information</span>
+                  </div>
+                  <div className="reg-info-box" style={{ display: "flex", gap: 8 }}>
+                    <Sparkles size={14} color={A1} style={{ flexShrink: 0, marginTop: 2 }} />
+                    <p style={{ color: "rgba(255,255,255,.45)", fontSize: 12, lineHeight: 1.6 }}>
+                      All fields are optional — you can update your business profile later from the Employer Dashboard.
+                    </p>
+                  </div>
+
+                  {/* Company Name */}
+                  <div>
+                    <label style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                      <Building2 size={13} color="#f59e0b" /> Company / Business Name
+                    </label>
+                    <Input
+                      placeholder="e.g. Acme Technologies Pvt. Ltd."
+                      value={employerBiz.company_name}
+                      onChange={e => setEmployerBiz(p => ({ ...p, company_name: e.target.value }))}
+                      className="reg-input" style={inp}
+                    />
+                  </div>
+
+                  {/* Business Type + Industry */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                    <div>
+                      <label style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600, display: "block", marginBottom: 8 }}>Business Type</label>
+                      <Select value={employerBiz.business_type} onValueChange={v => setEmployerBiz(p => ({ ...p, business_type: v }))}>
+                        <SelectTrigger style={inp}><SelectValue placeholder="Select type" /></SelectTrigger>
+                        <SelectContent>
+                          {BUSINESS_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600, display: "block", marginBottom: 8 }}>Industry Sector</label>
+                      <Select value={employerBiz.industry_sector} onValueChange={v => setEmployerBiz(p => ({ ...p, industry_sector: v }))}>
+                        <SelectTrigger style={inp}><SelectValue placeholder="Select sector" /></SelectTrigger>
+                        <SelectContent>
+                          {INDUSTRY_SECTORS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* GST Number */}
+                  <div>
+                    <label style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                      <FileText size={13} color="rgba(255,255,255,.4)" /> GST Number <span style={{ color: "rgba(255,255,255,.3)", fontSize: 11, fontWeight: 400, marginLeft: 4 }}>(optional)</span>
+                    </label>
+                    <Input
+                      placeholder="e.g. 22AAAAA0000A1Z5"
+                      maxLength={15}
+                      value={employerBiz.gst_number}
+                      onChange={e => setEmployerBiz(p => ({ ...p, gst_number: e.target.value.toUpperCase() }))}
+                      className="reg-input" style={{ ...inp, fontFamily: "monospace", letterSpacing: 1 }}
+                    />
+                  </div>
+
+                  {/* Business Description */}
+                  <div>
+                    <label style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                      <Briefcase size={13} color="rgba(255,255,255,.4)" /> Business Description
+                    </label>
+                    <Textarea
+                      placeholder="Briefly describe your company, products/services, and what kind of freelancers you typically hire…"
+                      rows={3}
+                      value={employerBiz.business_description}
+                      onChange={e => setEmployerBiz(p => ({ ...p, business_description: e.target.value }))}
+                      className="reg-input" style={{ ...inp, padding: "10px 12px", minHeight: 88, resize: "vertical" }}
+                    />
+                  </div>
+
+                  {/* Budget Range */}
+                  <div>
+                    <label style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                      <IndianRupee size={13} color="#22c55e" /> Typical Hiring Budget (INR)
+                    </label>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      <div style={{ position: "relative" }}>
+                        <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,.3)", fontSize: 13, fontWeight: 600, pointerEvents: "none" }}>₹</span>
+                        <Input
+                          type="number" min={0} placeholder="Min budget"
+                          value={employerBiz.typical_budget_min}
+                          onChange={e => setEmployerBiz(p => ({ ...p, typical_budget_min: e.target.value }))}
+                          className="reg-input" style={{ ...inp, paddingLeft: 26 }}
+                        />
+                      </div>
+                      <div style={{ position: "relative" }}>
+                        <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,.3)", fontSize: 13, fontWeight: 600, pointerEvents: "none" }}>₹</span>
+                        <Input
+                          type="number" min={0} placeholder="Max budget"
+                          value={employerBiz.typical_budget_max}
+                          onChange={e => setEmployerBiz(p => ({ ...p, typical_budget_max: e.target.value }))}
+                          className="reg-input" style={{ ...inp, paddingLeft: 26 }}
+                        />
+                      </div>
+                    </div>
+                    <p style={{ color: "rgba(255,255,255,.25)", fontSize: 11, marginTop: 5 }}>Per project / assignment range you usually hire for</p>
+                  </div>
+
+                  {/* Preferred Categories */}
+                  {categories.length > 0 && (
+                    <div>
+                      <label style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                        <Tag size={13} color="#818cf8" /> Preferred Freelancer Categories
+                      </label>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {categories.map((cat: any) => {
+                          const selected = employerBiz.preferred_categories.includes(cat.id);
+                          return (
+                            <button
+                              key={cat.id} type="button"
+                              onClick={() => setEmployerBiz(p => ({
+                                ...p,
+                                preferred_categories: selected
+                                  ? p.preferred_categories.filter(id => id !== cat.id)
+                                  : [...p.preferred_categories, cat.id]
+                              }))}
+                              style={{
+                                padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all .2s",
+                                background: selected ? "rgba(99,102,241,.25)" : "rgba(255,255,255,.05)",
+                                border: selected ? "1px solid rgba(99,102,241,.6)" : "1px solid rgba(255,255,255,.1)",
+                                color: selected ? "#a5b4fc" : "rgba(255,255,255,.5)",
+                              }}
+                            >
+                              {selected && <Check size={11} style={{ marginRight: 5, display: "inline" }} />}
+                              {cat.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* City + State */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                    <div>
+                      <label style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                        <MapPin size={13} color="#f43f5e" /> City
+                      </label>
+                      <Input
+                        placeholder="e.g. Mumbai"
+                        value={employerBiz.city}
+                        onChange={e => setEmployerBiz(p => ({ ...p, city: e.target.value }))}
+                        className="reg-input" style={inp}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600, display: "block", marginBottom: 8 }}>State</label>
+                      <Select value={employerBiz.state} onValueChange={v => setEmployerBiz(p => ({ ...p, state: v }))}>
+                        <SelectTrigger style={inp}><SelectValue placeholder="Select state" /></SelectTrigger>
+                        <SelectContent className="max-h-56">
+                          {INDIAN_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               )}
