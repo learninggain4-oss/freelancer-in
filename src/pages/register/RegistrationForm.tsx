@@ -317,10 +317,9 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
 
               {/* Steps */}
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {REG_STEPS.map(({ label, emoji, threshold, tickAt }, idx) => {
+                {REG_STEPS.map(({ label, emoji, threshold }, idx) => {
                   const done = countdownUnits <= threshold;
                   const active = idx === activeIdx;
-                  const pending = !done && !active;
                   return (
                     <div key={`${label}-${done}`}
                       style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 12,
@@ -358,13 +357,6 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                         )}
                       </p>
 
-                      {/* Tick time badge */}
-                      {done
-                        ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 9, color: "#4ade80", fontWeight: 800, padding: "2px 7px", borderRadius: 6, background: "rgba(74,222,128,0.12)", flexShrink: 0 }}>
-                            <Check size={9} color="#4ade80" strokeWidth={3} /> {tickAt}
-                          </span>
-                        : <span style={{ fontSize: 9, color: pending ? "rgba(255,255,255,0.18)" : "rgba(129,140,248,0.7)", fontWeight: 600, padding: "2px 7px", borderRadius: 6, background: "rgba(255,255,255,0.04)", flexShrink: 0 }}>{tickAt}</span>
-                      }
                     </div>
                   );
                 })}
