@@ -91,16 +91,16 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [submitted, setSubmitted] = useState(false);
-  const [countdownSec, setCountdownSec] = useState(180);
+  const [countdownUnits, setCountdownUnits] = useState(300);
   const [showSuccess, setShowSuccess] = useState(false);
   const [redirectSec, setRedirectSec] = useState(30);
 
   useEffect(() => {
     if (!submitted || showSuccess) return;
-    if (countdownSec <= 0) { setShowSuccess(true); return; }
-    const t = setTimeout(() => setCountdownSec(s => s - 1), 1000);
+    if (countdownUnits <= 0) { setShowSuccess(true); return; }
+    const t = setTimeout(() => setCountdownUnits(s => s - 1), 600);
     return () => clearTimeout(t);
-  }, [submitted, countdownSec, showSuccess]);
+  }, [submitted, countdownUnits, showSuccess]);
 
   useEffect(() => {
     if (!showSuccess) return;
@@ -210,9 +210,23 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const StepIcon = stepConfig[step].icon;
   const stepColor = stepConfig[step].color;
 
-  const cMins = Math.floor(countdownSec / 60);
-  const cSecs = countdownSec % 60;
-  const cProgress = ((180 - countdownSec) / 180) * 100;
+  const cMins = Math.floor(countdownUnits / 100);
+  const cSecs = countdownUnits % 100;
+  const cProgress = ((300 - countdownUnits) / 300) * 100;
+
+  const REG_STEPS = [
+    { label: "Registration Started",        emoji: "🚀", threshold: 270, tickAt: "2m:70s" },
+    { label: "Basic Details Submitted",     emoji: "📋", threshold: 240, tickAt: "2m:40s" },
+    { label: "Email Verification",          emoji: "📧", threshold: 200, tickAt: "2m:00s" },
+    { label: "Mobile Verification",         emoji: "📱", threshold: 170, tickAt: "1m:70s" },
+    { label: "Username & Profile Setup",    emoji: "👤", threshold: 140, tickAt: "1m:40s" },
+    { label: "Terms & Conditions",          emoji: "📜", threshold: 100, tickAt: "1m:00s" },
+    { label: "Profile Completeness Check",  emoji: "🔍", threshold: 80,  tickAt: "0m:80s" },
+    { label: "Security / Fraud Check",      emoji: "🛡️", threshold: 70,  tickAt: "0m:70s" },
+    { label: "Account Status Processing",   emoji: "⚙️", threshold: 40,  tickAt: "0m:40s" },
+    { label: "Wallet Account Activated",    emoji: "💳", threshold: 10,  tickAt: "0m:10s" },
+  ];
+  const activeIdx = REG_STEPS.findIndex(s => countdownUnits > s.threshold);
 
   if (submitted) return (
     <div style={{ background: "linear-gradient(160deg,#0a0e1a 0%,#0f1629 40%,#0d1220 100%)", color: "white", minHeight: "100vh", fontFamily: "Inter,system-ui,sans-serif", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 16px" }}>
@@ -220,7 +234,13 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
         @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0.4)}50%{box-shadow:0 0 0 14px rgba(99,102,241,0)}}
         @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
-        @keyframes confetti{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(-60px) rotate(360deg);opacity:0}}
+        @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+        @keyframes checkBounce{0%{transform:scale(0) rotate(-45deg);opacity:0}60%{transform:scale(1.25) rotate(5deg);opacity:1}80%{transform:scale(0.9)}100%{transform:scale(1) rotate(0deg);opacity:1}}
+        @keyframes stepSlideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes activeGlow{0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0.5)}50%{box-shadow:0 0 0 6px rgba(99,102,241,0.0)}}
+        @keyframes dotPulse{0%,100%{opacity:0.4;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
+        @keyframes ringRotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+        @keyframes doneRowGlow{from{background:rgba(34,197,94,0.18)}to{background:rgba(34,197,94,0.07)}}
       `}</style>
 
       <div style={{ width: "100%", maxWidth: 440, animation: "fadeUp .5s ease both" }}>
@@ -296,19 +316,56 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
               </p>
 
               {/* Steps */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {[
-                  { label: "Registration Data Saved", done: true, active: false },
-                  { label: "Account Being Configured", done: false, active: true },
-                  { label: "Profile Ready to Use", done: false, active: false },
-                ].map(({ label, done, active }) => (
-                  <div key={label} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 12, background: done ? "rgba(34,197,94,0.08)" : active ? "rgba(99,102,241,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${done ? "rgba(34,197,94,0.2)" : active ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.06)"}` }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: done ? "rgba(34,197,94,0.15)" : active ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      {done ? <Check size={14} color="#22c55e" /> : active ? <Loader2 size={14} color="#818cf8" style={{ animation: "spin 1.5s linear infinite" }} /> : <Shield size={14} color="rgba(255,255,255,0.2)" />}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {REG_STEPS.map(({ label, emoji, threshold, tickAt }, idx) => {
+                  const done = countdownUnits <= threshold;
+                  const active = idx === activeIdx;
+                  const pending = !done && !active;
+                  return (
+                    <div key={`${label}-${done}`}
+                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 12,
+                        background: done ? "rgba(34,197,94,0.07)" : active ? "rgba(99,102,241,0.10)" : "rgba(255,255,255,0.02)",
+                        border: `1px solid ${done ? "rgba(34,197,94,0.22)" : active ? "rgba(99,102,241,0.28)" : "rgba(255,255,255,0.05)"}`,
+                        animation: done ? "doneRowGlow 0.6s ease both, stepSlideIn 0.35s ease both" : active ? "stepSlideIn 0.35s ease both" : "none",
+                        transition: "all 0.4s ease" }}>
+
+                      {/* Icon circle */}
+                      <div style={{ position: "relative", width: 32, height: 32, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {/* Spinning ring for active */}
+                        {active && (
+                          <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid transparent", borderTopColor: "#818cf8", borderRightColor: "rgba(129,140,248,0.3)", animation: "ringRotate 1s linear infinite" }} />
+                        )}
+                        <div style={{ width: 26, height: 26, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13,
+                          background: done ? "rgba(34,197,94,0.18)" : active ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.04)",
+                          animation: active ? "activeGlow 1.8s ease-in-out infinite" : "none" }}>
+                          {done
+                            ? <span style={{ animation: "checkBounce 0.45s cubic-bezier(.36,1.56,.64,1) both", display: "inline-block", fontSize: 14, lineHeight: 1 }}>✅</span>
+                            : active
+                              ? <Loader2 size={13} color="#818cf8" style={{ animation: "spin 1.2s linear infinite" }} />
+                              : <span style={{ fontSize: 13, opacity: 0.35 }}>{emoji}</span>
+                          }
+                        </div>
+                      </div>
+
+                      {/* Label */}
+                      <p style={{ flex: 1, fontSize: 12, fontWeight: active ? 700 : done ? 600 : 500,
+                        color: done ? "#86efac" : active ? "#c7d2fe" : "rgba(255,255,255,0.28)", margin: 0, lineHeight: 1.3 }}>
+                        {emoji} {label}
+                        {active && (
+                          <span style={{ display: "inline-flex", gap: 3, marginLeft: 6 }}>
+                            {[0,1,2].map(i => <span key={i} style={{ width: 4, height: 4, borderRadius: "50%", background: "#818cf8", display: "inline-block", animation: `dotPulse 1.2s ease-in-out ${i*0.2}s infinite` }} />)}
+                          </span>
+                        )}
+                      </p>
+
+                      {/* Tick time badge */}
+                      {done
+                        ? <span style={{ fontSize: 9, color: "#4ade80", fontWeight: 800, padding: "2px 7px", borderRadius: 6, background: "rgba(74,222,128,0.12)", flexShrink: 0 }}>✓ {tickAt}</span>
+                        : <span style={{ fontSize: 9, color: pending ? "rgba(255,255,255,0.18)" : "rgba(129,140,248,0.7)", fontWeight: 600, padding: "2px 7px", borderRadius: 6, background: "rgba(255,255,255,0.04)", flexShrink: 0 }}>{tickAt}</span>
+                      }
                     </div>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: done ? "#86efac" : active ? "#c7d2fe" : "rgba(255,255,255,0.3)", margin: 0 }}>{label}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
