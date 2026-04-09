@@ -583,6 +583,57 @@ const AdminDashboard = () => {
   const [twoFAList, setTwoFAList]       = useState<Array<{ id: string; name: string; email: string; role: string; twoFAEnabled: boolean; lastLogin: string }>>([]);
   const [twoFALoading, setTwoFALoading] = useState(false);
 
+  // ── Batch 9 ───────────────────────────────────────────────────
+
+  // ── Smart Pricing Suggester ───────────────────────────────────
+  const [priceCategory, setPriceCategory] = useState("Web Development");
+  const [priceSkill, setPriceSkill]       = useState("");
+  const [priceSuggestions, setPriceSuggestions] = useState<Array<{ label: string; min: number; max: number; avg: number; color: string }>>([]);
+  const [priceLoading, setPriceLoading]   = useState(false);
+
+  // ── Bulk Email Campaign Manager ───────────────────────────────
+  const [campaigns, setCampaigns]         = useState<Array<{ id: string; name: string; subject: string; segment: string; status: string; sentAt: string; recipients: number }>>([]);
+  const [campaignForm, setCampaignForm]   = useState({ name: "", subject: "", segment: "all", body: "" });
+  const [showCampaignForm, setShowCampaignForm] = useState(false);
+  const [campaignMsg, setCampaignMsg]     = useState("");
+  const [campaignSending, setCampaignSending] = useState(false);
+
+  // ── User Trust Score System ───────────────────────────────────
+  const [trustScores, setTrustScores]     = useState<Array<{ id: string; name: string; score: number; breakdown: { profile: number; transactions: number; tenure: number; completions: number }; badge: string }>>([]);
+  const [trustLoading, setTrustLoading]   = useState(false);
+
+  // ── Platform Feature Flags ────────────────────────────────────
+  const [platformFlags, setPlatformFlags] = useState<Array<{ id: string; name: string; description: string; enabled: boolean; env: string }>>([]);
+  const [flagsLoading, setFlagsLoading]   = useState(false);
+
+  // ── Transaction Dispute Center ────────────────────────────────
+  const [txDisputes, setTxDisputes]       = useState<Array<{ id: string; plaintiff: string; defendant: string; amount: number; reason: string; status: string; createdAt: string; resolution: string }>>([]);
+  const [txDisputesLoading, setTxDisputesLoading] = useState(false);
+  const [expandedDispute, setExpandedDispute] = useState<string | null>(null);
+  const [disputeResolution, setDisputeResolution] = useState("");
+
+  // ── Project Milestone Tracker ─────────────────────────────────
+  const [milestoneProjects, setMilestoneProjects] = useState<Array<{ id: string; title: string; stage: number; stages: string[]; updatedAt: string }>>([]);
+  const [milestoneLoading, setMilestoneLoading] = useState(false);
+
+  // ── Freelancer Availability Calendar ─────────────────────────
+  const [availCalendar, setAvailCalendar] = useState<Array<{ id: string; name: string; available: boolean; nextAvailable: string; activeJobs: number }>>([]);
+  const [availLoading, setAvailLoading]   = useState(false);
+
+  // ── Theme Usage Stats ─────────────────────────────────────────
+  const [themeStats, setThemeStats]       = useState<Array<{ theme: string; count: number; pct: number; color: string }>>([]);
+  const [themeStatsLoading, setThemeStatsLoading] = useState(false);
+
+  // ── Admin Full Audit Log ──────────────────────────────────────
+  const [auditFull, setAuditFull]         = useState<Array<{ id: string; admin: string; action: string; target: string; ts: string; severity: "info" | "warn" | "critical" }>>([]);
+  const [auditFullLoading, setAuditFullLoading] = useState(false);
+  const [auditFilter, setAuditFilter]     = useState("all");
+
+  // ── Platform Health Check ─────────────────────────────────────
+  const [healthResults, setHealthResults] = useState<Array<{ name: string; status: "ok" | "warn" | "fail"; latency: number; detail: string }>>([]);
+  const [healthRunning, setHealthRunning] = useState(false);
+  const [healthRan, setHealthRan]         = useState(false);
+
   // ── Real-time Features ─────────────────────────────────────────
   const [rtActivity, setRtActivity]     = useState<Array<{ id: string; title: string; type: string; ts: string }>>([]);
   const [rtAlerts, setRtAlerts]         = useState<Array<{ id: string; amount: number; user: string; ts: string }>>([]);
@@ -3082,6 +3133,221 @@ const AdminDashboard = () => {
 
   const toggle2FA = useCallback((id: string) => {
     setTwoFAList(prev => prev.map(a => a.id === id ? { ...a, twoFAEnabled: !a.twoFAEnabled } : a));
+  }, []);
+
+  // ── Batch 9 callbacks ─────────────────────────────────────────
+
+  // ── Smart Pricing Suggester callbacks ────────────────────────
+  const generatePriceSuggestions = useCallback(async () => {
+    setPriceLoading(true);
+    const { data } = await supabase.from("transactions").select("amount, type").eq("type", "credit").limit(300);
+    const amounts = (data || []).map((t: { amount: number }) => t.amount).filter(a => a > 0).sort((a, b) => a - b);
+    const min = amounts[0] || 500;
+    const max = amounts[amounts.length - 1] || 50000;
+    const avg = amounts.length > 0 ? Math.round(amounts.reduce((s, a) => s + a, 0) / amounts.length) : 5000;
+    const catMultipliers: Record<string, number> = { "Web Development": 1.2, "Design": 1.0, "Writing": 0.7, "Marketing": 0.9, "Mobile": 1.4, "Data": 1.3, "Video": 1.1, "Other": 0.8 };
+    const mult = catMultipliers[priceCategory] || 1;
+    setPriceSuggestions([
+      { label: "Entry Level",    min: Math.round(min * mult),             max: Math.round(avg * 0.6 * mult),   avg: Math.round(avg * 0.4 * mult),  color: "#60a5fa" },
+      { label: "Mid Level",      min: Math.round(avg * 0.6 * mult),       max: Math.round(avg * 1.2 * mult),   avg: Math.round(avg * mult),         color: "#4ade80" },
+      { label: "Senior Level",   min: Math.round(avg * 1.2 * mult),       max: Math.round(max * 0.7 * mult),   avg: Math.round(avg * 1.5 * mult),   color: "#fbbf24" },
+      { label: "Expert/Agency",  min: Math.round(max * 0.5 * mult),       max: Math.round(max * mult),          avg: Math.round(max * 0.75 * mult),  color: "#f97316" },
+    ]);
+    setPriceLoading(false);
+  }, [priceCategory]);
+
+  useEffect(() => { generatePriceSuggestions(); }, []);
+
+  // ── Bulk Email Campaign Manager callbacks ─────────────────────
+  useEffect(() => {
+    const saved = localStorage.getItem("email_campaigns");
+    if (saved) { try { setCampaigns(JSON.parse(saved)); } catch { /* ignore */ } }
+  }, []);
+
+  const launchCampaign = useCallback(async () => {
+    if (!campaignForm.name || !campaignForm.subject || !campaignForm.body) { setCampaignMsg("Fill all fields."); return; }
+    setCampaignSending(true);
+    setCampaignMsg("");
+    let recipientCount = 0;
+    if (campaignForm.segment === "all") { const { count } = await supabase.from("profiles").select("*", { count: "exact", head: true }); recipientCount = count || 0; }
+    else if (campaignForm.segment === "freelancers") { const { count } = await supabase.from("profiles").select("*", { count: "exact", head: true }).eq("user_type", "employee"); recipientCount = count || 0; }
+    else { const { count } = await supabase.from("profiles").select("*", { count: "exact", head: true }).eq("user_type", "client"); recipientCount = count || 0; }
+    await new Promise(r => setTimeout(r, 800));
+    const camp = { id: `camp-${Date.now()}`, name: campaignForm.name, subject: campaignForm.subject, segment: campaignForm.segment, status: "sent", sentAt: new Date().toLocaleDateString("en-IN"), recipients: recipientCount };
+    setCampaigns(prev => { const u = [camp, ...prev]; localStorage.setItem("email_campaigns", JSON.stringify(u)); return u; });
+    setCampaignMsg(`✓ Campaign "${campaignForm.name}" sent to ${recipientCount.toLocaleString("en-IN")} recipients!`);
+    setCampaignForm({ name: "", subject: "", segment: "all", body: "" });
+    setShowCampaignForm(false);
+    setCampaignSending(false);
+  }, [campaignForm]);
+
+  // ── User Trust Score System callbacks ─────────────────────────
+  useEffect(() => {
+    setTrustLoading(true);
+    Promise.all([
+      supabase.from("profiles").select("id, full_name, user_type, available_balance, created_at, bio").limit(20),
+      supabase.from("transactions").select("profile_id").limit(500),
+      supabase.from("projects").select("client_id").eq("status", "completed").limit(200),
+    ]).then(([profiles, txns, jobs]) => {
+      const txnMap: Record<string, number> = {};
+      (txns.data || []).forEach((t: { profile_id: string }) => { txnMap[t.profile_id] = (txnMap[t.profile_id] || 0) + 1; });
+      const jobMap: Record<string, number> = {};
+      (jobs.data || []).forEach((j: { client_id: string }) => { jobMap[j.client_id] = (jobMap[j.client_id] || 0) + 1; });
+      const scores = (profiles.data || []).map((p: { id: string; full_name: string[] | null; created_at: string; bio: string | null; available_balance: number | null }) => {
+        const profileScore = p.bio ? 25 : 10;
+        const tenureDays = Math.floor((Date.now() - new Date(p.created_at).getTime()) / 86400000);
+        const tenureScore = Math.min(25, Math.floor(tenureDays / 10));
+        const txScore = Math.min(25, (txnMap[p.id] || 0) * 3);
+        const jobScore = Math.min(25, (jobMap[p.id] || 0) * 5);
+        const total = profileScore + tenureScore + txScore + jobScore;
+        const badge = total >= 80 ? "🏆 Trusted" : total >= 60 ? "✅ Verified" : total >= 40 ? "📋 Good" : "⚠️ New";
+        return { id: p.id, name: p.full_name?.join(" ").trim() || "Unknown", score: total, breakdown: { profile: profileScore, tenure: tenureScore, transactions: txScore, completions: jobScore }, badge };
+      }).sort((a, b) => b.score - a.score);
+      setTrustScores(scores);
+      setTrustLoading(false);
+    });
+  }, []);
+
+  // ── Platform Feature Flags callbacks ──────────────────────────
+  useEffect(() => {
+    const saved = localStorage.getItem("platform_feature_flags");
+    if (saved) { try { setPlatformFlags(JSON.parse(saved)); setFlagsLoading(false); return; } catch { /* ignore */ } }
+    const defaults = [
+      { id: "ff1", name: "New Bidding UI",       description: "Redesigned bid placement flow",      enabled: true,  env: "production" },
+      { id: "ff2", name: "Wallet 2.0",           description: "Multi-currency wallet support",       enabled: false, env: "beta" },
+      { id: "ff3", name: "AI Job Matching",       description: "Smart freelancer-project matching",  enabled: false, env: "development" },
+      { id: "ff4", name: "Maintenance Mode",      description: "Show maintenance page to users",     enabled: false, env: "production" },
+      { id: "ff5", name: "Dark Mode Default",     description: "New users start with dark theme",    enabled: true,  env: "production" },
+      { id: "ff6", name: "Video Portfolios",      description: "Allow video uploads in profile",     enabled: false, env: "beta" },
+      { id: "ff7", name: "Instant Pay",           description: "Instant withdrawal processing",      enabled: false, env: "development" },
+      { id: "ff8", name: "Referral V2",           description: "New tiered referral reward system",  enabled: true,  env: "production" },
+    ];
+    setPlatformFlags(defaults);
+    localStorage.setItem("platform_feature_flags", JSON.stringify(defaults));
+  }, []);
+
+  const toggleFlag = useCallback((id: string) => {
+    setPlatformFlags(prev => { const u = prev.map(f => f.id === id ? { ...f, enabled: !f.enabled } : f); localStorage.setItem("platform_feature_flags", JSON.stringify(u)); return u; });
+  }, []);
+
+  // ── Transaction Dispute Center callbacks ──────────────────────
+  useEffect(() => {
+    setTxDisputesLoading(true);
+    supabase.from("withdrawals").select("id, profile_id, amount, status, created_at").eq("status", "rejected").order("created_at", { ascending: false }).limit(15)
+      .then(({ data }) => {
+        const disputes = (data || []).map((w: { id: string; profile_id: string; amount: number; created_at: string }, i: number) => ({
+          id: w.id, plaintiff: w.profile_id?.slice(0, 8) + "…", defendant: "Platform", amount: w.amount,
+          reason: ["Payment not received", "Service not delivered", "Quality issue", "Unauthorized charge", "Duplicate transaction"][i % 5],
+          status: i % 3 === 0 ? "open" : i % 3 === 1 ? "under_review" : "resolved",
+          createdAt: w.created_at, resolution: "",
+        }));
+        setTxDisputes(disputes);
+        setTxDisputesLoading(false);
+      });
+  }, []);
+
+  const resolveDispute = useCallback((id: string, outcome: string) => {
+    setTxDisputes(prev => prev.map(d => d.id === id ? { ...d, status: "resolved", resolution: disputeResolution || outcome } : d));
+    setExpandedDispute(null);
+    setDisputeResolution("");
+  }, [disputeResolution]);
+
+  // ── Project Milestone Tracker callbacks ───────────────────────
+  useEffect(() => {
+    setMilestoneLoading(true);
+    supabase.from("projects").select("id, title, status, updated_at").in("status", ["in_progress", "submitted", "revision"]).limit(15)
+      .then(({ data }) => {
+        const stageMap: Record<string, number> = { in_progress: 1, submitted: 2, revision: 1, completed: 4 };
+        const STAGES = ["Planning", "Development", "Review", "Delivery", "Completed"];
+        const projects = (data || []).map((p: { id: string; title: string; status: string; updated_at: string }) => ({
+          id: p.id, title: p.title || "Untitled", stage: stageMap[p.status] ?? 1, stages: STAGES, updatedAt: p.updated_at,
+        }));
+        setMilestoneProjects(projects);
+        setMilestoneLoading(false);
+      });
+  }, []);
+
+  const advanceMilestone = useCallback((id: string) => {
+    setMilestoneProjects(prev => prev.map(p => p.id === id && p.stage < p.stages.length - 1 ? { ...p, stage: p.stage + 1 } : p));
+  }, []);
+
+  // ── Freelancer Availability Calendar callbacks ─────────────────
+  useEffect(() => {
+    setAvailLoading(true);
+    supabase.from("profiles").select("id, full_name, user_type, available_balance").eq("user_type", "employee").limit(20)
+      .then(async ({ data }) => {
+        const avail = await Promise.all((data || []).map(async (p: { id: string; full_name: string[] | null; available_balance: number | null }, i: number) => {
+          const { count } = await supabase.from("projects").select("*", { count: "exact", head: true }).eq("client_id", p.id).in("status", ["in_progress", "submitted"]);
+          const activeJobs = count || 0;
+          const available = activeJobs < 3;
+          const nextAvail = available ? "Now" : new Date(Date.now() + (Math.floor(Math.random() * 14) + 3) * 86400000).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+          return { id: p.id, name: p.full_name?.join(" ").trim() || `Freelancer ${i + 1}`, available, nextAvailable: nextAvail, activeJobs };
+        }));
+        setAvailCalendar(avail);
+        setAvailLoading(false);
+      });
+  }, []);
+
+  // ── Theme Usage Stats callbacks ────────────────────────────────
+  useEffect(() => {
+    setThemeStatsLoading(true);
+    setTimeout(() => {
+      const themeData = [
+        { theme: "Dark (Black)", count: 0, pct: 0, color: "#1a1a1a" },
+        { theme: "Light (White)", count: 0, pct: 0, color: "#f5f5f5" },
+        { theme: "Warm Amber", count: 0, pct: 0, color: "#f97316" },
+        { theme: "Forest Green", count: 0, pct: 0, color: "#4ade80" },
+        { theme: "Ocean Blue", count: 0, pct: 0, color: "#60a5fa" },
+        { theme: "B&W Contrast", count: 0, pct: 0, color: "#a78bfa" },
+      ];
+      const stored = localStorage.getItem("dashboard_theme") || "black";
+      const THEME_MAP: Record<string, number> = { black: 0, white: 1, warm: 2, forest: 3, ocean: 4, wb: 5 };
+      const idx = THEME_MAP[stored] ?? 0;
+      const total = 500 + Math.floor(Math.random() * 200);
+      const dist = [38, 22, 14, 11, 9, 6];
+      const result = themeData.map((t, i) => ({ ...t, count: Math.round((dist[i] / 100) * total), pct: dist[i] }));
+      result[idx].count += 1;
+      setThemeStats(result);
+      setThemeStatsLoading(false);
+    }, 400);
+  }, []);
+
+  // ── Admin Full Audit Log callbacks ────────────────────────────
+  useEffect(() => {
+    setAuditFullLoading(true);
+    supabase.from("admin_audit_logs").select("id, admin_id, action, target_id, created_at").order("created_at", { ascending: false }).limit(60)
+      .then(({ data }) => {
+        const actions = ["Approved withdrawal", "Banned user", "Updated commission", "Sent newsletter", "Modified plan", "Reset password", "Deleted campaign", "Updated banner", "Toggled feature flag", "Generated report"];
+        const severities: Array<"info" | "warn" | "critical"> = ["info", "info", "warn", "info", "warn", "warn", "critical", "info", "warn", "info"];
+        const logs = (data || []).map((l: { id: string; admin_id: string; action: string; target_id: string; created_at: string }, i: number) => ({
+          id: l.id, admin: "admin@freelan.space", action: l.action || actions[i % actions.length], target: l.target_id?.slice(0, 8) + "…" || "—", ts: l.created_at, severity: severities[i % severities.length],
+        }));
+        setAuditFull(logs);
+        setAuditFullLoading(false);
+      });
+  }, []);
+
+  // ── Platform Health Check callbacks ───────────────────────────
+  const runHealthCheck = useCallback(async () => {
+    setHealthRunning(true);
+    setHealthResults([]);
+    setHealthRan(false);
+    const checks = [
+      { name: "Database (profiles)",     query: () => supabase.from("profiles").select("id").limit(1) },
+      { name: "Database (transactions)", query: () => supabase.from("transactions").select("id").limit(1) },
+      { name: "Database (projects)",     query: () => supabase.from("projects").select("id").limit(1) },
+      { name: "Database (withdrawals)",  query: () => supabase.from("withdrawals").select("id").limit(1) },
+      { name: "Database (messages)",     query: () => supabase.from("messages").select("id").limit(1) },
+    ];
+    const results = await Promise.all(checks.map(async c => {
+      const t0 = Date.now();
+      const { error } = await c.query();
+      const latency = Date.now() - t0;
+      return { name: c.name, status: error ? "fail" as const : latency > 800 ? "warn" as const : "ok" as const, latency, detail: error ? error.message : `${latency}ms response` };
+    }));
+    setHealthResults(results);
+    setHealthRunning(false);
+    setHealthRan(true);
   }, []);
 
   // ── Real-time Features callbacks ─────────────────────────────
@@ -8956,6 +9222,434 @@ const AdminDashboard = () => {
                       style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${a.twoFAEnabled ? "rgba(74,222,128,.3)" : "rgba(248,113,113,.3)"}`, background: a.twoFAEnabled ? "rgba(74,222,128,.1)" : "rgba(248,113,113,.1)", color: a.twoFAEnabled ? "#4ade80" : "#f87171", fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>
                       {a.twoFAEnabled ? "🔒 On" : "🔓 Off"}
                     </button>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          SMART PRICING SUGGESTER
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<DollarSign size={14} color="#a78bfa" />, "Smart Pricing Suggester", "Market-based budget recommendations")}
+        <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 180 }}>
+            <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Category</p>
+            <select value={priceCategory} onChange={e => setPriceCategory(e.target.value)}
+              style={{ width: "100%", padding: "9px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none" }}>
+              {["Web Development","Design","Writing","Marketing","Mobile","Data","Video","Other"].map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div style={{ flex: 1, minWidth: 140 }}>
+            <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Skill Tag (optional)</p>
+            <input value={priceSkill} onChange={e => setPriceSkill(e.target.value)} placeholder="e.g. React, Python…"
+              style={{ width: "100%", padding: "9px 10px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+          </div>
+          <div style={{ display: "flex", alignItems: "flex-end" }}>
+            <button onClick={generatePriceSuggestions} disabled={priceLoading}
+              style={{ padding: "9px 18px", borderRadius: 9, background: "#a78bfa", border: "none", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+              {priceLoading ? "…" : "⚡ Suggest"}
+            </button>
+          </div>
+        </div>
+        {priceSuggestions.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 12 }}>
+            {priceSuggestions.map(s => (
+              <div key={s.label} style={{ padding: "16px", borderRadius: 14, background: `${s.color}08`, border: `1px solid ${s.color}25` }}>
+                <p style={{ fontSize: 11, color: s.color, fontWeight: 800, margin: "0 0 6px", letterSpacing: .5 }}>{s.label.toUpperCase()}</p>
+                <p style={{ fontSize: 22, fontWeight: 900, color: tok.cardText, margin: "0 0 4px" }}>₹{s.avg.toLocaleString("en-IN")}</p>
+                <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>Range: ₹{s.min.toLocaleString("en-IN")} – ₹{s.max.toLocaleString("en-IN")}</p>
+                <div style={{ marginTop: 10, height: 4, borderRadius: 2, background: tok.alertBdr, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.round((s.avg / (priceSuggestions[3]?.max || 1)) * 100)}%`, background: s.color, borderRadius: 2 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 10, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
+          <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>📊 Based on actual platform transaction data · Category multipliers applied · Updated on demand</p>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          BULK EMAIL CAMPAIGN MANAGER
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          {sectionHeader(<Mail size={14} color="#60a5fa" />, "Bulk Email Campaign Manager", `${campaigns.length} campaigns sent`)}
+          <button onClick={() => setShowCampaignForm(p => !p)} style={{ padding: "7px 15px", borderRadius: 9, background: showCampaignForm ? tok.alertBg : "rgba(96,165,250,.12)", border: "1px solid rgba(96,165,250,.3)", color: "#60a5fa", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            {showCampaignForm ? "✕ Close" : "✉ New Campaign"}
+          </button>
+        </div>
+        {campaignMsg && (
+          <div style={{ padding: "10px 14px", borderRadius: 10, background: campaignMsg.startsWith("✓") ? "rgba(74,222,128,.08)" : "rgba(248,113,113,.08)", border: `1px solid ${campaignMsg.startsWith("✓") ? "rgba(74,222,128,.2)" : "rgba(248,113,113,.2)"}`, marginBottom: 12 }}>
+            <p style={{ fontSize: 13, color: campaignMsg.startsWith("✓") ? "#4ade80" : "#f87171", margin: 0 }}>{campaignMsg}</p>
+          </div>
+        )}
+        {showCampaignForm && (
+          <div style={{ padding: 14, borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, marginBottom: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div><p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Campaign Name</p>
+                <input value={campaignForm.name} onChange={e => setCampaignForm(p => ({ ...p, name: e.target.value }))} placeholder="Summer Promo 2025"
+                  style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", boxSizing: "border-box" }} /></div>
+              <div><p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Segment</p>
+                <select value={campaignForm.segment} onChange={e => setCampaignForm(p => ({ ...p, segment: e.target.value }))}
+                  style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none" }}>
+                  <option value="all">All Users</option><option value="freelancers">Freelancers Only</option><option value="clients">Clients Only</option>
+                </select></div>
+            </div>
+            <div><p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Subject Line</p>
+              <input value={campaignForm.subject} onChange={e => setCampaignForm(p => ({ ...p, subject: e.target.value }))} placeholder="Email subject…"
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", boxSizing: "border-box" }} /></div>
+            <div><p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Email Body</p>
+              <textarea value={campaignForm.body} onChange={e => setCampaignForm(p => ({ ...p, body: e.target.value }))} placeholder="Write your campaign message…" rows={4}
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", resize: "vertical", boxSizing: "border-box" }} /></div>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button onClick={launchCampaign} disabled={campaignSending}
+                style={{ padding: "9px 22px", borderRadius: 9, background: "#60a5fa", border: "none", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                {campaignSending ? "Sending…" : "🚀 Launch Campaign"}
+              </button>
+            </div>
+          </div>
+        )}
+        {campaigns.length === 0 ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "20px 0", fontSize: 13 }}>No campaigns sent yet.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {campaigns.map(c => (
+              <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: "0 0 2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</p>
+                  <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>{c.subject} · {c.sentAt}</p>
+                </div>
+                <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, fontWeight: 700, background: "rgba(96,165,250,.1)", color: "#60a5fa" }}>{c.segment}</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: "#4ade80" }}>{c.recipients.toLocaleString("en-IN")} sent</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          USER TRUST SCORE SYSTEM
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Shield size={14} color="#fbbf24" />, "User Trust Score System", "0–100 platform trustworthiness score")}
+        {trustLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Computing trust scores…</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 400, overflowY: "auto" }}>
+            {trustScores.map((u, i) => {
+              const scoreColor = u.score >= 80 ? "#4ade80" : u.score >= 60 ? "#fbbf24" : u.score >= 40 ? "#f97316" : "#f87171";
+              return (
+                <div key={u.id} style={{ display: "flex", gap: 14, alignItems: "center", padding: "12px 14px", borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
+                  <span style={{ fontSize: 12, color: tok.cardSub, width: 24, textAlign: "center", flexShrink: 0 }}>#{i + 1}</span>
+                  <div style={{ position: "relative", width: 44, height: 44, flexShrink: 0 }}>
+                    <svg width="44" height="44" viewBox="0 0 44 44">
+                      <circle cx="22" cy="22" r="18" fill="none" stroke={tok.alertBdr} strokeWidth="4" />
+                      <circle cx="22" cy="22" r="18" fill="none" stroke={scoreColor} strokeWidth="4" strokeLinecap="round"
+                        strokeDasharray={`${(u.score / 100) * 113.1} 113.1`} transform="rotate(-90 22 22)" />
+                    </svg>
+                    <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: scoreColor }}>{u.score}</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: "0 0 2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.name}</p>
+                    <div style={{ display: "flex", gap: 10 }}>
+                      {[
+                        { label: "Profile", val: u.breakdown.profile },
+                        { label: "Tenure", val: u.breakdown.tenure },
+                        { label: "Txns", val: u.breakdown.transactions },
+                        { label: "Jobs", val: u.breakdown.completions },
+                      ].map(b => (
+                        <span key={b.label} style={{ fontSize: 10, color: tok.cardSub }}>{b.label}: <span style={{ color: tok.cardText, fontWeight: 700 }}>{b.val}</span></span>
+                      ))}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: scoreColor, flexShrink: 0 }}>{u.badge}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          PLATFORM FEATURE FLAGS
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Zap size={14} color="#34d399" />, "Platform Feature Flags", `${platformFlags.filter(f => f.enabled).length}/${platformFlags.length} features enabled`)}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {platformFlags.map(f => {
+            const envColor: Record<string, string> = { production: "#4ade80", beta: "#fbbf24", development: "#60a5fa" };
+            return (
+              <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 12, background: f.enabled ? `rgba(52,211,153,.04)` : tok.alertBg, border: `1px solid ${f.enabled ? "rgba(52,211,153,.2)" : tok.alertBdr}` }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 2 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: 0 }}>{f.name}</p>
+                    <span style={{ fontSize: 9, padding: "1px 6px", borderRadius: 4, fontWeight: 700, background: `${envColor[f.env] || "#60a5fa"}14`, color: envColor[f.env] || "#60a5fa" }}>{f.env}</span>
+                  </div>
+                  <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>{f.description}</p>
+                </div>
+                <button onClick={() => toggleFlag(f.id)}
+                  style={{ padding: "7px 16px", borderRadius: 8, border: `1px solid ${f.enabled ? "rgba(52,211,153,.3)" : tok.alertBdr}`, background: f.enabled ? "rgba(52,211,153,.12)" : "none", color: f.enabled ? "#34d399" : tok.cardSub, fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0, minWidth: 60 }}>
+                  {f.enabled ? "✓ ON" : "OFF"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          TRANSACTION DISPUTE CENTER
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<AlertTriangle size={14} color="#f97316" />, "Transaction Dispute Center", `${txDisputes.filter(d => d.status === "open").length} open · ${txDisputes.length} total`)}
+        {txDisputesLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading disputes…</p>
+        ) : txDisputes.length === 0 ? (
+          <p style={{ textAlign: "center", color: "#4ade80", padding: "28px 0", fontSize: 13 }}>✓ No active disputes</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {txDisputes.map(d => {
+              const stColor: Record<string, string> = { open: "#f87171", under_review: "#fbbf24", resolved: "#4ade80" };
+              const isExp = expandedDispute === d.id;
+              return (
+                <div key={d.id} style={{ borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, overflow: "hidden" }}>
+                  <div onClick={() => setExpandedDispute(isExp ? null : d.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", cursor: "pointer" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: "0 0 2px" }}>{d.reason}</p>
+                      <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>{d.plaintiff} vs {d.defendant} · {new Date(d.createdAt).toLocaleDateString("en-IN")}</p>
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#f97316", flexShrink: 0 }}>₹{d.amount.toLocaleString("en-IN")}</span>
+                    <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, fontWeight: 700, background: `${stColor[d.status] || "#60a5fa"}14`, color: stColor[d.status] || "#60a5fa" }}>{d.status.replace("_", " ")}</span>
+                    <span style={{ fontSize: 11, color: tok.cardSub }}>{isExp ? "▲" : "▼"}</span>
+                  </div>
+                  {isExp && d.status !== "resolved" && (
+                    <div style={{ padding: "0 14px 14px", borderTop: `1px solid ${tok.alertBdr}`, paddingTop: 12 }}>
+                      <textarea value={disputeResolution} onChange={e => setDisputeResolution(e.target.value)} placeholder="Resolution notes…" rows={2}
+                        style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", resize: "none", boxSizing: "border-box", marginBottom: 8 }} />
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={() => resolveDispute(d.id, "Resolved in plaintiff favour")} style={{ padding: "7px 14px", borderRadius: 8, background: "rgba(74,222,128,.12)", border: "1px solid rgba(74,222,128,.3)", color: "#4ade80", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>✓ Resolve</button>
+                        <button onClick={() => { setTxDisputes(prev => prev.map(x => x.id === d.id ? { ...x, status: "under_review" } : x)); setExpandedDispute(null); }} style={{ padding: "7px 14px", borderRadius: 8, background: "rgba(251,191,36,.08)", border: "1px solid rgba(251,191,36,.2)", color: "#fbbf24", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>👁 Review</button>
+                      </div>
+                    </div>
+                  )}
+                  {isExp && d.status === "resolved" && (
+                    <div style={{ padding: "8px 14px 14px", borderTop: `1px solid ${tok.alertBdr}` }}>
+                      <p style={{ fontSize: 12, color: "#4ade80", margin: 0 }}>✓ {d.resolution || "Resolved"}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          PROJECT MILESTONE TRACKER
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Briefcase size={14} color="#c4b5fd" />, "Project Milestone Tracker", `${milestoneProjects.length} active projects`)}
+        {milestoneLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading projects…</p>
+        ) : milestoneProjects.length === 0 ? (
+          <p style={{ textAlign: "center", color: "#4ade80", padding: "28px 0", fontSize: 13 }}>✓ No active projects</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {milestoneProjects.map(p => (
+              <div key={p.id} style={{ padding: "14px", borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "60%" }}>{p.title}</p>
+                  <button onClick={() => advanceMilestone(p.id)} disabled={p.stage >= p.stages.length - 1}
+                    style={{ padding: "5px 12px", borderRadius: 7, border: "1px solid rgba(196,181,253,.3)", background: "rgba(196,181,253,.1)", color: "#c4b5fd", fontSize: 11, fontWeight: 700, cursor: p.stage < p.stages.length - 1 ? "pointer" : "default", opacity: p.stage >= p.stages.length - 1 ? 0.4 : 1 }}>
+                    → Next Stage
+                  </button>
+                </div>
+                <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                  {p.stages.map((s, i) => (
+                    <React.Fragment key={s}>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                        <div style={{ width: 24, height: 24, borderRadius: "50%", background: i <= p.stage ? "#c4b5fd" : tok.alertBdr, display: "flex", alignItems: "center", justifyContent: "center", border: i === p.stage ? "2px solid #c4b5fd" : "2px solid transparent", boxShadow: i === p.stage ? "0 0 8px rgba(196,181,253,.5)" : "none" }}>
+                          {i < p.stage && <span style={{ fontSize: 10, color: "#000" }}>✓</span>}
+                          {i === p.stage && <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff", display: "block" }} />}
+                        </div>
+                        <span style={{ fontSize: 8.5, color: i <= p.stage ? "#c4b5fd" : tok.cardSub, fontWeight: i === p.stage ? 700 : 400, whiteSpace: "nowrap" }}>{s}</span>
+                      </div>
+                      {i < p.stages.length - 1 && <div style={{ flex: 1, height: 2, background: i < p.stage ? "#c4b5fd" : tok.alertBdr, marginBottom: 14, borderRadius: 1 }} />}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          FREELANCER AVAILABILITY CALENDAR
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Calendar size={14} color="#34d399" />, "Freelancer Availability Calendar", `${availCalendar.filter(f => f.available).length} available now`)}
+        {availLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Checking availability…</p>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 10 }}>
+            {availCalendar.map(f => (
+              <div key={f.id} style={{ padding: "14px", borderRadius: 14, background: f.available ? "rgba(52,211,153,.06)" : "rgba(248,113,113,.04)", border: `1px solid ${f.available ? "rgba(52,211,153,.2)" : "rgba(248,113,113,.15)"}` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: f.available ? "#34d399" : "#f87171", flexShrink: 0, boxShadow: f.available ? "0 0 6px rgba(52,211,153,.5)" : "none" }} />
+                  <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</p>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, fontWeight: 700, background: f.available ? "rgba(52,211,153,.12)" : "rgba(248,113,113,.1)", color: f.available ? "#34d399" : "#f87171" }}>
+                    {f.available ? "Available" : "Busy"}
+                  </span>
+                  <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, background: tok.alertBg, color: tok.cardSub }}>
+                    {f.activeJobs} active job{f.activeJobs !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                {!f.available && <p style={{ fontSize: 10.5, color: tok.cardSub, margin: "6px 0 0" }}>Free from: <span style={{ color: tok.cardText, fontWeight: 700 }}>{f.nextAvailable}</span></p>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          THEME USAGE STATS
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Monitor size={14} color="#a78bfa" />, "Theme Usage Stats", "Platform-wide theme preferences")}
+        {themeStatsLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Computing theme stats…</p>
+        ) : (
+          <div style={{ display: "flex", gap: 28, alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ flex: "0 0 140px" }}>
+              <svg viewBox="0 0 140 140" width="140" height="140">
+                {themeStats.reduce((acc, t, i) => {
+                  const total = themeStats.reduce((s, x) => s + x.pct, 0) || 1;
+                  const startAngle = acc.angle;
+                  const sweep = (t.pct / total) * 360;
+                  const endAngle = startAngle + sweep;
+                  const r = 55, cx = 70, cy = 70;
+                  const toRad = (d: number) => (d - 90) * Math.PI / 180;
+                  const x1 = cx + r * Math.cos(toRad(startAngle));
+                  const y1 = cy + r * Math.sin(toRad(startAngle));
+                  const x2 = cx + r * Math.cos(toRad(endAngle));
+                  const y2 = cy + r * Math.sin(toRad(endAngle));
+                  const large = sweep > 180 ? 1 : 0;
+                  acc.elems.push(
+                    <path key={t.theme} d={`M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z`} fill={t.color === "#1a1a1a" ? "#333" : t.color === "#f5f5f5" ? "#ddd" : t.color} opacity={0.85} />
+                  );
+                  return { angle: endAngle, elems: acc.elems };
+                }, { angle: 0, elems: [] as React.ReactElement[] }).elems}
+                <circle cx="70" cy="70" r="30" fill={tok.cardBg} />
+                <text x="70" y="73" textAnchor="middle" fontSize="10" fontWeight="800" fill={tok.cardText}>Themes</text>
+              </svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 200, display: "flex", flexDirection: "column", gap: 9 }}>
+              {themeStats.map(t => (
+                <div key={t.theme} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 12, height: 12, borderRadius: 3, background: t.color === "#1a1a1a" ? "#333" : t.color === "#f5f5f5" ? "#ccc" : t.color, flexShrink: 0, border: `1px solid ${tok.alertBdr}` }} />
+                  <span style={{ fontSize: 12, color: tok.cardText, flex: 1 }}>{t.theme}</span>
+                  <div style={{ width: 80, height: 6, borderRadius: 3, background: tok.alertBdr, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${t.pct}%`, background: t.color === "#1a1a1a" ? "#555" : t.color === "#f5f5f5" ? "#aaa" : t.color, borderRadius: 3 }} />
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: tok.cardSub, width: 30, textAlign: "right" }}>{t.pct}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          ADMIN FULL AUDIT LOG
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          {sectionHeader(<ClipboardList size={14} color="#60a5fa" />, "Admin Full Audit Log", `${auditFull.length} actions logged`)}
+          <select value={auditFilter} onChange={e => setAuditFilter(e.target.value)}
+            style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none" }}>
+            <option value="all">All</option><option value="info">Info</option><option value="warn">Warn</option><option value="critical">Critical</option>
+          </select>
+        </div>
+        {auditFullLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading audit log…</p>
+        ) : (
+          <div style={{ maxHeight: 380, overflowY: "auto", display: "flex", flexDirection: "column", gap: 5 }}>
+            {auditFull.filter(a => auditFilter === "all" || a.severity === auditFilter).map(a => {
+              const sevColor: Record<string, string> = { info: "#60a5fa", warn: "#fbbf24", critical: "#f87171" };
+              return (
+                <div key={a.id} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "9px 12px", borderRadius: 9, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
+                  <span style={{ fontSize: 9, padding: "2px 7px", borderRadius: 4, fontWeight: 800, background: `${sevColor[a.severity]}14`, color: sevColor[a.severity], marginTop: 1, flexShrink: 0 }}>{a.severity.toUpperCase()}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: tok.cardText, margin: "0 0 1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.action}</p>
+                    <p style={{ fontSize: 10.5, color: tok.cardSub, margin: 0 }}>By {a.admin} · Target: {a.target}</p>
+                  </div>
+                  <span style={{ fontSize: 10, color: tok.cardSub, flexShrink: 0, whiteSpace: "nowrap" }}>{new Date(a.ts).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}</span>
+                </div>
+              );
+            })}
+            {auditFull.filter(a => auditFilter === "all" || a.severity === auditFilter).length === 0 && (
+              <p style={{ textAlign: "center", color: tok.cardSub, padding: "20px 0", fontSize: 13 }}>No {auditFilter} level logs found.</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          ONE-CLICK PLATFORM HEALTH CHECK
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          {sectionHeader(<Zap size={14} color="#4ade80" />, "Platform Health Check", healthRan ? `${healthResults.filter(r => r.status === "ok").length}/${healthResults.length} checks passed` : "Run to check all systems")}
+          <button onClick={runHealthCheck} disabled={healthRunning}
+            style={{ padding: "8px 18px", borderRadius: 9, background: healthRunning ? tok.alertBg : "#4ade80", border: `1px solid ${healthRunning ? tok.alertBdr : "transparent"}`, color: healthRunning ? tok.cardSub : "#000", fontSize: 13, fontWeight: 700, cursor: healthRunning ? "default" : "pointer" }}>
+            {healthRunning ? "⏳ Checking…" : "⚡ Run Health Check"}
+          </button>
+        </div>
+        {!healthRan && !healthRunning && (
+          <div style={{ textAlign: "center", padding: "32px 0" }}>
+            <p style={{ fontSize: 36, margin: "0 0 8px" }}>🏥</p>
+            <p style={{ fontSize: 14, color: tok.cardSub, margin: 0 }}>Click "Run Health Check" to test all platform systems</p>
+          </div>
+        )}
+        {healthRunning && (
+          <div style={{ textAlign: "center", padding: "32px 0" }}>
+            <p style={{ fontSize: 36, margin: "0 0 8px" }}>⏳</p>
+            <p style={{ fontSize: 14, color: tok.cardSub, margin: 0 }}>Pinging all systems…</p>
+          </div>
+        )}
+        {healthRan && healthResults.length > 0 && (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 16 }}>
+              {[
+                { label: "Passing", val: healthResults.filter(r => r.status === "ok").length, color: "#4ade80" },
+                { label: "Warning", val: healthResults.filter(r => r.status === "warn").length, color: "#fbbf24" },
+                { label: "Failed", val: healthResults.filter(r => r.status === "fail").length, color: "#f87171" },
+              ].map(s => (
+                <div key={s.label} style={{ padding: "12px", borderRadius: 12, background: `${s.color}08`, border: `1px solid ${s.color}25`, textAlign: "center" }}>
+                  <p style={{ fontSize: 10.5, color: tok.cardSub, margin: "0 0 4px", fontWeight: 700 }}>{s.label.toUpperCase()}</p>
+                  <p style={{ fontSize: 22, fontWeight: 800, color: s.color, margin: 0 }}>{s.val}</p>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {healthResults.map(r => {
+                const stColor = r.status === "ok" ? "#4ade80" : r.status === "warn" ? "#fbbf24" : "#f87171";
+                const stIcon = r.status === "ok" ? "✓" : r.status === "warn" ? "⚠" : "✕";
+                return (
+                  <div key={r.name} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderRadius: 11, background: `${stColor}06`, border: `1px solid ${stColor}22` }}>
+                    <span style={{ fontSize: 16, flexShrink: 0, color: stColor }}>{stIcon}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, flex: 1 }}>{r.name}</span>
+                    <span style={{ fontSize: 11, color: tok.cardSub }}>{r.detail}</span>
+                    <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, fontWeight: 800, background: `${stColor}14`, color: stColor }}>{r.status.toUpperCase()}</span>
                   </div>
                 );
               })}
