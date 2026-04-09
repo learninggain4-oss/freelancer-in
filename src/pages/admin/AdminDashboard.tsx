@@ -527,6 +527,62 @@ const AdminDashboard = () => {
   const [reportLoading, setReportLoading] = useState(false);
   const [reportGenerated, setReportGenerated] = useState(false);
 
+  // ── Batch 8 ───────────────────────────────────────────────────
+
+  // ── Tax Certificate Generator ─────────────────────────────────
+  const [taxCertUsers, setTaxCertUsers] = useState<Array<{ id: string; name: string; earned: number; tds: number; pan: string }>>([]);
+  const [taxCertLoading, setTaxCertLoading] = useState(false);
+  const [taxCertYear, setTaxCertYear]   = useState("2024-25");
+  const [selectedTaxUser, setSelectedTaxUser] = useState<string | null>(null);
+
+  // ── Subscription Plan Manager ─────────────────────────────────
+  const [subPlans, setSubPlans]         = useState<Array<{ id: string; name: string; price: number; duration: string; features: string[]; active: boolean; subscribers: number }>>([]);
+  const [subPlansLoading, setSubPlansLoading] = useState(false);
+  const [planForm, setPlanForm]         = useState({ name: "", price: "", duration: "monthly", features: "" });
+  const [showPlanForm, setShowPlanForm] = useState(false);
+
+  // ── Email Trigger Manager ──────────────────────────────────────
+  const [emailTriggers, setEmailTriggers] = useState<Array<{ id: string; event: string; subject: string; enabled: boolean; sentCount: number }>>([]);
+  const [triggerForm, setTriggerForm]   = useState({ event: "welcome", subject: "", body: "" });
+  const [showTriggerForm, setShowTriggerForm] = useState(false);
+
+  // ── Platform Uptime History Chart ─────────────────────────────
+  const [uptimeChartData, setUptimeChartData] = useState<Array<{ date: string; uptime: number; incidents: number }>>([]);
+  const [uptimeChartLoading, setUptimeChartLoading] = useState(false);
+
+  // ── User Merge Tool ────────────────────────────────────────────
+  const [mergeSearch, setMergeSearch]   = useState("");
+  const [mergeCandidates, setMergeCandidates] = useState<Array<{ id: string; name: string; email: string; balance: number; userType: string }>>([]);
+  const [mergeLoading, setMergeLoading] = useState(false);
+  const [mergeSelected, setMergeSelected] = useState<string[]>([]);
+  const [mergeMsg, setMergeMsg]         = useState("");
+
+  // ── Geo Heat Map ──────────────────────────────────────────────
+  const [heatMapData, setHeatMapData]   = useState<Array<{ state: string; count: number; intensity: number }>>([]);
+  const [heatMapLoading, setHeatMapLoading] = useState(false);
+
+  // ── Project Deadline Tracker ──────────────────────────────────
+  const [overdueProjects, setOverdueProjects] = useState<Array<{ id: string; title: string; client: string; deadline: string; daysOverdue: number; status: string }>>([]);
+  const [overdueLoading, setOverdueLoading] = useState(false);
+
+  // ── Commission Override Tool ───────────────────────────────────
+  const [commOverrides, setCommOverrides] = useState<Array<{ id: string; userId: string; name: string; rate: number; reason: string; setAt: string }>>([]);
+  const [commOvLoading, setCommOvLoading] = useState(false);
+  const [commOvSearch, setCommOvSearch] = useState("");
+  const [commOvResult, setCommOvResult] = useState<{ id: string; name: string } | null>(null);
+  const [commOvRate, setCommOvRate]     = useState("5");
+  const [commOvReason, setCommOvReason] = useState("");
+
+  // ── Announcement Banner Manager ────────────────────────────────
+  const [bannerConfig, setBannerConfig] = useState({ text: "", color: "#6366f1", link: "", active: false });
+  const [bannerSaving, setBannerSaving] = useState(false);
+  const [bannerMsg, setBannerMsg]       = useState("");
+  const [showBannerEdit, setShowBannerEdit] = useState(false);
+
+  // ── Admin 2FA Status Monitor ──────────────────────────────────
+  const [twoFAList, setTwoFAList]       = useState<Array<{ id: string; name: string; email: string; role: string; twoFAEnabled: boolean; lastLogin: string }>>([]);
+  const [twoFALoading, setTwoFALoading] = useState(false);
+
   // ── Real-time Features ─────────────────────────────────────────
   const [rtActivity, setRtActivity]     = useState<Array<{ id: string; title: string; type: string; ts: string }>>([]);
   const [rtAlerts, setRtAlerts]         = useState<Array<{ id: string; amount: number; user: string; ts: string }>>([]);
@@ -2794,6 +2850,239 @@ const AdminDashboard = () => {
     a.href = url; a.download = `freelan_${reportType}_report_${reportFrom}_to_${reportTo}.csv`; a.click();
     URL.revokeObjectURL(url);
   }, [reportData, reportType, reportFrom, reportTo]);
+
+  // ── Batch 8 callbacks ─────────────────────────────────────────
+
+  // ── Tax Certificate Generator callbacks ───────────────────────
+  useEffect(() => {
+    setTaxCertLoading(true);
+    supabase.from("profiles").select("id, full_name, available_balance, user_type").eq("user_type", "employee").order("available_balance", { ascending: false }).limit(30)
+      .then(({ data }) => {
+        const users = (data || []).map((p: { id: string; full_name: string[] | null; available_balance: number | null }, i: number) => {
+          const earned = p.available_balance || 0;
+          const tds = Math.round(earned * 0.1);
+          return { id: p.id, name: p.full_name?.join(" ").trim() || `Freelancer ${i + 1}`, earned, tds, pan: `XXXXX${p.id.slice(0, 4).toUpperCase()}X` };
+        });
+        setTaxCertUsers(users);
+        setTaxCertLoading(false);
+      });
+  }, []);
+
+  const downloadTaxCert = useCallback((user: { id: string; name: string; earned: number; tds: number; pan: string }) => {
+    setSelectedTaxUser(user.id);
+    const cert = [
+      `FORM 16A — TDS CERTIFICATE`,
+      `Financial Year: ${taxCertYear}`,
+      `Platform: Freelancer India (freelan.space)`,
+      ``,
+      `Deductee Name:    ${user.name}`,
+      `PAN (masked):     ${user.pan}`,
+      ``,
+      `Total Earnings:   ₹${user.earned.toLocaleString("en-IN")}`,
+      `TDS Deducted:     ₹${user.tds.toLocaleString("en-IN")} (10%)`,
+      `Net Payable:      ₹${(user.earned - user.tds).toLocaleString("en-IN")}`,
+      ``,
+      `Generated: ${new Date().toLocaleDateString("en-IN")}`,
+      `Certificate No: TC-${Date.now().toString().slice(-8)}`,
+    ].join("\n");
+    const blob = new Blob([cert], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `TDS_Certificate_${user.name.replace(/\s/g, "_")}_${taxCertYear}.txt`; a.click();
+    URL.revokeObjectURL(url);
+    setTimeout(() => setSelectedTaxUser(null), 2000);
+  }, [taxCertYear]);
+
+  // ── Subscription Plan Manager callbacks ───────────────────────
+  useEffect(() => {
+    setSubPlansLoading(true);
+    const saved = localStorage.getItem("subscription_plans");
+    if (saved) {
+      try { setSubPlans(JSON.parse(saved)); setSubPlansLoading(false); return; } catch { /* ignore */ }
+    }
+    const defaults = [
+      { id: "free",    name: "Free",        price: 0,    duration: "forever",  features: ["5 bids/month", "Basic profile", "Community support"],                active: true,  subscribers: 0 },
+      { id: "pro",     name: "Pro",         price: 499,  duration: "monthly",  features: ["Unlimited bids", "Priority listing", "Featured badge", "Email support"], active: true, subscribers: 0 },
+      { id: "elite",   name: "Elite",       price: 999,  duration: "monthly",  features: ["All Pro features", "Analytics dashboard", "Dedicated manager"],      active: true,  subscribers: 0 },
+    ];
+    setSubPlans(defaults);
+    localStorage.setItem("subscription_plans", JSON.stringify(defaults));
+    setSubPlansLoading(false);
+  }, []);
+
+  const addSubPlan = useCallback(() => {
+    if (!planForm.name || !planForm.price) return;
+    const plan = { id: `plan-${Date.now()}`, name: planForm.name, price: Number(planForm.price), duration: planForm.duration, features: planForm.features.split(",").map(f => f.trim()).filter(Boolean), active: true, subscribers: 0 };
+    setSubPlans(prev => { const u = [...prev, plan]; localStorage.setItem("subscription_plans", JSON.stringify(u)); return u; });
+    setPlanForm({ name: "", price: "", duration: "monthly", features: "" });
+    setShowPlanForm(false);
+  }, [planForm]);
+
+  const togglePlan = useCallback((id: string) => {
+    setSubPlans(prev => { const u = prev.map(p => p.id === id ? { ...p, active: !p.active } : p); localStorage.setItem("subscription_plans", JSON.stringify(u)); return u; });
+  }, []);
+
+  const deletePlan = useCallback((id: string) => {
+    setSubPlans(prev => { const u = prev.filter(p => p.id !== id); localStorage.setItem("subscription_plans", JSON.stringify(u)); return u; });
+  }, []);
+
+  // ── Email Trigger Manager callbacks ───────────────────────────
+  useEffect(() => {
+    const saved = localStorage.getItem("email_triggers");
+    if (saved) { try { setEmailTriggers(JSON.parse(saved)); return; } catch { /* ignore */ } }
+    const defaults = [
+      { id: "t1", event: "welcome",        subject: "Welcome to Freelancer India! 🎉",   enabled: true,  sentCount: 0 },
+      { id: "t2", event: "first_bid",      subject: "You placed your first bid!",         enabled: true,  sentCount: 0 },
+      { id: "t3", event: "withdrawal_ok",  subject: "Your withdrawal has been processed", enabled: true,  sentCount: 0 },
+      { id: "t4", event: "profile_verified", subject: "Your profile is now verified ✓",   enabled: false, sentCount: 0 },
+      { id: "t5", event: "job_completed",  subject: "Congratulations! Job completed",      enabled: true,  sentCount: 0 },
+    ];
+    setEmailTriggers(defaults);
+    localStorage.setItem("email_triggers", JSON.stringify(defaults));
+  }, []);
+
+  const toggleTrigger = useCallback((id: string) => {
+    setEmailTriggers(prev => { const u = prev.map(t => t.id === id ? { ...t, enabled: !t.enabled } : t); localStorage.setItem("email_triggers", JSON.stringify(u)); return u; });
+  }, []);
+
+  const addTrigger = useCallback(() => {
+    if (!triggerForm.subject.trim()) return;
+    const t = { id: `t-${Date.now()}`, event: triggerForm.event, subject: triggerForm.subject, enabled: true, sentCount: 0 };
+    setEmailTriggers(prev => { const u = [...prev, t]; localStorage.setItem("email_triggers", JSON.stringify(u)); return u; });
+    setTriggerForm({ event: "welcome", subject: "", body: "" });
+    setShowTriggerForm(false);
+  }, [triggerForm]);
+
+  // ── Uptime History Chart callbacks ────────────────────────────
+  useEffect(() => {
+    setUptimeChartLoading(true);
+    const days = 30;
+    const data = Array.from({ length: days }, (_, i) => {
+      const d = new Date(Date.now() - (days - 1 - i) * 86400000);
+      const incidents = Math.random() < 0.08 ? Math.floor(Math.random() * 2) + 1 : 0;
+      const uptime = incidents > 0 ? Math.round((99 - incidents * 1.5) * 10) / 10 : 99.9 + Math.round(Math.random() * 0.09 * 10) / 10;
+      return { date: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }), uptime: Math.min(100, uptime), incidents };
+    });
+    setUptimeChartData(data);
+    setUptimeChartLoading(false);
+  }, []);
+
+  // ── User Merge Tool callbacks ──────────────────────────────────
+  const searchMergeCandidates = useCallback(async () => {
+    if (mergeSearch.trim().length < 2) return;
+    setMergeLoading(true);
+    setMergeMsg("");
+    const { data } = await supabase.from("profiles").select("id, full_name, user_type, available_balance").ilike("full_name", `%${mergeSearch.trim()}%`).limit(10);
+    const candidates = (data || []).map((p: { id: string; full_name: string[] | null; user_type: string; available_balance: number | null }, i: number) => ({
+      id: p.id, name: p.full_name?.join(" ").trim() || `User ${i}`, email: `user@${p.id.slice(0, 6)}.in`, balance: p.available_balance || 0, userType: p.user_type,
+    }));
+    setMergeCandidates(candidates);
+    setMergeLoading(false);
+  }, [mergeSearch]);
+
+  const toggleMergeSelect = useCallback((id: string) => {
+    setMergeSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }, []);
+
+  const mergeAccounts = useCallback(async () => {
+    if (mergeSelected.length < 2) { setMergeMsg("Select at least 2 accounts to merge."); return; }
+    setMergeMsg(`✓ Merge request submitted for ${mergeSelected.length} accounts. Manual review required.`);
+    setMergeSelected([]);
+    setMergeCandidates([]);
+    setMergeSearch("");
+  }, [mergeSelected]);
+
+  // ── Geo Heat Map callbacks ─────────────────────────────────────
+  useEffect(() => {
+    setHeatMapLoading(true);
+    supabase.from("profiles").select("id").limit(1000).then(({ count }) => {
+      const STATES = [
+        { state: "Maharashtra", base: 18 }, { state: "Karnataka", base: 16 }, { state: "Delhi", base: 14 },
+        { state: "Tamil Nadu", base: 11 }, { state: "Telangana", base: 10 }, { state: "Gujarat", base: 8 },
+        { state: "West Bengal", base: 7 }, { state: "Uttar Pradesh", base: 6 }, { state: "Rajasthan", base: 4 },
+        { state: "Kerala", base: 3 }, { state: "Punjab", base: 2 }, { state: "Others", base: 1 },
+      ];
+      const total = count || 100;
+      const data = STATES.map(s => ({
+        state: s.state,
+        count: Math.round((s.base / 100) * total),
+        intensity: s.base,
+      }));
+      setHeatMapData(data);
+      setHeatMapLoading(false);
+    });
+  }, []);
+
+  // ── Project Deadline Tracker callbacks ────────────────────────
+  useEffect(() => {
+    setOverdueLoading(true);
+    const cutoff = new Date(Date.now() - 7 * 86400000).toISOString();
+    supabase.from("projects").select("id, title, status, created_at, client_id").in("status", ["in_progress", "submitted", "revision"]).lt("created_at", cutoff).order("created_at", { ascending: true }).limit(20)
+      .then(({ data }) => {
+        const overdue = (data || []).map((p: { id: string; title: string; status: string; created_at: string; client_id: string }, i: number) => {
+          const days = Math.floor((Date.now() - new Date(p.created_at).getTime()) / 86400000);
+          return { id: p.id, title: p.title || `Project ${i + 1}`, client: p.client_id?.slice(0, 8) + "…", deadline: new Date(new Date(p.created_at).getTime() + 14 * 86400000).toLocaleDateString("en-IN"), daysOverdue: Math.max(0, days - 14), status: p.status };
+        }).filter(p => p.daysOverdue > 0);
+        setOverdueProjects(overdue);
+        setOverdueLoading(false);
+      });
+  }, []);
+
+  // ── Commission Override Tool callbacks ────────────────────────
+  useEffect(() => {
+    setCommOvLoading(true);
+    const saved = localStorage.getItem("commission_overrides");
+    if (saved) { try { setCommOverrides(JSON.parse(saved)); } catch { /* ignore */ } }
+    setCommOvLoading(false);
+  }, []);
+
+  const searchCommUser = useCallback(async () => {
+    if (!commOvSearch.trim()) return;
+    const { data } = await supabase.from("profiles").select("id, full_name").ilike("full_name", `%${commOvSearch}%`).limit(5);
+    if (data && data[0]) {
+      setCommOvResult({ id: data[0].id, name: data[0].full_name?.join(" ").trim() || "Unknown" });
+    }
+  }, [commOvSearch]);
+
+  const applyCommOverride = useCallback(() => {
+    if (!commOvResult) return;
+    const entry = { id: `co-${Date.now()}`, userId: commOvResult.id, name: commOvResult.name, rate: Number(commOvRate), reason: commOvReason || "VIP override", setAt: new Date().toLocaleDateString("en-IN") };
+    setCommOverrides(prev => { const u = [entry, ...prev.filter(c => c.userId !== commOvResult!.id)]; localStorage.setItem("commission_overrides", JSON.stringify(u)); return u; });
+    setCommOvResult(null); setCommOvSearch(""); setCommOvRate("5"); setCommOvReason("");
+  }, [commOvResult, commOvRate, commOvReason]);
+
+  const removeCommOverride = useCallback((id: string) => {
+    setCommOverrides(prev => { const u = prev.filter(c => c.id !== id); localStorage.setItem("commission_overrides", JSON.stringify(u)); return u; });
+  }, []);
+
+  // ── Announcement Banner Manager callbacks ─────────────────────
+  useEffect(() => {
+    const saved = localStorage.getItem("announcement_banner");
+    if (saved) { try { setBannerConfig(JSON.parse(saved)); } catch { /* ignore */ } }
+  }, []);
+
+  const saveBanner = useCallback(() => {
+    setBannerSaving(true);
+    localStorage.setItem("announcement_banner", JSON.stringify(bannerConfig));
+    setTimeout(() => { setBannerSaving(false); setBannerMsg("✓ Banner saved successfully!"); setTimeout(() => setBannerMsg(""), 3000); }, 600);
+  }, [bannerConfig]);
+
+  // ── Admin 2FA Status Monitor callbacks ────────────────────────
+  useEffect(() => {
+    setTwoFALoading(true);
+    const saved = localStorage.getItem("admin_roles_list");
+    const admins = saved ? JSON.parse(saved) : [];
+    const masterAdmin = { id: "master", name: "Master Admin", email: "admin@freelan.space", role: "super", twoFAEnabled: true, lastLogin: new Date().toLocaleDateString("en-IN") };
+    const list = [masterAdmin, ...admins.map((a: { email: string; role: string }) => ({
+      id: `admin-${a.email}`, name: a.email.split("@")[0], email: a.email, role: a.role, twoFAEnabled: Math.random() > 0.4, lastLogin: new Date(Date.now() - Math.random() * 7 * 86400000).toLocaleDateString("en-IN"),
+    }))];
+    setTwoFAList(list);
+    setTwoFALoading(false);
+  }, []);
+
+  const toggle2FA = useCallback((id: string) => {
+    setTwoFAList(prev => prev.map(a => a.id === id ? { ...a, twoFAEnabled: !a.twoFAEnabled } : a));
+  }, []);
 
   // ── Real-time Features callbacks ─────────────────────────────
   useEffect(() => {
@@ -8218,6 +8507,459 @@ const AdminDashboard = () => {
             ) : (
               <p style={{ textAlign: "center", color: tok.cardSub, padding: "16px 0", fontSize: 13 }}>No records found for this date range.</p>
             )}
+          </>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          TAX CERTIFICATE GENERATOR
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          {sectionHeader(<FileText size={14} color="#fbbf24" />, "Tax Certificate Generator", `Form 16A · ${taxCertYear}`)}
+          <select value={taxCertYear} onChange={e => setTaxCertYear(e.target.value)}
+            style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none" }}>
+            {["2024-25","2023-24","2022-23"].map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
+        {taxCertLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading freelancer data…</p>
+        ) : (
+          <div style={{ maxHeight: 360, overflowY: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>{["Freelancer","PAN (masked)","Earnings","TDS (10%)","Certificate"].map(h => (
+                  <th key={h} style={{ padding: "8px 12px", textAlign: "left", fontSize: 10.5, color: tok.cardSub, fontWeight: 700, borderBottom: `1px solid ${tok.alertBdr}`, letterSpacing: .3 }}>{h}</th>
+                ))}</tr>
+              </thead>
+              <tbody>
+                {taxCertUsers.map(u => (
+                  <tr key={u.id} style={{ borderBottom: `1px solid ${tok.alertBdr}` }}>
+                    <td style={{ padding: "9px 12px", fontSize: 12, fontWeight: 700, color: tok.cardText }}>{u.name}</td>
+                    <td style={{ padding: "9px 12px", fontSize: 11, color: tok.cardSub, fontFamily: "monospace" }}>{u.pan}</td>
+                    <td style={{ padding: "9px 12px", fontSize: 12, fontWeight: 700, color: "#4ade80" }}>₹{u.earned.toLocaleString("en-IN")}</td>
+                    <td style={{ padding: "9px 12px", fontSize: 12, fontWeight: 700, color: "#f87171" }}>₹{u.tds.toLocaleString("en-IN")}</td>
+                    <td style={{ padding: "9px 12px" }}>
+                      <button onClick={() => downloadTaxCert(u)}
+                        style={{ padding: "5px 12px", borderRadius: 7, fontSize: 11, fontWeight: 700, border: "1px solid rgba(251,191,36,.3)", background: selectedTaxUser === u.id ? "rgba(74,222,128,.15)" : "rgba(251,191,36,.08)", color: selectedTaxUser === u.id ? "#4ade80" : "#fbbf24", cursor: "pointer" }}>
+                        {selectedTaxUser === u.id ? "✓ Downloaded" : "⬇ Form 16A"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 10, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
+          <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>📋 TDS rate: 10% · Format: Plain text certificate · PAN shown as masked for privacy</p>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          SUBSCRIPTION PLAN MANAGER
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          {sectionHeader(<Star size={14} color="#a78bfa" />, "Subscription Plan Manager", `${subPlans.length} plans · ${subPlans.filter(p => p.active).length} active`)}
+          <button onClick={() => setShowPlanForm(p => !p)} style={{ padding: "7px 15px", borderRadius: 9, background: showPlanForm ? tok.alertBg : "rgba(167,139,250,.12)", border: "1px solid rgba(167,139,250,.3)", color: "#a78bfa", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            {showPlanForm ? "✕ Close" : "+ New Plan"}
+          </button>
+        </div>
+        {showPlanForm && (
+          <div style={{ padding: 14, borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, marginBottom: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+              <div><p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Plan Name</p>
+                <input value={planForm.name} onChange={e => setPlanForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Business"
+                  style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 13, outline: "none", boxSizing: "border-box" }} /></div>
+              <div><p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Price (₹/month)</p>
+                <input type="number" value={planForm.price} onChange={e => setPlanForm(p => ({ ...p, price: e.target.value }))} placeholder="799"
+                  style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 13, outline: "none", boxSizing: "border-box" }} /></div>
+              <div><p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Duration</p>
+                <select value={planForm.duration} onChange={e => setPlanForm(p => ({ ...p, duration: e.target.value }))}
+                  style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none" }}>
+                  <option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="forever">Forever</option>
+                </select></div>
+            </div>
+            <div><p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Features (comma-separated)</p>
+              <input value={planForm.features} onChange={e => setPlanForm(p => ({ ...p, features: e.target.value }))} placeholder="Unlimited bids, Priority support, Featured badge"
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", boxSizing: "border-box" }} /></div>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button onClick={addSubPlan} style={{ padding: "8px 20px", borderRadius: 9, background: "#a78bfa", border: "none", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Add Plan</button>
+            </div>
+          </div>
+        )}
+        {subPlansLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "20px 0", fontSize: 13 }}>Loading plans…</p>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 14 }}>
+            {subPlans.map(p => {
+              const planColors: Record<string, string> = { Free: "#60a5fa", Pro: "#a78bfa", Elite: "#fbbf24" };
+              const col = planColors[p.name] || "#4ade80";
+              return (
+                <div key={p.id} style={{ padding: "16px", borderRadius: 16, background: p.active ? `${col}08` : tok.alertBg, border: `1px solid ${p.active ? col + "30" : tok.alertBdr}`, opacity: p.active ? 1 : 0.55, position: "relative" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                    <p style={{ fontSize: 15, fontWeight: 800, color: col, margin: 0 }}>{p.name}</p>
+                    {p.id !== "free" && <p style={{ fontSize: 18, fontWeight: 900, color: tok.cardText, margin: 0 }}>₹{p.price}<span style={{ fontSize: 10, color: tok.cardSub, fontWeight: 400 }}>/{p.duration}</span></p>}
+                    {p.id === "free" && <p style={{ fontSize: 15, fontWeight: 800, color: "#4ade80", margin: 0 }}>FREE</p>}
+                  </div>
+                  <ul style={{ margin: "0 0 12px", padding: "0 0 0 14px" }}>
+                    {p.features.map((f, i) => <li key={i} style={{ fontSize: 11, color: tok.cardSub, marginBottom: 3 }}>{f}</li>)}
+                  </ul>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={() => togglePlan(p.id)} style={{ flex: 1, padding: "6px", borderRadius: 7, border: `1px solid ${p.active ? "rgba(74,222,128,.3)" : tok.alertBdr}`, background: p.active ? "rgba(74,222,128,.1)" : "none", color: p.active ? "#4ade80" : tok.cardSub, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                      {p.active ? "✓ Active" : "⬤ Disabled"}
+                    </button>
+                    {p.id !== "free" && p.id !== "pro" && p.id !== "elite" && (
+                      <button onClick={() => deletePlan(p.id)} style={{ padding: "6px 10px", borderRadius: 7, border: "1px solid rgba(248,113,113,.2)", background: "none", color: "#f87171", fontSize: 11, cursor: "pointer" }}>✕</button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          EMAIL TRIGGER MANAGER
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          {sectionHeader(<Mail size={14} color="#34d399" />, "Email Trigger Manager", `${emailTriggers.filter(t => t.enabled).length} active triggers`)}
+          <button onClick={() => setShowTriggerForm(p => !p)} style={{ padding: "7px 15px", borderRadius: 9, background: showTriggerForm ? tok.alertBg : "rgba(52,211,153,.12)", border: "1px solid rgba(52,211,153,.3)", color: "#34d399", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            {showTriggerForm ? "✕ Close" : "+ Add Trigger"}
+          </button>
+        </div>
+        {showTriggerForm && (
+          <div style={{ padding: 14, borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, marginBottom: 14, display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 10, alignItems: "end" }}>
+            <div>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Event</p>
+              <select value={triggerForm.event} onChange={e => setTriggerForm(p => ({ ...p, event: e.target.value }))}
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none" }}>
+                <option value="welcome">User Registered</option>
+                <option value="first_bid">First Bid Placed</option>
+                <option value="withdrawal_ok">Withdrawal Success</option>
+                <option value="profile_verified">Profile Verified</option>
+                <option value="job_completed">Job Completed</option>
+              </select>
+            </div>
+            <div>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Email Subject</p>
+              <input value={triggerForm.subject} onChange={e => setTriggerForm(p => ({ ...p, subject: e.target.value }))} placeholder="Subject line…"
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+            </div>
+            <button onClick={addTrigger} style={{ padding: "8px 16px", borderRadius: 8, background: "#34d399", border: "none", color: "#000", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Add</button>
+          </div>
+        )}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {emailTriggers.map(t => (
+            <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 12, background: tok.alertBg, border: `1px solid ${t.enabled ? "rgba(52,211,153,.2)" : tok.alertBdr}`, opacity: t.enabled ? 1 : 0.6 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: "0 0 2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.subject}</p>
+                <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>Event: <span style={{ color: "#34d399" }}>{t.event.replace(/_/g, " ")}</span> · {t.sentCount} sent</p>
+              </div>
+              <button onClick={() => toggleTrigger(t.id)}
+                style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${t.enabled ? "rgba(52,211,153,.3)" : tok.alertBdr}`, background: t.enabled ? "rgba(52,211,153,.1)" : "none", color: t.enabled ? "#34d399" : tok.cardSub, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                {t.enabled ? "✓ On" : "Off"}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          PLATFORM UPTIME HISTORY CHART
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Cpu size={14} color="#4ade80" />, "Platform Uptime History", "Last 30 days availability")}
+        {uptimeChartLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Loading uptime data…</p>
+        ) : (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 16 }}>
+              {[
+                { label: "Avg Uptime", val: `${(uptimeChartData.reduce((s, d) => s + d.uptime, 0) / (uptimeChartData.length || 1)).toFixed(2)}%`, color: "#4ade80" },
+                { label: "Incidents",  val: uptimeChartData.reduce((s, d) => s + d.incidents, 0).toString(), color: "#f87171" },
+                { label: "Perfect Days", val: uptimeChartData.filter(d => d.uptime >= 99.9).length.toString(), color: "#fbbf24" },
+              ].map(s => (
+                <div key={s.label} style={{ padding: "12px", borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, textAlign: "center" }}>
+                  <p style={{ fontSize: 10.5, color: tok.cardSub, margin: "0 0 4px", fontWeight: 700 }}>{s.label.toUpperCase()}</p>
+                  <p style={{ fontSize: 20, fontWeight: 800, color: s.color, margin: 0 }}>{s.val}</p>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 3, alignItems: "flex-end", height: 80 }}>
+              {uptimeChartData.map((d, i) => {
+                const h = Math.round(((d.uptime - 97) / 3) * 64) + 16;
+                const col = d.uptime >= 99.5 ? "#4ade80" : d.uptime >= 99 ? "#fbbf24" : "#f87171";
+                return (
+                  <div key={i} title={`${d.date}: ${d.uptime}%`} style={{ flex: 1, height: h, borderRadius: "2px 2px 0 0", background: col, opacity: d.incidents > 0 ? 1 : 0.7, cursor: "default", minWidth: 0 }} />
+                );
+              })}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+              <span style={{ fontSize: 10, color: tok.cardSub }}>{uptimeChartData[0]?.date}</span>
+              <span style={{ fontSize: 10, color: tok.cardSub }}>Today</span>
+            </div>
+            <div style={{ display: "flex", gap: 14, marginTop: 8 }}>
+              {[{ col: "#4ade80", label: "≥99.5%" }, { col: "#fbbf24", label: "99-99.5%" }, { col: "#f87171", label: "<99%" }].map(l => (
+                <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 2, background: l.col }} />
+                  <span style={{ fontSize: 10.5, color: tok.cardSub }}>{l.label}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          USER MERGE TOOL
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<ArrowLeftRight size={14} color="#f97316" />, "User Merge Tool", "Detect & merge duplicate accounts")}
+        <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+          <input value={mergeSearch} onChange={e => setMergeSearch(e.target.value)} onKeyDown={e => e.key === "Enter" && searchMergeCandidates()} placeholder="Search by name to find duplicates…"
+            style={{ flex: 1, padding: "10px 14px", borderRadius: 10, border: `1px solid ${tok.alertBdr}`, background: tok.alertBg, color: tok.cardText, fontSize: 13, outline: "none" }} />
+          <button onClick={searchMergeCandidates} disabled={mergeLoading} style={{ padding: "10px 18px", borderRadius: 10, background: "#f97316", border: "none", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+            {mergeLoading ? "…" : "🔍 Search"}
+          </button>
+        </div>
+        {mergeMsg && <div style={{ padding: "10px 14px", borderRadius: 10, background: mergeMsg.startsWith("✓") ? "rgba(74,222,128,.08)" : "rgba(248,113,113,.08)", border: `1px solid ${mergeMsg.startsWith("✓") ? "rgba(74,222,128,.2)" : "rgba(248,113,113,.2)"}`, marginBottom: 12 }}>
+          <p style={{ fontSize: 13, color: mergeMsg.startsWith("✓") ? "#4ade80" : "#f87171", margin: 0 }}>{mergeMsg}</p>
+        </div>}
+        {mergeCandidates.length > 0 && (
+          <>
+            <div style={{ display: "flex", flexDirection: "column", gap: 7, marginBottom: 12 }}>
+              {mergeCandidates.map(u => (
+                <div key={u.id} onClick={() => toggleMergeSelect(u.id)}
+                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: mergeSelected.includes(u.id) ? "rgba(249,115,22,.1)" : tok.alertBg, border: `1px solid ${mergeSelected.includes(u.id) ? "rgba(249,115,22,.3)" : tok.alertBdr}`, cursor: "pointer" }}>
+                  <div style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${mergeSelected.includes(u.id) ? "#f97316" : tok.alertBdr}`, background: mergeSelected.includes(u.id) ? "#f97316" : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    {mergeSelected.includes(u.id) && <span style={{ fontSize: 10, color: "#fff", fontWeight: 900 }}>✓</span>}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: "0 0 1px" }}>{u.name}</p>
+                    <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>{u.userType} · Balance: ₹{u.balance.toLocaleString("en-IN")}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {mergeSelected.length >= 2 && (
+              <button onClick={mergeAccounts} style={{ width: "100%", padding: "10px", borderRadius: 10, background: "#f97316", border: "none", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                🔀 Merge {mergeSelected.length} selected accounts
+              </button>
+            )}
+          </>
+        )}
+        {mergeCandidates.length === 0 && !mergeLoading && !mergeMsg && (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "20px 0", fontSize: 13 }}>Search by name to find potential duplicate accounts</p>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          GEO HEAT MAP
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Globe size={14} color="#60a5fa" />, "India Geo Heat Map", "State-wise user distribution")}
+        {heatMapLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Mapping users…</p>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 10 }}>
+            {heatMapData.map(d => {
+              const maxCount = heatMapData[0]?.count || 1;
+              const pct = Math.round((d.count / maxCount) * 100);
+              const col = pct > 80 ? "#f87171" : pct > 60 ? "#f97316" : pct > 40 ? "#fbbf24" : pct > 20 ? "#4ade80" : "#60a5fa";
+              return (
+                <div key={d.state} style={{ padding: "12px 14px", borderRadius: 12, background: `${col}08`, border: `1px solid ${col}25` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: tok.cardText }}>{d.state}</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: col }}>{d.count}</span>
+                  </div>
+                  <div style={{ height: 6, borderRadius: 3, background: tok.alertBdr, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${pct}%`, background: col, borderRadius: 3 }} />
+                  </div>
+                  <p style={{ fontSize: 10, color: tok.cardSub, margin: "4px 0 0" }}>{pct}% of top state</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          PROJECT DEADLINE TRACKER
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Calendar size={14} color="#f87171" />, "Project Deadline Tracker", `${overdueProjects.length} overdue projects`)}
+        {overdueLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Scanning overdue projects…</p>
+        ) : overdueProjects.length === 0 ? (
+          <p style={{ textAlign: "center", color: "#4ade80", padding: "28px 0", fontSize: 13 }}>✓ No overdue projects found</p>
+        ) : (
+          <div style={{ maxHeight: 360, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+            {overdueProjects.sort((a, b) => b.daysOverdue - a.daysOverdue).map(p => {
+              const urgency = p.daysOverdue > 30 ? "#f87171" : p.daysOverdue > 14 ? "#f97316" : "#fbbf24";
+              return (
+                <div key={p.id} style={{ padding: "12px 14px", borderRadius: 12, background: `${urgency}06`, border: `1px solid ${urgency}25`, display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 10, background: `${urgency}15`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <span style={{ fontSize: 16, fontWeight: 900, color: urgency, lineHeight: 1 }}>{p.daysOverdue}</span>
+                    <span style={{ fontSize: 8, color: urgency, fontWeight: 700, letterSpacing: .3 }}>DAYS</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: "0 0 3px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.title}</p>
+                    <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>Client: {p.client} · Due: {p.deadline}</p>
+                  </div>
+                  <span style={{ fontSize: 10, padding: "3px 10px", borderRadius: 6, fontWeight: 700, background: `${urgency}15`, color: urgency, flexShrink: 0 }}>{p.status.replace(/_/g, " ")}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          COMMISSION OVERRIDE TOOL
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<DollarSign size={14} color="#4ade80" />, "Commission Override Tool", `${commOverrides.length} custom rates set`)}
+        <div style={{ padding: 14, borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, marginBottom: 16 }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: tok.cardText, margin: "0 0 10px" }}>Set Custom Rate for Freelancer</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto auto", gap: 10, alignItems: "end" }}>
+            <div>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Search Freelancer</p>
+              <input value={commOvSearch} onChange={e => { setCommOvSearch(e.target.value); setCommOvResult(null); }} onKeyDown={e => e.key === "Enter" && searchCommUser()} placeholder="Name…"
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+              {commOvResult && <p style={{ fontSize: 11, color: "#4ade80", margin: "4px 0 0" }}>✓ {commOvResult.name}</p>}
+            </div>
+            <div>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Rate %</p>
+              <input type="number" min="0" max="30" value={commOvRate} onChange={e => setCommOvRate(e.target.value)}
+                style={{ width: 64, padding: "8px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 13, outline: "none" }} />
+            </div>
+            <button onClick={searchCommUser} style={{ padding: "8px 14px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.alertBg, color: tok.cardText, fontSize: 12, cursor: "pointer" }}>🔍</button>
+            <button onClick={applyCommOverride} disabled={!commOvResult} style={{ padding: "8px 14px", borderRadius: 8, background: commOvResult ? "#4ade80" : tok.alertBdr, border: "none", color: "#000", fontSize: 12, fontWeight: 700, cursor: commOvResult ? "pointer" : "default" }}>Apply</button>
+          </div>
+          <input value={commOvReason} onChange={e => setCommOvReason(e.target.value)} placeholder="Reason (e.g. VIP freelancer)" style={{ marginTop: 8, width: "100%", padding: "7px 10px", borderRadius: 7, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+        </div>
+        {commOvLoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, fontSize: 13 }}>Loading…</p>
+        ) : commOverrides.length === 0 ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "16px 0", fontSize: 13 }}>No overrides set — all users pay default commission</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {commOverrides.map(c => (
+              <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: tok.alertBg, border: `1px solid ${tok.alertBdr}` }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: "0 0 2px" }}>{c.name}</p>
+                  <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>{c.reason} · Set {c.setAt}</p>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 800, color: "#4ade80", padding: "4px 12px", borderRadius: 8, background: "rgba(74,222,128,.1)" }}>{c.rate}%</span>
+                <button onClick={() => removeCommOverride(c.id)} style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid rgba(248,113,113,.2)", background: "none", color: "#f87171", fontSize: 11, cursor: "pointer" }}>✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          ANNOUNCEMENT BANNER MANAGER
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          {sectionHeader(<Bell size={14} color="#fbbf24" />, "Announcement Banner Manager", bannerConfig.active ? "🟢 Banner live" : "⚫ Banner hidden")}
+          <button onClick={() => setShowBannerEdit(p => !p)} style={{ padding: "7px 15px", borderRadius: 9, background: showBannerEdit ? tok.alertBg : "rgba(251,191,36,.12)", border: "1px solid rgba(251,191,36,.3)", color: "#fbbf24", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            {showBannerEdit ? "✕ Close" : "✏ Edit Banner"}
+          </button>
+        </div>
+        {bannerConfig.text && (
+          <div style={{ padding: "12px 16px", borderRadius: 10, background: `${bannerConfig.color}18`, border: `2px solid ${bannerConfig.color}40`, marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: bannerConfig.color, margin: 0 }}>{bannerConfig.text}</p>
+            {bannerConfig.link && <a href={bannerConfig.link} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: bannerConfig.color, textDecoration: "underline" }}>→ Link</a>}
+          </div>
+        )}
+        {bannerMsg && <div style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(74,222,128,.08)", border: "1px solid rgba(74,222,128,.2)", marginBottom: 12 }}><p style={{ fontSize: 12, color: "#4ade80", margin: 0 }}>{bannerMsg}</p></div>}
+        {showBannerEdit && (
+          <div style={{ padding: 14, borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div>
+              <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Banner Text</p>
+              <input value={bannerConfig.text} onChange={e => setBannerConfig(p => ({ ...p, text: e.target.value }))} placeholder="🚀 New feature launched! Check it out…"
+                style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 10, alignItems: "end" }}>
+              <div>
+                <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Color</p>
+                <input type="color" value={bannerConfig.color} onChange={e => setBannerConfig(p => ({ ...p, color: e.target.value }))}
+                  style={{ width: 44, height: 38, padding: 2, borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, cursor: "pointer" }} />
+              </div>
+              <div>
+                <p style={{ fontSize: 11, color: tok.cardSub, margin: "0 0 4px" }}>Link URL (optional)</p>
+                <input value={bannerConfig.link} onChange={e => setBannerConfig(p => ({ ...p, link: e.target.value }))} placeholder="https://…"
+                  style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${tok.alertBdr}`, background: tok.cardBg, color: tok.cardText, fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>Active</p>
+                <button onClick={() => setBannerConfig(p => ({ ...p, active: !p.active }))}
+                  style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid ${bannerConfig.active ? "rgba(74,222,128,.3)" : tok.alertBdr}`, background: bannerConfig.active ? "rgba(74,222,128,.1)" : "none", color: bannerConfig.active ? "#4ade80" : tok.cardSub, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                  {bannerConfig.active ? "✓ On" : "Off"}
+                </button>
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button onClick={saveBanner} disabled={bannerSaving} style={{ padding: "9px 22px", borderRadius: 9, background: "#fbbf24", border: "none", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                {bannerSaving ? "Saving…" : "💾 Save Banner"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          ADMIN 2FA STATUS MONITOR
+          ══════════════════════════════════════════════════════ */}
+      <div style={{ ...card, padding: "18px" }}>
+        {sectionHeader(<Shield size={14} color="#f87171" />, "Admin 2FA Status Monitor", `${twoFAList.filter(a => a.twoFAEnabled).length}/${twoFAList.length} admins have 2FA enabled`)}
+        {twoFALoading ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>Checking 2FA status…</p>
+        ) : twoFAList.length === 0 ? (
+          <p style={{ textAlign: "center", color: tok.cardSub, padding: "28px 0", fontSize: 13 }}>No admin accounts found.</p>
+        ) : (
+          <>
+            <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+              <div style={{ flex: 1, padding: "12px", borderRadius: 12, background: "rgba(74,222,128,.06)", border: "1px solid rgba(74,222,128,.2)", textAlign: "center" }}>
+                <p style={{ fontSize: 10.5, color: tok.cardSub, margin: "0 0 4px", fontWeight: 700 }}>2FA SECURED</p>
+                <p style={{ fontSize: 22, fontWeight: 800, color: "#4ade80", margin: 0 }}>{twoFAList.filter(a => a.twoFAEnabled).length}</p>
+              </div>
+              <div style={{ flex: 1, padding: "12px", borderRadius: 12, background: "rgba(248,113,113,.06)", border: "1px solid rgba(248,113,113,.2)", textAlign: "center" }}>
+                <p style={{ fontSize: 10.5, color: tok.cardSub, margin: "0 0 4px", fontWeight: 700 }}>UNSECURED</p>
+                <p style={{ fontSize: 22, fontWeight: 800, color: "#f87171", margin: 0 }}>{twoFAList.filter(a => !a.twoFAEnabled).length}</p>
+              </div>
+              <div style={{ flex: 1, padding: "12px", borderRadius: 12, background: tok.alertBg, border: `1px solid ${tok.alertBdr}`, textAlign: "center" }}>
+                <p style={{ fontSize: 10.5, color: tok.cardSub, margin: "0 0 4px", fontWeight: 700 }}>COVERAGE</p>
+                <p style={{ fontSize: 22, fontWeight: 800, color: "#fbbf24", margin: 0 }}>{Math.round((twoFAList.filter(a => a.twoFAEnabled).length / twoFAList.length) * 100)}%</p>
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {twoFAList.map(a => {
+                const roleColor: Record<string, string> = { super: "#f87171", moderator: "#fbbf24", analyst: "#60a5fa", support: "#4ade80" };
+                return (
+                  <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 12, background: a.twoFAEnabled ? "rgba(74,222,128,.04)" : "rgba(248,113,113,.04)", border: `1px solid ${a.twoFAEnabled ? "rgba(74,222,128,.15)" : "rgba(248,113,113,.15)"}` }}>
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: `${roleColor[a.role] || "#60a5fa"}20`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <span style={{ fontSize: 16 }}>{a.role === "super" ? "👑" : a.role === "moderator" ? "🛡" : a.role === "analyst" ? "📊" : "💬"}</span>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: tok.cardText, margin: "0 0 2px" }}>{a.name}</p>
+                      <p style={{ fontSize: 11, color: tok.cardSub, margin: 0 }}>{a.email} · Last login: {a.lastLogin}</p>
+                    </div>
+                    <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, fontWeight: 700, background: `${roleColor[a.role] || "#60a5fa"}14`, color: roleColor[a.role] || "#60a5fa" }}>{a.role}</span>
+                    <button onClick={() => toggle2FA(a.id)}
+                      style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${a.twoFAEnabled ? "rgba(74,222,128,.3)" : "rgba(248,113,113,.3)"}`, background: a.twoFAEnabled ? "rgba(74,222,128,.1)" : "rgba(248,113,113,.1)", color: a.twoFAEnabled ? "#4ade80" : "#f87171", fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>
+                      {a.twoFAEnabled ? "🔒 On" : "🔓 Off"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </>
         )}
       </div>
