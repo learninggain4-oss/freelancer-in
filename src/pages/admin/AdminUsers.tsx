@@ -117,6 +117,8 @@ const AdminUsers = () => {
     mobile_number: "", whatsapp_number: "", gender: "", date_of_birth: "",
     approval_status: "approved", approval_notes: "",
   });
+  const [addUserEmailCheck, setAddUserEmailCheck] = useState<null | { exists: boolean; name?: string; type?: string; id?: string }>(null);
+  const [addUserEmailChecking, setAddUserEmailChecking] = useState(false);
 
   // Import Excel
   const [importOpen, setImportOpen] = useState(false);
@@ -720,6 +722,28 @@ const AdminUsers = () => {
     }
   };
 
+  const checkAddUserEmail = async (email: string) => {
+    if (!email || !email.includes("@")) { setAddUserEmailCheck(null); return; }
+    setAddUserEmailChecking(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/functions/v1/admin-check-email?email=${encodeURIComponent(email.trim().toLowerCase())}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) { setAddUserEmailCheck(null); return; }
+      const data = await res.json();
+      setAddUserEmailCheck(data);
+      if (data.exists && data.name) {
+        setAddUserForm(f => ({
+          ...f,
+          full_name: f.full_name || data.name,
+          user_type: f.user_type || data.type || "employee",
+        }));
+      }
+    } catch { setAddUserEmailCheck(null); }
+    finally { setAddUserEmailChecking(false); }
+  };
+
   const handleImportOpen = () => {
     setImportFile(null);
     setImportStep("upload");
@@ -800,6 +824,7 @@ const AdminUsers = () => {
       const action = data.action === "updated" ? "updated" : "created";
       toast.success(`User "${full_name.trim().toUpperCase()}" ${action} successfully`);
       setAddUserOpen(false);
+      setAddUserEmailCheck(null);
       setAddUserForm({ email: "", full_name: "", password: "", user_type: "employee",
         mobile_number: "", whatsapp_number: "", gender: "", date_of_birth: "",
         approval_status: "approved", approval_notes: "" });
@@ -1972,7 +1997,11 @@ const AdminUsers = () => {
               <Button size="sm"
                 className="h-9 gap-2 rounded-xl font-semibold shadow-lg"
                 style={{ background: "linear-gradient(135deg,#e0f2fe,#bae6fd)", color: "#0369a1" }}
-                onClick={() => setAddUserOpen(true)}>
+                onClick={() => {
+                  setAddUserForm({ email: "", full_name: "", password: "", user_type: "employee", mobile_number: "", whatsapp_number: "", gender: "", date_of_birth: "", approval_status: "approved", approval_notes: "" });
+                  setAddUserEmailCheck(null);
+                  setAddUserOpen(true);
+                }}>
                 <UserPlus className="h-3.5 w-3.5" />
                 Add User
               </Button>
@@ -2504,7 +2533,7 @@ const AdminUsers = () => {
       </Dialog>
 
       {/* Manual Add User Dialog */}
-      <Dialog open={addUserOpen} onOpenChange={(o) => { if (!addUserProcessing) setAddUserOpen(o); }}>
+      <Dialog open={addUserOpen} onOpenChange={(o) => { if (!addUserProcessing) { setAddUserOpen(o); if (!o) { setAddUserEmailCheck(null); } } }}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: T.card, borderColor: T.border }}>
           <DialogHeader>
             <DialogTitle style={{ color: T.text }}>Add User Manually</DialogTitle>
@@ -2523,9 +2552,30 @@ const AdminUsers = () => {
               </div>
               <div className="space-y-1">
                 <Label style={{ color: T.text }}>Email <span className="text-red-500">*</span></Label>
-                <Input type="email" placeholder="user@example.com" value={addUserForm.email}
-                  onChange={e => setAddUserForm(f => ({ ...f, email: e.target.value }))}
-                  style={{ background: T.input, color: T.text, borderColor: T.border }} />
+                <div className="relative">
+                  <Input type="email" placeholder="user@example.com" value={addUserForm.email}
+                    onChange={e => { setAddUserForm(f => ({ ...f, email: e.target.value })); setAddUserEmailCheck(null); }}
+                    onBlur={e => checkAddUserEmail(e.target.value)}
+                    style={{ background: T.input, color: T.text, borderColor: addUserEmailCheck?.exists ? "#f59e0b" : T.border }} />
+                  {addUserEmailChecking && <span className="absolute right-3 top-2.5 text-xs text-gray-400">Checking…</span>}
+                </div>
+                {addUserEmailCheck?.exists && (
+                  <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:border-amber-700 dark:text-amber-200">
+                    <div className="font-semibold mb-0.5">⚠️ ഈ email-ൽ ഒരു account ഇതിനകം ഉണ്ട്</div>
+                    <div className="text-xs">
+                      <span className="font-medium">{addUserEmailCheck.name}</span>
+                      {" · "}
+                      <span>{addUserEmailCheck.type === "employee" ? "Freelancer" : addUserEmailCheck.type === "client" ? "Employer" : addUserEmailCheck.type}</span>
+                    </div>
+                    <div className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                      Save ചെയ്‌താൽ ഈ user-ന്റെ profile <strong>update</strong> ആകും.
+                      ഒരു പുതിയ (separate) account create ചെയ്യണമെങ്കിൽ <strong>different email</strong> ഉപയോഗിക്കണം.
+                    </div>
+                  </div>
+                )}
+                {addUserEmailCheck && !addUserEmailCheck.exists && (
+                  <div className="text-xs text-green-600 dark:text-green-400 px-1">✓ പുതിയ account ആയി create ആകും</div>
+                )}
               </div>
               <div className="space-y-1">
                 <Label style={{ color: T.text }}>Password <span className="text-red-500">*</span></Label>

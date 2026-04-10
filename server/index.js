@@ -2394,6 +2394,36 @@ async function handleExportUsers(req, res) {
 app.get("/functions/v1/admin-export-users", handleExportUsers);
 app.post("/functions/v1/admin-export-users", handleExportUsers);
 
+// ── Check if email already has a profile ─────────────────────────────────────
+app.get("/functions/v1/admin-check-email", async (req, res) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
+    const user = await getUserFromToken(authHeader);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    const email = (req.query.email || "").trim().toLowerCase();
+    if (!email) return res.json({ exists: false });
+    const adminClient = getAdminClient();
+    const { data: profile } = await adminClient
+      .from("profiles")
+      .select("id, full_name, user_type, email")
+      .eq("email", email)
+      .maybeSingle();
+    if (profile) {
+      return res.json({
+        exists: true,
+        name: Array.isArray(profile.full_name) ? profile.full_name[0] : profile.full_name,
+        type: profile.user_type,
+        id: profile.id,
+      });
+    }
+    return res.json({ exists: false });
+  } catch (err) {
+    console.error("admin-check-email error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Production: serve the Vite build + SPA fallback ─────────────────────────
 const distPath = path.join(__dirname, "..", "dist");
 if (existsSync(distPath)) {
