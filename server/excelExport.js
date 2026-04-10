@@ -44,7 +44,7 @@ export async function generateExcel() {
 
     const adminClient = getAdminClient();
 
-    const { data: profiles, error } = await adminClient
+    const { data: profiles, error: profilesError } = await adminClient
       .from("profiles")
       .select(
         "id, user_id, user_code, full_name, email, mobile_number, whatsapp_number, " +
@@ -61,10 +61,25 @@ export async function generateExcel() {
       )
       .order("created_at", { ascending: false });
 
-    if (error) {
-      logError(`DB fetch error: ${error.message}`);
-      throw error;
+    if (profilesError) {
+      logError(`profiles fetch error: ${profilesError.message}`);
+      throw profilesError;
     }
+
+    const [{ data: regMeta }, { data: empProfiles }] = await Promise.all([
+      adminClient
+        .from("registration_metadata")
+        .select("profile_id, ip_address, city, region, country, latitude, longitude"),
+      adminClient
+        .from("employer_profiles")
+        .select("profile_id, company_name, business_type, industry_sector, gst_number, business_description, typical_budget_min, typical_budget_max, preferred_categories, city, state"),
+    ]);
+
+    const regMetaMap = new Map();
+    for (const r of regMeta || []) regMetaMap.set(r.profile_id, r);
+
+    const empMap = new Map();
+    for (const e of empProfiles || []) empMap.set(e.profile_id, e);
 
     const seenIds = new Set();
     const rows = [];
@@ -84,14 +99,6 @@ export async function generateExcel() {
 
     const lastUpdated = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
-    ws.mergeCells("A1:AN1");
-    const titleCell = ws.getCell("A1");
-    titleCell.value = `Freelancer India — User Export  |  Last Updated: ${lastUpdated} IST  |  Total Users: ${rows.length}`;
-    titleCell.font = { bold: true, size: 12, color: { argb: "FFFFFFFF" } };
-    titleCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF3B4FC8" } };
-    titleCell.alignment = { horizontal: "center", vertical: "middle" };
-    ws.getRow(1).height = 22;
-
     const COLS = [
       { header: "S.No", key: "sno", width: 6 },
       { header: "User Code", key: "user_code", width: 14 },
@@ -101,6 +108,7 @@ export async function generateExcel() {
       { header: "WhatsApp", key: "whatsapp_number", width: 14 },
       { header: "User Type", key: "user_type", width: 12 },
       { header: "Approval Status", key: "approval_status", width: 16 },
+      { header: "Is Disabled", key: "is_disabled", width: 12 },
       { header: "Account Status", key: "account_status", width: 14 },
       { header: "Disabled Reason", key: "disabled_reason", width: 20 },
       { header: "Wallet Balance (₹)", key: "available_balance", width: 18 },
@@ -131,6 +139,22 @@ export async function generateExcel() {
       { header: "Reg. Country", key: "registration_country", width: 16 },
       { header: "Latitude", key: "registration_latitude", width: 12 },
       { header: "Longitude", key: "registration_longitude", width: 12 },
+      { header: "Meta IP", key: "meta_ip", width: 16 },
+      { header: "Meta City", key: "meta_city", width: 16 },
+      { header: "Meta Region", key: "meta_region", width: 16 },
+      { header: "Meta Country", key: "meta_country", width: 16 },
+      { header: "Meta Latitude", key: "meta_latitude", width: 12 },
+      { header: "Meta Longitude", key: "meta_longitude", width: 12 },
+      { header: "Company Name", key: "company_name", width: 22 },
+      { header: "Business Type", key: "business_type", width: 16 },
+      { header: "Industry Sector", key: "industry_sector", width: 18 },
+      { header: "GST Number", key: "gst_number", width: 16 },
+      { header: "Business Description", key: "business_description", width: 24 },
+      { header: "Budget Min (₹)", key: "typical_budget_min", width: 14 },
+      { header: "Budget Max (₹)", key: "typical_budget_max", width: 14 },
+      { header: "Preferred Categories", key: "preferred_categories", width: 22 },
+      { header: "Employer City", key: "emp_city", width: 16 },
+      { header: "Employer State", key: "emp_state", width: 16 },
       { header: "Approval Notes", key: "approval_notes", width: 22 },
       { header: "Approved At", key: "approved_at", width: 20 },
       { header: "Last Seen", key: "last_seen_at", width: 20 },
@@ -140,6 +164,14 @@ export async function generateExcel() {
     ];
 
     ws.columns = COLS.map(c => ({ key: c.key, width: c.width }));
+
+    ws.mergeCells(`A1:${String.fromCharCode(64 + COLS.length)}1`);
+    const titleCell = ws.getCell("A1");
+    titleCell.value = `Freelancer India — User Export  |  Last Updated: ${lastUpdated} IST  |  Total Users: ${rows.length}`;
+    titleCell.font = { bold: true, size: 12, color: { argb: "FFFFFFFF" } };
+    titleCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF3B4FC8" } };
+    titleCell.alignment = { horizontal: "center", vertical: "middle" };
+    ws.getRow(1).height = 22;
 
     const headerRow = ws.getRow(2);
     COLS.forEach((col, i) => {
@@ -155,6 +187,9 @@ export async function generateExcel() {
     headerRow.height = 28;
 
     rows.forEach((p, idx) => {
+      const meta = regMetaMap.get(p.id) || {};
+      const emp = empMap.get(p.id) || {};
+
       const r = ws.addRow({
         sno: idx + 1,
         user_code: fmt(p.user_code),
@@ -164,6 +199,7 @@ export async function generateExcel() {
         whatsapp_number: fmt(p.whatsapp_number),
         user_type: p.user_type === "employee" ? "Freelancer" : p.user_type === "client" ? "Employer" : fmt(p.user_type),
         approval_status: fmt(p.approval_status),
+        is_disabled: p.is_disabled ? "TRUE" : "FALSE",
         account_status: p.is_disabled ? "Blocked" : "Active",
         disabled_reason: fmt(p.disabled_reason),
         available_balance: p.available_balance ?? 0,
@@ -194,6 +230,22 @@ export async function generateExcel() {
         registration_country: fmt(p.registration_country),
         registration_latitude: p.registration_latitude ?? "",
         registration_longitude: p.registration_longitude ?? "",
+        meta_ip: fmt(meta.ip_address),
+        meta_city: fmt(meta.city),
+        meta_region: fmt(meta.region),
+        meta_country: fmt(meta.country),
+        meta_latitude: meta.latitude ?? "",
+        meta_longitude: meta.longitude ?? "",
+        company_name: fmt(emp.company_name),
+        business_type: fmt(emp.business_type),
+        industry_sector: fmt(emp.industry_sector),
+        gst_number: fmt(emp.gst_number),
+        business_description: fmt(emp.business_description),
+        typical_budget_min: emp.typical_budget_min ?? "",
+        typical_budget_max: emp.typical_budget_max ?? "",
+        preferred_categories: Array.isArray(emp.preferred_categories) ? emp.preferred_categories.join(", ") : "",
+        emp_city: fmt(emp.city),
+        emp_state: fmt(emp.state),
         approval_notes: fmt(p.approval_notes),
         approved_at: fmt(p.approved_at),
         last_seen_at: fmt(p.last_seen_at),

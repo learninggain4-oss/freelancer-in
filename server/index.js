@@ -2216,7 +2216,9 @@ if (existsSync(distPath)) {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`API server running on port ${PORT}`);
   if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
-    generateExcel().catch(e => console.error("[excelExport] Startup generation failed:", e.message));
     scheduleRealtimeRefresh(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    setTimeout(() => {
+      generateExcel().catch(e => console.error("[excelExport] Startup generation failed:", e.message));
+    }, 5000);
   }
 });

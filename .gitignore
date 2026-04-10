@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Generated exports and logs
+server/exports/*.xlsx
+logs/*.log
