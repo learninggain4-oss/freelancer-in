@@ -137,11 +137,20 @@ async function logAudit(adminClient, adminProfileId, action, targetProfileId, ta
 
 async function getUserFromToken(authHeader) {
   if (!authHeader?.startsWith("Bearer ")) return null;
-  const token = authHeader.replace("Bearer ", "");
-  const anonClient = getAnonClient();
-  const { data: { user }, error } = await anonClient.auth.getUser(token);
-  if (error || !user) return null;
-  return user;
+  const token = authHeader.replace("Bearer ", "").trim();
+  if (!token) return null;
+  try {
+    const adminClient = getAdminClient();
+    const { data: { user }, error } = await adminClient.auth.getUser(token);
+    if (error || !user) {
+      console.warn("[getUserFromToken] getUser failed:", error?.message);
+      return null;
+    }
+    return user;
+  } catch (e) {
+    console.warn("[getUserFromToken] exception:", e.message);
+    return null;
+  }
 }
 
 
@@ -586,11 +595,13 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
     const authHeader = req.headers["authorization"];
     if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
     const user = await getUserFromToken(authHeader);
+    console.log("[admin-user-management] auth user:", user?.email || "null", "action:", req.body?.action);
     if (!user) return res.status(401).json({ error: "Unauthorized" });
 
     const adminClient = getAdminClient();
     const { data: roleData } = await adminClient.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
-    if (!roleData) return res.status(403).json({ error: "Forbidden: admin role required" });
+    const isSuper = isSuperAdmin(user.email);
+    if (!roleData && !isSuper) return res.status(403).json({ error: "Forbidden: admin role required" });
 
     // Fetch admin's own profile id for audit logging (non-critical)
     let adminProfileId = null;
