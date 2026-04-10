@@ -797,7 +797,8 @@ const AdminUsers = () => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create user");
-      toast.success(`User "${full_name.trim().toUpperCase()}" created successfully`);
+      const action = data.action === "updated" ? "updated" : "created";
+      toast.success(`User "${full_name.trim().toUpperCase()}" ${action} successfully`);
       setAddUserOpen(false);
       setAddUserForm({ email: "", full_name: "", password: "", user_type: "employee",
         mobile_number: "", whatsapp_number: "", gender: "", date_of_birth: "",

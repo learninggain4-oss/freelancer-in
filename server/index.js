@@ -2286,9 +2286,25 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
     const uType      = user_type || "employee";
     const approvalSt = approval_status || "pending";
 
-    // Check if profile already exists
-    const { data: existingProf } = await adminClient.from("profiles").select("id, email").eq("email", emailLower).maybeSingle();
-    if (existingProf) return res.status(409).json({ error: "A user with this email already exists in profiles" });
+    // Build the fields to set/update
+    const profileFields = {
+      full_name: [nameUpper], user_type: uType, approval_status: approvalSt,
+    };
+    if (mobile_number)   profileFields.mobile_number   = mobile_number.trim();
+    if (whatsapp_number) profileFields.whatsapp_number = whatsapp_number.trim();
+    if (gender)          profileFields.gender          = gender;
+    if (date_of_birth)   profileFields.date_of_birth   = date_of_birth;
+    if (approval_notes)  profileFields.approval_notes  = approval_notes.trim();
+
+    // Check if profile already exists by email — UPDATE it
+    const { data: existingProf } = await adminClient.from("profiles").select("id").eq("email", emailLower).maybeSingle();
+    if (existingProf) {
+      const { error: updErr } = await adminClient.from("profiles")
+        .update({ ...profileFields, updated_at: new Date().toISOString() })
+        .eq("id", existingProf.id);
+      if (updErr) return res.status(500).json({ error: updErr.message });
+      return res.json({ success: true, action: "updated", user_id: existingProf.id, email: emailLower, full_name: nameUpper });
+    }
 
     // Create/find auth user
     let userId = null;
@@ -2311,26 +2327,24 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
       userId = authData.user.id;
     }
 
-    // Check if profile exists for this auth user
+    // Check if profile exists for this auth user — UPDATE it
     const { data: authProf } = await adminClient.from("profiles").select("id").eq("id", userId).maybeSingle();
-    if (authProf) return res.status(409).json({ error: "Profile already exists for this auth user" });
+    if (authProf) {
+      const { error: updErr } = await adminClient.from("profiles")
+        .update({ ...profileFields, updated_at: new Date().toISOString() })
+        .eq("id", userId);
+      if (updErr) return res.status(500).json({ error: updErr.message });
+      return res.json({ success: true, action: "updated", user_id: userId, email: emailLower, full_name: nameUpper });
+    }
 
-    // Build profile
-    const profilePayload = {
+    // New user — INSERT profile
+    const { error: profErr } = await adminClient.from("profiles").insert({
       id: userId, user_id: userId, email: emailLower,
-      full_name: [nameUpper], user_code: [],
-      user_type: uType, approval_status: approvalSt,
-    };
-    if (mobile_number)   profilePayload.mobile_number   = mobile_number.trim();
-    if (whatsapp_number) profilePayload.whatsapp_number = whatsapp_number.trim();
-    if (gender)          profilePayload.gender          = gender;
-    if (date_of_birth)   profilePayload.date_of_birth   = date_of_birth;
-    if (approval_notes)  profilePayload.approval_notes  = approval_notes.trim();
-
-    const { error: profErr } = await adminClient.from("profiles").insert(profilePayload);
+      user_code: [], ...profileFields,
+    });
     if (profErr) return res.status(500).json({ error: profErr.message });
 
-    res.json({ success: true, user_id: userId, email: emailLower, full_name: nameUpper });
+    res.json({ success: true, action: "created", user_id: userId, email: emailLower, full_name: nameUpper });
   } catch (err) {
     console.error("admin-add-user error:", err);
     res.status(500).json({ error: err.message });
