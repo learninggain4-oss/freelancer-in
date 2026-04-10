@@ -257,31 +257,37 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
 
       // Helper: insert all related data after profile is created
       const insertRelatedData = async (profileId: string, supabaseClient: typeof supabase) => {
-        await supabaseClient.from("registration_metadata" as any).insert([{ profile_id: profileId, ip_address: geoData.ip||null, city: geoData.city||null, region: geoData.region||null, country: geoData.country||null, latitude: geoData.lat||null, longitude: geoData.lon||null }] as any).catch(() => {});
+        try { await supabaseClient.from("registration_metadata" as any).insert([{ profile_id: profileId, ip_address: geoData.ip||null, city: geoData.city||null, region: geoData.region||null, country: geoData.country||null, latitude: geoData.lat||null, longitude: geoData.lon||null }] as any); } catch {}
         if (uType === "client") {
-          await supabaseClient.from("employer_profiles" as any).insert([{
-            profile_id: profileId,
-            company_name: employerBiz.company_name || null,
-            business_type: employerBiz.business_type || null,
-            industry_sector: employerBiz.industry_sector || null,
-            gst_number: employerBiz.gst_number || null,
-            business_description: employerBiz.business_description || null,
-            typical_budget_min: employerBiz.typical_budget_min ? Number(employerBiz.typical_budget_min) : null,
-            typical_budget_max: employerBiz.typical_budget_max ? Number(employerBiz.typical_budget_max) : null,
-            preferred_categories: employerBiz.preferred_categories.length ? employerBiz.preferred_categories : null,
-            city: employerBiz.city || null, state: employerBiz.state || null,
-          }] as any).catch((e: any) => console.warn("Employer profile save deferred:", e));
+          try {
+            await supabaseClient.from("employer_profiles" as any).insert([{
+              profile_id: profileId,
+              company_name: employerBiz.company_name || null,
+              business_type: employerBiz.business_type || null,
+              industry_sector: employerBiz.industry_sector || null,
+              gst_number: employerBiz.gst_number || null,
+              business_description: employerBiz.business_description || null,
+              typical_budget_min: employerBiz.typical_budget_min ? Number(employerBiz.typical_budget_min) : null,
+              typical_budget_max: employerBiz.typical_budget_max ? Number(employerBiz.typical_budget_max) : null,
+              preferred_categories: employerBiz.preferred_categories.length ? employerBiz.preferred_categories : null,
+              city: employerBiz.city || null, state: employerBiz.state || null,
+            }] as any);
+          } catch (e) { console.warn("Employer profile save deferred:", e); }
         }
         for (const w of workExperiences.filter(w => w.company_name.trim())) {
           let certPath: string | null = null, certName: string | null = null;
           if (w.certificate_file) { const ext = w.certificate_file.name.split(".").pop(); const fpath = `${profileId}/${crypto.randomUUID()}.${ext}`; const { error: ue } = await supabaseClient.storage.from("work-certificates").upload(fpath, w.certificate_file); if (!ue) { certPath = fpath; certName = w.certificate_file.name; } }
-          await supabaseClient.from("work_experiences").insert({ profile_id: profileId, company_name: w.company_name, company_type: w.company_type, work_description: w.work_description||null, start_year: Number(w.start_year), end_year: w.is_current ? null : Number(w.end_year), is_current: w.is_current, certificate_path: certPath, certificate_name: certName }).catch(() => {});
+          try { await supabaseClient.from("work_experiences").insert({ profile_id: profileId, company_name: w.company_name, company_type: w.company_type, work_description: w.work_description||null, start_year: Number(w.start_year), end_year: w.is_current ? null : Number(w.end_year), is_current: w.is_current, certificate_path: certPath, certificate_name: certName }); } catch {}
         }
-        for (const c of emergencyContacts.filter(c => c.contact_name.trim())) await supabaseClient.from("employee_emergency_contacts").insert({ profile_id: profileId, contact_name: c.contact_name, contact_phone: c.contact_phone, relationship: c.relationship }).catch(() => {});
+        for (const c of emergencyContacts.filter(c => c.contact_name.trim())) {
+          try { await supabaseClient.from("employee_emergency_contacts").insert({ profile_id: profileId, contact_name: c.contact_name, contact_phone: c.contact_phone, relationship: c.relationship }); } catch {}
+        }
         for (const s of services) {
           if (!s.category_id || !s.service_title) continue;
-          const { data: svcData } = await supabaseClient.from("employee_services").insert({ profile_id: profileId, category_id: s.category_id, service_title: s.service_title, hourly_rate: Number(s.hourly_rate)||0, minimum_budget: Number(s.minimum_budget)||0 }).select("id").single();
-          if (svcData && s.skill_ids.length > 0) await supabaseClient.from("employee_skill_selections").insert(s.skill_ids.map((skillId: string) => ({ employee_service_id: svcData.id, skill_id: skillId }))).catch(() => {});
+          try {
+            const { data: svcData } = await supabaseClient.from("employee_services").insert({ profile_id: profileId, category_id: s.category_id, service_title: s.service_title, hourly_rate: Number(s.hourly_rate)||0, minimum_budget: Number(s.minimum_budget)||0 }).select("id").single();
+            if (svcData && s.skill_ids.length > 0) { try { await supabaseClient.from("employee_skill_selections").insert(s.skill_ids.map((skillId: string) => ({ employee_service_id: svcData.id, skill_id: skillId }))); } catch {} }
+          } catch {}
         }
       };
 
