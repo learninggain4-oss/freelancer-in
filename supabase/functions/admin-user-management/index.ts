@@ -156,6 +156,9 @@ Deno.serve(async (req) => {
           adminClient.from("documents").delete().eq("profile_id", pid),
           adminClient.from("employee_emergency_contacts").delete().eq("profile_id", pid),
           adminClient.from("employee_services").delete().eq("profile_id", pid),
+          // notifications.user_id is auth.users.id (not profiles.id)
+          adminClient.from("notifications").delete().eq("user_id", userId),
+          // Back-compat: if any legacy rows used profiles.id
           adminClient.from("notifications").delete().eq("user_id", pid),
           adminClient.from("registration_metadata").delete().eq("profile_id", pid),
           adminClient.from("transactions").delete().eq("profile_id", pid),
@@ -170,7 +173,8 @@ Deno.serve(async (req) => {
           adminClient.from("payment_confirmations").delete().eq("employee_id", pid),
           adminClient.from("message_reactions").delete().eq("user_id", pid),
           adminClient.from("support_message_reactions").delete().eq("user_id", pid),
-          adminClient.from("announcement_dismissals").delete().eq("user_id", pid),
+          // announcement_dismissals.user_id is auth.users.id (not profiles.id)
+          adminClient.from("announcement_dismissals").delete().eq("user_id", userId),
           adminClient.from("messages").delete().eq("sender_id", pid),
           // Tables referencing profile via non-standard columns
           adminClient.from("custom_quick_replies").delete().eq("created_by", pid),
