@@ -119,6 +119,7 @@ const AdminUsers = () => {
   });
   const [addUserEmailCheck, setAddUserEmailCheck] = useState<null | { exists: boolean; name?: string; type?: string; id?: string }>(null);
   const [addUserEmailChecking, setAddUserEmailChecking] = useState(false);
+  const [addUserForceNew, setAddUserForceNew] = useState(false);
 
   // Import Excel
   const [importOpen, setImportOpen] = useState(false);
@@ -817,7 +818,8 @@ const AdminUsers = () => {
           mobile_number: mobile_number.trim() || undefined,
           whatsapp_number: whatsapp_number.trim() || undefined,
           gender: gender || undefined, date_of_birth: date_of_birth || undefined,
-          approval_status, approval_notes: approval_notes.trim() || undefined }),
+          approval_status, approval_notes: approval_notes.trim() || undefined,
+          force_new: addUserForceNew }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create user");
@@ -825,6 +827,7 @@ const AdminUsers = () => {
       toast.success(`User "${full_name.trim().toUpperCase()}" ${action} successfully`);
       setAddUserOpen(false);
       setAddUserEmailCheck(null);
+      setAddUserForceNew(false);
       setAddUserForm({ email: "", full_name: "", password: "", user_type: "employee",
         mobile_number: "", whatsapp_number: "", gender: "", date_of_birth: "",
         approval_status: "approved", approval_notes: "" });
@@ -2000,6 +2003,7 @@ const AdminUsers = () => {
                 onClick={() => {
                   setAddUserForm({ email: "", full_name: "", password: "", user_type: "employee", mobile_number: "", whatsapp_number: "", gender: "", date_of_birth: "", approval_status: "approved", approval_notes: "" });
                   setAddUserEmailCheck(null);
+                  setAddUserForceNew(false);
                   setAddUserOpen(true);
                 }}>
                 <UserPlus className="h-3.5 w-3.5" />
@@ -2533,7 +2537,7 @@ const AdminUsers = () => {
       </Dialog>
 
       {/* Manual Add User Dialog */}
-      <Dialog open={addUserOpen} onOpenChange={(o) => { if (!addUserProcessing) { setAddUserOpen(o); if (!o) { setAddUserEmailCheck(null); } } }}>
+      <Dialog open={addUserOpen} onOpenChange={(o) => { if (!addUserProcessing) { setAddUserOpen(o); if (!o) { setAddUserEmailCheck(null); setAddUserForceNew(false); } } }}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: T.card, borderColor: T.border }}>
           <DialogHeader>
             <DialogTitle style={{ color: T.text }}>Add User Manually</DialogTitle>
@@ -2554,22 +2558,30 @@ const AdminUsers = () => {
                 <Label style={{ color: T.text }}>Email <span className="text-red-500">*</span></Label>
                 <div className="relative">
                   <Input type="email" placeholder="user@example.com" value={addUserForm.email}
-                    onChange={e => { setAddUserForm(f => ({ ...f, email: e.target.value })); setAddUserEmailCheck(null); }}
+                    onChange={e => { setAddUserForm(f => ({ ...f, email: e.target.value })); setAddUserEmailCheck(null); setAddUserForceNew(false); }}
                     onBlur={e => checkAddUserEmail(e.target.value)}
                     style={{ background: T.input, color: T.text, borderColor: addUserEmailCheck?.exists ? "#f59e0b" : T.border }} />
                   {addUserEmailChecking && <span className="absolute right-3 top-2.5 text-xs text-gray-400">Checking…</span>}
                 </div>
                 {addUserEmailCheck?.exists && (
-                  <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:border-amber-700 dark:text-amber-200">
-                    <div className="font-semibold mb-0.5">⚠️ ഈ email-ൽ ഒരു account ഇതിനകം ഉണ്ട്</div>
-                    <div className="text-xs">
-                      <span className="font-medium">{addUserEmailCheck.name}</span>
-                      {" · "}
-                      <span>{addUserEmailCheck.type === "employee" ? "Freelancer" : addUserEmailCheck.type === "client" ? "Employer" : addUserEmailCheck.type}</span>
-                    </div>
-                    <div className="mt-1 text-xs text-amber-700 dark:text-amber-300">
-                      Save ചെയ്‌താൽ ഈ user-ന്റെ profile <strong>update</strong> ആകും.
-                      ഒരു പുതിയ (separate) account create ചെയ്യണമെങ്കിൽ <strong>different email</strong> ഉപയോഗിക്കണം.
+                  <div className={`rounded-lg border px-3 py-2 text-sm ${addUserForceNew ? "border-blue-300 bg-blue-50 text-blue-800 dark:bg-blue-950 dark:border-blue-700 dark:text-blue-200" : "border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:border-amber-700 dark:text-amber-200"}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div>
+                        <div className="font-semibold">{addUserForceNew ? "🆕 പുതിയ Separate Account Create ആകും" : "⚠️ ഈ email-ൽ ഒരു account ഇതിനകം ഉണ്ട്"}</div>
+                        <div className="text-xs mt-0.5">
+                          <span className="font-medium">{addUserEmailCheck.name}</span>
+                          {" · "}
+                          <span>{addUserEmailCheck.type === "employee" ? "Freelancer" : addUserEmailCheck.type === "client" ? "Employer" : addUserEmailCheck.type}</span>
+                          {" · "}
+                          <span className="opacity-75">{addUserForceNew ? "existing account-ൽ touch ആകില്ല" : "Save ചെയ്‌താൽ ഈ profile update ആകും"}</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAddUserForceNew(v => !v)}
+                        className={`ml-3 shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold border transition-colors ${addUserForceNew ? "bg-blue-600 text-white border-blue-600" : "bg-white text-amber-700 border-amber-400 hover:bg-amber-100"}`}>
+                        {addUserForceNew ? "✓ New Account" : "New Account ആയി Add"}
+                      </button>
                     </div>
                   </div>
                 )}

@@ -2275,7 +2275,7 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
     if (!roleData && !isSuperAdmin(user.email)) return res.status(403).json({ error: "Forbidden" });
 
     const { email, full_name, password, user_type, mobile_number, whatsapp_number,
-            gender, date_of_birth, approval_status, approval_notes } = req.body || {};
+            gender, date_of_birth, approval_status, approval_notes, force_new } = req.body || {};
 
     if (!email) return res.status(400).json({ error: "Email is required" });
     if (!full_name) return res.status(400).json({ error: "Full name is required" });
@@ -2286,7 +2286,6 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
     const uType      = user_type || "employee";
     const approvalSt = approval_status || "pending";
 
-    // Build the fields to set/update
     const profileFields = {
       full_name: [nameUpper], user_type: uType, approval_status: approvalSt,
     };
@@ -2296,17 +2295,19 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
     if (date_of_birth)   profileFields.date_of_birth   = date_of_birth;
     if (approval_notes)  profileFields.approval_notes  = approval_notes.trim();
 
-    // Check if profile already exists by email — UPDATE it
-    const { data: existingProf } = await adminClient.from("profiles").select("id").eq("email", emailLower).maybeSingle();
-    if (existingProf) {
-      const { error: updErr } = await adminClient.from("profiles")
-        .update({ ...profileFields, updated_at: new Date().toISOString() })
-        .eq("id", existingProf.id);
-      if (updErr) return res.status(500).json({ error: updErr.message });
-      return res.json({ success: true, action: "updated", user_id: existingProf.id, email: emailLower, full_name: nameUpper });
+    // ── force_new=false (default): check existing profile → UPDATE ────────────
+    if (!force_new) {
+      const { data: existingProf } = await adminClient.from("profiles").select("id").eq("email", emailLower).maybeSingle();
+      if (existingProf) {
+        const { error: updErr } = await adminClient.from("profiles")
+          .update({ ...profileFields, updated_at: new Date().toISOString() })
+          .eq("id", existingProf.id);
+        if (updErr) return res.status(500).json({ error: updErr.message });
+        return res.json({ success: true, action: "updated", user_id: existingProf.id, email: emailLower, full_name: nameUpper });
+      }
     }
 
-    // Create/find auth user
+    // ── Find or create auth user ──────────────────────────────────────────────
     let userId = null;
     const { data: authData, error: authErr } = await adminClient.auth.admin.createUser({
       email: emailLower, password, email_confirm: true,
@@ -2318,7 +2319,6 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
                             authErr.message?.toLowerCase().includes("registered") ||
                             authErr.message?.toLowerCase().includes("exists");
       if (!alreadyExists) return res.status(400).json({ error: authErr.message });
-      // Auth user exists — find ID
       const { data: { users: allUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
       const existingAuth = allUsers.find(u => u.email?.toLowerCase() === emailLower);
       if (!existingAuth) return res.status(400).json({ error: "Auth user not found" });
@@ -2327,23 +2327,33 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
       userId = authData.user.id;
     }
 
-    // Check if profile exists for this auth user — UPDATE it
-    const { data: authProf } = await adminClient.from("profiles").select("id").eq("id", userId).maybeSingle();
+    // ── force_new: always INSERT a brand-new profile with a new UUID ──────────
+    if (force_new) {
+      const { randomUUID } = await import("crypto");
+      const newProfileId = randomUUID();
+      const { error: profErr } = await adminClient.from("profiles").insert({
+        id: newProfileId, user_id: userId, email: emailLower,
+        user_code: [], ...profileFields,
+      });
+      if (profErr) return res.status(500).json({ error: profErr.message });
+      return res.json({ success: true, action: "created", user_id: userId, profile_id: newProfileId, email: emailLower, full_name: nameUpper });
+    }
+
+    // ── Normal: check if profile exists for auth user → UPDATE or INSERT ──────
+    const { data: authProf } = await adminClient.from("profiles").select("id").eq("user_id", userId).maybeSingle();
     if (authProf) {
       const { error: updErr } = await adminClient.from("profiles")
         .update({ ...profileFields, updated_at: new Date().toISOString() })
-        .eq("id", userId);
+        .eq("id", authProf.id);
       if (updErr) return res.status(500).json({ error: updErr.message });
       return res.json({ success: true, action: "updated", user_id: userId, email: emailLower, full_name: nameUpper });
     }
 
-    // New user — INSERT profile
     const { error: profErr } = await adminClient.from("profiles").insert({
       id: userId, user_id: userId, email: emailLower,
       user_code: [], ...profileFields,
     });
     if (profErr) return res.status(500).json({ error: profErr.message });
-
     res.json({ success: true, action: "created", user_id: userId, email: emailLower, full_name: nameUpper });
   } catch (err) {
     console.error("admin-add-user error:", err);
