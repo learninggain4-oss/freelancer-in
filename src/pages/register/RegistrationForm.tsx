@@ -204,7 +204,23 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
 
       const uType = userType === "employer" ? "client" : "employee";
 
-      // Helper: register via server (used when email already exists in auth)
+      // Helper: create profile directly after getting userId (works for both new and duplicate email)
+      const insertProfileAndRelated = async (userId: string, supabaseClient: typeof supabase) => {
+        const newProfileId = crypto.randomUUID();
+        const { data: profileData, error: profileError } = await supabaseClient.from("profiles").insert([{
+          id: newProfileId, user_id: userId, user_type: uType,
+          full_name: [data.full_name.toUpperCase()], user_code: [], email: data.email,
+          gender: data.gender, date_of_birth: data.date_of_birth,
+          marital_status: data.marital_status, education_level: data.education_level,
+          mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number,
+          education_background: data.education_background || null,
+          referred_by: referralCode.trim() || null, approval_status: "approved",
+        } as any]).select("id").single();
+        if (profileError) throw profileError;
+        return (profileData as any)?.id || newProfileId;
+      };
+
+      // Helper: register via server API (fallback when can't sign in with existing account)
       const registerViaServer = async () => {
         const payload = {
           email: data.email, user_type: uType, full_name: data.full_name,
@@ -234,47 +250,16 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
         });
         const text = await res.text();
         let result: any = {};
-        try { result = JSON.parse(text); } catch { throw new Error("Server unavailable. Please try again."); }
+        try { result = JSON.parse(text); } catch { throw new Error("Registration failed. Please try again."); }
         if (!res.ok) throw new Error(result.error || "Registration failed");
         return result.profile_id as string;
       };
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({ email: data.email, password: data.password, options: { emailRedirectTo: window.location.origin } });
-
-      // Explicit "email already registered" error → create new profile via server
-      const isExplicitDuplicate = authError?.message?.toLowerCase().includes("already") ||
-                                  authError?.message?.toLowerCase().includes("registered") ||
-                                  authError?.message?.toLowerCase().includes("exists");
-      if (isExplicitDuplicate) {
-        await registerViaServer();
-        setSubmitted(true);
-        return;
-      }
-
-      if (authError) throw authError;
-
-      // If user is null but no error → email confirmation is pending (Supabase project setting)
-      // We still have the user object available, just no session yet
-      if (!authData.user) {
-        // Supabase silent fail for existing email (email confirmation mode) → try server path
-        // But first verify it's actually an existing email by trying server register
-        try {
-          await registerViaServer();
-        } catch {
-          // If server also fails, it might be a genuinely new user with email confirmation
-          // Treat as success — user will confirm email
-        }
-        setSubmitted(true);
-        return;
-      }
-      const userId = authData.user.id;
-      const { data: profileData, error: profileError } = await supabase.from("profiles").insert([{ user_id: userId, user_type: uType, full_name: [data.full_name.toUpperCase()], user_code: [], email: data.email, gender: data.gender, date_of_birth: data.date_of_birth, marital_status: data.marital_status, education_level: data.education_level, mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number, education_background: data.education_background || null, referred_by: referralCode.trim() || null, approval_status: "approved" } as any]).select("id").single();
-      if (profileError) throw profileError;
-      const profileId = (profileData as any)?.id || userId;
-      await supabase.from("registration_metadata" as any).insert([{ profile_id: profileId, ip_address: geoData.ip||null, city: geoData.city||null, region: geoData.region||null, country: geoData.country||null, latitude: geoData.lat||null, longitude: geoData.lon||null }] as any);
-      if (!isFreelancer) {
-        try {
-          await supabase.from("employer_profiles" as any).insert([{
+      // Helper: insert all related data after profile is created
+      const insertRelatedData = async (profileId: string, supabaseClient: typeof supabase) => {
+        await supabaseClient.from("registration_metadata" as any).insert([{ profile_id: profileId, ip_address: geoData.ip||null, city: geoData.city||null, region: geoData.region||null, country: geoData.country||null, latitude: geoData.lat||null, longitude: geoData.lon||null }] as any).catch(() => {});
+        if (uType === "client") {
+          await supabaseClient.from("employer_profiles" as any).insert([{
             profile_id: profileId,
             company_name: employerBiz.company_name || null,
             business_type: employerBiz.business_type || null,
@@ -284,22 +269,57 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
             typical_budget_min: employerBiz.typical_budget_min ? Number(employerBiz.typical_budget_min) : null,
             typical_budget_max: employerBiz.typical_budget_max ? Number(employerBiz.typical_budget_max) : null,
             preferred_categories: employerBiz.preferred_categories.length ? employerBiz.preferred_categories : null,
-            city: employerBiz.city || null,
-            state: employerBiz.state || null,
-          }] as any);
-        } catch (bizErr) { console.warn("Employer profile save deferred:", bizErr); }
+            city: employerBiz.city || null, state: employerBiz.state || null,
+          }] as any).catch((e: any) => console.warn("Employer profile save deferred:", e));
+        }
+        for (const w of workExperiences.filter(w => w.company_name.trim())) {
+          let certPath: string | null = null, certName: string | null = null;
+          if (w.certificate_file) { const ext = w.certificate_file.name.split(".").pop(); const fpath = `${profileId}/${crypto.randomUUID()}.${ext}`; const { error: ue } = await supabaseClient.storage.from("work-certificates").upload(fpath, w.certificate_file); if (!ue) { certPath = fpath; certName = w.certificate_file.name; } }
+          await supabaseClient.from("work_experiences").insert({ profile_id: profileId, company_name: w.company_name, company_type: w.company_type, work_description: w.work_description||null, start_year: Number(w.start_year), end_year: w.is_current ? null : Number(w.end_year), is_current: w.is_current, certificate_path: certPath, certificate_name: certName }).catch(() => {});
+        }
+        for (const c of emergencyContacts.filter(c => c.contact_name.trim())) await supabaseClient.from("employee_emergency_contacts").insert({ profile_id: profileId, contact_name: c.contact_name, contact_phone: c.contact_phone, relationship: c.relationship }).catch(() => {});
+        for (const s of services) {
+          if (!s.category_id || !s.service_title) continue;
+          const { data: svcData } = await supabaseClient.from("employee_services").insert({ profile_id: profileId, category_id: s.category_id, service_title: s.service_title, hourly_rate: Number(s.hourly_rate)||0, minimum_budget: Number(s.minimum_budget)||0 }).select("id").single();
+          if (svcData && s.skill_ids.length > 0) await supabaseClient.from("employee_skill_selections").insert(s.skill_ids.map((skillId: string) => ({ employee_service_id: svcData.id, skill_id: skillId }))).catch(() => {});
+        }
+      };
+
+      // Helper: handle duplicate email — sign in with same password → create new profile
+      const handleDuplicateEmail = async () => {
+        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+          email: data.email, password: data.password,
+        });
+        if (signInErr || !signInData?.user) {
+          // Wrong password or can't sign in → use server-side admin path
+          await registerViaServer();
+          return;
+        }
+        // Signed in successfully — create new profile with active session
+        const userId = signInData.user.id;
+        const profileId = await insertProfileAndRelated(userId, supabase);
+        await insertRelatedData(profileId, supabase);
+      };
+
+      const { data: authData, error: authError } = await supabase.auth.signUp({ email: data.email, password: data.password, options: { emailRedirectTo: window.location.origin } });
+
+      // Detect duplicate email
+      const isEmailTaken = authError?.message?.toLowerCase().includes("already") ||
+                           authError?.message?.toLowerCase().includes("registered") ||
+                           authError?.message?.toLowerCase().includes("exists") ||
+                           (!authError && !authData?.user);
+      if (isEmailTaken) {
+        await handleDuplicateEmail();
+        setSubmitted(true);
+        return;
       }
-      for (const w of workExperiences.filter(w => w.company_name.trim())) {
-        let certPath: string | null = null, certName: string | null = null;
-        if (w.certificate_file) { const ext = w.certificate_file.name.split(".").pop(); const path = `${profileId}/${crypto.randomUUID()}.${ext}`; const { error: ue } = await supabase.storage.from("work-certificates").upload(path, w.certificate_file); if (!ue) { certPath = path; certName = w.certificate_file.name; } }
-        await supabase.from("work_experiences").insert({ profile_id: profileId, company_name: w.company_name, company_type: w.company_type, work_description: w.work_description||null, start_year: Number(w.start_year), end_year: w.is_current ? null : Number(w.end_year), is_current: w.is_current, certificate_path: certPath, certificate_name: certName });
-      }
-      for (const c of emergencyContacts.filter(c => c.contact_name.trim())) await supabase.from("employee_emergency_contacts").insert({ profile_id: profileId, contact_name: c.contact_name, contact_phone: c.contact_phone, relationship: c.relationship });
-      for (const s of services) {
-        if (!s.category_id || !s.service_title) continue;
-        const { data: svcData } = await supabase.from("employee_services").insert({ profile_id: profileId, category_id: s.category_id, service_title: s.service_title, hourly_rate: Number(s.hourly_rate)||0, minimum_budget: Number(s.minimum_budget)||0 }).select("id").single();
-        if (svcData && s.skill_ids.length > 0) await supabase.from("employee_skill_selections").insert(s.skill_ids.map(skillId => ({ employee_service_id: svcData.id, skill_id: skillId })));
-      }
+
+      if (authError) throw authError;
+      if (!authData?.user) { setSubmitted(true); return; } // email confirmation pending
+      // New user — insert profile then all related data
+      const userId = authData.user.id;
+      const profileId = await insertProfileAndRelated(userId, supabase);
+      await insertRelatedData(profileId, supabase);
       setSubmitted(true);
     } catch (error: any) {
       const msg: string = error?.message || "";
