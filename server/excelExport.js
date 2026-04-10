@@ -165,8 +165,8 @@ export async function generateExcel() {
 
     ws.columns = COLS.map(c => ({ key: c.key, width: c.width }));
 
-    ws.mergeCells(`A1:${String.fromCharCode(64 + COLS.length)}1`);
-    const titleCell = ws.getCell("A1");
+    ws.mergeCells(1, 1, 1, COLS.length);
+    const titleCell = ws.getCell(1, 1);
     titleCell.value = `Freelancer India — User Export  |  Last Updated: ${lastUpdated} IST  |  Total Users: ${rows.length}`;
     titleCell.font = { bold: true, size: 12, color: { argb: "FFFFFFFF" } };
     titleCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF3B4FC8" } };
