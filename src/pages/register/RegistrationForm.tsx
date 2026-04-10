@@ -201,11 +201,59 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
     try {
       let geoData: any = {};
       try { const r = await fetch("https://ipapi.co/json/"); if (r.ok) { const g = await r.json(); geoData = { ip: g.ip, city: g.city, region: g.region, country: g.country_name, lat: g.latitude, lon: g.longitude }; } } catch {}
+
+      const uType = userType === "employer" ? "client" : "employee";
+
+      // Helper: register via server (used when email already exists in auth)
+      const registerViaServer = async () => {
+        const payload = {
+          email: data.email, user_type: uType, full_name: data.full_name,
+          gender: data.gender, date_of_birth: data.date_of_birth,
+          marital_status: data.marital_status, education_level: data.education_level,
+          mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number,
+          education_background: data.education_background || null,
+          referred_by: referralCode.trim() || null, approval_status: "approved",
+          geo: geoData,
+          employer_biz: uType === "client" ? employerBiz : undefined,
+          work_experiences: workExperiences.filter(w => w.company_name.trim()).map(w => ({
+            company_name: w.company_name, company_type: w.company_type,
+            work_description: w.work_description || null, start_year: w.start_year,
+            end_year: w.is_current ? null : w.end_year, is_current: w.is_current,
+          })),
+          emergency_contacts: emergencyContacts.filter(c => c.contact_name.trim()),
+          services: services.filter(s => s.category_id && s.service_title).map(s => ({
+            category_id: s.category_id, service_title: s.service_title,
+            hourly_rate: s.hourly_rate, minimum_budget: s.minimum_budget,
+            skill_ids: s.skill_ids,
+          })),
+        };
+        const res = await fetch("/functions/v1/public-register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || "Registration failed");
+        return result.profile_id as string;
+      };
+
       const { data: authData, error: authError } = await supabase.auth.signUp({ email: data.email, password: data.password, options: { emailRedirectTo: window.location.origin } });
+
+      // Email already exists in auth → register via server (creates new profile)
+      const isEmailExists = authError?.message?.toLowerCase().includes("already") ||
+                            authError?.message?.toLowerCase().includes("registered") ||
+                            authError?.message?.toLowerCase().includes("exists") ||
+                            (!authError && !authData.user);
+      if (isEmailExists) {
+        await registerViaServer();
+        setSubmitted(true);
+        return;
+      }
+
       if (authError) throw authError;
       if (!authData.user) throw new Error("Registration failed");
       const userId = authData.user.id;
-      const { data: profileData, error: profileError } = await supabase.from("profiles").insert([{ user_id: userId, user_type: userType === "employer" ? "client" : "employee", full_name: [data.full_name.toUpperCase()], user_code: [], email: data.email, gender: data.gender, date_of_birth: data.date_of_birth, marital_status: data.marital_status, education_level: data.education_level, mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number, education_background: data.education_background || null, referred_by: referralCode.trim() || null, approval_status: "approved" } as any]).select("id").single();
+      const { data: profileData, error: profileError } = await supabase.from("profiles").insert([{ user_id: userId, user_type: uType, full_name: [data.full_name.toUpperCase()], user_code: [], email: data.email, gender: data.gender, date_of_birth: data.date_of_birth, marital_status: data.marital_status, education_level: data.education_level, mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number, education_background: data.education_background || null, referred_by: referralCode.trim() || null, approval_status: "approved" } as any]).select("id").single();
       if (profileError) throw profileError;
       const profileId = (profileData as any)?.id || userId;
       await supabase.from("registration_metadata" as any).insert([{ profile_id: profileId, ip_address: geoData.ip||null, city: geoData.city||null, region: geoData.region||null, country: geoData.country||null, latitude: geoData.lat||null, longitude: geoData.lon||null }] as any);
