@@ -322,10 +322,8 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
 
       if (authError) throw authError;
       if (!authData?.user) { setSubmitted(true); return; } // email confirmation pending
-      // New user — insert profile then all related data
-      const userId = authData.user.id;
-      const profileId = await insertProfileAndRelated(userId, supabase);
-      await insertRelatedData(profileId, supabase);
+      // New user — use server (admin client) to create profile + all data, bypassing RLS
+      await registerViaServer();
       setSubmitted(true);
     } catch (error: any) {
       const msg: string = error?.message || "";
