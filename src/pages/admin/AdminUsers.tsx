@@ -30,6 +30,7 @@ import {
   BadgeIndianRupee, SendHorizonal, Phone, MapPin, GraduationCap, Briefcase, Building2,
   LogOut, ArrowLeftRight, Mail, History, FileText, Link2, Network, Star,
   AlertTriangle, Megaphone, BarChart3, TrendingUp, Activity, Zap, Fingerprint,
+  Upload,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
@@ -107,6 +108,14 @@ const AdminUsers = () => {
   const [changeTypeTo, setChangeTypeTo] = useState<string>("");
   const [changeTypeProcessing, setChangeTypeProcessing] = useState(false);
 
+
+  // Import Excel
+  const [importOpen, setImportOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importStep, setImportStep] = useState<"upload" | "preview" | "done">("upload");
+  const [importPreview, setImportPreview] = useState<any>(null);
+  const [importResult, setImportResult] = useState<any>(null);
+  const [importProcessing, setImportProcessing] = useState(false);
 
   // Advanced Filters
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -700,6 +709,63 @@ const AdminUsers = () => {
     } finally {
       setExcelExporting(false);
     }
+  };
+
+  const handleImportOpen = () => {
+    setImportFile(null);
+    setImportStep("upload");
+    setImportPreview(null);
+    setImportResult(null);
+    setImportOpen(true);
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const token = await getToken();
+      const res = await fetch("/functions/v1/admin-import-template", { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error("Failed to download template");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url;
+      a.download = "freelancer-india-import-template.xlsx"; a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) { toast.error(err.message); }
+  };
+
+  const handleImportPreview = async () => {
+    if (!importFile) { toast.error("Please select a file"); return; }
+    setImportProcessing(true);
+    try {
+      const token = await getToken();
+      const fd = new FormData(); fd.append("file", importFile);
+      const res = await fetch("/functions/v1/admin-import-users/preview", {
+        method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Preview failed");
+      setImportPreview(data);
+      setImportStep("preview");
+    } catch (err: any) { toast.error(err.message); }
+    finally { setImportProcessing(false); }
+  };
+
+  const handleImportConfirm = async () => {
+    if (!importFile) return;
+    setImportProcessing(true);
+    try {
+      const token = await getToken();
+      const fd = new FormData(); fd.append("file", importFile);
+      const res = await fetch("/functions/v1/admin-import-users/confirm", {
+        method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Import failed");
+      setImportResult(data);
+      setImportStep("done");
+      fetchProfiles();
+      toast.success(`Import complete: ${data.created?.length || 0} created, ${data.updated?.length || 0} updated`);
+    } catch (err: any) { toast.error(err.message); }
+    finally { setImportProcessing(false); }
   };
 
   const handleCopyId = (id: string) => {
@@ -1976,6 +2042,14 @@ const AdminUsers = () => {
               {excelExporting ? "Generating…" : `Export Selected (${selectedIds.size})`}
             </Button>
           )}
+          {/* Import Excel */}
+          <Button variant="outline" size="sm"
+            className="h-10 gap-2 rounded-xl text-sm shrink-0"
+            style={{ borderColor: "#0891b2", color: "#0891b2" }}
+            onClick={handleImportOpen}>
+            <Upload className="h-4 w-4" />
+            Import Excel
+          </Button>
         </div>
         {/* Secondary row — date range + result count + Advanced toggle */}
         <div className="flex flex-wrap items-center gap-2 px-3 py-2">
@@ -2211,6 +2285,168 @@ const AdminUsers = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Import Excel Dialog */}
+      <Dialog open={importOpen} onOpenChange={(o) => { if (!importProcessing) setImportOpen(o); }}>
+        <DialogContent className="sm:max-w-lg" style={{ background: T.card, borderColor: T.border }}>
+          <DialogHeader>
+            <DialogTitle style={{ color: T.text }}>
+              {importStep === "upload" && "Import Users from Excel"}
+              {importStep === "preview" && "Import Preview"}
+              {importStep === "done" && "Import Complete"}
+            </DialogTitle>
+            <DialogDescription style={{ color: T.sub }}>
+              {importStep === "upload" && "Upload an Excel file to create new users or update existing ones."}
+              {importStep === "preview" && "Review the changes before applying."}
+              {importStep === "done" && "The import has been completed successfully."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {importStep === "upload" && (
+            <div className="space-y-4 py-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm" style={{ color: T.sub }}>Don't have a template?</span>
+                <button onClick={handleDownloadTemplate}
+                  className="text-sm font-medium underline" style={{ color: "#0891b2" }}>
+                  Download Template
+                </button>
+              </div>
+              <div
+                className="border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors"
+                style={{ borderColor: importFile ? "#16a34a" : T.border, background: T.input }}
+                onClick={() => document.getElementById("import-file-input")?.click()}>
+                <Upload className="h-8 w-8 mx-auto mb-2" style={{ color: importFile ? "#16a34a" : T.sub }} />
+                {importFile ? (
+                  <div>
+                    <p className="font-medium text-sm" style={{ color: "#16a34a" }}>{importFile.name}</p>
+                    <p className="text-xs mt-1" style={{ color: T.sub }}>{(importFile.size / 1024).toFixed(1)} KB — Click to change</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: T.text }}>Click to select Excel file</p>
+                    <p className="text-xs mt-1" style={{ color: T.sub }}>.xlsx files only, max 10MB</p>
+                  </div>
+                )}
+                <input id="import-file-input" type="file" accept=".xlsx" className="hidden"
+                  onChange={(e) => setImportFile(e.target.files?.[0] || null)} />
+              </div>
+              <div className="rounded-lg p-3 text-xs space-y-1" style={{ background: T.input, color: T.sub }}>
+                <p className="font-semibold" style={{ color: T.text }}>Supported columns:</p>
+                <p>email (required), full_name, mobile_number, user_type (employee/client), approval_status (pending/approved/rejected), available_balance, wallet_active (TRUE/FALSE), is_disabled (TRUE/FALSE), temp_password (new users only)</p>
+              </div>
+            </div>
+          )}
+
+          {importStep === "preview" && importPreview && (
+            <div className="space-y-3 py-2 max-h-96 overflow-y-auto">
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: "Total Rows", value: importPreview.total, color: T.text },
+                  { label: "New Users", value: importPreview.created?.length || 0, color: "#16a34a" },
+                  { label: "Updates", value: importPreview.updated?.length || 0, color: "#0891b2" },
+                  { label: "Skipped", value: importPreview.skipped?.length || 0, color: "#ca8a04" },
+                  { label: "Errors", value: importPreview.errors?.length || 0, color: "#dc2626" },
+                ].map(item => (
+                  <div key={item.label} className="rounded-lg p-2 text-center" style={{ background: T.input }}>
+                    <p className="text-xl font-bold" style={{ color: item.color }}>{item.value}</p>
+                    <p className="text-xs" style={{ color: T.sub }}>{item.label}</p>
+                  </div>
+                ))}
+              </div>
+              {importPreview.created?.length > 0 && (
+                <div className="rounded-lg p-2" style={{ background: T.input }}>
+                  <p className="text-xs font-semibold mb-1" style={{ color: "#16a34a" }}>New Users to Create:</p>
+                  {importPreview.created.map((c: any, i: number) => (
+                    <p key={i} className="text-xs" style={{ color: T.text }}>• {c.email} ({c.user_type})</p>
+                  ))}
+                </div>
+              )}
+              {importPreview.updated?.length > 0 && (
+                <div className="rounded-lg p-2" style={{ background: T.input }}>
+                  <p className="text-xs font-semibold mb-1" style={{ color: "#0891b2" }}>Users to Update:</p>
+                  {importPreview.updated.map((u: any, i: number) => (
+                    <p key={i} className="text-xs" style={{ color: T.text }}>• {u.email} → {u.fields?.join(", ")}</p>
+                  ))}
+                </div>
+              )}
+              {importPreview.errors?.length > 0 && (
+                <div className="rounded-lg p-2" style={{ background: T.input }}>
+                  <p className="text-xs font-semibold mb-1" style={{ color: "#dc2626" }}>Errors (will be skipped):</p>
+                  {importPreview.errors.map((e: any, i: number) => (
+                    <p key={i} className="text-xs" style={{ color: "#dc2626" }}>• {e.email}: {e.error}</p>
+                  ))}
+                </div>
+              )}
+              {importPreview.skipped?.length > 0 && (
+                <div className="rounded-lg p-2" style={{ background: T.input }}>
+                  <p className="text-xs font-semibold mb-1" style={{ color: "#ca8a04" }}>Skipped:</p>
+                  {importPreview.skipped.map((s: any, i: number) => (
+                    <p key={i} className="text-xs" style={{ color: T.sub }}>• {s.email || "?"}: {s.reason}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {importStep === "done" && importResult && (
+            <div className="space-y-3 py-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg p-3 text-center" style={{ background: T.input }}>
+                  <p className="text-2xl font-bold" style={{ color: "#16a34a" }}>{importResult.created?.length || 0}</p>
+                  <p className="text-xs" style={{ color: T.sub }}>Users Created</p>
+                </div>
+                <div className="rounded-lg p-3 text-center" style={{ background: T.input }}>
+                  <p className="text-2xl font-bold" style={{ color: "#0891b2" }}>{importResult.updated?.length || 0}</p>
+                  <p className="text-xs" style={{ color: T.sub }}>Users Updated</p>
+                </div>
+              </div>
+              {importResult.created?.length > 0 && (
+                <div className="rounded-lg p-2 max-h-40 overflow-y-auto" style={{ background: T.input }}>
+                  <p className="text-xs font-semibold mb-1" style={{ color: "#16a34a" }}>Created accounts — share these passwords:</p>
+                  {importResult.created.map((c: any, i: number) => (
+                    <p key={i} className="text-xs font-mono" style={{ color: T.text }}>
+                      {c.email} — {c.temp_password !== "(provided)" ? `pw: ${c.temp_password}` : "pw: (user provided)"}
+                    </p>
+                  ))}
+                </div>
+              )}
+              {importResult.errors?.length > 0 && (
+                <div className="rounded-lg p-2" style={{ background: T.input }}>
+                  <p className="text-xs font-semibold mb-1" style={{ color: "#dc2626" }}>Failed ({importResult.errors.length}):</p>
+                  {importResult.errors.map((e: any, i: number) => (
+                    <p key={i} className="text-xs" style={{ color: "#dc2626" }}>• {e.email}: {e.error}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            {importStep === "upload" && (
+              <>
+                <Button variant="outline" onClick={() => setImportOpen(false)} style={{ borderColor: T.border, color: T.text }}>Cancel</Button>
+                <Button onClick={handleImportPreview} disabled={!importFile || importProcessing}
+                  style={{ background: "#0891b2", color: "#fff" }}>
+                  {importProcessing ? "Analysing…" : "Preview Changes"}
+                </Button>
+              </>
+            )}
+            {importStep === "preview" && (
+              <>
+                <Button variant="outline" onClick={() => setImportStep("upload")} disabled={importProcessing}
+                  style={{ borderColor: T.border, color: T.text }}>Back</Button>
+                <Button onClick={handleImportConfirm} disabled={importProcessing}
+                  style={{ background: "#16a34a", color: "#fff" }}>
+                  {importProcessing ? "Importing…" : `Confirm Import`}
+                </Button>
+              </>
+            )}
+            {importStep === "done" && (
+              <Button onClick={() => setImportOpen(false)} style={{ background: "#6366f1", color: "#fff" }}>Close</Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Invite User Dialog */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>

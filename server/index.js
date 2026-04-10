@@ -6,10 +6,12 @@ import crypto from "crypto";
 import { createRequire } from "module";
 import path from "path";
 import { fileURLToPath } from "url";
-import { existsSync, unlinkSync } from "fs";
+import { existsSync, unlinkSync, mkdirSync } from "fs";
 import os from "os";
 import { execSync } from "child_process";
+import multer from "multer";
 import { generateExcel, scheduleRealtimeRefresh } from "./excelExport.js";
+import { generateImportTemplate, parseImportExcel, processImport } from "./excelImport.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -2170,6 +2172,94 @@ app.post("/functions/v1/mpin-verify", async (req, res) => {
     res.json({ valid: false, attemptsLeft });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Multer: temp disk storage for uploaded files ────────────────────────────
+const UPLOAD_DIR = path.join(__dirname, "exports", "uploads");
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true });
+      cb(null, UPLOAD_DIR);
+    },
+    filename: (req, file, cb) => cb(null, `import-${Date.now()}.xlsx`),
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+        file.originalname.endsWith(".xlsx")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only .xlsx files are accepted"));
+    }
+  },
+});
+
+// ─── /functions/v1/admin-import-template — Download blank template ───────────
+app.get("/functions/v1/admin-import-template", async (req, res) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
+    const user = await getUserFromToken(authHeader);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    const adminClient = getAdminClient();
+    const { data: roleData } = await adminClient.from("user_roles").select("id").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+    if (!roleData && !isSuperAdmin(user.email)) return res.status(403).json({ error: "Forbidden" });
+
+    const wb = await generateImportTemplate();
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", 'attachment; filename="freelancer-india-import-template.xlsx"');
+    await wb.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── /functions/v1/admin-import-users — Parse + Preview (dry-run) ────────────
+app.post("/functions/v1/admin-import-users/preview", upload.single("file"), async (req, res) => {
+  const filePath = req.file?.path;
+  try {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
+    const user = await getUserFromToken(authHeader);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    const adminClient = getAdminClient();
+    const { data: roleData } = await adminClient.from("user_roles").select("id").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+    if (!roleData && !isSuperAdmin(user.email)) return res.status(403).json({ error: "Forbidden" });
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+    const rows = await parseImportExcel(filePath);
+    const results = await processImport(rows, true);
+    res.json({ total: rows.length, ...results });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (filePath) try { unlinkSync(filePath); } catch (_) {}
+  }
+});
+
+// ─── /functions/v1/admin-import-users — Actual import ────────────────────────
+app.post("/functions/v1/admin-import-users/confirm", upload.single("file"), async (req, res) => {
+  const filePath = req.file?.path;
+  try {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
+    const user = await getUserFromToken(authHeader);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    const adminClient = getAdminClient();
+    const { data: roleData } = await adminClient.from("user_roles").select("id").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+    if (!roleData && !isSuperAdmin(user.email)) return res.status(403).json({ error: "Forbidden" });
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+    const rows = await parseImportExcel(filePath);
+    const results = await processImport(rows, false);
+    res.json({ total: rows.length, ...results });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  } finally {
+    if (filePath) try { unlinkSync(filePath); } catch (_) {}
   }
 });
 
