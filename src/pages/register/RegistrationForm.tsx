@@ -166,17 +166,6 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
     const type = getStepType(step); setArrayErrors([]);
     const fields = formFieldsForStep(step);
     if (fields.length > 0) { const valid = await form.trigger(fields as any); if (!valid) return false; }
-    if (type === "contact") {
-      const values = form.getValues();
-      try {
-        const { data: dupes, error } = await supabase.rpc("check_registration_duplicates", { p_email: values.email, p_full_name: values.full_name.toUpperCase(), p_mobile: values.mobile_number, p_whatsapp: values.whatsapp_number });
-        if (error) throw error;
-        if (dupes && typeof dupes === "object" && Object.keys(dupes).length > 0) {
-          Object.values(dupes as Record<string, string>).forEach(m => toast({ title: "Duplicate found", description: m, variant: "destructive" }));
-          return false;
-        }
-      } catch (err: any) { toast({ title: "Validation error", description: err.message, variant: "destructive" }); return false; }
-    }
     if (type === "work") {
       const errors: string[] = [];
       workExperiences.forEach((w, i) => { const e = validateWorkExperience(w); if (e) errors.push(`Experience ${i+1}: ${e}`); });
@@ -251,9 +240,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       setSubmitted(true);
     } catch (error: any) {
       const msg: string = error?.message || "";
-      const friendlyMsg = msg.includes("already registered") || msg.includes("already exists") || msg.includes("duplicate") || msg.includes("unique")
-        ? "This email is already registered. Please login or use a different email."
-        : msg.includes("invalid input value for enum")
+      const friendlyMsg = msg.includes("invalid input value for enum")
         ? "Account type error — please contact support."
         : msg || "Something went wrong. Please try again.";
       toast({ title: "Registration failed", description: friendlyMsg, variant: "destructive" });
