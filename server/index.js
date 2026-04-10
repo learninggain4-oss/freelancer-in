@@ -2263,6 +2263,80 @@ app.post("/functions/v1/admin-import-users/confirm", upload.single("file"), asyn
   }
 });
 
+// ─── /functions/v1/admin-add-user — Manual single user creation ──────────────
+app.post("/functions/v1/admin-add-user", async (req, res) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
+    const user = await getUserFromToken(authHeader);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    const adminClient = getAdminClient();
+    const { data: roleData } = await adminClient.from("user_roles").select("id").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+    if (!roleData && !isSuperAdmin(user.email)) return res.status(403).json({ error: "Forbidden" });
+
+    const { email, full_name, password, user_type, mobile_number, whatsapp_number,
+            gender, date_of_birth, approval_status, approval_notes } = req.body || {};
+
+    if (!email) return res.status(400).json({ error: "Email is required" });
+    if (!full_name) return res.status(400).json({ error: "Full name is required" });
+    if (!password || password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+
+    const emailLower = email.trim().toLowerCase();
+    const nameUpper  = full_name.trim().toUpperCase();
+    const uType      = user_type || "employee";
+    const approvalSt = approval_status || "pending";
+
+    // Check if profile already exists
+    const { data: existingProf } = await adminClient.from("profiles").select("id, email").eq("email", emailLower).maybeSingle();
+    if (existingProf) return res.status(409).json({ error: "A user with this email already exists in profiles" });
+
+    // Create/find auth user
+    let userId = null;
+    const { data: authData, error: authErr } = await adminClient.auth.admin.createUser({
+      email: emailLower, password, email_confirm: true,
+      user_metadata: { full_name: nameUpper },
+    });
+
+    if (authErr) {
+      const alreadyExists = authErr.message?.toLowerCase().includes("already") ||
+                            authErr.message?.toLowerCase().includes("registered") ||
+                            authErr.message?.toLowerCase().includes("exists");
+      if (!alreadyExists) return res.status(400).json({ error: authErr.message });
+      // Auth user exists — find ID
+      const { data: { users: allUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+      const existingAuth = allUsers.find(u => u.email?.toLowerCase() === emailLower);
+      if (!existingAuth) return res.status(400).json({ error: "Auth user not found" });
+      userId = existingAuth.id;
+    } else {
+      userId = authData.user.id;
+    }
+
+    // Check if profile exists for this auth user
+    const { data: authProf } = await adminClient.from("profiles").select("id").eq("id", userId).maybeSingle();
+    if (authProf) return res.status(409).json({ error: "Profile already exists for this auth user" });
+
+    // Build profile
+    const profilePayload = {
+      id: userId, user_id: userId, email: emailLower,
+      full_name: [nameUpper], user_code: [],
+      user_type: uType, approval_status: approvalSt,
+    };
+    if (mobile_number)   profilePayload.mobile_number   = mobile_number.trim();
+    if (whatsapp_number) profilePayload.whatsapp_number = whatsapp_number.trim();
+    if (gender)          profilePayload.gender          = gender;
+    if (date_of_birth)   profilePayload.date_of_birth   = date_of_birth;
+    if (approval_notes)  profilePayload.approval_notes  = approval_notes.trim();
+
+    const { error: profErr } = await adminClient.from("profiles").insert(profilePayload);
+    if (profErr) return res.status(500).json({ error: profErr.message });
+
+    res.json({ success: true, user_id: userId, email: emailLower, full_name: nameUpper });
+  } catch (err) {
+    console.error("admin-add-user error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── /functions/v1/admin-export-users — Excel export (GET=all, POST=selected) ─
 async function handleExportUsers(req, res) {
   try {

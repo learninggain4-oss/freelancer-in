@@ -109,6 +109,15 @@ const AdminUsers = () => {
   const [changeTypeProcessing, setChangeTypeProcessing] = useState(false);
 
 
+  // Manual Add User
+  const [addUserOpen, setAddUserOpen] = useState(false);
+  const [addUserProcessing, setAddUserProcessing] = useState(false);
+  const [addUserForm, setAddUserForm] = useState({
+    email: "", full_name: "", password: "", user_type: "employee",
+    mobile_number: "", whatsapp_number: "", gender: "", date_of_birth: "",
+    approval_status: "approved", approval_notes: "",
+  });
+
   // Import Excel
   const [importOpen, setImportOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -766,6 +775,36 @@ const AdminUsers = () => {
       toast.success(`Import complete: ${data.created?.length || 0} created, ${data.updated?.length || 0} updated`);
     } catch (err: any) { toast.error(err.message); }
     finally { setImportProcessing(false); }
+  };
+
+  const handleAddUser = async () => {
+    const { email, full_name, password, user_type, mobile_number, whatsapp_number,
+            gender, date_of_birth, approval_status, approval_notes } = addUserForm;
+    if (!email.trim()) { toast.error("Email is required"); return; }
+    if (!full_name.trim()) { toast.error("Full name is required"); return; }
+    if (!password || password.length < 6) { toast.error("Password must be at least 6 characters"); return; }
+    setAddUserProcessing(true);
+    try {
+      const token = await getToken();
+      const res = await fetch("/functions/v1/admin-add-user", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), full_name: full_name.trim(), password, user_type,
+          mobile_number: mobile_number.trim() || undefined,
+          whatsapp_number: whatsapp_number.trim() || undefined,
+          gender: gender || undefined, date_of_birth: date_of_birth || undefined,
+          approval_status, approval_notes: approval_notes.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create user");
+      toast.success(`User "${full_name.trim().toUpperCase()}" created successfully`);
+      setAddUserOpen(false);
+      setAddUserForm({ email: "", full_name: "", password: "", user_type: "employee",
+        mobile_number: "", whatsapp_number: "", gender: "", date_of_birth: "",
+        approval_status: "approved", approval_notes: "" });
+      fetchProfiles();
+    } catch (err: any) { toast.error(err.message); }
+    finally { setAddUserProcessing(false); }
   };
 
   const handleCopyId = (id: string) => {
@@ -1931,6 +1970,13 @@ const AdminUsers = () => {
               </Button>
               <Button size="sm"
                 className="h-9 gap-2 rounded-xl font-semibold shadow-lg"
+                style={{ background: "linear-gradient(135deg,#e0f2fe,#bae6fd)", color: "#0369a1" }}
+                onClick={() => setAddUserOpen(true)}>
+                <UserPlus className="h-3.5 w-3.5" />
+                Add User
+              </Button>
+              <Button size="sm"
+                className="h-9 gap-2 rounded-xl font-semibold shadow-lg"
                 style={{ background: "linear-gradient(135deg,#fff,#e0e7ff)", color: "#4f46e5" }}
                 onClick={() => setInviteOpen(true)}>
                 <UserPlus className="h-3.5 w-3.5" />
@@ -2452,6 +2498,121 @@ const AdminUsers = () => {
             {importStep === "done" && (
               <Button onClick={() => setImportOpen(false)} style={{ background: "#6366f1", color: "#fff" }}>Close</Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manual Add User Dialog */}
+      <Dialog open={addUserOpen} onOpenChange={(o) => { if (!addUserProcessing) setAddUserOpen(o); }}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: T.card, borderColor: T.border }}>
+          <DialogHeader>
+            <DialogTitle style={{ color: T.text }}>Add User Manually</DialogTitle>
+            <DialogDescription style={{ color: T.sub }}>
+              Create a new user account directly. No invite email will be sent.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            {/* Required fields */}
+            <div className="grid grid-cols-1 gap-3">
+              <div className="space-y-1">
+                <Label style={{ color: T.text }}>Full Name <span className="text-red-500">*</span></Label>
+                <Input placeholder="JOHN DOE" value={addUserForm.full_name}
+                  onChange={e => setAddUserForm(f => ({ ...f, full_name: e.target.value }))}
+                  style={{ background: T.input, color: T.text, borderColor: T.border }} />
+              </div>
+              <div className="space-y-1">
+                <Label style={{ color: T.text }}>Email <span className="text-red-500">*</span></Label>
+                <Input type="email" placeholder="user@example.com" value={addUserForm.email}
+                  onChange={e => setAddUserForm(f => ({ ...f, email: e.target.value }))}
+                  style={{ background: T.input, color: T.text, borderColor: T.border }} />
+              </div>
+              <div className="space-y-1">
+                <Label style={{ color: T.text }}>Password <span className="text-red-500">*</span></Label>
+                <Input type="password" placeholder="Min 6 characters" value={addUserForm.password}
+                  onChange={e => setAddUserForm(f => ({ ...f, password: e.target.value }))}
+                  style={{ background: T.input, color: T.text, borderColor: T.border }} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label style={{ color: T.text }}>User Type</Label>
+                <Select value={addUserForm.user_type} onValueChange={v => setAddUserForm(f => ({ ...f, user_type: v }))}>
+                  <SelectTrigger style={{ background: T.input, color: T.text, borderColor: T.border }}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent style={{ background: T.card, borderColor: T.border }}>
+                    <SelectItem value="employee">Freelancer</SelectItem>
+                    <SelectItem value="client">Employer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label style={{ color: T.text }}>Approval Status</Label>
+                <Select value={addUserForm.approval_status} onValueChange={v => setAddUserForm(f => ({ ...f, approval_status: v }))}>
+                  <SelectTrigger style={{ background: T.input, color: T.text, borderColor: T.border }}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent style={{ background: T.card, borderColor: T.border }}>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label style={{ color: T.text }}>Mobile Number</Label>
+                <Input placeholder="9876543210" value={addUserForm.mobile_number}
+                  onChange={e => setAddUserForm(f => ({ ...f, mobile_number: e.target.value }))}
+                  style={{ background: T.input, color: T.text, borderColor: T.border }} />
+              </div>
+              <div className="space-y-1">
+                <Label style={{ color: T.text }}>WhatsApp Number</Label>
+                <Input placeholder="9876543210" value={addUserForm.whatsapp_number}
+                  onChange={e => setAddUserForm(f => ({ ...f, whatsapp_number: e.target.value }))}
+                  style={{ background: T.input, color: T.text, borderColor: T.border }} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label style={{ color: T.text }}>Gender</Label>
+                <Select value={addUserForm.gender} onValueChange={v => setAddUserForm(f => ({ ...f, gender: v }))}>
+                  <SelectTrigger style={{ background: T.input, color: T.text, borderColor: T.border }}>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent style={{ background: T.card, borderColor: T.border }}>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label style={{ color: T.text }}>Date of Birth</Label>
+                <Input type="date" value={addUserForm.date_of_birth}
+                  onChange={e => setAddUserForm(f => ({ ...f, date_of_birth: e.target.value }))}
+                  style={{ background: T.input, color: T.text, borderColor: T.border }} />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label style={{ color: T.text }}>Notes (optional)</Label>
+              <Textarea placeholder="Admin notes about this user…" value={addUserForm.approval_notes}
+                onChange={e => setAddUserForm(f => ({ ...f, approval_notes: e.target.value }))}
+                rows={2} style={{ background: T.input, color: T.text, borderColor: T.border }} />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setAddUserOpen(false)} disabled={addUserProcessing}
+              style={{ borderColor: T.border, color: T.text }}>Cancel</Button>
+            <Button onClick={handleAddUser} disabled={addUserProcessing}
+              style={{ background: "linear-gradient(135deg,#0369a1,#0284c7)", color: "#fff" }}>
+              {addUserProcessing ? "Creating…" : "Create User"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
