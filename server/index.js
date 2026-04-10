@@ -2453,18 +2453,23 @@ app.post("/functions/v1/public-register", async (req, res) => {
     const { error: profErr } = await adminClient.from("profiles").insert(profilePayload);
     if (profErr) return res.status(500).json({ error: profErr.message });
 
+    const logRegistrationWarning = (label, error) => {
+      if (error) console.warn(`public-register ${label}:`, error.message || error);
+    };
+
     // Registration metadata
     if (geo) {
-      await adminClient.from("registration_metadata").insert([{
+      const { error: metadataErr } = await adminClient.from("registration_metadata").insert([{
         profile_id: newProfileId, ip_address: geo.ip || null, city: geo.city || null,
         region: geo.region || null, country: geo.country || null,
         latitude: geo.lat || null, longitude: geo.lon || null,
-      }]).catch(() => {});
+      }]);
+      logRegistrationWarning("registration_metadata insert failed", metadataErr);
     }
 
     // Employer profile
     if (uType === "client" && employer_biz) {
-      await adminClient.from("employer_profiles").insert([{
+      const { error: employerErr } = await adminClient.from("employer_profiles").insert([{
         profile_id: newProfileId,
         company_name: employer_biz.company_name || null,
         business_type: employer_biz.business_type || null,
@@ -2475,28 +2480,31 @@ app.post("/functions/v1/public-register", async (req, res) => {
         typical_budget_max: employer_biz.typical_budget_max ? Number(employer_biz.typical_budget_max) : null,
         preferred_categories: employer_biz.preferred_categories?.length ? employer_biz.preferred_categories : null,
         city: employer_biz.city || null, state: employer_biz.state || null,
-      }]).catch(() => {});
+      }]);
+      logRegistrationWarning("employer_profiles insert failed", employerErr);
     }
 
     // Work experiences (no certificate files in this path)
     if (Array.isArray(work_experiences)) {
       for (const w of work_experiences.filter(w => w.company_name?.trim())) {
-        await adminClient.from("work_experiences").insert({
+        const { error: workErr } = await adminClient.from("work_experiences").insert({
           profile_id: newProfileId, company_name: w.company_name, company_type: w.company_type,
           work_description: w.work_description || null, start_year: Number(w.start_year),
           end_year: w.is_current ? null : Number(w.end_year), is_current: !!w.is_current,
           certificate_path: null, certificate_name: null,
-        }).catch(() => {});
+        });
+        logRegistrationWarning("work_experiences insert failed", workErr);
       }
     }
 
     // Emergency contacts
     if (Array.isArray(emergency_contacts)) {
       for (const c of emergency_contacts.filter(c => c.contact_name?.trim())) {
-        await adminClient.from("employee_emergency_contacts").insert({
+        const { error: contactErr } = await adminClient.from("employee_emergency_contacts").insert({
           profile_id: newProfileId, contact_name: c.contact_name,
           contact_phone: c.contact_phone, relationship: c.relationship,
-        }).catch(() => {});
+        });
+        logRegistrationWarning("employee_emergency_contacts insert failed", contactErr);
       }
     }
 
@@ -2504,14 +2512,16 @@ app.post("/functions/v1/public-register", async (req, res) => {
     if (Array.isArray(services)) {
       for (const s of services) {
         if (!s.category_id || !s.service_title) continue;
-        const { data: svcData } = await adminClient.from("employee_services").insert({
+        const { data: svcData, error: serviceErr } = await adminClient.from("employee_services").insert({
           profile_id: newProfileId, category_id: s.category_id, service_title: s.service_title,
           hourly_rate: Number(s.hourly_rate) || 0, minimum_budget: Number(s.minimum_budget) || 0,
-        }).select("id").single().catch(() => ({ data: null }));
+        }).select("id").single();
+        logRegistrationWarning("employee_services insert failed", serviceErr);
         if (svcData?.id && Array.isArray(s.skill_ids) && s.skill_ids.length > 0) {
-          await adminClient.from("employee_skill_selections").insert(
+          const { error: skillErr } = await adminClient.from("employee_skill_selections").insert(
             s.skill_ids.map(skillId => ({ employee_service_id: svcData.id, skill_id: skillId }))
-          ).catch(() => {});
+          );
+          logRegistrationWarning("employee_skill_selections insert failed", skillErr);
         }
       }
     }
