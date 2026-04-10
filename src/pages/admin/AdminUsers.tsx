@@ -2567,26 +2567,26 @@ const AdminUsers = () => {
                   <div className={`rounded-lg border px-3 py-2 text-sm ${addUserForceNew ? "border-blue-300 bg-blue-50 text-blue-800 dark:bg-blue-950 dark:border-blue-700 dark:text-blue-200" : "border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:border-amber-700 dark:text-amber-200"}`}>
                     <div className="flex items-center justify-between mb-1">
                       <div>
-                        <div className="font-semibold">{addUserForceNew ? "🆕 പുതിയ Separate Account Create ആകും" : "⚠️ ഈ email-ൽ ഒരു account ഇതിനകം ഉണ്ട്"}</div>
+                        <div className="font-semibold">{addUserForceNew ? "🆕 A new separate account will be created" : "⚠️ An account already exists for this email"}</div>
                         <div className="text-xs mt-0.5">
                           <span className="font-medium">{addUserEmailCheck.name}</span>
                           {" · "}
                           <span>{addUserEmailCheck.type === "employee" ? "Freelancer" : addUserEmailCheck.type === "client" ? "Employer" : addUserEmailCheck.type}</span>
                           {" · "}
-                          <span className="opacity-75">{addUserForceNew ? "existing account-ൽ touch ആകില്ല" : "Save ചെയ്‌താൽ ഈ profile update ആകും"}</span>
+                          <span className="opacity-75">{addUserForceNew ? "Existing account will not be affected" : "Saving will update the existing profile"}</span>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => setAddUserForceNew(v => !v)}
                         className={`ml-3 shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold border transition-colors ${addUserForceNew ? "bg-blue-600 text-white border-blue-600" : "bg-white text-amber-700 border-amber-400 hover:bg-amber-100"}`}>
-                        {addUserForceNew ? "✓ New Account" : "New Account ആയി Add"}
+                        {addUserForceNew ? "✓ New Account" : "Add as New Account"}
                       </button>
                     </div>
                   </div>
                 )}
                 {addUserEmailCheck && !addUserEmailCheck.exists && (
-                  <div className="text-xs text-green-600 dark:text-green-400 px-1">✓ പുതിയ account ആയി create ആകും</div>
+                  <div className="text-xs text-green-600 dark:text-green-400 px-1">✓ A new account will be created</div>
                 )}
               </div>
               <div className="space-y-1">
