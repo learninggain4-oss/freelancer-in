@@ -528,8 +528,10 @@ const AdminUsers = () => {
       });
       const data = await readResponseJson(res);
       if (!res.ok || data?.error) {
+        const raw = data && typeof data === "object" && "error" in data ? (data as { error?: unknown }).error : undefined;
         const errMsg =
-          (typeof data?.error === "string" && data.error) ||
+          (typeof raw === "string" && raw.trim()) ||
+          (raw != null && typeof raw !== "string" ? JSON.stringify(raw) : "") ||
           (!res.ok ? `Delete failed (HTTP ${res.status})` : "Delete failed");
         toast.error(errMsg);
       } else {

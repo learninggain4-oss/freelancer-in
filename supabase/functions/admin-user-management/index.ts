@@ -156,6 +156,13 @@ Deno.serve(async (req) => {
         // 3. Nullify assigned_employee_id on remaining projects
         await adminClient.from("projects").update({ assigned_employee_id: null }).eq("assigned_employee_id", pid);
 
+        // 3b. Break FKs from other rows that reference this profile (no CASCADE)
+        await adminClient.from("admin_audit_logs").update({ target_profile_id: null }).eq("target_profile_id", pid);
+        await adminClient.from("profiles").update({ edit_reviewed_by: null }).eq("edit_reviewed_by", pid);
+        await adminClient.from("recovery_requests").update({ resolved_by: null }).eq("resolved_by", pid);
+        await adminClient.from("withdrawals").update({ reviewed_by: null }).eq("reviewed_by", pid);
+        await adminClient.from("blocked_ips").update({ blocked_by: null }).eq("blocked_by", pid);
+
         // 4. Delete records referencing profile_id
         await Promise.all([
           adminClient.from("aadhaar_verifications").delete().eq("profile_id", pid),
@@ -163,6 +170,20 @@ Deno.serve(async (req) => {
           adminClient.from("documents").delete().eq("profile_id", pid),
           adminClient.from("employee_emergency_contacts").delete().eq("profile_id", pid),
           adminClient.from("employee_services").delete().eq("profile_id", pid),
+          // Same as Node admin route — required before profiles DELETE
+          adminClient.from("user_bank_accounts").delete().eq("profile_id", pid),
+          adminClient.from("attendance").delete().eq("profile_id", pid),
+          adminClient.from("coin_transactions").delete().eq("profile_id", pid),
+          adminClient.from("coin_reward_claims").delete().eq("profile_id", pid),
+          adminClient.from("employee_payment_apps").delete().eq("profile_id", pid),
+          adminClient.from("push_subscriptions").delete().eq("profile_id", pid),
+          adminClient.from("pwa_install_status").delete().eq("profile_id", pid),
+          adminClient.from("site_visitors").delete().eq("profile_id", pid),
+          adminClient.from("upgrade_appointments").delete().eq("profile_id", pid),
+          adminClient.from("user_reviews").delete().eq("profile_id", pid),
+          adminClient.from("wallet_upgrade_requests").delete().eq("profile_id", pid),
+          adminClient.from("reviews").delete().eq("reviewee_id", pid),
+          adminClient.from("reviews").delete().eq("reviewer_id", pid),
           // notifications.user_id is auth.users.id (not profiles.id)
           adminClient.from("notifications").delete().eq("user_id", userId),
           // Back-compat: if any legacy rows used profiles.id
