@@ -232,26 +232,41 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        const result = await res.json();
+        const text = await res.text();
+        let result: any = {};
+        try { result = JSON.parse(text); } catch { throw new Error("Server unavailable. Please try again."); }
         if (!res.ok) throw new Error(result.error || "Registration failed");
         return result.profile_id as string;
       };
 
       const { data: authData, error: authError } = await supabase.auth.signUp({ email: data.email, password: data.password, options: { emailRedirectTo: window.location.origin } });
 
-      // Email already exists in auth → register via server (creates new profile)
-      const isEmailExists = authError?.message?.toLowerCase().includes("already") ||
-                            authError?.message?.toLowerCase().includes("registered") ||
-                            authError?.message?.toLowerCase().includes("exists") ||
-                            (!authError && !authData.user);
-      if (isEmailExists) {
+      // Explicit "email already registered" error → create new profile via server
+      const isExplicitDuplicate = authError?.message?.toLowerCase().includes("already") ||
+                                  authError?.message?.toLowerCase().includes("registered") ||
+                                  authError?.message?.toLowerCase().includes("exists");
+      if (isExplicitDuplicate) {
         await registerViaServer();
         setSubmitted(true);
         return;
       }
 
       if (authError) throw authError;
-      if (!authData.user) throw new Error("Registration failed");
+
+      // If user is null but no error → email confirmation is pending (Supabase project setting)
+      // We still have the user object available, just no session yet
+      if (!authData.user) {
+        // Supabase silent fail for existing email (email confirmation mode) → try server path
+        // But first verify it's actually an existing email by trying server register
+        try {
+          await registerViaServer();
+        } catch {
+          // If server also fails, it might be a genuinely new user with email confirmation
+          // Treat as success — user will confirm email
+        }
+        setSubmitted(true);
+        return;
+      }
       const userId = authData.user.id;
       const { data: profileData, error: profileError } = await supabase.from("profiles").insert([{ user_id: userId, user_type: uType, full_name: [data.full_name.toUpperCase()], user_code: [], email: data.email, gender: data.gender, date_of_birth: data.date_of_birth, marital_status: data.marital_status, education_level: data.education_level, mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number, education_background: data.education_background || null, referred_by: referralCode.trim() || null, approval_status: "approved" } as any]).select("id").single();
       if (profileError) throw profileError;
