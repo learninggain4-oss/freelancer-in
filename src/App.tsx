@@ -72,10 +72,15 @@ const AppPage = lazy(() => import("./pages/AppPage"));
 const EmployeeSupportChat = lazy(() => import("./pages/freelancer/EmployeeSupportChat"));
 const HelpSupport = lazy(() => import("./pages/HelpSupport"));
 const AdminHelpSupport = lazy(() => import("./pages/admin/AdminHelpSupport"));
+const AdminSupportReporting = lazy(() => import("./pages/admin/AdminSupportReporting"));
+const AdminPaymentMethods = lazy(() => import("./pages/admin/AdminPaymentMethods"));
 const AdminCountdowns = lazy(() => import("./pages/admin/AdminCountdowns"));
 const AdminValidation = lazy(() => import("./pages/admin/AdminValidation"));
+const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"));
+const AdminBranding = lazy(() => import("./pages/admin/AdminBranding"));
 const AdminReset    = lazy(() => import("./pages/admin/AdminReset"));
 const AdminTestimonials = lazy(() => import("./pages/admin/AdminTestimonials"));
+const AdminReferrals = lazy(() => import("./pages/admin/AdminReferrals"));
 const AdminOnlineStatus = lazy(() => import("./pages/admin/AdminOnlineStatus"));
 const AdminHeroSlides = lazy(() => import("./pages/admin/AdminHeroSlides"));
 const AdminVisitors = lazy(() => import("./pages/admin/AdminVisitors"));
@@ -87,6 +92,7 @@ const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
 const AdminWalletTypes = lazy(() => import("./pages/admin/AdminWalletTypes"));
 const AdminWalletUpgrades = lazy(() => import("./pages/admin/AdminWalletUpgrades"));
 const AdminAutoResponses = lazy(() => import("./pages/admin/AdminAutoResponses"));
+const AdminIpBlocking = lazy(() => import("./pages/admin/AdminIpBlocking"));
 const AdminPwaInstalls = lazy(() => import("./pages/admin/AdminPwaInstalls"));
 const AdminSafetyCenter = lazy(() => import("./pages/admin/AdminSafetyCenter"));
 const AdminAuditLogs = lazy(() => import("./pages/admin/AdminAuditLogs"));
@@ -98,6 +104,7 @@ const AdminBackups = lazy(() => import("./pages/admin/AdminBackups"));
 const AdminApprovalCenter = lazy(() => import("./pages/admin/AdminApprovalCenter"));
 const AdminDataPrivacy = lazy(() => import("./pages/admin/AdminDataPrivacy"));
 const AdminAlertSystem = lazy(() => import("./pages/admin/AdminAlertSystem"));
+const AdminVersionControl = lazy(() => import("./pages/admin/AdminVersionControl"));
 const AdminSessionSecurity = lazy(() => import("./pages/admin/AdminSessionSecurity"));
 const AdminDataMigration = lazy(() => import("./pages/admin/AdminDataMigration"));
 const AdminJobQueue = lazy(() => import("./pages/admin/AdminJobQueue"));
@@ -110,7 +117,9 @@ const AdminReportGenerator = lazy(() => import("./pages/admin/AdminReportGenerat
 const AdminSecretsManager = lazy(() => import("./pages/admin/AdminSecretsManager"));
 const AdminKnowledgeBase = lazy(() => import("./pages/admin/AdminKnowledgeBase"));
 const AdminCacheManager = lazy(() => import("./pages/admin/AdminCacheManager"));
+const AdminApiManager = lazy(() => import("./pages/admin/AdminApiManager"));
 const AdminSessionManager = lazy(() => import("./pages/admin/AdminSessionManager"));
+const AdminNotificationCenter = lazy(() => import("./pages/admin/AdminNotificationCenter"));
 const AdminFileManager = lazy(() => import("./pages/admin/AdminFileManager"));
 const AdminHighAvailability = lazy(() => import("./pages/admin/AdminHighAvailability"));
 const AdminDataIntegrity = lazy(() => import("./pages/admin/AdminDataIntegrity"));
@@ -147,6 +156,7 @@ const AdminFraudNotifications = lazy(() => import("./pages/admin/AdminFraudNotif
 const AdminFraudAutomation = lazy(() => import("./pages/admin/AdminFraudAutomation"));
 const AdminFraudReports = lazy(() => import("./pages/admin/AdminFraudReports"));
 const AdminFraudSecuritySettings = lazy(() => import("./pages/admin/AdminFraudSecuritySettings"));
+const AdminConfigManagement = lazy(() => import("./pages/admin/AdminConfigManagement"));
 const AdminMaintenanceCenter = lazy(() => import("./pages/admin/AdminMaintenanceCenter"));
 const AdminRateLimiting = lazy(() => import("./pages/admin/AdminRateLimiting"));
 const AdminScheduler = lazy(() => import("./pages/admin/AdminScheduler"));
@@ -169,6 +179,7 @@ const AdminComprehensiveAudit = lazy(() => import("./pages/admin/AdminComprehens
 const AdminConfigDrift = lazy(() => import("./pages/admin/AdminConfigDrift"));
 const AdminCronJobs = lazy(() => import("./pages/admin/AdminCronJobs"));
 const AdminCsrfProtection = lazy(() => import("./pages/admin/AdminCsrfProtection"));
+const AdminDashboardAccuracy = lazy(() => import("./pages/admin/AdminDashboardAccuracy"));
 const AdminDataArchival = lazy(() => import("./pages/admin/AdminDataArchival"));
 const AdminDbIndexing = lazy(() => import("./pages/admin/AdminDbIndexing"));
 const AdminDependencyManager = lazy(() => import("./pages/admin/AdminDependencyManager"));
@@ -181,11 +192,14 @@ const AdminExportFormat = lazy(() => import("./pages/admin/AdminExportFormat"));
 const AdminExternalApiMonitor = lazy(() => import("./pages/admin/AdminExternalApiMonitor"));
 const AdminExternalServiceFailover = lazy(() => import("./pages/admin/AdminExternalServiceFailover"));
 const AdminFeatureDependency = lazy(() => import("./pages/admin/AdminFeatureDependency"));
+const AdminFeatureFlags = lazy(() => import("./pages/admin/AdminFeatureFlags"));
 const AdminFeatureToggleConflict = lazy(() => import("./pages/admin/AdminFeatureToggleConflict"));
 const AdminFilePathManagement = lazy(() => import("./pages/admin/AdminFilePathManagement"));
 const AdminFilePermissions = lazy(() => import("./pages/admin/AdminFilePermissions"));
 const AdminFileUploadValidation = lazy(() => import("./pages/admin/AdminFileUploadValidation"));
+const AdminGatewayFailover = lazy(() => import("./pages/admin/AdminGatewayFailover"));
 const AdminJobScheduler = lazy(() => import("./pages/admin/AdminJobScheduler"));
+const AdminLocalization = lazy(() => import("./pages/admin/AdminLocalization"));
 const AdminMaintenanceMode = lazy(() => import("./pages/admin/AdminMaintenanceMode"));
 const AdminModuleDependency = lazy(() => import("./pages/admin/AdminModuleDependency"));
 const AdminMultiAdminConflict = lazy(() => import("./pages/admin/AdminMultiAdminConflict"));
@@ -199,6 +213,7 @@ const AdminRbacSecurity = lazy(() => import("./pages/admin/AdminRbacSecurity"));
 const AdminReportValidation = lazy(() => import("./pages/admin/AdminReportValidation"));
 const AdminRestoreVersionControl = lazy(() => import("./pages/admin/AdminRestoreVersionControl"));
 const AdminRoleEscalation = lazy(() => import("./pages/admin/AdminRoleEscalation"));
+const AdminSearchIndex = lazy(() => import("./pages/admin/AdminSearchIndex"));
 const AdminSecureAuditLog = lazy(() => import("./pages/admin/AdminSecureAuditLog"));
 const AdminSecureSessionMgr = lazy(() => import("./pages/admin/AdminSecureSessionMgr"));
 const AdminSessionExpiry = lazy(() => import("./pages/admin/AdminSessionExpiry"));
@@ -211,16 +226,37 @@ const AdminStorageManager = lazy(() => import("./pages/admin/AdminStorageManager
 const AdminTimeSlotManagement = lazy(() => import("./pages/admin/AdminTimeSlotManagement"));
 const AdminTimezoneManager = lazy(() => import("./pages/admin/AdminTimezoneManager"));
 const AdminTrafficManagement = lazy(() => import("./pages/admin/AdminTrafficManagement"));
+const AdminWebhookMonitor = lazy(() => import("./pages/admin/AdminWebhookMonitor"));
 const AdminXssProtection = lazy(() => import("./pages/admin/AdminXssProtection"));
+const AdminCommissionManagement = lazy(() => import("./pages/admin/AdminCommissionManagement"));
+const AdminDisputeCenter = lazy(() => import("./pages/admin/AdminDisputeCenter"));
 const AdminBadgeManagement = lazy(() => import("./pages/admin/AdminBadgeManagement"));
 const AdminCoinManagement = lazy(() => import("./pages/admin/AdminCoinManagement"));
+const AdminGstTaxReports = lazy(() => import("./pages/admin/AdminGstTaxReports"));
+const AdminPromoManagement = lazy(() => import("./pages/admin/AdminPromoManagement"));
+const AdminProjectAnalytics = lazy(() => import("./pages/admin/AdminProjectAnalytics"));
+const AdminContentModeration = lazy(() => import("./pages/admin/AdminContentModeration"));
+const AdminAffiliateManagement = lazy(() => import("./pages/admin/AdminAffiliateManagement"));
 const AdminFeeConfiguration = lazy(() => import("./pages/admin/AdminFeeConfiguration"));
+const AdminSkillCategoryManagement = lazy(() => import("./pages/admin/AdminSkillCategoryManagement"));
 const AdminKycDashboard = lazy(() => import("./pages/admin/AdminKycDashboard"));
+const AdminSubscriptionManagement = lazy(() => import("./pages/admin/AdminSubscriptionManagement"));
+const AdminRevenueAnalytics = lazy(() => import("./pages/admin/AdminRevenueAnalytics"));
+const AdminMilestoneManagement = lazy(() => import("./pages/admin/AdminMilestoneManagement"));
+const AdminInvoiceManagement = lazy(() => import("./pages/admin/AdminInvoiceManagement"));
 const AdminReviewManagement = lazy(() => import("./pages/admin/AdminReviewManagement"));
+const AdminEmailCampaigns = lazy(() => import("./pages/admin/AdminEmailCampaigns"));
+const AdminPayoutSchedule = lazy(() => import("./pages/admin/AdminPayoutSchedule"));
 const AdminMobileAppManagement = lazy(() => import("./pages/admin/AdminMobileAppManagement"));
 const AdminWaitlistManagement = lazy(() => import("./pages/admin/AdminWaitlistManagement"));
+const AdminSlaReports = lazy(() => import("./pages/admin/AdminSlaReports"));
+const AdminTdsManagement = lazy(() => import("./pages/admin/AdminTdsManagement"));
 const AdminTalentShowcase = lazy(() => import("./pages/admin/AdminTalentShowcase"));
+const AdminFreelancerLevels = lazy(() => import("./pages/admin/AdminFreelancerLevels"));
+const AdminChatMonitoring = lazy(() => import("./pages/admin/AdminChatMonitoring"));
 const AdminPanVerification = lazy(() => import("./pages/admin/AdminPanVerification"));
+const AdminCommissionTiers = lazy(() => import("./pages/admin/AdminCommissionTiers"));
+const AdminBiddingRules = lazy(() => import("./pages/admin/AdminBiddingRules"));
 const AdminBannerManager = lazy(() => import("./pages/admin/AdminBannerManager"));
 const AdminHolidayCalendar = lazy(() => import("./pages/admin/AdminHolidayCalendar"));
 const AdminRateCards = lazy(() => import("./pages/admin/AdminRateCards"));
@@ -228,6 +264,45 @@ const AdminActivityLog = lazy(() => import("./pages/admin/AdminActivityLog"));
 const AdminAiFraudDetection = lazy(() => import("./pages/admin/AdminAiFraudDetection"));
 const AdminSmartMatchAlgorithm = lazy(() => import("./pages/admin/AdminSmartMatchAlgorithm"));
 const AdminSentimentAnalysis = lazy(() => import("./pages/admin/AdminSentimentAnalysis"));
+const AdminSpamDetection = lazy(() => import("./pages/admin/AdminSpamDetection"));
+const AdminCohortAnalysis = lazy(() => import("./pages/admin/AdminCohortAnalysis"));
+const AdminFunnelAnalytics = lazy(() => import("./pages/admin/AdminFunnelAnalytics"));
+const AdminRevenueForecasting = lazy(() => import("./pages/admin/AdminRevenueForecasting"));
+const AdminGeographicAnalytics = lazy(() => import("./pages/admin/AdminGeographicAnalytics"));
+const AdminPeakHourMonitor = lazy(() => import("./pages/admin/AdminPeakHourMonitor"));
+const AdminPartnerReseller = lazy(() => import("./pages/admin/AdminPartnerReseller"));
+const AdminB2BClients = lazy(() => import("./pages/admin/AdminB2BClients"));
+const AdminAffiliatePayouts = lazy(() => import("./pages/admin/AdminAffiliatePayouts"));
+const AdminReferralLeaderboard = lazy(() => import("./pages/admin/AdminReferralLeaderboard"));
+const AdminMarketplaceTrends = lazy(() => import("./pages/admin/AdminMarketplaceTrends"));
+const AdminContractTemplates = lazy(() => import("./pages/admin/AdminContractTemplates"));
+const AdminNdaManagement = lazy(() => import("./pages/admin/AdminNdaManagement"));
+const AdminGdprCompliance = lazy(() => import("./pages/admin/AdminGdprCompliance"));
+const AdminGrievanceRedressal = lazy(() => import("./pages/admin/AdminGrievanceRedressal"));
+const AdminCourtOrders = lazy(() => import("./pages/admin/AdminCourtOrders"));
+const AdminSkillAssessment = lazy(() => import("./pages/admin/AdminSkillAssessment"));
+const AdminPortfolioReview = lazy(() => import("./pages/admin/AdminPortfolioReview"));
+const AdminTimeTracking = lazy(() => import("./pages/admin/AdminTimeTracking"));
+const AdminProjectTemplates = lazy(() => import("./pages/admin/AdminProjectTemplates"));
+const AdminTestimonialApproval = lazy(() => import("./pages/admin/AdminTestimonialApproval"));
+const AdminEmailCampaignManager = lazy(() => import("./pages/admin/AdminEmailCampaignManager"));
+const AdminPushNotificationCampaigns = lazy(() => import("./pages/admin/AdminPushNotificationCampaigns"));
+const AdminSmsCampaignManager = lazy(() => import("./pages/admin/AdminSmsCampaignManager"));
+const AdminAbandonedUserReengagement = lazy(() => import("./pages/admin/AdminAbandonedUserReengagement"));
+const AdminAbTestManager = lazy(() => import("./pages/admin/AdminAbTestManager"));
+const AdminBadgeAchievementManager = lazy(() => import("./pages/admin/AdminBadgeAchievementManager"));
+const AdminLeaderboardManager = lazy(() => import("./pages/admin/AdminLeaderboardManager"));
+const AdminLoyaltyPointsSystem = lazy(() => import("./pages/admin/AdminLoyaltyPointsSystem"));
+const AdminLevelTierUpgradeRules = lazy(() => import("./pages/admin/AdminLevelTierUpgradeRules"));
+const AdminAppVersionManager = lazy(() => import("./pages/admin/AdminAppVersionManager"));
+const AdminPwaAnalytics = lazy(() => import("./pages/admin/AdminPwaAnalytics"));
+const AdminDeepLinkManager = lazy(() => import("./pages/admin/AdminDeepLinkManager"));
+const AdminAppStoreReviewMonitor = lazy(() => import("./pages/admin/AdminAppStoreReviewMonitor"));
+const AdminLiveChatMonitor = lazy(() => import("./pages/admin/AdminLiveChatMonitor"));
+const AdminTicketEscalationMatrix = lazy(() => import("./pages/admin/AdminTicketEscalationMatrix"));
+const AdminSlaBreachAlerts = lazy(() => import("./pages/admin/AdminSlaBreachAlerts"));
+const AdminUserOnboardingFunnel = lazy(() => import("./pages/admin/AdminUserOnboardingFunnel"));
+const AdminThirdPartyApiKeyManager = lazy(() => import("./pages/admin/AdminThirdPartyApiKeyManager"));
 const WalletTypes = lazy(() => import("./pages/WalletTypes"));
 const UserReview = lazy(() => import("./pages/UserReview"));
 const Categories = lazy(() => import("./pages/Categories"));
@@ -508,10 +583,15 @@ const AppContent = () => {
               <Route path="announcements" element={<AdminAnnouncements />} />
               <Route path="notifications" element={<AdminNotifications />} />
               <Route path="help-support" element={<AdminHelpSupport />} />
+              <Route path="support-reporting" element={<AdminSupportReporting />} />
+              <Route path="payment-methods" element={<AdminPaymentMethods />} />
               <Route path="countdowns" element={<AdminCountdowns />} />
               <Route path="validation" element={<AdminValidation />} />
+              <Route path="sessions" element={<AdminSessions />} />
               <Route path="testimonials" element={<AdminTestimonials />} />
+              <Route path="referrals" element={<AdminReferrals />} />
               <Route path="online-status" element={<AdminOnlineStatus />} />
+              <Route path="branding" element={<AdminBranding />} />
               <Route path="reset" element={<AdminReset />} />
               <Route path="hero-slides" element={<AdminHeroSlides />} />
               <Route path="visitors" element={<AdminVisitors />} />
@@ -523,6 +603,7 @@ const AppContent = () => {
               <Route path="wallet-types" element={<AdminWalletTypes />} />
               <Route path="wallet-upgrades" element={<AdminWalletUpgrades />} />
               <Route path="auto-responses" element={<AdminAutoResponses />} />
+              <Route path="ip-blocking" element={<AdminIpBlocking />} />
               <Route path="pwa-installs" element={<AdminPwaInstalls />} />
               <Route path="safety-center" element={<AdminSafetyCenter />} />
               <Route path="audit-logs" element={<AdminAuditLogs />} />
@@ -534,6 +615,7 @@ const AppContent = () => {
               <Route path="approval-center" element={<AdminApprovalCenter />} />
               <Route path="data-privacy" element={<AdminDataPrivacy />} />
               <Route path="alert-system" element={<AdminAlertSystem />} />
+              <Route path="version-control" element={<AdminVersionControl />} />
               <Route path="session-security" element={<AdminSessionSecurity />} />
               <Route path="data-migration" element={<AdminDataMigration />} />
               <Route path="job-queue" element={<AdminJobQueue />} />
@@ -545,6 +627,7 @@ const AppContent = () => {
               <Route path="report-generator" element={<AdminReportGenerator />} />
               <Route path="secrets-manager" element={<AdminSecretsManager />} />
               <Route path="knowledge-base" element={<AdminKnowledgeBase />} />
+              <Route path="config-management" element={<AdminConfigManagement />} />
               <Route path="maintenance-center" element={<AdminMaintenanceCenter />} />
               <Route path="rate-limiting" element={<AdminRateLimiting />} />
               <Route path="scheduler" element={<AdminScheduler />} />
@@ -552,7 +635,9 @@ const AppContent = () => {
               <Route path="export-control" element={<AdminExportControl />} />
               <Route path="vendor-manager" element={<AdminVendorManager />} />
               <Route path="cache-manager" element={<AdminCacheManager />} />
+              <Route path="api-manager" element={<AdminApiManager />} />
               <Route path="session-manager" element={<AdminSessionManager />} />
+              <Route path="notification-center" element={<AdminNotificationCenter />} />
               <Route path="file-manager" element={<AdminFileManager />} />
               <Route path="high-availability" element={<AdminHighAvailability />} />
               <Route path="data-integrity" element={<AdminDataIntegrity />} />
@@ -605,6 +690,7 @@ const AppContent = () => {
               <Route path="config-drift" element={<AdminConfigDrift />} />
               <Route path="cron-jobs" element={<AdminCronJobs />} />
               <Route path="csrf-protection" element={<AdminCsrfProtection />} />
+              <Route path="dashboard-accuracy" element={<AdminDashboardAccuracy />} />
               <Route path="data-archival" element={<AdminDataArchival />} />
               <Route path="db-indexing" element={<AdminDbIndexing />} />
               <Route path="dependency-manager" element={<AdminDependencyManager />} />
@@ -617,11 +703,14 @@ const AppContent = () => {
               <Route path="external-api-monitor" element={<AdminExternalApiMonitor />} />
               <Route path="external-failover" element={<AdminExternalServiceFailover />} />
               <Route path="feature-dependency" element={<AdminFeatureDependency />} />
+              <Route path="feature-flags" element={<AdminFeatureFlags />} />
               <Route path="feature-conflicts" element={<AdminFeatureToggleConflict />} />
               <Route path="file-paths" element={<AdminFilePathManagement />} />
               <Route path="file-permissions" element={<AdminFilePermissions />} />
               <Route path="file-upload-validation" element={<AdminFileUploadValidation />} />
+              <Route path="gateway-failover" element={<AdminGatewayFailover />} />
               <Route path="job-scheduler" element={<AdminJobScheduler />} />
+              <Route path="localization" element={<AdminLocalization />} />
               <Route path="maintenance-mode" element={<AdminMaintenanceMode />} />
               <Route path="module-dependency" element={<AdminModuleDependency />} />
               <Route path="multi-admin-conflict" element={<AdminMultiAdminConflict />} />
@@ -635,6 +724,7 @@ const AppContent = () => {
               <Route path="report-validation" element={<AdminReportValidation />} />
               <Route path="restore-version" element={<AdminRestoreVersionControl />} />
               <Route path="role-escalation" element={<AdminRoleEscalation />} />
+              <Route path="search-index" element={<AdminSearchIndex />} />
               <Route path="secure-audit-log" element={<AdminSecureAuditLog />} />
               <Route path="secure-session-mgr" element={<AdminSecureSessionMgr />} />
               <Route path="session-expiry" element={<AdminSessionExpiry />} />
@@ -647,16 +737,37 @@ const AppContent = () => {
               <Route path="time-slots" element={<AdminTimeSlotManagement />} />
               <Route path="timezone-manager" element={<AdminTimezoneManager />} />
               <Route path="traffic-management" element={<AdminTrafficManagement />} />
+              <Route path="webhook-monitor" element={<AdminWebhookMonitor />} />
               <Route path="xss-protection" element={<AdminXssProtection />} />
+              <Route path="commission-management" element={<AdminCommissionManagement />} />
+              <Route path="dispute-center" element={<AdminDisputeCenter />} />
               <Route path="badge-management" element={<AdminBadgeManagement />} />
               <Route path="coin-management" element={<AdminCoinManagement />} />
+              <Route path="gst-tax-reports" element={<AdminGstTaxReports />} />
+              <Route path="promo-management" element={<AdminPromoManagement />} />
+              <Route path="project-analytics" element={<AdminProjectAnalytics />} />
+              <Route path="content-moderation" element={<AdminContentModeration />} />
+              <Route path="affiliate-management" element={<AdminAffiliateManagement />} />
               <Route path="fee-configuration" element={<AdminFeeConfiguration />} />
+              <Route path="skill-category-management" element={<AdminSkillCategoryManagement />} />
               <Route path="kyc-dashboard" element={<AdminKycDashboard />} />
+              <Route path="subscription-management" element={<AdminSubscriptionManagement />} />
+              <Route path="revenue-analytics" element={<AdminRevenueAnalytics />} />
+              <Route path="milestone-management" element={<AdminMilestoneManagement />} />
+              <Route path="invoice-management" element={<AdminInvoiceManagement />} />
               <Route path="review-management" element={<AdminReviewManagement />} />
+              <Route path="email-campaigns" element={<AdminEmailCampaigns />} />
+              <Route path="payout-schedule" element={<AdminPayoutSchedule />} />
               <Route path="mobile-app-management" element={<AdminMobileAppManagement />} />
               <Route path="waitlist-management" element={<AdminWaitlistManagement />} />
+              <Route path="sla-reports" element={<AdminSlaReports />} />
+              <Route path="tds-management" element={<AdminTdsManagement />} />
               <Route path="talent-showcase" element={<AdminTalentShowcase />} />
+              <Route path="freelancer-levels" element={<AdminFreelancerLevels />} />
+              <Route path="chat-monitoring" element={<AdminChatMonitoring />} />
               <Route path="pan-gst-verification" element={<AdminPanVerification />} />
+              <Route path="commission-tiers" element={<AdminCommissionTiers />} />
+              <Route path="bidding-rules" element={<AdminBiddingRules />} />
               <Route path="banner-manager" element={<AdminBannerManager />} />
               <Route path="holiday-calendar" element={<AdminHolidayCalendar />} />
               <Route path="rate-cards" element={<AdminRateCards />} />
@@ -664,6 +775,45 @@ const AppContent = () => {
               <Route path="ai-fraud-detection" element={<AdminAiFraudDetection />} />
               <Route path="smart-match-algorithm" element={<AdminSmartMatchAlgorithm />} />
               <Route path="sentiment-analysis" element={<AdminSentimentAnalysis />} />
+              <Route path="spam-detection" element={<AdminSpamDetection />} />
+              <Route path="cohort-analysis" element={<AdminCohortAnalysis />} />
+              <Route path="funnel-analytics" element={<AdminFunnelAnalytics />} />
+              <Route path="revenue-forecasting" element={<AdminRevenueForecasting />} />
+              <Route path="geographic-analytics" element={<AdminGeographicAnalytics />} />
+              <Route path="peak-hour-monitor" element={<AdminPeakHourMonitor />} />
+              <Route path="partner-reseller" element={<AdminPartnerReseller />} />
+              <Route path="b2b-clients" element={<AdminB2BClients />} />
+              <Route path="affiliate-payouts" element={<AdminAffiliatePayouts />} />
+              <Route path="referral-leaderboard" element={<AdminReferralLeaderboard />} />
+              <Route path="marketplace-trends" element={<AdminMarketplaceTrends />} />
+              <Route path="contract-templates" element={<AdminContractTemplates />} />
+              <Route path="nda-management" element={<AdminNdaManagement />} />
+              <Route path="gdpr-compliance" element={<AdminGdprCompliance />} />
+              <Route path="grievance-redressal" element={<AdminGrievanceRedressal />} />
+              <Route path="court-orders" element={<AdminCourtOrders />} />
+              <Route path="skill-assessment" element={<AdminSkillAssessment />} />
+              <Route path="portfolio-review" element={<AdminPortfolioReview />} />
+              <Route path="time-tracking" element={<AdminTimeTracking />} />
+              <Route path="project-templates" element={<AdminProjectTemplates />} />
+              <Route path="testimonial-approval" element={<AdminTestimonialApproval />} />
+              <Route path="email-campaign-manager" element={<AdminEmailCampaignManager />} />
+              <Route path="push-notification-campaigns" element={<AdminPushNotificationCampaigns />} />
+              <Route path="sms-campaign-manager" element={<AdminSmsCampaignManager />} />
+              <Route path="abandoned-user-reengagement" element={<AdminAbandonedUserReengagement />} />
+              <Route path="ab-test-manager" element={<AdminAbTestManager />} />
+              <Route path="badge-achievement-manager" element={<AdminBadgeAchievementManager />} />
+              <Route path="leaderboard-manager" element={<AdminLeaderboardManager />} />
+              <Route path="loyalty-points-system" element={<AdminLoyaltyPointsSystem />} />
+              <Route path="level-tier-upgrade-rules" element={<AdminLevelTierUpgradeRules />} />
+              <Route path="app-version-manager" element={<AdminAppVersionManager />} />
+              <Route path="pwa-analytics" element={<AdminPwaAnalytics />} />
+              <Route path="deep-link-manager" element={<AdminDeepLinkManager />} />
+              <Route path="app-store-review-monitor" element={<AdminAppStoreReviewMonitor />} />
+              <Route path="live-chat-monitor" element={<AdminLiveChatMonitor />} />
+              <Route path="ticket-escalation-matrix" element={<AdminTicketEscalationMatrix />} />
+              <Route path="sla-breach-alerts" element={<AdminSlaBreachAlerts />} />
+              <Route path="user-onboarding-funnel" element={<AdminUserOnboardingFunnel />} />
+              <Route path="third-party-api-key-manager" element={<AdminThirdPartyApiKeyManager />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
