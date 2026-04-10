@@ -137,7 +137,7 @@ export async function processImport(rows, dryRun = false) {
     try {
       if (existing) {
         const updates = {};
-        if (toStr(row.full_name))       updates.full_name        = toStr(row.full_name);
+        if (toStr(row.full_name))       updates.full_name        = [toStr(row.full_name).toUpperCase()];
         if (toStr(row.mobile_number))   updates.mobile_number    = toStr(row.mobile_number);
         if (toStr(row.whatsapp_number)) updates.whatsapp_number  = toStr(row.whatsapp_number);
         if (toStr(row.user_type))       updates.user_type        = toStr(row.user_type);
@@ -179,9 +179,11 @@ export async function processImport(rows, dryRun = false) {
           if (authErr) throw authErr;
 
           const profilePayload = {
+            id: authData.user.id,
             user_id: authData.user.id,
             email,
-            full_name: fullName,
+            full_name: [fullName.toUpperCase()],
+            user_code: [],
             user_type: userType,
             approval_status: approvalStatus,
           };
