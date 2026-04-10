@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import { existsSync } from "fs";
 import os from "os";
 import { execSync } from "child_process";
+import { generateExcel, getExportFilePath, scheduleRealtimeRefresh } from "./excelExport.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -2172,6 +2173,36 @@ app.post("/functions/v1/mpin-verify", async (req, res) => {
   }
 });
 
+// ─── /functions/v1/admin-export-users — Excel export ───────────────────────
+app.get("/functions/v1/admin-export-users", async (req, res) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
+    const user = await getUserFromToken(authHeader);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const adminClient = getAdminClient();
+    const { data: roleData } = await adminClient
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    const isAdmin = !!roleData || isSuperAdmin(user.email);
+    if (!isAdmin) return res.status(403).json({ error: "Forbidden: admin only" });
+
+    const filePath = await generateExcel();
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="freelancer-india-users-${timestamp}.xlsx"`);
+    res.sendFile(filePath);
+  } catch (err) {
+    console.error("admin-export-users error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Production: serve the Vite build + SPA fallback ─────────────────────────
 const distPath = path.join(__dirname, "..", "dist");
 if (existsSync(distPath)) {
@@ -2184,4 +2215,8 @@ if (existsSync(distPath)) {
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`API server running on port ${PORT}`);
+  if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+    generateExcel().catch(e => console.error("[excelExport] Startup generation failed:", e.message));
+    scheduleRealtimeRefresh(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  }
 });

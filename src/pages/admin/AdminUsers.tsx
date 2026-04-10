@@ -665,6 +665,36 @@ const AdminUsers = () => {
     toast.success(`Exported ${users.length} users`);
   };
 
+  const [excelExporting, setExcelExporting] = useState(false);
+  const handleExportExcel = async () => {
+    setExcelExporting(true);
+    try {
+      const { getToken: getT } = await import("@/lib/supabase-functions");
+      const token = await getT();
+      const res = await fetch("/functions/v1/admin-export-users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Export failed");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const cd = res.headers.get("Content-Disposition") || "";
+      const match = cd.match(/filename="([^"]+)"/);
+      a.download = match ? match[1] : `freelancer-india-users-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Excel file downloaded successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to export Excel");
+    } finally {
+      setExcelExporting(false);
+    }
+  };
+
   const handleCopyId = (id: string) => {
     navigator.clipboard.writeText(id);
     toast.success("User ID copied to clipboard");
@@ -1911,13 +1941,22 @@ const AdminUsers = () => {
               ≡ Table
             </button>
           </div>
-          {/* Export */}
+          {/* Export CSV */}
           <Button variant="outline" size="sm"
             className="h-10 gap-2 rounded-xl text-sm shrink-0"
             style={{ borderColor: T.border, color: T.text }}
             onClick={() => handleExportCsv(filtered)}>
             <Download className="h-4 w-4" />
-            Export
+            Export CSV
+          </Button>
+          {/* Export Excel */}
+          <Button variant="outline" size="sm"
+            className="h-10 gap-2 rounded-xl text-sm shrink-0"
+            style={{ borderColor: "#16a34a", color: "#16a34a", opacity: excelExporting ? 0.7 : 1 }}
+            onClick={handleExportExcel}
+            disabled={excelExporting}>
+            <FileText className="h-4 w-4" />
+            {excelExporting ? "Generating…" : "Export Excel"}
           </Button>
         </div>
         {/* Secondary row — date range + result count + Advanced toggle */}
