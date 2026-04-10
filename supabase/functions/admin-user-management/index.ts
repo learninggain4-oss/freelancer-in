@@ -59,15 +59,22 @@ Deno.serve(async (req) => {
 
 
 
-    const { data: roleData } = await adminClient
+    const { data: roleRows, error: roleError } = await adminClient
       .from("user_roles")
       .select("role")
       .eq("user_id", callerUserId)
-      .eq("role", "admin")
-      .maybeSingle();
+      .in("role", ["admin", "super_admin"]);
 
-    if (!roleData) {
-      return new Response(JSON.stringify({ error: "Forbidden: admin role required" }), {
+    if (roleError) {
+      console.error("Role check error:", roleError);
+      return new Response(JSON.stringify({ error: "Failed to validate admin access" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!roleRows || roleRows.length === 0) {
+      return new Response(JSON.stringify({ error: "Forbidden: admin or super_admin role required" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -210,7 +217,7 @@ Deno.serve(async (req) => {
         const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
         if (deleteError) {
           console.error("Auth delete error:", deleteError);
-          return new Response(JSON.stringify({ error: "Database error deleting user" }), {
+          return new Response(JSON.stringify({ error: `Auth delete failed: ${deleteError.message}` }), {
             status: 500,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
