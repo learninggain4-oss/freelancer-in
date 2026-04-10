@@ -9,7 +9,7 @@ import { fileURLToPath } from "url";
 import { existsSync } from "fs";
 import os from "os";
 import { execSync } from "child_process";
-import { generateExcel, getExportFilePath, scheduleRealtimeRefresh } from "./excelExport.js";
+import { generateExcel, scheduleRealtimeRefresh } from "./excelExport.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
