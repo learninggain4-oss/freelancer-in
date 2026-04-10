@@ -518,7 +518,8 @@ const AdminUsers = () => {
     }
   };
 
-  const handlePermanentDelete = async (user: FullProfile) => {
+const handlePermanentDelete = async (user: FullProfile) => {
+    console.log("🗑️ Delete attempt for user:", user.id, user.full_name?.[0] || user.email);
     setActionProcessing(true);
     try {
       const tkn = await getToken();
@@ -527,19 +528,22 @@ const AdminUsers = () => {
         token: tkn,
       });
       const data = await readResponseJson(res);
+      console.log("🗑️ Edge Function response:", { status: res.status, ok: res.ok, data });
+      
       if (!res.ok || data?.error) {
-        const raw = data && typeof data === "object" && "error" in data ? (data as { error?: unknown }).error : undefined;
-        const errMsg =
-          (typeof raw === "string" && raw.trim()) ||
-          (raw != null && typeof raw !== "string" ? JSON.stringify(raw) : "") ||
-          (!res.ok ? `Delete failed (HTTP ${res.status})` : "Delete failed");
-        toast.error(errMsg);
+        const rawError = data?.error || data?.message || 'Unknown Edge Function error';
+        console.error("🗑️ Delete failed:", rawError, data);
+        toast.error(`Delete failed: ${rawError}`);
       } else {
-        toast.success("User permanently deleted");
-        fetchProfiles();
+        // Optimistic remove from local state
+        setProfiles(prev => prev.filter(p => p.id !== user.id));
+        toast.success(`User "${user.full_name?.[0] || user.email}" permanently deleted`);
+        // Refetch to confirm
+        await fetchProfiles();
       }
     } catch (err: any) {
-      toast.error(err.message || "Delete failed");
+      console.error("🗑️ Delete exception:", err);
+      toast.error(`Delete error: ${err.message || 'Network/unknown error'}`);
     } finally {
       setActionProcessing(false);
       setConfirmAction(null);
