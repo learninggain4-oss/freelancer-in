@@ -81,6 +81,40 @@ export async function generateExcel() {
         .select("profile_id, status, document_name, document_path, is_cleared, rejection_reason, verified_at, attempt_count"),
     ]);
 
+    const URL_EXPIRY = 604800; // 7 days
+
+    async function signedUrl(bucket, filePath) {
+      if (!filePath) return "";
+      try {
+        const { data } = await adminClient.storage.from(bucket).createSignedUrl(filePath, URL_EXPIRY);
+        return data?.signedUrl || "";
+      } catch { return ""; }
+    }
+
+    const aadhaarUrlPromises = (aadhaarVerifs || []).map(async (a) => {
+      const [frontUrl, backUrl] = await Promise.all([
+        signedUrl("aadhaar-documents", a.front_image_path),
+        signedUrl("aadhaar-documents", a.back_image_path),
+      ]);
+      return { profile_id: a.profile_id, frontUrl, backUrl };
+    });
+
+    const bankUrlPromises = (bankVerifs || []).map(async (b) => {
+      const docUrl = await signedUrl("kyc-documents", b.document_path);
+      return { profile_id: b.profile_id, docUrl };
+    });
+
+    const [aadhaarUrls, bankUrls] = await Promise.all([
+      Promise.all(aadhaarUrlPromises),
+      Promise.all(bankUrlPromises),
+    ]);
+
+    const aadhaarUrlMap = new Map();
+    for (const a of aadhaarUrls) aadhaarUrlMap.set(a.profile_id, a);
+
+    const bankUrlMap = new Map();
+    for (const b of bankUrls) bankUrlMap.set(b.profile_id, b);
+
     if (profilesError) {
       logError(`profiles fetch error: ${profilesError.message}`);
       throw profilesError;
@@ -214,6 +248,8 @@ export async function generateExcel() {
       const emp = empMap.get(p.id) || {};
       const aadh = aadhaarMap.get(p.id) || {};
       const bankV = bankVerifMap.get(p.id) || {};
+      const aUrls = aadhaarUrlMap.get(p.id) || {};
+      const bUrls = bankUrlMap.get(p.id) || {};
 
       const r = ws.addRow({
         sno: idx + 1,
@@ -257,14 +293,14 @@ export async function generateExcel() {
         aadhaar_name: fmt(aadh.name_on_aadhaar),
         aadhaar_dob: fmt(aadh.dob_on_aadhaar),
         aadhaar_address: fmt(aadh.address_on_aadhaar),
-        aadhaar_front: fmt(aadh.front_image_path),
-        aadhaar_back: fmt(aadh.back_image_path),
+        aadhaar_front: aUrls.frontUrl ? { text: "Open Front File", hyperlink: aUrls.frontUrl } : (aadh.front_image_path ? "URL expired - re-export" : ""),
+        aadhaar_back: aUrls.backUrl ? { text: "Open Back File", hyperlink: aUrls.backUrl } : (aadh.back_image_path ? "URL expired - re-export" : ""),
         aadhaar_verified_at: fmt(aadh.verified_at),
         aadhaar_rejection: fmt(aadh.rejection_reason),
         bank_verif_status: fmt(bankV.status),
         bank_verif_cleared: bankV.is_cleared ? "Verified" : bankV.status ? "Pending" : "",
         bank_doc_name: fmt(bankV.document_name),
-        bank_doc_path: fmt(bankV.document_path),
+        bank_doc_path: bUrls.docUrl ? { text: "Open Bank Document", hyperlink: bUrls.docUrl } : (bankV.document_path ? "URL expired - re-export" : ""),
         bank_verified_at: fmt(bankV.verified_at),
         bank_rejection: fmt(bankV.rejection_reason),
         bank_attempts: bankV.attempt_count ?? "",
@@ -302,6 +338,13 @@ export async function generateExcel() {
 
       r.getCell("available_balance").numFmt = "#,##0.00";
       r.getCell("hold_balance").numFmt = "#,##0.00";
+
+      for (const key of ["aadhaar_front", "aadhaar_back", "bank_doc_path"]) {
+        const cell = r.getCell(key);
+        if (cell.value && typeof cell.value === "object" && cell.value.hyperlink) {
+          cell.font = { size: 9, color: { argb: "FF2563EB" }, underline: true };
+        }
+      }
     });
 
     ws.autoFilter = {
