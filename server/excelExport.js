@@ -38,7 +38,7 @@ function fmt(val) {
   return String(val);
 }
 
-export async function generateExcel() {
+export async function generateExcel(profileIds = null) {
   try {
     if (!fs.existsSync(EXPORT_DIR)) fs.mkdirSync(EXPORT_DIR, { recursive: true });
 
@@ -51,22 +51,26 @@ export async function generateExcel() {
       { data: aadhaarVerifs },
       { data: bankVerifs },
     ] = await Promise.all([
-      adminClient
-        .from("profiles")
-        .select(
-          "id, user_id, user_code, full_name, email, mobile_number, whatsapp_number, " +
-          "user_type, approval_status, is_disabled, disabled_reason, " +
-          "available_balance, coin_balance, hold_balance, wallet_active, wallet_number, upi_id, " +
-          "registration_ip, registration_city, registration_country, registration_region, " +
-          "registration_latitude, registration_longitude, " +
-          "gender, date_of_birth, marital_status, education_level, education_background, " +
-          "work_experience, previous_job_details, " +
-          "bank_name, bank_holder_name, bank_account_number, bank_ifsc_code, " +
-          "emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, " +
-          "referral_code, referred_by, " +
-          "approval_notes, approved_at, last_seen_at, created_at, updated_at"
-        )
-        .order("created_at", { ascending: false }),
+      (() => {
+        let q = adminClient
+          .from("profiles")
+          .select(
+            "id, user_id, user_code, full_name, email, mobile_number, whatsapp_number, " +
+            "user_type, approval_status, is_disabled, disabled_reason, " +
+            "available_balance, coin_balance, hold_balance, wallet_active, wallet_number, upi_id, " +
+            "registration_ip, registration_city, registration_country, registration_region, " +
+            "registration_latitude, registration_longitude, " +
+            "gender, date_of_birth, marital_status, education_level, education_background, " +
+            "work_experience, previous_job_details, " +
+            "bank_name, bank_holder_name, bank_account_number, bank_ifsc_code, " +
+            "emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, " +
+            "referral_code, referred_by, " +
+            "approval_notes, approved_at, last_seen_at, created_at, updated_at"
+          )
+          .order("created_at", { ascending: false });
+        if (profileIds && profileIds.length > 0) q = q.in("id", profileIds);
+        return q;
+      })(),
       adminClient
         .from("registration_metadata")
         .select("profile_id, ip_address, city, region, country, latitude, longitude"),
@@ -352,9 +356,13 @@ export async function generateExcel() {
       to: { row: 2, column: COLS.length },
     };
 
-    await wb.xlsx.writeFile(EXPORT_FILE);
-    console.log(`[excelExport] Generated: ${EXPORT_FILE} (${rows.length} users)`);
-    return EXPORT_FILE;
+    const outFile = (profileIds && profileIds.length > 0)
+      ? path.join(EXPORT_DIR, `selected-export-${Date.now()}.xlsx`)
+      : EXPORT_FILE;
+
+    await wb.xlsx.writeFile(outFile);
+    console.log(`[excelExport] Generated: ${outFile} (${rows.length} users)`);
+    return outFile;
   } catch (err) {
     logError(`generateExcel failed: ${err.message}\n${err.stack || ""}`);
     throw err;

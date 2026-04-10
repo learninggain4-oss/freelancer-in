@@ -666,13 +666,20 @@ const AdminUsers = () => {
   };
 
   const [excelExporting, setExcelExporting] = useState(false);
-  const handleExportExcel = async () => {
+  const handleExportExcel = async (onlySelected = false) => {
     setExcelExporting(true);
     try {
       const { getToken: getT } = await import("@/lib/supabase-functions");
       const token = await getT();
+      const selectedArr = onlySelected ? Array.from(selectedIds) : [];
+      const isPost = selectedArr.length > 0;
       const res = await fetch("/functions/v1/admin-export-users", {
-        headers: { Authorization: `Bearer ${token}` },
+        method: isPost ? "POST" : "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...(isPost ? { "Content-Type": "application/json" } : {}),
+        },
+        ...(isPost ? { body: JSON.stringify({ profile_ids: selectedArr }) } : {}),
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -687,7 +694,7 @@ const AdminUsers = () => {
       a.download = match ? match[1] : `freelancer-india-users-${new Date().toISOString().slice(0, 10)}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("Excel file downloaded successfully");
+      toast.success(isPost ? `${selectedArr.length} users exported successfully` : "Excel file downloaded successfully");
     } catch (err: any) {
       toast.error(err.message || "Failed to export Excel");
     } finally {
@@ -1953,11 +1960,22 @@ const AdminUsers = () => {
           <Button variant="outline" size="sm"
             className="h-10 gap-2 rounded-xl text-sm shrink-0"
             style={{ borderColor: "#16a34a", color: "#16a34a", opacity: excelExporting ? 0.7 : 1 }}
-            onClick={handleExportExcel}
+            onClick={() => handleExportExcel(false)}
             disabled={excelExporting}>
             <FileText className="h-4 w-4" />
             {excelExporting ? "Generating…" : "Export Excel"}
           </Button>
+          {/* Export Selected — visible only when users are selected */}
+          {selectedIds.size > 0 && (
+            <Button variant="outline" size="sm"
+              className="h-10 gap-2 rounded-xl text-sm shrink-0"
+              style={{ borderColor: "#7c3aed", color: "#7c3aed", opacity: excelExporting ? 0.7 : 1 }}
+              onClick={() => handleExportExcel(true)}
+              disabled={excelExporting}>
+              <FileText className="h-4 w-4" />
+              {excelExporting ? "Generating…" : `Export Selected (${selectedIds.size})`}
+            </Button>
+          )}
         </div>
         {/* Secondary row — date range + result count + Advanced toggle */}
         <div className="flex flex-wrap items-center gap-2 px-3 py-2">

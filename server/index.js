@@ -6,7 +6,7 @@ import crypto from "crypto";
 import { createRequire } from "module";
 import path from "path";
 import { fileURLToPath } from "url";
-import { existsSync } from "fs";
+import { existsSync, unlinkSync } from "fs";
 import os from "os";
 import { execSync } from "child_process";
 import { generateExcel, scheduleRealtimeRefresh } from "./excelExport.js";
@@ -2173,8 +2173,8 @@ app.post("/functions/v1/mpin-verify", async (req, res) => {
   }
 });
 
-// ─── /functions/v1/admin-export-users — Excel export ───────────────────────
-app.get("/functions/v1/admin-export-users", async (req, res) => {
+// ─── /functions/v1/admin-export-users — Excel export (GET=all, POST=selected) ─
+async function handleExportUsers(req, res) {
   try {
     const authHeader = req.headers["authorization"];
     if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
@@ -2191,17 +2191,30 @@ app.get("/functions/v1/admin-export-users", async (req, res) => {
     const isAdmin = !!roleData || isSuperAdmin(user.email);
     if (!isAdmin) return res.status(403).json({ error: "Forbidden: admin only" });
 
-    const filePath = await generateExcel();
+    const profileIds = req.body?.profile_ids || null;
+    const filePath = await generateExcel(profileIds);
+    const isSelected = profileIds && profileIds.length > 0;
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    const filename = isSelected
+      ? `freelancer-india-selected-${profileIds.length}users-${timestamp}.xlsx`
+      : `freelancer-india-users-${timestamp}.xlsx`;
+
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res.setHeader("Content-Disposition", `attachment; filename="freelancer-india-users-${timestamp}.xlsx"`);
-    res.sendFile(filePath);
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.sendFile(filePath, () => {
+      if (isSelected) {
+        try { unlinkSync(filePath); } catch (_) {}
+      }
+    });
   } catch (err) {
     console.error("admin-export-users error:", err);
     res.status(500).json({ error: err.message });
   }
-});
+}
+
+app.get("/functions/v1/admin-export-users", handleExportUsers);
+app.post("/functions/v1/admin-export-users", handleExportUsers);
 
 // ── Production: serve the Vite build + SPA fallback ─────────────────────────
 const distPath = path.join(__dirname, "..", "dist");
