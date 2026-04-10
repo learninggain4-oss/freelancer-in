@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { callEdgeFunction, getToken } from "@/lib/supabase-functions";
+import { callEdgeFunction, getToken, readResponseJson } from "@/lib/supabase-functions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -264,7 +264,7 @@ const AdminUsers = () => {
     // Fetch admin list to detect admin / super admin users
     try {
       const res = await callEdgeFunction("admin-list", { method: "GET", token });
-      const adminData = await res.json();
+      const adminData = await readResponseJson(res);
       const map = new Map<string, { isSuperAdmin: boolean }>();
       (adminData.admins || []).forEach((a: { email: string; is_super_admin: boolean }) => {
         if (a.email) map.set(a.email.toLowerCase(), { isSuperAdmin: a.is_super_admin });
@@ -308,7 +308,7 @@ const AdminUsers = () => {
       callEdgeFunction("admin-user-management", {
         body: { action: "get_referral_chain", profile_id: previewUser.id },
         token,
-      }).then((res) => res.json()).then((data) => {
+      }).then((res) => readResponseJson(res)).then((data) => {
         if (data?.success) setPreviewReferral(data);
         setPreviewReferralLoading(false);
       }).catch(() => setPreviewReferralLoading(false))
@@ -319,7 +319,7 @@ const AdminUsers = () => {
       callEdgeFunction("admin-user-management", {
         body: { action: "get_user_stats", profile_id: previewUser.id },
         token,
-      }).then((res) => res.json()).then((data) => {
+      }).then((res) => readResponseJson(res)).then((data) => {
         if (data?.success) setPreviewStats(data as UserStats);
         setPreviewStatsLoading(false);
       }).catch(() => setPreviewStatsLoading(false))
@@ -347,7 +347,7 @@ const AdminUsers = () => {
         body: { profile_id: user.id },
         token,
       });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (res.status === 403) {
         setSecurityDenied(true);
       } else if (!res.ok || data?.error) {
@@ -373,7 +373,7 @@ const AdminUsers = () => {
         body: { profile_id: viewSecurityUser.id },
         token,
       });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (res.ok && !data?.error) setSecurityData(data);
     } catch { /* ignore */ } finally {
       setSecurityLoading(false);
@@ -526,9 +526,12 @@ const AdminUsers = () => {
         body: { action: "permanent_delete", profile_id: user.id },
         token: tkn,
       });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (!res.ok || data?.error) {
-        toast.error(data?.error || "Delete failed");
+        const errMsg =
+          (typeof data?.error === "string" && data.error) ||
+          (!res.ok ? `Delete failed (HTTP ${res.status})` : "Delete failed");
+        toast.error(errMsg);
       } else {
         toast.success("User permanently deleted");
         fetchProfiles();
@@ -546,7 +549,7 @@ const AdminUsers = () => {
     try {
       const token = await getToken();
       const res = await callEdgeFunction("admin-user-management", { method: "POST", body: { action: "reset_mpin", profile_id: user.id }, token });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (!res.ok || data?.error) {
         toast.error(data?.error || "Security reset failed");
       } else {
@@ -569,7 +572,7 @@ const AdminUsers = () => {
         body: { action: "invite_user", email: inviteEmail.trim().toLowerCase(), user_type: inviteType },
         token: tkn,
       });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (!res.ok || data?.error) {
         toast.error(data?.error || "Failed to send invite");
       } else {
@@ -703,7 +706,7 @@ const AdminUsers = () => {
         ...(isPost ? { body: JSON.stringify({ profile_ids: selectedArr }) } : {}),
       });
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
+        const errData = await readResponseJson(res);
         throw new Error(errData.error || "Export failed");
       }
       const blob = await res.blob();
@@ -732,7 +735,7 @@ const AdminUsers = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) { setAddUserEmailCheck(null); return; }
-      const data = await res.json();
+      const data = await readResponseJson(res);
       setAddUserEmailCheck(data);
       if (data.exists && data.name) {
         setAddUserForm(f => ({
@@ -775,7 +778,7 @@ const AdminUsers = () => {
       const res = await fetch("/functions/v1/admin-import-users/preview", {
         method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd,
       });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (!res.ok) throw new Error(data.error || "Preview failed");
       setImportPreview(data);
       setImportStep("preview");
@@ -792,7 +795,7 @@ const AdminUsers = () => {
       const res = await fetch("/functions/v1/admin-import-users/confirm", {
         method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd,
       });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (!res.ok) throw new Error(data.error || "Import failed");
       setImportResult(data);
       setImportStep("done");
@@ -821,7 +824,7 @@ const AdminUsers = () => {
           approval_status, approval_notes: approval_notes.trim() || undefined,
           force_new: addUserForceNew }),
       });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (!res.ok) throw new Error(data.error || "Failed to create user");
       const action = data.action === "updated" ? "updated" : "created";
       toast.success(`User "${full_name.trim().toUpperCase()}" ${action} successfully`);
@@ -855,7 +858,7 @@ const AdminUsers = () => {
         body: { action: "save_admin_notes", profile_id: notesDialogUser.id, notes: notesText },
         token,
       });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to save notes"); }
       else {
         toast.success("Notes saved");
@@ -878,7 +881,7 @@ const AdminUsers = () => {
         body: { action, target_profile_id: walletDialogUser.id, amount: amt, description: walletDesc || undefined },
         token,
       });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Wallet operation failed"); }
       else {
         toast.success(`₹${amt.toLocaleString("en-IN")} ${walletDir === "add" ? "added to" : "deducted from"} wallet`);
@@ -903,7 +906,7 @@ const AdminUsers = () => {
         body: { action: "send_email", target_user_id: emailDialogUser.user_id, target_profile_id: emailDialogUser.id, subject: emailSubject, message: emailBody },
         token,
       });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to send email"); }
       else {
         toast.success(data.via === "smtp" ? "Email sent successfully via SMTP" : "Message sent via in-app notification");
@@ -927,7 +930,7 @@ const AdminUsers = () => {
         body: { action: "get_audit_log", ...(u ? { target_profile_id: u.id } : {}) },
         token,
       });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to load audit log"); }
       else { setAuditLogs(data.logs || []); }
     } catch (e: any) { toast.error(e.message || "Failed to load audit log"); }
@@ -955,7 +958,7 @@ const AdminUsers = () => {
         body: { action: "issue_warning", target_profile_id: warningDialogUser.id, target_user_id: warningDialogUser.user_id, warning_level: warningLevel, reason: warningReason.trim() },
         token,
       });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to issue warning"); }
       else { toast.success(data.message || "Warning issued"); setWarningDialogUser(null); setWarningReason(""); setWarningLevel("minor"); }
     } catch (e: any) { toast.error(e.message || "Failed to issue warning"); }
@@ -975,7 +978,7 @@ const AdminUsers = () => {
         body: { action: "bulk_notify", target_user_ids: targetUserIds, title: bulkNotifyTitle.trim(), message: bulkNotifyMsg.trim() },
         token,
       });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to send"); }
       else { toast.success(`Notification sent to ${data.sent} users`); setBulkNotifyOpen(false); setBulkNotifyTitle(""); setBulkNotifyMsg(""); }
     } catch (e: any) { toast.error(e.message || "Failed to send"); }
@@ -1003,7 +1006,7 @@ const AdminUsers = () => {
         body: { action: "get_kyc_docs", profile_id: u.id },
         token,
       });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to load KYC docs"); }
       else { setKycDocs(data.docs || []); }
     } catch (e: any) { toast.error(e.message || "Failed to load KYC docs"); }
@@ -1021,7 +1024,7 @@ const AdminUsers = () => {
         body: { action: "get_aadhaar_docs", profile_id: u.id },
         token,
       });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to load Aadhaar records"); }
       else { setAadhaarRecords(data.records || []); }
     } catch (e: any) { toast.error(e.message || "Failed to load Aadhaar records"); }
@@ -1132,7 +1135,7 @@ const AdminUsers = () => {
         body: { action: "send_password_reset", email: u.email },
         token,
       });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to send reset email"); }
       else { toast.success(`Password reset email sent to ${u.email}`); }
     } catch (e: any) { toast.error(e.message || "Failed"); }
@@ -1149,7 +1152,7 @@ const AdminUsers = () => {
         body: { action: "send_notification", target_user_id: msgDialogUser.user_id, title: msgTitle, message: msgBody },
         token,
       });
-      const data = await res.json();
+      const data = await readResponseJson(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to send notification"); }
       else {
         toast.success("Notification sent successfully");
@@ -3797,8 +3800,11 @@ const AdminUsers = () => {
                                 setViewSecurityUser(null);
                                 setSecurityData(null);
                               } else {
-                                const d = await r.json();
-                                toast.error(d.error || "Reset failed");
+                                const d = await readResponseJson(r);
+                                toast.error(
+                                  (typeof d?.error === "string" && d.error) ||
+                                    `Reset failed (HTTP ${r.status})`,
+                                );
                               }
                             } catch { toast.error("Reset failed"); }
                             finally { setActionProcessing(false); }

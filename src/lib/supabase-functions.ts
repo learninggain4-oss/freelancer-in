@@ -38,3 +38,14 @@ export async function callEdgeFunction(
     ...(options?.body ? { body: JSON.stringify(options.body) } : {}),
   });
 }
+
+/** Parse JSON from a fetch Response without throwing on empty body (avoids "Unexpected end of JSON input"). */
+export async function readResponseJson<T = Record<string, unknown>>(res: Response): Promise<T> {
+  const text = await res.text();
+  if (!text.trim()) return {} as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return { error: `Invalid response (${res.status}): ${text.slice(0, 200)}` } as T;
+  }
+}
