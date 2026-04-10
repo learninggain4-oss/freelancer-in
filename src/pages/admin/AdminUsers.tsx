@@ -2042,6 +2042,14 @@ const AdminUsers = () => {
               {excelExporting ? "Generating…" : `Export Selected (${selectedIds.size})`}
             </Button>
           )}
+          {/* Download Import Template */}
+          <Button variant="outline" size="sm"
+            className="h-10 gap-2 rounded-xl text-sm shrink-0"
+            style={{ borderColor: "#0891b2", color: "#0891b2" }}
+            onClick={handleDownloadTemplate}>
+            <Download className="h-4 w-4" />
+            Import Template
+          </Button>
           {/* Import Excel */}
           <Button variant="outline" size="sm"
             className="h-10 gap-2 rounded-xl text-sm shrink-0"
