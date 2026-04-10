@@ -170,17 +170,57 @@ export async function processImport(rows, dryRun = false) {
         const approvalStatus = toStr(row.approval_status) || "pending";
 
         if (!dryRun) {
+          let userId = null;
+
+          // Try creating a new auth user
           const { data: authData, error: authErr } = await adminClient.auth.admin.createUser({
             email,
             password,
             email_confirm: true,
             user_metadata: { full_name: fullName },
           });
-          if (authErr) throw authErr;
 
+          if (authErr) {
+            const alreadyExists = authErr.message?.toLowerCase().includes("already") ||
+                                  authErr.message?.toLowerCase().includes("registered") ||
+                                  authErr.message?.toLowerCase().includes("exists");
+            if (!alreadyExists) throw authErr;
+
+            // Auth user already exists — find their user ID
+            const { data: { users: allUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+            const existingAuthUser = allUsers.find(u => u.email?.toLowerCase() === email);
+            if (!existingAuthUser) throw new Error("Auth user not found despite 'already registered' error");
+            userId = existingAuthUser.id;
+          } else {
+            userId = authData.user.id;
+          }
+
+          // Check if a profile already exists for this auth user (created by trigger or previous import)
+          const { data: existingProf } = await adminClient.from("profiles").select("id").eq("id", userId).maybeSingle();
+
+          if (existingProf) {
+            // Profile exists — update it instead
+            const updates = { full_name: [fullName.toUpperCase()], user_type: userType, approval_status: approvalStatus, updated_at: new Date().toISOString() };
+            if (toStr(row.mobile_number))   updates.mobile_number   = toStr(row.mobile_number);
+            if (toStr(row.whatsapp_number)) updates.whatsapp_number = toStr(row.whatsapp_number);
+            if (toStr(row.gender))          updates.gender          = toStr(row.gender);
+            if (toStr(row.date_of_birth))   updates.date_of_birth   = toStr(row.date_of_birth);
+            if (toStr(row.approval_notes))  updates.approval_notes  = toStr(row.approval_notes);
+            if (toNumber(row.available_balance) !== null) updates.available_balance = toNumber(row.available_balance);
+            if (toNumber(row.hold_balance) !== null)      updates.hold_balance      = toNumber(row.hold_balance);
+            if (toBool(row.wallet_active) !== null)       updates.wallet_active     = toBool(row.wallet_active);
+            if (toBool(row.is_disabled) !== null)         updates.is_disabled       = toBool(row.is_disabled);
+            if (toStr(row.disabled_reason)) updates.disabled_reason = toStr(row.disabled_reason);
+            const { error: updErr } = await adminClient.from("profiles").update(updates).eq("id", userId);
+            if (updErr) throw updErr;
+            results.updated.push({ email, fields: Object.keys(updates).filter(k => !["updated_at"].includes(k)) });
+            continue;
+          }
+
+          // No profile yet — create one
           const profilePayload = {
-            id: authData.user.id,
-            user_id: authData.user.id,
+            id: userId,
+            user_id: userId,
             email,
             full_name: [fullName.toUpperCase()],
             user_code: [],
