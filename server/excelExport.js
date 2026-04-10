@@ -81,7 +81,7 @@ export async function generateExcel() {
         .select("profile_id, status, document_name, document_path, is_cleared, rejection_reason, verified_at, attempt_count"),
     ]);
 
-    const URL_EXPIRY = 604800; // 7 days
+    const URL_EXPIRY = 2147483647; // max int32 — effectively permanent (~68 years)
 
     async function signedUrl(bucket, filePath) {
       if (!filePath) return "";
@@ -100,7 +100,7 @@ export async function generateExcel() {
     });
 
     const bankUrlPromises = (bankVerifs || []).map(async (b) => {
-      const docUrl = await signedUrl("kyc-documents", b.document_path);
+      const docUrl = await signedUrl("bank-documents", b.document_path);
       return { profile_id: b.profile_id, docUrl };
     });
 
