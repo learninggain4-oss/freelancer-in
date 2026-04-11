@@ -613,8 +613,10 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
     const { action, user_id, profile_id, email, user_type } = req.body;
 
     if (action === "permanent_delete") {
+      console.log("[permanent_delete] Request received, profile_id:", profile_id);
       if (!profile_id) return res.status(400).json({ error: "profile_id required" });
       const { data: profile } = await adminClient.from("profiles").select("user_id, full_name").eq("id", profile_id).single();
+      console.log("[permanent_delete] Profile found:", profile);
       if (!profile) return res.status(404).json({ error: "Profile not found" });
 
       const pid = profile_id;
