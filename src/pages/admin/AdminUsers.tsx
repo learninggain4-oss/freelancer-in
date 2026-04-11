@@ -1587,7 +1587,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
                             </Button>
                             <Button size="icon" variant="ghost" title="Delete permanently"
                               className="h-8 w-8 rounded-lg text-red-400 hover:text-red-400 hover:bg-red-500/10"
-                              onClick={() => setConfirmAction({ type: "delete", user: u })}>
+                              onClick={() => { console.log("[DELETE BUTTON] clicked for:", u.id); setConfirmAction({ type: "delete", user: u }); }}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
@@ -2354,6 +2354,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={actionProcessing}>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              type="button"
               disabled={actionProcessing}
               className={
                 confirmAction?.type === "delete"
@@ -2363,6 +2364,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
                   : ""
               }
               onClick={() => {
+                console.log("[DELETE] Confirm clicked, type:", confirmAction?.type);
                 if (!confirmAction) return;
                 if (confirmAction.type === "delete") handlePermanentDelete(confirmAction.user);
                 else if (confirmAction.type === "reset_mpin") handleResetMpin(confirmAction.user);
