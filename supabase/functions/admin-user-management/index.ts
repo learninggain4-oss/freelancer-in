@@ -170,6 +170,7 @@ Deno.serve(async (req) => {
           adminClient.from("documents").delete().eq("profile_id", pid),
           adminClient.from("employee_emergency_contacts").delete().eq("profile_id", pid),
           adminClient.from("employee_services").delete().eq("profile_id", pid),
+          adminClient.from("employer_profiles").delete().eq("profile_id", pid),
           // Same as Node admin route — required before profiles DELETE
           adminClient.from("user_bank_accounts").delete().eq("profile_id", pid),
           adminClient.from("attendance").delete().eq("profile_id", pid),
@@ -221,7 +222,14 @@ Deno.serve(async (req) => {
         }
 
 
-        // 7. Delete the profile (check for errors)
+        // 7. Delete user_roles first (FK to auth.users)
+        const { error: userRolesDeleteError } = await adminClient.from("user_roles").delete().eq("user_id", userId);
+        if (userRolesDeleteError) {
+          console.error("user_roles delete error:", userRolesDeleteError);
+          // Continue anyway - might not exist
+        }
+
+        // 8. Delete the profile (check for errors)
         const { error: profileDeleteError } = await adminClient.from("profiles").delete().eq("id", pid);
         if (profileDeleteError) {
           console.error("Profile delete error:", profileDeleteError);
@@ -230,9 +238,6 @@ Deno.serve(async (req) => {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-
-        // 8. Delete user_roles (FK to auth.users) — THIS was the missing piece
-        await adminClient.from("user_roles").delete().eq("user_id", userId);
 
         // 9. Finally delete the auth user
         const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
