@@ -87,11 +87,7 @@ const SQ_QUESTIONS = [
 // ───────────────────────────────────────────────────────────────────────────
 
 const app = express();
-
-app.use(cors({
-  origin: true,
-  credentials: true,
-}));
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 // In production Replit sets PORT; in dev we use SERVER_PORT (set in workflow) to avoid conflict with Vite

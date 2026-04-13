@@ -23,15 +23,13 @@ export async function callEdgeFunction(
   const method = options?.method ?? (options?.body ? "POST" : "GET");
   const url = `${SUPABASE_URL}/functions/v1/${functionName}`;
 
-  const token = options?.token ?? (await getToken());
-
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "apikey": SUPABASE_ANON_KEY,
   };
 
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+  if (options?.token) {
+    headers["Authorization"] = `Bearer ${options.token}`;
   }
 
   return fetch(url, {

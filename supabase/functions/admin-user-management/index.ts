@@ -39,10 +39,6 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Super admin emails — these always have full access regardless of user_roles table
-    const SUPER_ADMIN_EMAILS = (Deno.env.get("SUPER_ADMIN_EMAILS") || "freeandin9@gmail.com")
-      .split(",").map((e: string) => e.trim().toLowerCase()).filter(Boolean);
-
     // Use getUser for reliable token validation instead of manual JWT decoding
     const token = authHeader.replace("Bearer ", "");
     const { data: { user: callerUser }, error: userError } = await adminClient.auth.getUser(token);
@@ -57,35 +53,31 @@ Deno.serve(async (req) => {
         });
       }
       var callerUserId = fallbackId;
-      var callerEmail = "";
     } else {
       var callerUserId = callerUser.id;
-      var callerEmail = (callerUser.email || "").toLowerCase();
     }
 
-    const isSuperAdmin = SUPER_ADMIN_EMAILS.includes(callerEmail);
 
-    if (!isSuperAdmin) {
-      const { data: roleRows, error: roleError } = await adminClient
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", callerUserId)
-        .in("role", ["admin", "super_admin"]);
 
-      if (roleError) {
-        console.error("Role check error:", roleError);
-        return new Response(JSON.stringify({ error: "Failed to validate admin access" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+    const { data: roleRows, error: roleError } = await adminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", callerUserId)
+      .in("role", ["admin", "super_admin"]);
 
-      if (!roleRows || roleRows.length === 0) {
-        return new Response(JSON.stringify({ error: "Forbidden: admin or super_admin role required" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+    if (roleError) {
+      console.error("Role check error:", roleError);
+      return new Response(JSON.stringify({ error: "Failed to validate admin access" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!roleRows || roleRows.length === 0) {
+      return new Response(JSON.stringify({ error: "Forbidden: admin or super_admin role required" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const { action, user_id, profile_id, email, user_type } = await req.json();
@@ -166,12 +158,15 @@ Deno.serve(async (req) => {
 
         // 3b. Break FKs from other rows that reference this profile (no CASCADE)
         await Promise.all([
-          adminClient.from("admin_audit_logs").update({ admin_id: null }).eq("admin_id", pid),
           adminClient.from("admin_audit_logs").update({ target_profile_id: null }).eq("target_profile_id", pid),
+          adminClient.from("admin_audit_logs").delete().eq("admin_id", pid),
           adminClient.from("profiles").update({ edit_reviewed_by: null }).eq("edit_reviewed_by", pid),
           adminClient.from("recovery_requests").update({ resolved_by: null }).eq("resolved_by", pid),
           adminClient.from("withdrawals").update({ reviewed_by: null }).eq("reviewed_by", pid),
           adminClient.from("blocked_ips").update({ blocked_by: null }).eq("blocked_by", pid),
+          adminClient.from("aadhaar_verifications").update({ verified_by: null }).eq("verified_by", pid),
+          adminClient.from("bank_verifications").update({ verified_by: null }).eq("verified_by", pid),
+          adminClient.from("support_messages").delete().eq("sender_id", pid),
         ]);
 
         // 4. Delete records referencing profile_id
@@ -233,14 +228,12 @@ Deno.serve(async (req) => {
         }
 
 
-        // 7. Delete ALL rows that directly reference auth.users.id (must be done before deleteUser)
-        await Promise.all([
-          adminClient.from("user_roles").delete().eq("user_id", userId),
-          adminClient.from("user_totp_secrets").delete().eq("user_id", userId),
-          adminClient.from("admin_totp_secrets").delete().eq("user_id", userId),
-          adminClient.from("announcement_dismissals").delete().eq("user_id", userId),
-          adminClient.from("notifications").delete().eq("user_id", userId),
-        ]);
+        // 7. Delete user_roles first (FK to auth.users)
+        const { error: userRolesDeleteError } = await adminClient.from("user_roles").delete().eq("user_id", userId);
+        if (userRolesDeleteError) {
+          console.error("user_roles delete error:", userRolesDeleteError);
+          // Continue anyway - might not exist
+        }
 
         // 8. Delete the profile (check for errors)
         const { error: profileDeleteError } = await adminClient.from("profiles").delete().eq("id", pid);
@@ -252,7 +245,7 @@ Deno.serve(async (req) => {
           });
         }
 
-        // 9. Finally delete the auth user (all FKs already cleared above)
+        // 9. Finally delete the auth user
         const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
         if (deleteError) {
           console.error("Auth delete error:", deleteError);
