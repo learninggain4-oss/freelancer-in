@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { callEdgeFunction, getToken, readResponseJson } from "@/lib/supabase-functions";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,11 +60,14 @@ const AdminSessions = () => {
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["admin-sessions"],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("admin-user-management", {
+      const token = await getToken();
+      const res = await callEdgeFunction("admin-user-management", {
         body: { action: "list_users_sessions" },
+        token,
       });
-      if (error) throw error;
-      return (data?.users || []) as SessionUser[];
+      const data = await readResponseJson(res);
+      if (!res.ok) throw new Error((data as any)?.error || "Failed to load sessions");
+      return ((data as any)?.users || []) as SessionUser[];
     },
   });
 
@@ -98,15 +102,17 @@ const AdminSessions = () => {
         ? { action: "force_logout", user_id: confirmAction.user.auth_user_id }
         : { action: "permanent_delete", profile_id: confirmAction.user.profile_id };
 
-    const { data, error } = await supabase.functions.invoke("admin-user-management", { body });
+    const token = await getToken();
+    const res = await callEdgeFunction("admin-user-management", { body, token });
+    const data = await readResponseJson(res);
 
     setProcessing(false);
     setConfirmAction(null);
 
-    if (error || data?.error) {
-      toast.error(data?.error || error?.message || "Action failed");
+    if (!res.ok || (data as any)?.error) {
+      toast.error((data as any)?.error || "Action failed");
     } else {
-      toast.success(data?.message || "Action completed");
+      toast.success((data as any)?.message || "Action completed");
       queryClient.invalidateQueries({ queryKey: ["admin-sessions"] });
     }
   };

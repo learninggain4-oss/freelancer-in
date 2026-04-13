@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { callEdgeFunction, getToken, readResponseJson } from "@/lib/supabase-functions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,13 +114,16 @@ const AdminEmployees = () => {
 
   const handlePermanentDelete = async (freelancer: EmployeeRow) => {
     setProcessing(true);
-    const { data, error } = await supabase.functions.invoke("admin-user-management", {
+    const token = await getToken();
+    const res = await callEdgeFunction("admin-user-management", {
       body: { action: "permanent_delete", profile_id: freelancer.id },
+      token,
     });
+    const data = await readResponseJson(res);
     setProcessing(false);
     setConfirmAction(null);
-    if (error || data?.error) {
-      toast.error(data?.error || error?.message || "Delete failed");
+    if (!res.ok || (data as any)?.error) {
+      toast.error((data as any)?.error || "Delete failed");
     } else {
       toast.success("Freelancer permanently deleted");
       fetchData();
