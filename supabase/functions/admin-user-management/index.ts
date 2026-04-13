@@ -230,12 +230,14 @@ Deno.serve(async (req) => {
         }
 
 
-        // 7. Delete user_roles first (FK to auth.users)
-        const { error: userRolesDeleteError } = await adminClient.from("user_roles").delete().eq("user_id", userId);
-        if (userRolesDeleteError) {
-          console.error("user_roles delete error:", userRolesDeleteError);
-          // Continue anyway - might not exist
-        }
+        // 7. Delete ALL rows that directly reference auth.users.id (must be done before deleteUser)
+        await Promise.all([
+          adminClient.from("user_roles").delete().eq("user_id", userId),
+          adminClient.from("user_totp_secrets").delete().eq("user_id", userId),
+          adminClient.from("admin_totp_secrets").delete().eq("user_id", userId),
+          adminClient.from("announcement_dismissals").delete().eq("user_id", userId),
+          adminClient.from("notifications").delete().eq("user_id", userId),
+        ]);
 
         // 8. Delete the profile (check for errors)
         const { error: profileDeleteError } = await adminClient.from("profiles").delete().eq("id", pid);
@@ -247,7 +249,7 @@ Deno.serve(async (req) => {
           });
         }
 
-        // 9. Finally delete the auth user
+        // 9. Finally delete the auth user (all FKs already cleared above)
         const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
         if (deleteError) {
           console.error("Auth delete error:", deleteError);
