@@ -165,11 +165,14 @@ Deno.serve(async (req) => {
         await adminClient.from("projects").update({ assigned_employee_id: null }).eq("assigned_employee_id", pid);
 
         // 3b. Break FKs from other rows that reference this profile (no CASCADE)
-        await adminClient.from("admin_audit_logs").update({ target_profile_id: null }).eq("target_profile_id", pid);
-        await adminClient.from("profiles").update({ edit_reviewed_by: null }).eq("edit_reviewed_by", pid);
-        await adminClient.from("recovery_requests").update({ resolved_by: null }).eq("resolved_by", pid);
-        await adminClient.from("withdrawals").update({ reviewed_by: null }).eq("reviewed_by", pid);
-        await adminClient.from("blocked_ips").update({ blocked_by: null }).eq("blocked_by", pid);
+        await Promise.all([
+          adminClient.from("admin_audit_logs").update({ admin_id: null }).eq("admin_id", pid),
+          adminClient.from("admin_audit_logs").update({ target_profile_id: null }).eq("target_profile_id", pid),
+          adminClient.from("profiles").update({ edit_reviewed_by: null }).eq("edit_reviewed_by", pid),
+          adminClient.from("recovery_requests").update({ resolved_by: null }).eq("resolved_by", pid),
+          adminClient.from("withdrawals").update({ reviewed_by: null }).eq("reviewed_by", pid),
+          adminClient.from("blocked_ips").update({ blocked_by: null }).eq("blocked_by", pid),
+        ]);
 
         // 4. Delete records referencing profile_id
         await Promise.all([
