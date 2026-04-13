@@ -652,13 +652,36 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
       }
 
       await adminClient.from("projects").update({ assigned_employee_id: null }).eq("assigned_employee_id", pid);
+
+      // Break non-CASCADE FK references before profile delete
+      await Promise.all([
+        adminClient.from("admin_audit_logs").update({ target_profile_id: null }).eq("target_profile_id", pid),
+        adminClient.from("admin_audit_logs").delete().eq("admin_id", pid),
+        adminClient.from("profiles").update({ edit_reviewed_by: null }).eq("edit_reviewed_by", pid),
+        adminClient.from("recovery_requests").update({ resolved_by: null }).eq("resolved_by", pid),
+        adminClient.from("withdrawals").update({ reviewed_by: null }).eq("reviewed_by", pid),
+        adminClient.from("blocked_ips").update({ blocked_by: null }).eq("blocked_by", pid),
+        adminClient.from("aadhaar_verifications").update({ verified_by: null }).eq("verified_by", pid),
+        adminClient.from("bank_verifications").update({ verified_by: null }).eq("verified_by", pid),
+        adminClient.from("support_messages").delete().eq("sender_id", pid),
+      ]);
+
+      // Delete support conversations owned by this profile
+      const { data: supportConvo } = await adminClient.from("support_conversations").select("id").eq("user_id", pid).maybeSingle();
+      if (supportConvo) {
+        await adminClient.from("support_messages").delete().eq("conversation_id", supportConvo.id);
+        await adminClient.from("support_conversations").delete().eq("id", supportConvo.id);
+      }
+
       await Promise.all([
         adminClient.from("aadhaar_verifications").delete().eq("profile_id", pid),
         adminClient.from("bank_verifications").delete().eq("profile_id", pid),
         adminClient.from("documents").delete().eq("profile_id", pid),
         adminClient.from("employee_emergency_contacts").delete().eq("profile_id", pid),
         adminClient.from("employee_services").delete().eq("profile_id", pid),
+        adminClient.from("employer_profiles").delete().eq("profile_id", pid),
         adminClient.from("notifications").delete().eq("user_id", userId),
+        adminClient.from("notifications").delete().eq("user_id", pid),
         adminClient.from("registration_metadata").delete().eq("profile_id", pid),
         adminClient.from("transactions").delete().eq("profile_id", pid),
         adminClient.from("withdrawals").delete().eq("employee_id", pid),
@@ -666,6 +689,28 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
         adminClient.from("user_bank_accounts").delete().eq("profile_id", pid),
         adminClient.from("attendance").delete().eq("profile_id", pid),
         adminClient.from("coin_transactions").delete().eq("profile_id", pid),
+        adminClient.from("coin_reward_claims").delete().eq("profile_id", pid),
+        adminClient.from("push_subscriptions").delete().eq("profile_id", pid),
+        adminClient.from("pwa_install_status").delete().eq("profile_id", pid),
+        adminClient.from("site_visitors").delete().eq("profile_id", pid),
+        adminClient.from("upgrade_appointments").delete().eq("profile_id", pid),
+        adminClient.from("user_reviews").delete().eq("profile_id", pid),
+        adminClient.from("wallet_upgrade_requests").delete().eq("profile_id", pid),
+        adminClient.from("reviews").delete().eq("reviewee_id", pid),
+        adminClient.from("reviews").delete().eq("reviewer_id", pid),
+        adminClient.from("work_experiences").delete().eq("profile_id", pid),
+        adminClient.from("referrals").delete().eq("referrer_id", pid),
+        adminClient.from("referrals").delete().eq("referred_id", pid),
+        adminClient.from("project_applications").delete().eq("employee_id", pid),
+        adminClient.from("project_submissions").delete().eq("employee_id", pid),
+        adminClient.from("project_documents").delete().eq("uploaded_by", pid),
+        adminClient.from("payment_confirmations").delete().eq("employee_id", pid),
+        adminClient.from("message_reactions").delete().eq("user_id", pid),
+        adminClient.from("support_message_reactions").delete().eq("user_id", pid),
+        adminClient.from("messages").delete().eq("sender_id", pid),
+        adminClient.from("announcement_dismissals").delete().eq("user_id", userId),
+        adminClient.from("custom_quick_replies").delete().eq("created_by", pid),
+        adminClient.from("quick_reply_analytics").delete().eq("used_by", pid),
       ]);
 
       await adminClient.from("profiles").delete().eq("id", pid);
