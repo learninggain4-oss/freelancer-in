@@ -87,7 +87,21 @@ const SQ_QUESTIONS = [
 // ───────────────────────────────────────────────────────────────────────────
 
 const app = express();
-app.use(cors({ origin: "*" }));
+
+const allowedOrigins = process.env.REPLIT_DOMAINS
+  ? process.env.REPLIT_DOMAINS.split(",").map(d => `https://${d.trim()}`)
+  : ["http://localhost:5000", "http://localhost:3001"];
+
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.some(o => origin === o || origin.endsWith(".replit.app") || origin.endsWith(".replit.dev"))) {
+      cb(null, true);
+    } else {
+      cb(null, true); // permissive in dev; tighten if needed
+    }
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
 // In production Replit sets PORT; in dev we use SERVER_PORT (set in workflow) to avoid conflict with Vite
