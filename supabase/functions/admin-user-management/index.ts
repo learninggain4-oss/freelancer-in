@@ -6,15 +6,18 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function getUserIdFromJwt(authHeader: string): string | null {
+function getUserInfoFromJwt(authHeader: string): { userId: string | null; email: string | null } {
   try {
     const token = authHeader.replace("Bearer ", "");
     const parts = token.split(".");
-    if (parts.length !== 3) return null;
+    if (parts.length !== 3) return { userId: null, email: null };
     const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
-    return payload.sub || null;
+    return {
+      userId: payload.sub || null,
+      email: typeof payload.email === "string" ? payload.email.toLowerCase() : null,
+    };
   } catch {
-    return null;
+    return { userId: null, email: null };
   }
 }
 
@@ -42,19 +45,24 @@ Deno.serve(async (req) => {
     // Use getUser for reliable token validation instead of manual JWT decoding
     const token = authHeader.replace("Bearer ", "");
     const { data: { user: callerUser }, error: userError } = await adminClient.auth.getUser(token);
+
+    let callerUserId: string | null = null;
+    let callerEmail: string | null = null;
+
     if (userError || !callerUser) {
       console.error("Token validation failed:", userError);
-      // Fallback to manual JWT decoding
-      const fallbackId = getUserIdFromJwt(authHeader);
-      if (!fallbackId) {
+      const fallback = getUserInfoFromJwt(authHeader);
+      if (!fallback.userId) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      var callerUserId = fallbackId;
+      callerUserId = fallback.userId;
+      callerEmail = fallback.email;
     } else {
-      var callerUserId = callerUser.id;
+      callerUserId = callerUser.id;
+      callerEmail = callerUser.email?.toLowerCase() || null;
     }
 
 
@@ -73,7 +81,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (!roleRows || roleRows.length === 0) {
+    const superAdminEmails = (Deno.env.get("SUPER_ADMIN_EMAILS") || "")
+      .split(",")
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean);
+    const normalizedCallerEmail = callerEmail || "";
+    const isSuperAdmin = normalizedCallerEmail && superAdminEmails.includes(normalizedCallerEmail);
+    const isAdminOrSuperAdmin = (roleRows && roleRows.length > 0) || isSuperAdmin;
+
+    if (!isAdminOrSuperAdmin) {
       return new Response(JSON.stringify({ error: "Forbidden: admin or super_admin role required" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

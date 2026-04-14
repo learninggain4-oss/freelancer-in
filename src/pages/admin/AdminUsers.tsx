@@ -531,9 +531,10 @@ const handlePermanentDelete = async (user: FullProfile) => {
       console.log("🗑️ Edge Function response:", { status: res.status, ok: res.ok, data });
       
       if (!res.ok || data?.error) {
-        const rawError = data?.error || data?.message || 'Unknown Edge Function error';
+        const rawError = data?.error || data?.message || data?.msg || res.statusText || 'Unknown Edge Function error';
+        const statusInfo = !res.ok ? ` (status ${res.status})` : "";
         console.error("🗑️ Delete failed:", rawError, data);
-        toast.error(`Delete failed: ${rawError}`);
+        toast.error(`Delete failed: ${rawError}${statusInfo}`);
       } else {
         // Optimistic remove from local state
         setProfiles(prev => prev.filter(p => p.id !== user.id));
