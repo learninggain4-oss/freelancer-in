@@ -6,6 +6,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const DEFAULT_SUPER_ADMIN_EMAILS = ["freeandin9@gmail.com"];
+
 function getUserInfoFromJwt(authHeader: string): { userId: string | null; email: string | null } {
   try {
     const token = authHeader.replace("Bearer ", "");
@@ -72,10 +74,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    const superAdminEmails = (Deno.env.get("SUPER_ADMIN_EMAILS") || "")
-      .split(",")
-      .map((email) => email.trim().toLowerCase())
-      .filter(Boolean);
+    const superAdminEmails = [
+      ...DEFAULT_SUPER_ADMIN_EMAILS,
+      ...(Deno.env.get("SUPER_ADMIN_EMAILS") || "")
+        .split(",")
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean),
+    ];
     const normalizedCallerEmail = callerEmail || "";
     const isSuperAdmin = normalizedCallerEmail && superAdminEmails.includes(normalizedCallerEmail);
 
