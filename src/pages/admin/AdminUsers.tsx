@@ -106,7 +106,7 @@ const AdminUsers = () => {
 
   // Change User Type
   const [changeTypeUser, setChangeTypeUser] = useState<FullProfile | null>(null);
-  const [changeTypeTo, setChangeTypeTo] = useState<string>("");
+  const [changeTypeTo, setChangeTypeTo] = useState<"employee" | "client" | "">("");
   const [changeTypeProcessing, setChangeTypeProcessing] = useState(false);
 
 
@@ -266,9 +266,9 @@ const AdminUsers = () => {
     // Fetch admin list to detect admin / super admin users
     try {
       const res = await callEdgeFunction("admin-list", { method: "GET", token });
-      const adminData = await readResponseJson(res);
+      const adminData = await readResponseJson<{ admins?: { email?: string; is_super_admin?: boolean }[] }>(res);
       const map = new Map<string, { isSuperAdmin: boolean }>();
-      (adminData.admins || []).forEach((a: { email: string; is_super_admin: boolean }) => {
+      (adminData.admins || []).forEach((a) => {
         if (a.email) map.set(a.email.toLowerCase(), { isSuperAdmin: a.is_super_admin });
       });
       setAdminEmailMap(map);
@@ -310,7 +310,7 @@ const AdminUsers = () => {
       callEdgeFunction("admin-user-management", {
         body: { action: "get_referral_chain", profile_id: previewUser.id },
         token,
-      }).then((res) => readResponseJson(res)).then((data) => {
+      }).then((res) => readResponseJson<ReferralChain & { success?: boolean }>(res)).then((data) => {
         if (data?.success) setPreviewReferral(data);
         setPreviewReferralLoading(false);
       }).catch(() => setPreviewReferralLoading(false))
@@ -321,8 +321,8 @@ const AdminUsers = () => {
       callEdgeFunction("admin-user-management", {
         body: { action: "get_user_stats", profile_id: previewUser.id },
         token,
-      }).then((res) => readResponseJson(res)).then((data) => {
-        if (data?.success) setPreviewStats(data as UserStats);
+      }).then((res) => readResponseJson<UserStats & { success?: boolean }>(res)).then((data) => {
+        if (data?.success) setPreviewStats(data);
         setPreviewStatsLoading(false);
       }).catch(() => setPreviewStatsLoading(false))
     );
@@ -349,7 +349,7 @@ const AdminUsers = () => {
         body: { profile_id: user.id },
         token,
       });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<SecurityData & { error?: string }>(res);
       if (res.status === 403) {
         setSecurityDenied(true);
       } else if (!res.ok || data?.error) {
@@ -375,7 +375,7 @@ const AdminUsers = () => {
         body: { profile_id: viewSecurityUser.id },
         token,
       });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<SecurityData & { error?: string }>(res);
       if (res.ok && !data?.error) setSecurityData(data);
     } catch { /* ignore */ } finally {
       setSecurityLoading(false);
@@ -529,7 +529,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
         body: { action: "permanent_delete", profile_id: user.id },
         token: tkn,
       });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<any>(res);
       console.log("🗑️ Edge Function response:", { status: res.status, ok: res.ok, data });
       
       if (!res.ok || data?.error) {
@@ -558,7 +558,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
     try {
       const token = await getToken();
       const res = await callEdgeFunction("admin-user-management", { method: "POST", body: { action: "reset_mpin", profile_id: user.id }, token });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<any>(res);
       if (!res.ok || data?.error) {
         toast.error(data?.error || "Security reset failed");
       } else {
@@ -581,7 +581,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
         body: { action: "invite_user", email: inviteEmail.trim().toLowerCase(), user_type: inviteType },
         token: tkn,
       });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<any>(res);
       if (!res.ok || data?.error) {
         toast.error(data?.error || "Failed to send invite");
       } else {
@@ -715,7 +715,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
         ...(isPost ? { body: JSON.stringify({ profile_ids: selectedArr }) } : {}),
       });
       if (!res.ok) {
-        const errData = await readResponseJson(res);
+        const errData = await readResponseJson<any>(res);
         throw new Error(errData.error || "Export failed");
       }
       const blob = await res.blob();
@@ -744,7 +744,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) { setAddUserEmailCheck(null); return; }
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<any>(res);
       setAddUserEmailCheck(data);
       if (data.exists && data.name) {
         setAddUserForm(f => ({
@@ -787,7 +787,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
       const res = await fetch("/functions/v1/admin-import-users/preview", {
         method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd,
       });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<any>(res);
       if (!res.ok) throw new Error(data.error || "Preview failed");
       setImportPreview(data);
       setImportStep("preview");
@@ -804,7 +804,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
       const res = await fetch("/functions/v1/admin-import-users/confirm", {
         method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd,
       });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<any>(res);
       if (!res.ok) throw new Error(data.error || "Import failed");
       setImportResult(data);
       setImportStep("done");
@@ -833,7 +833,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
           approval_status, approval_notes: approval_notes.trim() || undefined,
           force_new: addUserForceNew }),
       });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<any>(res);
       if (!res.ok) throw new Error(data.error || "Failed to create user");
       const action = data.action === "updated" ? "updated" : "created";
       toast.success(`User "${full_name.trim().toUpperCase()}" ${action} successfully`);
@@ -910,7 +910,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
         body: { action: "save_admin_notes", profile_id: notesDialogUser.id, notes: notesText },
         token,
       });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<any>(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to save notes"); }
       else {
         toast.success("Notes saved");
@@ -933,7 +933,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
         body: { action, target_profile_id: walletDialogUser.id, amount: amt, description: walletDesc || undefined },
         token,
       });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<any>(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Wallet operation failed"); }
       else {
         toast.success(`₹${amt.toLocaleString("en-IN")} ${walletDir === "add" ? "added to" : "deducted from"} wallet`);
@@ -958,7 +958,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
         body: { action: "send_email", target_user_id: emailDialogUser.user_id, target_profile_id: emailDialogUser.id, subject: emailSubject, message: emailBody },
         token,
       });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<any>(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to send email"); }
       else {
         toast.success(data.via === "smtp" ? "Email sent successfully via SMTP" : "Message sent via in-app notification");
@@ -982,7 +982,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
         body: { action: "get_audit_log", ...(u ? { target_profile_id: u.id } : {}) },
         token,
       });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<any>(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to load audit log"); }
       else { setAuditLogs(data.logs || []); }
     } catch (e: any) { toast.error(e.message || "Failed to load audit log"); }
@@ -1010,7 +1010,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
         body: { action: "issue_warning", target_profile_id: warningDialogUser.id, target_user_id: warningDialogUser.user_id, warning_level: warningLevel, reason: warningReason.trim() },
         token,
       });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<any>(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to issue warning"); }
       else { toast.success(data.message || "Warning issued"); setWarningDialogUser(null); setWarningReason(""); setWarningLevel("minor"); }
     } catch (e: any) { toast.error(e.message || "Failed to issue warning"); }
@@ -1030,7 +1030,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
         body: { action: "bulk_notify", target_user_ids: targetUserIds, title: bulkNotifyTitle.trim(), message: bulkNotifyMsg.trim() },
         token,
       });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<any>(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to send"); }
       else { toast.success(`Notification sent to ${data.sent} users`); setBulkNotifyOpen(false); setBulkNotifyTitle(""); setBulkNotifyMsg(""); }
     } catch (e: any) { toast.error(e.message || "Failed to send"); }
@@ -1058,7 +1058,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
         body: { action: "get_kyc_docs", profile_id: u.id },
         token,
       });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<any>(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to load KYC docs"); }
       else { setKycDocs(data.docs || []); }
     } catch (e: any) { toast.error(e.message || "Failed to load KYC docs"); }
@@ -1076,7 +1076,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
         body: { action: "get_aadhaar_docs", profile_id: u.id },
         token,
       });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<any>(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to load Aadhaar records"); }
       else { setAadhaarRecords(data.records || []); }
     } catch (e: any) { toast.error(e.message || "Failed to load Aadhaar records"); }
@@ -1187,7 +1187,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
         body: { action: "send_password_reset", email: u.email },
         token,
       });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<any>(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to send reset email"); }
       else { toast.success(`Password reset email sent to ${u.email}`); }
     } catch (e: any) { toast.error(e.message || "Failed"); }
@@ -1204,7 +1204,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
         body: { action: "send_notification", target_user_id: msgDialogUser.user_id, title: msgTitle, message: msgBody },
         token,
       });
-      const data = await readResponseJson(res);
+      const data = await readResponseJson<any>(res);
       if (!res.ok || data?.error) { toast.error(data?.error || "Failed to send notification"); }
       else {
         toast.success("Notification sent successfully");
@@ -1628,7 +1628,10 @@ const handlePermanentDelete = async (user: FullProfile) => {
                             <Button size="icon" variant="ghost" title="Change user type"
                               className="h-8 w-8 rounded-lg hover:bg-cyan-500/10"
                               style={{ color: "#22d3ee" }}
-                              onClick={() => { setChangeTypeUser(u); setChangeTypeTo(u.user_type === "employee" ? "client" : "employee"); }}>
+                              onClick={() => {
+                                setChangeTypeUser(u);
+                                setChangeTypeTo((u.user_type === "employee" ? "client" : "employee") as "client" | "employee");
+                              }}>
                               <ArrowLeftRight className="h-3.5 w-3.5" />
                             </Button>
                             <Button size="icon" variant="ghost" title="Delete permanently"
@@ -1916,7 +1919,10 @@ const handlePermanentDelete = async (user: FullProfile) => {
                             title: "Force Logout",  cls: "hover:bg-rose-500/10",        color: "#fb7185",
                             action: () => handleForceLogout(u) },
                           { icon: <ArrowLeftRight className="h-3.5 w-3.5" />, title: "Change Type",   cls: "hover:bg-cyan-500/10",        color: "#22d3ee",
-                            action: () => { setChangeTypeUser(u); setChangeTypeTo(u.user_type === "employee" ? "client" : "employee"); } },
+                            action: () => {
+                              setChangeTypeUser(u);
+                              setChangeTypeTo((u.user_type === "employee" ? "client" : "employee") as "client" | "employee");
+                            } },
                         ].map((btn, i) => (
                           <button key={i} title={btn.title} disabled={btn.title === "Force Logout" && logoutUserId === u.id}
                             className={`h-8 w-full rounded-lg flex items-center justify-center transition-colors ${btn.cls}`}

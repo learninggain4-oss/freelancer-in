@@ -35,6 +35,7 @@ type RegistrationMeta = {
 
 export type FullProfile = {
   id: string;
+  user_id?: string;
   full_name: string[];
   user_code: string[];
   email: string;
@@ -60,6 +61,10 @@ export type FullProfile = {
   coin_balance?: number;
   hold_balance?: number;
   last_seen_at?: string | null;
+  registration_ip?: string | null;
+  registration_city?: string | null;
+  registration_country?: string | null;
+  registration_region?: string | null;
 };
 
 interface Props {
