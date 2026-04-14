@@ -848,6 +848,8 @@ const handlePermanentDelete = async (user: FullProfile) => {
       setWalletMin("");
       setWalletMax("");
       setCityFilter("");
+      setDateFrom("");
+      setDateTo("");
       const nextTab = approval_status === "pending" ? "pending"
         : approval_status === "approved" ? "approved"
         : approval_status === "rejected" ? "rejected"
