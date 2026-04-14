@@ -766,20 +766,24 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
 
     if (action === "invite_user") {
       if (!email || !user_type) return res.status(400).json({ error: "email and user_type required" });
+      const normalizedUserType = user_type === "freelancer" ? "employee" : user_type === "employer" ? "client" : user_type;
       const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email);
       if (inviteErr) return res.status(400).json({ error: inviteErr.message });
       const invitedUserId = inviteData?.user?.id;
-      if (invitedUserId) {
-        await adminClient.from("profiles").insert({
-          user_id: invitedUserId,
-          email,
-          full_name: [email.split("@")[0].toUpperCase()],
-          user_code: ["PENDING"],
-          user_type,
-          approval_status: "approved",
-          approved_at: new Date().toISOString(),
-          referral_code: invitedUserId.substring(0, 8).toUpperCase(),
-        }).catch(e => console.error("Profile creation error:", e.message));
+      if (!invitedUserId) return res.status(500).json({ error: "Failed to create invited auth user" });
+      const { error: profileErr } = await adminClient.from("profiles").insert({
+        user_id: invitedUserId,
+        email,
+        full_name: [email.split("@")[0].toUpperCase()],
+        user_code: ["PENDING"],
+        user_type: normalizedUserType,
+        approval_status: "approved",
+        approved_at: new Date().toISOString(),
+        referral_code: invitedUserId.substring(0, 8).toUpperCase(),
+      });
+      if (profileErr) {
+        console.error("Profile creation error:", profileErr.message);
+        return res.status(500).json({ error: `User invited, but profile creation failed: ${profileErr.message}` });
       }
       return res.json({ success: true, message: `Invite sent to ${email}` });
     }
@@ -2361,7 +2365,7 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
           .update({ ...profileFields, updated_at: new Date().toISOString() })
           .eq("id", existingProf.id);
         if (updErr) return res.status(500).json({ error: updErr.message });
-        return res.json({ success: true, action: "updated", user_id: existingProf.id, email: emailLower, full_name: nameUpper });
+        return res.json({ success: true, action: "updated", profile_id: existingProf.id, user_id: existingProf.user_id || null, email: emailLower, full_name: nameUpper });
       }
     }
 
@@ -2404,7 +2408,7 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
         .update({ ...profileFields, updated_at: new Date().toISOString() })
         .eq("id", authProf.id);
       if (updErr) return res.status(500).json({ error: updErr.message });
-      return res.json({ success: true, action: "updated", user_id: userId, email: emailLower, full_name: nameUpper });
+      return res.json({ success: true, action: "updated", profile_id: authProf.id, user_id: userId, email: emailLower, full_name: nameUpper });
     }
 
     const { error: profErr } = await adminClient.from("profiles").insert({
@@ -2412,7 +2416,7 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
       user_code: [], ...profileFields,
     });
     if (profErr) return res.status(500).json({ error: profErr.message });
-    res.json({ success: true, action: "created", user_id: userId, email: emailLower, full_name: nameUpper });
+    res.json({ success: true, action: "created", profile_id: userId, user_id: userId, email: emailLower, full_name: nameUpper });
   } catch (err) {
     console.error("admin-add-user error:", err);
     res.status(500).json({ error: err.message });

@@ -855,10 +855,19 @@ const handlePermanentDelete = async (user: FullProfile) => {
       setActiveTab("all");
       setCurrentPage(1);
       await fetchProfiles();
+      const createdProfileId = (data as any)?.profile_id;
       const createdUserId = (data as any)?.user_id;
       const createdEmail = email.trim().toLowerCase();
       let createdProfile = null;
-      if (createdUserId) {
+      if (createdProfileId) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
+          .eq("id", createdProfileId)
+          .maybeSingle();
+        createdProfile = data;
+      }
+      if (!createdProfile && createdUserId) {
         const { data } = await supabase
           .from("profiles")
           .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
