@@ -852,11 +852,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
       setDateTo("");
       setShowAdvancedFilters(false);
       setSelectedIds(new Set());
-      const nextTab = approval_status === "pending" ? "pending"
-        : approval_status === "approved" ? "approved"
-        : approval_status === "rejected" ? "rejected"
-        : "all";
-      setActiveTab(nextTab);
+      setActiveTab("all");
       setCurrentPage(1);
       await fetchProfiles();
       const createdUserId = (data as any)?.user_id;
