@@ -60,6 +60,7 @@ const AdminUsers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<"pending" | "approved" | "rejected" | "all">("pending");
   const [confirmAction, setConfirmAction] = useState<{ type: "block" | "unblock" | "delete" | "reset_mpin"; user: FullProfile } | null>(null);
   const [actionProcessing, setActionProcessing] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -841,7 +842,19 @@ const handlePermanentDelete = async (user: FullProfile) => {
       setAddUserForm({ email: "", full_name: "", password: "", user_type: "employee",
         mobile_number: "", whatsapp_number: "", gender: "", date_of_birth: "",
         approval_status: "approved", approval_notes: "" });
-      fetchProfiles();
+      setSearchQuery("");
+      setTypeFilter("all");
+      setKycFilter("all");
+      setWalletMin("");
+      setWalletMax("");
+      setCityFilter("");
+      const nextTab = approval_status === "pending" ? "pending"
+        : approval_status === "approved" ? "approved"
+        : approval_status === "rejected" ? "rejected"
+        : "all";
+      setActiveTab(nextTab);
+      setCurrentPage(1);
+      await fetchProfiles();
     } catch (err: any) { toast.error(err.message); }
     finally { setAddUserProcessing(false); }
   };
@@ -2262,7 +2275,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
       {/* ══════════════════════════════════════════════════
            STATUS TABS + USER GRID / TABLE
       ══════════════════════════════════════════════════ */}
-      <Tabs defaultValue="pending" className="w-full" onValueChange={() => { setSelectedIds(new Set()); setCurrentPage(1); }}>
+      <Tabs value={activeTab} className="w-full" onValueChange={(value) => { setActiveTab(value as "pending" | "approved" | "rejected" | "all"); setSelectedIds(new Set()); setCurrentPage(1); }}>
         {/* Tab pills */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <TabsList className="h-auto p-1 rounded-2xl gap-1" style={{ background: T.nav }}>
