@@ -187,11 +187,17 @@ Deno.serve(async (req) => {
         await adminClient.from("projects").update({ assigned_employee_id: null }).eq("assigned_employee_id", pid);
 
         // 3b. Break FKs from other rows that reference this profile (no CASCADE)
-        await adminClient.from("admin_audit_logs").update({ target_profile_id: null }).eq("target_profile_id", pid);
-        await adminClient.from("profiles").update({ edit_reviewed_by: null }).eq("edit_reviewed_by", pid);
-        await adminClient.from("recovery_requests").update({ resolved_by: null }).eq("resolved_by", pid);
-        await adminClient.from("withdrawals").update({ reviewed_by: null }).eq("reviewed_by", pid);
-        await adminClient.from("blocked_ips").update({ blocked_by: null }).eq("blocked_by", pid);
+        await Promise.all([
+          adminClient.from("admin_audit_logs").update({ target_profile_id: null }).eq("target_profile_id", pid),
+          adminClient.from("admin_audit_logs").delete().eq("admin_id", pid),
+          adminClient.from("profiles").update({ edit_reviewed_by: null }).eq("edit_reviewed_by", pid),
+          adminClient.from("recovery_requests").update({ resolved_by: null }).eq("resolved_by", pid),
+          adminClient.from("withdrawals").update({ reviewed_by: null }).eq("reviewed_by", pid),
+          adminClient.from("blocked_ips").update({ blocked_by: null }).eq("blocked_by", pid),
+          adminClient.from("aadhaar_verifications").update({ verified_by: null }).eq("verified_by", pid),
+          adminClient.from("bank_verifications").update({ verified_by: null }).eq("verified_by", pid),
+          adminClient.from("support_messages").delete().eq("sender_id", pid),
+        ]);
 
         // 4. Delete records referencing profile_id
         await Promise.all([
@@ -200,6 +206,7 @@ Deno.serve(async (req) => {
           adminClient.from("documents").delete().eq("profile_id", pid),
           adminClient.from("employee_emergency_contacts").delete().eq("profile_id", pid),
           adminClient.from("employee_services").delete().eq("profile_id", pid),
+          adminClient.from("employer_profiles").delete().eq("profile_id", pid),
           // Same as Node admin route — required before profiles DELETE
           adminClient.from("user_bank_accounts").delete().eq("profile_id", pid),
           adminClient.from("attendance").delete().eq("profile_id", pid),
@@ -251,7 +258,14 @@ Deno.serve(async (req) => {
         }
 
 
-        // 7. Delete the profile (check for errors)
+        // 7. Delete user_roles first (FK to auth.users)
+        const { error: userRolesDeleteError } = await adminClient.from("user_roles").delete().eq("user_id", userId);
+        if (userRolesDeleteError) {
+          console.error("user_roles delete error:", userRolesDeleteError);
+          // Continue anyway - might not exist
+        }
+
+        // 8. Delete the profile (check for errors)
         const { error: profileDeleteError } = await adminClient.from("profiles").delete().eq("id", pid);
         if (profileDeleteError) {
           console.error("Profile delete error:", profileDeleteError);
@@ -260,9 +274,6 @@ Deno.serve(async (req) => {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-
-        // 8. Delete user_roles (FK to auth.users) — THIS was the missing piece
-        await adminClient.from("user_roles").delete().eq("user_id", userId);
 
         // 9. Finally delete the auth user
         const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
