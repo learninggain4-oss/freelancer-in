@@ -72,30 +72,36 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: roleRows, error: roleError } = await adminClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", callerUserId)
-      .in("role", ["admin", "super_admin"]);
-
-    if (roleError) {
-      console.error("Role check error:", roleError, { callerUserId, callerEmail });
-      return new Response(JSON.stringify({
-        error: "Failed to validate admin access",
-        detail: roleError.message,
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const superAdminEmails = (Deno.env.get("SUPER_ADMIN_EMAILS") || "")
       .split(",")
       .map((email) => email.trim().toLowerCase())
       .filter(Boolean);
     const normalizedCallerEmail = callerEmail || "";
     const isSuperAdmin = normalizedCallerEmail && superAdminEmails.includes(normalizedCallerEmail);
-    const isAdminOrSuperAdmin = (roleRows && roleRows.length > 0) || isSuperAdmin;
+
+    let roleRows: any[] | null = null;
+    if (!isSuperAdmin) {
+      const { data, error: roleError } = await adminClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", callerUserId)
+        .in("role", ["admin", "super_admin"]);
+
+      if (roleError) {
+        console.error("Role check error:", roleError, { callerUserId, callerEmail });
+        return new Response(JSON.stringify({
+          error: "Failed to validate admin access",
+          detail: roleError.message,
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      roleRows = data;
+    }
+
+    const isAdminOrSuperAdmin = isSuperAdmin || (roleRows && roleRows.length > 0);
 
     if (!isAdminOrSuperAdmin) {
       return new Response(JSON.stringify({ error: "Forbidden: admin or super_admin role required" }), {
