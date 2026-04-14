@@ -2395,7 +2395,7 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
       const newProfileId = randomUUID();
       const { error: profErr } = await adminClient.from("profiles").insert({
         id: newProfileId, user_id: userId, email: emailLower,
-        user_code: [], ...profileFields,
+        user_code: [], created_at: new Date().toISOString(), ...profileFields,
       });
       if (profErr) return res.status(500).json({ error: profErr.message });
       return res.json({ success: true, action: "created", user_id: userId, profile_id: newProfileId, email: emailLower, full_name: nameUpper });
@@ -2413,7 +2413,7 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
 
     const { error: profErr } = await adminClient.from("profiles").insert({
       id: userId, user_id: userId, email: emailLower,
-      user_code: [], ...profileFields,
+      user_code: [], created_at: new Date().toISOString(), ...profileFields,
     });
     if (profErr) return res.status(500).json({ error: profErr.message });
     res.json({ success: true, action: "created", profile_id: userId, user_id: userId, email: emailLower, full_name: nameUpper });
