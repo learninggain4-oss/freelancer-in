@@ -860,15 +860,16 @@ const handlePermanentDelete = async (user: FullProfile) => {
       setCurrentPage(1);
       await fetchProfiles();
       const createdUserId = (data as any)?.user_id;
-      if (createdUserId) {
-        const { data: createdProfile } = await supabase
-          .from("profiles")
-          .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
-          .eq("user_id", createdUserId)
-          .maybeSingle();
-        if (createdProfile) {
-          setProfiles((prev) => [createdProfile as FullProfile, ...prev.filter((p) => p.id !== createdProfile.id)]);
-        }
+      const createdEmail = email.trim().toLowerCase();
+      const profileQuery = supabase
+        .from("profiles")
+        .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
+        .maybeSingle();
+      const { data: createdProfile } = await (createdUserId
+        ? profileQuery.eq("user_id", createdUserId)
+        : profileQuery.eq("email", createdEmail));
+      if (createdProfile) {
+        setProfiles((prev) => [createdProfile as FullProfile, ...prev.filter((p) => p.id !== createdProfile.id)]);
       }
     } catch (err: any) { toast.error(err.message); }
     finally { setAddUserProcessing(false); }
