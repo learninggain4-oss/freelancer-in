@@ -65,7 +65,12 @@ Deno.serve(async (req) => {
       callerEmail = callerUser.email?.toLowerCase() || null;
     }
 
-
+    if (!callerUserId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const { data: roleRows, error: roleError } = await adminClient
       .from("user_roles")
@@ -74,8 +79,11 @@ Deno.serve(async (req) => {
       .in("role", ["admin", "super_admin"]);
 
     if (roleError) {
-      console.error("Role check error:", roleError);
-      return new Response(JSON.stringify({ error: "Failed to validate admin access" }), {
+      console.error("Role check error:", roleError, { callerUserId, callerEmail });
+      return new Response(JSON.stringify({
+        error: "Failed to validate admin access",
+        detail: roleError.message,
+      }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
