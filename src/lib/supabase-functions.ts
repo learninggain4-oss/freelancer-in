@@ -21,12 +21,22 @@ export async function callEdgeFunction(
   },
 ): Promise<Response> {
   const method = options?.method ?? (options?.body ? "POST" : "GET");
-  const url = `${SUPABASE_URL}/functions/v1/${functionName}`;
+
+  // In dev (Replit): use relative path so Vite proxy forwards to local Express server.
+  // In prod (Lovable): call Supabase Edge Functions directly.
+  const isDev = import.meta.env.DEV;
+  const url = isDev
+    ? `/functions/v1/${functionName}`
+    : `${SUPABASE_URL}/functions/v1/${functionName}`;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "apikey": SUPABASE_ANON_KEY,
   };
+
+  // Only attach apikey when calling Supabase directly (prod)
+  if (!isDev) {
+    headers["apikey"] = SUPABASE_ANON_KEY;
+  }
 
   if (options?.token) {
     headers["Authorization"] = `Bearer ${options.token}`;
