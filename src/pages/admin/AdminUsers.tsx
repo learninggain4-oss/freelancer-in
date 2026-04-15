@@ -440,6 +440,7 @@ const AdminUsers = () => {
         token: tkn,
       });
       const { toast } = await import("sonner");
+      const data = await res.clone().json().catch(() => ({}));
       if (res.ok) {
         toast.success(`${u.full_name || u.email} logged out from all sessions`);
         // Notify user
@@ -455,11 +456,14 @@ const AdminUsers = () => {
           });
         } catch { /* non-critical */ }
       } else {
-        toast.error("Failed to force logout");
+        const errMsg = data?.error || `HTTP ${res.status}`;
+        console.error("Force logout failed:", res.status, data);
+        toast.error(`Failed to force logout: ${errMsg}`);
       }
-    } catch {
+    } catch (err: any) {
       const { toast } = await import("sonner");
-      toast.error("Failed to force logout");
+      console.error("Force logout exception:", err);
+      toast.error(`Failed to force logout: ${err?.message || "Network error"}`);
     }
     setLogoutUserId(null);
   };
