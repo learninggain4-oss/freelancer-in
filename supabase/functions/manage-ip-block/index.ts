@@ -43,19 +43,27 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Check admin role
-    const { data: roleData } = await supabaseAdmin
-      .from("user_roles")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
+    // Get caller email for super admin check
+    const { data: { user: callerUser } } = await supabaseAdmin.auth.getUser(token);
+    const callerEmail = (callerUser?.email || "").toLowerCase();
+    const superAdminEmails = ["freeandin9@gmail.com", ...(Deno.env.get("SUPER_ADMIN_EMAILS") || "").split(",").map((e: string) => e.trim().toLowerCase()).filter(Boolean)];
+    const isSuperAdmin = superAdminEmails.includes(callerEmail);
 
-    if (!roleData) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!isSuperAdmin) {
+      // Check admin role
+      const { data: roleData } = await supabaseAdmin
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (!roleData) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     const body = await req.json();
