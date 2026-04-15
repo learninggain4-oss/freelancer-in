@@ -447,6 +447,38 @@ Deno.serve(async (req) => {
         });
       }
 
+      case "send_password_reset": {
+        if (!email) {
+          return new Response(JSON.stringify({ error: "email required" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const resetRes = await fetch(`${supabaseUrl}/auth/v1/recover`, {
+          method: "POST",
+          headers: {
+            "apikey": serviceRoleKey,
+            "Authorization": `Bearer ${serviceRoleKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        });
+
+        if (!resetRes.ok) {
+          const resetBody = await resetRes.text();
+          console.error("Password reset error:", resetRes.status, resetBody);
+          return new Response(JSON.stringify({ error: "Failed to send password reset email" }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        return new Response(JSON.stringify({ success: true, message: "Password reset email sent" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       default:
         return new Response(JSON.stringify({ error: "Unknown action" }), {
           status: 400,
