@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
   const approvalSt = approval_status || "pending";
 
   const profileFields: Record<string, any> = {
-    full_name: nameUpper,
+    full_name: [nameUpper],
     user_type: uType,
     approval_status: approvalSt,
   };
