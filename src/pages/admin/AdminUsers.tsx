@@ -436,7 +436,7 @@ const AdminUsers = () => {
     try {
       const tkn = await getToken();
       const res = await callEdgeFunction("admin-user-management", {
-        body: { action: "revoke_sessions", user_id: u.user_id },
+        body: { action: "force_logout", user_id: u.user_id },
         token: tkn,
       });
       const { toast } = await import("sonner");
@@ -737,10 +737,9 @@ const handlePermanentDelete = async (user: FullProfile) => {
     setAddUserEmailChecking(true);
     try {
       const token = await getToken();
-      const res = await callEdgeFunction(
-        `admin-check-email?email=${encodeURIComponent(email.trim().toLowerCase())}`,
-        { method: "GET", token }
-      );
+      const res = await fetch(`/functions/v1/admin-check-email?email=${encodeURIComponent(email.trim().toLowerCase())}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) { setAddUserEmailCheck(null); return; }
       const data = await readResponseJson(res);
       setAddUserEmailCheck(data);
@@ -821,15 +820,15 @@ const handlePermanentDelete = async (user: FullProfile) => {
     setAddUserProcessing(true);
     try {
       const token = await getToken();
-      const res = await callEdgeFunction("admin-add-user", {
+      const res = await fetch("/functions/v1/admin-add-user", {
         method: "POST",
-        token,
-        body: { email: email.trim(), full_name: full_name.trim(), password, user_type,
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), full_name: full_name.trim(), password, user_type,
           mobile_number: mobile_number.trim() || undefined,
           whatsapp_number: whatsapp_number.trim() || undefined,
           gender: gender || undefined, date_of_birth: date_of_birth || undefined,
           approval_status, approval_notes: approval_notes.trim() || undefined,
-          force_new: addUserForceNew },
+          force_new: addUserForceNew }),
       });
       const data = await readResponseJson(res);
       if (!res.ok) throw new Error(data.error || "Failed to create user");
@@ -860,13 +859,14 @@ const handlePermanentDelete = async (user: FullProfile) => {
     if (!notesDialogUser) return;
     setNotesProcessing(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ approval_notes: notesText || null })
-        .eq("id", notesDialogUser.id);
-      if (error) {
-        toast.error(error.message || "Failed to save notes");
-      } else {
+      const token = await getToken();
+      const res = await callEdgeFunction("admin-user-management", {
+        body: { action: "save_admin_notes", profile_id: notesDialogUser.id, notes: notesText },
+        token,
+      });
+      const data = await readResponseJson(res);
+      if (!res.ok || data?.error) { toast.error(data?.error || "Failed to save notes"); }
+      else {
         toast.success("Notes saved");
         setProfiles((prev) => prev.map((p) => p.id === notesDialogUser.id ? { ...p, approval_notes: notesText } : p));
         setNotesDialogUser(null);
@@ -2678,30 +2678,6 @@ const handlePermanentDelete = async (user: FullProfile) => {
               <Textarea placeholder="Admin notes about this user…" value={addUserForm.approval_notes}
                 onChange={e => setAddUserForm(f => ({ ...f, approval_notes: e.target.value }))}
                 rows={2} style={{ background: T.input, color: T.text, borderColor: T.border }} />
-            </div>
-
-            {/* Always-visible Force New Account toggle */}
-            <div
-              className="flex items-center justify-between rounded-lg border px-3 py-2.5 cursor-pointer select-none"
-              style={{
-                borderColor: addUserForceNew ? "#3b82f6" : T.border,
-                background: addUserForceNew ? "rgba(59,130,246,0.08)" : T.input,
-              }}
-              onClick={() => setAddUserForceNew(v => !v)}
-            >
-              <div>
-                <div className="text-sm font-medium" style={{ color: T.text }}>
-                  Create new separate account
-                </div>
-                <div className="text-xs mt-0.5" style={{ color: T.sub }}>
-                  {addUserForceNew
-                    ? "A brand-new profile will be created even if this email already has an account"
-                    : "If this email already has an account, the existing profile will be updated instead"}
-                </div>
-              </div>
-              <div className={`ml-3 w-9 h-5 rounded-full flex items-center transition-colors shrink-0 ${addUserForceNew ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600"}`}>
-                <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform mx-0.5 ${addUserForceNew ? "translate-x-4" : "translate-x-0"}`} />
-              </div>
             </div>
           </div>
           <DialogFooter className="gap-2">
