@@ -860,14 +860,13 @@ const handlePermanentDelete = async (user: FullProfile) => {
     if (!notesDialogUser) return;
     setNotesProcessing(true);
     try {
-      const token = await getToken();
-      const res = await callEdgeFunction("admin-user-management", {
-        body: { action: "save_admin_notes", profile_id: notesDialogUser.id, notes: notesText },
-        token,
-      });
-      const data = await readResponseJson(res);
-      if (!res.ok || data?.error) { toast.error(data?.error || "Failed to save notes"); }
-      else {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ approval_notes: notesText || null })
+        .eq("id", notesDialogUser.id);
+      if (error) {
+        toast.error(error.message || "Failed to save notes");
+      } else {
         toast.success("Notes saved");
         setProfiles((prev) => prev.map((p) => p.id === notesDialogUser.id ? { ...p, approval_notes: notesText } : p));
         setNotesDialogUser(null);
