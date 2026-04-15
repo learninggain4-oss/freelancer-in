@@ -455,6 +455,13 @@ Deno.serve(async (req) => {
           });
         }
 
+        // Build redirect URL from request origin so the link lands on /reset-password
+        const reqOrigin = req.headers.get("origin") || req.headers.get("referer") || "";
+        let redirectTo: string | undefined;
+        try {
+          if (reqOrigin) redirectTo = `${new URL(reqOrigin).origin}/reset-password`;
+        } catch { /* ignore bad origin */ }
+
         const resetRes = await fetch(`${supabaseUrl}/auth/v1/recover`, {
           method: "POST",
           headers: {
@@ -462,7 +469,7 @@ Deno.serve(async (req) => {
             "Authorization": `Bearer ${serviceRoleKey}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email, ...(redirectTo ? { redirect_to: redirectTo } : {}) }),
         });
 
         if (!resetRes.ok) {
