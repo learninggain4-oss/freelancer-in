@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, CheckCircle, Check, X, Lock, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Loader2, CheckCircle, Check, X, Lock, Eye, EyeOff, ShieldCheck, Mail, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import AuthPageShell, { A1, A2 } from "@/components/layout/AuthPageShell";
@@ -26,9 +26,59 @@ const ResetPassword = () => {
   const [success, setSuccess] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [email, setEmail] = useState("");
+  const [sessionReady, setSessionReady] = useState(false);
+  const [sessionError, setSessionError] = useState("");
+  const [initializing, setInitializing] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
   const strength = useMemo(() => getPasswordStrength(password), [password]);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        // Handle PKCE flow: ?code=... in query params
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get("code");
+        if (code) {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            setSessionError("Reset link is invalid or has expired. Please request a new one.");
+            setInitializing(false);
+            return;
+          }
+          if (data.session?.user?.email) {
+            setEmail(data.session.user.email);
+            setSessionReady(true);
+            setInitializing(false);
+            return;
+          }
+        }
+
+        // Handle implicit flow: #access_token=...&type=recovery in hash
+        const hash = window.location.hash;
+        if (hash.includes("type=recovery") || hash.includes("access_token")) {
+          // Supabase client auto-parses hash tokens — just wait for the session
+          await new Promise(r => setTimeout(r, 800));
+        }
+
+        // Check if a recovery session is already active
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.email) {
+          setEmail(session.user.email);
+          setSessionReady(true);
+        } else {
+          setSessionError("Reset link is invalid or has expired. Please request a new one.");
+        }
+      } catch {
+        setSessionError("Something went wrong. Please request a new reset link.");
+      } finally {
+        setInitializing(false);
+      }
+    };
+
+    init();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +123,31 @@ const ResetPassword = () => {
 
         {/* Glass card */}
         <div className="auth-glass-card" style={{ borderRadius: 24, padding: 32 }}>
-          {success ? (
+
+          {/* Initializing */}
+          {initializing && (
+            <div style={{ textAlign: "center", padding: "32px 0" }}>
+              <Loader2 size={36} color={A1} style={{ animation: "spin 1s linear infinite", margin: "0 auto 16px" }} />
+              <p style={{ color: "rgba(255,255,255,.5)", fontSize: 14 }}>Verifying reset link…</p>
+            </div>
+          )}
+
+          {/* Invalid / expired token */}
+          {!initializing && sessionError && (
+            <div style={{ textAlign: "center" }}>
+              <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(239,68,68,.15)", border: "2px solid rgba(239,68,68,.4)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+                <AlertCircle size={32} color="#ef4444" />
+              </div>
+              <h2 style={{ color: "white", fontWeight: 700, fontSize: 20, marginBottom: 10 }}>Link Expired</h2>
+              <p style={{ color: "rgba(255,255,255,.5)", fontSize: 13, marginBottom: 28 }}>{sessionError}</p>
+              <button onClick={() => navigate("/forgot-password")} className="auth-btn-primary">
+                Request New Reset Link
+              </button>
+            </div>
+          )}
+
+          {/* Success */}
+          {!initializing && !sessionError && success && (
             <div style={{ textAlign: "center" }}>
               <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(34,197,94,.15)", border: "2px solid rgba(34,197,94,.4)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", boxShadow: "0 0 32px rgba(34,197,94,.2)" }}>
                 <CheckCircle size={36} color="#22c55e" />
@@ -86,8 +160,29 @@ const ResetPassword = () => {
                 Go to Login
               </button>
             </div>
-          ) : (
+          )}
+
+          {/* Password form */}
+          {!initializing && !sessionError && !success && sessionReady && (
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+              {/* Email (read-only) */}
+              {email && (
+                <div>
+                  <label className="auth-label">Email</label>
+                  <div style={{ position: "relative" }}>
+                    <Mail size={15} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,.3)" }} />
+                    <input
+                      type="email"
+                      className="auth-input"
+                      value={email}
+                      readOnly
+                      style={{ width: "100%", paddingLeft: 40, boxSizing: "border-box", opacity: 0.7, cursor: "default" }}
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* New Password */}
               <div>
                 <label className="auth-label">New Password</label>
