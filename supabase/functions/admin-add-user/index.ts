@@ -13,11 +13,30 @@ function ok(body: object) {
   });
 }
 
-function err(status: number, message: string) {
+function errResp(status: number, message: string) {
   return new Response(JSON.stringify({ error: message }), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+function getUserIdFromJwt(authHeader: string): string | null {
+  try {
+    const token = authHeader.replace("Bearer ", "");
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return payload.sub || null;
+  } catch {
+    return null;
+  }
+}
+
+function isSuperAdminEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  const envEmails = (Deno.env.get("SUPER_ADMIN_EMAILS") || "")
+    .split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+  return envEmails.includes(email.toLowerCase());
 }
 
 Deno.serve(async (req) => {
@@ -27,33 +46,65 @@ Deno.serve(async (req) => {
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
   const authHeader = req.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) return err(401, "Unauthorized");
+  if (!authHeader?.startsWith("Bearer ")) return errResp(401, "Unauthorized");
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
   const token = authHeader.replace("Bearer ", "");
-  const { data: { user: callerUser }, error: userError } = await adminClient.auth.getUser(token);
-  if (userError || !callerUser) return err(401, "Unauthorized");
 
-  const { data: roleRows } = await adminClient
+  // Validate token — with JWT fallback like admin-user-management
+  let callerUserId: string;
+  let callerEmail: string | null = null;
+
+  const { data: { user: callerUser }, error: userError } = await adminClient.auth.getUser(token);
+  if (userError || !callerUser) {
+    console.error("Token validation failed:", userError?.message, "— falling back to JWT decode");
+    const fallbackId = getUserIdFromJwt(authHeader);
+    if (!fallbackId) return errResp(401, "Unauthorized");
+    callerUserId = fallbackId;
+  } else {
+    callerUserId = callerUser.id;
+    callerEmail = callerUser.email ?? null;
+  }
+
+  // Check user_roles table
+  const { data: roleRows, error: roleError } = await adminClient
     .from("user_roles")
     .select("role")
-    .eq("user_id", callerUser.id)
+    .eq("user_id", callerUserId)
     .in("role", ["admin", "super_admin"]);
 
-  if (!roleRows || roleRows.length === 0) return err(403, "Forbidden: admin or super_admin role required");
+  if (roleError) {
+    console.error("Role check error:", roleError.message);
+  }
+
+  const hasRoleInTable = roleRows && roleRows.length > 0;
+  const hasSuperAdminEmail = isSuperAdminEmail(callerEmail);
+
+  if (!hasRoleInTable && !hasSuperAdminEmail) {
+    console.error(`Forbidden: user ${callerUserId} (${callerEmail}) has no admin role. roleRows=${JSON.stringify(roleRows)}`);
+    return errResp(403, "Forbidden: admin or super_admin role required");
+  }
+
+  // Parse body
+  let body: Record<string, any>;
+  try {
+    body = await req.json();
+  } catch {
+    return errResp(400, "Invalid JSON body");
+  }
 
   const {
     email, full_name, password, user_type, mobile_number,
     whatsapp_number, gender, date_of_birth, approval_status,
     approval_notes, force_new,
-  } = await req.json();
+  } = body;
 
-  if (!email?.trim()) return err(400, "Email is required");
-  if (!full_name?.trim()) return err(400, "Full name is required");
-  if (!password || password.length < 6) return err(400, "Password must be at least 6 characters");
+  if (!email?.trim()) return errResp(400, "Email is required");
+  if (!full_name?.trim()) return errResp(400, "Full name is required");
+  if (!password || password.length < 6) return errResp(400, "Password must be at least 6 characters");
 
   const emailLower = email.trim().toLowerCase();
   const nameUpper  = full_name.trim().toUpperCase();
@@ -84,7 +135,7 @@ Deno.serve(async (req) => {
         .from("profiles")
         .update({ ...profileFields, updated_at: new Date().toISOString() })
         .eq("id", existingProf.id);
-      if (updErr) return err(500, updErr.message);
+      if (updErr) return errResp(500, updErr.message);
       return ok({ success: true, action: "updated", profile_id: existingProf.id, email: emailLower, full_name: nameUpper });
     }
   }
@@ -103,12 +154,11 @@ Deno.serve(async (req) => {
       authErr.message?.toLowerCase().includes("already") ||
       authErr.message?.toLowerCase().includes("registered") ||
       authErr.message?.toLowerCase().includes("exists");
-    if (!alreadyExists) return err(400, authErr.message);
+    if (!alreadyExists) return errResp(400, authErr.message);
 
-    // Auth user already exists — find it
     const { data: { users: allUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
     const existingAuth = allUsers.find((u) => u.email?.toLowerCase() === emailLower);
-    if (!existingAuth) return err(400, "Auth user not found");
+    if (!existingAuth) return errResp(400, "Auth user not found");
     userId = existingAuth.id;
   } else {
     userId = authData.user.id;
@@ -121,7 +171,7 @@ Deno.serve(async (req) => {
       id: newProfileId, user_id: userId, email: emailLower,
       user_code: [], ...profileFields,
     });
-    if (profErr) return err(500, profErr.message);
+    if (profErr) return errResp(500, profErr.message);
     return ok({ success: true, action: "created", user_id: userId, profile_id: newProfileId, email: emailLower, full_name: nameUpper });
   }
 
@@ -137,7 +187,7 @@ Deno.serve(async (req) => {
       .from("profiles")
       .update({ ...profileFields, updated_at: new Date().toISOString() })
       .eq("id", authProf.id);
-    if (updErr) return err(500, updErr.message);
+    if (updErr) return errResp(500, updErr.message);
     return ok({ success: true, action: "updated", user_id: userId, email: emailLower, full_name: nameUpper });
   }
 
@@ -145,6 +195,6 @@ Deno.serve(async (req) => {
     id: userId, user_id: userId, email: emailLower,
     user_code: [], ...profileFields,
   });
-  if (profErr) return err(500, profErr.message);
+  if (profErr) return errResp(500, profErr.message);
   return ok({ success: true, action: "created", user_id: userId, email: emailLower, full_name: nameUpper });
 });
