@@ -21,13 +21,8 @@ export async function callEdgeFunction(
   },
 ): Promise<Response> {
   const method = options?.method ?? (options?.body ? "POST" : "GET");
-
-  // In dev (Replit): use relative path so Vite proxy forwards to local Express server.
-  // In prod (Lovable): call Supabase Edge Functions directly.
-  const isDev = import.meta.env.DEV;
-  const url = isDev
-    ? `/functions/v1/${functionName}`
-    : `${SUPABASE_URL}/functions/v1/${functionName}`;
+  const baseUrl = import.meta.env.DEV ? "" : SUPABASE_URL;
+  const url = `${baseUrl}/functions/v1/${functionName}`;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
