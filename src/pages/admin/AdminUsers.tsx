@@ -844,7 +844,56 @@ const handlePermanentDelete = async (user: FullProfile) => {
       setAddUserForm({ email: "", full_name: "", password: "", user_type: "employee",
         mobile_number: "", whatsapp_number: "", gender: "", date_of_birth: "",
         approval_status: "approved", approval_notes: "" });
-      fetchProfiles();
+      setSearchQuery("");
+      setTypeFilter("all");
+      setKycFilter("all");
+      setWalletMin("");
+      setWalletMax("");
+      setCityFilter("");
+      setDateFrom("");
+      setDateTo("");
+      setShowAdvancedFilters(false);
+      setSelectedIds(new Set());
+      setActiveTab("all");
+      setCurrentPage(1);
+
+      const createdProfile = (data as any)?.profile;
+      if (createdProfile) {
+        setProfiles((prev) => [createdProfile as FullProfile, ...prev.filter((p) => p.id !== createdProfile.id)]);
+      }
+
+      await fetchProfiles();
+      const createdProfileId = (data as any)?.profile_id;
+      const createdUserId = (data as any)?.user_id;
+      const createdEmail = email.trim().toLowerCase();
+      let fallbackProfile = null;
+      if (!createdProfile && createdProfileId) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
+          .eq("id", createdProfileId)
+          .maybeSingle();
+        fallbackProfile = data;
+      }
+      if (!createdProfile && !fallbackProfile && createdUserId) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
+          .eq("user_id", createdUserId)
+          .maybeSingle();
+        fallbackProfile = data;
+      }
+      if (!createdProfile && !fallbackProfile) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
+          .eq("email", createdEmail)
+          .maybeSingle();
+        fallbackProfile = data;
+      }
+      if (!createdProfile && fallbackProfile) {
+        setProfiles((prev) => [fallbackProfile as FullProfile, ...prev.filter((p) => p.id !== fallbackProfile.id)]);
+      }
     } catch (err: any) { toast.error(err.message); }
     finally { setAddUserProcessing(false); }
   };

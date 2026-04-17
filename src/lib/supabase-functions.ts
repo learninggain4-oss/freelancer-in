@@ -21,7 +21,8 @@ export async function callEdgeFunction(
   },
 ): Promise<Response> {
   const method = options?.method ?? (options?.body ? "POST" : "GET");
-  const baseUrl = import.meta.env.DEV ? "" : SUPABASE_URL;
+  const isDev = import.meta.env.DEV;
+  const baseUrl = isDev ? "" : SUPABASE_URL;
   const url = `${baseUrl}/functions/v1/${functionName}`;
 
   const headers: Record<string, string> = {

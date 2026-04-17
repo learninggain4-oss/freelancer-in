@@ -2359,13 +2359,22 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
 
     // ── force_new=false (default): check existing profile → UPDATE ────────────
     if (!force_new) {
-      const { data: existingProf } = await adminClient.from("profiles").select("id").eq("email", emailLower).maybeSingle();
+      const { data: existingProf } = await adminClient.from("profiles")
+        .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
+        .eq("email", emailLower)
+        .maybeSingle();
       if (existingProf) {
         const { error: updErr } = await adminClient.from("profiles")
           .update({ ...profileFields, updated_at: new Date().toISOString() })
           .eq("id", existingProf.id);
         if (updErr) return res.status(500).json({ error: updErr.message });
-        return res.json({ success: true, action: "updated", profile_id: existingProf.id, user_id: existingProf.user_id || null, email: emailLower, full_name: nameUpper });
+
+        const { data: updatedProfile } = await adminClient.from("profiles")
+          .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
+          .eq("id", existingProf.id)
+          .maybeSingle();
+
+        return res.json({ success: true, action: "updated", profile_id: existingProf.id, user_id: existingProf.user_id || null, email: emailLower, full_name: nameUpper, profile: updatedProfile });
       }
     }
 
@@ -2398,17 +2407,29 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
         user_code: [], created_at: new Date().toISOString(), ...profileFields,
       });
       if (profErr) return res.status(500).json({ error: profErr.message });
-      return res.json({ success: true, action: "created", user_id: userId, profile_id: newProfileId, email: emailLower, full_name: nameUpper });
+
+      const { data: createdProfile } = await adminClient.from("profiles")
+        .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
+        .eq("id", newProfileId)
+        .maybeSingle();
+
+      return res.json({ success: true, action: "created", user_id: userId, profile_id: newProfileId, email: emailLower, full_name: nameUpper, profile: createdProfile });
     }
 
     // ── Normal: check if profile exists for auth user → UPDATE or INSERT ──────
-    const { data: authProf } = await adminClient.from("profiles").select("id").eq("user_id", userId).maybeSingle();
+    const { data: authProf } = await adminClient.from("profiles").select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region").eq("user_id", userId).maybeSingle();
     if (authProf) {
       const { error: updErr } = await adminClient.from("profiles")
         .update({ ...profileFields, updated_at: new Date().toISOString() })
         .eq("id", authProf.id);
       if (updErr) return res.status(500).json({ error: updErr.message });
-      return res.json({ success: true, action: "updated", profile_id: authProf.id, user_id: userId, email: emailLower, full_name: nameUpper });
+
+      const { data: updatedProfile } = await adminClient.from("profiles")
+        .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
+        .eq("id", authProf.id)
+        .maybeSingle();
+
+      return res.json({ success: true, action: "updated", profile_id: authProf.id, user_id: userId, email: emailLower, full_name: nameUpper, profile: updatedProfile });
     }
 
     const { error: profErr } = await adminClient.from("profiles").insert({
@@ -2416,7 +2437,13 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
       user_code: [], created_at: new Date().toISOString(), ...profileFields,
     });
     if (profErr) return res.status(500).json({ error: profErr.message });
-    res.json({ success: true, action: "created", profile_id: userId, user_id: userId, email: emailLower, full_name: nameUpper });
+
+    const { data: createdProfile } = await adminClient.from("profiles")
+      .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
+      .eq("id", userId)
+      .maybeSingle();
+
+    res.json({ success: true, action: "created", profile_id: userId, user_id: userId, email: emailLower, full_name: nameUpper, profile: createdProfile });
   } catch (err) {
     console.error("admin-add-user error:", err);
     res.status(500).json({ error: err.message });
