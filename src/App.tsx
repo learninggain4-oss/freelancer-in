@@ -49,7 +49,7 @@ const AdminAdmins = lazy(() => import("./pages/admin/AdminAdmins"));
 const AdminInvite = lazy(() => import("./pages/admin/AdminInvite"));
 const AdminFreelancer = lazy(() => import("./pages/admin/AdminFreelancer"));
 const AdminEmployers = lazy(() => import("./pages/admin/AdminEmployers"));
-const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
+const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));   
 const AdminVerifications = lazy(() => import("./pages/admin/AdminVerifications"));
 const AdminBankVerifications = lazy(() => import("./pages/admin/AdminBankVerifications"));
 const AdminProfileEdit = lazy(() => import("./pages/admin/AdminProfileEdit"));
