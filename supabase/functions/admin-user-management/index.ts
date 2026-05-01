@@ -88,7 +88,33 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { action, user_id, profile_id, email, user_type } = await req.json();
+    const body = await req.json();
+    const {
+      action, user_id, profile_id, email, user_type,
+      title, message, notes, subject,
+      target_user_id, target_profile_id, target_profile_name, target_user_ids,
+      warning_level, reason, audit_action, details,
+    } = body;
+
+    // Resolve admin profile id (for audit logging)
+    let adminProfileId: string | null = null;
+    try {
+      const { data: ap } = await adminClient
+        .from("profiles").select("id").eq("user_id", callerUserId).maybeSingle();
+      adminProfileId = ap?.id ?? null;
+    } catch { /* ignore */ }
+
+    const logAudit = async (act: string, tProfileId: string | null, tProfileName: string | null, dets: any) => {
+      try {
+        await adminClient.from("admin_audit_logs").insert({
+          admin_id: adminProfileId,
+          action: act,
+          target_profile_id: tProfileId,
+          target_profile_name: tProfileName,
+          details: dets ?? null,
+        });
+      } catch (e) { console.error("audit log failed:", e); }
+    };
 
     switch (action) {
       case "permanent_delete": {
