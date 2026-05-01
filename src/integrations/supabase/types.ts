@@ -826,6 +826,65 @@ export type Database = {
           },
         ]
       }
+      employer_profiles: {
+        Row: {
+          business_description: string | null
+          business_type: string | null
+          city: string | null
+          company_name: string | null
+          created_at: string
+          gst_number: string | null
+          id: string
+          industry_sector: string | null
+          preferred_categories: string[] | null
+          profile_id: string
+          state: string | null
+          typical_budget_max: number | null
+          typical_budget_min: number | null
+          updated_at: string
+        }
+        Insert: {
+          business_description?: string | null
+          business_type?: string | null
+          city?: string | null
+          company_name?: string | null
+          created_at?: string
+          gst_number?: string | null
+          id?: string
+          industry_sector?: string | null
+          preferred_categories?: string[] | null
+          profile_id: string
+          state?: string | null
+          typical_budget_max?: number | null
+          typical_budget_min?: number | null
+          updated_at?: string
+        }
+        Update: {
+          business_description?: string | null
+          business_type?: string | null
+          city?: string | null
+          company_name?: string | null
+          created_at?: string
+          gst_number?: string | null
+          id?: string
+          industry_sector?: string | null
+          preferred_categories?: string[] | null
+          profile_id?: string
+          state?: string | null
+          typical_budget_max?: number | null
+          typical_budget_min?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employer_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       faqs: {
         Row: {
           answer: string
