@@ -278,18 +278,20 @@ const AdminWalletTransfer = () => {
       />
 
       <Dialog open={showStatusPopup} onOpenChange={(open) => !transferMutation.isPending && setShowStatusPopup(open)}>
-        <DialogContent className="sm:max-w-sm border border-slate-200/10 bg-slate-950 p-0 overflow-hidden rounded-2xl">
-          <div className="px-6 py-7 text-center text-white">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-900 ring-1 ring-slate-700">
+        <DialogContent className="sm:max-w-sm border border-slate-200/10 bg-slate-950 p-0 overflow-hidden rounded-2xl animate-in fade-in zoom-in-95 duration-300">
+          <div className="relative px-6 py-7 text-center text-white">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_-10%,rgba(139,92,246,0.2),transparent_40%)]" />
+            <div className="relative mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-900 ring-1 ring-slate-700">
+              <div className="absolute -inset-2 rounded-full border border-violet-400/30 animate-[spin_4s_linear_infinite]" />
               {paymentStage === "processing" && <Loader2 className="h-9 w-9 animate-spin text-violet-300" />}
               {paymentStage === "success" && <CheckCircle2 className="h-9 w-9 text-emerald-400" />}
               {paymentStage === "failed" && <XCircle className="h-9 w-9 text-rose-400" />}
             </div>
 
-            <h3 className="text-lg font-semibold tracking-tight">
+            <h3 className="relative text-lg font-semibold tracking-tight transition-all duration-300">
               {paymentStage === "processing" ? "Transfer Processing" : paymentStage === "success" ? "Transfer Successful" : "Transfer Failed"}
             </h3>
-            <p className="mt-2 text-sm text-slate-300">{statusMessage}</p>
+            <p className="relative mt-2 text-sm text-slate-300 transition-all duration-300">{statusMessage}</p>
 
             {paymentStage === "processing" && (
               <div className="mx-auto mt-4 h-1.5 w-48 overflow-hidden rounded-full bg-slate-800">
