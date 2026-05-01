@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, SendHorizontal, Search } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, Search, SendHorizontal, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import TotpVerifyDialog from "@/components/admin/TotpVerifyDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
@@ -30,6 +31,9 @@ const AdminWalletTransfer = () => {
   const [transferDescription, setTransferDescription] = useState("");
   const [selectedRecipient, setSelectedRecipient] = useState<{ id: string; full_name: string[]; user_code: string[]; user_type: string; wallet_number: string } | null>(null);
   const [showTotp, setShowTotp] = useState(false);
+  const [showStatusPopup, setShowStatusPopup] = useState(false);
+  const [paymentStage, setPaymentStage] = useState<"processing" | "success" | "failed">("processing");
+  const [statusMessage, setStatusMessage] = useState("Processing transfer...");
 
   const { data: totpStatus } = useQuery({
     queryKey: ["admin-totp-status"],
@@ -59,6 +63,11 @@ const AdminWalletTransfer = () => {
   });
 
   const transferMutation = useMutation({
+    onMutate: () => {
+      setPaymentStage("processing");
+      setStatusMessage("Processing transfer...");
+      setShowStatusPopup(true);
+    },
     mutationFn: async () => {
       const amt = Number(transferAmount);
       if (!amt || amt <= 0) throw new Error("Enter a valid amount");
@@ -79,16 +88,25 @@ const AdminWalletTransfer = () => {
       return amt;
     },
     onSuccess: (amt) => {
-      toast.success(`₹${amt.toLocaleString("en-IN")} transferred to ${selectedRecipient?.full_name?.[0]}`);
+      setPaymentStage("success");
+      setStatusMessage(`INR ${amt.toLocaleString("en-IN")} transferred successfully`);
+      toast.success(`INR ${amt.toLocaleString("en-IN")} transferred to ${selectedRecipient?.full_name?.[0]}`);
       setTransferAmount("");
       setTransferSearch("");
       setSelectedRecipient(null);
       setTransferDescription("");
       refreshProfile();
       queryClient.invalidateQueries({ queryKey: ["admin-wallet-transactions"] });
-      navigate("/admin/wallet");
+      setTimeout(() => {
+        setShowStatusPopup(false);
+        navigate("/admin/wallet");
+      }, 1300);
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      setPaymentStage("failed");
+      setStatusMessage(e.message || "Transfer failed. Please try again.");
+      toast.error(e.message);
+    },
   });
 
   const handleTransfer = () => {
@@ -151,7 +169,7 @@ const AdminWalletTransfer = () => {
                     >
                       <div className="text-left">
                         <p className="font-bold" style={{ color: T.text }}>{u.full_name?.[0]}</p>
-                        <p className="text-xs" style={{ color: T.sub }}>{u.user_type === "employee" ? "Freelancer" : u.user_type === "client" ? "Employer" : u.user_type || "—"}</p>
+                        <p className="text-xs" style={{ color: T.sub }}>{u.user_type === "employee" ? "Freelancer" : u.user_type === "client" ? "Employer" : u.user_type || "-"}</p>
                       </div>
                       <Badge variant="outline" className="border-indigo-500/30 text-indigo-400">{u.wallet_number}</Badge>
                     </button>
@@ -177,7 +195,7 @@ const AdminWalletTransfer = () => {
               )}
             </div>
             <div className="space-y-2">
-              <Label style={{ color: T.sub }}>Amount (₹)</Label>
+              <Label style={{ color: T.sub }}>Amount (INR)</Label>
               <Input
                 type="number"
                 placeholder="0.00"
@@ -224,6 +242,34 @@ const AdminWalletTransfer = () => {
         title="Authorize Transfer"
         description="Please enter your 2FA code to complete the fund transfer."
       />
+
+      <Dialog open={showStatusPopup} onOpenChange={(open) => !transferMutation.isPending && setShowStatusPopup(open)}>
+        <DialogContent className="sm:max-w-sm border-0 p-0 overflow-hidden">
+          <div className="relative bg-gradient-to-b from-slate-950 to-slate-900 px-6 py-8 text-center text-white">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white/10">
+              {paymentStage === "processing" && <Loader2 className="h-10 w-10 animate-spin text-violet-300" />}
+              {paymentStage === "success" && <CheckCircle2 className="h-10 w-10 text-emerald-400" />}
+              {paymentStage === "failed" && <XCircle className="h-10 w-10 text-red-400" />}
+            </div>
+            <h3 className="text-lg font-semibold">
+              {paymentStage === "processing" ? "Transfer Processing" : paymentStage === "success" ? "Transfer Successful" : "Transfer Failed"}
+            </h3>
+            <p className="mt-2 text-sm text-slate-300">{statusMessage}</p>
+            {paymentStage === "processing" && (
+              <div className="mt-5 flex items-center justify-center gap-1.5">
+                <span className="h-2 w-2 animate-bounce rounded-full bg-violet-300 [animation-delay:-0.2s]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-violet-300 [animation-delay:-0.1s]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-violet-300" />
+              </div>
+            )}
+            {paymentStage === "failed" && (
+              <Button className="mt-5 w-full bg-violet-600 hover:bg-violet-700" onClick={() => setShowStatusPopup(false)}>
+                Close
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
