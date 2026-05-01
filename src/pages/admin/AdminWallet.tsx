@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,9 +31,14 @@ const AdminWallet = () => {
   const [transferSearch, setTransferSearch] = useState("");
   const [selectedRecipient, setSelectedRecipient] = useState<{ id: string; full_name: string[]; user_code: string[]; user_type: string; wallet_number: string } | null>(null);
   const [transferDescription, setTransferDescription] = useState("");
+  const [walletNumber, setWalletNumber] = useState("");
   const [showTotpForTransfer, setShowTotpForTransfer] = useState(false);
   const [showTotpForAddMoney, setShowTotpForAddMoney] = useState(false);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setWalletNumber(profile?.wallet_number || "");
+  }, [profile?.wallet_number]);
 
   const { data: totpStatus } = useQuery({
     queryKey: ["admin-totp-status"],
@@ -133,6 +138,28 @@ const AdminWallet = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const updateWalletNumberMutation = useMutation({
+    mutationFn: async () => {
+      const normalized = walletNumber.trim();
+      if (!normalized) throw new Error("Wallet number is required");
+      if (!profile?.id) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ wallet_number: normalized })
+        .eq("id", profile.id);
+
+      if (error) throw new Error(error.message);
+      return normalized;
+    },
+    onSuccess: (updatedWalletNumber) => {
+      toast.success(`Wallet number updated to ${updatedWalletNumber}`);
+      refreshProfile();
+      queryClient.invalidateQueries({ queryKey: ["admin-transfer-search"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   if (!profile) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -193,6 +220,35 @@ const AdminWallet = () => {
               {addMoneyMutation.isPending ? "Processing..." : "Add to Wallet"}
             </Button>
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-3xl border p-6 transition-all hover:shadow-xl" style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }}>
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
+            <Wallet className="h-5 w-5" />
+          </div>
+          <h3 className="text-lg font-bold" style={{ color: T.text }}>Edit Wallet Number</h3>
+        </div>
+        <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+          <div className="space-y-2">
+            <Label style={{ color: T.sub }}>Wallet Number</Label>
+            <Input
+              placeholder="Enter wallet number"
+              value={walletNumber}
+              onChange={(e) => setWalletNumber(e.target.value)}
+              className="h-11"
+              style={{ background: T.input, borderColor: T.border, color: T.text }}
+            />
+          </div>
+          <Button
+            className="h-11 rounded-xl bg-blue-600 hover:bg-blue-700 font-semibold"
+            onClick={() => updateWalletNumberMutation.mutate()}
+            disabled={updateWalletNumberMutation.isPending || walletNumber.trim() === (profile.wallet_number || "")}
+          >
+            {updateWalletNumberMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {updateWalletNumberMutation.isPending ? "Saving..." : "Update Wallet Number"}
+          </Button>
         </div>
       </div>
 
