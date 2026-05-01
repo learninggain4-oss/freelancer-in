@@ -1528,8 +1528,9 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
         } else if (action === "admin_wallet_transfer") {
           if (!target_profile_id || !transfer_to_profile_id || !amount || amount <= 0) throw new Error("Missing required fields");
           const { data: from } = await supabase.from("profiles").select("id, available_balance").eq("id", target_profile_id).single();
-          const { data: to } = await supabase.from("profiles").select("id, available_balance").eq("id", transfer_to_profile_id).single();
+          const { data: to } = await supabase.from("profiles").select("id, available_balance, wallet_active").eq("id", transfer_to_profile_id).single();
           if (!from || !to) throw new Error("Profile not found");
+          if (!to.wallet_active) throw new Error("Receiver wallet is inactive");
           if (Number(from.available_balance) < amount) throw new Error("Insufficient balance");
           await supabase.from("profiles").update({ available_balance: Number(from.available_balance) - amount }).eq("id", from.id);
           await supabase.from("profiles").update({ available_balance: Number(to.available_balance) + amount }).eq("id", to.id);

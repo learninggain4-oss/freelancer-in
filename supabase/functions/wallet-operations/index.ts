@@ -1012,8 +1012,9 @@ Deno.serve(async (req) => {
         if (!target_profile_id || !transfer_to_profile_id || !amount || amount <= 0) throw new Error("Missing parameters");
 
         const { data: from } = await supabase.from("profiles").select("id, available_balance, user_id, full_name").eq("id", target_profile_id).single();
-        const { data: to } = await supabase.from("profiles").select("id, available_balance, user_id, full_name").eq("id", transfer_to_profile_id).single();
+        const { data: to } = await supabase.from("profiles").select("id, available_balance, user_id, full_name, wallet_active").eq("id", transfer_to_profile_id).single();
         if (!from || !to) throw new Error("Profile not found");
+        if (!to.wallet_active) throw new Error("Receiver wallet is inactive");
 
         await supabase.from("profiles").update({ available_balance: Number(from.available_balance) - amount }).eq("id", from.id);
         await supabase.from("profiles").update({ available_balance: Number(to.available_balance) + amount }).eq("id", to.id);
