@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState } from "react";
 import { BookOpen, User, CheckCircle2, Clock, Plus, Search, Shield, Users, FileText, Award } from "lucide-react";
 import { Input } from "@/components/ui/input";

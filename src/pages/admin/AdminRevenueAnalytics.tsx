@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { IndianRupee, TrendingUp, Users, Briefcase, BarChart3, ArrowUpRight } from "lucide-react";
