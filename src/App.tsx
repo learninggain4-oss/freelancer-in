@@ -567,8 +567,8 @@ const AppContent = () => {
               <Route path="users" element={<AdminUsers />} />
               <Route path="admins" element={<AdminAdmins />} />
               <Route path="invite" element={<AdminInvite />} />
-              <Route path="freelancers" element={<AdminEmployees />} />
-              <Route path="employers" element={<AdminClients />} />
+              <Route path="freelancers" element={<AdminEmployers />} />
+              <Route path="employers" element={<AdminB2BClients />} />
               <Route path="withdrawals" element={<AdminWithdrawals />} />
               <Route path="verifications" element={<AdminVerifications />} />
               <Route path="bank-verifications" element={<AdminBankVerifications />} />
