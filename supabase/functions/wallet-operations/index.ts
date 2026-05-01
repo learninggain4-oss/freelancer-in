@@ -91,6 +91,22 @@ function generateWithdrawalOrderId(length: number): string {
   return `${datePrefix}${randomDigits}`;
 }
 
+// Generate unique 13-digit transaction ID: TXNYYMMDDXXXXX
+function generateTransactionId(): string {
+  const now = new Date();
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  
+  // Generate 7 random digits for uniqueness
+  let randomDigits = "";
+  for (let i = 0; i < 7; i++) {
+    randomDigits += Math.floor(Math.random() * 10).toString();
+  }
+  
+  return `TXN${yy}${mm}${dd}${randomDigits}`;
+}
+
 function isDuplicateOrderIdError(error: unknown): boolean {
   const message = formatErrorMessage(error, "").toLowerCase();
   return (
@@ -935,7 +951,7 @@ Deno.serve(async (req) => {
 
       // ─── Admin Wallet Management Actions ───
 
-      case "admin_wallet_add": {
+case "admin_wallet_add": {
         const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
         if (!roleCheck) throw new Error("Admin access required");
         if (!target_profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
@@ -943,16 +959,26 @@ Deno.serve(async (req) => {
         const { data: tp, error: tpErr } = await supabase.from("profiles").select("id, available_balance, user_id, full_name").eq("id", target_profile_id).single();
         if (tpErr || !tp) throw new Error("Target profile not found");
 
+        // Generate 13-digit transaction ID
+        const txnId = generateTransactionId();
         const newBal = Number(tp.available_balance) + amount;
         await supabase.from("profiles").update({ available_balance: newBal }).eq("id", tp.id);
-        await supabase.from("transactions").insert({ profile_id: tp.id, type: "credit", amount, description: description || "Admin: added to wallet" });
-        await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Wallet Credited", message: `₹${amount.toLocaleString("en-IN")} has been added to your wallet by admin.`, type: "financial" });
+        await supabase.from("transactions").insert({ 
+          profile_id: tp.id, 
+          type: "credit", 
+          amount, 
+          transaction_id: txnId,
+          status: "success",
+          description: description || "Admin: added to wallet" 
+        });
+        await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Wallet Credited", message: `₹${amount.toLocaleString("en-IN")} has been added to your wallet by admin. Transaction ID: ${txnId}`, type: "financial" });
         
         result.new_balance = newBal;
+        result.transaction_id = txnId;
         break;
       }
 
-      case "admin_wallet_deduct": {
+case "admin_wallet_deduct": {
         const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
         if (!roleCheck) throw new Error("Admin access required");
         if (!target_profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
@@ -960,12 +986,22 @@ Deno.serve(async (req) => {
         const { data: tp } = await supabase.from("profiles").select("id, available_balance, user_id, full_name").eq("id", target_profile_id).single();
         if (!tp) throw new Error("Target profile not found");
 
+        // Generate 13-digit transaction ID
+        const txnId = generateTransactionId();
         const newBal = Number(tp.available_balance) - amount;
         await supabase.from("profiles").update({ available_balance: newBal }).eq("id", tp.id);
-        await supabase.from("transactions").insert({ profile_id: tp.id, type: "debit", amount, description: description || "Admin: deducted from wallet" });
-        await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Wallet Deducted", message: `₹${amount.toLocaleString("en-IN")} has been deducted from your wallet by admin.`, type: "financial" });
+        await supabase.from("transactions").insert({ 
+          profile_id: tp.id, 
+          type: "debit", 
+          amount, 
+          transaction_id: txnId,
+          status: "success",
+          description: description || "Admin: deducted from wallet" 
+        });
+        await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Wallet Deducted", message: `₹${amount.toLocaleString("en-IN")} has been deducted from your wallet by admin. Transaction ID: ${txnId}`, type: "financial" });
         
         result.new_balance = newBal;
+        result.transaction_id = txnId;
         break;
       }
 
@@ -1006,7 +1042,7 @@ Deno.serve(async (req) => {
         break;
       }
 
-      case "admin_wallet_transfer": {
+case "admin_wallet_transfer": {
         const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
         if (!roleCheck) throw new Error("Admin access required");
         if (!target_profile_id || !transfer_to_profile_id || !amount || amount <= 0) throw new Error("Missing parameters");
@@ -1016,17 +1052,23 @@ Deno.serve(async (req) => {
         if (!from || !to) throw new Error("Profile not found");
         if (!to.wallet_active) throw new Error("Receiver wallet is inactive");
 
+        // Generate 13-digit transaction IDs for both transactions
+        const txnIdDebit = generateTransactionId();
+        const txnIdCredit = generateTransactionId();
+        
         await supabase.from("profiles").update({ available_balance: Number(from.available_balance) - amount }).eq("id", from.id);
         await supabase.from("profiles").update({ available_balance: Number(to.available_balance) + amount }).eq("id", to.id);
         await supabase.from("transactions").insert([
-          { profile_id: from.id, type: "debit" as const, amount, description: description || `Admin transfer to ${(to.full_name as any)?.[0] || to.id}` },
-          { profile_id: to.id, type: "credit" as const, amount, description: description || `Admin transfer from ${(from.full_name as any)?.[0] || from.id}` },
+          { profile_id: from.id, type: "debit" as const, amount, transaction_id: txnIdDebit, status: "success", description: description || `Admin transfer to ${(to.full_name as any)?.[0] || to.id}` },
+          { profile_id: to.id, type: "credit" as const, amount, transaction_id: txnIdCredit, status: "success", description: description || `Admin transfer from ${(from.full_name as any)?.[0] || from.id}` },
         ]);
         await supabase.from("notifications").insert([
-          { user_id: from.user_id, title: "Funds Transferred", message: `₹${amount.toLocaleString("en-IN")} transferred to ${(to.full_name as any)?.[0]} by admin.`, type: "financial" },
-          { user_id: to.user_id, title: "Funds Received", message: `₹${amount.toLocaleString("en-IN")} received from ${(from.full_name as any)?.[0]} by admin.`, type: "financial" },
+          { user_id: from.user_id, title: "Funds Transferred", message: `₹${amount.toLocaleString("en-IN")} transferred to ${(to.full_name as any)?.[0]} by admin. Transaction ID: ${txnIdDebit}`, type: "financial" },
+          { user_id: to.user_id, title: "Funds Received", message: `₹${amount.toLocaleString("en-IN")} received from ${(from.full_name as any)?.[0]} by admin. Transaction ID: ${txnIdCredit}`, type: "financial" },
         ]);
         
+        result.transaction_id_debit = txnIdDebit;
+        result.transaction_id_credit = txnIdCredit;
         break;
       }
 

@@ -56,12 +56,14 @@ const AdminWalletTransactions = () => {
   const T = TH[themeKey];
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const [page, setPage] = useState(1);
+const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [txnIdSearch, setTxnIdSearch] = useState("");
 
   const { data: transactions, isLoading } = useQuery({
-    queryKey: ["admin-wallet-transactions", profile?.id, page, searchQuery, typeFilter],
+    queryKey: ["admin-wallet-transactions", profile?.id, page, searchQuery, typeFilter, statusFilter, txnIdSearch],
     queryFn: async () => {
       if (!profile?.id) return { items: [], total: 0 };
       const from = (page - 1) * PAGE_SIZE;
@@ -77,8 +79,16 @@ const AdminWalletTransactions = () => {
         query = query.eq("type", typeFilter as "credit" | "debit" | "hold" | "release");
       }
 
+      if (statusFilter !== "all") {
+        query = query.eq("status", statusFilter as "success" | "failed" | "pending");
+      }
+
       if (searchQuery.trim()) {
         query = query.ilike("description", `%${searchQuery.trim()}%`);
+      }
+
+      if (txnIdSearch.trim()) {
+        query = query.ilike("transaction_id", `%${txnIdSearch.trim()}%`);
       }
 
       const { data, count, error } = await query.range(from, to);
@@ -140,7 +150,7 @@ const AdminWalletTransactions = () => {
               style={{ background: T.input, borderColor: T.border, color: T.text }}
             />
           </div>
-          <div className="flex items-center gap-3">
+<div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl border" style={{ borderColor: T.border, background: T.nav }}>
               <Filter className="h-4 w-4" style={{ color: T.sub }} />
               <span className="text-xs font-medium" style={{ color: T.sub }}>Filter:</span>
@@ -163,6 +173,33 @@ const AdminWalletTransactions = () => {
                 </SelectContent>
               </Select>
             </div>
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => {
+                setStatusFilter(v);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[130px] h-11 border rounded-xl" style={{ borderColor: T.border, background: T.input, color: T.text }}>
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(16px)" }}>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="success">Success</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              placeholder="Search by Txn ID..."
+              value={txnIdSearch}
+              onChange={(e) => {
+                setTxnIdSearch(e.target.value);
+                setPage(1);
+              }}
+              className="h-11 w-[180px] rounded-xl"
+              style={{ background: T.input, borderColor: T.border, color: T.text }}
+            />
           </div>
         </div>
 
@@ -183,19 +220,24 @@ const AdminWalletTransactions = () => {
           <div className="overflow-hidden rounded-2xl border" style={{ borderColor: T.border }}>
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader>
+<TableHeader>
                   <TableRow style={{ borderColor: T.border, background: theme === "black" ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}>
                     <TableHead style={{ color: T.sub }}>Date & Time</TableHead>
+                    <TableHead style={{ color: T.sub }}>Transaction ID</TableHead>
                     <TableHead style={{ color: T.sub }}>Type</TableHead>
                     <TableHead style={{ color: T.sub }}>Description</TableHead>
+                    <TableHead style={{ color: T.sub }}>Status</TableHead>
                     <TableHead className="text-right" style={{ color: T.sub }}>Amount</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
+<TableBody>
                   {transactions.items.map((tx) => (
                     <TableRow key={tx.id} style={{ borderColor: T.border }} className="hover:bg-slate-500/5 transition-colors">
                       <TableCell className="whitespace-nowrap text-xs font-medium" style={{ color: T.sub }}>
                         {safeFmt(tx.created_at, "dd MMM yyyy, hh:mm a")}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs" style={{ color: T.text }}>
+                        {tx.transaction_id || "—"}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={cn("backdrop-blur-md uppercase text-[10px]", typeBadgeVariant(tx.type))}>
@@ -204,6 +246,15 @@ const AdminWalletTransactions = () => {
                       </TableCell>
                       <TableCell className="max-w-[400px] truncate text-sm" style={{ color: T.text }}>
                         {tx.description}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={cn("backdrop-blur-md uppercase text-[10px]", 
+                          tx.status === "success" ? "bg-green-500/20 text-green-500 border-green-500/30" : 
+                          tx.status === "failed" ? "bg-red-500/20 text-red-500 border-red-500/30" :
+                          "bg-amber-500/20 text-amber-500 border-amber-500/30"
+                        )}>
+                          {tx.status || "pending"}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right font-bold text-lg" style={{ color: T.text }}>
                         ₹{Number(tx.amount).toLocaleString("en-IN")}

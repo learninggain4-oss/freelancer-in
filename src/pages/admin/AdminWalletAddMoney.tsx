@@ -44,7 +44,7 @@ const AdminWalletAddMoney = () => {
 
   const requireTotp = totpStatus?.is_enabled ?? false;
 
-  const addMoneyMutation = useMutation({
+const addMoneyMutation = useMutation({
     onMutate: () => {
       setPaymentStage("processing");
       setStatusMessage("Processing payment...");
@@ -67,20 +67,21 @@ const AdminWalletAddMoney = () => {
       });
       if (res.error) throw new Error(res.error.message);
       if (res.data?.error) throw new Error(res.data.error);
-      return amount;
+      return res.data;
     },
-    onSuccess: (amount) => {
+    onSuccess: (data) => {
       playNotificationSound("project");
       setPaymentStage("success");
-      setStatusMessage(`INR ${amount.toLocaleString("en-IN")} added successfully`);
-      toast.success(`INR ${amount.toLocaleString("en-IN")} added to wallet`);
+      const txnId = data?.transaction_id ? `\nTransaction ID: ${data.transaction_id}` : "";
+      setStatusMessage(`₹${Number(addAmount).toLocaleString("en-IN")} added successfully${txnId}`);
+      toast.success(`₹${Number(addAmount).toLocaleString("en-IN")} added to wallet${txnId ? `\nTXN: ${data.transaction_id}` : ""}`);
       setAddAmount("");
       refreshProfile();
       queryClient.invalidateQueries({ queryKey: ["admin-wallet-transactions"] });
       setTimeout(() => {
         setShowStatusPopup(false);
         navigate("/admin/wallet");
-      }, 1300);
+      }, 2000);
     },
     onError: (e: any) => {
       playNotificationSound("alert");
