@@ -88,7 +88,33 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { action, user_id, profile_id, email, user_type } = await req.json();
+    const body = await req.json();
+    const {
+      action, user_id, profile_id, email, user_type,
+      title, message, notes, subject,
+      target_user_id, target_profile_id, target_profile_name, target_user_ids,
+      warning_level, reason, audit_action, details,
+    } = body;
+
+    // Resolve admin profile id (for audit logging)
+    let adminProfileId: string | null = null;
+    try {
+      const { data: ap } = await adminClient
+        .from("profiles").select("id").eq("user_id", callerUserId).maybeSingle();
+      adminProfileId = ap?.id ?? null;
+    } catch { /* ignore */ }
+
+    const logAudit = async (act: string, tProfileId: string | null, tProfileName: string | null, dets: any) => {
+      try {
+        await adminClient.from("admin_audit_logs").insert({
+          admin_id: adminProfileId,
+          action: act,
+          target_profile_id: tProfileId,
+          target_profile_name: tProfileName,
+          details: dets ?? null,
+        });
+      } catch (e) { console.error("audit log failed:", e); }
+    };
 
     switch (action) {
       case "permanent_delete": {
@@ -484,6 +510,120 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ success: true, message: "Password reset email sent" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
+      }
+
+      case "send_notification": {
+        const tUid = target_user_id || user_id;
+        if (!tUid || !title || !message) {
+          return new Response(JSON.stringify({ error: "target_user_id, title, message required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { error } = await adminClient.from("notifications").insert({
+          user_id: tUid, title, message, type: "info",
+        });
+        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      case "bulk_notify": {
+        if (!Array.isArray(target_user_ids) || target_user_ids.length === 0 || !title || !message) {
+          return new Response(JSON.stringify({ error: "target_user_ids[], title, message required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const rows = target_user_ids.map((uid: string) => ({ user_id: uid, title, message, type: "info" }));
+        const { error } = await adminClient.from("notifications").insert(rows);
+        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ success: true, count: rows.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      case "save_admin_notes": {
+        if (!profile_id) return new Response(JSON.stringify({ error: "profile_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { error } = await adminClient.from("profiles").update({ approval_notes: notes ?? null }).eq("id", profile_id);
+        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await logAudit("save_admin_notes", profile_id, null, { notes });
+        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      case "send_email": {
+        if (!email && !target_profile_id && !target_user_id) {
+          return new Response(JSON.stringify({ error: "email or target id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        // Also push as in-app notification so the user sees something immediately
+        if (target_user_id) {
+          await adminClient.from("notifications").insert({
+            user_id: target_user_id,
+            title: subject || "Message from Admin",
+            message: message || "",
+            type: "info",
+          });
+        }
+        await logAudit("send_email", target_profile_id || null, null, { subject, message });
+        return new Response(JSON.stringify({ success: true, message: "Message delivered as in-app notification" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      case "get_audit_log": {
+        let q = adminClient
+          .from("admin_audit_logs")
+          .select("id, action, admin_id, target_profile_id, target_profile_name, details, created_at")
+          .order("created_at", { ascending: false })
+          .limit(200);
+        if (target_profile_id) q = q.eq("target_profile_id", target_profile_id);
+        const { data, error } = await q;
+        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ logs: data || [] }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      case "log_audit": {
+        if (!audit_action) return new Response(JSON.stringify({ error: "audit_action required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await logAudit(audit_action, target_profile_id || null, target_profile_name || null, details);
+        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      case "issue_warning": {
+        if (!target_profile_id || !reason) return new Response(JSON.stringify({ error: "target_profile_id and reason required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await logAudit("issue_warning", target_profile_id, null, { warning_level, reason });
+        if (target_user_id) {
+          await adminClient.from("notifications").insert({
+            user_id: target_user_id,
+            title: `⚠️ Warning issued (${warning_level || "info"})`,
+            message: reason,
+            type: "warning",
+          });
+        }
+        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      case "get_kyc_docs": {
+        if (!profile_id) return new Response(JSON.stringify({ error: "profile_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data, error } = await adminClient
+          .from("documents").select("*").eq("profile_id", profile_id);
+        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ documents: data || [] }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      case "get_aadhaar_docs": {
+        if (!profile_id) return new Response(JSON.stringify({ error: "profile_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data, error } = await adminClient
+          .from("aadhaar_verifications").select("*").eq("profile_id", profile_id).maybeSingle();
+        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ aadhaar: data || null }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      case "get_referral_chain": {
+        if (!profile_id) return new Response(JSON.stringify({ error: "profile_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: referred } = await adminClient.from("referrals").select("id, referred_id, signup_bonus_paid, job_bonus_paid, created_at").eq("referrer_id", profile_id);
+        const { data: referrer } = await adminClient.from("referrals").select("id, referrer_id, signup_bonus_paid, job_bonus_paid, created_at").eq("referred_id", profile_id).maybeSingle();
+        return new Response(JSON.stringify({ referred: referred || [], referrer: referrer || null }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      case "get_user_stats": {
+        if (!profile_id) return new Response(JSON.stringify({ error: "profile_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const [{ count: txCount }, { count: projCount }, { count: wdCount }] = await Promise.all([
+          adminClient.from("transactions").select("id", { count: "exact", head: true }).eq("profile_id", profile_id),
+          adminClient.from("projects").select("id", { count: "exact", head: true }).or(`client_id.eq.${profile_id},assigned_employee_id.eq.${profile_id}`),
+          adminClient.from("withdrawals").select("id", { count: "exact", head: true }).eq("employee_id", profile_id),
+        ]);
+        return new Response(JSON.stringify({
+          stats: { transactions: txCount || 0, projects: projCount || 0, withdrawals: wdCount || 0 }
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       default:
