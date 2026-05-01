@@ -10,6 +10,7 @@ import TotpVerifyDialog from "@/components/admin/TotpVerifyDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { supabase } from "@/integrations/supabase/client";
+import { playNotificationSound } from "@/utils/notification-sounds";
 import { toast } from "sonner";
 
 const TH = {
@@ -69,6 +70,7 @@ const AdminWalletAddMoney = () => {
       return amount;
     },
     onSuccess: (amount) => {
+      playNotificationSound("project");
       setPaymentStage("success");
       setStatusMessage(`INR ${amount.toLocaleString("en-IN")} added successfully`);
       toast.success(`INR ${amount.toLocaleString("en-IN")} added to wallet`);
@@ -81,6 +83,7 @@ const AdminWalletAddMoney = () => {
       }, 1300);
     },
     onError: (e: any) => {
+      playNotificationSound("alert");
       setPaymentStage("failed");
       setStatusMessage(e.message || "Payment failed. Please try again.");
       toast.error(e.message);
