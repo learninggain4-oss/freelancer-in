@@ -21,7 +21,7 @@ const AdminWalletAddMoney = () => {
   const { themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const navigate = useNavigate();
-  const { refreshProfile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const queryClient = useQueryClient();
 
   const [addAmount, setAddAmount] = useState("");
@@ -43,11 +43,17 @@ const AdminWalletAddMoney = () => {
     mutationFn: async () => {
       const amount = Number(addAmount);
       if (!amount || amount <= 0) throw new Error("Enter a valid amount");
+      if (!profile?.id) throw new Error("Profile not found");
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
       const res = await supabase.functions.invoke("wallet-operations", {
-        body: { action: "add_money", amount },
+        body: {
+          action: "admin_wallet_add",
+          target_profile_id: profile.id,
+          amount,
+          description: "Admin: added to personal wallet",
+        },
       });
       if (res.error) throw new Error(res.error.message);
       if (res.data?.error) throw new Error(res.data.error);
