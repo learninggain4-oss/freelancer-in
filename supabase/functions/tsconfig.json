@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.window"],
+    "target": "ES2022",
+    "module": "ES2022",
+    "skipLibCheck": true,
+    "noImplicitAny": false,
+    "strict": false,
+    "allowJs": true,
+    "noEmit": true
+  },
+  "include": ["**/*.ts", "**/*.js"],
+  "exclude": ["node_modules"]
+}

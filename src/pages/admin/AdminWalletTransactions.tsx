@@ -59,11 +59,9 @@ const AdminWalletTransactions = () => {
 const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [txnIdSearch, setTxnIdSearch] = useState("");
 
   const { data: transactions, isLoading } = useQuery({
-    queryKey: ["admin-wallet-transactions", profile?.id, page, searchQuery, typeFilter, statusFilter, txnIdSearch],
+    queryKey: ["admin-wallet-transactions", profile?.id, page, searchQuery, typeFilter],
     queryFn: async () => {
       if (!profile?.id) return { items: [], total: 0 };
       const from = (page - 1) * PAGE_SIZE;
@@ -79,16 +77,8 @@ const [page, setPage] = useState(1);
         query = query.eq("type", typeFilter as "credit" | "debit" | "hold" | "release");
       }
 
-      if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter as "success" | "failed" | "pending");
-      }
-
       if (searchQuery.trim()) {
         query = query.ilike("description", `%${searchQuery.trim()}%`);
-      }
-
-      if (txnIdSearch.trim()) {
-        query = query.ilike("transaction_id", `%${txnIdSearch.trim()}%`);
       }
 
       const { data, count, error } = await query.range(from, to);
@@ -173,33 +163,6 @@ const [page, setPage] = useState(1);
                 </SelectContent>
               </Select>
             </div>
-            <Select
-              value={statusFilter}
-              onValueChange={(v) => {
-                setStatusFilter(v);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[130px] h-11 border rounded-xl" style={{ borderColor: T.border, background: T.input, color: T.text }}>
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(16px)" }}>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="success">Success</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-              </SelectContent>
-            </Select>
-            <Input
-              placeholder="Search by Txn ID..."
-              value={txnIdSearch}
-              onChange={(e) => {
-                setTxnIdSearch(e.target.value);
-                setPage(1);
-              }}
-              className="h-11 w-[180px] rounded-xl"
-              style={{ background: T.input, borderColor: T.border, color: T.text }}
-            />
           </div>
         </div>
 
@@ -237,7 +200,7 @@ const [page, setPage] = useState(1);
                         {safeFmt(tx.created_at, "dd MMM yyyy, hh:mm a")}
                       </TableCell>
                       <TableCell className="font-mono text-xs" style={{ color: T.text }}>
-                        {tx.transaction_id || "—"}
+                        {tx.reference_id || "—"}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={cn("backdrop-blur-md uppercase text-[10px]", typeBadgeVariant(tx.type))}>
@@ -249,11 +212,10 @@ const [page, setPage] = useState(1);
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={cn("backdrop-blur-md uppercase text-[10px]", 
-                          tx.status === "success" ? "bg-green-500/20 text-green-500 border-green-500/30" : 
-                          tx.status === "failed" ? "bg-red-500/20 text-red-500 border-red-500/30" :
+                          tx.is_cleared ? "bg-green-500/20 text-green-500 border-green-500/30" :
                           "bg-amber-500/20 text-amber-500 border-amber-500/30"
                         )}>
-                          {tx.status || "pending"}
+                          {tx.is_cleared ? "cleared" : "pending"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-bold text-lg" style={{ color: T.text }}>
