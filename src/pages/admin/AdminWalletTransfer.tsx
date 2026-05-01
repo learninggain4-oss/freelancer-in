@@ -11,6 +11,7 @@ import TotpVerifyDialog from "@/components/admin/TotpVerifyDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { supabase } from "@/integrations/supabase/client";
+import { playNotificationSound } from "@/utils/notification-sounds";
 import { toast } from "sonner";
 
 const TH = {
@@ -118,6 +119,7 @@ const AdminWalletTransfer = () => {
       return amt;
     },
     onSuccess: (amt) => {
+      playNotificationSound("project");
       setPaymentStage("success");
       setStatusMessage(`INR ${amt.toLocaleString("en-IN")} transferred successfully`);
       toast.success(`INR ${amt.toLocaleString("en-IN")} transferred to ${selectedRecipient?.full_name?.[0]}`);
@@ -133,6 +135,7 @@ const AdminWalletTransfer = () => {
       }, 1300);
     },
     onError: (e: any) => {
+      playNotificationSound("alert");
       setPaymentStage("failed");
       const reason = getTransferFailureReason(e.message || "");
       setStatusMessage(reason);
@@ -275,26 +278,40 @@ const AdminWalletTransfer = () => {
       />
 
       <Dialog open={showStatusPopup} onOpenChange={(open) => !transferMutation.isPending && setShowStatusPopup(open)}>
-        <DialogContent className="sm:max-w-sm border-0 p-0 overflow-hidden">
-          <div className="relative bg-gradient-to-b from-slate-950 to-slate-900 px-6 py-8 text-center text-white">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white/10">
-              {paymentStage === "processing" && <Loader2 className="h-10 w-10 animate-spin text-violet-300" />}
-              {paymentStage === "success" && <CheckCircle2 className="h-10 w-10 text-emerald-400" />}
-              {paymentStage === "failed" && <XCircle className="h-10 w-10 text-red-400" />}
+        <DialogContent className="sm:max-w-sm border-0 p-0 overflow-hidden rounded-3xl">
+          <div className="relative bg-gradient-to-b from-[#030b2a] via-[#0a1742] to-[#1a0f39] px-6 py-8 text-center text-white">
+            <div className="pointer-events-none absolute -top-16 -left-12 h-40 w-40 rounded-full bg-cyan-400/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-20 -right-12 h-44 w-44 rounded-full bg-violet-500/30 blur-3xl" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.14),transparent_40%)]" />
+
+            <div className="relative mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
+              <div className="absolute inset-0 rounded-full border border-white/20 animate-ping" />
+              <div className="absolute inset-2 rounded-full border border-violet-300/40" />
+              {paymentStage === "processing" && <Loader2 className="h-10 w-10 animate-spin text-violet-200 drop-shadow-[0_0_12px_rgba(196,181,253,.8)]" />}
+              {paymentStage === "success" && <CheckCircle2 className="h-10 w-10 text-emerald-300 drop-shadow-[0_0_16px_rgba(110,231,183,.9)]" />}
+              {paymentStage === "failed" && <XCircle className="h-10 w-10 text-rose-300 drop-shadow-[0_0_16px_rgba(251,113,133,.9)]" />}
             </div>
-            <h3 className="text-lg font-semibold">
+
+            <h3 className="relative text-xl font-bold tracking-wide">
               {paymentStage === "processing" ? "Transfer Processing" : paymentStage === "success" ? "Transfer Successful" : "Transfer Failed"}
             </h3>
-            <p className="mt-2 text-sm text-slate-300">{statusMessage}</p>
+            <p className="relative mt-2 text-sm text-slate-200/90">{statusMessage}</p>
+
             {paymentStage === "processing" && (
-              <div className="mt-5 flex items-center justify-center gap-1.5">
-                <span className="h-2 w-2 animate-bounce rounded-full bg-violet-300 [animation-delay:-0.2s]" />
-                <span className="h-2 w-2 animate-bounce rounded-full bg-violet-300 [animation-delay:-0.1s]" />
-                <span className="h-2 w-2 animate-bounce rounded-full bg-violet-300" />
+              <div className="relative mx-auto mt-4 h-1.5 w-48 overflow-hidden rounded-full bg-white/20">
+                <div className="h-full w-1/2 animate-[pulse_1.2s_ease-in-out_infinite] rounded-full bg-gradient-to-r from-cyan-300 via-indigo-300 to-violet-300" />
+              </div>
+            )}
+
+            {paymentStage === "processing" && (
+              <div className="relative mt-5 flex items-center justify-center gap-1.5">
+                <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-cyan-300 [animation-delay:-0.2s]" />
+                <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-indigo-300 [animation-delay:-0.1s]" />
+                <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-violet-300" />
               </div>
             )}
             {paymentStage === "failed" && (
-              <Button className="mt-5 w-full bg-violet-600 hover:bg-violet-700" onClick={() => setShowStatusPopup(false)}>
+              <Button className="relative mt-5 w-full bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600" onClick={() => setShowStatusPopup(false)}>
                 Close
               </Button>
             )}
