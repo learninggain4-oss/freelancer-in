@@ -155,40 +155,34 @@ const AdminWalletAddMoney = () => {
       />
 
       <Dialog open={showStatusPopup} onOpenChange={(open) => !addMoneyMutation.isPending && setShowStatusPopup(open)}>
-        <DialogContent className="sm:max-w-sm border-0 p-0 overflow-hidden rounded-3xl">
-          <div className="relative bg-gradient-to-b from-[#030b2a] via-[#0a1742] to-[#1a0f39] px-6 py-8 text-center text-white">
-            <div className="pointer-events-none absolute -top-16 -left-12 h-40 w-40 rounded-full bg-cyan-400/20 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-20 -right-12 h-44 w-44 rounded-full bg-violet-500/30 blur-3xl" />
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.14),transparent_40%)]" />
-
-            <div className="relative mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
-              <div className="absolute inset-0 rounded-full border border-white/20 animate-ping" />
-              <div className="absolute inset-2 rounded-full border border-indigo-300/40" />
-              {paymentStage === "processing" && <Loader2 className="h-10 w-10 animate-spin text-cyan-200 drop-shadow-[0_0_12px_rgba(103,232,249,.8)]" />}
-              {paymentStage === "success" && <CheckCircle2 className="h-10 w-10 text-emerald-300 drop-shadow-[0_0_16px_rgba(110,231,183,.9)]" />}
-              {paymentStage === "failed" && <XCircle className="h-10 w-10 text-rose-300 drop-shadow-[0_0_16px_rgba(251,113,133,.9)]" />}
+        <DialogContent className="sm:max-w-sm border border-slate-200/10 bg-slate-950 p-0 overflow-hidden rounded-2xl">
+          <div className="px-6 py-7 text-center text-white">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-900 ring-1 ring-slate-700">
+              {paymentStage === "processing" && <Loader2 className="h-9 w-9 animate-spin text-indigo-300" />}
+              {paymentStage === "success" && <CheckCircle2 className="h-9 w-9 text-emerald-400" />}
+              {paymentStage === "failed" && <XCircle className="h-9 w-9 text-rose-400" />}
             </div>
 
-            <h3 className="relative text-xl font-bold tracking-wide">
+            <h3 className="text-lg font-semibold tracking-tight">
               {paymentStage === "processing" ? "Payment Processing" : paymentStage === "success" ? "Payment Successful" : "Payment Failed"}
             </h3>
-            <p className="relative mt-2 text-sm text-slate-200/90">{statusMessage}</p>
+            <p className="mt-2 text-sm text-slate-300">{statusMessage}</p>
 
             {paymentStage === "processing" && (
-              <div className="relative mx-auto mt-4 h-1.5 w-48 overflow-hidden rounded-full bg-white/20">
-                <div className="h-full w-1/2 animate-[pulse_1.2s_ease-in-out_infinite] rounded-full bg-gradient-to-r from-cyan-300 via-indigo-300 to-violet-300" />
+              <div className="mx-auto mt-4 h-1.5 w-48 overflow-hidden rounded-full bg-slate-800">
+                <div className="h-full w-1/2 animate-[pulse_1.1s_ease-in-out_infinite] rounded-full bg-indigo-400" />
               </div>
             )}
 
             {paymentStage === "processing" && (
-              <div className="relative mt-5 flex items-center justify-center gap-1.5">
-                <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-cyan-300 [animation-delay:-0.2s]" />
-                <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-indigo-300 [animation-delay:-0.1s]" />
-                <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-violet-300" />
+              <div className="mt-5 flex items-center justify-center gap-1.5">
+                <span className="h-2 w-2 animate-bounce rounded-full bg-indigo-300 [animation-delay:-0.2s]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-indigo-300 [animation-delay:-0.1s]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-indigo-300" />
               </div>
             )}
             {paymentStage === "failed" && (
-              <Button className="relative mt-5 w-full bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600" onClick={() => setShowStatusPopup(false)}>
+              <Button className="mt-5 w-full bg-indigo-600 hover:bg-indigo-700" onClick={() => setShowStatusPopup(false)}>
                 Close
               </Button>
             )}
