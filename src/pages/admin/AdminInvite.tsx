@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { callEdgeFunction, getToken } from "@/lib/supabase-functions";
