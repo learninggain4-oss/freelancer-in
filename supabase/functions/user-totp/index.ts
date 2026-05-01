@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
 import { encode as base32Encode } from "https://deno.land/std@0.208.0/encoding/base32.ts";
 
 const corsHeaders = {
