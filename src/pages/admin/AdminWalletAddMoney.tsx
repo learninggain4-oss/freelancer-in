@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowUpRight, Loader2, PlusCircle } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, CheckCircle2, Loader2, PlusCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import TotpVerifyDialog from "@/components/admin/TotpVerifyDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
@@ -26,6 +27,9 @@ const AdminWalletAddMoney = () => {
 
   const [addAmount, setAddAmount] = useState("");
   const [showTotp, setShowTotp] = useState(false);
+  const [showStatusPopup, setShowStatusPopup] = useState(false);
+  const [paymentStage, setPaymentStage] = useState<"processing" | "success" | "failed">("processing");
+  const [statusMessage, setStatusMessage] = useState("Processing payment...");
 
   const { data: totpStatus } = useQuery({
     queryKey: ["admin-totp-status"],
@@ -40,6 +44,11 @@ const AdminWalletAddMoney = () => {
   const requireTotp = totpStatus?.is_enabled ?? false;
 
   const addMoneyMutation = useMutation({
+    onMutate: () => {
+      setPaymentStage("processing");
+      setStatusMessage("Processing payment...");
+      setShowStatusPopup(true);
+    },
     mutationFn: async () => {
       const amount = Number(addAmount);
       if (!amount || amount <= 0) throw new Error("Enter a valid amount");
@@ -60,13 +69,22 @@ const AdminWalletAddMoney = () => {
       return amount;
     },
     onSuccess: (amount) => {
-      toast.success(`₹${amount.toLocaleString("en-IN")} added to wallet`);
+      setPaymentStage("success");
+      setStatusMessage(`INR ${amount.toLocaleString("en-IN")} added successfully`);
+      toast.success(`INR ${amount.toLocaleString("en-IN")} added to wallet`);
       setAddAmount("");
       refreshProfile();
       queryClient.invalidateQueries({ queryKey: ["admin-wallet-transactions"] });
-      navigate("/admin/wallet");
+      setTimeout(() => {
+        setShowStatusPopup(false);
+        navigate("/admin/wallet");
+      }, 1300);
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      setPaymentStage("failed");
+      setStatusMessage(e.message || "Payment failed. Please try again.");
+      toast.error(e.message);
+    },
   });
 
   const handleAddMoney = () => {
@@ -100,7 +118,7 @@ const AdminWalletAddMoney = () => {
 
         <div className="space-y-4 max-w-xl">
           <div className="space-y-2">
-            <Label style={{ color: T.sub }}>Amount (₹)</Label>
+            <Label style={{ color: T.sub }}>Amount (INR)</Label>
             <Input
               type="number"
               placeholder="0.00"
@@ -132,6 +150,34 @@ const AdminWalletAddMoney = () => {
         title="Verify Security Code"
         description="Please enter your 2FA code to authorize this deposit."
       />
+
+      <Dialog open={showStatusPopup} onOpenChange={(open) => !addMoneyMutation.isPending && setShowStatusPopup(open)}>
+        <DialogContent className="sm:max-w-sm border-0 p-0 overflow-hidden">
+          <div className="relative bg-gradient-to-b from-slate-950 to-slate-900 px-6 py-8 text-center text-white">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white/10">
+              {paymentStage === "processing" && <Loader2 className="h-10 w-10 animate-spin text-indigo-300" />}
+              {paymentStage === "success" && <CheckCircle2 className="h-10 w-10 text-emerald-400" />}
+              {paymentStage === "failed" && <XCircle className="h-10 w-10 text-red-400" />}
+            </div>
+            <h3 className="text-lg font-semibold">
+              {paymentStage === "processing" ? "Payment Processing" : paymentStage === "success" ? "Payment Successful" : "Payment Failed"}
+            </h3>
+            <p className="mt-2 text-sm text-slate-300">{statusMessage}</p>
+            {paymentStage === "processing" && (
+              <div className="mt-5 flex items-center justify-center gap-1.5">
+                <span className="h-2 w-2 animate-bounce rounded-full bg-indigo-300 [animation-delay:-0.2s]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-indigo-300 [animation-delay:-0.1s]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-indigo-300" />
+              </div>
+            )}
+            {paymentStage === "failed" && (
+              <Button className="mt-5 w-full bg-indigo-600 hover:bg-indigo-700" onClick={() => setShowStatusPopup(false)}>
+                Close
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
