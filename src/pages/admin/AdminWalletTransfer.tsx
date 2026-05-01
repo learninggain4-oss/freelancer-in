@@ -19,6 +19,25 @@ const TH = {
   wb: { bg: "#f0f4ff", card: "#ffffff", border: "rgba(0,0,0,.08)", text: "#1e293b", sub: "#64748b", input: "#f8fafc" },
 };
 
+const getTransferFailureReason = (rawMessage: string) => {
+  if (rawMessage.includes("Receiver wallet is inactive")) {
+    return "Receiver wallet is inactive. Activate the receiver wallet and try again.";
+  }
+  if (rawMessage.includes("Insufficient balance")) {
+    return "Insufficient balance in sender wallet.";
+  }
+  if (rawMessage.includes("Select a recipient")) {
+    return "Please select a valid recipient wallet.";
+  }
+  if (rawMessage.includes("Profile not found")) {
+    return "Recipient profile not found.";
+  }
+  if (rawMessage.includes("Not authenticated")) {
+    return "Session expired. Please login again.";
+  }
+  return "Transfer could not be completed. Please try again.";
+};
+
 const AdminWalletTransfer = () => {
   const { themeKey } = useAdminTheme();
   const T = TH[themeKey];
@@ -83,8 +102,19 @@ const AdminWalletTransfer = () => {
           description: transferDescription || undefined,
         },
       });
-      if (res.error) throw new Error(res.error.message);
       if (res.data?.error) throw new Error(res.data.error);
+      if (res.error) {
+        const ctxBody = (res.error as any)?.context?.body;
+        if (typeof ctxBody === "string") {
+          try {
+            const parsed = JSON.parse(ctxBody);
+            if (parsed?.error) throw new Error(parsed.error);
+          } catch {
+            // Ignore parse issues and use fallback message below
+          }
+        }
+        throw new Error(res.error.message);
+      }
       return amt;
     },
     onSuccess: (amt) => {
@@ -104,8 +134,9 @@ const AdminWalletTransfer = () => {
     },
     onError: (e: any) => {
       setPaymentStage("failed");
-      setStatusMessage(e.message || "Transfer failed. Please try again.");
-      toast.error(e.message);
+      const reason = getTransferFailureReason(e.message || "");
+      setStatusMessage(reason);
+      toast.error(reason);
     },
   });
 
