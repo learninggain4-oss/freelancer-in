@@ -90,6 +90,72 @@ const [page, setPage] = useState(1);
     enabled: !!profile?.id,
   });
 
+  const queryClient = useQueryClient();
+  const [retryingId, setRetryingId] = useState<string | null>(null);
+
+  const genTxnId = () => {
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(-2);
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const rand = Math.floor(1000000 + Math.random() * 9000000).toString();
+    return `TXN${yy}${mm}${dd}${rand}`;
+  };
+
+  const retryMutation = useMutation({
+    mutationFn: async (tx: any) => {
+      if (!profile?.id) throw new Error("Profile not found");
+      const amount = Number(tx.amount);
+      if (!amount || amount <= 0) throw new Error("Invalid amount");
+
+      const baseDesc = String(tx.description || "")
+        .replace(/^Failed:\s*/i, "")
+        .replace(/\s*—\s*.*$/, "")
+        .trim() || "Retried transaction";
+
+      let action: string;
+      const body: Record<string, any> = {
+        amount,
+        target_profile_id: profile.id,
+        description: `Retry: ${baseDesc}`,
+      };
+
+      if (tx.type === "credit") {
+        action = "admin_wallet_add";
+      } else if (tx.type === "debit") {
+        action = "admin_wallet_debit";
+      } else {
+        throw new Error(`Retry not supported for type: ${tx.type}`);
+      }
+
+      const res = await supabase.functions.invoke("wallet-operations", { body: { action, ...body } });
+      if (res.error || res.data?.error) {
+        const failedTxnId = genTxnId();
+        await supabase.from("transactions").insert({
+          profile_id: profile.id,
+          type: tx.type,
+          amount,
+          transaction_id: failedTxnId,
+          status: "failed",
+          description: `Retry failed: ${baseDesc} — ${res.error?.message || res.data?.error}`,
+        } as any);
+        throw new Error(res.error?.message || res.data?.error || "Retry failed");
+      }
+      return res.data;
+    },
+    onMutate: (tx: any) => setRetryingId(tx.id),
+    onSettled: () => setRetryingId(null),
+    onSuccess: (data: any) => {
+      const newId = data?.transaction_id ? ` (New TXN: ${data.transaction_id})` : "";
+      toast.success(`Retry successful${newId}`);
+      queryClient.invalidateQueries({ queryKey: ["admin-wallet-transactions"] });
+    },
+    onError: (e: any) => {
+      toast.error(e.message || "Retry failed");
+      queryClient.invalidateQueries({ queryKey: ["admin-wallet-transactions"] });
+    },
+  });
+
   if (!profile) {
     return (
       <div className="flex items-center justify-center py-20">
