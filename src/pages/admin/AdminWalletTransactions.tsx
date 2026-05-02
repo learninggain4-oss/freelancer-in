@@ -297,6 +297,27 @@ const [page, setPage] = useState(1);
                       <TableCell className="text-right font-bold text-lg" style={{ color: T.text }}>
                         ₹{Number(tx.amount).toLocaleString("en-IN")}
                       </TableCell>
+                      <TableCell className="text-right">
+                        {(() => {
+                          const status = ((tx as any).status as string) || (tx.is_cleared ? "success" : "pending");
+                          const canRetry = status === "failed" && (tx.type === "credit" || tx.type === "debit");
+                          if (!canRetry) return <span className="text-xs" style={{ color: T.sub }}>—</span>;
+                          const isRetrying = retryingId === tx.id;
+                          return (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-xl h-8 text-xs"
+                              disabled={isRetrying || retryMutation.isPending}
+                              onClick={() => retryMutation.mutate(tx)}
+                              style={{ borderColor: T.border, background: T.nav, color: T.text }}
+                            >
+                              <RotateCw className={cn("mr-1.5 h-3.5 w-3.5", isRetrying && "animate-spin")} />
+                              {isRetrying ? "Retrying..." : "Retry"}
+                            </Button>
+                          );
+                        })()}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
