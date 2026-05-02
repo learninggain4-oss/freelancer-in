@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { RotateCw } from "lucide-react";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -86,6 +88,72 @@ const [page, setPage] = useState(1);
       return { items: data || [], total: count || 0 };
     },
     enabled: !!profile?.id,
+  });
+
+  const queryClient = useQueryClient();
+  const [retryingId, setRetryingId] = useState<string | null>(null);
+
+  const genTxnId = () => {
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(-2);
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const rand = Math.floor(1000000 + Math.random() * 9000000).toString();
+    return `TXN${yy}${mm}${dd}${rand}`;
+  };
+
+  const retryMutation = useMutation({
+    mutationFn: async (tx: any) => {
+      if (!profile?.id) throw new Error("Profile not found");
+      const amount = Number(tx.amount);
+      if (!amount || amount <= 0) throw new Error("Invalid amount");
+
+      const baseDesc = String(tx.description || "")
+        .replace(/^Failed:\s*/i, "")
+        .replace(/\s*—\s*.*$/, "")
+        .trim() || "Retried transaction";
+
+      let action: string;
+      const body: Record<string, any> = {
+        amount,
+        target_profile_id: profile.id,
+        description: `Retry: ${baseDesc}`,
+      };
+
+      if (tx.type === "credit") {
+        action = "admin_wallet_add";
+      } else if (tx.type === "debit") {
+        action = "admin_wallet_debit";
+      } else {
+        throw new Error(`Retry not supported for type: ${tx.type}`);
+      }
+
+      const res = await supabase.functions.invoke("wallet-operations", { body: { action, ...body } });
+      if (res.error || res.data?.error) {
+        const failedTxnId = genTxnId();
+        await supabase.from("transactions").insert({
+          profile_id: profile.id,
+          type: tx.type,
+          amount,
+          transaction_id: failedTxnId,
+          status: "failed",
+          description: `Retry failed: ${baseDesc} — ${res.error?.message || res.data?.error}`,
+        } as any);
+        throw new Error(res.error?.message || res.data?.error || "Retry failed");
+      }
+      return res.data;
+    },
+    onMutate: (tx: any) => setRetryingId(tx.id),
+    onSettled: () => setRetryingId(null),
+    onSuccess: (data: any) => {
+      const newId = data?.transaction_id ? ` (New TXN: ${data.transaction_id})` : "";
+      toast.success(`Retry successful${newId}`);
+      queryClient.invalidateQueries({ queryKey: ["admin-wallet-transactions"] });
+    },
+    onError: (e: any) => {
+      toast.error(e.message || "Retry failed");
+      queryClient.invalidateQueries({ queryKey: ["admin-wallet-transactions"] });
+    },
   });
 
   if (!profile) {
@@ -191,6 +259,7 @@ const [page, setPage] = useState(1);
                     <TableHead style={{ color: T.sub }}>Description</TableHead>
                     <TableHead style={{ color: T.sub }}>Status</TableHead>
                     <TableHead className="text-right" style={{ color: T.sub }}>Amount</TableHead>
+                    <TableHead className="text-right" style={{ color: T.sub }}>Action</TableHead>
                   </TableRow>
                 </TableHeader>
 <TableBody>
@@ -227,6 +296,27 @@ const [page, setPage] = useState(1);
                       </TableCell>
                       <TableCell className="text-right font-bold text-lg" style={{ color: T.text }}>
                         ₹{Number(tx.amount).toLocaleString("en-IN")}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {(() => {
+                          const status = ((tx as any).status as string) || (tx.is_cleared ? "success" : "pending");
+                          const canRetry = status === "failed" && (tx.type === "credit" || tx.type === "debit");
+                          if (!canRetry) return <span className="text-xs" style={{ color: T.sub }}>—</span>;
+                          const isRetrying = retryingId === tx.id;
+                          return (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-xl h-8 text-xs"
+                              disabled={isRetrying || retryMutation.isPending}
+                              onClick={() => retryMutation.mutate(tx)}
+                              style={{ borderColor: T.border, background: T.nav, color: T.text }}
+                            >
+                              <RotateCw className={cn("mr-1.5 h-3.5 w-3.5", isRetrying && "animate-spin")} />
+                              {isRetrying ? "Retrying..." : "Retry"}
+                            </Button>
+                          );
+                        })()}
                       </TableCell>
                     </TableRow>
                   ))}
