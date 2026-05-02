@@ -259,6 +259,7 @@ const [page, setPage] = useState(1);
                     <TableHead style={{ color: T.sub }}>Description</TableHead>
                     <TableHead style={{ color: T.sub }}>Status</TableHead>
                     <TableHead className="text-right" style={{ color: T.sub }}>Amount</TableHead>
+                    <TableHead className="text-right" style={{ color: T.sub }}>Action</TableHead>
                   </TableRow>
                 </TableHeader>
 <TableBody>
