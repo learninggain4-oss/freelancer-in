@@ -83,8 +83,28 @@ const addMoneyMutation = useMutation({
         navigate("/admin/wallet");
       }, 2000);
     },
-    onError: (e: any) => {
+    onError: async (e: any) => {
       playNotificationSound("alert");
+      // Log failed transaction so it appears in history
+      try {
+        if (profile?.id) {
+          const now = new Date();
+          const yy = String(now.getFullYear()).slice(-2);
+          const mm = String(now.getMonth() + 1).padStart(2, "0");
+          const dd = String(now.getDate()).padStart(2, "0");
+          const rand = Math.floor(1000000 + Math.random() * 9000000).toString();
+          const failedTxnId = `TXN${yy}${mm}${dd}${rand}`;
+          await supabase.from("transactions").insert({
+            profile_id: profile.id,
+            type: "credit",
+            amount: Number(addAmount) || 0,
+            transaction_id: failedTxnId,
+            status: "failed",
+            description: `Failed: Add money — ${e.message || "unknown error"}`,
+          } as any);
+          queryClient.invalidateQueries({ queryKey: ["admin-wallet-transactions"] });
+        }
+      } catch { /* ignore logging errors */ }
       setPaymentStage("failed");
       setStatusMessage(e.message || "Payment failed. Please try again.");
       toast.error(e.message);

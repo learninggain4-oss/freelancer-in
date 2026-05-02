@@ -2237,6 +2237,8 @@ export type Database = {
           is_cleared: boolean
           profile_id: string
           reference_id: string | null
+          status: string
+          transaction_id: string | null
           type: Database["public"]["Enums"]["transaction_type"]
         }
         Insert: {
@@ -2247,6 +2249,8 @@ export type Database = {
           is_cleared?: boolean
           profile_id: string
           reference_id?: string | null
+          status?: string
+          transaction_id?: string | null
           type: Database["public"]["Enums"]["transaction_type"]
         }
         Update: {
@@ -2257,6 +2261,8 @@ export type Database = {
           is_cleared?: boolean
           profile_id?: string
           reference_id?: string | null
+          status?: string
+          transaction_id?: string | null
           type?: Database["public"]["Enums"]["transaction_type"]
         }
         Relationships: [

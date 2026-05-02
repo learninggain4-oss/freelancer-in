@@ -200,7 +200,7 @@ const [page, setPage] = useState(1);
                         {safeFmt(tx.created_at, "dd MMM yyyy, hh:mm a")}
                       </TableCell>
                       <TableCell className="font-mono text-xs" style={{ color: T.text }}>
-                        {tx.reference_id || "—"}
+                        {(tx as any).transaction_id || tx.reference_id || "—"}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={cn("backdrop-blur-md uppercase text-[10px]", typeBadgeVariant(tx.type))}>
@@ -211,12 +211,19 @@ const [page, setPage] = useState(1);
                         {tx.description}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={cn("backdrop-blur-md uppercase text-[10px]", 
-                          tx.is_cleared ? "bg-green-500/20 text-green-500 border-green-500/30" :
-                          "bg-amber-500/20 text-amber-500 border-amber-500/30"
-                        )}>
-                          {tx.is_cleared ? "cleared" : "pending"}
-                        </Badge>
+                        {(() => {
+                          const status = ((tx as any).status as string) || (tx.is_cleared ? "success" : "pending");
+                          const cls = status === "failed"
+                            ? "bg-red-500/20 text-red-500 border-red-500/30"
+                            : status === "success" || status === "cleared"
+                              ? "bg-green-500/20 text-green-500 border-green-500/30"
+                              : "bg-amber-500/20 text-amber-500 border-amber-500/30";
+                          return (
+                            <Badge variant="outline" className={cn("backdrop-blur-md uppercase text-[10px]", cls)}>
+                              {status}
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="text-right font-bold text-lg" style={{ color: T.text }}>
                         ₹{Number(tx.amount).toLocaleString("en-IN")}

@@ -134,8 +134,27 @@ const AdminWalletTransfer = () => {
         navigate("/admin/wallet");
       }, 1300);
     },
-    onError: (e: any) => {
+    onError: async (e: any) => {
       playNotificationSound("alert");
+      try {
+        if (profile?.id) {
+          const now = new Date();
+          const yy = String(now.getFullYear()).slice(-2);
+          const mm = String(now.getMonth() + 1).padStart(2, "0");
+          const dd = String(now.getDate()).padStart(2, "0");
+          const rand = Math.floor(1000000 + Math.random() * 9000000).toString();
+          const failedTxnId = `TXN${yy}${mm}${dd}${rand}`;
+          await supabase.from("transactions").insert({
+            profile_id: profile.id,
+            type: "debit",
+            amount: Number(transferAmount) || 0,
+            transaction_id: failedTxnId,
+            status: "failed",
+            description: `Failed: Transfer to ${selectedRecipient?.full_name?.[0] || "recipient"} — ${e.message || "unknown error"}`,
+          } as any);
+          queryClient.invalidateQueries({ queryKey: ["admin-wallet-transactions"] });
+        }
+      } catch { /* ignore logging errors */ }
       setPaymentStage("failed");
       const reason = getTransferFailureReason(e.message || "");
       setStatusMessage(reason);
