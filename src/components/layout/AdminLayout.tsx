@@ -985,47 +985,56 @@ const AdminLayout = () => {
         </div>
       </header>
 
-      {/* ─── ICON TAB NAV — full-width, no scroll, all 14 groups ─────── */}
-      <div ref={navBarRef} style={{ background: tok.header, borderBottom: `1px solid ${tok.headerBdr}`, position: "sticky", top: 58, zIndex: 29, flexShrink: 0, backdropFilter: "blur(20px)" }}>
+      {/* ─── ICON TAB NAV — full-width, refined design ─────── */}
+      <div ref={navBarRef} style={{ background: `linear-gradient(180deg, ${tok.header} 0%, rgba(248,250,255,.97) 100%)`, borderBottom: `1px solid ${tok.headerBdr}`, position: "sticky", top: 58, zIndex: 29, flexShrink: 0, backdropFilter: "blur(20px)", boxShadow: "0 1px 0 rgba(255,255,255,.6) inset, 0 4px 14px -8px rgba(15,23,42,.08)" }}>
 
         {/* Tab grid — each group gets equal flex-1 slot */}
-        <div style={{ display: "flex", width: "100%" }}>
-          {navGroupItems.map((group, idx) => {
+        <div style={{ display: "flex", width: "100%", padding: "6px 8px 0", gap: 2 }}>
+          {navGroupItems.map((group) => {
             const isGroupActive = group.directPath
               ? location.pathname === group.directPath
               : group.items.some(item => location.pathname === item.path);
             const isOpen = openNavGroup === group.label;
-            const col   = isGroupActive ? A1 : isOpen ? tok.mainText : tok.mainSub;
-            const tabBg = isGroupActive ? `${A1}10` : isOpen ? `${A1}06` : "transparent";
-            const borderB = isGroupActive ? `2px solid ${A1}` : "2px solid transparent";
-            const borderR = idx < navGroupItems.length - 1 ? `1px solid ${tok.headerBdr}` : "none";
+            const isHi = isGroupActive || isOpen;
+            const col = isGroupActive ? A1 : isOpen ? A2 : tok.mainSub;
 
             const inner = (
               <>
-                <div style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: isGroupActive ? `${A1}18` : isOpen ? `${A1}0d` : "transparent", transition: "background .15s", marginBottom: 2 }}>
-                  <group.icon size={14} color={col} />
+                {/* Top active accent bar */}
+                <span style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: 2, borderRadius: "0 0 3px 3px", background: isGroupActive ? `linear-gradient(90deg, ${A1}, ${A2})` : "transparent", boxShadow: isGroupActive ? `0 0 8px ${A1}80` : "none", transition: "all .2s" }} />
+                <div style={{ width: 32, height: 32, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", background: isGroupActive ? `linear-gradient(135deg, ${A1}1f, ${A2}1f)` : isOpen ? `${A1}10` : "transparent", border: isGroupActive ? `1px solid ${A1}33` : "1px solid transparent", transition: "all .18s", marginBottom: 3 }}>
+                  <group.icon size={16} color={col} strokeWidth={isGroupActive ? 2.4 : 2} />
                 </div>
-                <span style={{ fontSize: 9.5, fontWeight: isGroupActive ? 700 : 500, color: col, lineHeight: 1.2, textAlign: "center", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{group.label}</span>
+                <span style={{ fontSize: 10.5, fontWeight: isGroupActive ? 700 : 500, color: isHi ? tok.mainText : tok.mainSub, lineHeight: 1.1, textAlign: "center", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: ".1px" }}>{group.label}</span>
                 {group.items.length > 0 && (
-                  <ChevronDown size={8} color={col} style={{ opacity: 0.5, marginTop: 1, transform: isOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform .15s" }} />
+                  <ChevronDown size={9} color={isHi ? col : tok.mainSub} style={{ opacity: 0.55, marginTop: 1, transform: isOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform .18s" }} />
                 )}
               </>
             );
 
             const tabStyle: React.CSSProperties = {
-              flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-              gap: 2, height: 56, background: tabBg, border: "none", borderBottom: borderB,
-              borderRight: borderR, cursor: "pointer", textDecoration: "none", transition: "background .15s",
-              padding: "0 2px",
+              position: "relative", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              gap: 1, height: 60, background: isGroupActive ? "rgba(255,255,255,.85)" : isOpen ? "rgba(255,255,255,.6)" : "transparent",
+              border: "none", borderRadius: "10px 10px 0 0", cursor: "pointer", textDecoration: "none", transition: "background .18s",
+              padding: "0 2px", overflow: "hidden",
+            };
+
+            const hoverOn = (e: React.MouseEvent<HTMLElement>) => {
+              if (!isGroupActive && !isOpen) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,.55)";
+            };
+            const hoverOff = (e: React.MouseEvent<HTMLElement>) => {
+              if (!isGroupActive && !isOpen) (e.currentTarget as HTMLElement).style.background = "transparent";
             };
 
             return group.directPath ? (
-              <NavLink key={group.label} to={group.directPath} style={tabStyle}>
+              <NavLink key={group.label} to={group.directPath} style={tabStyle} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
                 {inner}
               </NavLink>
             ) : (
               <button
                 key={group.label}
+                onMouseEnter={hoverOn}
+                onMouseLeave={hoverOff}
                 onClick={e => {
                   if (isOpen) { setOpenNavGroup(null); setDropPos(null); }
                   else {
@@ -1043,12 +1052,12 @@ const AdminLayout = () => {
         </div>
 
         {/* ── Slim breadcrumb + clear strip ── */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 14px", borderTop: `1px solid ${tok.headerBdr}`, background: `${tok.header}cc` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 16px", borderTop: `1px solid ${tok.headerBdr}`, background: "rgba(248,250,255,.7)" }}>
           {isSubPage ? (
             <>
               <button onClick={() => navigate("/admin/dashboard")}
-                style={{ color: tok.mainSub, background: "none", border: "none", cursor: "pointer", fontSize: 11, display: "flex", alignItems: "center", gap: 2, padding: 0 }}
-                onMouseEnter={e => (e.currentTarget.style.color = tok.mainText)}
+                style={{ color: tok.mainSub, background: "none", border: "none", cursor: "pointer", fontSize: 11, display: "flex", alignItems: "center", gap: 2, padding: 0, fontWeight: 500 }}
+                onMouseEnter={e => (e.currentTarget.style.color = A1)}
                 onMouseLeave={e => (e.currentTarget.style.color = tok.mainSub)}>
                 <ChevronLeft size={11} />
                 <span>Dashboard</span>
@@ -1056,23 +1065,23 @@ const AdminLayout = () => {
               {currentNav && (
                 <>
                   <span style={{ opacity: .3, fontSize: 11 }}>/</span>
-                  <span style={{ fontWeight: 600, color: tok.mainText, fontSize: 11, whiteSpace: "nowrap", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }}>{currentNav.label}</span>
+                  <span style={{ fontWeight: 600, color: tok.mainText, fontSize: 11, whiteSpace: "nowrap", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis" }}>{currentNav.label}</span>
                 </>
               )}
             </>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "2px 9px", borderRadius: 999, background: tok.liveBg, border: `1px solid ${tok.liveBdr}` }}>
               <div style={{ width: 6, height: 6, borderRadius: "50%", background: tok.statusDot, animation: "pulse-dot 2s ease-in-out infinite" }} />
-              <span style={{ fontWeight: 700, color: tok.mainText, fontSize: 11 }}>Live</span>
+              <span style={{ fontWeight: 700, color: tok.liveFg, fontSize: 10.5, letterSpacing: ".3px" }}>LIVE</span>
             </div>
           )}
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
             <button
               onClick={openClearDialog}
               title="Clear page data"
-              style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 7, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.2)", color: "#dc2626", fontSize: 10.5, fontWeight: 700, cursor: "pointer" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,.15)"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,.08)"; }}>
+              style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 7, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.2)", color: "#dc2626", fontSize: 10.5, fontWeight: 700, cursor: "pointer", transition: "all .15s" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,.18)"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,.08)"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"; }}>
               <Trash2 size={10} />
               <span>Clear Data</span>
             </button>
