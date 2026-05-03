@@ -80,7 +80,9 @@ export default function AdminThirdPartyApiKeyManager() {
             ))}
           </tr></thead>
           <tbody>
-            {filtered.map(k=>(
+            {filtered.length === 0 ? (
+              <tr><td colSpan={8} className="px-4 py-12 text-center text-xs" style={{ color:T.sub }}>No API keys added yet. Click "Add API Key" to get started.</td></tr>
+            ) : filtered.map(k=>(
               <tr key={k.id} className="border-b" style={{ borderColor:T.border }}>
                 <td className="px-4 py-3 font-bold text-sm" style={{ color:T.text }}>{k.service}</td>
                 <td className="px-4 py-3"><span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background:`${catColor(k.category)}15`, color:catColor(k.category) }}>{k.category}</span></td>
