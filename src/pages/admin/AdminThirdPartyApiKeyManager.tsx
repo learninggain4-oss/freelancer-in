@@ -9,18 +9,8 @@ const TH = {
 };
 const A1 = "#6366f1";
 
-const apiKeys = [
-  { id:"AK001", service:"Razorpay", category:"Payments", keyPreview:"rzp_live_••••••••••••••••", status:"Active", lastUsed:"2 min ago", requests:"84,210/month", env:"Production" },
-  { id:"AK002", service:"Razorpay (Test)", category:"Payments", keyPreview:"rzp_test_••••••••••••••••", status:"Active", lastUsed:"1 day ago", requests:"1,240/month", env:"Staging" },
-  { id:"AK003", service:"Twilio / MSG91", category:"SMS", keyPreview:"MG••••••••••••••••••••••••", status:"Active", lastUsed:"5 min ago", requests:"1,30,020/month", env:"Production" },
-  { id:"AK004", service:"OneSignal", category:"Push Notifications", keyPreview:"os_v2_app_••••••••••••••••", status:"Active", lastUsed:"10 min ago", requests:"38,200/month", env:"Production" },
-  { id:"AK005", service:"SendGrid", category:"Email", keyPreview:"SG.••••••••••••••••••••••••", status:"Active", lastUsed:"1 hour ago", requests:"56,400/month", env:"Production" },
-  { id:"AK006", service:"Google Maps", category:"Maps/Geo", keyPreview:"AIza••••••••••••••••••••••••", status:"Active", lastUsed:"3 min ago", requests:"12,840/month", env:"Production" },
-  { id:"AK007", service:"Aadhaar eSign API", category:"KYC", keyPreview:"ae_••••••••••••••••••••••••", status:"Active", lastUsed:"1 hour ago", requests:"4,820/month", env:"Production" },
-  { id:"AK008", service:"DigiLocker", category:"KYC", keyPreview:"dl_••••••••••••••••••••••••", status:"Inactive", lastUsed:"Never", requests:"0/month", env:"Production" },
-  { id:"AK009", service:"Sentry", category:"Monitoring", keyPreview:"sn_••••••••••••••••••••••••", status:"Active", lastUsed:"Just now", requests:"Unlimited", env:"Both" },
-  { id:"AK010", service:"OpenAI", category:"AI/ML", keyPreview:"sk-••••••••••••••••••••••••", status:"Active", lastUsed:"30 min ago", requests:"8,420/month", env:"Production" },
-];
+type ApiKey = { id:string; service:string; category:string; keyPreview:string; status:string; lastUsed:string; requests:string; env:string };
+const apiKeys: ApiKey[] = [];
 
 const categories = ["All","Payments","SMS","Push Notifications","Email","KYC","Maps/Geo","Monitoring","AI/ML"];
 
