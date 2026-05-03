@@ -10,9 +10,10 @@ const TH = {
 const A1 = "#6366f1";
 
 type ApiKey = { id:string; service:string; category:string; keyPreview:string; status:string; lastUsed:string; requests:string; env:string };
-const apiKeys: ApiKey[] = [];
 
 const categories = ["All","Payments","SMS","Push Notifications","Email","KYC","Maps/Geo","Monitoring","AI/ML"];
+const catOptions = categories.filter(c => c !== "All");
+const envOptions = ["Production", "Staging", "Both"];
 
 export default function AdminThirdPartyApiKeyManager() {
   const { themeKey } = useAdminTheme();
@@ -20,12 +21,38 @@ export default function AdminThirdPartyApiKeyManager() {
   const [cat, setCat] = useState("All");
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState<string|null>(null);
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ service:"", category:catOptions[0], apiKey:"", env:envOptions[0], status:"Active" });
 
   const filtered = cat==="All" ? apiKeys : apiKeys.filter(k=>k.category===cat);
   const toggle = (id:string) => {
     setRevealed(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
   };
   const copy = (id:string) => { setCopied(id); setTimeout(()=>setCopied(null),2000); };
+
+  const maskKey = (k:string) => {
+    if (!k) return "";
+    if (k.length <= 8) return "•".repeat(k.length);
+    return k.slice(0,4) + "•".repeat(Math.max(8, k.length - 8)) + k.slice(-4);
+  };
+
+  const handleAdd = () => {
+    if (!form.service.trim() || !form.apiKey.trim()) return;
+    const newKey: ApiKey = {
+      id: `AK${Date.now()}`,
+      service: form.service.trim(),
+      category: form.category,
+      keyPreview: maskKey(form.apiKey.trim()),
+      status: form.status,
+      lastUsed: "Never",
+      requests: "0/month",
+      env: form.env,
+    };
+    setApiKeys(prev => [newKey, ...prev]);
+    setForm({ service:"", category:catOptions[0], apiKey:"", env:envOptions[0], status:"Active" });
+    setShowModal(false);
+  };
 
   const catColor = (c:string) => {
     if(c==="Payments") return "#4ade80";
@@ -44,10 +71,54 @@ export default function AdminThirdPartyApiKeyManager() {
           <h1 className="text-2xl font-bold" style={{ color:T.text }}>Third-party API Key Manager</h1>
           <p className="text-sm mt-1" style={{ color:T.sub }}>Securely manage and monitor all third-party API keys. View usage, rotate keys, and control access by environment.</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold" style={{ background:A1, color:"#fff" }}>
+        <button onClick={()=>setShowModal(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold" style={{ background:A1, color:"#fff" }}>
           <Plus className="h-4 w-4" /> Add API Key
         </button>
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:"rgba(0,0,0,.6)" }} onClick={()=>setShowModal(false)}>
+          <div className="w-full max-w-md rounded-2xl border p-6 space-y-4" style={{ background:T.card, borderColor:T.border }} onClick={e=>e.stopPropagation()}>
+            <h2 className="text-lg font-bold" style={{ color:T.text }}>Add API Key</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-bold block mb-1" style={{ color:T.sub }}>Service Name</label>
+                <input value={form.service} onChange={e=>setForm({...form, service:e.target.value})} placeholder="e.g. Razorpay" className="w-full px-3 py-2 rounded-lg text-sm border outline-none" style={{ background:T.input, borderColor:T.border, color:T.text }} />
+              </div>
+              <div>
+                <label className="text-xs font-bold block mb-1" style={{ color:T.sub }}>Category</label>
+                <select value={form.category} onChange={e=>setForm({...form, category:e.target.value})} className="w-full px-3 py-2 rounded-lg text-sm border outline-none" style={{ background:T.input, borderColor:T.border, color:T.text }}>
+                  {catOptions.map(c=><option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold block mb-1" style={{ color:T.sub }}>API Key</label>
+                <input value={form.apiKey} onChange={e=>setForm({...form, apiKey:e.target.value})} placeholder="Paste API key" className="w-full px-3 py-2 rounded-lg text-sm border outline-none font-mono" style={{ background:T.input, borderColor:T.border, color:T.text }} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold block mb-1" style={{ color:T.sub }}>Environment</label>
+                  <select value={form.env} onChange={e=>setForm({...form, env:e.target.value})} className="w-full px-3 py-2 rounded-lg text-sm border outline-none" style={{ background:T.input, borderColor:T.border, color:T.text }}>
+                    {envOptions.map(c=><option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold block mb-1" style={{ color:T.sub }}>Status</label>
+                  <select value={form.status} onChange={e=>setForm({...form, status:e.target.value})} className="w-full px-3 py-2 rounded-lg text-sm border outline-none" style={{ background:T.input, borderColor:T.border, color:T.text }}>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end pt-2">
+              <button onClick={()=>setShowModal(false)} className="px-4 py-2 rounded-xl text-sm font-bold border" style={{ borderColor:T.border, color:T.sub }}>Cancel</button>
+              <button onClick={handleAdd} disabled={!form.service.trim()||!form.apiKey.trim()} className="px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50" style={{ background:A1, color:"#fff" }}>Save Key</button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
