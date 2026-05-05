@@ -185,6 +185,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
     const type = getStepType(step); setArrayErrors([]);
     const fields = formFieldsForStep(step);
     if (fields.length > 0) { const valid = await form.trigger(fields as any); if (!valid) return false; }
+    if (type === "personal" && usernameStatus === "taken") { setArrayErrors(["Username is already taken. Please choose another."]); return false; }
     if (type === "work") {
       const errors: string[] = [];
       workExperiences.forEach((w, i) => { const e = validateWorkExperience(w); if (e) errors.push(`Experience ${i+1}: ${e}`); });
