@@ -689,6 +689,19 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                     </FormItem>
                   )} />
 
+                  <FormField control={form.control} name="username" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600 }}>
+                        Username <span style={{ color: "#ef4444" }}>*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. john_doe" {...field} onChange={e => field.onChange(e.target.value.toLowerCase().replace(/\s+/g, ""))} className="reg-input" style={inp} />
+                      </FormControl>
+                      <FormDescription style={{ color: "rgba(255,255,255,.3)", fontSize: 11 }}>3–30 chars, letters, numbers, dot or underscore only. Must be unique.</FormDescription>
+                      <FormMessage className="text-red-400 text-xs" />
+                    </FormItem>
+                  )} />
+
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                     <FormField control={form.control} name="gender" render={({ field }) => (
                       <FormItem>
