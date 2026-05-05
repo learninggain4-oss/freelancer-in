@@ -21,6 +21,7 @@ export const contactInfoSchema = z.object({
   whatsapp_number: z.string().regex(phoneRegex, "Enter a valid 10-digit WhatsApp number"),
   email: z.string().trim().email("Enter a valid email").max(255),
   password: z.string().min(8, "Password must be at least 8 characters").max(72),
+  confirm_password: z.string().min(1, "Please confirm your password"),
 });
 
 export const educationSchema = z.object({
@@ -29,7 +30,8 @@ export const educationSchema = z.object({
 
 export const registrationProfileSchema = personalInfoSchema
   .merge(contactInfoSchema)
-  .merge(educationSchema);
+  .merge(educationSchema)
+  .refine((d) => d.password === d.confirm_password, { message: "Passwords do not match", path: ["confirm_password"] });
 
 export type RegistrationFormData = z.infer<typeof registrationProfileSchema>;
 

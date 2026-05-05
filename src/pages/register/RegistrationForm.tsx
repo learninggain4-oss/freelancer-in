@@ -7,7 +7,7 @@ import {
   Briefcase, ArrowLeft, ArrowRight, Loader2, Plus, Trash2,
   User, Phone, Building2, Heart, Wrench, CheckCircle2, Shield,
   GraduationCap, Calendar, Mail, Lock, Share2, Upload, FileText,
-  Sparkles, Check, Factory, IndianRupee, MapPin, Tag,
+  Sparkles, Check, Factory, IndianRupee, MapPin, Tag, Eye, EyeOff,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -128,6 +128,8 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [redirectSec, setRedirectSec] = useState(30);
   const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     if (!submitted || showSuccess) return;
@@ -145,7 +147,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationProfileSchema),
-    defaultValues: { full_name: "", username: "", gender: undefined, date_of_birth: "", marital_status: undefined, education_level: "", mobile_number: "", whatsapp_number: "", email: "", password: "", education_background: "" },
+    defaultValues: { full_name: "", username: "", gender: undefined, date_of_birth: "", marital_status: undefined, education_level: "", mobile_number: "", whatsapp_number: "", email: "", password: "", confirm_password: "", education_background: "" },
     mode: "onTouched",
   });
 
@@ -177,7 +179,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
 
   const formFieldsForStep = (s: number): string[] => {
     if (s === 0) return ["full_name","username","gender","date_of_birth","marital_status","education_level"];
-    if (s === 1) return ["mobile_number","whatsapp_number","email","password"];
+    if (s === 1) return ["mobile_number","whatsapp_number","email","password","confirm_password"];
     return [];
   };
 
@@ -841,12 +843,31 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                       <FormControl>
                         <div style={{ position: "relative" }}>
                           <Lock size={14} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,.3)" }} />
-                          <Input type="password" placeholder="Min 8 characters" {...field} className="reg-input" style={{ ...inp, paddingLeft: 38 }} />
+                          <Input type={showPassword ? "text" : "password"} placeholder="Min 8 characters" {...field} className="reg-input" style={{ ...inp, paddingLeft: 38, paddingRight: 40 }} />
+                          <button type="button" onClick={() => setShowPassword(v => !v)} aria-label={showPassword ? "Hide password" : "Show password"} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", color: "rgba(255,255,255,.5)", cursor: "pointer", padding: 4 }}>
+                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
                         </div>
                       </FormControl>
                       <FormDescription style={{ color: "rgba(255,255,255,.3)", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
                         <Shield size={11} /> Minimum 8 characters
                       </FormDescription>
+                      <FormMessage className="text-red-400 text-xs" />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="confirm_password" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600 }}>Confirm Password <span style={{ color: "#ef4444" }}>*</span></FormLabel>
+                      <FormControl>
+                        <div style={{ position: "relative" }}>
+                          <Lock size={14} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,.3)" }} />
+                          <Input type={showConfirmPassword ? "text" : "password"} placeholder="Re-enter password" {...field} className="reg-input" style={{ ...inp, paddingLeft: 38, paddingRight: 40 }} />
+                          <button type="button" onClick={() => setShowConfirmPassword(v => !v)} aria-label={showConfirmPassword ? "Hide password" : "Show password"} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", color: "rgba(255,255,255,.5)", cursor: "pointer", padding: 4 }}>
+                            {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                      </FormControl>
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
                   )} />
