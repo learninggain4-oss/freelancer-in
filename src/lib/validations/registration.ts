@@ -4,6 +4,12 @@ const phoneRegex = /^[6-9]\d{9}$/;
 
 export const personalInfoSchema = z.object({
   full_name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
+  username: z
+    .string()
+    .trim()
+    .min(3, "Username must be at least 3 characters")
+    .max(30, "Username must be 30 characters or less")
+    .regex(/^[a-zA-Z0-9_.]+$/, "Only letters, numbers, dot and underscore are allowed"),
   gender: z.enum(["male", "female", "other"], { required_error: "Select gender" }),
   date_of_birth: z.string().min(1, "Date of birth is required"),
   marital_status: z.enum(["single", "married", "divorced", "widowed"], { required_error: "Select marital status" }),

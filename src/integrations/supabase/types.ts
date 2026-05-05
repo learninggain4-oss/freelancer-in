@@ -1287,6 +1287,7 @@ export type Database = {
           user_code: string[]
           user_id: string
           user_type: Database["public"]["Enums"]["user_type"]
+          username: string | null
           wallet_active: boolean
           wallet_number: string | null
           wallet_type_id: string | null
@@ -1344,6 +1345,7 @@ export type Database = {
           user_code: string[]
           user_id: string
           user_type: Database["public"]["Enums"]["user_type"]
+          username?: string | null
           wallet_active?: boolean
           wallet_number?: string | null
           wallet_type_id?: string | null
@@ -1401,6 +1403,7 @@ export type Database = {
           user_code?: string[]
           user_id?: string
           user_type?: Database["public"]["Enums"]["user_type"]
+          username?: string | null
           wallet_active?: boolean
           wallet_number?: string | null
           wallet_type_id?: string | null

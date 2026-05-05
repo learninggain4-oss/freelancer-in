@@ -144,7 +144,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationProfileSchema),
-    defaultValues: { full_name: "", gender: undefined, date_of_birth: "", marital_status: undefined, education_level: "", mobile_number: "", whatsapp_number: "", email: "", password: "", education_background: "" },
+    defaultValues: { full_name: "", username: "", gender: undefined, date_of_birth: "", marital_status: undefined, education_level: "", mobile_number: "", whatsapp_number: "", email: "", password: "", education_background: "" },
     mode: "onTouched",
   });
 
@@ -157,7 +157,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   };
 
   const formFieldsForStep = (s: number): string[] => {
-    if (s === 0) return ["full_name","gender","date_of_birth","marital_status","education_level"];
+    if (s === 0) return ["full_name","username","gender","date_of_birth","marital_status","education_level"];
     if (s === 1) return ["mobile_number","whatsapp_number","email","password"];
     return [];
   };
@@ -210,6 +210,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
         const { data: profileData, error: profileError } = await supabaseClient.from("profiles").insert([{
           id: newProfileId, user_id: userId, user_type: uType,
           full_name: [data.full_name.toUpperCase()], user_code: [], email: data.email,
+          username: data.username.trim().toLowerCase(),
           gender: data.gender, date_of_birth: data.date_of_birth,
           marital_status: data.marital_status, education_level: data.education_level,
           mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number,
@@ -223,7 +224,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       // Helper: register via server API (fallback when can't sign in with existing account)
       const registerViaServer = async () => {
         const payload = {
-          email: data.email, user_type: uType, full_name: data.full_name,
+          email: data.email, user_type: uType, full_name: data.full_name, username: data.username.trim().toLowerCase(),
           gender: data.gender, date_of_birth: data.date_of_birth,
           marital_status: data.marital_status, education_level: data.education_level,
           mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number,
@@ -684,6 +685,19 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                         <Input placeholder="Enter your full name" {...field} onChange={e => field.onChange(e.target.value.toUpperCase())} className="reg-input" style={inp} />
                       </FormControl>
                       <FormDescription style={{ color: "rgba(255,255,255,.3)", fontSize: 11 }}>Name will be stored in uppercase</FormDescription>
+                      <FormMessage className="text-red-400 text-xs" />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="username" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600 }}>
+                        Username <span style={{ color: "#ef4444" }}>*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. john_doe" {...field} onChange={e => field.onChange(e.target.value.toLowerCase().replace(/\s+/g, ""))} className="reg-input" style={inp} />
+                      </FormControl>
+                      <FormDescription style={{ color: "rgba(255,255,255,.3)", fontSize: 11 }}>3–30 chars, letters, numbers, dot or underscore only. Must be unique.</FormDescription>
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
                   )} />
