@@ -714,9 +714,21 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                         Username <span style={{ color: "#ef4444" }}>*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. john_doe" {...field} onChange={e => field.onChange(e.target.value.toLowerCase().replace(/\s+/g, ""))} className="reg-input" style={inp} />
+                        <div style={{ position: "relative" }}>
+                          <Input placeholder="e.g. john_doe" {...field} onChange={e => field.onChange(e.target.value.toLowerCase().replace(/\s+/g, ""))} className="reg-input" style={{ ...inp, paddingRight: 38 }} />
+                          <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", display: "flex", alignItems: "center" }}>
+                            {usernameStatus === "checking" && <Loader2 size={16} color="rgba(255,255,255,.5)" className="animate-spin" />}
+                            {usernameStatus === "available" && <Check size={18} color="#22c55e" strokeWidth={3} />}
+                            {usernameStatus === "taken" && <span style={{ color: "#ef4444", fontSize: 16, fontWeight: 700 }}>✕</span>}
+                          </div>
+                        </div>
                       </FormControl>
-                      <FormDescription style={{ color: "rgba(255,255,255,.3)", fontSize: 11 }}>3–30 chars, letters, numbers, dot or underscore only. Must be unique.</FormDescription>
+                      <FormDescription style={{ fontSize: 11, color: usernameStatus === "available" ? "#22c55e" : usernameStatus === "taken" ? "#ef4444" : "rgba(255,255,255,.3)" }}>
+                        {usernameStatus === "checking" ? "Checking availability…"
+                          : usernameStatus === "available" ? "✓ Username is available"
+                          : usernameStatus === "taken" ? "✕ Username is already taken"
+                          : "3–30 chars, letters, numbers, dot or underscore only. Must be unique."}
+                      </FormDescription>
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
                   )} />
