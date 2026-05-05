@@ -127,6 +127,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const [countdownUnits, setCountdownUnits] = useState(300);
   const [showSuccess, setShowSuccess] = useState(false);
   const [redirectSec, setRedirectSec] = useState(30);
+  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
 
   useEffect(() => {
     if (!submitted || showSuccess) return;
