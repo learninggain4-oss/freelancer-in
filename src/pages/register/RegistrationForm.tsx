@@ -157,7 +157,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   };
 
   const formFieldsForStep = (s: number): string[] => {
-    if (s === 0) return ["full_name","gender","date_of_birth","marital_status","education_level"];
+    if (s === 0) return ["full_name","username","gender","date_of_birth","marital_status","education_level"];
     if (s === 1) return ["mobile_number","whatsapp_number","email","password"];
     return [];
   };
