@@ -7,7 +7,7 @@ import {
   Briefcase, ArrowLeft, ArrowRight, Loader2, Plus, Trash2,
   User, Phone, Building2, Heart, Wrench, CheckCircle2, Shield,
   GraduationCap, Calendar, Mail, Lock, Share2, Upload, FileText,
-  Sparkles, Check, Factory, IndianRupee, MapPin, Tag,
+  Sparkles, Check, Factory, IndianRupee, MapPin, Tag, Eye, EyeOff,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
