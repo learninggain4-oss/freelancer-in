@@ -145,7 +145,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationProfileSchema),
-    defaultValues: { full_name: "", username: "", gender: undefined, date_of_birth: "", marital_status: undefined, education_level: "", mobile_number: "", whatsapp_number: "", email: "", password: "", education_background: "" },
+    defaultValues: { full_name: "", username: "", gender: undefined, date_of_birth: "", marital_status: undefined, education_level: "", mobile_number: "", whatsapp_number: "", email: "", password: "", confirm_password: "", education_background: "" },
     mode: "onTouched",
   });
 
