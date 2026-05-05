@@ -22,7 +22,7 @@ export const contactInfoSchema = z.object({
   email: z.string().trim().email("Enter a valid email").max(255),
   password: z.string().min(8, "Password must be at least 8 characters").max(72),
   confirm_password: z.string().min(1, "Please confirm your password"),
-}).refine((d) => d.password === d.confirm_password, { message: "Passwords do not match", path: ["confirm_password"] });
+});
 
 export const educationSchema = z.object({
   education_background: z.string().max(500).optional().or(z.literal("")),
@@ -30,7 +30,8 @@ export const educationSchema = z.object({
 
 export const registrationProfileSchema = personalInfoSchema
   .merge(contactInfoSchema)
-  .merge(educationSchema);
+  .merge(educationSchema)
+  .refine((d) => d.password === d.confirm_password, { message: "Passwords do not match", path: ["confirm_password"] });
 
 export type RegistrationFormData = z.infer<typeof registrationProfileSchema>;
 
