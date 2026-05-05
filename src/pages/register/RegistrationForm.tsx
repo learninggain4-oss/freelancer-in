@@ -127,6 +127,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const [countdownUnits, setCountdownUnits] = useState(300);
   const [showSuccess, setShowSuccess] = useState(false);
   const [redirectSec, setRedirectSec] = useState(30);
+  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
 
   useEffect(() => {
     if (!submitted || showSuccess) return;
@@ -148,6 +149,24 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
     mode: "onTouched",
   });
 
+  const usernameValue = form.watch("username");
+  useEffect(() => {
+    const v = (usernameValue || "").trim().toLowerCase();
+    if (!v) { setUsernameStatus("idle"); return; }
+    if (!/^[a-z0-9_.]{3,30}$/.test(v)) { setUsernameStatus("invalid"); return; }
+    setUsernameStatus("checking");
+    const t = setTimeout(async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .ilike("username", v)
+        .maybeSingle();
+      if (error) { setUsernameStatus("idle"); return; }
+      setUsernameStatus(data ? "taken" : "available");
+    }, 450);
+    return () => clearTimeout(t);
+  }, [usernameValue]);
+
   const { data: categories = [] } = useQuery({ queryKey: ["service-categories"], queryFn: async () => { const { data } = await supabase.from("service_categories").select("*").order("name"); return data || []; } });
   const { data: allSkills = [] } = useQuery({ queryKey: ["service-skills"], queryFn: async () => { const { data } = await supabase.from("service_skills").select("*").order("name"); return data || []; } });
 
@@ -166,6 +185,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
     const type = getStepType(step); setArrayErrors([]);
     const fields = formFieldsForStep(step);
     if (fields.length > 0) { const valid = await form.trigger(fields as any); if (!valid) return false; }
+    if (type === "personal" && usernameStatus === "taken") { setArrayErrors(["Username is already taken. Please choose another."]); return false; }
     if (type === "work") {
       const errors: string[] = [];
       workExperiences.forEach((w, i) => { const e = validateWorkExperience(w); if (e) errors.push(`Experience ${i+1}: ${e}`); });
@@ -695,9 +715,21 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                         Username <span style={{ color: "#ef4444" }}>*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. john_doe" {...field} onChange={e => field.onChange(e.target.value.toLowerCase().replace(/\s+/g, ""))} className="reg-input" style={inp} />
+                        <div style={{ position: "relative" }}>
+                          <Input placeholder="e.g. john_doe" {...field} onChange={e => field.onChange(e.target.value.toLowerCase().replace(/\s+/g, ""))} className="reg-input" style={{ ...inp, paddingRight: 38 }} />
+                          <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", display: "flex", alignItems: "center" }}>
+                            {usernameStatus === "checking" && <Loader2 size={16} color="rgba(255,255,255,.5)" className="animate-spin" />}
+                            {usernameStatus === "available" && <Check size={18} color="#22c55e" strokeWidth={3} />}
+                            {usernameStatus === "taken" && <span style={{ color: "#ef4444", fontSize: 16, fontWeight: 700 }}>✕</span>}
+                          </div>
+                        </div>
                       </FormControl>
-                      <FormDescription style={{ color: "rgba(255,255,255,.3)", fontSize: 11 }}>3–30 chars, letters, numbers, dot or underscore only. Must be unique.</FormDescription>
+                      <FormDescription style={{ fontSize: 11, color: usernameStatus === "available" ? "#22c55e" : usernameStatus === "taken" ? "#ef4444" : "rgba(255,255,255,.3)" }}>
+                        {usernameStatus === "checking" ? "Checking availability…"
+                          : usernameStatus === "available" ? "✓ Username is available"
+                          : usernameStatus === "taken" ? "✕ Username is already taken"
+                          : "3–30 chars, letters, numbers, dot or underscore only. Must be unique."}
+                      </FormDescription>
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
                   )} />
