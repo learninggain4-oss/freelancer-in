@@ -149,6 +149,24 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
     mode: "onTouched",
   });
 
+  const usernameValue = form.watch("username");
+  useEffect(() => {
+    const v = (usernameValue || "").trim().toLowerCase();
+    if (!v) { setUsernameStatus("idle"); return; }
+    if (!/^[a-z0-9_.]{3,30}$/.test(v)) { setUsernameStatus("invalid"); return; }
+    setUsernameStatus("checking");
+    const t = setTimeout(async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .ilike("username", v)
+        .maybeSingle();
+      if (error) { setUsernameStatus("idle"); return; }
+      setUsernameStatus(data ? "taken" : "available");
+    }, 450);
+    return () => clearTimeout(t);
+  }, [usernameValue]);
+
   const { data: categories = [] } = useQuery({ queryKey: ["service-categories"], queryFn: async () => { const { data } = await supabase.from("service_categories").select("*").order("name"); return data || []; } });
   const { data: allSkills = [] } = useQuery({ queryKey: ["service-skills"], queryFn: async () => { const { data } = await supabase.from("service_skills").select("*").order("name"); return data || []; } });
 
