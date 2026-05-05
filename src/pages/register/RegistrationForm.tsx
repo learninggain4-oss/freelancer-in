@@ -843,12 +843,31 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                       <FormControl>
                         <div style={{ position: "relative" }}>
                           <Lock size={14} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,.3)" }} />
-                          <Input type="password" placeholder="Min 8 characters" {...field} className="reg-input" style={{ ...inp, paddingLeft: 38 }} />
+                          <Input type={showPassword ? "text" : "password"} placeholder="Min 8 characters" {...field} className="reg-input" style={{ ...inp, paddingLeft: 38, paddingRight: 40 }} />
+                          <button type="button" onClick={() => setShowPassword(v => !v)} aria-label={showPassword ? "Hide password" : "Show password"} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", color: "rgba(255,255,255,.5)", cursor: "pointer", padding: 4 }}>
+                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
                         </div>
                       </FormControl>
                       <FormDescription style={{ color: "rgba(255,255,255,.3)", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
                         <Shield size={11} /> Minimum 8 characters
                       </FormDescription>
+                      <FormMessage className="text-red-400 text-xs" />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="confirm_password" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600 }}>Confirm Password <span style={{ color: "#ef4444" }}>*</span></FormLabel>
+                      <FormControl>
+                        <div style={{ position: "relative" }}>
+                          <Lock size={14} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,.3)" }} />
+                          <Input type={showConfirmPassword ? "text" : "password"} placeholder="Re-enter password" {...field} className="reg-input" style={{ ...inp, paddingLeft: 38, paddingRight: 40 }} />
+                          <button type="button" onClick={() => setShowConfirmPassword(v => !v)} aria-label={showConfirmPassword ? "Hide password" : "Show password"} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", color: "rgba(255,255,255,.5)", cursor: "pointer", padding: 4 }}>
+                            {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                      </FormControl>
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
                   )} />
