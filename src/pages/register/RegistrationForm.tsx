@@ -224,7 +224,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       // Helper: register via server API (fallback when can't sign in with existing account)
       const registerViaServer = async () => {
         const payload = {
-          email: data.email, user_type: uType, full_name: data.full_name,
+          email: data.email, user_type: uType, full_name: data.full_name, username: data.username.trim().toLowerCase(),
           gender: data.gender, date_of_birth: data.date_of_birth,
           marital_status: data.marital_status, education_level: data.education_level,
           mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number,
