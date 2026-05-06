@@ -17,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { loginSchema, type LoginFormData } from "@/lib/validations/registration";
 import { supabase } from "@/integrations/supabase/client";
 import TotpVerifyDialog from "@/components/admin/TotpVerifyDialog";
+import ForgotEmailDialog from "@/components/auth/ForgotEmailDialog";
 
 /* ─── Keyframe CSS ─── */
 const GLOBAL_CSS = `
@@ -145,6 +146,7 @@ const Login = () => {
   const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [captchaVerified, setCaptchaVerified] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotEmail, setShowForgotEmail] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, user, profile, loading: authLoading } = useAuth();
@@ -374,10 +376,15 @@ const Login = () => {
                     </FormItem>
                   )} />
 
-                  {/* Forgot password */}
-                  <div style={{ textAlign: "right" }}>
+                  {/* Forgot links */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    <button type="button" onClick={() => setShowForgotEmail(true)}
+                      style={{ background: "none", border: "none", padding: 0, color: A1, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                      Forgot email?
+                    </button>
                     <Link to="/forgot-password" style={{ color: A1, fontSize: 12, textDecoration: "none", fontWeight: 600 }}>Forgot password?</Link>
                   </div>
+
 
                   {/* Terms checkbox */}
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
@@ -675,6 +682,8 @@ const Login = () => {
         description="Enter your Google Authenticator code to continue."
         functionName={pendingAdminNav ? "admin-totp" : "user-totp"}
       />
+
+      <ForgotEmailDialog open={showForgotEmail} onOpenChange={setShowForgotEmail} />
     </div>
   );
 };
