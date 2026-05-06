@@ -17,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { loginSchema, type LoginFormData } from "@/lib/validations/registration";
 import { supabase } from "@/integrations/supabase/client";
 import TotpVerifyDialog from "@/components/admin/TotpVerifyDialog";
+import ForgotEmailDialog from "@/components/auth/ForgotEmailDialog";
 
 /* ─── Keyframe CSS ─── */
 const GLOBAL_CSS = `
