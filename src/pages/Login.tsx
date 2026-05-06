@@ -376,10 +376,15 @@ const Login = () => {
                     </FormItem>
                   )} />
 
-                  {/* Forgot password */}
-                  <div style={{ textAlign: "right" }}>
+                  {/* Forgot links */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    <button type="button" onClick={() => setShowForgotEmail(true)}
+                      style={{ background: "none", border: "none", padding: 0, color: A1, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                      Forgot email?
+                    </button>
                     <Link to="/forgot-password" style={{ color: A1, fontSize: 12, textDecoration: "none", fontWeight: 600 }}>Forgot password?</Link>
                   </div>
+
 
                   {/* Terms checkbox */}
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
