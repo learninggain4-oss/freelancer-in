@@ -2918,6 +2918,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      lookup_email_by_mobile_dob: {
+        Args: { p_dob: string; p_mobile: string }
+        Returns: string
+      }
       sign: {
         Args: { algorithm?: string; payload: Json; secret: string }
         Returns: string
