@@ -682,6 +682,8 @@ const Login = () => {
         description="Enter your Google Authenticator code to continue."
         functionName={pendingAdminNav ? "admin-totp" : "user-totp"}
       />
+
+      <ForgotEmailDialog open={showForgotEmail} onOpenChange={setShowForgotEmail} />
     </div>
   );
 };
