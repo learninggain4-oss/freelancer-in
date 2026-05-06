@@ -146,6 +146,7 @@ const Login = () => {
   const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [captchaVerified, setCaptchaVerified] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotEmail, setShowForgotEmail] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, user, profile, loading: authLoading } = useAuth();
