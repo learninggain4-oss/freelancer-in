@@ -18,6 +18,7 @@ import { loginSchema, type LoginFormData } from "@/lib/validations/registration"
 import { supabase } from "@/integrations/supabase/client";
 import TotpVerifyDialog from "@/components/admin/TotpVerifyDialog";
 import ForgotEmailDialog from "@/components/auth/ForgotEmailDialog";
+import CanvasCaptcha from "@/components/auth/CanvasCaptcha";
 
 /* ─── Keyframe CSS ─── */
 const GLOBAL_CSS = `
