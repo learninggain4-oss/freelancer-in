@@ -142,34 +142,12 @@ const Login = () => {
   const [showTotpDialog, setShowTotpDialog] = useState(false);
   const [pendingAdminNav, setPendingAdminNav] = useState(false);
   const [pendingUserNav, setPendingUserNav] = useState<string | null>(null);
-  const [captchaA, setCaptchaA] = useState(0);
-  const [captchaB, setCaptchaB] = useState(0);
-  const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [captchaVerified, setCaptchaVerified] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotEmail, setShowForgotEmail] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, user, profile, loading: authLoading } = useAuth();
-
-  const regenerateCaptcha = useCallback(() => {
-    setCaptchaA(Math.floor(Math.random() * 9) + 1);
-    setCaptchaB(Math.floor(Math.random() * 9) + 1);
-    setCaptchaAnswer("");
-    setCaptchaVerified(false);
-  }, []);
-
-  const verifyCaptcha = () => {
-    if (parseInt(captchaAnswer) === captchaA + captchaB) {
-      setCaptchaVerified(true);
-      toast({ title: "CAPTCHA verified!" });
-    } else {
-      toast({ title: "Wrong answer", description: "Please try again.", variant: "destructive" });
-      regenerateCaptcha();
-    }
-  };
-
-  useEffect(() => { regenerateCaptcha(); }, [regenerateCaptcha]);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
