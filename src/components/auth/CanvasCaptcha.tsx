@@ -17,6 +17,16 @@ const getRandomIndex = (max: number) => {
   return Math.floor(Math.random() * max);
 };
 
+const getRandomIndex = (max: number) => {
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    const value = new Uint32Array(1);
+    crypto.getRandomValues(value);
+    return value[0] % max;
+  }
+
+  return Math.floor(Math.random() * max);
+};
+
 const generateCode = (len = 6) => {
   let s = "";
   for (let i = 0; i < len; i++) s += CHARS[getRandomIndex(CHARS.length)];
