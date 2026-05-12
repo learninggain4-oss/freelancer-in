@@ -5,10 +5,30 @@ import { useToast } from "@/hooks/use-toast";
 
 const CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no confusing 0/O/1/I
 
+const getRandomIndex = (max: number) => {
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    const value = new Uint32Array(1);
+    crypto.getRandomValues(value);
+    return value[0] % max;
+  }
+
+  return Math.floor(Math.random() * max);
+};
+
 const generateCode = (len = 6) => {
   let s = "";
-  for (let i = 0; i < len; i++) s += CHARS[Math.floor(Math.random() * CHARS.length)];
+  for (let i = 0; i < len; i++) s += CHARS[getRandomIndex(CHARS.length)];
   return s;
+};
+
+const generateFreshCode = (previousCode?: string, len = 6) => {
+  let nextCode = generateCode(len);
+
+  while (nextCode === previousCode) {
+    nextCode = generateCode(len);
+  }
+
+  return nextCode;
 };
 
 interface Props {
@@ -29,6 +49,8 @@ const CanvasCaptcha = ({ verified, onVerifiedChange, accent = "#6366f1" }: Props
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const W = canvas.width, H = canvas.height;
+
+    ctx.clearRect(0, 0, W, H);
 
     // background
     const grad = ctx.createLinearGradient(0, 0, W, H);
@@ -85,7 +107,7 @@ const CanvasCaptcha = ({ verified, onVerifiedChange, accent = "#6366f1" }: Props
   useEffect(() => { draw(code); }, [code, draw]);
 
   const regenerate = () => {
-    setCode(generateCode());
+    setCode((previousCode) => generateFreshCode(previousCode));
     setAnswer("");
     onVerifiedChange(false);
   };
@@ -96,7 +118,7 @@ const CanvasCaptcha = ({ verified, onVerifiedChange, accent = "#6366f1" }: Props
       toast({ title: "CAPTCHA verified!" });
     } else {
       toast({ title: "Wrong code", description: "Please try again.", variant: "destructive" });
-      setCode(generateCode());
+      setCode((previousCode) => generateFreshCode(previousCode));
       setAnswer("");
     }
   };
