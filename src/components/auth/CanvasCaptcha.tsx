@@ -17,6 +17,16 @@ const getRandomIndex = (max: number) => {
   return Math.floor(Math.random() * max);
 };
 
+const getRandomIndex = (max: number) => {
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    const value = new Uint32Array(1);
+    crypto.getRandomValues(value);
+    return value[0] % max;
+  }
+
+  return Math.floor(Math.random() * max);
+};
+
 const generateCode = (len = 6) => {
   let s = "";
   for (let i = 0; i < len; i++) s += CHARS[getRandomIndex(CHARS.length)];
@@ -49,7 +59,7 @@ const CanvasCaptcha = ({ verified, onVerifiedChange, accent = "#6366f1" }: Props
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const pixelRatio = canvas.ownerDocument.defaultView?.devicePixelRatio ?? 1;
+    const pixelRatio = window.devicePixelRatio || 1;
 
     // Reset the bitmap on every draw so the previous CAPTCHA is fully removed.
     canvas.width = CAPTCHA_WIDTH * pixelRatio;
