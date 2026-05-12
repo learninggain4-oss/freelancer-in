@@ -50,6 +50,8 @@ const CanvasCaptcha = ({ verified, onVerifiedChange, accent = "#6366f1" }: Props
     if (!ctx) return;
     const W = canvas.width, H = canvas.height;
 
+    ctx.clearRect(0, 0, W, H);
+
     // background
     const grad = ctx.createLinearGradient(0, 0, W, H);
     grad.addColorStop(0, "rgba(99,102,241,0.18)");
