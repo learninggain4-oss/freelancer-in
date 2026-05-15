@@ -50,6 +50,7 @@ const AdminInvite = lazy(() => import("./pages/admin/AdminInvite"));
 const AdminEmployees = lazy(() => import("./pages/admin/AdminEmployees"));
 const AdminClients = lazy(() => import("./pages/admin/AdminClients"));
 const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
+const AdminDepositRequests = lazy(() => import("./pages/admin/AdminDepositRequests"));
 const AdminVerifications = lazy(() => import("./pages/admin/AdminVerifications"));
 const AdminBankVerifications = lazy(() => import("./pages/admin/AdminBankVerifications"));
 const AdminProfileEdit = lazy(() => import("./pages/admin/AdminProfileEdit"));
@@ -573,6 +574,7 @@ const AppContent = () => {
               <Route path="freelancers" element={<AdminEmployees />} />
               <Route path="employers" element={<AdminClients />} />
               <Route path="withdrawals" element={<AdminWithdrawals />} />
+              <Route path="deposit-requests" element={<AdminDepositRequests />} />
               <Route path="verifications" element={<AdminVerifications />} />
               <Route path="bank-verifications" element={<AdminBankVerifications />} />
               <Route path="profile-edits" element={<AdminProfileEdits />} />
