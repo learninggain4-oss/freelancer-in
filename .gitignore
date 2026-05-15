@@ -26,3 +26,12 @@ dist-ssr
 # Generated exports and logs
 server/exports/*.xlsx
 logs/*.log
+
+# Vite temp files
+vite.config.ts.timestamp-*.mjs
+
+# Supabase CLI temp files
+supabase/.temp/
+
+# Replit internal
+.local/

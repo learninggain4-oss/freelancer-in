@@ -5,7 +5,7 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "supabase/**", ".local/**", "server/**"] },
+  { ignores: ["dist", ".local/", "node_modules/", "supabase/.temp/", "vite.config.ts.timestamp-*.mjs"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
@@ -21,19 +21,6 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
-      "@typescript-eslint/no-require-imports": "off",
-      "no-var": "off",
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-empty-object-type": "off",
-      "@typescript-eslint/no-unused-expressions": "off",
-      "@typescript-eslint/ban-ts-comment": "warn",
-      "no-empty": "off",
-      "no-shadow": "off",
-      "no-shadow-restricted-names": "off",
-      "no-constant-condition": "warn",
-      "no-constant-binary-expression": "warn",
-      "prefer-const": "warn",
-      "react-hooks/exhaustive-deps": "warn",
     },
   },
 );

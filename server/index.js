@@ -652,36 +652,13 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
       }
 
       await adminClient.from("projects").update({ assigned_employee_id: null }).eq("assigned_employee_id", pid);
-
-      // Break non-CASCADE FK references before profile delete
-      await Promise.all([
-        adminClient.from("admin_audit_logs").update({ target_profile_id: null }).eq("target_profile_id", pid),
-        adminClient.from("admin_audit_logs").delete().eq("admin_id", pid),
-        adminClient.from("profiles").update({ edit_reviewed_by: null }).eq("edit_reviewed_by", pid),
-        adminClient.from("recovery_requests").update({ resolved_by: null }).eq("resolved_by", pid),
-        adminClient.from("withdrawals").update({ reviewed_by: null }).eq("reviewed_by", pid),
-        adminClient.from("blocked_ips").update({ blocked_by: null }).eq("blocked_by", pid),
-        adminClient.from("aadhaar_verifications").update({ verified_by: null }).eq("verified_by", pid),
-        adminClient.from("bank_verifications").update({ verified_by: null }).eq("verified_by", pid),
-        adminClient.from("support_messages").delete().eq("sender_id", pid),
-      ]);
-
-      // Delete support conversations owned by this profile
-      const { data: supportConvo } = await adminClient.from("support_conversations").select("id").eq("user_id", pid).maybeSingle();
-      if (supportConvo) {
-        await adminClient.from("support_messages").delete().eq("conversation_id", supportConvo.id);
-        await adminClient.from("support_conversations").delete().eq("id", supportConvo.id);
-      }
-
       await Promise.all([
         adminClient.from("aadhaar_verifications").delete().eq("profile_id", pid),
         adminClient.from("bank_verifications").delete().eq("profile_id", pid),
         adminClient.from("documents").delete().eq("profile_id", pid),
         adminClient.from("employee_emergency_contacts").delete().eq("profile_id", pid),
         adminClient.from("employee_services").delete().eq("profile_id", pid),
-        adminClient.from("employer_profiles").delete().eq("profile_id", pid),
         adminClient.from("notifications").delete().eq("user_id", userId),
-        adminClient.from("notifications").delete().eq("user_id", pid),
         adminClient.from("registration_metadata").delete().eq("profile_id", pid),
         adminClient.from("transactions").delete().eq("profile_id", pid),
         adminClient.from("withdrawals").delete().eq("employee_id", pid),
@@ -689,28 +666,6 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
         adminClient.from("user_bank_accounts").delete().eq("profile_id", pid),
         adminClient.from("attendance").delete().eq("profile_id", pid),
         adminClient.from("coin_transactions").delete().eq("profile_id", pid),
-        adminClient.from("coin_reward_claims").delete().eq("profile_id", pid),
-        adminClient.from("push_subscriptions").delete().eq("profile_id", pid),
-        adminClient.from("pwa_install_status").delete().eq("profile_id", pid),
-        adminClient.from("site_visitors").delete().eq("profile_id", pid),
-        adminClient.from("upgrade_appointments").delete().eq("profile_id", pid),
-        adminClient.from("user_reviews").delete().eq("profile_id", pid),
-        adminClient.from("wallet_upgrade_requests").delete().eq("profile_id", pid),
-        adminClient.from("reviews").delete().eq("reviewee_id", pid),
-        adminClient.from("reviews").delete().eq("reviewer_id", pid),
-        adminClient.from("work_experiences").delete().eq("profile_id", pid),
-        adminClient.from("referrals").delete().eq("referrer_id", pid),
-        adminClient.from("referrals").delete().eq("referred_id", pid),
-        adminClient.from("project_applications").delete().eq("employee_id", pid),
-        adminClient.from("project_submissions").delete().eq("employee_id", pid),
-        adminClient.from("project_documents").delete().eq("uploaded_by", pid),
-        adminClient.from("payment_confirmations").delete().eq("employee_id", pid),
-        adminClient.from("message_reactions").delete().eq("user_id", pid),
-        adminClient.from("support_message_reactions").delete().eq("user_id", pid),
-        adminClient.from("messages").delete().eq("sender_id", pid),
-        adminClient.from("announcement_dismissals").delete().eq("user_id", userId),
-        adminClient.from("custom_quick_replies").delete().eq("created_by", pid),
-        adminClient.from("quick_reply_analytics").delete().eq("used_by", pid),
       ]);
 
       await adminClient.from("profiles").delete().eq("id", pid);
@@ -739,7 +694,7 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
       return res.json({ success: true, sessions: [] });
     }
 
-    if (action === "revoke_sessions" || action === "force_logout") {
+    if (action === "revoke_sessions") {
       if (!user_id) return res.status(400).json({ error: "user_id required" });
       // Use GoTrue REST API to revoke all sessions for the user by user_id
       const supabaseUrl = SUPABASE_URL;
@@ -766,24 +721,20 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
 
     if (action === "invite_user") {
       if (!email || !user_type) return res.status(400).json({ error: "email and user_type required" });
-      const normalizedUserType = user_type === "freelancer" ? "employee" : user_type === "employer" ? "client" : user_type;
       const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email);
       if (inviteErr) return res.status(400).json({ error: inviteErr.message });
       const invitedUserId = inviteData?.user?.id;
-      if (!invitedUserId) return res.status(500).json({ error: "Failed to create invited auth user" });
-      const { error: profileErr } = await adminClient.from("profiles").insert({
-        user_id: invitedUserId,
-        email,
-        full_name: [email.split("@")[0].toUpperCase()],
-        user_code: ["PENDING"],
-        user_type: normalizedUserType,
-        approval_status: "approved",
-        approved_at: new Date().toISOString(),
-        referral_code: invitedUserId.substring(0, 8).toUpperCase(),
-      });
-      if (profileErr) {
-        console.error("Profile creation error:", profileErr.message);
-        return res.status(500).json({ error: `User invited, but profile creation failed: ${profileErr.message}` });
+      if (invitedUserId) {
+        await adminClient.from("profiles").insert({
+          user_id: invitedUserId,
+          email,
+          full_name: [email.split("@")[0].toUpperCase()],
+          user_code: ["PENDING"],
+          user_type,
+          approval_status: "approved",
+          approved_at: new Date().toISOString(),
+          referral_code: invitedUserId.substring(0, 8).toUpperCase(),
+        }).catch(e => console.error("Profile creation error:", e.message));
       }
       return res.json({ success: true, message: `Invite sent to ${email}` });
     }
@@ -1296,7 +1247,7 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
     if (!checkRateLimit(user.id)) return res.status(429).json({ error: "Rate limit exceeded. Please try again later." });
 
     const supabase = getAdminClient();
-    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, target_wallet_number, payment_method, payment_details, status_filter, deposit_request_id, deposit_action } = req.body;
+    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, target_wallet_number } = req.body;
 
     const { data: callerProfile, error: cpErr } = await supabase.from("profiles").select("id, user_id, user_type, available_balance, hold_balance, approval_status, wallet_number").eq("user_id", user.id).single();
     if (cpErr || !callerProfile) throw new Error("Profile not found");
@@ -1588,95 +1539,6 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
         break;
       }
 
-      case "claim_add_money_slot": {
-        const now = new Date();
-        const { data: activeSlot } = await supabase.from("add_money_queue")
-          .select("id, user_id, expires_at, profile_id")
-          .eq("status", "active")
-          .gt("expires_at", now.toISOString())
-          .order("started_at", { ascending: true })
-          .limit(1)
-          .maybeSingle();
-        if (activeSlot && activeSlot.profile_id !== callerProfile.id) {
-          const expiresAt = new Date(activeSlot.expires_at);
-          const waitSeconds = Math.max(0, Math.floor((expiresAt - now) / 1000));
-          result.claimed = false;
-          result.wait_seconds = waitSeconds;
-          result.expires_at = activeSlot.expires_at;
-        } else {
-          await supabase.from("add_money_queue").delete().eq("profile_id", callerProfile.id);
-          const expiresAt = new Date(now.getTime() + 15 * 60 * 1000).toISOString();
-          await supabase.from("add_money_queue").insert({ profile_id: callerProfile.id, user_id: callerProfile.user_id, started_at: now.toISOString(), expires_at: expiresAt, status: "active" });
-          result.claimed = true;
-          result.expires_at = expiresAt;
-        }
-        break;
-      }
-
-      case "release_add_money_slot": {
-        await supabase.from("add_money_queue").delete().eq("profile_id", callerProfile.id);
-        result.released = true;
-        break;
-      }
-
-      case "submit_deposit_request": {
-        if (!amount || amount <= 0) throw new Error("Invalid amount");
-        if (amount < 100) throw new Error("Minimum deposit amount is ₹100");
-        if (amount > 50000) throw new Error("Maximum deposit amount is ₹50,000");
-        if (amount % 100 !== 0) throw new Error("Amount must be in multiples of ₹100 (no loose change)");
-        if (!["employee", "client"].includes(callerProfile.user_type)) throw new Error("Only freelancers and employers can deposit money");
-        const { data: depInsert, error: reqErr } = await supabase.from("deposit_requests").insert({
-          profile_id: callerProfile.id,
-          amount,
-          payment_method: payment_method || "UPI",
-          payment_details: payment_details || {},
-          status: "pending",
-        }).select("id, order_id").single();
-        if (reqErr) throw new Error("Failed to create deposit request");
-        await supabase.from("add_money_queue").delete().eq("profile_id", callerProfile.id);
-        await supabase.from("notifications").insert({ user_id: callerProfile.user_id, title: "Deposit Request Submitted", message: `Your deposit request of ₹${amount.toLocaleString("en-IN")} has been submitted. Admin will credit your wallet after payment verification.`, type: "financial" });
-        result.request_id = depInsert.id;
-        result.order_id = depInsert.order_id;
-        break;
-      }
-
-      case "admin_get_deposit_requests": {
-        if (!["admin"].includes(callerProfile.user_type)) throw new Error("Admin access required");
-        const resolvedStatusFilter = status_filter || "pending";
-        let query = supabase.from("deposit_requests").select("id, profile_id, amount, payment_method, payment_details, status, order_id, created_at, reviewed_at, review_notes, profiles(full_name, email, user_type, wallet_number)").order("created_at", { ascending: false }).limit(100);
-        if (resolvedStatusFilter !== "all") query = query.eq("status", resolvedStatusFilter);
-        const { data: requests, error: rErr } = await query;
-        if (rErr) throw new Error(rErr.message);
-        result.requests = requests || [];
-        break;
-      }
-
-      case "admin_process_deposit": {
-        if (!["admin"].includes(callerProfile.user_type)) throw new Error("Admin access required");
-        if (!deposit_request_id || !deposit_action) throw new Error("deposit_request_id and deposit_action required");
-        if (!["approve", "reject"].includes(deposit_action)) throw new Error("deposit_action must be approve or reject");
-        const { data: depReq } = await supabase.from("deposit_requests").select("id, profile_id, amount, status").eq("id", deposit_request_id).single();
-        if (!depReq) throw new Error("Deposit request not found");
-        if (depReq.status !== "pending") throw new Error("Request already processed");
-        if (deposit_action === "approve") {
-          const { data: userProf } = await supabase.from("profiles").select("available_balance, user_id, full_name").eq("id", depReq.profile_id).single();
-          if (!userProf) throw new Error("User profile not found");
-          const newBal = Number(userProf.available_balance) + Number(depReq.amount);
-          await supabase.from("profiles").update({ available_balance: newBal }).eq("id", depReq.profile_id);
-          await supabase.from("transactions").insert({ profile_id: depReq.profile_id, type: "credit", amount: depReq.amount, description: `Wallet top-up approved by admin (₹${Number(depReq.amount).toLocaleString("en-IN")})`, reference_id: depReq.id });
-          await supabase.from("notifications").insert({ user_id: userProf.user_id, title: "Deposit Approved! 🎉", message: `Your deposit of ₹${Number(depReq.amount).toLocaleString("en-IN")} has been approved and credited to your FlexPay wallet.`, type: "financial" });
-          await supabase.from("deposit_requests").update({ status: "approved", reviewed_at: new Date().toISOString(), review_notes: review_notes || null, reviewed_by: callerProfile.id }).eq("id", deposit_request_id);
-          result.new_balance = newBal;
-        } else {
-          const { data: userProf } = await supabase.from("profiles").select("user_id").eq("id", depReq.profile_id).single();
-          await supabase.from("deposit_requests").update({ status: "rejected", reviewed_at: new Date().toISOString(), review_notes: review_notes || null, reviewed_by: callerProfile.id }).eq("id", deposit_request_id);
-          if (userProf) await supabase.from("notifications").insert({ user_id: userProf.user_id, title: "Deposit Rejected", message: `Your deposit request of ₹${Number(depReq.amount).toLocaleString("en-IN")} was rejected.${review_notes ? " Reason: " + review_notes : ""}`, type: "financial" });
-        }
-        logAudit(supabase, callerProfile.id, deposit_action === "approve" ? "wallet_add" : "reject_deposit", depReq.profile_id, null, { amount: depReq.amount, deposit_request_id });
-        result.processed = true;
-        break;
-      }
-
       default:
         throw new Error(`Unknown action: ${action}`);
     }
@@ -1770,6 +1632,7 @@ app.get("/functions/v1/server-metrics", async (req, res) => {
   try {
     const user = await getUserFromToken(req.headers.authorization);
     if (!user) return res.status(401).json({ error: "Unauthorized" });
+    const adminClient = getAdminClient();
     const { data: roleData } = await adminClient.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
     if (!roleData) return res.status(403).json({ error: "Forbidden: admin role required" });
 
@@ -2454,7 +2317,7 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
           .update({ ...profileFields, updated_at: new Date().toISOString() })
           .eq("id", existingProf.id);
         if (updErr) return res.status(500).json({ error: updErr.message });
-        return res.json({ success: true, action: "updated", profile_id: existingProf.id, user_id: existingProf.user_id || null, email: emailLower, full_name: nameUpper });
+        return res.json({ success: true, action: "updated", user_id: existingProf.id, email: emailLower, full_name: nameUpper });
       }
     }
 
@@ -2484,7 +2347,7 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
       const newProfileId = randomUUID();
       const { error: profErr } = await adminClient.from("profiles").insert({
         id: newProfileId, user_id: userId, email: emailLower,
-        user_code: [], created_at: new Date().toISOString(), ...profileFields,
+        user_code: [], ...profileFields,
       });
       if (profErr) return res.status(500).json({ error: profErr.message });
       return res.json({ success: true, action: "created", user_id: userId, profile_id: newProfileId, email: emailLower, full_name: nameUpper });
@@ -2497,15 +2360,15 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
         .update({ ...profileFields, updated_at: new Date().toISOString() })
         .eq("id", authProf.id);
       if (updErr) return res.status(500).json({ error: updErr.message });
-      return res.json({ success: true, action: "updated", profile_id: authProf.id, user_id: userId, email: emailLower, full_name: nameUpper });
+      return res.json({ success: true, action: "updated", user_id: userId, email: emailLower, full_name: nameUpper });
     }
 
     const { error: profErr } = await adminClient.from("profiles").insert({
       id: userId, user_id: userId, email: emailLower,
-      user_code: [], created_at: new Date().toISOString(), ...profileFields,
+      user_code: [], ...profileFields,
     });
     if (profErr) return res.status(500).json({ error: profErr.message });
-    res.json({ success: true, action: "created", profile_id: userId, user_id: userId, email: emailLower, full_name: nameUpper });
+    res.json({ success: true, action: "created", user_id: userId, email: emailLower, full_name: nameUpper });
   } catch (err) {
     console.error("admin-add-user error:", err);
     res.status(500).json({ error: err.message });
