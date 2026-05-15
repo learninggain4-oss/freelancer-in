@@ -319,9 +319,8 @@ const WithdrawalHistory = lazy(() => import("./pages/wallet/WithdrawalHistory"))
 const WalletQRPage = lazy(() => import("./pages/wallet/WalletQRPage"));
 const WalletScanPage = lazy(() => import("./pages/wallet/WalletScanPage"));
 const RequestWithdrawal = lazy(() => import("./pages/wallet/RequestWithdrawal"));
-const UpgradeChat = lazy(() => import("./pages/wallet/UpgradeChat"));
 const AddMoneyPage = lazy(() => import("./pages/wallet/AddMoneyPage"));
-const AdminDepositRequests = lazy(() => import("./pages/admin/AdminDepositRequests"));
+const UpgradeChat = lazy(() => import("./pages/wallet/UpgradeChat"));
 const ProfilePersonalInfo = lazy(() => import("./pages/profile/ProfilePersonalInfo"));
 const ProfileProfessional = lazy(() => import("./pages/profile/ProfileProfessional"));
 const ProfileBankDetails = lazy(() => import("./pages/profile/ProfileBankDetails"));
@@ -590,7 +589,6 @@ const AppContent = () => {
               <Route path="help-support" element={<AdminHelpSupport />} />
               <Route path="support-reporting" element={<AdminSupportReporting />} />
               <Route path="payment-methods" element={<AdminPaymentMethods />} />
-              <Route path="deposit-requests" element={<AdminDepositRequests />} />
               <Route path="countdowns" element={<AdminCountdowns />} />
               <Route path="validation" element={<AdminValidation />} />
               <Route path="sessions" element={<AdminSessions />} />
