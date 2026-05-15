@@ -60,8 +60,8 @@ const ClientWallet = () => {
       const res = await supabase.functions.invoke("wallet-operations", {
         body: { action: "add_money", amount },
       });
-      if (res.error) throw new Error(res.error.message);
       if (res.data?.error) throw new Error(res.data.error);
+      if (res.error) throw new Error(res.error.message);
       return res.data;
     },
     onSuccess: () => {
@@ -103,7 +103,7 @@ const ClientWallet = () => {
           availableBalance={profile?.available_balance ?? 0}
           holdBalance={profile?.hold_balance ?? 0}
           walletActive={(profile as any)?.wallet_active ?? true}
-          onAddMoney={() => navigate("/employer/wallet/add-money")}
+          onAddMoney={scrollToAddMoney}
           onTransfer={() => setShowTransfer(true)}
         />
       </div>
