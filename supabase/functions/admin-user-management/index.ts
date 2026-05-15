@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2.95.0";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,10 +39,6 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Super admin emails — these always have full access regardless of user_roles table
-    const SUPER_ADMIN_EMAILS = (Deno.env.get("SUPER_ADMIN_EMAILS") || "freeandin9@gmail.com")
-      .split(",").map((e: string) => e.trim().toLowerCase()).filter(Boolean);
-
     // Use getUser for reliable token validation instead of manual JWT decoding
     const token = authHeader.replace("Bearer ", "");
     const { data: { user: callerUser }, error: userError } = await adminClient.auth.getUser(token);
@@ -57,64 +53,34 @@ Deno.serve(async (req) => {
         });
       }
       var callerUserId = fallbackId;
-      var callerEmail = "";
     } else {
       var callerUserId = callerUser.id;
-      var callerEmail = (callerUser.email || "").toLowerCase();
     }
 
-    const isSuperAdmin = SUPER_ADMIN_EMAILS.includes(callerEmail);
 
-    if (!isSuperAdmin) {
-      const { data: roleRows, error: roleError } = await adminClient
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", callerUserId)
-        .in("role", ["admin", "super_admin"]);
 
-      if (roleError) {
-        console.error("Role check error:", roleError);
-        return new Response(JSON.stringify({ error: "Failed to validate admin access" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+    const { data: roleRows, error: roleError } = await adminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", callerUserId)
+      .in("role", ["admin", "super_admin"]);
 
-      if (!roleRows || roleRows.length === 0) {
-        return new Response(JSON.stringify({ error: "Forbidden: admin or super_admin role required" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+    if (roleError) {
+      console.error("Role check error:", roleError);
+      return new Response(JSON.stringify({ error: "Failed to validate admin access" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const body = await req.json();
-    const {
-      action, user_id, profile_id, email, user_type,
-      title, message, notes, subject,
-      target_user_id, target_profile_id, target_profile_name, target_user_ids,
-      warning_level, reason, audit_action, details,
-    } = body;
+    if (!roleRows || roleRows.length === 0) {
+      return new Response(JSON.stringify({ error: "Forbidden: admin or super_admin role required" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    // Resolve admin profile id (for audit logging)
-    let adminProfileId: string | null = null;
-    try {
-      const { data: ap } = await adminClient
-        .from("profiles").select("id").eq("user_id", callerUserId).maybeSingle();
-      adminProfileId = ap?.id ?? null;
-    } catch { /* ignore */ }
-
-    const logAudit = async (act: string, tProfileId: string | null, tProfileName: string | null, dets: any) => {
-      try {
-        await adminClient.from("admin_audit_logs").insert({
-          admin_id: adminProfileId,
-          action: act,
-          target_profile_id: tProfileId,
-          target_profile_name: tProfileName,
-          details: dets ?? null,
-        });
-      } catch (e) { console.error("audit log failed:", e); }
-    };
+    const { action, user_id, profile_id, email, user_type } = await req.json();
 
     switch (action) {
       case "permanent_delete": {
@@ -192,12 +158,15 @@ Deno.serve(async (req) => {
 
         // 3b. Break FKs from other rows that reference this profile (no CASCADE)
         await Promise.all([
-          adminClient.from("admin_audit_logs").update({ admin_id: null }).eq("admin_id", pid),
           adminClient.from("admin_audit_logs").update({ target_profile_id: null }).eq("target_profile_id", pid),
+          adminClient.from("admin_audit_logs").delete().eq("admin_id", pid),
           adminClient.from("profiles").update({ edit_reviewed_by: null }).eq("edit_reviewed_by", pid),
           adminClient.from("recovery_requests").update({ resolved_by: null }).eq("resolved_by", pid),
           adminClient.from("withdrawals").update({ reviewed_by: null }).eq("reviewed_by", pid),
           adminClient.from("blocked_ips").update({ blocked_by: null }).eq("blocked_by", pid),
+          adminClient.from("aadhaar_verifications").update({ verified_by: null }).eq("verified_by", pid),
+          adminClient.from("bank_verifications").update({ verified_by: null }).eq("verified_by", pid),
+          adminClient.from("support_messages").delete().eq("sender_id", pid),
         ]);
 
         // 4. Delete records referencing profile_id
@@ -259,14 +228,12 @@ Deno.serve(async (req) => {
         }
 
 
-        // 7. Delete ALL rows that directly reference auth.users.id (must be done before deleteUser)
-        await Promise.all([
-          adminClient.from("user_roles").delete().eq("user_id", userId),
-          adminClient.from("user_totp_secrets").delete().eq("user_id", userId),
-          adminClient.from("admin_totp_secrets").delete().eq("user_id", userId),
-          adminClient.from("announcement_dismissals").delete().eq("user_id", userId),
-          adminClient.from("notifications").delete().eq("user_id", userId),
-        ]);
+        // 7. Delete user_roles first (FK to auth.users)
+        const { error: userRolesDeleteError } = await adminClient.from("user_roles").delete().eq("user_id", userId);
+        if (userRolesDeleteError) {
+          console.error("user_roles delete error:", userRolesDeleteError);
+          // Continue anyway - might not exist
+        }
 
         // 8. Delete the profile (check for errors)
         const { error: profileDeleteError } = await adminClient.from("profiles").delete().eq("id", pid);
@@ -278,7 +245,7 @@ Deno.serve(async (req) => {
           });
         }
 
-        // 9. Finally delete the auth user (all FKs already cleared above)
+        // 9. Finally delete the auth user
         const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
         if (deleteError) {
           console.error("Auth delete error:", deleteError);
@@ -293,8 +260,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      case "force_logout":
-      case "revoke_sessions": {
+      case "force_logout": {
         if (!user_id) {
           return new Response(JSON.stringify({ error: "user_id required" }), {
             status: 400,
@@ -302,25 +268,44 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Ban the user (this invalidates ALL active sessions/refresh tokens)
-        const { error: banError } = await adminClient.auth.admin.updateUserById(user_id, {
-          ban_duration: "876000h",
+        // Use Admin REST API to ban user briefly, which invalidates all sessions
+        const banRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${user_id}`, {
+          method: "PUT",
+          headers: {
+            "Authorization": `Bearer ${serviceRoleKey}`,
+            "apikey": serviceRoleKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ ban_duration: "1s" }),
         });
-        if (banError) {
-          console.error("Ban error:", banError);
-          return new Response(JSON.stringify({ error: "Failed to force logout user: " + banError.message }), {
+        const banBody = await banRes.text();
+
+        if (!banRes.ok) {
+          console.error("Ban error:", banRes.status, banBody);
+          return new Response(JSON.stringify({ error: "Failed to force logout user" }), {
             status: 500,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
 
-        // Immediately lift the ban so the user can log back in
-        const { error: unbanError } = await adminClient.auth.admin.updateUserById(user_id, {
-          ban_duration: "none",
+        // Immediately unban
+        const unbanRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${user_id}`, {
+          method: "PUT",
+          headers: {
+            "Authorization": `Bearer ${serviceRoleKey}`,
+            "apikey": serviceRoleKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ ban_duration: "none" }),
         });
-        if (unbanError) {
-          console.error("Unban error:", unbanError);
-        }
+        await unbanRes.text();
+
+        const { data: targetProfile } = await adminClient
+          .from("profiles")
+          .select("id, full_name")
+          .eq("user_id", user_id)
+          .maybeSingle();
+
 
         return new Response(JSON.stringify({ success: true, message: "User logged out from all sessions" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -473,157 +458,25 @@ Deno.serve(async (req) => {
         });
       }
 
-      case "send_password_reset": {
-        if (!email) {
-          return new Response(JSON.stringify({ error: "email required" }), {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+      case "save_admin_notes": {
+        if (!profile_id) {
+          return new Response(JSON.stringify({ error: "profile_id required" }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-
-        // Build redirect URL from request origin so the link lands on /reset-password
-        const reqOrigin = req.headers.get("origin") || req.headers.get("referer") || "";
-        let redirectTo: string | undefined;
-        try {
-          if (reqOrigin) redirectTo = `${new URL(reqOrigin).origin}/reset-password`;
-        } catch { /* ignore bad origin */ }
-
-        const resetRes = await fetch(`${supabaseUrl}/auth/v1/recover`, {
-          method: "POST",
-          headers: {
-            "apikey": serviceRoleKey,
-            "Authorization": `Bearer ${serviceRoleKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email, ...(redirectTo ? { redirect_to: redirectTo } : {}) }),
-        });
-
-        if (!resetRes.ok) {
-          const resetBody = await resetRes.text();
-          console.error("Password reset error:", resetRes.status, resetBody);
-          return new Response(JSON.stringify({ error: "Failed to send password reset email" }), {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+        const { notes } = body as { notes?: string };
+        const { error: notesErr } = await adminClient
+          .from("profiles")
+          .update({ approval_notes: notes ?? null, updated_at: new Date().toISOString() })
+          .eq("id", profile_id);
+        if (notesErr) {
+          return new Response(JSON.stringify({ error: notesErr.message }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-
-        return new Response(JSON.stringify({ success: true, message: "Password reset email sent" }), {
+        return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
-      }
-
-      case "send_notification": {
-        const tUid = target_user_id || user_id;
-        if (!tUid || !title || !message) {
-          return new Response(JSON.stringify({ error: "target_user_id, title, message required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        }
-        const { error } = await adminClient.from("notifications").insert({
-          user_id: tUid, title, message, type: "info",
-        });
-        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-
-      case "bulk_notify": {
-        if (!Array.isArray(target_user_ids) || target_user_ids.length === 0 || !title || !message) {
-          return new Response(JSON.stringify({ error: "target_user_ids[], title, message required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        }
-        const rows = target_user_ids.map((uid: string) => ({ user_id: uid, title, message, type: "info" }));
-        const { error } = await adminClient.from("notifications").insert(rows);
-        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        return new Response(JSON.stringify({ success: true, count: rows.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-
-      case "save_admin_notes": {
-        if (!profile_id) return new Response(JSON.stringify({ error: "profile_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        const { error } = await adminClient.from("profiles").update({ approval_notes: notes ?? null }).eq("id", profile_id);
-        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        await logAudit("save_admin_notes", profile_id, null, { notes });
-        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-
-      case "send_email": {
-        if (!email && !target_profile_id && !target_user_id) {
-          return new Response(JSON.stringify({ error: "email or target id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        }
-        // Also push as in-app notification so the user sees something immediately
-        if (target_user_id) {
-          await adminClient.from("notifications").insert({
-            user_id: target_user_id,
-            title: subject || "Message from Admin",
-            message: message || "",
-            type: "info",
-          });
-        }
-        await logAudit("send_email", target_profile_id || null, null, { subject, message });
-        return new Response(JSON.stringify({ success: true, message: "Message delivered as in-app notification" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-
-      case "get_audit_log": {
-        let q = adminClient
-          .from("admin_audit_logs")
-          .select("id, action, admin_id, target_profile_id, target_profile_name, details, created_at")
-          .order("created_at", { ascending: false })
-          .limit(200);
-        if (target_profile_id) q = q.eq("target_profile_id", target_profile_id);
-        const { data, error } = await q;
-        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        return new Response(JSON.stringify({ logs: data || [] }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-
-      case "log_audit": {
-        if (!audit_action) return new Response(JSON.stringify({ error: "audit_action required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        await logAudit(audit_action, target_profile_id || null, target_profile_name || null, details);
-        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-
-      case "issue_warning": {
-        if (!target_profile_id || !reason) return new Response(JSON.stringify({ error: "target_profile_id and reason required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        await logAudit("issue_warning", target_profile_id, null, { warning_level, reason });
-        if (target_user_id) {
-          await adminClient.from("notifications").insert({
-            user_id: target_user_id,
-            title: `⚠️ Warning issued (${warning_level || "info"})`,
-            message: reason,
-            type: "warning",
-          });
-        }
-        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-
-      case "get_kyc_docs": {
-        if (!profile_id) return new Response(JSON.stringify({ error: "profile_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        const { data, error } = await adminClient
-          .from("documents").select("*").eq("profile_id", profile_id);
-        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        return new Response(JSON.stringify({ documents: data || [] }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-
-      case "get_aadhaar_docs": {
-        if (!profile_id) return new Response(JSON.stringify({ error: "profile_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        const { data, error } = await adminClient
-          .from("aadhaar_verifications").select("*").eq("profile_id", profile_id).maybeSingle();
-        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        return new Response(JSON.stringify({ aadhaar: data || null }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-
-      case "get_referral_chain": {
-        if (!profile_id) return new Response(JSON.stringify({ error: "profile_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        const { data: referred } = await adminClient.from("referrals").select("id, referred_id, signup_bonus_paid, job_bonus_paid, created_at").eq("referrer_id", profile_id);
-        const { data: referrer } = await adminClient.from("referrals").select("id, referrer_id, signup_bonus_paid, job_bonus_paid, created_at").eq("referred_id", profile_id).maybeSingle();
-        return new Response(JSON.stringify({ referred: referred || [], referrer: referrer || null }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-
-      case "get_user_stats": {
-        if (!profile_id) return new Response(JSON.stringify({ error: "profile_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        const [{ count: txCount }, { count: projCount }, { count: wdCount }] = await Promise.all([
-          adminClient.from("transactions").select("id", { count: "exact", head: true }).eq("profile_id", profile_id),
-          adminClient.from("projects").select("id", { count: "exact", head: true }).or(`client_id.eq.${profile_id},assigned_employee_id.eq.${profile_id}`),
-          adminClient.from("withdrawals").select("id", { count: "exact", head: true }).eq("employee_id", profile_id),
-        ]);
-        return new Response(JSON.stringify({
-          stats: { transactions: txCount || 0, projects: projCount || 0, withdrawals: wdCount || 0 }
-        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       default:

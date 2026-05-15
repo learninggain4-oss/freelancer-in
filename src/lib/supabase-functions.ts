@@ -21,39 +21,22 @@ export async function callEdgeFunction(
   },
 ): Promise<Response> {
   const method = options?.method ?? (options?.body ? "POST" : "GET");
-  const isDev = import.meta.env.DEV;
-  const isLocalHost = typeof window !== "undefined" && ["localhost", "127.0.0.1"].includes(window.location.hostname);
-  const localUrl = `/functions/v1/${functionName}`;
-  const remoteUrl = `${SUPABASE_URL}/functions/v1/${functionName}`;
-  const useLocal = isDev || isLocalHost;
+  const url = `${SUPABASE_URL}/functions/v1/${functionName}`;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "apikey": SUPABASE_ANON_KEY,
   };
-
-  if (!useLocal) {
-    headers["apikey"] = SUPABASE_ANON_KEY;
-  }
 
   if (options?.token) {
     headers["Authorization"] = `Bearer ${options.token}`;
   }
 
-  const fetchOptions: RequestInit = {
+  return fetch(url, {
     method,
     headers,
     ...(options?.body ? { body: JSON.stringify(options.body) } : {}),
-  };
-
-  if (useLocal) {
-    try {
-      return await fetch(localUrl, fetchOptions);
-    } catch {
-      return fetch(remoteUrl, fetchOptions);
-    }
-  }
-
-  return fetch(remoteUrl, fetchOptions);
+  });
 }
 
 /** Parse JSON from a fetch Response without throwing on empty body (avoids "Unexpected end of JSON input"). */
