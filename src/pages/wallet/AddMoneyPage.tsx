@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   ArrowLeft, PlusCircle, Clock, CheckCircle2, CreditCard,
-  Landmark, Smartphone, Zap, AlertCircle, ChevronRight, Loader2,
+  Zap, AlertCircle, ChevronRight, Loader2,
 } from "lucide-react";
 
 const TH = {
@@ -20,16 +20,17 @@ const TH = {
   ocean: { bg:"#f0f9ff", card:"#ffffff", border:"rgba(14,165,233,.1)", text:"#0c4a6e", sub:"#4b83a3", input:"#ffffff", muted:"#e0f2fe" },
 };
 
-const PAYMENT_METHODS = [
-  { id: "UPI", label: "UPI Transfer", desc: "GPay, PhonePe, Paytm, BHIM", icon: Zap, color: "#f59e0b" },
-  { id: "NEFT", label: "NEFT / RTGS / IMPS", desc: "Bank account transfer", icon: Landmark, color: "#6366f1" },
-  { id: "Net Banking", label: "Net Banking", desc: "All major Indian banks", icon: Landmark, color: "#3b82f6" },
-  { id: "Debit Card", label: "Debit Card", desc: "Visa, Mastercard, RuPay", icon: CreditCard, color: "#8b5cf6" },
-  { id: "Credit Card", label: "Credit Card", desc: "Visa, Mastercard, Amex", icon: CreditCard, color: "#ec4899" },
-  { id: "Mobile Wallet", label: "Mobile Wallet", desc: "PhonePe, Amazon Pay", icon: Smartphone, color: "#10b981" },
-];
+type PaymentMethod = {
+  id: string;
+  name: string;
+  is_active: boolean;
+  display_order: number;
+  logo_path: string | null;
+};
 
 type Step = "loading" | "wait" | "amount" | "method" | "confirm" | "done";
+
+const BUCKET = "payment-method-logos";
 
 const fmt = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
@@ -53,8 +54,51 @@ export default function AddMoneyPage() {
   const [paymentDetails, setPaymentDetails] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState("");
-
   const [dbError, setDbError] = useState(false);
+
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [methodsLoading, setMethodsLoading] = useState(true);
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
+
+  // Fetch active payment methods + UPI banner from DB
+  useEffect(() => {
+    const fetchMethods = async () => {
+      setMethodsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("payment_methods")
+          .select("id, name, is_active, display_order, logo_path")
+          .eq("is_active", true)
+          .order("display_order", { ascending: true });
+        if (!error && data) setPaymentMethods(data as PaymentMethod[]);
+      } catch { /* silently ignore */ } finally {
+        setMethodsLoading(false);
+      }
+    };
+
+    const fetchBanner = async () => {
+      try {
+        const { data } = await supabase
+          .from("app_settings")
+          .select("value")
+          .eq("key", "upi_banner_path")
+          .maybeSingle();
+        if (data?.value) {
+          const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(data.value);
+          setBannerUrl(urlData?.publicUrl || null);
+        }
+      } catch { /* ignore */ }
+    };
+
+    fetchMethods();
+    fetchBanner();
+  }, []);
+
+  const getLogoUrl = (path: string | null) => {
+    if (!path) return null;
+    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+    return data.publicUrl;
+  };
 
   const claimSlot = useCallback(async () => {
     setStep("loading");
@@ -96,11 +140,7 @@ export default function AddMoneyPage() {
     if (step !== "wait" || waitSeconds <= 0) return;
     const timer = setInterval(() => {
       setWaitSeconds(s => {
-        if (s <= 1) {
-          clearInterval(timer);
-          claimSlot();
-          return 0;
-        }
+        if (s <= 1) { clearInterval(timer); claimSlot(); return 0; }
         return s - 1;
       });
     }, 1000);
@@ -156,8 +196,14 @@ export default function AddMoneyPage() {
   const minutes = Math.floor(waitSeconds / 60);
   const secs = waitSeconds % 60;
   const waitFmt = `${minutes}:${String(secs).padStart(2, "0")}`;
-
   const amtNum = Number(amount) || 0;
+
+  // Detect if selected method name contains "UPI" (case-insensitive)
+  const isUpiSelected = selectedMethod.toLowerCase().includes("upi") ||
+    selectedMethod.toLowerCase().includes("gpay") ||
+    selectedMethod.toLowerCase().includes("phonepe") ||
+    selectedMethod.toLowerCase().includes("paytm") ||
+    selectedMethod.toLowerCase().includes("bhim");
 
   if (step === "loading") return (
     <div style={{ background: T.bg, minHeight: "100vh" }} className="flex items-center justify-center">
@@ -227,6 +273,7 @@ export default function AddMoneyPage() {
 
   return (
     <div style={{ background: T.bg, minHeight: "100vh", color: T.text }} className="max-w-md mx-auto p-4 pb-24 space-y-4">
+      {/* Header */}
       <div className="flex items-center gap-3 pt-2">
         <Button variant="ghost" size="icon" className="h-10 w-10 rounded-2xl"
           style={{ color: T.sub }} onClick={() => {
@@ -258,6 +305,7 @@ export default function AddMoneyPage() {
         </div>
       )}
 
+      {/* Step: Amount */}
       {step === "amount" && (
         <div className="space-y-5 animate-fade-in-up">
           <div className="rounded-3xl p-6 space-y-6" style={{ background: T.card, border: `1px solid ${T.border}` }}>
@@ -301,6 +349,7 @@ export default function AddMoneyPage() {
         </div>
       )}
 
+      {/* Step: Method — fetched from DB */}
       {step === "method" && (
         <div className="space-y-4 animate-fade-in-up">
           <div className="rounded-2xl px-4 py-3 flex items-center justify-between" style={{ background: T.muted, border: `1px solid ${T.border}` }}>
@@ -308,46 +357,80 @@ export default function AddMoneyPage() {
             <span className="font-black text-lg text-indigo-400">{fmt(amtNum)}</span>
           </div>
           <p style={{ color: T.sub }} className="text-[10px] font-black uppercase tracking-widest px-1">Select Payment Method</p>
-          <div className="space-y-2">
-            {PAYMENT_METHODS.map(m => {
-              const Icon = m.icon;
-              const active = selectedMethod === m.id;
-              return (
-                <button key={m.id} onClick={() => setSelectedMethod(m.id)}
-                  className="w-full flex items-center gap-4 p-4 rounded-2xl transition-all active:scale-[0.98]"
-                  style={{ background: active ? `${m.color}15` : T.card, border: `1.5px solid ${active ? m.color : T.border}` }}>
-                  <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: `${m.color}15` }}>
-                    <Icon className="h-5 w-5" style={{ color: m.color }} />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-sm font-black" style={{ color: T.text }}>{m.label}</p>
-                    <p className="text-[10px] font-medium" style={{ color: T.sub }}>{m.desc}</p>
-                  </div>
-                  <div className="h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0"
-                    style={{ borderColor: active ? m.color : T.border, background: active ? m.color : "transparent" }}>
-                    {active && <div className="h-2 w-2 rounded-full bg-white" />}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-          {selectedMethod === "UPI" && (
+
+          {methodsLoading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
+            </div>
+          ) : paymentMethods.length === 0 ? (
+            <div className="rounded-2xl p-6 text-center flex flex-col items-center gap-3"
+              style={{ background: T.card, border: `1px solid ${T.border}` }}>
+              <CreditCard className="h-8 w-8 opacity-30" style={{ color: T.sub }} />
+              <div>
+                <p className="font-black text-sm" style={{ color: T.text }}>No payment methods available</p>
+                <p className="text-xs mt-1" style={{ color: T.sub }}>Please contact admin to enable payment methods.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {paymentMethods.map(m => {
+                const active = selectedMethod === m.name;
+                const logoUrl = getLogoUrl(m.logo_path);
+                return (
+                  <button key={m.id} onClick={() => setSelectedMethod(m.name)}
+                    className="w-full flex items-center gap-4 p-4 rounded-2xl transition-all active:scale-[0.98]"
+                    style={{
+                      background: active ? "rgba(99,102,241,0.12)" : T.card,
+                      border: `1.5px solid ${active ? "#6366f1" : T.border}`
+                    }}>
+                    {/* Logo or fallback icon */}
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-white"
+                      style={{ border: `1px solid ${T.border}` }}>
+                      {logoUrl ? (
+                        <img src={logoUrl} alt={m.name} className="h-full w-full object-contain p-1.5" />
+                      ) : (
+                        <Zap className="h-5 w-5 text-indigo-400" />
+                      )}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-black" style={{ color: T.text }}>{m.name}</p>
+                    </div>
+                    <div className="h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0"
+                      style={{ borderColor: active ? "#6366f1" : T.border, background: active ? "#6366f1" : "transparent" }}>
+                      {active && <div className="h-2 w-2 rounded-full bg-white" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* UPI Banner — shown when a UPI-type method is selected */}
+          {isUpiSelected && bannerUrl && (
+            <div className="rounded-2xl overflow-hidden border" style={{ borderColor: T.border }}>
+              <img src={bannerUrl} alt="UPI Payment Details" className="w-full object-contain" />
+            </div>
+          )}
+
+          {/* UPI ID input for UPI-type methods */}
+          {isUpiSelected && (
             <div className="rounded-2xl p-4 space-y-2" style={{ background: T.card, border: `1px solid ${T.border}` }}>
               <p style={{ color: T.sub }} className="text-[10px] font-black uppercase tracking-widest">Your UPI ID</p>
               <Input placeholder="yourname@upi" value={paymentDetails.upi_id || ""}
                 onChange={e => setPaymentDetails(d => ({ ...d, upi_id: e.target.value }))}
                 className="rounded-xl border-0 font-medium" style={{ background: T.input, color: T.text }} />
-              <p style={{ color: T.sub }} className="text-[10px]">Enter the UPI ID you'll use to make the payment</p>
+              <p style={{ color: T.sub }} className="text-[10px]">Enter the UPI ID you used to make the payment</p>
             </div>
           )}
+
           <Button className="w-full h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-700 font-black uppercase tracking-widest shadow-xl shadow-indigo-600/20"
-            onClick={handleMethodNext} disabled={!selectedMethod}>
+            onClick={handleMethodNext} disabled={!selectedMethod || paymentMethods.length === 0}>
             Continue <ChevronRight className="ml-1 h-5 w-5" />
           </Button>
         </div>
       )}
 
+      {/* Step: Confirm */}
       {step === "confirm" && (
         <div className="space-y-4 animate-fade-in-up">
           <div className="rounded-3xl p-6 space-y-5" style={{ background: T.card, border: `1px solid ${T.border}` }}>
