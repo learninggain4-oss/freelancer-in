@@ -42,6 +42,7 @@ Deno.serve(async (req) => {
     // Use getUser for reliable token validation instead of manual JWT decoding
     const token = authHeader.replace("Bearer ", "");
     const { data: { user: callerUser }, error: userError } = await adminClient.auth.getUser(token);
+    let callerUserId: string;
     if (userError || !callerUser) {
       console.error("Token validation failed:", userError);
       // Fallback to manual JWT decoding
@@ -52,9 +53,9 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      var callerUserId = fallbackId;
+      callerUserId = fallbackId;
     } else {
-      var callerUserId = callerUser.id;
+      callerUserId = callerUser.id;
     }
 
 
