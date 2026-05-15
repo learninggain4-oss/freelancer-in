@@ -56,6 +56,7 @@ export default defineConfig(({ mode }) => ({
   ].filter(Boolean),
   define: {
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    "import.meta.env.VITE_SUPABASE_URL": JSON.stringify("https://maysttckdfnnzvfeujaj.supabase.co"),
   },
   resolve: {
     alias: {
