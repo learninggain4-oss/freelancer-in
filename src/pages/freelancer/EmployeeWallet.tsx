@@ -78,7 +78,7 @@ const EmployeeWallet = () => {
           availableBalance={profile?.available_balance ?? 0}
           holdBalance={profile?.hold_balance ?? 0}
           walletActive={(profile as any)?.wallet_active ?? true}
-          onAddMoney={() => navigate(`${base}/wallet/add-money`)}
+          onAddMoney={() => navigate(`${base}/wallet/add`)}
           onTransfer={() => setShowTransfer(true)}
           onWithdraw={() => navigate(`${base}/wallet/withdraw`)}
         />
