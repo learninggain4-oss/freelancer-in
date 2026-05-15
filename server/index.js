@@ -1577,7 +1577,10 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
       }
 
       case "admin_get_deposit_requests": {
-        if (callerProfile.user_type !== "admin") throw new Error("Admin access required");
+        if (!isSuperAdmin(user.email)) {
+          const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+          if (!roleData) throw new Error("Admin access required");
+        }
         let query = supabase
           .from("deposit_requests")
           .select("*, profiles(full_name, email, user_type, wallet_number)")
@@ -1592,7 +1595,10 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
       }
 
       case "admin_process_deposit": {
-        if (callerProfile.user_type !== "admin") throw new Error("Admin access required");
+        if (!isSuperAdmin(user.email)) {
+          const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+          if (!roleData) throw new Error("Admin access required");
+        }
         if (!deposit_request_id) throw new Error("Missing deposit_request_id");
         if (!deposit_action || !["approve", "reject"].includes(deposit_action)) throw new Error("Invalid deposit_action");
 
@@ -1624,14 +1630,14 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
             status: "approved",
             reviewed_by: callerProfile.id,
             reviewed_at: new Date().toISOString(),
-            review_notes: review_notes || null,
+            admin_notes: review_notes || null,
           }).eq("id", deposit_request_id);
         } else {
           await supabase.from("deposit_requests").update({
             status: "rejected",
             reviewed_by: callerProfile.id,
             reviewed_at: new Date().toISOString(),
-            review_notes: review_notes || null,
+            admin_notes: review_notes || null,
           }).eq("id", deposit_request_id);
           await supabase.from("notifications").insert({
             user_id: depReq.profiles.user_id,
@@ -1787,7 +1793,7 @@ app.delete("/functions/v1/support-delete-message", async (req, res) => {
     // Allow admins to delete any message
     // sender_id in messages = profile.id (profile row UUID), NOT auth user.id
     const { data: callerProfile } = await supabase.from("profiles").select("id, user_type").eq("user_id", user.id).maybeSingle();
-    const isAdmin = callerProfile?.user_type === "admin";
+    const isAdmin = isSuperAdmin(user.email) || callerProfile?.user_type === "admin";
     if (!isAdmin && msg.sender_id !== callerProfile?.id) return res.status(403).json({ error: "Cannot delete another user's message" });
 
     const { error } = await supabase.from("support_messages").delete().eq("id", messageId);
@@ -1821,7 +1827,7 @@ app.delete("/functions/v1/support-clear-history", async (req, res) => {
 
     // Allow admins to clear any conversation
     const { data: callerProfile2 } = await supabase.from("profiles").select("user_type").eq("user_id", user.id).maybeSingle();
-    const isAdmin2 = callerProfile2?.user_type === "admin";
+    const isAdmin2 = isSuperAdmin(user.email) || callerProfile2?.user_type === "admin";
     if (!isAdmin2 && conv.user_id !== user.id) return res.status(403).json({ error: "Not your conversation" });
 
     const { error } = await supabase.from("support_messages").delete().eq("conversation_id", conversationId);

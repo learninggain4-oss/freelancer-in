@@ -34,7 +34,7 @@ interface DepositRequest {
   order_id: string;
   created_at: string;
   reviewed_at: string | null;
-  review_notes: string | null;
+  admin_notes: string | null;
   profiles: { full_name: string[] | string; email: string; user_type: string; wallet_number: string } | null;
 }
 
@@ -276,9 +276,9 @@ CREATE TABLE IF NOT EXISTS add_money_queue (
                     </div>
                   )}
 
-                  {req.status !== "pending" && req.review_notes && (
+                  {req.status !== "pending" && req.admin_notes && (
                     <div className="rounded-xl px-3 py-2 text-xs" style={{ background: T.muted, color: T.sub }}>
-                      <span className="font-black uppercase tracking-widest">Note: </span>{req.review_notes}
+                      <span className="font-black uppercase tracking-widest">Note: </span>{req.admin_notes}
                     </div>
                   )}
 
