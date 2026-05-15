@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, target_wallet_number } =
+    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, target_wallet_number, payment_method, payment_details } =
       await req.json();
 
     // Get the caller's profile
@@ -1233,6 +1233,42 @@ Deno.serve(async (req) => {
         });
 
         result.recipient_name = recipientName;
+        break;
+      }
+
+      case "claim_add_money_slot": {
+        // Simplified slot system — always grant slot immediately
+        result.claimed = true;
+        result.wait_seconds = 0;
+        break;
+      }
+
+      case "release_add_money_slot": {
+        // No-op — slot released
+        result.released = true;
+        break;
+      }
+
+      case "submit_deposit_request": {
+        const amtNum = Number(amount);
+        if (!amtNum || amtNum < 100) throw new Error("Invalid amount. Minimum is ₹100.");
+        const orderId = `DEP${generateWithdrawalOrderId(12)}`;
+        const { error: drErr } = await supabase.from("deposit_requests").insert({
+          profile_id: callerProfile.id,
+          amount: amtNum,
+          payment_method: payment_method || "Unknown",
+          payment_details: payment_details || {},
+          order_id: orderId,
+          status: "pending",
+        });
+        if (drErr) throw new Error(formatErrorMessage(drErr, "Failed to submit deposit request"));
+        await supabase.from("notifications").insert({
+          user_id: user.id,
+          title: "Deposit Request Submitted",
+          message: `Your deposit request for ₹${amtNum.toLocaleString("en-IN")} has been submitted. Order ID: ${orderId}. Admin will verify and credit your wallet within 24 hours.`,
+          type: "financial",
+        }).catch(() => {});
+        result.order_id = orderId;
         break;
       }
 
