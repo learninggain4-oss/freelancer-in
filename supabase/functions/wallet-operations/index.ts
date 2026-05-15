@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -91,22 +91,6 @@ function generateWithdrawalOrderId(length: number): string {
   return `${datePrefix}${randomDigits}`;
 }
 
-// Generate unique 13-digit transaction ID: TXNYYMMDDXXXXX
-function generateTransactionId(): string {
-  const now = new Date();
-  const yy = String(now.getFullYear()).slice(-2);
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const dd = String(now.getDate()).padStart(2, "0");
-  
-  // Generate 7 random digits for uniqueness
-  let randomDigits = "";
-  for (let i = 0; i < 7; i++) {
-    randomDigits += Math.floor(Math.random() * 10).toString();
-  }
-  
-  return `TXN${yy}${mm}${dd}${randomDigits}`;
-}
-
 function isDuplicateOrderIdError(error: unknown): boolean {
   const message = formatErrorMessage(error, "").toLowerCase();
   return (
@@ -116,7 +100,29 @@ function isDuplicateOrderIdError(error: unknown): boolean {
   );
 }
 
-Deno.serve(async (req: Request) => {
+const HARDCODED_SUPER_ADMINS = ["freeandin9@gmail.com"];
+
+async function isAdminUser(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  userEmail: string
+): Promise<boolean> {
+  const superAdminEmails = (Deno.env.get("SUPER_ADMIN_EMAILS") || "")
+    .split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+  if (
+    HARDCODED_SUPER_ADMINS.includes(userEmail.toLowerCase()) ||
+    superAdminEmails.includes(userEmail.toLowerCase())
+  ) return true;
+  const { data } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .single();
+  return !!data;
+}
+
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -725,13 +731,7 @@ Deno.serve(async (req: Request) => {
       case "admin_process_withdrawal": {
         // Admin approves/rejects withdrawal
         // Check admin role
-        const { data: roleCheck } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .eq("role", "admin")
-          .single();
-        if (!roleCheck) throw new Error("Admin access required");
+        if (!(await isAdminUser(supabase, user.id, user.email ?? ""))) throw new Error("Admin access required");
 
         if (!withdrawal_id || !status)
           throw new Error("Missing withdrawal_id or status");
@@ -808,13 +808,7 @@ Deno.serve(async (req: Request) => {
 
       case "admin_release_held_balance": {
         // Admin releases held balance from cancelled project to employee's available balance
-        const { data: roleCheck } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .eq("role", "admin")
-          .single();
-        if (!roleCheck) throw new Error("Admin access required");
+        if (!(await isAdminUser(supabase, user.id, user.email ?? ""))) throw new Error("Admin access required");
 
         if (!project_id) throw new Error("Missing project_id");
 
@@ -888,13 +882,7 @@ Deno.serve(async (req: Request) => {
 
       case "admin_hold_balance": {
         // Admin moves funds from employee's available balance back to hold balance
-        const { data: roleCheck } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .eq("role", "admin")
-          .single();
-        if (!roleCheck) throw new Error("Admin access required");
+        if (!(await isAdminUser(supabase, user.id, user.email ?? ""))) throw new Error("Admin access required");
 
         if (!recovery_request_id) throw new Error("Missing recovery_request_id");
         if (!amount || amount <= 0) throw new Error("Invalid amount");
@@ -951,63 +939,40 @@ Deno.serve(async (req: Request) => {
 
       // ─── Admin Wallet Management Actions ───
 
-case "admin_wallet_add": {
-        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
-        if (!roleCheck) throw new Error("Admin access required");
+      case "admin_wallet_add": {
+        if (!(await isAdminUser(supabase, user.id, user.email ?? ""))) throw new Error("Admin access required");
         if (!target_profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
 
         const { data: tp, error: tpErr } = await supabase.from("profiles").select("id, available_balance, user_id, full_name").eq("id", target_profile_id).single();
         if (tpErr || !tp) throw new Error("Target profile not found");
 
-        // Generate 13-digit transaction ID
-        const txnId = generateTransactionId();
         const newBal = Number(tp.available_balance) + amount;
         await supabase.from("profiles").update({ available_balance: newBal }).eq("id", tp.id);
-        await supabase.from("transactions").insert({ 
-          profile_id: tp.id, 
-          type: "credit", 
-          amount, 
-          transaction_id: txnId,
-          status: "success",
-          description: description || "Admin: added to wallet" 
-        });
-        await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Wallet Credited", message: `₹${amount.toLocaleString("en-IN")} has been added to your wallet by admin. Transaction ID: ${txnId}`, type: "financial" });
+        await supabase.from("transactions").insert({ profile_id: tp.id, type: "credit", amount, description: description || "Admin: added to wallet" });
+        await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Wallet Credited", message: `₹${amount.toLocaleString("en-IN")} has been added to your wallet by admin.`, type: "financial" });
         
         result.new_balance = newBal;
-        result.transaction_id = txnId;
         break;
       }
 
-case "admin_wallet_deduct": {
-        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
-        if (!roleCheck) throw new Error("Admin access required");
+      case "admin_wallet_deduct": {
+        if (!(await isAdminUser(supabase, user.id, user.email ?? ""))) throw new Error("Admin access required");
         if (!target_profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
 
         const { data: tp } = await supabase.from("profiles").select("id, available_balance, user_id, full_name").eq("id", target_profile_id).single();
         if (!tp) throw new Error("Target profile not found");
 
-        // Generate 13-digit transaction ID
-        const txnId = generateTransactionId();
         const newBal = Number(tp.available_balance) - amount;
         await supabase.from("profiles").update({ available_balance: newBal }).eq("id", tp.id);
-        await supabase.from("transactions").insert({ 
-          profile_id: tp.id, 
-          type: "debit", 
-          amount, 
-          transaction_id: txnId,
-          status: "success",
-          description: description || "Admin: deducted from wallet" 
-        });
-        await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Wallet Deducted", message: `₹${amount.toLocaleString("en-IN")} has been deducted from your wallet by admin. Transaction ID: ${txnId}`, type: "financial" });
+        await supabase.from("transactions").insert({ profile_id: tp.id, type: "debit", amount, description: description || "Admin: deducted from wallet" });
+        await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Wallet Deducted", message: `₹${amount.toLocaleString("en-IN")} has been deducted from your wallet by admin.`, type: "financial" });
         
         result.new_balance = newBal;
-        result.transaction_id = txnId;
         break;
       }
 
       case "admin_wallet_hold": {
-        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
-        if (!roleCheck) throw new Error("Admin access required");
+        if (!(await isAdminUser(supabase, user.id, user.email ?? ""))) throw new Error("Admin access required");
         if (!target_profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
 
         const { data: tp } = await supabase.from("profiles").select("id, available_balance, hold_balance, user_id, full_name").eq("id", target_profile_id).single();
@@ -1024,8 +989,7 @@ case "admin_wallet_deduct": {
       }
 
       case "admin_wallet_release": {
-        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
-        if (!roleCheck) throw new Error("Admin access required");
+        if (!(await isAdminUser(supabase, user.id, user.email ?? ""))) throw new Error("Admin access required");
         if (!target_profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
 
         const { data: tp } = await supabase.from("profiles").select("id, available_balance, hold_balance, user_id, full_name").eq("id", target_profile_id).single();
@@ -1042,39 +1006,30 @@ case "admin_wallet_deduct": {
         break;
       }
 
-case "admin_wallet_transfer": {
-        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
-        if (!roleCheck) throw new Error("Admin access required");
+      case "admin_wallet_transfer": {
+        if (!(await isAdminUser(supabase, user.id, user.email ?? ""))) throw new Error("Admin access required");
         if (!target_profile_id || !transfer_to_profile_id || !amount || amount <= 0) throw new Error("Missing parameters");
 
         const { data: from } = await supabase.from("profiles").select("id, available_balance, user_id, full_name").eq("id", target_profile_id).single();
-        const { data: to } = await supabase.from("profiles").select("id, available_balance, user_id, full_name, wallet_active").eq("id", transfer_to_profile_id).single();
+        const { data: to } = await supabase.from("profiles").select("id, available_balance, user_id, full_name").eq("id", transfer_to_profile_id).single();
         if (!from || !to) throw new Error("Profile not found");
-        if (!to.wallet_active) throw new Error("Receiver wallet is inactive");
 
-        // Generate 13-digit transaction IDs for both transactions
-        const txnIdDebit = generateTransactionId();
-        const txnIdCredit = generateTransactionId();
-        
         await supabase.from("profiles").update({ available_balance: Number(from.available_balance) - amount }).eq("id", from.id);
         await supabase.from("profiles").update({ available_balance: Number(to.available_balance) + amount }).eq("id", to.id);
         await supabase.from("transactions").insert([
-          { profile_id: from.id, type: "debit" as const, amount, transaction_id: txnIdDebit, status: "success", description: description || `Admin transfer to ${(to.full_name as any)?.[0] || to.id}` },
-          { profile_id: to.id, type: "credit" as const, amount, transaction_id: txnIdCredit, status: "success", description: description || `Admin transfer from ${(from.full_name as any)?.[0] || from.id}` },
+          { profile_id: from.id, type: "debit" as const, amount, description: description || `Admin transfer to ${(to.full_name as any)?.[0] || to.id}` },
+          { profile_id: to.id, type: "credit" as const, amount, description: description || `Admin transfer from ${(from.full_name as any)?.[0] || from.id}` },
         ]);
         await supabase.from("notifications").insert([
-          { user_id: from.user_id, title: "Funds Transferred", message: `₹${amount.toLocaleString("en-IN")} transferred to ${(to.full_name as any)?.[0]} by admin. Transaction ID: ${txnIdDebit}`, type: "financial" },
-          { user_id: to.user_id, title: "Funds Received", message: `₹${amount.toLocaleString("en-IN")} received from ${(from.full_name as any)?.[0]} by admin. Transaction ID: ${txnIdCredit}`, type: "financial" },
+          { user_id: from.user_id, title: "Funds Transferred", message: `₹${amount.toLocaleString("en-IN")} transferred to ${(to.full_name as any)?.[0]} by admin.`, type: "financial" },
+          { user_id: to.user_id, title: "Funds Received", message: `₹${amount.toLocaleString("en-IN")} received from ${(from.full_name as any)?.[0]} by admin.`, type: "financial" },
         ]);
         
-        result.transaction_id_debit = txnIdDebit;
-        result.transaction_id_credit = txnIdCredit;
         break;
       }
 
       case "admin_edit_transaction": {
-        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
-        if (!roleCheck) throw new Error("Admin access required");
+        if (!(await isAdminUser(supabase, user.id, user.email ?? ""))) throw new Error("Admin access required");
         if (!transaction_id || !target_profile_id) throw new Error("Missing parameters");
 
         const { data: oldTx } = await supabase.from("transactions").select("*").eq("id", transaction_id).single();
@@ -1114,8 +1069,7 @@ case "admin_wallet_transfer": {
       }
 
       case "admin_delete_transaction": {
-        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
-        if (!roleCheck) throw new Error("Admin access required");
+        if (!(await isAdminUser(supabase, user.id, user.email ?? ""))) throw new Error("Admin access required");
         if (!transaction_id || !target_profile_id) throw new Error("Missing parameters");
 
         const { data: oldTx } = await supabase.from("transactions").select("*").eq("id", transaction_id).single();
@@ -1143,8 +1097,7 @@ case "admin_wallet_transfer": {
       }
 
       case "admin_edit_withdrawal": {
-        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
-        if (!roleCheck) throw new Error("Admin access required");
+        if (!(await isAdminUser(supabase, user.id, user.email ?? ""))) throw new Error("Admin access required");
         if (!withdrawal_id || !target_profile_id) throw new Error("Missing parameters");
 
         const { data: oldW } = await supabase.from("withdrawals").select("*").eq("id", withdrawal_id).single();
@@ -1169,8 +1122,7 @@ case "admin_wallet_transfer": {
       }
 
       case "admin_delete_withdrawal": {
-        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
-        if (!roleCheck) throw new Error("Admin access required");
+        if (!(await isAdminUser(supabase, user.id, user.email ?? ""))) throw new Error("Admin access required");
         if (!withdrawal_id || !target_profile_id) throw new Error("Missing parameters");
 
         const { data: oldW } = await supabase.from("withdrawals").select("*").eq("id", withdrawal_id).single();
