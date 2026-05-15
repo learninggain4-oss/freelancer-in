@@ -149,8 +149,6 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case "add_money": {
-        if (callerProfile.user_type !== "client")
-          throw new Error("Only clients can add money");
         const validAmount = validateAmount(amount, 500000);
 
         const newBalance = Number(callerProfile.available_balance) + validAmount;
