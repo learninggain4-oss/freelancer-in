@@ -18,27 +18,27 @@ const Login = lazy(() => import("./pages/Login"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
-const FreelancerRegister = lazy(() => import("./pages/register/FreelancerRegister"));
+const EmployeeRegister = lazy(() => import("./pages/register/FreelancerRegister"));
 const EmployerRegisterComp = lazy(() => import("./pages/register/EmployerRegister"));
 const VerificationPending = lazy(() => import("./pages/VerificationPending"));
-const FreelancerDashboard = lazy(() => import("./pages/freelancer/FreelancerDashboard"));
-const FreelancerProjects = lazy(() => import("./pages/freelancer/FreelancerProjects"));
-const FreelancerRequests = lazy(() => import("./pages/freelancer/FreelancerRequests"));
-const FreelancerWallet = lazy(() => import("./pages/freelancer/FreelancerWallet"));
-const FreelancerAttendance = lazy(() => import("./pages/freelancer/FreelancerAttendance"));
-const FreelancerProfile = lazy(() => import("./pages/freelancer/FreelancerProfile"));
-const FreelancerBids = lazy(() => import("./pages/freelancer/FreelancerBids"));
-const FreelancerEarnings = lazy(() => import("./pages/freelancer/FreelancerEarnings"));
-const FreelancerReviews = lazy(() => import("./pages/freelancer/FreelancerReviews"));
-const FreelancerBadges = lazy(() => import("./pages/freelancer/FreelancerBadges"));
-const FreelancerPortfolio = lazy(() => import("./pages/freelancer/FreelancerPortfolio"));
-const EmployerDashboard = lazy(() => import("./pages/employer/EmployerDashboard"));
-const EmployerWallet = lazy(() => import("./pages/employer/EmployerWallet"));
-const EmployerProjects = lazy(() => import("./pages/employer/EmployerProjects"));
-const CreateProject = lazy(() => import("./pages/employer/EmployerProject"));
-const EmployerWithdrawals = lazy(() => import("./pages/employer/EmployerWithdrawals"));
-const EmployerProfile = lazy(() => import("./pages/employer/EmployerProfile"));
-const EmployerAttendance = lazy(() => import("./pages/employer/EmployerAttendance"));
+const EmployeeDashboard = lazy(() => import("./pages/freelancer/EmployeeDashboard"));
+const EmployeeProjects = lazy(() => import("./pages/freelancer/EmployeeProjects"));
+const EmployeeRequests = lazy(() => import("./pages/freelancer/EmployeeRequests"));
+const EmployeeWallet = lazy(() => import("./pages/freelancer/EmployeeWallet"));
+const EmployeeAttendance = lazy(() => import("./pages/freelancer/EmployeeAttendance"));
+const EmployeeProfile = lazy(() => import("./pages/freelancer/EmployeeProfile"));
+const EmployeeBids = lazy(() => import("./pages/freelancer/EmployeeBids"));
+const EmployeeEarnings = lazy(() => import("./pages/freelancer/EmployeeEarnings"));
+const EmployeeReviews = lazy(() => import("./pages/freelancer/EmployeeReviews"));
+const EmployeeBadges = lazy(() => import("./pages/freelancer/EmployeeBadges"));
+const EmployeePortfolio = lazy(() => import("./pages/freelancer/EmployeePortfolio"));
+const EmployerDashboard = lazy(() => import("./pages/employer/ClientDashboard"));
+const EmployerWallet = lazy(() => import("./pages/employer/ClientWallet"));
+const EmployerProjects = lazy(() => import("./pages/employer/ClientProjects"));
+const CreateProject = lazy(() => import("./pages/employer/CreateProject"));
+const EmployerWithdrawals = lazy(() => import("./pages/employer/ClientWithdrawals"));
+const EmployerProfile = lazy(() => import("./pages/employer/ClientProfile"));
+const EmployerAttendance = lazy(() => import("./pages/employer/ClientAttendance"));
 const ChatRoom = lazy(() => import("./components/chat/ChatRoom"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
@@ -47,9 +47,9 @@ const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminAdmins = lazy(() => import("./pages/admin/AdminAdmins"));
 const AdminInvite = lazy(() => import("./pages/admin/AdminInvite"));
-const AdminFreelancer = lazy(() => import("./pages/admin/AdminFreelancer"));
-const AdminEmployers = lazy(() => import("./pages/admin/AdminEmployers"));
-const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));   
+const AdminEmployees = lazy(() => import("./pages/admin/AdminEmployees"));
+const AdminClients = lazy(() => import("./pages/admin/AdminClients"));
+const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
 const AdminVerifications = lazy(() => import("./pages/admin/AdminVerifications"));
 const AdminBankVerifications = lazy(() => import("./pages/admin/AdminBankVerifications"));
 const AdminProfileEdit = lazy(() => import("./pages/admin/AdminProfileEdit"));
@@ -69,7 +69,7 @@ const NotificationSettings = lazy(() => import("./pages/NotificationSettings"));
 const GetFree = lazy(() => import("./pages/GetFree"));
 const GetCoins = lazy(() => import("./pages/GetCoins"));
 const AppPage = lazy(() => import("./pages/AppPage"));
-const EmployeeSupportChat = lazy(() => import("./pages/freelancer/FreelancerSupportChat"));
+const EmployeeSupportChat = lazy(() => import("./pages/freelancer/EmployeeSupportChat"));
 const HelpSupport = lazy(() => import("./pages/HelpSupport"));
 const AdminHelpSupport = lazy(() => import("./pages/admin/AdminHelpSupport"));
 const AdminSupportReporting = lazy(() => import("./pages/admin/AdminSupportReporting"));
@@ -85,9 +85,6 @@ const AdminOnlineStatus = lazy(() => import("./pages/admin/AdminOnlineStatus"));
 const AdminHeroSlides = lazy(() => import("./pages/admin/AdminHeroSlides"));
 const AdminVisitors = lazy(() => import("./pages/admin/AdminVisitors"));
 const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
-const AdminWalletAddMoney = lazy(() => import("./pages/admin/AdminWalletAddMoney"));
-const AdminWalletTransfer = lazy(() => import("./pages/admin/AdminWalletTransfer"));
-const AdminWalletEditNumber = lazy(() => import("./pages/admin/AdminWalletEditNumber"));
 const AdminWalletTransactions = lazy(() => import("./pages/admin/AdminWalletTransactions"));
 const AdminAttendance = lazy(() => import("./pages/admin/AdminAttendance"));
 const AdminBanks = lazy(() => import("./pages/admin/AdminBanks"));
@@ -323,6 +320,8 @@ const WalletQRPage = lazy(() => import("./pages/wallet/WalletQRPage"));
 const WalletScanPage = lazy(() => import("./pages/wallet/WalletScanPage"));
 const RequestWithdrawal = lazy(() => import("./pages/wallet/RequestWithdrawal"));
 const UpgradeChat = lazy(() => import("./pages/wallet/UpgradeChat"));
+const AddMoneyPage = lazy(() => import("./pages/wallet/AddMoneyPage"));
+const AdminDepositRequests = lazy(() => import("./pages/admin/AdminDepositRequests"));
 const ProfilePersonalInfo = lazy(() => import("./pages/profile/ProfilePersonalInfo"));
 const ProfileProfessional = lazy(() => import("./pages/profile/ProfileProfessional"));
 const ProfileBankDetails = lazy(() => import("./pages/profile/ProfileBankDetails"));
@@ -343,7 +342,6 @@ import { useIpBlockCheck } from "@/hooks/use-ip-block-check";
 import AnnouncementPopup from "@/components/announcements/AnnouncementPopup";
 
 import BlockedScreen from "@/components/BlockedScreen";
-import FreelancerSupportChat from "./pages/freelancer/FreelancerSupportChat";
 
 const queryClient = new QueryClient();
 
@@ -399,8 +397,8 @@ const AppContent = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/register/freelancer" element={<FreelancerRegister />} />
-            <Route path="/register/freelancer" element={<FreelancerRegister />} />
+            <Route path="/register/employee" element={<EmployeeRegister />} />
+            <Route path="/register/freelancer" element={<EmployeeRegister />} />
             <Route path="/register/employer" element={<EmployerRegisterComp />} />
             <Route path="/register/client" element={<EmployerRegisterComp />} />
             <Route path="/verification-pending" element={<VerificationPending />} />
@@ -427,24 +425,25 @@ const AppContent = () => {
                 </ProtectedRoute>
               }
             >
-              <Route path="dashboard" element={<FreelancerDashboard />} />
-              <Route path="attendance" element={<FreelancerAttendance />} />
-              <Route path="projects" element={<FreelancerProjects />} />
-              <Route path="requests" element={<FreelancerRequests />} />
+              <Route path="dashboard" element={<EmployeeDashboard />} />
+              <Route path="attendance" element={<EmployeeAttendance />} />
+              <Route path="projects" element={<EmployeeProjects />} />
+              <Route path="requests" element={<EmployeeRequests />} />
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
-              <Route path="projects/support-chat/:projectId" element={<FreelancerSupportChat />} />
-              <Route path="wallet" element={<FreelancerWallet />} />
+              <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
+              <Route path="wallet" element={<EmployeeWallet />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
               <Route path="wallet/qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
-              <Route path="bids" element={<FreelancerBids />} />
-              <Route path="earnings" element={<FreelancerEarnings />} />
-              <Route path="reviews" element={<FreelancerReviews />} />
-              <Route path="badges" element={<FreelancerBadges />} />
-              <Route path="portfolio" element={<FreelancerPortfolio />} />
-              <Route path="profile" element={<FreelancerProfile />} />
+              <Route path="wallet/add-money" element={<AddMoneyPage />} />
+              <Route path="bids" element={<EmployeeBids />} />
+              <Route path="earnings" element={<EmployeeEarnings />} />
+              <Route path="reviews" element={<EmployeeReviews />} />
+              <Route path="badges" element={<EmployeeBadges />} />
+              <Route path="portfolio" element={<EmployeePortfolio />} />
+              <Route path="profile" element={<EmployeeProfile />} />
               <Route path="profile/personal" element={<ProfilePersonalInfo />} />
               <Route path="profile/professional" element={<ProfileProfessional />} />
               <Route path="profile/bank-details" element={<ProfileBankDetails />} />
@@ -475,24 +474,25 @@ const AppContent = () => {
                 </ProtectedRoute>
               }
             >
-              <Route path="dashboard" element={<FreelancerDashboard />} />
-              <Route path="attendance" element={<FreelancerAttendance />} />
-              <Route path="projects" element={<FreelancerProjects />} />
-              <Route path="requests" element={<FreelancerRequests />} />
+              <Route path="dashboard" element={<EmployeeDashboard />} />
+              <Route path="attendance" element={<EmployeeAttendance />} />
+              <Route path="projects" element={<EmployeeProjects />} />
+              <Route path="requests" element={<EmployeeRequests />} />
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
-              <Route path="projects/support-chat/:projectId" element={<FreelancerSupportChat />} />
-              <Route path="wallet" element={<FreelancerWallet />} />
+              <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
+              <Route path="wallet" element={<EmployeeWallet />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
               <Route path="wallet/qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
-              <Route path="bids" element={<FreelancerBids />} />
-              <Route path="earnings" element={<FreelancerEarnings />} />
-              <Route path="reviews" element={<FreelancerReviews />} />
-              <Route path="badges" element={<FreelancerBadges />} />
-              <Route path="portfolio" element={<FreelancerPortfolio />} />
-              <Route path="profile" element={<FreelancerProfile />} />
+              <Route path="wallet/add-money" element={<AddMoneyPage />} />
+              <Route path="bids" element={<EmployeeBids />} />
+              <Route path="earnings" element={<EmployeeEarnings />} />
+              <Route path="reviews" element={<EmployeeReviews />} />
+              <Route path="badges" element={<EmployeeBadges />} />
+              <Route path="portfolio" element={<EmployeePortfolio />} />
+              <Route path="profile" element={<EmployeeProfile />} />
               <Route path="profile/personal" element={<ProfilePersonalInfo />} />
               <Route path="profile/professional" element={<ProfileProfessional />} />
               <Route path="profile/bank-details" element={<ProfileBankDetails />} />
@@ -531,6 +531,7 @@ const AppContent = () => {
               <Route path="wallet/qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
+              <Route path="wallet/add-money" element={<AddMoneyPage />} />
               <Route path="projects" element={<EmployerProjects />} />
               <Route path="projects/create" element={<CreateProject />} />
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
@@ -570,8 +571,8 @@ const AppContent = () => {
               <Route path="users" element={<AdminUsers />} />
               <Route path="admins" element={<AdminAdmins />} />
               <Route path="invite" element={<AdminInvite />} />
-              <Route path="freelancers" element={<AdminEmployers />} />
-              <Route path="employers" element={<AdminB2BClients />} />
+              <Route path="freelancers" element={<AdminEmployees />} />
+              <Route path="employers" element={<AdminClients />} />
               <Route path="withdrawals" element={<AdminWithdrawals />} />
               <Route path="verifications" element={<AdminVerifications />} />
               <Route path="bank-verifications" element={<AdminBankVerifications />} />
@@ -589,6 +590,7 @@ const AppContent = () => {
               <Route path="help-support" element={<AdminHelpSupport />} />
               <Route path="support-reporting" element={<AdminSupportReporting />} />
               <Route path="payment-methods" element={<AdminPaymentMethods />} />
+              <Route path="deposit-requests" element={<AdminDepositRequests />} />
               <Route path="countdowns" element={<AdminCountdowns />} />
               <Route path="validation" element={<AdminValidation />} />
               <Route path="sessions" element={<AdminSessions />} />
@@ -600,9 +602,6 @@ const AppContent = () => {
               <Route path="hero-slides" element={<AdminHeroSlides />} />
               <Route path="visitors" element={<AdminVisitors />} />
               <Route path="wallet" element={<AdminWallet />} />
-              <Route path="wallet/add-money" element={<AdminWalletAddMoney />} />
-              <Route path="wallet/transfer" element={<AdminWalletTransfer />} />
-              <Route path="wallet/edit-number" element={<AdminWalletEditNumber />} />
               <Route path="wallet/transactions" element={<AdminWalletTransactions />} />
               <Route path="attendance" element={<AdminAttendance />} />
               <Route path="banks" element={<AdminBanks />} />

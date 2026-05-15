@@ -739,7 +739,7 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
       return res.json({ success: true, sessions: [] });
     }
 
-    if (action === "revoke_sessions") {
+    if (action === "revoke_sessions" || action === "force_logout") {
       if (!user_id) return res.status(400).json({ error: "user_id required" });
       // Use GoTrue REST API to revoke all sessions for the user by user_id
       const supabaseUrl = SUPABASE_URL;
@@ -1296,7 +1296,7 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
     if (!checkRateLimit(user.id)) return res.status(429).json({ error: "Rate limit exceeded. Please try again later." });
 
     const supabase = getAdminClient();
-    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, target_wallet_number } = req.body;
+    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, target_wallet_number, payment_method, payment_details, status_filter, deposit_request_id, deposit_action } = req.body;
 
     const { data: callerProfile, error: cpErr } = await supabase.from("profiles").select("id, user_id, user_type, available_balance, hold_balance, approval_status, wallet_number").eq("user_id", user.id).single();
     if (cpErr || !callerProfile) throw new Error("Profile not found");
@@ -1528,9 +1528,8 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
         } else if (action === "admin_wallet_transfer") {
           if (!target_profile_id || !transfer_to_profile_id || !amount || amount <= 0) throw new Error("Missing required fields");
           const { data: from } = await supabase.from("profiles").select("id, available_balance").eq("id", target_profile_id).single();
-          const { data: to } = await supabase.from("profiles").select("id, available_balance, wallet_active").eq("id", transfer_to_profile_id).single();
+          const { data: to } = await supabase.from("profiles").select("id, available_balance").eq("id", transfer_to_profile_id).single();
           if (!from || !to) throw new Error("Profile not found");
-          if (!to.wallet_active) throw new Error("Receiver wallet is inactive");
           if (Number(from.available_balance) < amount) throw new Error("Insufficient balance");
           await supabase.from("profiles").update({ available_balance: Number(from.available_balance) - amount }).eq("id", from.id);
           await supabase.from("profiles").update({ available_balance: Number(to.available_balance) + amount }).eq("id", to.id);
@@ -1586,6 +1585,95 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
         const senderName = Array.isArray(senderProfile?.full_name) ? senderProfile.full_name[0] : senderProfile?.full_name ?? "Someone";
         await supabase.from("notifications").insert({ user_id: recipient.user_id, title: "Money Received! 💰", message: `${senderName} sent you ₹${amount.toLocaleString("en-IN")} via FlexPay wallet transfer.`, type: "financial" });
         result.recipient_name = recipientName;
+        break;
+      }
+
+      case "claim_add_money_slot": {
+        const now = new Date();
+        const { data: activeSlot } = await supabase.from("add_money_queue")
+          .select("id, user_id, expires_at, profile_id")
+          .eq("status", "active")
+          .gt("expires_at", now.toISOString())
+          .order("started_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (activeSlot && activeSlot.profile_id !== callerProfile.id) {
+          const expiresAt = new Date(activeSlot.expires_at);
+          const waitSeconds = Math.max(0, Math.floor((expiresAt - now) / 1000));
+          result.claimed = false;
+          result.wait_seconds = waitSeconds;
+          result.expires_at = activeSlot.expires_at;
+        } else {
+          await supabase.from("add_money_queue").delete().eq("profile_id", callerProfile.id);
+          const expiresAt = new Date(now.getTime() + 15 * 60 * 1000).toISOString();
+          await supabase.from("add_money_queue").insert({ profile_id: callerProfile.id, user_id: callerProfile.user_id, started_at: now.toISOString(), expires_at: expiresAt, status: "active" });
+          result.claimed = true;
+          result.expires_at = expiresAt;
+        }
+        break;
+      }
+
+      case "release_add_money_slot": {
+        await supabase.from("add_money_queue").delete().eq("profile_id", callerProfile.id);
+        result.released = true;
+        break;
+      }
+
+      case "submit_deposit_request": {
+        if (!amount || amount <= 0) throw new Error("Invalid amount");
+        if (amount < 100) throw new Error("Minimum deposit amount is ₹100");
+        if (amount > 50000) throw new Error("Maximum deposit amount is ₹50,000");
+        if (amount % 100 !== 0) throw new Error("Amount must be in multiples of ₹100 (no loose change)");
+        if (!["employee", "client"].includes(callerProfile.user_type)) throw new Error("Only freelancers and employers can deposit money");
+        const { data: depInsert, error: reqErr } = await supabase.from("deposit_requests").insert({
+          profile_id: callerProfile.id,
+          amount,
+          payment_method: payment_method || "UPI",
+          payment_details: payment_details || {},
+          status: "pending",
+        }).select("id, order_id").single();
+        if (reqErr) throw new Error("Failed to create deposit request");
+        await supabase.from("add_money_queue").delete().eq("profile_id", callerProfile.id);
+        await supabase.from("notifications").insert({ user_id: callerProfile.user_id, title: "Deposit Request Submitted", message: `Your deposit request of ₹${amount.toLocaleString("en-IN")} has been submitted. Admin will credit your wallet after payment verification.`, type: "financial" });
+        result.request_id = depInsert.id;
+        result.order_id = depInsert.order_id;
+        break;
+      }
+
+      case "admin_get_deposit_requests": {
+        if (!["admin"].includes(callerProfile.user_type)) throw new Error("Admin access required");
+        const resolvedStatusFilter = status_filter || "pending";
+        let query = supabase.from("deposit_requests").select("id, profile_id, amount, payment_method, payment_details, status, order_id, created_at, reviewed_at, review_notes, profiles(full_name, email, user_type, wallet_number)").order("created_at", { ascending: false }).limit(100);
+        if (resolvedStatusFilter !== "all") query = query.eq("status", resolvedStatusFilter);
+        const { data: requests, error: rErr } = await query;
+        if (rErr) throw new Error(rErr.message);
+        result.requests = requests || [];
+        break;
+      }
+
+      case "admin_process_deposit": {
+        if (!["admin"].includes(callerProfile.user_type)) throw new Error("Admin access required");
+        if (!deposit_request_id || !deposit_action) throw new Error("deposit_request_id and deposit_action required");
+        if (!["approve", "reject"].includes(deposit_action)) throw new Error("deposit_action must be approve or reject");
+        const { data: depReq } = await supabase.from("deposit_requests").select("id, profile_id, amount, status").eq("id", deposit_request_id).single();
+        if (!depReq) throw new Error("Deposit request not found");
+        if (depReq.status !== "pending") throw new Error("Request already processed");
+        if (deposit_action === "approve") {
+          const { data: userProf } = await supabase.from("profiles").select("available_balance, user_id, full_name").eq("id", depReq.profile_id).single();
+          if (!userProf) throw new Error("User profile not found");
+          const newBal = Number(userProf.available_balance) + Number(depReq.amount);
+          await supabase.from("profiles").update({ available_balance: newBal }).eq("id", depReq.profile_id);
+          await supabase.from("transactions").insert({ profile_id: depReq.profile_id, type: "credit", amount: depReq.amount, description: `Wallet top-up approved by admin (₹${Number(depReq.amount).toLocaleString("en-IN")})`, reference_id: depReq.id });
+          await supabase.from("notifications").insert({ user_id: userProf.user_id, title: "Deposit Approved! 🎉", message: `Your deposit of ₹${Number(depReq.amount).toLocaleString("en-IN")} has been approved and credited to your FlexPay wallet.`, type: "financial" });
+          await supabase.from("deposit_requests").update({ status: "approved", reviewed_at: new Date().toISOString(), review_notes: review_notes || null, reviewed_by: callerProfile.id }).eq("id", deposit_request_id);
+          result.new_balance = newBal;
+        } else {
+          const { data: userProf } = await supabase.from("profiles").select("user_id").eq("id", depReq.profile_id).single();
+          await supabase.from("deposit_requests").update({ status: "rejected", reviewed_at: new Date().toISOString(), review_notes: review_notes || null, reviewed_by: callerProfile.id }).eq("id", deposit_request_id);
+          if (userProf) await supabase.from("notifications").insert({ user_id: userProf.user_id, title: "Deposit Rejected", message: `Your deposit request of ₹${Number(depReq.amount).toLocaleString("en-IN")} was rejected.${review_notes ? " Reason: " + review_notes : ""}`, type: "financial" });
+        }
+        logAudit(supabase, callerProfile.id, deposit_action === "approve" ? "wallet_add" : "reject_deposit", depReq.profile_id, null, { amount: depReq.amount, deposit_request_id });
+        result.processed = true;
         break;
       }
 
@@ -2360,22 +2448,13 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
 
     // ── force_new=false (default): check existing profile → UPDATE ────────────
     if (!force_new) {
-      const { data: existingProf } = await adminClient.from("profiles")
-        .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
-        .eq("email", emailLower)
-        .maybeSingle();
+      const { data: existingProf } = await adminClient.from("profiles").select("id").eq("email", emailLower).maybeSingle();
       if (existingProf) {
         const { error: updErr } = await adminClient.from("profiles")
           .update({ ...profileFields, updated_at: new Date().toISOString() })
           .eq("id", existingProf.id);
         if (updErr) return res.status(500).json({ error: updErr.message });
-
-        const { data: updatedProfile } = await adminClient.from("profiles")
-          .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
-          .eq("id", existingProf.id)
-          .maybeSingle();
-
-        return res.json({ success: true, action: "updated", profile_id: existingProf.id, user_id: existingProf.user_id || null, email: emailLower, full_name: nameUpper, profile: updatedProfile });
+        return res.json({ success: true, action: "updated", profile_id: existingProf.id, user_id: existingProf.user_id || null, email: emailLower, full_name: nameUpper });
       }
     }
 
@@ -2408,29 +2487,17 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
         user_code: [], created_at: new Date().toISOString(), ...profileFields,
       });
       if (profErr) return res.status(500).json({ error: profErr.message });
-
-      const { data: createdProfile } = await adminClient.from("profiles")
-        .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
-        .eq("id", newProfileId)
-        .maybeSingle();
-
-      return res.json({ success: true, action: "created", user_id: userId, profile_id: newProfileId, email: emailLower, full_name: nameUpper, profile: createdProfile });
+      return res.json({ success: true, action: "created", user_id: userId, profile_id: newProfileId, email: emailLower, full_name: nameUpper });
     }
 
     // ── Normal: check if profile exists for auth user → UPDATE or INSERT ──────
-    const { data: authProf } = await adminClient.from("profiles").select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region").eq("user_id", userId).maybeSingle();
+    const { data: authProf } = await adminClient.from("profiles").select("id").eq("user_id", userId).maybeSingle();
     if (authProf) {
       const { error: updErr } = await adminClient.from("profiles")
         .update({ ...profileFields, updated_at: new Date().toISOString() })
         .eq("id", authProf.id);
       if (updErr) return res.status(500).json({ error: updErr.message });
-
-      const { data: updatedProfile } = await adminClient.from("profiles")
-        .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
-        .eq("id", authProf.id)
-        .maybeSingle();
-
-      return res.json({ success: true, action: "updated", profile_id: authProf.id, user_id: userId, email: emailLower, full_name: nameUpper, profile: updatedProfile });
+      return res.json({ success: true, action: "updated", profile_id: authProf.id, user_id: userId, email: emailLower, full_name: nameUpper });
     }
 
     const { error: profErr } = await adminClient.from("profiles").insert({
@@ -2438,13 +2505,7 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
       user_code: [], created_at: new Date().toISOString(), ...profileFields,
     });
     if (profErr) return res.status(500).json({ error: profErr.message });
-
-    const { data: createdProfile } = await adminClient.from("profiles")
-      .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
-      .eq("id", userId)
-      .maybeSingle();
-
-    res.json({ success: true, action: "created", profile_id: userId, user_id: userId, email: emailLower, full_name: nameUpper, profile: createdProfile });
+    res.json({ success: true, action: "created", profile_id: userId, user_id: userId, email: emailLower, full_name: nameUpper });
   } catch (err) {
     console.error("admin-add-user error:", err);
     res.status(500).json({ error: err.message });
