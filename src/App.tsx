@@ -431,12 +431,12 @@ const AppContent = () => {
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
               <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
               <Route path="wallet" element={<EmployeeWallet />} />
+              <Route path="wallet/add" element={<AddMoneyPage />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
               <Route path="wallet/qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
-              <Route path="wallet/add-money" element={<AddMoneyPage />} />
               <Route path="bids" element={<EmployeeBids />} />
               <Route path="earnings" element={<EmployeeEarnings />} />
               <Route path="reviews" element={<EmployeeReviews />} />
@@ -480,12 +480,12 @@ const AppContent = () => {
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
               <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
               <Route path="wallet" element={<EmployeeWallet />} />
+              <Route path="wallet/add" element={<AddMoneyPage />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
               <Route path="wallet/qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
-              <Route path="wallet/add-money" element={<AddMoneyPage />} />
               <Route path="bids" element={<EmployeeBids />} />
               <Route path="earnings" element={<EmployeeEarnings />} />
               <Route path="reviews" element={<EmployeeReviews />} />
@@ -525,12 +525,12 @@ const AppContent = () => {
               <Route path="dashboard" element={<EmployerDashboard />} />
               <Route path="attendance" element={<EmployerAttendance />} />
               <Route path="wallet" element={<EmployerWallet />} />
+              <Route path="wallet/add" element={<AddMoneyPage />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
               <Route path="wallet/qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
-              <Route path="wallet/add-money" element={<AddMoneyPage />} />
               <Route path="projects" element={<EmployerProjects />} />
               <Route path="projects/create" element={<CreateProject />} />
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
