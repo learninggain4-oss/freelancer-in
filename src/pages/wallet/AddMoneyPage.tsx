@@ -212,16 +212,6 @@ export default function AddMoneyPage() {
         </div>
       </div>
 
-      {step === "amount" && dbError && (
-        <div className="rounded-2xl p-4 flex items-start gap-3 text-sm border" style={{ background: "rgba(217,119,6,.08)", borderColor: "rgba(217,119,6,.3)", color: "#b45309" }}>
-          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
-          <div>
-            <p className="font-black">Database setup pending</p>
-            <p className="text-xs opacity-80 mt-0.5">Admin needs to run the migration SQL in Supabase Dashboard. The Add Money page will work fully once that's done.</p>
-          </div>
-        </div>
-      )}
-
       {/* Step: Amount */}
       {step === "amount" && (
         <div className="space-y-5 animate-fade-in-up">
