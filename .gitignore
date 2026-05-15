@@ -35,3 +35,9 @@ supabase/.temp/
 
 # Replit internal
 .local/
+
+# Bun lock (use npm/yarn only)
+bun.lock
+
+# TypeScript build cache
+tsconfig.tsbuildinfo
