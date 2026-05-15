@@ -18,7 +18,7 @@ import { loginSchema, type LoginFormData } from "@/lib/validations/registration"
 import { supabase } from "@/integrations/supabase/client";
 import TotpVerifyDialog from "@/components/admin/TotpVerifyDialog";
 import ForgotEmailDialog from "@/components/auth/ForgotEmailDialog";
-import MathCaptcha from "@/components/auth/MathCaptcha";
+import SliderCaptcha from "@/components/auth/SliderCaptcha";
 
 /* ─── Keyframe CSS ─── */
 const GLOBAL_CSS = `
@@ -142,34 +142,18 @@ const Login = () => {
   const [showTotpDialog, setShowTotpDialog] = useState(false);
   const [pendingAdminNav, setPendingAdminNav] = useState(false);
   const [pendingUserNav, setPendingUserNav] = useState<string | null>(null);
-  const [captchaA, setCaptchaA] = useState(0);
-  const [captchaB, setCaptchaB] = useState(0);
-  const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [captchaVerified, setCaptchaVerified] = useState(false);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotEmail, setShowForgotEmail] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, user, profile, loading: authLoading } = useAuth();
 
-  const regenerateCaptcha = useCallback(() => {
-    setCaptchaA(Math.floor(Math.random() * 9) + 1);
-    setCaptchaB(Math.floor(Math.random() * 9) + 1);
-    setCaptchaAnswer("");
+  const resetCaptcha = useCallback(() => {
     setCaptchaVerified(false);
+    setCaptchaResetKey(k => k + 1);
   }, []);
-
-  const verifyCaptcha = () => {
-    if (parseInt(captchaAnswer) === captchaA + captchaB) {
-      setCaptchaVerified(true);
-      toast({ title: "CAPTCHA verified!" });
-    } else {
-      toast({ title: "Wrong answer", description: "Please try again.", variant: "destructive" });
-      regenerateCaptcha();
-    }
-  };
-
-  useEffect(() => { regenerateCaptcha(); }, [regenerateCaptcha]);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -223,7 +207,7 @@ const Login = () => {
       waitForProfile();
     } catch (error: any) {
       toast({ title: "Login failed", description: error.message, variant: "destructive" });
-      regenerateCaptcha();
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -400,14 +384,9 @@ const Login = () => {
                   </div>
 
                   {/* CAPTCHA */}
-                  <MathCaptcha
-                    a={captchaA}
-                    b={captchaB}
-                    answer={captchaAnswer}
-                    verified={captchaVerified}
-                    onAnswerChange={(v) => { setCaptchaAnswer(v); setCaptchaVerified(false); }}
-                    onVerify={verifyCaptcha}
-                    onRefresh={regenerateCaptcha}
+                  <SliderCaptcha
+                    onVerified={setCaptchaVerified}
+                    resetKey={captchaResetKey}
                   />
 
                   {/* Submit */}
