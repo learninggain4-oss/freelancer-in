@@ -1251,7 +1251,7 @@ Deno.serve(async (req) => {
       error instanceof Error ? error.message : "Unknown error";
     console.error("wallet-operations error:", message);
     return new Response(JSON.stringify({ error: message }), {
-      status: 400,
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
