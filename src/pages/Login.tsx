@@ -18,6 +18,7 @@ import { loginSchema, type LoginFormData } from "@/lib/validations/registration"
 import { supabase } from "@/integrations/supabase/client";
 import TotpVerifyDialog from "@/components/admin/TotpVerifyDialog";
 import ForgotEmailDialog from "@/components/auth/ForgotEmailDialog";
+import MathCaptcha from "@/components/auth/MathCaptcha";
 
 /* ─── Keyframe CSS ─── */
 const GLOBAL_CSS = `
@@ -399,29 +400,15 @@ const Login = () => {
                   </div>
 
                   {/* CAPTCHA */}
-                  <div style={{ borderRadius: 12, border: "1px solid rgba(255,255,255,.1)", background: "rgba(255,255,255,.04)", padding: "14px 16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: captchaVerified ? 0 : 10 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,.7)", whiteSpace: "nowrap" }}>
-                        What is {captchaA} + {captchaB} =
-                      </span>
-                      <Input type="number" value={captchaAnswer}
-                        onChange={(e) => { setCaptchaAnswer(e.target.value); setCaptchaVerified(false); }}
-                        placeholder="?" disabled={captchaVerified}
-                        style={{ width: 70, textAlign: "center", background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.12)", borderRadius: 10, color: "white", height: 36, fontSize: 14 }} />
-                      <button type="button" onClick={regenerateCaptcha}
-                        style={{ color: "rgba(255,255,255,.3)", background: "none", border: "none", cursor: "pointer" }} aria-label="New captcha">
-                        <RefreshCw size={14} />
-                      </button>
-                    </div>
-                    {!captchaVerified ? (
-                      <button type="button" onClick={verifyCaptcha} disabled={!captchaAnswer}
-                        style={{ width: "100%", padding: "8px", borderRadius: 10, border: `1px solid rgba(99,102,241,.4)`, background: "rgba(99,102,241,.12)", color: A1, fontSize: 12, fontWeight: 600, cursor: captchaAnswer ? "pointer" : "not-allowed", opacity: captchaAnswer ? 1 : .5 }}>
-                        Verify CAPTCHA
-                      </button>
-                    ) : (
-                      <p style={{ color: "#22c55e", fontSize: 12, fontWeight: 600, textAlign: "center" }}>✓ CAPTCHA verified</p>
-                    )}
-                  </div>
+                  <MathCaptcha
+                    a={captchaA}
+                    b={captchaB}
+                    answer={captchaAnswer}
+                    verified={captchaVerified}
+                    onAnswerChange={(v) => { setCaptchaAnswer(v); setCaptchaVerified(false); }}
+                    onVerify={verifyCaptcha}
+                    onRefresh={regenerateCaptcha}
+                  />
 
                   {/* Submit */}
                   <button type="submit" disabled={loading || !agreedToTerms || !captchaVerified}
