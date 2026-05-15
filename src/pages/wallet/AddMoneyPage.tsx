@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
-  ArrowLeft, PlusCircle, Clock, CheckCircle2, CreditCard,
+  ArrowLeft, PlusCircle, CheckCircle2, CreditCard,
   Zap, AlertCircle, ChevronRight, Loader2,
 } from "lucide-react";
 
@@ -28,7 +28,7 @@ type PaymentMethod = {
   logo_path: string | null;
 };
 
-type Step = "loading" | "wait" | "amount" | "method" | "confirm" | "done";
+type Step = "amount" | "method" | "confirm" | "done";
 
 const BUCKET = "payment-method-logos";
 
@@ -46,15 +46,13 @@ export default function AddMoneyPage() {
     : location.pathname.startsWith("/employer") ? "/employer"
     : "/employer";
 
-  const [step, setStep] = useState<Step>("loading");
-  const [waitSeconds, setWaitSeconds] = useState(0);
+  const [step, setStep] = useState<Step>("amount");
   const [amount, setAmount] = useState("");
   const [amtError, setAmtError] = useState("");
   const [selectedMethod, setSelectedMethod] = useState<string>("");
   const [paymentDetails, setPaymentDetails] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [orderId, setOrderId] = useState("");
-  const [dbError, setDbError] = useState(false);
 
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [methodsLoading, setMethodsLoading] = useState(true);
@@ -100,52 +98,6 @@ export default function AddMoneyPage() {
     return data.publicUrl;
   };
 
-  const claimSlot = useCallback(async () => {
-    setStep("loading");
-    try {
-      const { data, error } = await supabase.functions.invoke("wallet-operations", {
-        body: { action: "claim_add_money_slot" },
-      });
-      const errMsg = data?.error || error?.message || "";
-      if (errMsg.includes("does not exist") || errMsg.includes("relation") || errMsg.includes("42P01")) {
-        setDbError(true);
-        setStep("amount");
-        return;
-      }
-      if (error || data?.error) {
-        toast.error(errMsg || "Could not connect");
-        navigate(`${base}/wallet`);
-        return;
-      }
-      if (data?.claimed) {
-        setStep("amount");
-      } else {
-        setWaitSeconds(data?.wait_seconds ?? 0);
-        setStep("wait");
-      }
-    } catch {
-      toast.error("Connection error. Please try again.");
-      navigate(`${base}/wallet`);
-    }
-  }, [base, navigate]);
-
-  useEffect(() => {
-    claimSlot();
-    return () => {
-      supabase.functions.invoke("wallet-operations", { body: { action: "release_add_money_slot" } }).catch(() => {});
-    };
-  }, [claimSlot]);
-
-  useEffect(() => {
-    if (step !== "wait" || waitSeconds <= 0) return;
-    const timer = setInterval(() => {
-      setWaitSeconds(s => {
-        if (s <= 1) { clearInterval(timer); claimSlot(); return 0; }
-        return s - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [step, waitSeconds, claimSlot]);
 
   const validateAmount = (val: string) => {
     const n = Number(val);
@@ -193,9 +145,6 @@ export default function AddMoneyPage() {
     }
   };
 
-  const minutes = Math.floor(waitSeconds / 60);
-  const secs = waitSeconds % 60;
-  const waitFmt = `${minutes}:${String(secs).padStart(2, "0")}`;
   const amtNum = Number(amount) || 0;
 
   // Detect if selected method name contains "UPI" (case-insensitive)
@@ -204,38 +153,6 @@ export default function AddMoneyPage() {
     selectedMethod.toLowerCase().includes("phonepe") ||
     selectedMethod.toLowerCase().includes("paytm") ||
     selectedMethod.toLowerCase().includes("bhim");
-
-  if (step === "loading") return (
-    <div style={{ background: T.bg, minHeight: "100vh" }} className="flex items-center justify-center">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
-        <p style={{ color: T.sub }} className="text-sm font-medium">Checking availability…</p>
-      </div>
-    </div>
-  );
-
-  if (step === "wait") return (
-    <div style={{ background: T.bg, minHeight: "100vh", color: T.text }} className="flex flex-col items-center justify-center gap-6 p-6">
-      <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-amber-500/10 border border-amber-500/20">
-        <Clock className="h-12 w-12 text-amber-500" />
-      </div>
-      <div className="text-center space-y-2 max-w-xs">
-        <h2 className="text-2xl font-black">Please Wait</h2>
-        <p style={{ color: T.sub }} className="text-sm leading-relaxed">
-          Another user is currently in the Add Money flow. Your session will start automatically when they finish.
-        </p>
-      </div>
-      <div className="rounded-3xl border px-10 py-6 text-center space-y-1" style={{ background: T.card, borderColor: T.border }}>
-        <p style={{ color: T.sub }} className="text-[10px] font-black uppercase tracking-widest">Time Remaining</p>
-        <p className="text-5xl font-black tabular-nums text-amber-500">{waitFmt}</p>
-        <p style={{ color: T.sub }} className="text-xs">minutes : seconds</p>
-      </div>
-      <Button variant="outline" onClick={() => navigate(`${base}/wallet`)}
-        className="rounded-2xl" style={{ borderColor: T.border, color: T.sub }}>
-        <ArrowLeft className="h-4 w-4 mr-2" /> Go Back
-      </Button>
-    </div>
-  );
 
   if (step === "done") return (
     <div style={{ background: T.bg, minHeight: "100vh", color: T.text }} className="flex flex-col items-center justify-center gap-6 p-6">

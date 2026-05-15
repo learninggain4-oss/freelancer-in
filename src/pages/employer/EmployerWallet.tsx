@@ -1,26 +1,18 @@
-import { useState, useRef, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import WalletCard from "@/components/wallet/WalletCard";
 import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
 import TransferDialog from "@/components/wallet/TransferDialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 import {
-  PlusCircle,
-  ArrowUpRight,
   AlertCircle,
   Receipt,
   History,
   ChevronRight,
   Wallet,
 } from "lucide-react";
-import { toast } from "sonner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 
 const TH = {
@@ -33,10 +25,7 @@ const ClientWallet = () => {
   const { theme, themeKey } = useDashboardTheme();
   const T = TH[themeKey];
   const { profile, refreshProfile } = useAuth();
-  const [addAmount, setAddAmount] = useState("");
   const [showTransfer, setShowTransfer] = useState(false);
-  const [showAddMoney, setShowAddMoney] = useState(false);
-  const addMoneyRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
@@ -50,33 +39,6 @@ const ClientWallet = () => {
     }
   }, [location.state]);
 
-  const addMoneyMutation = useMutation({
-    mutationFn: async () => {
-      const amount = Number(addAmount);
-      if (!amount || amount <= 0) throw new Error("Enter a valid amount");
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-
-      const res = await supabase.functions.invoke("wallet-operations", {
-        body: { action: "add_money", amount },
-      });
-      if (res.error) throw new Error(res.error.message);
-      if (res.data?.error) throw new Error(res.data.error);
-      return res.data;
-    },
-    onSuccess: () => {
-      toast.success(`₹${Number(addAmount).toLocaleString("en-IN")} added to wallet`);
-      setAddAmount("");
-      refreshProfile();
-      queryClient.invalidateQueries({ queryKey: ["client-transactions"] });
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const scrollToAddMoney = () => {
-    setShowAddMoney(true);
-    setTimeout(() => addMoneyRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-  };
 
   return (
     <div className="space-y-6 p-4 pb-24 min-h-screen" style={{ backgroundColor: T.bg, color: T.text }}>
@@ -103,7 +65,7 @@ const ClientWallet = () => {
           availableBalance={profile?.available_balance ?? 0}
           holdBalance={profile?.hold_balance ?? 0}
           walletActive={(profile as any)?.wallet_active ?? true}
-          onAddMoney={scrollToAddMoney}
+          onAddMoney={() => navigate("/employer/wallet/add")}
           onTransfer={() => setShowTransfer(true)}
         />
       </div>
@@ -160,43 +122,6 @@ const ClientWallet = () => {
             <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>Track Requests</p>
           </div>
         </button>
-      </div>
-
-      {/* Add Money Form */}
-      <div ref={addMoneyRef} className="animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
-        <Card className="border-0 shadow-2xl overflow-hidden" style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
-          <div className="h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500" />
-          <CardHeader className="flex-row items-center gap-3 pb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-              <PlusCircle className="h-5 w-5 text-emerald-400" />
-            </div>
-            <CardTitle className="text-lg font-black tracking-tight" style={{ color: T.text }}>Add Money</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-3">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: T.sub }}>Deposit Amount (₹)</Label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-black text-indigo-400">₹</span>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  value={addAmount}
-                  onChange={(e) => setAddAmount(e.target.value)}
-                  className="h-16 pl-10 text-2xl font-black border-0 bg-white/5 rounded-2xl focus-visible:ring-indigo-500/30"
-                  style={{ color: T.text }}
-                />
-              </div>
-            </div>
-            <Button
-              className="w-full h-14 text-base font-black uppercase tracking-widest rounded-2xl bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all active:scale-[0.98]"
-              onClick={() => addMoneyMutation.mutate()}
-              disabled={addMoneyMutation.isPending || !(profile as any)?.wallet_active}
-            >
-              <ArrowUpRight className="mr-2 h-5 w-5" />
-              {addMoneyMutation.isPending ? "Processing..." : !(profile as any)?.wallet_active ? "Wallet Inactive" : "Add to Wallet"}
-            </Button>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Transfer Dialog */}
