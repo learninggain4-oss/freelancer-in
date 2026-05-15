@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { action, user_id, profile_id, email, user_type } = await req.json();
+    const { action, user_id, profile_id, email, user_type, notes } = await req.json();
 
     switch (action) {
       case "permanent_delete": {
@@ -464,7 +464,6 @@ Deno.serve(async (req) => {
             status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-        const { notes } = body as { notes?: string };
         const { error: notesErr } = await adminClient
           .from("profiles")
           .update({ approval_notes: notes ?? null, updated_at: new Date().toISOString() })
