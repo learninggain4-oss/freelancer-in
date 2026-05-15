@@ -1247,7 +1247,7 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
     if (!checkRateLimit(user.id)) return res.status(429).json({ error: "Rate limit exceeded. Please try again later." });
 
     const supabase = getAdminClient();
-    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, target_wallet_number } = req.body;
+    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, target_wallet_number, payment_method, payment_details, status_filter, deposit_request_id, deposit_action } = req.body;
 
     const { data: callerProfile, error: cpErr } = await supabase.from("profiles").select("id, user_id, user_type, available_balance, hold_balance, approval_status, wallet_number").eq("user_id", user.id).single();
     if (cpErr || !callerProfile) throw new Error("Profile not found");
@@ -1536,6 +1536,111 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
         const senderName = Array.isArray(senderProfile?.full_name) ? senderProfile.full_name[0] : senderProfile?.full_name ?? "Someone";
         await supabase.from("notifications").insert({ user_id: recipient.user_id, title: "Money Received! 💰", message: `${senderName} sent you ₹${amount.toLocaleString("en-IN")} via FlexPay wallet transfer.`, type: "financial" });
         result.recipient_name = recipientName;
+        break;
+      }
+
+      case "claim_add_money_slot": {
+        result = { claimed: true };
+        break;
+      }
+
+      case "release_add_money_slot": {
+        result = { success: true };
+        break;
+      }
+
+      case "submit_deposit_request": {
+        if (!amount || Number(amount) <= 0) throw new Error("Invalid amount");
+        const validAmount = Number(amount);
+        const orderId = "DEP-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+        const { error: drErr } = await supabase.from("deposit_requests").insert({
+          profile_id: callerProfile.id,
+          amount: validAmount,
+          payment_method: payment_method || "Unknown",
+          payment_details: payment_details ? JSON.stringify(payment_details) : null,
+          order_id: orderId,
+          status: "pending",
+        });
+        if (drErr) {
+          console.warn("deposit_requests insert failed:", drErr.message);
+          throw new Error("Failed to submit deposit request: " + drErr.message);
+        }
+        // Notify the user
+        await supabase.from("notifications").insert({
+          user_id: user.id,
+          title: "Deposit Request Submitted",
+          message: `Your deposit request of ₹${validAmount.toLocaleString("en-IN")} via ${payment_method || "Unknown"} has been received. Order ID: ${orderId}. Admin will credit your wallet after verifying the payment.`,
+          type: "financial",
+        });
+        result = { order_id: orderId };
+        break;
+      }
+
+      case "admin_get_deposit_requests": {
+        if (callerProfile.user_type !== "admin") throw new Error("Admin access required");
+        let query = supabase
+          .from("deposit_requests")
+          .select("*, profiles(full_name, email, user_type, wallet_number)")
+          .order("created_at", { ascending: false });
+        if (status_filter && status_filter !== "all") {
+          query = query.eq("status", status_filter);
+        }
+        const { data: requests, error: rErr } = await query;
+        if (rErr) throw new Error(rErr.message);
+        result = { requests: requests || [] };
+        break;
+      }
+
+      case "admin_process_deposit": {
+        if (callerProfile.user_type !== "admin") throw new Error("Admin access required");
+        if (!deposit_request_id) throw new Error("Missing deposit_request_id");
+        if (!deposit_action || !["approve", "reject"].includes(deposit_action)) throw new Error("Invalid deposit_action");
+
+        const { data: depReq, error: depErr } = await supabase
+          .from("deposit_requests")
+          .select("*, profiles(id, available_balance, user_id, full_name)")
+          .eq("id", deposit_request_id)
+          .single();
+        if (depErr || !depReq) throw new Error("Deposit request not found");
+        if (depReq.status !== "pending") throw new Error("Request already processed");
+
+        if (deposit_action === "approve") {
+          const userProfile = depReq.profiles;
+          const newBalance = Number(userProfile.available_balance) + Number(depReq.amount);
+          await supabase.from("profiles").update({ available_balance: newBalance }).eq("id", userProfile.id);
+          await supabase.from("transactions").insert({
+            profile_id: userProfile.id,
+            type: "credit",
+            amount: Number(depReq.amount),
+            description: `Wallet top-up approved via ${depReq.payment_method}. Order: ${depReq.order_id}`,
+          });
+          await supabase.from("notifications").insert({
+            user_id: userProfile.user_id,
+            title: "Deposit Approved! 💰",
+            message: `Your deposit of ₹${Number(depReq.amount).toLocaleString("en-IN")} via ${depReq.payment_method} has been approved. Your wallet has been credited.`,
+            type: "financial",
+          });
+          await supabase.from("deposit_requests").update({
+            status: "approved",
+            reviewed_by: callerProfile.id,
+            reviewed_at: new Date().toISOString(),
+            review_notes: review_notes || null,
+          }).eq("id", deposit_request_id);
+        } else {
+          await supabase.from("deposit_requests").update({
+            status: "rejected",
+            reviewed_by: callerProfile.id,
+            reviewed_at: new Date().toISOString(),
+            review_notes: review_notes || null,
+          }).eq("id", deposit_request_id);
+          await supabase.from("notifications").insert({
+            user_id: depReq.profiles.user_id,
+            title: "Deposit Request Rejected",
+            message: `Your deposit request of ₹${Number(depReq.amount).toLocaleString("en-IN")} via ${depReq.payment_method} was rejected.${review_notes ? " Reason: " + review_notes : ""}`,
+            type: "financial",
+          });
+        }
+        result = { success: true };
         break;
       }
 
