@@ -16,9 +16,12 @@ import {
   History,
   ChevronRight,
   Wallet,
+  Smartphone,
+  Building2,
+  Globe,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
@@ -34,8 +37,10 @@ const ClientWallet = () => {
   const T = TH[themeKey];
   const { profile, refreshProfile } = useAuth();
   const [addAmount, setAddAmount] = useState("");
+  const [payMethod, setPayMethod] = useState("UPI");
   const [showTransfer, setShowTransfer] = useState(false);
   const [showAddMoney, setShowAddMoney] = useState(false);
+  const [creatingDeposit, setCreatingDeposit] = useState(false);
   const addMoneyRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -50,28 +55,30 @@ const ClientWallet = () => {
     }
   }, [location.state]);
 
-  const addMoneyMutation = useMutation({
-    mutationFn: async () => {
-      const amount = Number(addAmount);
-      if (!amount || amount <= 0) throw new Error("Enter a valid amount");
+  const handlePay = async () => {
+    const amount = Number(addAmount);
+    if (!amount || amount <= 0) { toast.error("Enter a valid amount"); return; }
+    if (amount < 10) { toast.error("Minimum deposit is ₹10"); return; }
+    setCreatingDeposit(true);
+    try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
-
-      const res = await supabase.functions.invoke("wallet-operations", {
-        body: { action: "add_money", amount },
-      });
-      if (res.data?.error) throw new Error(res.data.error);
-      if (res.error) throw new Error(res.error.message);
-      return res.data;
-    },
-    onSuccess: () => {
-      toast.success(`₹${Number(addAmount).toLocaleString("en-IN")} added to wallet`);
-      setAddAmount("");
-      refreshProfile();
-      queryClient.invalidateQueries({ queryKey: ["client-transactions"] });
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
+      const orderId = "DEP" + Date.now().toString().slice(-8) + Math.floor(Math.random() * 1000).toString().padStart(3, "0");
+      const { data, error } = await supabase.from("deposit_requests").insert({
+        profile_id: profile?.id,
+        order_id: orderId,
+        amount,
+        payment_method: payMethod,
+        status: "pending",
+      }).select().single();
+      if (error) throw error;
+      navigate(`/employer/wallet/deposit/${data.id}`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to create deposit request");
+    } finally {
+      setCreatingDeposit(false);
+    }
+  };
 
   const scrollToAddMoney = () => {
     setShowAddMoney(true);
@@ -187,13 +194,37 @@ const ClientWallet = () => {
                 />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: T.sub }}>Payment Method</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { key: "UPI", icon: <Smartphone className="h-4 w-4" />, label: "UPI" },
+                  { key: "Bank Transfer", icon: <Building2 className="h-4 w-4" />, label: "Bank" },
+                  { key: "Net Banking", icon: <Globe className="h-4 w-4" />, label: "Net Banking" },
+                ].map(m => (
+                  <button key={m.key} type="button" onClick={() => setPayMethod(m.key)}
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all"
+                    style={{
+                      border: payMethod === m.key ? "1.5px solid #6366f1" : `1px solid ${T.border}`,
+                      background: payMethod === m.key ? "rgba(99,102,241,.1)" : T.input,
+                      color: payMethod === m.key ? "#6366f1" : T.sub,
+                    }}>
+                    {m.icon}
+                    <span className="text-[10px] font-black uppercase tracking-wider">{m.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl p-3 text-xs" style={{ background: "rgba(99,102,241,.06)", border: "1px solid rgba(99,102,241,.15)", color: T.sub }}>
+              After clicking Pay, you will receive payment details from admin. Complete payment and submit your UTR number as proof.
+            </div>
             <Button
               className="w-full h-14 text-base font-black uppercase tracking-widest rounded-2xl bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all active:scale-[0.98]"
-              onClick={() => addMoneyMutation.mutate()}
-              disabled={addMoneyMutation.isPending || !(profile as any)?.wallet_active}
+              onClick={handlePay}
+              disabled={creatingDeposit || !(profile as any)?.wallet_active || !addAmount}
             >
               <ArrowUpRight className="mr-2 h-5 w-5" />
-              {addMoneyMutation.isPending ? "Processing..." : !(profile as any)?.wallet_active ? "Wallet Inactive" : "Add to Wallet"}
+              {creatingDeposit ? "Creating request…" : !(profile as any)?.wallet_active ? "Wallet Inactive" : "Pay"}
             </Button>
           </CardContent>
         </Card>
