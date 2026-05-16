@@ -133,7 +133,7 @@ const navSections = [
     { label: "Online Status", icon: Wifi,     path: "/admin/online-status" },
   ]},
   { title: "Financial", items: [
-    { label: "Deposit Requests",   icon: PlusCircle,         path: "/admin/deposit-requests" },
+    { label: "Deposit Requests",   icon: IndianRupee,        path: "/admin/deposits" },
     { label: "Withdrawals",        icon: Wallet,             path: "/admin/withdrawals" },
     { label: "Wallet Mgmt",        icon: IndianRupee,        path: "/admin/wallet-management" },
     { label: "Wallet Types",       icon: Wallet,             path: "/admin/wallet-types" },
