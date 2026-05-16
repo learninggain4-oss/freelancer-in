@@ -50,7 +50,7 @@ const AdminInvite = lazy(() => import("./pages/admin/AdminInvite"));
 const AdminEmployees = lazy(() => import("./pages/admin/AdminEmployees"));
 const AdminClients = lazy(() => import("./pages/admin/AdminClients"));
 const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
-const AdminDepositRequests = lazy(() => import("./pages/admin/AdminDepositRequests"));
+const AdminDeposits = lazy(() => import("./pages/admin/AdminDeposits"));
 const AdminVerifications = lazy(() => import("./pages/admin/AdminVerifications"));
 const AdminBankVerifications = lazy(() => import("./pages/admin/AdminBankVerifications"));
 const AdminProfileEdit = lazy(() => import("./pages/admin/AdminProfileEdit"));
@@ -320,7 +320,7 @@ const WithdrawalHistory = lazy(() => import("./pages/wallet/WithdrawalHistory"))
 const WalletQRPage = lazy(() => import("./pages/wallet/WalletQRPage"));
 const WalletScanPage = lazy(() => import("./pages/wallet/WalletScanPage"));
 const RequestWithdrawal = lazy(() => import("./pages/wallet/RequestWithdrawal"));
-const AddMoneyPage = lazy(() => import("./pages/wallet/AddMoneyPage"));
+const DepositPayment = lazy(() => import("./pages/wallet/DepositPayment"));
 const UpgradeChat = lazy(() => import("./pages/wallet/UpgradeChat"));
 const ProfilePersonalInfo = lazy(() => import("./pages/profile/ProfilePersonalInfo"));
 const ProfileProfessional = lazy(() => import("./pages/profile/ProfileProfessional"));
@@ -432,7 +432,7 @@ const AppContent = () => {
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
               <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
               <Route path="wallet" element={<EmployeeWallet />} />
-              <Route path="wallet/add" element={<AddMoneyPage />} />
+              <Route path="wallet/deposit/:requestId" element={<DepositPayment />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
               <Route path="wallet/qr" element={<WalletQRPage />} />
@@ -481,7 +481,7 @@ const AppContent = () => {
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
               <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
               <Route path="wallet" element={<EmployeeWallet />} />
-              <Route path="wallet/add" element={<AddMoneyPage />} />
+              <Route path="wallet/deposit/:requestId" element={<DepositPayment />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
               <Route path="wallet/qr" element={<WalletQRPage />} />
@@ -526,7 +526,7 @@ const AppContent = () => {
               <Route path="dashboard" element={<EmployerDashboard />} />
               <Route path="attendance" element={<EmployerAttendance />} />
               <Route path="wallet" element={<EmployerWallet />} />
-              <Route path="wallet/add" element={<AddMoneyPage />} />
+              <Route path="wallet/deposit/:requestId" element={<DepositPayment />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
               <Route path="wallet/qr" element={<WalletQRPage />} />
@@ -574,7 +574,7 @@ const AppContent = () => {
               <Route path="freelancers" element={<AdminEmployees />} />
               <Route path="employers" element={<AdminClients />} />
               <Route path="withdrawals" element={<AdminWithdrawals />} />
-              <Route path="deposit-requests" element={<AdminDepositRequests />} />
+              <Route path="deposits" element={<AdminDeposits />} />
               <Route path="verifications" element={<AdminVerifications />} />
               <Route path="bank-verifications" element={<AdminBankVerifications />} />
               <Route path="profile-edits" element={<AdminProfileEdits />} />
