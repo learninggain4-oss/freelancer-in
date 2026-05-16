@@ -1576,6 +1576,18 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
         break;
       }
 
+      case "my_deposit_requests": {
+        const { data: myDeps, error: myDepsErr } = await supabase
+          .from("deposit_requests")
+          .select("id, amount, payment_method, payment_details, status, order_id, admin_notes, reviewed_at, created_at")
+          .eq("profile_id", callerProfile.id)
+          .order("created_at", { ascending: false })
+          .limit(20);
+        if (myDepsErr) throw new Error(myDepsErr.message);
+        result = { requests: myDeps || [] };
+        break;
+      }
+
       case "admin_get_deposit_requests": {
         if (!isSuperAdmin(user.email)) {
           const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();

@@ -6,14 +6,12 @@ import TransferDialog from "@/components/wallet/TransferDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  AlertCircle,
-  Receipt,
-  History,
-  ChevronRight,
-  Wallet,
+  AlertCircle, Receipt, History, ChevronRight, Wallet,
+  PlusCircle, Clock, CheckCircle2, XCircle, ChevronDown, ChevronUp, Loader2,
 } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
+import { supabase } from "@/integrations/supabase/client";
 
 const TH = {
   black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
@@ -21,14 +19,37 @@ const TH = {
   wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
 };
 
+const STATUS_CFG = {
+  pending:  { icon: Clock,        color: "#f59e0b", bg: "rgba(245,158,11,.1)",  label: "Pending" },
+  approved: { icon: CheckCircle2, color: "#10b981", bg: "rgba(16,185,129,.1)", label: "Approved" },
+  rejected: { icon: XCircle,      color: "#ef4444", bg: "rgba(239,68,68,.1)",  label: "Rejected" },
+} as const;
+
+const fmt = (n: number) => `₹${Number(n).toLocaleString("en-IN")}`;
+const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+
 const ClientWallet = () => {
   const { theme, themeKey } = useDashboardTheme();
   const T = TH[themeKey];
   const { profile, refreshProfile } = useAuth();
   const [showTransfer, setShowTransfer] = useState(false);
+  const [showDeposits, setShowDeposits] = useState(true);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const { data: depositData, isLoading: depositsLoading } = useQuery({
+    queryKey: ["my-deposit-requests", profile?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("wallet-operations", {
+        body: { action: "my_deposit_requests" },
+      });
+      if (error || data?.error) return [];
+      return data?.requests || [];
+    },
+    enabled: !!profile?.id,
+    refetchInterval: 30000,
+  });
 
   // Handle scanned wallet from QR scanner
   useEffect(() => {
@@ -122,6 +143,72 @@ const ClientWallet = () => {
             <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>Track Requests</p>
           </div>
         </button>
+      </div>
+
+      {/* Deposit History */}
+      <div className="animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
+        <button
+          onClick={() => setShowDeposits(v => !v)}
+          className="w-full flex items-center justify-between px-5 py-4 rounded-2xl mb-3"
+          style={{ background: T.card, border: `1px solid ${T.border}` }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(99,102,241,.1)" }}>
+              <PlusCircle className="h-5 w-5 text-indigo-400" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-black" style={{ color: T.text }}>Deposit Requests</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>
+                {depositData?.length ? `${depositData.length} request${depositData.length !== 1 ? "s" : ""}` : "No requests yet"}
+              </p>
+            </div>
+          </div>
+          {showDeposits ? <ChevronUp className="h-4 w-4" style={{ color: T.sub }} /> : <ChevronDown className="h-4 w-4" style={{ color: T.sub }} />}
+        </button>
+
+        {showDeposits && (
+          <div className="space-y-2">
+            {depositsLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-indigo-400" />
+              </div>
+            ) : !depositData?.length ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-10 rounded-2xl"
+                style={{ background: T.card, border: `1px solid ${T.border}` }}>
+                <PlusCircle className="h-8 w-8 opacity-20" style={{ color: T.sub }} />
+                <p className="text-sm font-bold" style={{ color: T.sub }}>No deposit requests yet</p>
+                <button onClick={() => navigate("/employer/wallet/add")}
+                  className="mt-1 text-xs font-black text-indigo-400 underline underline-offset-2">
+                  Make your first deposit →
+                </button>
+              </div>
+            ) : depositData.map((dep: any) => {
+              const st = STATUS_CFG[dep.status as keyof typeof STATUS_CFG] ?? STATUS_CFG.pending;
+              const Icon = st.icon;
+              return (
+                <div key={dep.id} className="flex items-center gap-4 p-4 rounded-2xl"
+                  style={{ background: T.card, border: `1px solid ${T.border}` }}>
+                  <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: st.bg }}>
+                    <Icon className="h-5 w-5" style={{ color: st.color }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-black" style={{ color: T.text }}>{fmt(dep.amount)}</p>
+                      <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full shrink-0"
+                        style={{ background: st.bg, color: st.color }}>{st.label}</span>
+                    </div>
+                    <p className="text-xs truncate" style={{ color: T.sub }}>{dep.payment_method} · {dep.order_id}</p>
+                    <p className="text-[10px]" style={{ color: T.sub }}>{fmtDate(dep.created_at)}</p>
+                    {dep.admin_notes && dep.status !== "pending" && (
+                      <p className="text-[10px] mt-0.5 italic" style={{ color: T.sub }}>Note: {dep.admin_notes}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Transfer Dialog */}
