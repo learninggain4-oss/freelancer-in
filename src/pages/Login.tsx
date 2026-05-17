@@ -17,6 +17,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { loginSchema, type LoginFormData } from "@/lib/validations/registration";
 import { supabase } from "@/integrations/supabase/client";
 import TotpVerifyDialog from "@/components/admin/TotpVerifyDialog";
+import ForgotEmailDialog from "@/components/auth/ForgotEmailDialog";
+import SliderCaptcha from "@/components/auth/SliderCaptcha";
 
 /* ─── Keyframe CSS ─── */
 const GLOBAL_CSS = `
@@ -140,33 +142,18 @@ const Login = () => {
   const [showTotpDialog, setShowTotpDialog] = useState(false);
   const [pendingAdminNav, setPendingAdminNav] = useState(false);
   const [pendingUserNav, setPendingUserNav] = useState<string | null>(null);
-  const [captchaA, setCaptchaA] = useState(0);
-  const [captchaB, setCaptchaB] = useState(0);
-  const [captchaAnswer, setCaptchaAnswer] = useState("");
   const [captchaVerified, setCaptchaVerified] = useState(false);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotEmail, setShowForgotEmail] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, user, profile, loading: authLoading } = useAuth();
 
-  const regenerateCaptcha = useCallback(() => {
-    setCaptchaA(Math.floor(Math.random() * 9) + 1);
-    setCaptchaB(Math.floor(Math.random() * 9) + 1);
-    setCaptchaAnswer("");
+  const resetCaptcha = useCallback(() => {
     setCaptchaVerified(false);
+    setCaptchaResetKey(k => k + 1);
   }, []);
-
-  const verifyCaptcha = () => {
-    if (parseInt(captchaAnswer) === captchaA + captchaB) {
-      setCaptchaVerified(true);
-      toast({ title: "CAPTCHA verified!" });
-    } else {
-      toast({ title: "Wrong answer", description: "Please try again.", variant: "destructive" });
-      regenerateCaptcha();
-    }
-  };
-
-  useEffect(() => { regenerateCaptcha(); }, [regenerateCaptcha]);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -220,7 +207,7 @@ const Login = () => {
       waitForProfile();
     } catch (error: any) {
       toast({ title: "Login failed", description: error.message, variant: "destructive" });
-      regenerateCaptcha();
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -374,10 +361,15 @@ const Login = () => {
                     </FormItem>
                   )} />
 
-                  {/* Forgot password */}
-                  <div style={{ textAlign: "right" }}>
+                  {/* Forgot links */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    <button type="button" onClick={() => setShowForgotEmail(true)}
+                      style={{ background: "none", border: "none", padding: 0, color: A1, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                      Forgot email?
+                    </button>
                     <Link to="/forgot-password" style={{ color: A1, fontSize: 12, textDecoration: "none", fontWeight: 600 }}>Forgot password?</Link>
                   </div>
+
 
                   {/* Terms checkbox */}
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
@@ -392,29 +384,10 @@ const Login = () => {
                   </div>
 
                   {/* CAPTCHA */}
-                  <div style={{ borderRadius: 12, border: "1px solid rgba(255,255,255,.1)", background: "rgba(255,255,255,.04)", padding: "14px 16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: captchaVerified ? 0 : 10 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,.7)", whiteSpace: "nowrap" }}>
-                        What is {captchaA} + {captchaB} =
-                      </span>
-                      <Input type="number" value={captchaAnswer}
-                        onChange={(e) => { setCaptchaAnswer(e.target.value); setCaptchaVerified(false); }}
-                        placeholder="?" disabled={captchaVerified}
-                        style={{ width: 70, textAlign: "center", background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.12)", borderRadius: 10, color: "white", height: 36, fontSize: 14 }} />
-                      <button type="button" onClick={regenerateCaptcha}
-                        style={{ color: "rgba(255,255,255,.3)", background: "none", border: "none", cursor: "pointer" }} aria-label="New captcha">
-                        <RefreshCw size={14} />
-                      </button>
-                    </div>
-                    {!captchaVerified ? (
-                      <button type="button" onClick={verifyCaptcha} disabled={!captchaAnswer}
-                        style={{ width: "100%", padding: "8px", borderRadius: 10, border: `1px solid rgba(99,102,241,.4)`, background: "rgba(99,102,241,.12)", color: A1, fontSize: 12, fontWeight: 600, cursor: captchaAnswer ? "pointer" : "not-allowed", opacity: captchaAnswer ? 1 : .5 }}>
-                        Verify CAPTCHA
-                      </button>
-                    ) : (
-                      <p style={{ color: "#22c55e", fontSize: 12, fontWeight: 600, textAlign: "center" }}>✓ CAPTCHA verified</p>
-                    )}
-                  </div>
+                  <SliderCaptcha
+                    onVerified={setCaptchaVerified}
+                    resetKey={captchaResetKey}
+                  />
 
                   {/* Submit */}
                   <button type="submit" disabled={loading || !agreedToTerms || !captchaVerified}
@@ -675,6 +648,8 @@ const Login = () => {
         description="Enter your Google Authenticator code to continue."
         functionName={pendingAdminNav ? "admin-totp" : "user-totp"}
       />
+
+      <ForgotEmailDialog open={showForgotEmail} onOpenChange={setShowForgotEmail} />
     </div>
   );
 };

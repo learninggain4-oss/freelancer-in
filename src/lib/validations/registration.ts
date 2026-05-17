@@ -4,6 +4,12 @@ const phoneRegex = /^[6-9]\d{9}$/;
 
 export const personalInfoSchema = z.object({
   full_name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
+  username: z
+    .string()
+    .trim()
+    .min(3, "Username must be at least 3 characters")
+    .max(30, "Username must be 30 characters or less")
+    .regex(/^[a-zA-Z0-9_.]+$/, "Only letters, numbers, dot and underscore are allowed"),
   gender: z.enum(["male", "female", "other"], { required_error: "Select gender" }),
   date_of_birth: z.string().min(1, "Date of birth is required"),
   marital_status: z.enum(["single", "married", "divorced", "widowed"], { required_error: "Select marital status" }),
@@ -15,6 +21,7 @@ export const contactInfoSchema = z.object({
   whatsapp_number: z.string().regex(phoneRegex, "Enter a valid 10-digit WhatsApp number"),
   email: z.string().trim().email("Enter a valid email").max(255),
   password: z.string().min(8, "Password must be at least 8 characters").max(72),
+  confirm_password: z.string().min(1, "Please confirm your password"),
 });
 
 export const educationSchema = z.object({
@@ -23,7 +30,8 @@ export const educationSchema = z.object({
 
 export const registrationProfileSchema = personalInfoSchema
   .merge(contactInfoSchema)
-  .merge(educationSchema);
+  .merge(educationSchema)
+  .refine((d) => d.password === d.confirm_password, { message: "Passwords do not match", path: ["confirm_password"] });
 
 export type RegistrationFormData = z.infer<typeof registrationProfileSchema>;
 

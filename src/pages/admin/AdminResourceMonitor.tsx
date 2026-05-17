@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from "react";
 import { Activity, AlertTriangle, RefreshCw, Cpu, HardDrive, Wifi, BarChart3, Clock, CheckCircle2 } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";

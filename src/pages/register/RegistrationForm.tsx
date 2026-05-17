@@ -7,7 +7,7 @@ import {
   Briefcase, ArrowLeft, ArrowRight, Loader2, Plus, Trash2,
   User, Phone, Building2, Heart, Wrench, CheckCircle2, Shield,
   GraduationCap, Calendar, Mail, Lock, Share2, Upload, FileText,
-  Sparkles, Check, Factory, IndianRupee, MapPin, Tag,
+  Sparkles, Check, Factory, IndianRupee, MapPin, Tag, Eye, EyeOff,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -127,6 +127,9 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   const [countdownUnits, setCountdownUnits] = useState(300);
   const [showSuccess, setShowSuccess] = useState(false);
   const [redirectSec, setRedirectSec] = useState(30);
+  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     if (!submitted || showSuccess) return;
@@ -144,9 +147,27 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
 
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationProfileSchema),
-    defaultValues: { full_name: "", gender: undefined, date_of_birth: "", marital_status: undefined, education_level: "", mobile_number: "", whatsapp_number: "", email: "", password: "", education_background: "" },
+    defaultValues: { full_name: "", username: "", gender: undefined, date_of_birth: "", marital_status: undefined, education_level: "", mobile_number: "", whatsapp_number: "", email: "", password: "", confirm_password: "", education_background: "" },
     mode: "onTouched",
   });
+
+  const usernameValue = form.watch("username");
+  useEffect(() => {
+    const v = (usernameValue || "").trim().toLowerCase();
+    if (!v) { setUsernameStatus("idle"); return; }
+    if (!/^[a-z0-9_.]{3,30}$/.test(v)) { setUsernameStatus("invalid"); return; }
+    setUsernameStatus("checking");
+    const t = setTimeout(async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .ilike("username", v)
+        .maybeSingle();
+      if (error) { setUsernameStatus("idle"); return; }
+      setUsernameStatus(data ? "taken" : "available");
+    }, 450);
+    return () => clearTimeout(t);
+  }, [usernameValue]);
 
   const { data: categories = [] } = useQuery({ queryKey: ["service-categories"], queryFn: async () => { const { data } = await supabase.from("service_categories").select("*").order("name"); return data || []; } });
   const { data: allSkills = [] } = useQuery({ queryKey: ["service-skills"], queryFn: async () => { const { data } = await supabase.from("service_skills").select("*").order("name"); return data || []; } });
@@ -157,8 +178,8 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
   };
 
   const formFieldsForStep = (s: number): string[] => {
-    if (s === 0) return ["full_name","gender","date_of_birth","marital_status","education_level"];
-    if (s === 1) return ["mobile_number","whatsapp_number","email","password"];
+    if (s === 0) return ["full_name","username","gender","date_of_birth","marital_status","education_level"];
+    if (s === 1) return ["mobile_number","whatsapp_number","email","password","confirm_password"];
     return [];
   };
 
@@ -166,6 +187,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
     const type = getStepType(step); setArrayErrors([]);
     const fields = formFieldsForStep(step);
     if (fields.length > 0) { const valid = await form.trigger(fields as any); if (!valid) return false; }
+    if (type === "personal" && usernameStatus === "taken") { setArrayErrors(["Username is already taken. Please choose another."]); return false; }
     if (type === "work") {
       const errors: string[] = [];
       workExperiences.forEach((w, i) => { const e = validateWorkExperience(w); if (e) errors.push(`Experience ${i+1}: ${e}`); });
@@ -210,6 +232,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
         const { data: profileData, error: profileError } = await supabaseClient.from("profiles").insert([{
           id: newProfileId, user_id: userId, user_type: uType,
           full_name: [data.full_name.toUpperCase()], user_code: [], email: data.email,
+          username: data.username.trim().toLowerCase(),
           gender: data.gender, date_of_birth: data.date_of_birth,
           marital_status: data.marital_status, education_level: data.education_level,
           mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number,
@@ -223,7 +246,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       // Helper: register via server API (fallback when can't sign in with existing account)
       const registerViaServer = async () => {
         const payload = {
-          email: data.email, user_type: uType, full_name: data.full_name,
+          email: data.email, user_type: uType, full_name: data.full_name, username: data.username.trim().toLowerCase(),
           gender: data.gender, date_of_birth: data.date_of_birth,
           marital_status: data.marital_status, education_level: data.education_level,
           mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number,
@@ -688,6 +711,31 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                     </FormItem>
                   )} />
 
+                  <FormField control={form.control} name="username" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600 }}>
+                        Username <span style={{ color: "#ef4444" }}>*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <div style={{ position: "relative" }}>
+                          <Input placeholder="e.g. john_doe" {...field} onChange={e => field.onChange(e.target.value.toLowerCase().replace(/\s+/g, ""))} className="reg-input" style={{ ...inp, paddingRight: 38 }} />
+                          <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", display: "flex", alignItems: "center" }}>
+                            {usernameStatus === "checking" && <Loader2 size={16} color="rgba(255,255,255,.5)" className="animate-spin" />}
+                            {usernameStatus === "available" && <Check size={18} color="#22c55e" strokeWidth={3} />}
+                            {usernameStatus === "taken" && <span style={{ color: "#ef4444", fontSize: 16, fontWeight: 700 }}>✕</span>}
+                          </div>
+                        </div>
+                      </FormControl>
+                      <FormDescription style={{ fontSize: 11, color: usernameStatus === "available" ? "#22c55e" : usernameStatus === "taken" ? "#ef4444" : "rgba(255,255,255,.3)" }}>
+                        {usernameStatus === "checking" ? "Checking availability…"
+                          : usernameStatus === "available" ? "✓ Username is available"
+                          : usernameStatus === "taken" ? "✕ Username is already taken"
+                          : "3–30 chars, letters, numbers, dot or underscore only. Must be unique."}
+                      </FormDescription>
+                      <FormMessage className="text-red-400 text-xs" />
+                    </FormItem>
+                  )} />
+
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                     <FormField control={form.control} name="gender" render={({ field }) => (
                       <FormItem>
@@ -795,12 +843,31 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
                       <FormControl>
                         <div style={{ position: "relative" }}>
                           <Lock size={14} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,.3)" }} />
-                          <Input type="password" placeholder="Min 8 characters" {...field} className="reg-input" style={{ ...inp, paddingLeft: 38 }} />
+                          <Input type={showPassword ? "text" : "password"} placeholder="Min 8 characters" {...field} className="reg-input" style={{ ...inp, paddingLeft: 38, paddingRight: 40 }} />
+                          <button type="button" onClick={() => setShowPassword(v => !v)} aria-label={showPassword ? "Hide password" : "Show password"} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", color: "rgba(255,255,255,.5)", cursor: "pointer", padding: 4 }}>
+                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
                         </div>
                       </FormControl>
                       <FormDescription style={{ color: "rgba(255,255,255,.3)", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
                         <Shield size={11} /> Minimum 8 characters
                       </FormDescription>
+                      <FormMessage className="text-red-400 text-xs" />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="confirm_password" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel style={{ color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600 }}>Confirm Password <span style={{ color: "#ef4444" }}>*</span></FormLabel>
+                      <FormControl>
+                        <div style={{ position: "relative" }}>
+                          <Lock size={14} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,.3)" }} />
+                          <Input type={showConfirmPassword ? "text" : "password"} placeholder="Re-enter password" {...field} className="reg-input" style={{ ...inp, paddingLeft: 38, paddingRight: 40 }} />
+                          <button type="button" onClick={() => setShowConfirmPassword(v => !v)} aria-label={showConfirmPassword ? "Hide password" : "Show password"} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", color: "rgba(255,255,255,.5)", cursor: "pointer", padding: 4 }}>
+                            {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                      </FormControl>
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
                   )} />

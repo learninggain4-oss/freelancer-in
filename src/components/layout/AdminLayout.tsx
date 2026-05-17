@@ -17,7 +17,7 @@ import {
   Settings2, Wrench, Gauge, CalendarClock, UserCog, Download, Globe,
   Zap, FileUp, Cpu, Activity, BookOpen,
   ShieldAlert, UserX, Ban, Folder, BarChart2, TrendingUp,
-  Search, MessageSquare, Plus, ChevronDown,
+  Search, MessageSquare, Plus, PlusCircle, ChevronDown,
   User, Languages, PanelRightOpen, PanelRightClose,
   CheckCircle2, Info, XCircle, Mail, Image as ImageIcon, RotateCcw,
   Trash2, CheckSquare, Square, Timer,
@@ -133,6 +133,7 @@ const navSections = [
     { label: "Online Status", icon: Wifi,     path: "/admin/online-status" },
   ]},
   { title: "Financial", items: [
+    { label: "Deposit Requests",   icon: IndianRupee,        path: "/admin/deposits" },
     { label: "Withdrawals",        icon: Wallet,             path: "/admin/withdrawals" },
     { label: "Wallet Mgmt",        icon: IndianRupee,        path: "/admin/wallet-management" },
     { label: "Wallet Types",       icon: Wallet,             path: "/admin/wallet-types" },

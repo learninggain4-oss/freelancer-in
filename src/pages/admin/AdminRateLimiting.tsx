@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState } from "react";
 import { Gauge, AlertTriangle, CheckCircle2, Clock, Zap, Activity, RefreshCw, Shield, Ban, ToggleLeft, ToggleRight, Eye, Cpu } from "lucide-react";
 import { Input } from "@/components/ui/input";

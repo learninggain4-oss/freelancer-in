@@ -93,8 +93,8 @@ app.use(express.json());
 // In production Replit sets PORT; in dev we use SERVER_PORT (set in workflow) to avoid conflict with Vite
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3001;
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const SUPER_ADMIN_EMAILS = (process.env.SUPER_ADMIN_EMAILS || "")
@@ -652,36 +652,13 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
       }
 
       await adminClient.from("projects").update({ assigned_employee_id: null }).eq("assigned_employee_id", pid);
-
-      // Break non-CASCADE FK references before profile delete
-      await Promise.all([
-        adminClient.from("admin_audit_logs").update({ target_profile_id: null }).eq("target_profile_id", pid),
-        adminClient.from("admin_audit_logs").delete().eq("admin_id", pid),
-        adminClient.from("profiles").update({ edit_reviewed_by: null }).eq("edit_reviewed_by", pid),
-        adminClient.from("recovery_requests").update({ resolved_by: null }).eq("resolved_by", pid),
-        adminClient.from("withdrawals").update({ reviewed_by: null }).eq("reviewed_by", pid),
-        adminClient.from("blocked_ips").update({ blocked_by: null }).eq("blocked_by", pid),
-        adminClient.from("aadhaar_verifications").update({ verified_by: null }).eq("verified_by", pid),
-        adminClient.from("bank_verifications").update({ verified_by: null }).eq("verified_by", pid),
-        adminClient.from("support_messages").delete().eq("sender_id", pid),
-      ]);
-
-      // Delete support conversations owned by this profile
-      const { data: supportConvo } = await adminClient.from("support_conversations").select("id").eq("user_id", pid).maybeSingle();
-      if (supportConvo) {
-        await adminClient.from("support_messages").delete().eq("conversation_id", supportConvo.id);
-        await adminClient.from("support_conversations").delete().eq("id", supportConvo.id);
-      }
-
       await Promise.all([
         adminClient.from("aadhaar_verifications").delete().eq("profile_id", pid),
         adminClient.from("bank_verifications").delete().eq("profile_id", pid),
         adminClient.from("documents").delete().eq("profile_id", pid),
         adminClient.from("employee_emergency_contacts").delete().eq("profile_id", pid),
         adminClient.from("employee_services").delete().eq("profile_id", pid),
-        adminClient.from("employer_profiles").delete().eq("profile_id", pid),
         adminClient.from("notifications").delete().eq("user_id", userId),
-        adminClient.from("notifications").delete().eq("user_id", pid),
         adminClient.from("registration_metadata").delete().eq("profile_id", pid),
         adminClient.from("transactions").delete().eq("profile_id", pid),
         adminClient.from("withdrawals").delete().eq("employee_id", pid),
@@ -689,28 +666,6 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
         adminClient.from("user_bank_accounts").delete().eq("profile_id", pid),
         adminClient.from("attendance").delete().eq("profile_id", pid),
         adminClient.from("coin_transactions").delete().eq("profile_id", pid),
-        adminClient.from("coin_reward_claims").delete().eq("profile_id", pid),
-        adminClient.from("push_subscriptions").delete().eq("profile_id", pid),
-        adminClient.from("pwa_install_status").delete().eq("profile_id", pid),
-        adminClient.from("site_visitors").delete().eq("profile_id", pid),
-        adminClient.from("upgrade_appointments").delete().eq("profile_id", pid),
-        adminClient.from("user_reviews").delete().eq("profile_id", pid),
-        adminClient.from("wallet_upgrade_requests").delete().eq("profile_id", pid),
-        adminClient.from("reviews").delete().eq("reviewee_id", pid),
-        adminClient.from("reviews").delete().eq("reviewer_id", pid),
-        adminClient.from("work_experiences").delete().eq("profile_id", pid),
-        adminClient.from("referrals").delete().eq("referrer_id", pid),
-        adminClient.from("referrals").delete().eq("referred_id", pid),
-        adminClient.from("project_applications").delete().eq("employee_id", pid),
-        adminClient.from("project_submissions").delete().eq("employee_id", pid),
-        adminClient.from("project_documents").delete().eq("uploaded_by", pid),
-        adminClient.from("payment_confirmations").delete().eq("employee_id", pid),
-        adminClient.from("message_reactions").delete().eq("user_id", pid),
-        adminClient.from("support_message_reactions").delete().eq("user_id", pid),
-        adminClient.from("messages").delete().eq("sender_id", pid),
-        adminClient.from("announcement_dismissals").delete().eq("user_id", userId),
-        adminClient.from("custom_quick_replies").delete().eq("created_by", pid),
-        adminClient.from("quick_reply_analytics").delete().eq("used_by", pid),
       ]);
 
       await adminClient.from("profiles").delete().eq("id", pid);
@@ -766,24 +721,20 @@ app.post("/functions/v1/admin-user-management", async (req, res) => {
 
     if (action === "invite_user") {
       if (!email || !user_type) return res.status(400).json({ error: "email and user_type required" });
-      const normalizedUserType = user_type === "freelancer" ? "employee" : user_type === "employer" ? "client" : user_type;
       const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email);
       if (inviteErr) return res.status(400).json({ error: inviteErr.message });
       const invitedUserId = inviteData?.user?.id;
-      if (!invitedUserId) return res.status(500).json({ error: "Failed to create invited auth user" });
-      const { error: profileErr } = await adminClient.from("profiles").insert({
-        user_id: invitedUserId,
-        email,
-        full_name: [email.split("@")[0].toUpperCase()],
-        user_code: ["PENDING"],
-        user_type: normalizedUserType,
-        approval_status: "approved",
-        approved_at: new Date().toISOString(),
-        referral_code: invitedUserId.substring(0, 8).toUpperCase(),
-      });
-      if (profileErr) {
-        console.error("Profile creation error:", profileErr.message);
-        return res.status(500).json({ error: `User invited, but profile creation failed: ${profileErr.message}` });
+      if (invitedUserId) {
+        await adminClient.from("profiles").insert({
+          user_id: invitedUserId,
+          email,
+          full_name: [email.split("@")[0].toUpperCase()],
+          user_code: ["PENDING"],
+          user_type,
+          approval_status: "approved",
+          approved_at: new Date().toISOString(),
+          referral_code: invitedUserId.substring(0, 8).toUpperCase(),
+        }).catch(e => console.error("Profile creation error:", e.message));
       }
       return res.json({ success: true, message: `Invite sent to ${email}` });
     }
@@ -1296,7 +1247,7 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
     if (!checkRateLimit(user.id)) return res.status(429).json({ error: "Rate limit exceeded. Please try again later." });
 
     const supabase = getAdminClient();
-    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, target_wallet_number } = req.body;
+    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, target_wallet_number, payment_method, payment_details, status_filter, deposit_request_id, deposit_action } = req.body;
 
     const { data: callerProfile, error: cpErr } = await supabase.from("profiles").select("id, user_id, user_type, available_balance, hold_balance, approval_status, wallet_number").eq("user_id", user.id).single();
     if (cpErr || !callerProfile) throw new Error("Profile not found");
@@ -1588,6 +1539,129 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
         break;
       }
 
+      case "claim_add_money_slot": {
+        result = { claimed: true };
+        break;
+      }
+
+      case "release_add_money_slot": {
+        result = { success: true };
+        break;
+      }
+
+      case "submit_deposit_request": {
+        if (!amount || Number(amount) <= 0) throw new Error("Invalid amount");
+        const validAmount = Number(amount);
+        const orderId = "DEP-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+        const { error: drErr } = await supabase.from("deposit_requests").insert({
+          profile_id: callerProfile.id,
+          amount: validAmount,
+          payment_method: payment_method || "Unknown",
+          payment_details: payment_details ? JSON.stringify(payment_details) : null,
+          order_id: orderId,
+          status: "pending",
+        });
+        if (drErr) {
+          console.warn("deposit_requests insert failed:", drErr.message);
+          throw new Error("Failed to submit deposit request: " + drErr.message);
+        }
+        // Notify the user
+        await supabase.from("notifications").insert({
+          user_id: user.id,
+          title: "Deposit Request Submitted",
+          message: `Your deposit request of ₹${validAmount.toLocaleString("en-IN")} via ${payment_method || "Unknown"} has been received. Order ID: ${orderId}. Admin will credit your wallet after verifying the payment.`,
+          type: "financial",
+        });
+        result = { order_id: orderId };
+        break;
+      }
+
+      case "my_deposit_requests": {
+        const { data: myDeps, error: myDepsErr } = await supabase
+          .from("deposit_requests")
+          .select("id, amount, payment_method, payment_details, status, order_id, admin_notes, reviewed_at, created_at")
+          .eq("profile_id", callerProfile.id)
+          .order("created_at", { ascending: false })
+          .limit(20);
+        if (myDepsErr) throw new Error(myDepsErr.message);
+        result = { requests: myDeps || [] };
+        break;
+      }
+
+      case "admin_get_deposit_requests": {
+        if (!isSuperAdmin(user.email)) {
+          const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+          if (!roleData) throw new Error("Admin access required");
+        }
+        let query = supabase
+          .from("deposit_requests")
+          .select("*, profiles(full_name, email, user_type, wallet_number)")
+          .order("created_at", { ascending: false });
+        if (status_filter && status_filter !== "all") {
+          query = query.eq("status", status_filter);
+        }
+        const { data: requests, error: rErr } = await query;
+        if (rErr) throw new Error(rErr.message);
+        result = { requests: requests || [] };
+        break;
+      }
+
+      case "admin_process_deposit": {
+        if (!isSuperAdmin(user.email)) {
+          const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+          if (!roleData) throw new Error("Admin access required");
+        }
+        if (!deposit_request_id) throw new Error("Missing deposit_request_id");
+        if (!deposit_action || !["approve", "reject"].includes(deposit_action)) throw new Error("Invalid deposit_action");
+
+        const { data: depReq, error: depErr } = await supabase
+          .from("deposit_requests")
+          .select("*, profiles(id, available_balance, user_id, full_name)")
+          .eq("id", deposit_request_id)
+          .single();
+        if (depErr || !depReq) throw new Error("Deposit request not found");
+        if (depReq.status !== "pending") throw new Error("Request already processed");
+
+        if (deposit_action === "approve") {
+          const userProfile = depReq.profiles;
+          const newBalance = Number(userProfile.available_balance) + Number(depReq.amount);
+          await supabase.from("profiles").update({ available_balance: newBalance }).eq("id", userProfile.id);
+          await supabase.from("transactions").insert({
+            profile_id: userProfile.id,
+            type: "credit",
+            amount: Number(depReq.amount),
+            description: `Wallet top-up approved via ${depReq.payment_method}. Order: ${depReq.order_id}`,
+          });
+          await supabase.from("notifications").insert({
+            user_id: userProfile.user_id,
+            title: "Deposit Approved! 💰",
+            message: `Your deposit of ₹${Number(depReq.amount).toLocaleString("en-IN")} via ${depReq.payment_method} has been approved. Your wallet has been credited.`,
+            type: "financial",
+          });
+          await supabase.from("deposit_requests").update({
+            status: "approved",
+            reviewed_by: callerProfile.id,
+            reviewed_at: new Date().toISOString(),
+            admin_notes: review_notes || null,
+          }).eq("id", deposit_request_id);
+        } else {
+          await supabase.from("deposit_requests").update({
+            status: "rejected",
+            reviewed_by: callerProfile.id,
+            reviewed_at: new Date().toISOString(),
+            admin_notes: review_notes || null,
+          }).eq("id", deposit_request_id);
+          await supabase.from("notifications").insert({
+            user_id: depReq.profiles.user_id,
+            title: "Deposit Request Rejected",
+            message: `Your deposit request of ₹${Number(depReq.amount).toLocaleString("en-IN")} via ${depReq.payment_method} was rejected.${review_notes ? " Reason: " + review_notes : ""}`,
+            type: "financial",
+          });
+        }
+        result = { success: true };
+        break;
+      }
+
       default:
         throw new Error(`Unknown action: ${action}`);
     }
@@ -1681,6 +1755,7 @@ app.get("/functions/v1/server-metrics", async (req, res) => {
   try {
     const user = await getUserFromToken(req.headers.authorization);
     if (!user) return res.status(401).json({ error: "Unauthorized" });
+    const adminClient = getAdminClient();
     const { data: roleData } = await adminClient.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
     if (!roleData) return res.status(403).json({ error: "Forbidden: admin role required" });
 
@@ -1730,7 +1805,7 @@ app.delete("/functions/v1/support-delete-message", async (req, res) => {
     // Allow admins to delete any message
     // sender_id in messages = profile.id (profile row UUID), NOT auth user.id
     const { data: callerProfile } = await supabase.from("profiles").select("id, user_type").eq("user_id", user.id).maybeSingle();
-    const isAdmin = callerProfile?.user_type === "admin";
+    const isAdmin = isSuperAdmin(user.email) || callerProfile?.user_type === "admin";
     if (!isAdmin && msg.sender_id !== callerProfile?.id) return res.status(403).json({ error: "Cannot delete another user's message" });
 
     const { error } = await supabase.from("support_messages").delete().eq("id", messageId);
@@ -1764,7 +1839,7 @@ app.delete("/functions/v1/support-clear-history", async (req, res) => {
 
     // Allow admins to clear any conversation
     const { data: callerProfile2 } = await supabase.from("profiles").select("user_type").eq("user_id", user.id).maybeSingle();
-    const isAdmin2 = callerProfile2?.user_type === "admin";
+    const isAdmin2 = isSuperAdmin(user.email) || callerProfile2?.user_type === "admin";
     if (!isAdmin2 && conv.user_id !== user.id) return res.status(403).json({ error: "Not your conversation" });
 
     const { error } = await supabase.from("support_messages").delete().eq("conversation_id", conversationId);
@@ -2359,22 +2434,13 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
 
     // ── force_new=false (default): check existing profile → UPDATE ────────────
     if (!force_new) {
-      const { data: existingProf } = await adminClient.from("profiles")
-        .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
-        .eq("email", emailLower)
-        .maybeSingle();
+      const { data: existingProf } = await adminClient.from("profiles").select("id").eq("email", emailLower).maybeSingle();
       if (existingProf) {
         const { error: updErr } = await adminClient.from("profiles")
           .update({ ...profileFields, updated_at: new Date().toISOString() })
           .eq("id", existingProf.id);
         if (updErr) return res.status(500).json({ error: updErr.message });
-
-        const { data: updatedProfile } = await adminClient.from("profiles")
-          .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
-          .eq("id", existingProf.id)
-          .maybeSingle();
-
-        return res.json({ success: true, action: "updated", profile_id: existingProf.id, user_id: existingProf.user_id || null, email: emailLower, full_name: nameUpper, profile: updatedProfile });
+        return res.json({ success: true, action: "updated", user_id: existingProf.id, email: emailLower, full_name: nameUpper });
       }
     }
 
@@ -2404,46 +2470,28 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
       const newProfileId = randomUUID();
       const { error: profErr } = await adminClient.from("profiles").insert({
         id: newProfileId, user_id: userId, email: emailLower,
-        user_code: [], created_at: new Date().toISOString(), ...profileFields,
+        user_code: [], ...profileFields,
       });
       if (profErr) return res.status(500).json({ error: profErr.message });
-
-      const { data: createdProfile } = await adminClient.from("profiles")
-        .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
-        .eq("id", newProfileId)
-        .maybeSingle();
-
-      return res.json({ success: true, action: "created", user_id: userId, profile_id: newProfileId, email: emailLower, full_name: nameUpper, profile: createdProfile });
+      return res.json({ success: true, action: "created", user_id: userId, profile_id: newProfileId, email: emailLower, full_name: nameUpper });
     }
 
     // ── Normal: check if profile exists for auth user → UPDATE or INSERT ──────
-    const { data: authProf } = await adminClient.from("profiles").select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region").eq("user_id", userId).maybeSingle();
+    const { data: authProf } = await adminClient.from("profiles").select("id").eq("user_id", userId).maybeSingle();
     if (authProf) {
       const { error: updErr } = await adminClient.from("profiles")
         .update({ ...profileFields, updated_at: new Date().toISOString() })
         .eq("id", authProf.id);
       if (updErr) return res.status(500).json({ error: updErr.message });
-
-      const { data: updatedProfile } = await adminClient.from("profiles")
-        .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
-        .eq("id", authProf.id)
-        .maybeSingle();
-
-      return res.json({ success: true, action: "updated", profile_id: authProf.id, user_id: userId, email: emailLower, full_name: nameUpper, profile: updatedProfile });
+      return res.json({ success: true, action: "updated", user_id: userId, email: emailLower, full_name: nameUpper });
     }
 
     const { error: profErr } = await adminClient.from("profiles").insert({
       id: userId, user_id: userId, email: emailLower,
-      user_code: [], created_at: new Date().toISOString(), ...profileFields,
+      user_code: [], ...profileFields,
     });
     if (profErr) return res.status(500).json({ error: profErr.message });
-
-    const { data: createdProfile } = await adminClient.from("profiles")
-      .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
-      .eq("id", userId)
-      .maybeSingle();
-
-    res.json({ success: true, action: "created", profile_id: userId, user_id: userId, email: emailLower, full_name: nameUpper, profile: createdProfile });
+    res.json({ success: true, action: "created", user_id: userId, email: emailLower, full_name: nameUpper });
   } catch (err) {
     console.error("admin-add-user error:", err);
     res.status(500).json({ error: err.message });

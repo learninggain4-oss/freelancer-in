@@ -67,8 +67,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    let isMounted = true;
+
+    // Safeguard timeout: ensure loading is never stuck for more than 5 seconds
+    const timeout = setTimeout(() => {
+      if (isMounted) {
+        setLoading(false);
+      }
+    }, 5000);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!isMounted) return;
+        clearTimeout(timeout);
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -92,19 +103,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loginOneSignal(session.user.id);
-        requestPushPermissionOnce();
-        fetchProfile(session.user.id).catch(() => {});
-        checkAdminRole(session.user.id).catch(() => {});
-      }
-      setLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (!isMounted) return;
+        clearTimeout(timeout);
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          loginOneSignal(session.user.id);
+          requestPushPermissionOnce();
+          fetchProfile(session.user.id).catch(() => {});
+          checkAdminRole(session.user.id).catch(() => {});
+        }
+        setLoading(false);
+      })
+      .catch((error) => {
+        if (isMounted) {
+          console.error("Failed to get session:", error);
+          clearTimeout(timeout);
+          setLoading(false);
+        }
+      });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Auto-refresh profile every 30 seconds across all pages

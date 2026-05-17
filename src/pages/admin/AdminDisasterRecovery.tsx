@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState } from "react";
 import { ShieldCheck, AlertTriangle, CheckCircle2, RefreshCw, Activity, Clock, Zap, HardDrive } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";

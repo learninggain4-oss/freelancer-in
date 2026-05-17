@@ -440,7 +440,6 @@ const AdminUsers = () => {
         token: tkn,
       });
       const { toast } = await import("sonner");
-      const data = await res.clone().json().catch(() => ({}));
       if (res.ok) {
         toast.success(`${u.full_name || u.email} logged out from all sessions`);
         // Notify user
@@ -456,14 +455,11 @@ const AdminUsers = () => {
           });
         } catch { /* non-critical */ }
       } else {
-        const errMsg = data?.error || `HTTP ${res.status}`;
-        console.error("Force logout failed:", res.status, data);
-        toast.error(`Failed to force logout: ${errMsg}`);
+        toast.error("Failed to force logout");
       }
-    } catch (err: any) {
+    } catch {
       const { toast } = await import("sonner");
-      console.error("Force logout exception:", err);
-      toast.error(`Failed to force logout: ${err?.message || "Network error"}`);
+      toast.error("Failed to force logout");
     }
     setLogoutUserId(null);
   };
@@ -741,9 +737,10 @@ const handlePermanentDelete = async (user: FullProfile) => {
     setAddUserEmailChecking(true);
     try {
       const token = await getToken();
-      const res = await fetch(`/functions/v1/admin-check-email?email=${encodeURIComponent(email.trim().toLowerCase())}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await callEdgeFunction(
+        `admin-check-email?email=${encodeURIComponent(email.trim().toLowerCase())}`,
+        { method: "GET", token }
+      );
       if (!res.ok) { setAddUserEmailCheck(null); return; }
       const data = await readResponseJson(res);
       setAddUserEmailCheck(data);
@@ -824,15 +821,15 @@ const handlePermanentDelete = async (user: FullProfile) => {
     setAddUserProcessing(true);
     try {
       const token = await getToken();
-      const res = await fetch("/functions/v1/admin-add-user", {
+      const res = await callEdgeFunction("admin-add-user", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), full_name: full_name.trim(), password, user_type,
+        token,
+        body: { email: email.trim(), full_name: full_name.trim(), password, user_type,
           mobile_number: mobile_number.trim() || undefined,
           whatsapp_number: whatsapp_number.trim() || undefined,
           gender: gender || undefined, date_of_birth: date_of_birth || undefined,
           approval_status, approval_notes: approval_notes.trim() || undefined,
-          force_new: addUserForceNew }),
+          force_new: addUserForceNew },
       });
       const data = await readResponseJson(res);
       if (!res.ok) throw new Error(data.error || "Failed to create user");
@@ -844,56 +841,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
       setAddUserForm({ email: "", full_name: "", password: "", user_type: "employee",
         mobile_number: "", whatsapp_number: "", gender: "", date_of_birth: "",
         approval_status: "approved", approval_notes: "" });
-      setSearchQuery("");
-      setTypeFilter("all");
-      setKycFilter("all");
-      setWalletMin("");
-      setWalletMax("");
-      setCityFilter("");
-      setDateFrom("");
-      setDateTo("");
-      setShowAdvancedFilters(false);
-      setSelectedIds(new Set());
-      setActiveTab("all");
-      setCurrentPage(1);
-
-      const createdProfile = (data as any)?.profile;
-      if (createdProfile) {
-        setProfiles((prev) => [createdProfile as FullProfile, ...prev.filter((p) => p.id !== createdProfile.id)]);
-      }
-
-      await fetchProfiles();
-      const createdProfileId = (data as any)?.profile_id;
-      const createdUserId = (data as any)?.user_id;
-      const createdEmail = email.trim().toLowerCase();
-      let fallbackProfile = null;
-      if (!createdProfile && createdProfileId) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
-          .eq("id", createdProfileId)
-          .maybeSingle();
-        fallbackProfile = data;
-      }
-      if (!createdProfile && !fallbackProfile && createdUserId) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
-          .eq("user_id", createdUserId)
-          .maybeSingle();
-        fallbackProfile = data;
-      }
-      if (!createdProfile && !fallbackProfile) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
-          .eq("email", createdEmail)
-          .maybeSingle();
-        fallbackProfile = data;
-      }
-      if (!createdProfile && fallbackProfile) {
-        setProfiles((prev) => [fallbackProfile as FullProfile, ...prev.filter((p) => p.id !== fallbackProfile.id)]);
-      }
+      fetchProfiles();
     } catch (err: any) { toast.error(err.message); }
     finally { setAddUserProcessing(false); }
   };
@@ -912,14 +860,13 @@ const handlePermanentDelete = async (user: FullProfile) => {
     if (!notesDialogUser) return;
     setNotesProcessing(true);
     try {
-      const token = await getToken();
-      const res = await callEdgeFunction("admin-user-management", {
-        body: { action: "save_admin_notes", profile_id: notesDialogUser.id, notes: notesText },
-        token,
-      });
-      const data = await readResponseJson(res);
-      if (!res.ok || data?.error) { toast.error(data?.error || "Failed to save notes"); }
-      else {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ approval_notes: notesText || null })
+        .eq("id", notesDialogUser.id);
+      if (error) {
+        toast.error(error.message || "Failed to save notes");
+      } else {
         toast.success("Notes saved");
         setProfiles((prev) => prev.map((p) => p.id === notesDialogUser.id ? { ...p, approval_notes: notesText } : p));
         setNotesDialogUser(null);
@@ -2731,6 +2678,30 @@ const handlePermanentDelete = async (user: FullProfile) => {
               <Textarea placeholder="Admin notes about this user…" value={addUserForm.approval_notes}
                 onChange={e => setAddUserForm(f => ({ ...f, approval_notes: e.target.value }))}
                 rows={2} style={{ background: T.input, color: T.text, borderColor: T.border }} />
+            </div>
+
+            {/* Always-visible Force New Account toggle */}
+            <div
+              className="flex items-center justify-between rounded-lg border px-3 py-2.5 cursor-pointer select-none"
+              style={{
+                borderColor: addUserForceNew ? "#3b82f6" : T.border,
+                background: addUserForceNew ? "rgba(59,130,246,0.08)" : T.input,
+              }}
+              onClick={() => setAddUserForceNew(v => !v)}
+            >
+              <div>
+                <div className="text-sm font-medium" style={{ color: T.text }}>
+                  Create new separate account
+                </div>
+                <div className="text-xs mt-0.5" style={{ color: T.sub }}>
+                  {addUserForceNew
+                    ? "A brand-new profile will be created even if this email already has an account"
+                    : "If this email already has an account, the existing profile will be updated instead"}
+                </div>
+              </div>
+              <div className={`ml-3 w-9 h-5 rounded-full flex items-center transition-colors shrink-0 ${addUserForceNew ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600"}`}>
+                <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform mx-0.5 ${addUserForceNew ? "translate-x-4" : "translate-x-0"}`} />
+              </div>
             </div>
           </div>
           <DialogFooter className="gap-2">

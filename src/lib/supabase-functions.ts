@@ -21,17 +21,20 @@ export async function callEdgeFunction(
   },
 ): Promise<Response> {
   const method = options?.method ?? (options?.body ? "POST" : "GET");
+
+  // In dev (Replit): use relative path so Vite proxy forwards to local Express server.
+  // In prod (Lovable): call Supabase Edge Functions directly.
   const isDev = import.meta.env.DEV;
-  const isLocalHost = typeof window !== "undefined" && ["localhost", "127.0.0.1"].includes(window.location.hostname);
-  const localUrl = `/functions/v1/${functionName}`;
-  const remoteUrl = `${SUPABASE_URL}/functions/v1/${functionName}`;
-  const useLocal = isDev || isLocalHost;
+  const url = isDev
+    ? `/functions/v1/${functionName}`
+    : `${SUPABASE_URL}/functions/v1/${functionName}`;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
-  if (!useLocal) {
+  // Only attach apikey when calling Supabase directly (prod)
+  if (!isDev) {
     headers["apikey"] = SUPABASE_ANON_KEY;
   }
 
@@ -39,21 +42,11 @@ export async function callEdgeFunction(
     headers["Authorization"] = `Bearer ${options.token}`;
   }
 
-  const fetchOptions: RequestInit = {
+  return fetch(url, {
     method,
     headers,
     ...(options?.body ? { body: JSON.stringify(options.body) } : {}),
-  };
-
-  if (useLocal) {
-    try {
-      return await fetch(localUrl, fetchOptions);
-    } catch {
-      return fetch(remoteUrl, fetchOptions);
-    }
-  }
-
-  return fetch(remoteUrl, fetchOptions);
+  });
 }
 
 /** Parse JSON from a fetch Response without throwing on empty body (avoids "Unexpected end of JSON input"). */

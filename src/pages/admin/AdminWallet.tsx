@@ -73,8 +73,8 @@ const AdminWallet = () => {
       const res = await supabase.functions.invoke("wallet-operations", {
         body: { action: "add_money", amount },
       });
-      if (res.error) throw new Error(res.error.message);
       if (res.data?.error) throw new Error(res.data.error);
+      if (res.error) throw new Error(res.error.message);
       return res.data;
     },
     onSuccess: () => {

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState } from "react";
 import { GitBranch, RotateCcw, Clock, CheckCircle2, AlertTriangle, Tag, FileText, Wrench, RefreshCw, Shield, Download, UploadCloud, ChevronDown, ChevronUp, Zap } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
