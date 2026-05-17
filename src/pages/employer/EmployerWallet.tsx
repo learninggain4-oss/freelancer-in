@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import WalletCard from "@/components/wallet/WalletCard";
 import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
@@ -34,6 +34,7 @@ const ClientWallet = () => {
   const { profile, refreshProfile } = useAuth();
   const [showTransfer, setShowTransfer] = useState(false);
   const [showDeposits, setShowDeposits] = useState(true);
+  const depositsRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
@@ -59,6 +60,11 @@ const ClientWallet = () => {
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
+
+  const openDepositSection = () => {
+    setShowDeposits(true);
+    setTimeout(() => depositsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  };
 
 
   return (
@@ -86,7 +92,7 @@ const ClientWallet = () => {
           availableBalance={profile?.available_balance ?? 0}
           holdBalance={profile?.hold_balance ?? 0}
           walletActive={(profile as any)?.wallet_active ?? true}
-          onAddMoney={() => navigate("/employer/wallet")}
+          onAddMoney={openDepositSection}
           onTransfer={() => setShowTransfer(true)}
         />
       </div>
@@ -146,7 +152,7 @@ const ClientWallet = () => {
       </div>
 
       {/* Deposit History */}
-      <div className="animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
+      <div ref={depositsRef} className="animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
         <button
           onClick={() => setShowDeposits(v => !v)}
           className="w-full flex items-center justify-between px-5 py-4 rounded-2xl mb-3"
@@ -177,7 +183,7 @@ const ClientWallet = () => {
                 style={{ background: T.card, border: `1px solid ${T.border}` }}>
                 <PlusCircle className="h-8 w-8 opacity-20" style={{ color: T.sub }} />
                 <p className="text-sm font-bold" style={{ color: T.sub }}>No deposit requests yet</p>
-                <button onClick={() => navigate("/employer/wallet")}
+                <button onClick={openDepositSection}
                   className="mt-1 text-xs font-black text-indigo-400 underline underline-offset-2">
                   Make your first deposit →
                 </button>
