@@ -319,6 +319,7 @@ const WithdrawalHistory = lazy(() => import("./pages/wallet/WithdrawalHistory"))
 const WalletQRPage = lazy(() => import("./pages/wallet/WalletQRPage"));
 const WalletScanPage = lazy(() => import("./pages/wallet/WalletScanPage"));
 const RequestWithdrawal = lazy(() => import("./pages/wallet/RequestWithdrawal"));
+const AddMoneyPage = lazy(() => import("./pages/wallet/AddMoneyPage"));
 const UpgradeChat = lazy(() => import("./pages/wallet/UpgradeChat"));
 const ProfilePersonalInfo = lazy(() => import("./pages/profile/ProfilePersonalInfo"));
 const ProfileProfessional = lazy(() => import("./pages/profile/ProfileProfessional"));
@@ -436,6 +437,7 @@ const AppContent = () => {
               <Route path="wallet/qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
+              <Route path="wallet/add" element={<AddMoneyPage />} />
               <Route path="bids" element={<FreelancerBids />} />
               <Route path="earnings" element={<FreelancerEarnings />} />
               <Route path="reviews" element={<FreelancerReviews />} />
@@ -484,6 +486,7 @@ const AppContent = () => {
               <Route path="wallet/qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
+              <Route path="wallet/add" element={<AddMoneyPage />} />
               <Route path="bids" element={<FreelancerBids />} />
               <Route path="earnings" element={<FreelancerEarnings />} />
               <Route path="reviews" element={<FreelancerReviews />} />
@@ -528,6 +531,7 @@ const AppContent = () => {
               <Route path="wallet/qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
+              <Route path="wallet/add" element={<AddMoneyPage />} />
               <Route path="projects" element={<EmployerProjects />} />
               <Route path="projects/create" element={<CreateProject />} />
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
