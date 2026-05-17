@@ -323,11 +323,8 @@ const WithdrawalHistory = lazy(() => import("./pages/wallet/WithdrawalHistory"))
 const WalletQRPage = lazy(() => import("./pages/wallet/WalletQRPage"));
 const WalletScanPage = lazy(() => import("./pages/wallet/WalletScanPage"));
 const RequestWithdrawal = lazy(() => import("./pages/wallet/RequestWithdrawal"));
-<<<<<<< HEAD
 const AddMoneyPage = lazy(() => import("./pages/wallet/AddMoneyPage"));
-=======
 const DepositPayment = lazy(() => import("./pages/wallet/DepositPayment"));
->>>>>>> 23b248a4a4f2e94096e2f2ab93022120ce3c735b
 const UpgradeChat = lazy(() => import("./pages/wallet/UpgradeChat"));
 const ProfilePersonalInfo = lazy(() => import("./pages/profile/ProfilePersonalInfo"));
 const ProfileProfessional = lazy(() => import("./pages/profile/ProfileProfessional"));
@@ -445,22 +442,13 @@ const AppContent = () => {
               <Route path="wallet/qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
-<<<<<<< HEAD
               <Route path="wallet/add" element={<AddMoneyPage />} />
-              <Route path="bids" element={<FreelancerBids />} />
-              <Route path="earnings" element={<FreelancerEarnings />} />
-              <Route path="reviews" element={<FreelancerReviews />} />
-              <Route path="badges" element={<FreelancerBadges />} />
-              <Route path="portfolio" element={<FreelancerPortfolio />} />
-              <Route path="profile" element={<FreelancerProfile />} />
-=======
               <Route path="bids" element={<EmployeeBids />} />
               <Route path="earnings" element={<EmployeeEarnings />} />
               <Route path="reviews" element={<EmployeeReviews />} />
               <Route path="badges" element={<EmployeeBadges />} />
               <Route path="portfolio" element={<EmployeePortfolio />} />
               <Route path="profile" element={<EmployeeProfile />} />
->>>>>>> 23b248a4a4f2e94096e2f2ab93022120ce3c735b
               <Route path="profile/personal" element={<ProfilePersonalInfo />} />
               <Route path="profile/professional" element={<ProfileProfessional />} />
               <Route path="profile/bank-details" element={<ProfileBankDetails />} />
@@ -504,22 +492,13 @@ const AppContent = () => {
               <Route path="wallet/qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
-<<<<<<< HEAD
               <Route path="wallet/add" element={<AddMoneyPage />} />
-              <Route path="bids" element={<FreelancerBids />} />
-              <Route path="earnings" element={<FreelancerEarnings />} />
-              <Route path="reviews" element={<FreelancerReviews />} />
-              <Route path="badges" element={<FreelancerBadges />} />
-              <Route path="portfolio" element={<FreelancerPortfolio />} />
-              <Route path="profile" element={<FreelancerProfile />} />
-=======
               <Route path="bids" element={<EmployeeBids />} />
               <Route path="earnings" element={<EmployeeEarnings />} />
               <Route path="reviews" element={<EmployeeReviews />} />
               <Route path="badges" element={<EmployeeBadges />} />
               <Route path="portfolio" element={<EmployeePortfolio />} />
               <Route path="profile" element={<EmployeeProfile />} />
->>>>>>> 23b248a4a4f2e94096e2f2ab93022120ce3c735b
               <Route path="profile/personal" element={<ProfilePersonalInfo />} />
               <Route path="profile/professional" element={<ProfileProfessional />} />
               <Route path="profile/bank-details" element={<ProfileBankDetails />} />
