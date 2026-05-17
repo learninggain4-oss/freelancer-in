@@ -86,7 +86,7 @@ const ClientWallet = () => {
           availableBalance={profile?.available_balance ?? 0}
           holdBalance={profile?.hold_balance ?? 0}
           walletActive={(profile as any)?.wallet_active ?? true}
-          onAddMoney={() => navigate("/employer/wallet/add")}
+          onAddMoney={() => navigate("/employer/wallet")}
           onTransfer={() => setShowTransfer(true)}
         />
       </div>
@@ -177,7 +177,7 @@ const ClientWallet = () => {
                 style={{ background: T.card, border: `1px solid ${T.border}` }}>
                 <PlusCircle className="h-8 w-8 opacity-20" style={{ color: T.sub }} />
                 <p className="text-sm font-bold" style={{ color: T.sub }}>No deposit requests yet</p>
-                <button onClick={() => navigate("/employer/wallet/add")}
+                <button onClick={() => navigate("/employer/wallet")}
                   className="mt-1 text-xs font-black text-indigo-400 underline underline-offset-2">
                   Make your first deposit →
                 </button>
