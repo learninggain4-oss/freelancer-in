@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import WalletCard from "@/components/wallet/WalletCard";
 import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
@@ -32,6 +33,9 @@ const STATUS_CFG = {
   approved: { icon: CheckCircle2,  color: "#10b981", bg: "rgba(16,185,129,.1)", label: "Approved" },
   rejected: { icon: XCircle,       color: "#ef4444", bg: "rgba(239,68,68,.1)",  label: "Rejected" },
 } as const;
+
+const MIN_DEPOSIT = 100;
+const MAX_DEPOSIT = 50000;
 
 const fmt = (n: number) => `₹${Number(n).toLocaleString("en-IN")}`;
 const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
@@ -67,7 +71,7 @@ const EmployeeWallet = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("payment_methods")
-        .select("id, name")
+        .select("id, name, logo_path")
         .eq("is_active", true)
         .order("display_order");
       if (error) throw error;
@@ -75,10 +79,19 @@ const EmployeeWallet = () => {
     },
   });
 
+  const getMethodLogoUrl = (path: string | null) => {
+    if (!path) return null;
+    const { data } = supabase.storage.from("payment-method-logos").getPublicUrl(path);
+    return data.publicUrl;
+  };
+
   const submitDepositMutation = useMutation({
     mutationFn: async () => {
       const amount = Number(addAmount);
-      if (!amount || amount <= 0) throw new Error("Enter valid amount");
+      if (!amount || amount < MIN_DEPOSIT || amount > MAX_DEPOSIT) {
+        throw new Error("Amount must be between ₹100 and ₹50,000");
+      }
+      if (amount % 100 !== 0) throw new Error("Amount must be in multiples of ₹100");
       if (!paymentMethod) throw new Error("Select payment method");
       const res = await supabase.functions.invoke("wallet-operations", {
         body: {
@@ -212,9 +225,15 @@ const EmployeeWallet = () => {
                 placeholder="Enter amount"
                 value={addAmount}
                 onChange={(e) => setAddAmount(e.target.value)}
+                min={MIN_DEPOSIT}
+                max={MAX_DEPOSIT}
+                step={100}
                 className="h-11 border-0"
                 style={{ backgroundColor: T.input, color: T.text }}
               />
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>
+                Min ₹100, Max ₹50,000, Multiples of ₹100 only
+              </p>
             </div>
             <div className="space-y-2">
               <Label style={{ color: T.sub }} className="text-xs font-bold uppercase tracking-widest">Payment Method</Label>
@@ -224,7 +243,16 @@ const EmployeeWallet = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {paymentMethods.map((m: any) => (
-                    <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
+                    <SelectItem key={m.id} value={m.name}>
+                      <div className="flex items-center gap-2">
+                        {getMethodLogoUrl(m.logo_path) ? (
+                          <img src={getMethodLogoUrl(m.logo_path)!} alt={m.name} className="h-4 w-4 rounded-sm object-contain" />
+                        ) : (
+                          <div className="h-4 w-4 rounded-sm bg-white/20" />
+                        )}
+                        <span>{m.name}</span>
+                      </div>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
