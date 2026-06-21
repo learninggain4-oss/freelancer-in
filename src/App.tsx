@@ -76,6 +76,7 @@ const AccountSettings = lazy(() => import("./pages/AccountSettings"));
 const SecurityMpinPage = lazy(() => import("./pages/settings/SecurityMpinPage"));
 const SecurityTotpPage = lazy(() => import("./pages/settings/SecurityTotpPage"));
 const SecurityWithdrawalPasswordPage = lazy(() => import("./pages/settings/SecurityWithdrawalPasswordPage"));
+const SecurityQuestionModelPage = lazy(() => import("./pages/settings/SecurityQuestionsModelPage"));
 const NotificationSettings = lazy(() => import("./pages/NotificationSettings"));
 const GetFree = lazy(() => import("./pages/GetFree"));
 const GetCoins = lazy(() => import("./pages/GetCoins"));
@@ -89,7 +90,7 @@ const AdminCountdowns = lazy(() => import("./pages/admin/AdminCountdowns"));
 const AdminValidation = lazy(() => import("./pages/admin/AdminValidation"));
 const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"));
 const AdminBranding = lazy(() => import("./pages/admin/AdminBranding"));
-const AdminReset    = lazy(() => import("./pages/admin/AdminReset"));
+const AdminReset = lazy(() => import("./pages/admin/AdminReset"));
 const AdminTestimonials = lazy(() => import("./pages/admin/AdminTestimonials"));
 const AdminReferrals = lazy(() => import("./pages/admin/AdminReferrals"));
 const AdminOnlineStatus = lazy(() => import("./pages/admin/AdminOnlineStatus"));
@@ -378,8 +379,7 @@ const PageLoader = () => <LoadingScreen />;
 /** Show landing page in browser, login in installed PWA */
 const SmartRoot = () => {
   const isStandalone =
-    window.matchMedia("(display-mode: standalone)").matches ||
-    (window.navigator as any).standalone === true;
+    window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone === true;
   return isStandalone ? <Login /> : <Index />;
 };
 
@@ -387,11 +387,14 @@ const AppContent = () => {
   const { blocked, loading } = useIpBlockCheck();
 
   useEffect(() => {
-    supabase.from("app_settings").select("key, value").in("key", ["seo_title", "seo_description"])
+    supabase
+      .from("app_settings")
+      .select("key, value")
+      .in("key", ["seo_title", "seo_description"])
       .then(({ data }) => {
         if (!data) return;
-        const title = data.find(r => r.key === "seo_title")?.value;
-        const desc  = data.find(r => r.key === "seo_description")?.value;
+        const title = data.find((r) => r.key === "seo_title")?.value;
+        const desc = data.find((r) => r.key === "seo_description")?.value;
         if (title) document.title = title;
         if (desc) {
           const m = document.querySelector('meta[name="description"]');
@@ -409,7 +412,6 @@ const AppContent = () => {
       <AnnouncementPopup />
       <LocationPermissionBanner />
 
-      
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
@@ -511,6 +513,7 @@ const AppContent = () => {
               <Route path="settings/security/mpin" element={<SecurityMpinPage />} />
               <Route path="settings/security/google-authenticator" element={<SecurityTotpPage />} />
               <Route path="settings/security/withdrawal-password" element={<SecurityWithdrawalPasswordPage />} />
+              <Route path="/settings/security/security-questions" element={<SecurityQuestionsPage />} />
               <Route path="notification-settings" element={<NotificationSettings />} />
               <Route path="get-free" element={<GetFree />} />
               <Route path="get-coins" element={<GetCoins />} />
@@ -571,6 +574,7 @@ const AppContent = () => {
               <Route path="settings/security/mpin" element={<SecurityMpinPage />} />
               <Route path="settings/security/google-authenticator" element={<SecurityTotpPage />} />
               <Route path="settings/security/withdrawal-password" element={<SecurityWithdrawalPasswordPage />} />
+              <Route path="/settings/security/security-questions" element={<SecurityQuestionsPage />} />
               <Route path="notification-settings" element={<NotificationSettings />} />
               <Route path="get-free" element={<GetFree />} />
               <Route path="get-coins" element={<GetCoins />} />
