@@ -51,7 +51,7 @@ const AccountSettings = () => {
       icon: HelpCircle,
       label: "Security Questions",
       description: "Set questions to recover your account",
-      path: `${basePath}/settings/security/security-questions`,
+      path: `${basePath}/settings/security/security-questions-model`,
     },
   ];
 
