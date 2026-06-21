@@ -29,7 +29,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import Tesseract from "tesseract.js";
 
 const statusConfig: Record<
   string,
@@ -47,8 +46,6 @@ const BankVerificationCard = () => {
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const [verifyingOCR, setVerifyingOCR] = useState(false);
-  const [ocrVerified, setOcrVerified] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [editing, setEditing] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
@@ -154,7 +151,6 @@ const BankVerificationCard = () => {
       queryClient.invalidateQueries({ queryKey: ["bank-verifications"] });
       queryClient.invalidateQueries({ queryKey: ["bank-verification-status"] });
       setSelectedFile(null);
-      setOcrVerified(false);
       if (fileRef.current) fileRef.current.value = "";
       if (cameraRef.current) cameraRef.current.value = "";
     },
@@ -176,7 +172,6 @@ const BankVerificationCard = () => {
       queryClient.invalidateQueries({ queryKey: ["bank-verifications"] });
       queryClient.invalidateQueries({ queryKey: ["bank-verification-status"] });
       setSelectedFile(null);
-      setOcrVerified(false);
       setEditing(false);
       if (fileRef.current) fileRef.current.value = "";
       if (cameraRef.current) cameraRef.current.value = "";
@@ -208,7 +203,6 @@ const BankVerificationCard = () => {
       toast.success("Document updated");
       queryClient.invalidateQueries({ queryKey: ["bank-verifications"] });
       setSelectedFile(null);
-      setOcrVerified(false);
       setEditing(false);
       if (fileRef.current) fileRef.current.value = "";
       if (cameraRef.current) cameraRef.current.value = "";
@@ -217,82 +211,19 @@ const BankVerificationCard = () => {
     onSettled: () => setUploading(false),
   });
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
       toast.error("File size must be under 10MB");
       return;
     }
-    if (!selectedAccount) {
-      toast.error("Please select a bank account first.");
-      return;
-    }
-
-    // Checking if it's a PDF or DOC file - skip OCR for these formats
-    const isImage = file.type.startsWith("image/");
-    if (!isImage) {
-      setSelectedFile(file);
-      setOcrVerified(true);
-      return;
-    }
-
-    // Perform OCR for Images/Camera Photos
-    setVerifyingOCR(true);
-    setOcrVerified(false);
-    const toastId = toast.loading("Scanning photo for bank details...");
-
-    try {
-      const result = await Tesseract.recognize(file, "eng");
-      const detectedText = result.data.text.toLowerCase();
-
-      const requiredName = selectedAccount.bank_holder_name.toLowerCase();
-      const requiredNumber = selectedAccount.bank_account_number.toLowerCase();
-      const requiredIfsc = selectedAccount.bank_ifsc_code.toLowerCase();
-
-      const cleanString = (str: string) => str.replace(/[^a-z0-9]/g, "");
-      const cleanedText = cleanString(detectedText);
-
-      const matchName = detectedText.includes(requiredName) || cleanedText.includes(cleanString(requiredName));
-      const matchNumber = detectedText.includes(requiredNumber) || cleanedText.includes(cleanString(requiredNumber));
-      const matchIfsc = detectedText.includes(requiredIfsc) || cleanedText.includes(cleanString(requiredIfsc));
-
-      if (!matchName || !matchNumber || !matchIfsc) {
-        const missingFields = [];
-        if (!matchName) missingFields.push("Account Holder Name");
-        if (!matchNumber) missingFields.push("Account Number");
-        if (!matchIfsc) missingFields.push("IFSC Code");
-
-        toast.error(
-          `Verification Failed! Cannot detect: ${missingFields.join(", ")}. Please ensure the photo is clear.`,
-          {
-            id: toastId,
-            duration: 5000,
-          },
-        );
-
-        setSelectedFile(null);
-        if (fileRef.current) fileRef.current.value = "";
-        if (cameraRef.current) cameraRef.current.value = "";
-      } else {
-        toast.success("Bank details detected successfully!", { id: toastId });
-        setSelectedFile(file);
-        setOcrVerified(true);
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to read text from the image. Please try again with a clearer picture.", { id: toastId });
-    } finally {
-      setVerifyingOCR(false);
-    }
+    setSelectedFile(file);
   };
 
   const hasBankDetails = userBankAccounts.length > 0;
   const cfg = verification ? (statusConfig[verification.status] ?? statusConfig.pending) : null;
-  const canSubmit =
-    hasBankDetails &&
-    !!selectedAccount &&
-    ((selectedFile && ocrVerified) || (!selectedFile && verification?.document_path));
+  const canSubmit = hasBankDetails && !!selectedAccount && (selectedFile || verification?.document_path);
   const isPending = verification?.status === "pending";
 
   const statusBadge = (s: string | null) => {
@@ -329,7 +260,6 @@ const BankVerificationCard = () => {
                     onClick={() => {
                       setSelectedAccountId(acc.id);
                       setSelectedFile(null);
-                      setOcrVerified(false);
                       setEditing(false);
                     }}
                     className={`w-full rounded-md border p-3 text-left transition-colors ${
@@ -374,7 +304,6 @@ const BankVerificationCard = () => {
                     onClick={() => {
                       setEditing(true);
                       setSelectedFile(null);
-                      setOcrVerified(false);
                     }}
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -432,28 +361,16 @@ const BankVerificationCard = () => {
 
                 <div className="flex flex-col gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={() => fileRef.current?.click()}
-                      disabled={verifyingOCR}
-                    >
+                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => fileRef.current?.click()}>
                       <Upload className="h-3.5 w-3.5" /> File
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={() => cameraRef.current?.click()}
-                      disabled={verifyingOCR}
-                    >
+                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => cameraRef.current?.click()}>
                       <Camera className="h-3.5 w-3.5" /> Camera
                     </Button>
                     <Button
                       size="sm"
                       onClick={() => updateDocMutation.mutate()}
-                      disabled={updateDocMutation.isPending || !selectedFile || verifyingOCR || !ocrVerified}
+                      disabled={updateDocMutation.isPending || !selectedFile}
                     >
                       {updateDocMutation.isPending ? "Updating..." : "Update Document"}
                     </Button>
@@ -463,23 +380,12 @@ const BankVerificationCard = () => {
                       onClick={() => {
                         setEditing(false);
                         setSelectedFile(null);
-                        setOcrVerified(false);
                       }}
-                      disabled={verifyingOCR}
                     >
                       Cancel
                     </Button>
                   </div>
-                  {verifyingOCR && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Loader2 className="h-3 w-3 animate-spin text-primary" /> Scanning document text...
-                    </div>
-                  )}
-                  {selectedFile && (
-                    <span className="text-xs text-muted-foreground text-emerald-600 font-medium">
-                      ✓ Ready: {selectedFile.name}
-                    </span>
-                  )}
+                  {selectedFile && <span className="text-xs text-muted-foreground">Selected: {selectedFile.name}</span>}
                 </div>
               </div>
             )}
@@ -524,7 +430,6 @@ const BankVerificationCard = () => {
                           size="sm"
                           className="gap-1.5"
                           onClick={() => fileRef.current?.click()}
-                          disabled={verifyingOCR}
                         >
                           <Upload className="h-3.5 w-3.5" /> Upload File
                         </Button>
@@ -533,28 +438,23 @@ const BankVerificationCard = () => {
                           size="sm"
                           className="gap-1.5"
                           onClick={() => cameraRef.current?.click()}
-                          disabled={verifyingOCR}
                         >
                           <Camera className="h-3.5 w-3.5" /> Take Photo
                         </Button>
                         <Button
                           size="sm"
-                          className="ml-2"
                           onClick={() => submitMutation.mutate()}
-                          disabled={submitMutation.isPending || !hasBankDetails || verifyingOCR || !canSubmit}
+                          disabled={
+                            submitMutation.isPending ||
+                            !hasBankDetails ||
+                            (!selectedFile && !verification.document_path)
+                          }
                         >
                           {submitMutation.isPending ? "Submitting..." : "Resubmit"}
                         </Button>
                       </div>
-                      {verifyingOCR && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Loader2 className="h-3 w-3 animate-spin text-primary" /> Scanning photo text...
-                        </div>
-                      )}
                       {selectedFile && (
-                        <span className="text-xs text-muted-foreground text-emerald-600 font-medium">
-                          ✓ Ready: {selectedFile.name}
-                        </span>
+                        <span className="text-xs text-muted-foreground">Selected: {selectedFile.name}</span>
                       )}
                     </div>
                   </div>
@@ -599,7 +499,7 @@ const BankVerificationCard = () => {
                   size="sm"
                   className="gap-1.5"
                   onClick={() => fileRef.current?.click()}
-                  disabled={!hasBankDetails || !selectedAccount || verifyingOCR}
+                  disabled={!hasBankDetails || !selectedAccount}
                 >
                   <Upload className="h-3.5 w-3.5" /> Upload File
                 </Button>
@@ -608,28 +508,19 @@ const BankVerificationCard = () => {
                   size="sm"
                   className="gap-1.5"
                   onClick={() => cameraRef.current?.click()}
-                  disabled={!hasBankDetails || !selectedAccount || verifyingOCR}
+                  disabled={!hasBankDetails || !selectedAccount}
                 >
                   <Camera className="h-3.5 w-3.5" /> Take Photo
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => submitMutation.mutate()}
-                  disabled={submitMutation.isPending || uploading || verifyingOCR || !canSubmit}
+                  disabled={submitMutation.isPending || !canSubmit}
                 >
                   {submitMutation.isPending || uploading ? "Submitting..." : "Submit for Verification"}
                 </Button>
               </div>
-              {verifyingOCR && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin text-primary" /> Scanning photo text...
-                </div>
-              )}
-              {selectedFile && (
-                <span className="text-xs text-muted-foreground text-emerald-600 font-medium">
-                  ✓ Ready: {selectedFile.name}
-                </span>
-              )}
+              {selectedFile && <span className="text-xs text-muted-foreground">Selected: {selectedFile.name}</span>}
             </div>
           </div>
         )}
