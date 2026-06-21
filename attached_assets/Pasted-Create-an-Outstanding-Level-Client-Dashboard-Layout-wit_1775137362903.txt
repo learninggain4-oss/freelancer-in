@@ -1,0 +1,281 @@
+Create an Outstanding Level Client Dashboard Layout with a modern, professional, and production-ready UI/UX design suitable for a real-world Freelancer platform.
+
+The dashboard must be responsive, secure, fast-loading, and easy to use.
+
+---
+
+1) Overall Dashboard Layout Structure
+
+Design a complete Client Dashboard layout with the following structure:
+
+- Top Header (Navigation Bar)
+- Left Sidebar Navigation
+- Main Dashboard Content Area
+- Right-side Notifications / Activity Panel (Optional)
+- Sticky Footer
+
+The layout must support:
+
+- Desktop
+- Tablet
+- Mobile (Responsive Design)
+
+---
+
+2) Header (Top Navigation Bar)
+
+Include the following components:
+
+- Platform Logo
+- Global Search Bar
+- Notifications Icon (Bell)
+- Messages Icon
+- Wallet Balance Display
+- Post Job Button
+- Profile Avatar Dropdown:
+  - My Profile
+  - Settings
+  - Billing
+  - Logout
+- Dark Mode / Light Mode Toggle
+
+Add:
+
+- Sticky header
+- Real-time notification badge counter
+- Smooth animation
+
+---
+
+3) Sidebar (Left Navigation Menu)
+
+Create a collapsible sidebar with icons and labels.
+
+Main Menu Items:
+
+Dashboard
+Post a Job
+My Jobs
+Active Contracts
+Freelancers
+Proposals
+Messages
+Payments
+Invoices
+Transactions
+Wallet
+Reports
+Notifications
+Support / Help Center
+Settings
+Logout
+
+Features required:
+
+- Active menu highlight
+- Hover animation
+- Expand / Collapse submenu
+- Mobile-friendly sidebar
+- Role-based visibility
+
+---
+
+4) Top Dashboard Summary Cards
+
+Display key statistics at the top of the dashboard:
+
+- Total Jobs Posted
+- Active Jobs
+- Completed Jobs
+- Total Spending
+- Pending Payments
+- Active Contracts
+- Proposals Received
+- Saved Freelancers
+
+Each card must include:
+
+- Icon
+- Value
+- Status indicator
+- Trend indicator
+
+Add:
+
+- Animated counters
+- Responsive card layout
+
+---
+
+5) Main Dashboard Sections
+
+A) Recent Jobs Section
+
+Show:
+
+- Job Title
+- Category
+- Budget
+- Status
+- Posted Date
+- Deadline
+- Action Button (View / Edit)
+
+Add:
+
+- Table layout
+- Status badges
+- Pagination
+- Sorting
+
+---
+
+B) Proposals Received Section
+
+Show:
+
+- Freelancer Name
+- Proposal Amount
+- Delivery Time
+- Rating
+- Status
+- Action Buttons:
+  - Accept
+  - Reject
+  - View Profile
+
+Add:
+
+- Real-time updates
+- Highlight best proposals
+
+---
+
+C) Payments & Spending Section
+
+Include:
+
+- Spending Chart
+- Monthly Spending
+- Pending Payments
+- Completed Payments
+- Payment History
+
+Add:
+
+- Interactive charts
+- Date filters
+
+---
+
+D) Active Contracts Section
+
+Show:
+
+- Freelancer Name
+- Job Title
+- Contract Amount
+- Start Date
+- Status
+- Action Button (Manage)
+
+Add:
+
+- Contract status tracking
+- Deadline alerts
+
+---
+
+6) Quick Actions Panel
+
+Add quick buttons:
+
+- Post New Job
+- Hire Freelancer
+- Send Message
+- Make Payment
+- Contact Support
+
+Add:
+
+- Floating action buttons
+- Hover animation
+
+---
+
+7) Notifications & Alerts Section
+
+Show:
+
+- New proposals received
+- Freelancer messages
+- Payment reminders
+- Contract deadline alerts
+- System notifications
+
+Add:
+
+- Real-time updates
+- Highlight urgent alerts
+
+---
+
+8) Activity Timeline Section
+
+Show recent activities:
+
+- Job posted
+- Proposal received
+- Freelancer hired
+- Payment completed
+- Contract closed
+
+Add:
+
+- Timeline design
+- Date and time stamps
+
+---
+
+9) UI / UX Design Requirements
+
+The design must follow:
+
+Modern SaaS dashboard style
+Clean and minimal layout
+Professional spacing
+High readability
+Consistent icon system
+
+Add:
+
+- Smooth animations
+- Loading skeleton screens
+- Hover effects
+- Micro-interactions
+
+---
+
+10) Performance & Security Requirements
+
+The dashboard must support:
+
+- Fast loading performance
+- Secure session handling
+- Mobile responsiveness
+- Data protection
+- Error handling
+
+---
+
+Final Requirement
+
+This Client Dashboard layout must be:
+
+Outstanding Level
+Professional Grade
+Production Ready
+Fully Responsive
+Modern UI/UX Design
+User-Friendly
+Scalable Architecture
