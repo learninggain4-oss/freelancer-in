@@ -4,14 +4,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Shield, User, Mail, Fingerprint, Lock, ChevronRight, KeyRound, ShieldCheck } from "lucide-react";
+import {
+  Settings,
+  Shield,
+  User,
+  Mail,
+  Fingerprint,
+  Lock,
+  ChevronRight,
+  KeyRound,
+  ShieldCheck,
+  HelpCircle,
+} from "lucide-react";
 
 const AccountSettings = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Derive base path (/employee, /freelancer, /employer)
   const basePath = location.pathname.split("/settings")[0];
 
   const securityItems = [
@@ -35,6 +45,13 @@ const AccountSettings = () => {
       label: "Withdrawal Password",
       description: "Secure password required for fund withdrawals",
       path: `${basePath}/settings/security/withdrawal-password`,
+    },
+    {
+      key: "security-questions",
+      icon: HelpCircle,
+      label: "Security Questions",
+      description: "Set questions to recover your account",
+      path: `${basePath}/settings/security/security-questions`,
     },
   ];
 
@@ -65,7 +82,6 @@ const AccountSettings = () => {
           </TabsTrigger>
         </TabsList>
 
-        {/* Tab: Security - now a list of nav items to separate pages */}
         <TabsContent value="security" className="space-y-3 mt-4">
           <Card className="border-0 shadow-sm overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-primary via-accent to-primary" />
@@ -92,8 +108,8 @@ const AccountSettings = () => {
           </Card>
         </TabsContent>
 
-        {/* Tab: Account */}
         <TabsContent value="account" className="space-y-4 mt-4">
+          {/* Account info section remains the same */}
           <Card className="border-0 shadow-sm overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-primary via-accent to-primary" />
             <CardHeader className="pb-3">
@@ -104,10 +120,24 @@ const AccountSettings = () => {
             </CardHeader>
             <CardContent className="space-y-0">
               {[
-                { icon: User, label: "Name", value: Array.isArray(profile?.full_name) ? profile.full_name[0] : profile?.full_name },
-                { icon: Fingerprint, label: "User Code", value: Array.isArray(profile?.user_code) ? profile.user_code[0] : profile?.user_code, isBadge: true },
+                {
+                  icon: User,
+                  label: "Name",
+                  value: Array.isArray(profile?.full_name) ? profile.full_name[0] : profile?.full_name,
+                },
+                {
+                  icon: Fingerprint,
+                  label: "User Code",
+                  value: Array.isArray(profile?.user_code) ? profile.user_code[0] : profile?.user_code,
+                  isBadge: true,
+                },
                 { icon: Mail, label: "Email", value: profile?.email },
-                { icon: Lock, label: "Account Type", value: profile?.user_type === "Freelancer" ? "Freelancer" : "Employer", isBadge: true },
+                {
+                  icon: Lock,
+                  label: "Account Type",
+                  value: profile?.user_type === "Freelancer" ? "Freelancer" : "Employer",
+                  isBadge: true,
+                },
               ].map((item, idx) => (
                 <div key={idx}>
                   <div className="flex items-center gap-3 py-3.5">
@@ -117,7 +147,9 @@ const AccountSettings = () => {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-muted-foreground">{item.label}</p>
                       {item.isBadge ? (
-                        <Badge variant="secondary" className="mt-0.5 text-xs">{item.value}</Badge>
+                        <Badge variant="secondary" className="mt-0.5 text-xs">
+                          {item.value}
+                        </Badge>
                       ) : (
                         <p className="text-sm font-medium text-foreground truncate">{item.value}</p>
                       )}
