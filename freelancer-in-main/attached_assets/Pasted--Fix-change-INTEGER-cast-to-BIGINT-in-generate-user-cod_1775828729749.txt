@@ -1,0 +1,80 @@
+-- Fix: change INTEGER cast to BIGINT in generate_user_code function
+CREATE OR REPLACE FUNCTION generate_user_code()
+RETURNS TRIGGER AS $$
+DECLARE
+  prefix TEXT;
+  digits INTEGER;
+  separator TEXT;
+  include_year BOOLEAN;
+  include_month BOOLEAN;
+  seq_num BIGINT;
+  year_part TEXT;
+  month_part TEXT;
+  code_body TEXT;
+  pattern TEXT;
+BEGIN
+  IF NEW.user_type = 'employee' THEN
+    SELECT value INTO prefix FROM app_settings WHERE key = 'employee_code_prefix';
+    SELECT value::integer INTO digits FROM app_settings WHERE key = 'employee_code_digits';
+    SELECT value INTO separator FROM app_settings WHERE key = 'employee_code_separator';
+    SELECT COALESCE(value, 'false') = 'true' INTO include_year FROM app_settings WHERE key = 'employee_code_include_year';
+    SELECT COALESCE(value, 'false') = 'true' INTO include_month FROM app_settings WHERE key = 'employee_code_include_month';
+  ELSE
+    SELECT value INTO prefix FROM app_settings WHERE key = 'client_code_prefix';
+    SELECT value::integer INTO digits FROM app_settings WHERE key = 'client_code_digits';
+    SELECT value INTO separator FROM app_settings WHERE key = 'client_code_separator';
+    SELECT COALESCE(value, 'false') = 'true' INTO include_year FROM app_settings WHERE key = 'client_code_include_year';
+    SELECT COALESCE(value, 'false') = 'true' INTO include_month FROM app_settings WHERE key = 'client_code_include_month';
+  END IF;
+
+  IF prefix IS NULL THEN prefix := CASE WHEN NEW.user_type = 'employee' THEN 'EMP' ELSE 'CLT' END; END IF;
+  IF digits IS NULL OR digits < 1 THEN digits := 5; END IF;
+  IF separator IS NULL THEN separator := '-'; END IF;
+  IF include_year IS NULL THEN include_year := false; END IF;
+  IF include_month IS NULL THEN include_month := false; END IF;
+
+  year_part := EXTRACT(YEAR FROM now())::TEXT;
+  month_part := LPAD(EXTRACT(MONTH FROM now())::INTEGER::TEXT, 2, '0');
+
+  code_body := prefix;
+  IF include_year THEN
+    code_body := code_body || separator || year_part;
+    IF include_month THEN
+      code_body := code_body || separator || month_part;
+    END IF;
+  END IF;
+
+  pattern := '^' || regexp_replace(code_body, '([.\-/])', '\\\1', 'g') || CASE WHEN include_year THEN regexp_replace(separator, '([.\-/])', '\\\1', 'g') ELSE '' END;
+
+  IF include_year THEN
+    SELECT COALESCE(MAX(
+      CAST(REGEXP_REPLACE(user_code[1], '.*[^0-9]', '', 'g') AS BIGINT)
+    ), 0) + 1
+    INTO seq_num
+    FROM public.profiles
+    WHERE user_type = NEW.user_type
+      AND user_code IS NOT NULL
+      AND array_length(user_code, 1) > 0
+      AND user_code[1] LIKE code_body || '%';
+  ELSE
+    SELECT COALESCE(MAX(
+      CAST(REGEXP_REPLACE(user_code[1], '[^0-9]', '', 'g') AS BIGINT)
+    ), 0) + 1
+    INTO seq_num
+    FROM public.profiles
+    WHERE user_type = NEW.user_type AND user_code IS NOT NULL AND array_length(user_code, 1) > 0;
+  END IF;
+
+  IF include_year THEN
+    NEW.user_code := ARRAY[code_body || separator || LPAD(seq_num::TEXT, digits, '0')];
+  ELSE
+    NEW.user_code := ARRAY[prefix || LPAD(seq_num::TEXT, digits, '0')];
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Remove duplicate triggers (keep only one)
+DROP TRIGGER IF EXISTS generate_user_code_trigger ON public.profiles;
+DROP TRIGGER IF EXISTS set_user_code_on_insert ON public.profiles;

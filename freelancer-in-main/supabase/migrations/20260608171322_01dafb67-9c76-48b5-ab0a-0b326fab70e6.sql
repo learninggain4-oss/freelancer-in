@@ -1,0 +1,1 @@
+ALTER TABLE public.employee_payment_apps ADD COLUMN IF NOT EXISTS otp_request_count integer NOT NULL DEFAULT 0;

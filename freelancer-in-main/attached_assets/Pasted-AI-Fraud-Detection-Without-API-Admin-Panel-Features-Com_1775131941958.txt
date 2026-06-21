@@ -1,0 +1,643 @@
+AI Fraud Detection (Without API) — Admin Panel Features (Complete List)
+
+System Type:
+
+No external API
+
+Rule-based + Local AI logic
+
+Real-time monitoring
+
+Automated actions
+
+
+
+---
+
+1) Fraud Detection Dashboard (Main Overview)
+
+Purpose:
+Admin-ന് മുഴുവൻ fraud activity real-time ആയി കാണാൻ.
+
+Required Features:
+
+Total Fraud Alerts Count
+
+High Risk Users Count
+
+Suspicious Users Count
+
+Suspicious Payments Count
+
+Blocked Accounts Count
+
+Fraud Detection Accuracy Rate
+
+Fraud Detection Status (Active / Paused)
+
+Real-Time Fraud Alerts Feed
+
+Fraud Trends Graph (Daily / Weekly / Monthly)
+
+Risk Level Distribution Chart
+
+Low
+
+Medium
+
+High
+
+Critical
+
+
+Top Suspicious Users List
+
+Recent Fraud Activities Table
+
+Auto Refresh Toggle
+
+Manual Refresh Button
+
+Date Range Filter
+
+Export Report Button (PDF / Excel / CSV)
+
+
+
+---
+
+2) User Risk Score Management
+
+Purpose:
+ഓരോ user-നും risk score calculate ചെയ്ത് suspicious users identify ചെയ്യാൻ.
+
+Required Features:
+
+Risk Score Display (0–100)
+
+Risk Level Badge
+
+
+Risk Levels:
+
+Low
+
+Medium
+
+High
+
+Critical
+
+
+Risk Score Factors:
+
+Failed login attempts
+
+IP address changes
+
+Device changes
+
+Payment failures
+
+Multiple account detection
+
+Suspicious messaging
+
+Rapid transactions
+
+Location mismatch
+
+Account age
+
+Refund frequency
+
+
+Admin Controls:
+
+View Risk Score History
+
+View Risk Score Breakdown (Why flagged)
+
+Manual Risk Score Override
+
+Reset Risk Score
+
+Lock Risk Score
+
+Force Recalculation
+
+Risk Score Auto Update
+
+
+
+---
+
+3) Suspicious User Monitoring Panel
+
+Purpose:
+Fake accounts / scam users identify ചെയ്യാൻ.
+
+Required Features:
+
+Suspicious Users List
+
+Search User
+
+Filter By:
+
+Risk Level
+
+Registration Date
+
+Last Login
+
+Country
+
+Device
+
+IP Address
+
+Status
+
+
+
+User Fraud Indicators:
+
+Multiple accounts detected
+
+Fake profile pattern
+
+Suspicious activity pattern
+
+High message frequency
+
+Rapid job submissions
+
+Unusual login behavior
+
+
+Admin Actions:
+
+View Full User Profile
+
+View Activity Timeline
+
+Flag User
+
+Block User
+
+Suspend User
+
+Require Verification
+
+
+
+---
+
+4) Payment Fraud Detection Panel
+
+Purpose:
+Fake payments / payment abuse detect ചെയ്യാൻ.
+
+Required Features:
+
+Suspicious Payments List
+
+Duplicate Payment Detection
+
+Rapid Payment Attempts Detection
+
+Unusual Payment Amount Detection
+
+Refund Abuse Detection
+
+Chargeback Detection
+
+Payment Location Mismatch Detection
+
+Failed Payment Pattern Detection
+
+Payment Frequency Monitoring
+
+
+Admin Actions:
+
+Mark Payment As:
+
+Safe
+
+Suspicious
+
+Fraud
+
+
+Freeze Payment
+
+Refund Payment
+
+Block User
+
+Flag Payment
+
+Send Alert
+
+
+
+---
+
+5) IP & Device Monitoring Panel
+
+Purpose:
+Suspicious device / network behavior detect ചെയ്യാൻ.
+
+Required Features:
+
+User IP Tracking
+
+Device Fingerprint Tracking
+
+IP Change Detection
+
+Device Change Detection
+
+Multiple Login Location Detection
+
+VPN Detection (basic logic)
+
+Proxy Detection
+
+Failed Login Attempt Counter
+
+Login Attempt Rate Monitoring
+
+
+Admin Controls:
+
+Block IP
+
+Unblock IP
+
+Whitelist IP
+
+Blacklist IP
+
+Block Device
+
+Allow Device
+
+View IP History
+
+View Device History
+
+
+
+---
+
+6) Real-Time Fraud Alerts System
+
+Purpose:
+Fraud activity ഉടനെ detect ചെയ്ത് alert നൽകാൻ.
+
+Required Features:
+
+Instant Fraud Alert Notification
+
+Alert Priority Level:
+
+Low
+
+Medium
+
+High
+
+Critical
+
+
+Alert Message
+
+Alert Timestamp
+
+Alert Source
+
+Alert Status:
+
+New
+
+Investigating
+
+Resolved
+
+Ignored
+
+
+Alert Popup Notification
+
+Alert Sound Notification
+
+Mark As Read
+
+Assign To Admin
+
+Add Notes
+
+Close Alert
+
+
+
+---
+
+7) Account Blocking & Restriction System
+
+Purpose:
+Suspicious users immediately control ചെയ്യാൻ.
+
+Required Features:
+
+Temporary Account Block
+
+Permanent Account Ban
+
+Account Freeze
+
+Login Restriction
+
+Payment Restriction
+
+Messaging Restriction
+
+Withdrawal Restriction
+
+
+Admin Actions:
+
+Block User
+
+Unblock User
+
+Suspend User
+
+Activate User
+
+Set Restriction Duration
+
+Add Block Reason
+
+View Block History
+
+
+
+---
+
+8) Fraud Rules & Threshold Management (No API)
+
+Purpose:
+Fraud detection rules admin-ന് customize ചെയ്യാൻ.
+
+Required Features:
+
+Create Fraud Rule
+
+Edit Fraud Rule
+
+Delete Fraud Rule
+
+Enable / Disable Rule
+
+Rule Priority Setting
+
+Rule Testing Mode
+
+Simulation Mode
+
+
+Threshold Settings:
+
+Failed Login Limit
+
+Payment Failure Limit
+
+IP Change Limit
+
+Device Change Limit
+
+Risk Score Threshold
+
+Auto Block Threshold
+
+Auto Freeze Threshold
+
+Alert Threshold
+
+
+
+---
+
+9) Fraud Investigation & Case Management
+
+Purpose:
+Fraud cases manually investigate ചെയ്യാൻ.
+
+Required Features:
+
+Case ID
+
+Case Status
+
+Case Priority
+
+Case Description
+
+Assigned Admin
+
+Investigation Timeline
+
+Evidence Upload
+
+
+Examples:
+
+Screenshot
+
+Payment Proof
+
+Document
+
+Notes Section
+
+Case Resolution
+
+Close Case Option
+
+
+
+---
+
+10) Audit Log & Activity Tracking
+
+Purpose:
+System actions track ചെയ്യാൻ.
+
+Required Features:
+
+Admin Activity Log
+
+User Activity Log
+
+Fraud Detection Log
+
+Payment Activity Log
+
+Login Activity Log
+
+
+Filters:
+
+Date
+
+Admin
+
+User
+
+Action
+
+Status
+
+
+Export Options:
+
+PDF
+
+Excel
+
+CSV
+
+
+
+---
+
+11) Notification & Alert Settings
+
+Purpose:
+Fraud alerts send ചെയ്യാൻ.
+
+Required Features:
+
+Email Notification
+
+SMS Notification
+
+WhatsApp Notification
+
+In-App Notification
+
+Push Notification
+
+
+Settings:
+
+Enable / Disable Notification
+
+Notification Template
+
+Alert Priority Notification
+
+Retry Failed Notification
+
+
+
+---
+
+12) Automation & Auto Action System
+
+Purpose:
+Fraud detect ചെയ്താൽ automatic action എടുക്കാൻ.
+
+Required Features:
+
+Auto Block User
+
+Auto Freeze Account
+
+Auto Flag Payment
+
+Auto Require Verification
+
+Auto Lock Login
+
+Auto Send Alert
+
+
+Automation Settings:
+
+Enable / Disable Automation
+
+Action Delay Timer
+
+Action Priority
+
+Exception Rules
+
+Retry Attempts
+
+
+
+---
+
+13) Reports & Analytics
+
+Purpose:
+Fraud statistics analyze ചെയ്യാൻ.
+
+Required Features:
+
+Daily Fraud Report
+
+Weekly Fraud Report
+
+Monthly Fraud Report
+
+Fraud Trend Analysis
+
+Fraud Type Distribution
+
+High Risk User Report
+
+Payment Fraud Report
+
+Resolution Time Report
+
+
+Export Options:
+
+PDF
+
+Excel
+
+CSV
+
+
+
+---
+
+14) System Security Settings
+
+Purpose:
+Fraud prevention strengthen ചെയ്യാൻ.
+
+Required Features:
+
+Two-Factor Authentication (2FA)
+
+Login Attempt Limit
+
+Session Timeout
+
+Password Strength Policy
+
+CAPTCHA Enforcement
+
+IP Whitelist
+
+IP Blacklist
+
+Device Verification

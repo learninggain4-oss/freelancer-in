@@ -1,0 +1,43 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Generated exports and logs
+server/exports/*.xlsx
+logs/*.log
+
+# Vite temp files
+vite.config.ts.timestamp-*.mjs
+
+# Supabase CLI temp files
+supabase/.temp/
+
+# Replit internal
+.local/
+
+# Bun lock (use npm/yarn only)
+bun.lock
+
+# TypeScript build cache
+tsconfig.tsbuildinfo

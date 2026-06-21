@@ -1,0 +1,9 @@
+tgname,trigger_def
+generate_user_code_trigger,CREATE TRIGGER generate_user_code_trigger BEFORE INSERT ON public.profiles FOR EACH ROW EXECUTE FUNCTION generate_user_code()
+generate_wallet_number_trigger,CREATE TRIGGER generate_wallet_number_trigger BEFORE INSERT ON public.profiles FOR EACH ROW EXECUTE FUNCTION generate_wallet_number()
+set_referral_code,CREATE TRIGGER set_referral_code BEFORE INSERT ON public.profiles FOR EACH ROW EXECUTE FUNCTION generate_referral_code()
+set_user_code_on_insert,CREATE TRIGGER set_user_code_on_insert BEFORE INSERT ON public.profiles FOR EACH ROW EXECUTE FUNCTION generate_user_code()
+trg_referral_signup_bonus,CREATE TRIGGER trg_referral_signup_bonus AFTER UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION credit_referral_signup_bonus()
+trigger_award_coins_complete_profile,CREATE TRIGGER trigger_award_coins_complete_profile AFTER UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION award_coins_complete_profile()
+trigger_generate_user_code,CREATE TRIGGER trigger_generate_user_code BEFORE INSERT ON public.profiles FOR EACH ROW EXECUTE FUNCTION generate_user_code()
+update_profiles_updated_at,CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()

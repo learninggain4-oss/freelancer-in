@@ -1,0 +1,73 @@
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+import { VitePWA } from "vite-plugin-pwa";
+
+export default defineConfig(({ mode }) => ({
+  server: {
+    host: "0.0.0.0",
+    port: 5000,
+    allowedHosts: true,
+    hmr: {
+      overlay: false,
+    },
+    proxy: {
+      "/functions/v1": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+  plugins: [
+    react(),
+    VitePWA({
+      // "prompt" prevents the service worker from auto-activating and forcing
+      // the page to reload while the user is interacting with the app.
+      registerType: "prompt",
+      includeAssets: ["favicon.ico", "pwa-icon-512.png"],
+      devOptions: {
+        enabled: false,
+      },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        navigateFallbackDenylist: [/^\/~oauth/],
+        runtimeCaching: [],
+        clientsClaim: false,
+        skipWaiting: false,
+      },
+      manifest: {
+        name: "Freelancer",
+        short_name: "Freelancer",
+        description: "Connect freelancers with clients for project collaboration",
+        start_url: "/",
+        display: "standalone",
+        background_color: "#ffffff",
+        theme_color: "#2563EB",
+        orientation: "portrait-primary",
+        icons: [
+          {
+            src: "/pwa-icon-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any maskable",
+          },
+          {
+            src: "/favicon.ico",
+            sizes: "64x64",
+            type: "image/x-icon",
+          },
+        ],
+      },
+    }),
+  ].filter(Boolean),
+  define: {
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    "import.meta.env.VITE_SUPABASE_URL": JSON.stringify("https://maysttckdfnnzvfeujaj.supabase.co"),
+  },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+}));

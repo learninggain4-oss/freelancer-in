@@ -1,0 +1,205 @@
+Create an Outstanding Level Admin Panel Layout with a modern, professional, and production-ready UI/UX design.
+The layout must be scalable, responsive, secure, and suitable for a real-world Freelancer platform.
+
+1) Overall Layout Structure
+
+Design a complete Admin Panel layout with the following structure:
+
+- Fixed Top Header (Navbar)
+- Collapsible Left Sidebar Navigation
+- Main Content Area
+- Right-side Quick Actions / Notifications Panel (Optional)
+- Sticky Footer
+
+The layout must support:
+
+- Desktop
+- Tablet
+- Mobile (Responsive Design)
+
+---
+
+2) Header (Top Navigation Bar)
+
+Include the following components in the header:
+
+- Logo (Left side)
+- Global Search Bar
+- Notifications Icon (Bell)
+- Messages Icon
+- Quick Create Button (+)
+- User Profile Dropdown:
+  - Profile
+  - Settings
+  - Logout
+- Dark Mode / Light Mode Toggle
+- Language Selector
+
+Add:
+
+- Sticky header
+- Smooth animations
+- Real-time notification badge counter
+
+---
+
+3) Sidebar (Left Navigation Menu)
+
+Create a collapsible sidebar with icons and labels.
+
+Main Menu Items:
+
+Dashboard
+Users Management
+Jobs Management
+Payments
+Wallet System
+Fraud Detection
+Reports & Analytics
+Support / Help Desk
+Notifications
+Content Management
+System Settings
+Security & Permissions
+Audit Logs
+Integrations
+Backup & Restore
+Logout
+
+Features required:
+
+- Active menu highlight
+- Hover animation
+- Expand / Collapse submenu
+- Role-based visibility
+- Scrollable sidebar
+
+---
+
+4) Dashboard Layout (Main Screen)
+
+Design a modern dashboard with:
+
+Top Statistics Cards:
+
+- Total Users
+- Active Jobs
+- Total Revenue
+- Pending Withdrawals
+- Fraud Alerts
+- Support Tickets
+
+Charts Section:
+
+- Revenue Chart
+- User Growth Chart
+- Job Activity Chart
+- Fraud Detection Graph
+
+Recent Activity Section:
+
+- Latest Users
+- Recent Jobs
+- Recent Payments
+- Recent Support Tickets
+
+Add:
+
+- Real-time data updates
+- Smooth chart animations
+- Responsive grid layout
+
+---
+
+5) Content Area Design
+
+The main content area must support:
+
+- Tables
+- Forms
+- Cards
+- Modals
+- Tabs
+- Filters
+- Pagination
+- Search
+- Sorting
+- Bulk Actions
+
+UI Requirements:
+
+- Clean spacing
+- Modern typography
+- Professional color palette
+- Smooth transitions
+- Loading skeleton animation
+
+---
+
+6) Right Panel (Quick Actions / Alerts)
+
+Optional right-side panel with:
+
+- Fraud Alerts
+- System Warnings
+- Pending Approvals
+- Recent Notifications
+- Quick Actions Buttons
+
+---
+
+7) Footer
+
+Include:
+
+- Version number
+- System status
+- Copyright text
+- Last updated time
+
+Footer must be sticky and minimal.
+
+---
+
+8) UI/UX Design Style Requirements
+
+Design must follow:
+
+Modern SaaS style
+Glassmorphism or Soft UI
+Minimalistic layout
+High readability
+Professional spacing
+Consistent icon system
+
+Add:
+
+- Smooth animations
+- Hover effects
+- Micro-interactions
+- Loading animations
+
+---
+
+9) Security & Performance Requirements
+
+The layout must support:
+
+- Role-based access control
+- Secure session handling
+- Fast loading performance
+- Mobile responsiveness
+- Accessibility standards
+
+---
+
+10) Final Requirement
+
+This Admin Panel layout must be:
+
+Outstanding Level
+Enterprise Grade
+Production Ready
+Fully Responsive
+Modern UI/UX Design
+Scalable Architecture

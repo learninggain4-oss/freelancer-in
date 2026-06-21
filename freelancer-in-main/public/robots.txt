@@ -1,0 +1,33 @@
+User-agent: *
+Allow: /
+Disallow: /employee/
+Disallow: /client/
+Disallow: /admin/
+Disallow: /complete-profile
+Disallow: /verification-pending
+Disallow: /reset-password
+Disallow: /forgot-password
+Crawl-delay: 1
+
+User-agent: Googlebot
+Allow: /
+Disallow: /employee/
+Disallow: /client/
+Disallow: /admin/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /employee/
+Disallow: /client/
+Disallow: /admin/
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+Sitemap: https://www.freelan.space/sitemap.xml

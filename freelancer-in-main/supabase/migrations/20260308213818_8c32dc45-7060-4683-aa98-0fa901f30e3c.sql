@@ -1,0 +1,1 @@
+INSERT INTO app_settings (key, value) VALUES ('coin_conversion_rate', '100') ON CONFLICT (key) DO NOTHING;

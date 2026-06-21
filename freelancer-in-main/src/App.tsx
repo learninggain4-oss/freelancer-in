@@ -1,0 +1,931 @@
+import { lazy, Suspense, useEffect } from "react";
+import "@/lib/pwa"; // register beforeinstallprompt listener at app boot
+import { supabase } from "@/integrations/supabase/client";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import AppLayout from "@/components/layout/AppLayout";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import LoadingScreen from "@/components/LoadingScreen";
+
+// Lazy loaded pages
+const Index = lazy(() => import("./pages/Index"));
+const Login = lazy(() => import("./pages/Login"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
+const FreelancerRegister = lazy(() => import("./pages/register/FreelancerRegister"));
+const EmployerRegisterComp = lazy(() => import("./pages/register/EmployerRegister"));
+const VerificationPending = lazy(() => import("./pages/VerificationPending"));
+const FreelancerDashboard = lazy(() => import("./pages/freelancer/FreelancerDashboard"));
+const FreelancerProjects = lazy(() => import("./pages/freelancer/FreelancerProjects"));
+const FreelancerRequests = lazy(() => import("./pages/freelancer/FreelancerRequests"));
+const FreelancerWallet = lazy(() => import("./pages/freelancer/FreelancerWallet"));
+const FreelancerAttendance = lazy(() => import("./pages/freelancer/FreelancerAttendance"));
+const FreelancerProfile = lazy(() => import("./pages/freelancer/FreelancerProfile"));
+const FreelancerBids = lazy(() => import("./pages/freelancer/FreelancerBids"));
+const FreelancerEarnings = lazy(() => import("./pages/freelancer/FreelancerEarnings"));
+const FreelancerReviews = lazy(() => import("./pages/freelancer/FreelancerReviews"));
+const FreelancerBadges = lazy(() => import("./pages/freelancer/FreelancerBadges"));
+const FreelancerPortfolio = lazy(() => import("./pages/freelancer/FreelancerPortfolio"));
+const EmployerDashboard = lazy(() => import("./pages/employer/EmployerDashboard"));
+const EmployerWallet = lazy(() => import("./pages/employer/EmployerWallet"));
+const EmployerProjects = lazy(() => import("./pages/employer/EmployerProjects"));
+const CreateProject = lazy(() => import("./pages/employer/CreateProject"));
+const EmployerWithdrawals = lazy(() => import("./pages/employer/EmployerWithdrawals"));
+const EmployerProfile = lazy(() => import("./pages/employer/EmployerProfile"));
+const EmployerAttendance = lazy(() => import("./pages/employer/EmployerAttendance"));
+const ChatRoom = lazy(() => import("./components/chat/ChatRoom"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const InstallApp = lazy(() => import("./pages/InstallApp"));
+const AdminPreview = lazy(() => import("./pages/admin/AdminPreview"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminAdmins = lazy(() => import("./pages/admin/AdminAdmins"));
+const AdminInvite = lazy(() => import("./pages/admin/AdminInvite"));
+const AdminEmployees = lazy(() => import("./pages/admin/AdminEmployees"));
+const AdminClients = lazy(() => import("./pages/admin/AdminClients"));
+const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
+const AdminDeposits = lazy(() => import("./pages/admin/AdminDeposits"));
+const AdminFreelancer = lazy(() => import("./pages/admin/AdminFreelancer"));
+const AdminEmployers = lazy(() => import("./pages/admin/AdminEmployers"));
+const AdminDepositRequests = lazy(() => import("./pages/admin/AdminDepositRequests"));
+const AdminVerifications = lazy(() => import("./pages/admin/AdminVerifications"));
+const AdminBankVerifications = lazy(() => import("./pages/admin/AdminBankVerifications"));
+const AdminMobileVerifications = lazy(() => import("./pages/admin/AdminMobileVerifications"));
+const AdminUpiKycManagement = lazy(() => import("./pages/admin/AdminUpiKycManagement"));
+const AdminUpiKycSchedule = lazy(() => import("./pages/admin/AdminUpiKycSchedule"));
+const AdminProfileEdit = lazy(() => import("./pages/admin/AdminProfileEdit"));
+const AdminProfileEdits = lazy(() => import("./pages/admin/AdminProfileEdits"));
+const AdminLegalDocuments = lazy(() => import("./pages/admin/AdminLegalDocuments"));
+const AdminServiceManagement = lazy(() => import("./pages/admin/AdminServiceManagement"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminAnnouncements = lazy(() => import("./pages/admin/AdminAnnouncements"));
+const AdminJobs = lazy(() => import("./pages/admin/AdminJobs"));
+const AdminRecoveryRequests = lazy(() => import("./pages/admin/AdminRecoveryRequests"));
+const AdminRecoveryChat = lazy(() => import("./pages/admin/AdminRecoveryChat"));
+const AdminWalletManagement = lazy(() => import("./pages/admin/AdminWalletManagement"));
+const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
+const LegalDocument = lazy(() => import("./pages/LegalDocument"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
+const AccountSettings = lazy(() => import("./pages/AccountSettings"));
+const SecurityMpinPage = lazy(() => import("./pages/settings/SecurityMpinPage"));
+const SecurityTotpPage = lazy(() => import("./pages/settings/SecurityTotpPage"));
+const SecurityWithdrawalPasswordPage = lazy(() => import("./pages/settings/SecurityWithdrawalPasswordPage"));
+const NotificationSettings = lazy(() => import("./pages/NotificationSettings"));
+const GetFree = lazy(() => import("./pages/GetFree"));
+const GetCoins = lazy(() => import("./pages/GetCoins"));
+const AppPage = lazy(() => import("./pages/AppPage"));
+const FreelancerSupportChat = lazy(() => import("./pages/freelancer/FreelancerSupportChat"));
+const HelpSupport = lazy(() => import("./pages/HelpSupport"));
+const AdminHelpSupport = lazy(() => import("./pages/admin/AdminHelpSupport"));
+const AdminSupportReporting = lazy(() => import("./pages/admin/AdminSupportReporting"));
+const AdminPaymentMethods = lazy(() => import("./pages/admin/AdminPaymentMethods"));
+const AdminCountdowns = lazy(() => import("./pages/admin/AdminCountdowns"));
+const AdminValidation = lazy(() => import("./pages/admin/AdminValidation"));
+const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"));
+const AdminBranding = lazy(() => import("./pages/admin/AdminBranding"));
+const AdminReset    = lazy(() => import("./pages/admin/AdminReset"));
+const AdminTestimonials = lazy(() => import("./pages/admin/AdminTestimonials"));
+const AdminReferrals = lazy(() => import("./pages/admin/AdminReferrals"));
+const AdminOnlineStatus = lazy(() => import("./pages/admin/AdminOnlineStatus"));
+const AdminHeroSlides = lazy(() => import("./pages/admin/AdminHeroSlides"));
+const AdminVisitors = lazy(() => import("./pages/admin/AdminVisitors"));
+const AdminWallet = lazy(() => import("./pages/admin/AdminWallet"));
+const AdminWalletTransactions = lazy(() => import("./pages/admin/AdminWalletTransactions"));
+const AdminAttendance = lazy(() => import("./pages/admin/AdminAttendance"));
+const AdminBanks = lazy(() => import("./pages/admin/AdminBanks"));
+const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
+const AdminWalletTypes = lazy(() => import("./pages/admin/AdminWalletTypes"));
+const AdminWalletUpgrades = lazy(() => import("./pages/admin/AdminWalletUpgrades"));
+const AdminAutoResponses = lazy(() => import("./pages/admin/AdminAutoResponses"));
+const AdminIpBlocking = lazy(() => import("./pages/admin/AdminIpBlocking"));
+const AdminPwaInstalls = lazy(() => import("./pages/admin/AdminPwaInstalls"));
+const AdminSafetyCenter = lazy(() => import("./pages/admin/AdminSafetyCenter"));
+const AdminAuditLogs = lazy(() => import("./pages/admin/AdminAuditLogs"));
+const AdminRBAC = lazy(() => import("./pages/admin/AdminRBAC"));
+const AdminDatabaseManager = lazy(() => import("./pages/admin/AdminDatabaseManager"));
+const AdminEnvVars = lazy(() => import("./pages/admin/AdminEnvVars"));
+const AdminServerMonitor = lazy(() => import("./pages/admin/AdminServerMonitor"));
+const AdminBackups = lazy(() => import("./pages/admin/AdminBackups"));
+const AdminApprovalCenter = lazy(() => import("./pages/admin/AdminApprovalCenter"));
+const AdminDataPrivacy = lazy(() => import("./pages/admin/AdminDataPrivacy"));
+const AdminAlertSystem = lazy(() => import("./pages/admin/AdminAlertSystem"));
+const AdminVersionControl = lazy(() => import("./pages/admin/AdminVersionControl"));
+const AdminSessionSecurity = lazy(() => import("./pages/admin/AdminSessionSecurity"));
+const AdminDataMigration = lazy(() => import("./pages/admin/AdminDataMigration"));
+const AdminJobQueue = lazy(() => import("./pages/admin/AdminJobQueue"));
+const AdminTransactionControl = lazy(() => import("./pages/admin/AdminTransactionControl"));
+const AdminResourceMonitor = lazy(() => import("./pages/admin/AdminResourceMonitor"));
+const AdminServiceResilience = lazy(() => import("./pages/admin/AdminServiceResilience"));
+const AdminDataRetention = lazy(() => import("./pages/admin/AdminDataRetention"));
+const AdminBulkOperations = lazy(() => import("./pages/admin/AdminBulkOperations"));
+const AdminReportGenerator = lazy(() => import("./pages/admin/AdminReportGenerator"));
+const AdminSecretsManager = lazy(() => import("./pages/admin/AdminSecretsManager"));
+const AdminKnowledgeBase = lazy(() => import("./pages/admin/AdminKnowledgeBase"));
+const AdminCacheManager = lazy(() => import("./pages/admin/AdminCacheManager"));
+const AdminApiManager = lazy(() => import("./pages/admin/AdminApiManager"));
+const AdminSessionManager = lazy(() => import("./pages/admin/AdminSessionManager"));
+const AdminNotificationCenter = lazy(() => import("./pages/admin/AdminNotificationCenter"));
+const AdminFileManager = lazy(() => import("./pages/admin/AdminFileManager"));
+const AdminHighAvailability = lazy(() => import("./pages/admin/AdminHighAvailability"));
+const AdminDataIntegrity = lazy(() => import("./pages/admin/AdminDataIntegrity"));
+const AdminNetworkMonitor = lazy(() => import("./pages/admin/AdminNetworkMonitor"));
+const AdminDeadlockProtection = lazy(() => import("./pages/admin/AdminDeadlockProtection"));
+const AdminNotificationDelivery = lazy(() => import("./pages/admin/AdminNotificationDelivery"));
+const AdminChangeApproval = lazy(() => import("./pages/admin/AdminChangeApproval"));
+const AdminTimeSyncSystem = lazy(() => import("./pages/admin/AdminTimeSyncSystem"));
+const AdminBackupVerification = lazy(() => import("./pages/admin/AdminBackupVerification"));
+const AdminLockoutRecovery = lazy(() => import("./pages/admin/AdminLockoutRecovery"));
+const AdminSystemResources = lazy(() => import("./pages/admin/AdminSystemResources"));
+const AdminApiValidation = lazy(() => import("./pages/admin/AdminApiValidation"));
+const AdminSessionManagement = lazy(() => import("./pages/admin/AdminSessionManagement"));
+const AdminPermissionSync = lazy(() => import("./pages/admin/AdminPermissionSync"));
+const AdminLogManagement = lazy(() => import("./pages/admin/AdminLogManagement"));
+const AdminDataImport = lazy(() => import("./pages/admin/AdminDataImport"));
+const AdminConfigRollback = lazy(() => import("./pages/admin/AdminConfigRollback"));
+const AdminMonitoringRedundancy = lazy(() => import("./pages/admin/AdminMonitoringRedundancy"));
+const AdminDataSync = lazy(() => import("./pages/admin/AdminDataSync"));
+const AdminSecurityPatch = lazy(() => import("./pages/admin/AdminSecurityPatch"));
+const AdminTokenManagement = lazy(() => import("./pages/admin/AdminTokenManagement"));
+const AdminDisasterRecovery = lazy(() => import("./pages/admin/AdminDisasterRecovery"));
+const AdminFraudDashboard = lazy(() => import("./pages/admin/AdminFraudDashboard"));
+const AdminUserRiskScore = lazy(() => import("./pages/admin/AdminUserRiskScore"));
+const AdminSuspiciousUsers = lazy(() => import("./pages/admin/AdminSuspiciousUsers"));
+const AdminPaymentFraud = lazy(() => import("./pages/admin/AdminPaymentFraud"));
+const AdminIPDeviceMonitor = lazy(() => import("./pages/admin/AdminIPDeviceMonitor"));
+const AdminFraudAlerts = lazy(() => import("./pages/admin/AdminFraudAlerts"));
+const AdminAccountRestrictions = lazy(() => import("./pages/admin/AdminAccountRestrictions"));
+const AdminFraudRules = lazy(() => import("./pages/admin/AdminFraudRules"));
+const AdminFraudCases = lazy(() => import("./pages/admin/AdminFraudCases"));
+const AdminFraudAuditLog = lazy(() => import("./pages/admin/AdminFraudAuditLog"));
+const AdminFraudNotifications = lazy(() => import("./pages/admin/AdminFraudNotifications"));
+const AdminFraudAutomation = lazy(() => import("./pages/admin/AdminFraudAutomation"));
+const AdminFraudReports = lazy(() => import("./pages/admin/AdminFraudReports"));
+const AdminFraudSecuritySettings = lazy(() => import("./pages/admin/AdminFraudSecuritySettings"));
+const AdminConfigManagement = lazy(() => import("./pages/admin/AdminConfigManagement"));
+const AdminMaintenanceCenter = lazy(() => import("./pages/admin/AdminMaintenanceCenter"));
+const AdminRateLimiting = lazy(() => import("./pages/admin/AdminRateLimiting"));
+const AdminScheduler = lazy(() => import("./pages/admin/AdminScheduler"));
+const AdminPermissionValidator = lazy(() => import("./pages/admin/AdminPermissionValidator"));
+const AdminExportControl = lazy(() => import("./pages/admin/AdminExportControl"));
+const AdminVendorManager = lazy(() => import("./pages/admin/AdminVendorManager"));
+const AdminAlertVisibility = lazy(() => import("./pages/admin/AdminAlertVisibility"));
+const AdminApiMonitor = lazy(() => import("./pages/admin/AdminApiMonitor"));
+const AdminApiRateLimiting = lazy(() => import("./pages/admin/AdminApiRateLimiting"));
+const AdminApiSchema = lazy(() => import("./pages/admin/AdminApiSchema"));
+const AdminApiTimeout = lazy(() => import("./pages/admin/AdminApiTimeout"));
+const AdminAutoLogout = lazy(() => import("./pages/admin/AdminAutoLogout"));
+const AdminBackgroundJobMonitor = lazy(() => import("./pages/admin/AdminBackgroundJobMonitor"));
+const AdminBackupStorage = lazy(() => import("./pages/admin/AdminBackupStorage"));
+const AdminBulkNotification = lazy(() => import("./pages/admin/AdminBulkNotification"));
+const AdminCacheManagement = lazy(() => import("./pages/admin/AdminCacheManagement"));
+const AdminCleanupSafety = lazy(() => import("./pages/admin/AdminCleanupSafety"));
+const AdminComplianceManager = lazy(() => import("./pages/admin/AdminComplianceManager"));
+const AdminComprehensiveAudit = lazy(() => import("./pages/admin/AdminComprehensiveAudit"));
+const AdminConfigDrift = lazy(() => import("./pages/admin/AdminConfigDrift"));
+const AdminCronJobs = lazy(() => import("./pages/admin/AdminCronJobs"));
+const AdminCsrfProtection = lazy(() => import("./pages/admin/AdminCsrfProtection"));
+const AdminDashboardAccuracy = lazy(() => import("./pages/admin/AdminDashboardAccuracy"));
+const AdminDataArchival = lazy(() => import("./pages/admin/AdminDataArchival"));
+const AdminDbIndexing = lazy(() => import("./pages/admin/AdminDbIndexing"));
+const AdminDependencyManager = lazy(() => import("./pages/admin/AdminDependencyManager"));
+const AdminDeploymentMonitor = lazy(() => import("./pages/admin/AdminDeploymentMonitor"));
+const AdminDnsDomain = lazy(() => import("./pages/admin/AdminDnsDomain"));
+const AdminDuplicateAccounts = lazy(() => import("./pages/admin/AdminDuplicateAccounts"));
+const AdminEmailDeliverability = lazy(() => import("./pages/admin/AdminEmailDeliverability"));
+const AdminEncryptionKeys = lazy(() => import("./pages/admin/AdminEncryptionKeys"));
+const AdminExportFormat = lazy(() => import("./pages/admin/AdminExportFormat"));
+const AdminExternalApiMonitor = lazy(() => import("./pages/admin/AdminExternalApiMonitor"));
+const AdminExternalServiceFailover = lazy(() => import("./pages/admin/AdminExternalServiceFailover"));
+const AdminFeatureDependency = lazy(() => import("./pages/admin/AdminFeatureDependency"));
+const AdminFeatureFlags = lazy(() => import("./pages/admin/AdminFeatureFlags"));
+const AdminFeatureToggleConflict = lazy(() => import("./pages/admin/AdminFeatureToggleConflict"));
+const AdminFilePathManagement = lazy(() => import("./pages/admin/AdminFilePathManagement"));
+const AdminFilePermissions = lazy(() => import("./pages/admin/AdminFilePermissions"));
+const AdminFileUploadValidation = lazy(() => import("./pages/admin/AdminFileUploadValidation"));
+const AdminGatewayFailover = lazy(() => import("./pages/admin/AdminGatewayFailover"));
+const AdminJobScheduler = lazy(() => import("./pages/admin/AdminJobScheduler"));
+const AdminLocalization = lazy(() => import("./pages/admin/AdminLocalization"));
+const AdminMaintenanceMode = lazy(() => import("./pages/admin/AdminMaintenanceMode"));
+const AdminModuleDependency = lazy(() => import("./pages/admin/AdminModuleDependency"));
+const AdminMultiAdminConflict = lazy(() => import("./pages/admin/AdminMultiAdminConflict"));
+const AdminNotificationControl = lazy(() => import("./pages/admin/AdminNotificationControl"));
+const AdminPaginationValidator = lazy(() => import("./pages/admin/AdminPaginationValidator"));
+const AdminPerformanceMonitor = lazy(() => import("./pages/admin/AdminPerformanceMonitor"));
+const AdminQueryValidation = lazy(() => import("./pages/admin/AdminQueryValidation"));
+const AdminQueueManagement = lazy(() => import("./pages/admin/AdminQueueManagement"));
+const AdminRateLimitConfig = lazy(() => import("./pages/admin/AdminRateLimitConfig"));
+const AdminRbacSecurity = lazy(() => import("./pages/admin/AdminRbacSecurity"));
+const AdminReportValidation = lazy(() => import("./pages/admin/AdminReportValidation"));
+const AdminRestoreVersionControl = lazy(() => import("./pages/admin/AdminRestoreVersionControl"));
+const AdminRoleEscalation = lazy(() => import("./pages/admin/AdminRoleEscalation"));
+const AdminSearchIndex = lazy(() => import("./pages/admin/AdminSearchIndex"));
+const AdminSecureAuditLog = lazy(() => import("./pages/admin/AdminSecureAuditLog"));
+const AdminSecureSessionMgr = lazy(() => import("./pages/admin/AdminSecureSessionMgr"));
+const AdminSessionExpiry = lazy(() => import("./pages/admin/AdminSessionExpiry"));
+const AdminSessionStorage = lazy(() => import("./pages/admin/AdminSessionStorage"));
+const AdminSessionSync = lazy(() => import("./pages/admin/AdminSessionSync"));
+const AdminSmartAlertManager = lazy(() => import("./pages/admin/AdminSmartAlertManager"));
+const AdminSoftDeleteCleanup = lazy(() => import("./pages/admin/AdminSoftDeleteCleanup"));
+const AdminSslMonitor = lazy(() => import("./pages/admin/AdminSslMonitor"));
+const AdminStorageManager = lazy(() => import("./pages/admin/AdminStorageManager"));
+const AdminTimeSlotManagement = lazy(() => import("./pages/admin/AdminTimeSlotManagement"));
+const AdminTimezoneManager = lazy(() => import("./pages/admin/AdminTimezoneManager"));
+const AdminTrafficManagement = lazy(() => import("./pages/admin/AdminTrafficManagement"));
+const AdminWebhookMonitor = lazy(() => import("./pages/admin/AdminWebhookMonitor"));
+const AdminXssProtection = lazy(() => import("./pages/admin/AdminXssProtection"));
+const AdminCommissionManagement = lazy(() => import("./pages/admin/AdminCommissionManagement"));
+const AdminDisputeCenter = lazy(() => import("./pages/admin/AdminDisputeCenter"));
+const AdminBadgeManagement = lazy(() => import("./pages/admin/AdminBadgeManagement"));
+const AdminCoinManagement = lazy(() => import("./pages/admin/AdminCoinManagement"));
+const AdminGstTaxReports = lazy(() => import("./pages/admin/AdminGstTaxReports"));
+const AdminPromoManagement = lazy(() => import("./pages/admin/AdminPromoManagement"));
+const AdminProjectAnalytics = lazy(() => import("./pages/admin/AdminProjectAnalytics"));
+const AdminContentModeration = lazy(() => import("./pages/admin/AdminContentModeration"));
+const AdminAffiliateManagement = lazy(() => import("./pages/admin/AdminAffiliateManagement"));
+const AdminFeeConfiguration = lazy(() => import("./pages/admin/AdminFeeConfiguration"));
+const AdminSkillCategoryManagement = lazy(() => import("./pages/admin/AdminSkillCategoryManagement"));
+const AdminKycDashboard = lazy(() => import("./pages/admin/AdminKycDashboard"));
+const AdminSubscriptionManagement = lazy(() => import("./pages/admin/AdminSubscriptionManagement"));
+const AdminRevenueAnalytics = lazy(() => import("./pages/admin/AdminRevenueAnalytics"));
+const AdminMilestoneManagement = lazy(() => import("./pages/admin/AdminMilestoneManagement"));
+const AdminInvoiceManagement = lazy(() => import("./pages/admin/AdminInvoiceManagement"));
+const AdminReviewManagement = lazy(() => import("./pages/admin/AdminReviewManagement"));
+const AdminEmailCampaigns = lazy(() => import("./pages/admin/AdminEmailCampaigns"));
+const AdminPayoutSchedule = lazy(() => import("./pages/admin/AdminPayoutSchedule"));
+const AdminMobileAppManagement = lazy(() => import("./pages/admin/AdminMobileAppManagement"));
+const AdminWaitlistManagement = lazy(() => import("./pages/admin/AdminWaitlistManagement"));
+const AdminSlaReports = lazy(() => import("./pages/admin/AdminSlaReports"));
+const AdminTdsManagement = lazy(() => import("./pages/admin/AdminTdsManagement"));
+const AdminTalentShowcase = lazy(() => import("./pages/admin/AdminTalentShowcase"));
+const AdminFreelancerLevels = lazy(() => import("./pages/admin/AdminFreelancerLevels"));
+const AdminChatMonitoring = lazy(() => import("./pages/admin/AdminChatMonitoring"));
+const AdminPanVerification = lazy(() => import("./pages/admin/AdminPanVerification"));
+const AdminCommissionTiers = lazy(() => import("./pages/admin/AdminCommissionTiers"));
+const AdminBiddingRules = lazy(() => import("./pages/admin/AdminBiddingRules"));
+const AdminBannerManager = lazy(() => import("./pages/admin/AdminBannerManager"));
+const AdminHolidayCalendar = lazy(() => import("./pages/admin/AdminHolidayCalendar"));
+const AdminRateCards = lazy(() => import("./pages/admin/AdminRateCards"));
+const AdminActivityLog = lazy(() => import("./pages/admin/AdminActivityLog"));
+const AdminAiFraudDetection = lazy(() => import("./pages/admin/AdminAiFraudDetection"));
+const AdminSmartMatchAlgorithm = lazy(() => import("./pages/admin/AdminSmartMatchAlgorithm"));
+const AdminSentimentAnalysis = lazy(() => import("./pages/admin/AdminSentimentAnalysis"));
+const AdminSpamDetection = lazy(() => import("./pages/admin/AdminSpamDetection"));
+const AdminCohortAnalysis = lazy(() => import("./pages/admin/AdminCohortAnalysis"));
+const AdminFunnelAnalytics = lazy(() => import("./pages/admin/AdminFunnelAnalytics"));
+const AdminRevenueForecasting = lazy(() => import("./pages/admin/AdminRevenueForecasting"));
+const AdminGeographicAnalytics = lazy(() => import("./pages/admin/AdminGeographicAnalytics"));
+const AdminPeakHourMonitor = lazy(() => import("./pages/admin/AdminPeakHourMonitor"));
+const AdminPartnerReseller = lazy(() => import("./pages/admin/AdminPartnerReseller"));
+const AdminB2BClients = lazy(() => import("./pages/admin/AdminB2BClients"));
+const AdminAffiliatePayouts = lazy(() => import("./pages/admin/AdminAffiliatePayouts"));
+const AdminReferralLeaderboard = lazy(() => import("./pages/admin/AdminReferralLeaderboard"));
+const AdminMarketplaceTrends = lazy(() => import("./pages/admin/AdminMarketplaceTrends"));
+const AdminContractTemplates = lazy(() => import("./pages/admin/AdminContractTemplates"));
+const AdminNdaManagement = lazy(() => import("./pages/admin/AdminNdaManagement"));
+const AdminGdprCompliance = lazy(() => import("./pages/admin/AdminGdprCompliance"));
+const AdminGrievanceRedressal = lazy(() => import("./pages/admin/AdminGrievanceRedressal"));
+const AdminCourtOrders = lazy(() => import("./pages/admin/AdminCourtOrders"));
+const AdminSkillAssessment = lazy(() => import("./pages/admin/AdminSkillAssessment"));
+const AdminPortfolioReview = lazy(() => import("./pages/admin/AdminPortfolioReview"));
+const AdminTimeTracking = lazy(() => import("./pages/admin/AdminTimeTracking"));
+const AdminProjectTemplates = lazy(() => import("./pages/admin/AdminProjectTemplates"));
+const AdminTestimonialApproval = lazy(() => import("./pages/admin/AdminTestimonialApproval"));
+const AdminEmailCampaignManager = lazy(() => import("./pages/admin/AdminEmailCampaignManager"));
+const AdminPushNotificationCampaigns = lazy(() => import("./pages/admin/AdminPushNotificationCampaigns"));
+const AdminSmsCampaignManager = lazy(() => import("./pages/admin/AdminSmsCampaignManager"));
+const AdminAbandonedUserReengagement = lazy(() => import("./pages/admin/AdminAbandonedUserReengagement"));
+const AdminAbTestManager = lazy(() => import("./pages/admin/AdminAbTestManager"));
+const AdminBadgeAchievementManager = lazy(() => import("./pages/admin/AdminBadgeAchievementManager"));
+const AdminLeaderboardManager = lazy(() => import("./pages/admin/AdminLeaderboardManager"));
+const AdminLoyaltyPointsSystem = lazy(() => import("./pages/admin/AdminLoyaltyPointsSystem"));
+const AdminLevelTierUpgradeRules = lazy(() => import("./pages/admin/AdminLevelTierUpgradeRules"));
+const AdminAppVersionManager = lazy(() => import("./pages/admin/AdminAppVersionManager"));
+const AdminPwaAnalytics = lazy(() => import("./pages/admin/AdminPwaAnalytics"));
+const AdminDeepLinkManager = lazy(() => import("./pages/admin/AdminDeepLinkManager"));
+const AdminAppStoreReviewMonitor = lazy(() => import("./pages/admin/AdminAppStoreReviewMonitor"));
+const AdminLiveChatMonitor = lazy(() => import("./pages/admin/AdminLiveChatMonitor"));
+const AdminTicketEscalationMatrix = lazy(() => import("./pages/admin/AdminTicketEscalationMatrix"));
+const AdminSlaBreachAlerts = lazy(() => import("./pages/admin/AdminSlaBreachAlerts"));
+const AdminUserOnboardingFunnel = lazy(() => import("./pages/admin/AdminUserOnboardingFunnel"));
+const AdminThirdPartyApiKeyManager = lazy(() => import("./pages/admin/AdminThirdPartyApiKeyManager"));
+const WalletTypes = lazy(() => import("./pages/WalletTypes"));
+const UserReview = lazy(() => import("./pages/UserReview"));
+const Categories = lazy(() => import("./pages/Categories"));
+const Projects = lazy(() => import("./pages/Projects"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const HowItWorks = lazy(() => import("./pages/HowItWorks"));
+const Community = lazy(() => import("./pages/Community"));
+const About = lazy(() => import("./pages/About"));
+const Blog = lazy(() => import("./pages/Blog"));
+const Careers = lazy(() => import("./pages/Careers"));
+const ContactPage = lazy(() => import("./pages/Contact"));
+const TransactionHistory = lazy(() => import("./pages/wallet/TransactionHistory"));
+const WithdrawalHistory = lazy(() => import("./pages/wallet/WithdrawalHistory"));
+const WalletActivity = lazy(() => import("./pages/wallet/WalletActivity"));
+const WalletQRPage = lazy(() => import("./pages/wallet/WalletQRPage"));
+const WalletScanPage = lazy(() => import("./pages/wallet/WalletScanPage"));
+const RequestWithdrawal = lazy(() => import("./pages/wallet/RequestWithdrawal"));
+const AddMoneyPage = lazy(() => import("./pages/wallet/AddMoneyPage"));
+const DepositPayment = lazy(() => import("./pages/wallet/DepositPayment"));
+const UpgradeChat = lazy(() => import("./pages/wallet/UpgradeChat"));
+const ProfilePersonalInfo = lazy(() => import("./pages/profile/ProfilePersonalInfo"));
+const ProfileChangeEmail = lazy(() => import("./pages/profile/ProfileChangeEmail"));
+const ProfileMobileVerify = lazy(() => import("./pages/profile/ProfileMobileVerify"));
+const ProfileProfessional = lazy(() => import("./pages/profile/ProfileProfessional"));
+const ProfileBankDetails = lazy(() => import("./pages/profile/ProfileBankDetails"));
+const ProfileWorkExperience = lazy(() => import("./pages/profile/ProfileWorkExperience"));
+const ProfileServices = lazy(() => import("./pages/profile/ProfileServices"));
+const ProfileEmergencyContacts = lazy(() => import("./pages/profile/ProfileEmergencyContacts"));
+const ProfileAadhaarVerification = lazy(() => import("./pages/profile/ProfileAadhaarVerification"));
+const ProfileBankVerification = lazy(() => import("./pages/profile/ProfileBankVerification"));
+const ProfileUpiApps = lazy(() => import("./pages/profile/ProfileUpiApps"));
+const ProfileUpiKycSchedule = lazy(() => import("./pages/profile/ProfileUpiKycSchedule"));
+const ProfileMobileVerifySchedule = lazy(() => import("./pages/profile/ProfileMobileVerifySchedule"));
+const AdminMobileVerifySchedule = lazy(() => import("./pages/admin/AdminMobileVerifySchedule"));
+const ProfileUpiAppKyc = lazy(() => import("./pages/profile/ProfileUpiAppKyc"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+import AdminLayout from "@/components/layout/AdminLayout";
+import AdminRoute from "@/components/auth/AdminRoute";
+import { useChatNotifications } from "@/hooks/use-chat-notifications";
+import { usePwaInstallTracking } from "@/hooks/use-pwa-install-tracking";
+import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
+import { useVisitorTracking } from "@/hooks/use-visitor-tracking";
+import { useIpBlockCheck } from "@/hooks/use-ip-block-check";
+import AnnouncementPopup from "@/components/announcements/AnnouncementPopup";
+import LocationPermissionBanner from "@/components/LocationPermissionBanner";
+
+import BlockedScreen from "@/components/BlockedScreen";
+
+const queryClient = new QueryClient();
+
+/** Activates global chat toast notifications for logged-in users */
+const GlobalChatNotifier = () => {
+  useChatNotifications();
+  usePresenceHeartbeat();
+  useVisitorTracking();
+  usePwaInstallTracking();
+  return null;
+};
+
+const PageLoader = () => <LoadingScreen />;
+
+/** Show landing page in browser, login in installed PWA */
+const SmartRoot = () => {
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as any).standalone === true;
+  return isStandalone ? <Login /> : <Index />;
+};
+
+const AppContent = () => {
+  const { blocked, loading } = useIpBlockCheck();
+
+  useEffect(() => {
+    supabase.from("app_settings").select("key, value").in("key", ["seo_title", "seo_description"])
+      .then(({ data }) => {
+        if (!data) return;
+        const title = data.find(r => r.key === "seo_title")?.value;
+        const desc  = data.find(r => r.key === "seo_description")?.value;
+        if (title) document.title = title;
+        if (desc) {
+          const m = document.querySelector('meta[name="description"]');
+          if (m) m.setAttribute("content", desc);
+        }
+      });
+  }, []);
+
+  if (loading) return <PageLoader />;
+  if (blocked) return <BlockedScreen />;
+
+  return (
+    <>
+      <GlobalChatNotifier />
+      <AnnouncementPopup />
+      <LocationPermissionBanner />
+
+      
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<SmartRoot />} />
+            <Route path="/landing" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/register/employee" element={<FreelancerRegister />} />
+            <Route path="/register/freelancer" element={<FreelancerRegister />} />
+            <Route path="/register/employer" element={<EmployerRegisterComp />} />
+            <Route path="/register/client" element={<EmployerRegisterComp />} />
+            <Route path="/verification-pending" element={<VerificationPending />} />
+            <Route path="/install" element={<InstallApp />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/complete-profile" element={<CompleteProfile />} />
+            <Route path="/admin-preview" element={<AdminPreview />} />
+            <Route path="/legal/:slug" element={<LegalDocument />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
+            <Route
+              path="/wallet/deposit/:requestId"
+              element={
+                <ProtectedRoute>
+                  <DepositPayment />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/client/wallet/deposit/:requestId"
+              element={
+                <ProtectedRoute>
+                  <DepositPayment />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/employee/wallet/deposit/:requestId"
+              element={
+                <ProtectedRoute>
+                  <DepositPayment />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Freelancer Routes */}
+            <Route
+              path="/freelancer"
+              element={
+                <ProtectedRoute>
+                  <AppLayout userType="employee" />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<FreelancerDashboard />} />
+              <Route path="attendance" element={<FreelancerAttendance />} />
+              <Route path="projects" element={<FreelancerProjects />} />
+              <Route path="requests" element={<FreelancerRequests />} />
+              <Route path="projects/chat/:projectId" element={<ChatRoom />} />
+              <Route path="projects/support-chat/:projectId" element={<FreelancerSupportChat />} />
+              <Route path="wallet" element={<FreelancerWallet />} />
+              <Route path="wallet/add" element={<AddMoneyPage />} />
+              <Route path="wallet/deposit/:requestId" element={<DepositPayment />} />
+              <Route path="wallet/transactions" element={<TransactionHistory />} />
+              <Route path="wallet/activity" element={<WalletActivity />} />
+              <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
+              <Route path="wallet/qr" element={<WalletQRPage />} />
+              <Route path="wallet/scan" element={<WalletScanPage />} />
+              <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
+              <Route path="wallet/add" element={<AddMoneyPage />} />
+              <Route path="bids" element={<FreelancerBids />} />
+              <Route path="earnings" element={<FreelancerEarnings />} />
+              <Route path="reviews" element={<FreelancerReviews />} />
+              <Route path="badges" element={<FreelancerBadges />} />
+              <Route path="portfolio" element={<FreelancerPortfolio />} />
+              <Route path="profile" element={<FreelancerProfile />} />
+              <Route path="profile/personal" element={<ProfilePersonalInfo />} />
+              <Route path="profile/change-email" element={<ProfileChangeEmail />} />
+              <Route path="profile/mobile-verify" element={<ProfileMobileVerify />} />
+              <Route path="profile/mobile-verify/schedule" element={<ProfileMobileVerifySchedule />} />
+              <Route path="profile/professional" element={<ProfileProfessional />} />
+              <Route path="profile/bank-details" element={<ProfileBankDetails />} />
+              <Route path="profile/work-experience" element={<ProfileWorkExperience />} />
+              <Route path="profile/services" element={<ProfileServices />} />
+              <Route path="profile/emergency-contacts" element={<ProfileEmergencyContacts />} />
+              <Route path="profile/aadhaar-verification" element={<ProfileAadhaarVerification />} />
+              <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
+              <Route path="profile/upi-apps" element={<ProfileUpiApps />} />
+              <Route path="profile/upi-apps/schedule" element={<ProfileUpiKycSchedule />} />
+              <Route path="profile/upi-apps/:methodId/kyc" element={<ProfileUpiAppKyc />} />
+              <Route path="settings" element={<AccountSettings />} />
+              <Route path="settings/security/mpin" element={<SecurityMpinPage />} />
+              <Route path="settings/security/google-authenticator" element={<SecurityTotpPage />} />
+              <Route path="settings/security/withdrawal-password" element={<SecurityWithdrawalPasswordPage />} />
+              <Route path="notification-settings" element={<NotificationSettings />} />
+              <Route path="get-free" element={<GetFree />} />
+              <Route path="get-coins" element={<GetCoins />} />
+              <Route path="app" element={<AppPage />} />
+              <Route path="help-support" element={<HelpSupport />} />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="review" element={<UserReview />} />
+              <Route path="wallet-types" element={<WalletTypes />} />
+              <Route path="wallet/upgrade-chat/:requestId" element={<UpgradeChat />} />
+            </Route>
+
+            {/* Freelancer Routes (alias for /freelancer — same pages, new brand name) */}
+            <Route
+              path="/freelancer"
+              element={
+                <ProtectedRoute>
+                  <AppLayout userType="employee" />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<FreelancerDashboard />} />
+              <Route path="attendance" element={<FreelancerAttendance />} />
+              <Route path="projects" element={<FreelancerProjects />} />
+              <Route path="requests" element={<FreelancerRequests />} />
+              <Route path="projects/chat/:projectId" element={<ChatRoom />} />
+              <Route path="projects/support-chat/:projectId" element={<FreelancerSupportChat />} />
+              <Route path="wallet" element={<FreelancerWallet />} />
+              <Route path="wallet/add" element={<AddMoneyPage />} />
+              <Route path="wallet/deposit/:requestId" element={<DepositPayment />} />
+              <Route path="wallet/transactions" element={<TransactionHistory />} />
+              <Route path="wallet/activity" element={<WalletActivity />} />
+              <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
+              <Route path="wallet/qr" element={<WalletQRPage />} />
+              <Route path="wallet/scan" element={<WalletScanPage />} />
+              <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
+              <Route path="wallet/add" element={<AddMoneyPage />} />
+              <Route path="bids" element={<FreelancerBids />} />
+              <Route path="earnings" element={<FreelancerEarnings />} />
+              <Route path="reviews" element={<FreelancerReviews />} />
+              <Route path="badges" element={<FreelancerBadges />} />
+              <Route path="portfolio" element={<FreelancerPortfolio />} />
+              <Route path="profile" element={<FreelancerProfile />} />
+              <Route path="profile/personal" element={<ProfilePersonalInfo />} />
+              <Route path="profile/change-email" element={<ProfileChangeEmail />} />
+              <Route path="profile/mobile-verify" element={<ProfileMobileVerify />} />
+              <Route path="profile/mobile-verify/schedule" element={<ProfileMobileVerifySchedule />} />
+              <Route path="profile/professional" element={<ProfileProfessional />} />
+              <Route path="profile/bank-details" element={<ProfileBankDetails />} />
+              <Route path="profile/work-experience" element={<ProfileWorkExperience />} />
+              <Route path="profile/services" element={<ProfileServices />} />
+              <Route path="profile/emergency-contacts" element={<ProfileEmergencyContacts />} />
+              <Route path="profile/aadhaar-verification" element={<ProfileAadhaarVerification />} />
+              <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
+              <Route path="profile/upi-apps" element={<ProfileUpiApps />} />
+              <Route path="profile/upi-apps/schedule" element={<ProfileUpiKycSchedule />} />
+              <Route path="profile/upi-apps/:methodId/kyc" element={<ProfileUpiAppKyc />} />
+              <Route path="settings" element={<AccountSettings />} />
+              <Route path="settings/security/mpin" element={<SecurityMpinPage />} />
+              <Route path="settings/security/google-authenticator" element={<SecurityTotpPage />} />
+              <Route path="settings/security/withdrawal-password" element={<SecurityWithdrawalPasswordPage />} />
+              <Route path="notification-settings" element={<NotificationSettings />} />
+              <Route path="get-free" element={<GetFree />} />
+              <Route path="get-coins" element={<GetCoins />} />
+              <Route path="app" element={<AppPage />} />
+              <Route path="help-support" element={<HelpSupport />} />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="review" element={<UserReview />} />
+              <Route path="wallet-types" element={<WalletTypes />} />
+              <Route path="wallet/upgrade-chat/:requestId" element={<UpgradeChat />} />
+            </Route>
+
+            {/* Employer Routes */}
+            <Route
+              path="/employer"
+              element={
+                <ProtectedRoute>
+                  <AppLayout userType="employer" />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<EmployerDashboard />} />
+              <Route path="attendance" element={<EmployerAttendance />} />
+              <Route path="wallet" element={<EmployerWallet />} />
+              <Route path="wallet/add" element={<AddMoneyPage />} />
+              <Route path="wallet/deposit/:requestId" element={<DepositPayment />} />
+              <Route path="wallet/transactions" element={<TransactionHistory />} />
+              <Route path="wallet/activity" element={<WalletActivity />} />
+              <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
+              <Route path="wallet/qr" element={<WalletQRPage />} />
+              <Route path="wallet/scan" element={<WalletScanPage />} />
+              <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
+              <Route path="wallet/add" element={<AddMoneyPage />} />
+              <Route path="projects" element={<EmployerProjects />} />
+              <Route path="projects/create" element={<CreateProject />} />
+              <Route path="projects/chat/:projectId" element={<ChatRoom />} />
+              <Route path="withdrawals" element={<EmployerWithdrawals />} />
+              <Route path="profile" element={<EmployerProfile />} />
+              <Route path="profile/personal" element={<ProfilePersonalInfo />} />
+              <Route path="profile/change-email" element={<ProfileChangeEmail />} />
+              <Route path="profile/mobile-verify" element={<ProfileMobileVerify />} />
+              <Route path="profile/mobile-verify/schedule" element={<ProfileMobileVerifySchedule />} />
+              <Route path="profile/professional" element={<ProfileProfessional />} />
+              <Route path="profile/bank-details" element={<ProfileBankDetails />} />
+              <Route path="profile/work-experience" element={<ProfileWorkExperience />} />
+              <Route path="profile/services" element={<ProfileServices />} />
+              <Route path="profile/emergency-contacts" element={<ProfileEmergencyContacts />} />
+              <Route path="profile/aadhaar-verification" element={<ProfileAadhaarVerification />} />
+              <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
+              <Route path="profile/upi-apps" element={<ProfileUpiApps />} />
+              <Route path="profile/upi-apps/schedule" element={<ProfileUpiKycSchedule />} />
+              <Route path="profile/upi-apps/:methodId/kyc" element={<ProfileUpiAppKyc />} />
+              <Route path="settings" element={<AccountSettings />} />
+              <Route path="settings/security/mpin" element={<SecurityMpinPage />} />
+              <Route path="settings/security/google-authenticator" element={<SecurityTotpPage />} />
+              <Route path="settings/security/withdrawal-password" element={<SecurityWithdrawalPasswordPage />} />
+              <Route path="notification-settings" element={<NotificationSettings />} />
+              <Route path="get-free" element={<GetFree />} />
+              <Route path="get-coins" element={<GetCoins />} />
+              <Route path="app" element={<AppPage />} />
+              <Route path="help-support" element={<HelpSupport />} />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="review" element={<UserReview />} />
+              <Route path="wallet-types" element={<WalletTypes />} />
+              <Route path="wallet/upgrade-chat/:requestId" element={<UpgradeChat />} />
+            </Route>
+
+            {/* Admin Routes */}
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }
+            >
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="admins" element={<AdminAdmins />} />
+              <Route path="invite" element={<AdminInvite />} />
+              <Route path="freelancers" element={<AdminEmployees />} />
+              <Route path="employers" element={<AdminClients />} />
+              <Route path="withdrawals" element={<AdminWithdrawals />} />
+              <Route path="deposits" element={<AdminDeposits />} />
+              <Route path="deposit-requests" element={<AdminDepositRequests />} />
+              <Route path="upi-kyc-management" element={<AdminUpiKycManagement />} />
+              <Route path="upi-kyc-schedule" element={<AdminUpiKycSchedule />} />
+              <Route path="verifications" element={<AdminVerifications />} />
+              <Route path="bank-verifications" element={<AdminBankVerifications />} />
+              <Route path="mobile-verifications" element={<AdminMobileVerifications />} />
+              <Route path="mobile-verify-schedule" element={<AdminMobileVerifySchedule />} />
+              <Route path="profile-edits" element={<AdminProfileEdits />} />
+              <Route path="users/:profileId" element={<AdminProfileEdit />} />
+              <Route path="legal-documents" element={<AdminLegalDocuments />} />
+              <Route path="jobs" element={<AdminJobs />} />
+              <Route path="recovery-requests" element={<AdminRecoveryRequests />} />
+              <Route path="recovery-chat/:projectId" element={<AdminRecoveryChat />} />
+              <Route path="services" element={<AdminServiceManagement />} />
+              <Route path="wallet-management" element={<AdminWalletManagement />} />
+              <Route path="settings" element={<AdminSettings />} />
+              <Route path="announcements" element={<AdminAnnouncements />} />
+              <Route path="notifications" element={<AdminNotifications />} />
+              <Route path="help-support" element={<AdminHelpSupport />} />
+              <Route path="support-reporting" element={<AdminSupportReporting />} />
+              <Route path="payment-methods" element={<AdminPaymentMethods />} />
+              <Route path="countdowns" element={<AdminCountdowns />} />
+              <Route path="validation" element={<AdminValidation />} />
+              <Route path="sessions" element={<AdminSessions />} />
+              <Route path="testimonials" element={<AdminTestimonials />} />
+              <Route path="referrals" element={<AdminReferrals />} />
+              <Route path="online-status" element={<AdminOnlineStatus />} />
+              <Route path="branding" element={<AdminBranding />} />
+              <Route path="reset" element={<AdminReset />} />
+              <Route path="hero-slides" element={<AdminHeroSlides />} />
+              <Route path="visitors" element={<AdminVisitors />} />
+              <Route path="wallet" element={<AdminWallet />} />
+              <Route path="wallet/transactions" element={<AdminWalletTransactions />} />
+              <Route path="attendance" element={<AdminAttendance />} />
+              <Route path="banks" element={<AdminBanks />} />
+              <Route path="reviews" element={<AdminReviews />} />
+              <Route path="wallet-types" element={<AdminWalletTypes />} />
+              <Route path="wallet-upgrades" element={<AdminWalletUpgrades />} />
+              <Route path="auto-responses" element={<AdminAutoResponses />} />
+              <Route path="ip-blocking" element={<AdminIpBlocking />} />
+              <Route path="pwa-installs" element={<AdminPwaInstalls />} />
+              <Route path="safety-center" element={<AdminSafetyCenter />} />
+              <Route path="audit-logs" element={<AdminAuditLogs />} />
+              <Route path="rbac" element={<AdminRBAC />} />
+              <Route path="database-manager" element={<AdminDatabaseManager />} />
+              <Route path="env-vars" element={<AdminEnvVars />} />
+              <Route path="server-monitor" element={<AdminServerMonitor />} />
+              <Route path="backups" element={<AdminBackups />} />
+              <Route path="approval-center" element={<AdminApprovalCenter />} />
+              <Route path="data-privacy" element={<AdminDataPrivacy />} />
+              <Route path="alert-system" element={<AdminAlertSystem />} />
+              <Route path="version-control" element={<AdminVersionControl />} />
+              <Route path="session-security" element={<AdminSessionSecurity />} />
+              <Route path="data-migration" element={<AdminDataMigration />} />
+              <Route path="job-queue" element={<AdminJobQueue />} />
+              <Route path="transaction-control" element={<AdminTransactionControl />} />
+              <Route path="resource-monitor" element={<AdminResourceMonitor />} />
+              <Route path="service-resilience" element={<AdminServiceResilience />} />
+              <Route path="data-retention" element={<AdminDataRetention />} />
+              <Route path="bulk-operations" element={<AdminBulkOperations />} />
+              <Route path="report-generator" element={<AdminReportGenerator />} />
+              <Route path="secrets-manager" element={<AdminSecretsManager />} />
+              <Route path="knowledge-base" element={<AdminKnowledgeBase />} />
+              <Route path="config-management" element={<AdminConfigManagement />} />
+              <Route path="maintenance-center" element={<AdminMaintenanceCenter />} />
+              <Route path="rate-limiting" element={<AdminRateLimiting />} />
+              <Route path="scheduler" element={<AdminScheduler />} />
+              <Route path="permission-validator" element={<AdminPermissionValidator />} />
+              <Route path="export-control" element={<AdminExportControl />} />
+              <Route path="vendor-manager" element={<AdminVendorManager />} />
+              <Route path="cache-manager" element={<AdminCacheManager />} />
+              <Route path="api-manager" element={<AdminApiManager />} />
+              <Route path="session-manager" element={<AdminSessionManager />} />
+              <Route path="notification-center" element={<AdminNotificationCenter />} />
+              <Route path="file-manager" element={<AdminFileManager />} />
+              <Route path="high-availability" element={<AdminHighAvailability />} />
+              <Route path="data-integrity" element={<AdminDataIntegrity />} />
+              <Route path="network-monitor" element={<AdminNetworkMonitor />} />
+              <Route path="deadlock-protection" element={<AdminDeadlockProtection />} />
+              <Route path="notification-delivery" element={<AdminNotificationDelivery />} />
+              <Route path="change-approval" element={<AdminChangeApproval />} />
+              <Route path="time-sync" element={<AdminTimeSyncSystem />} />
+              <Route path="backup-verification" element={<AdminBackupVerification />} />
+              <Route path="lockout-recovery" element={<AdminLockoutRecovery />} />
+              <Route path="system-resources" element={<AdminSystemResources />} />
+              <Route path="api-validation" element={<AdminApiValidation />} />
+              <Route path="session-management" element={<AdminSessionManagement />} />
+              <Route path="permission-sync" element={<AdminPermissionSync />} />
+              <Route path="log-management" element={<AdminLogManagement />} />
+              <Route path="data-import" element={<AdminDataImport />} />
+              <Route path="config-rollback" element={<AdminConfigRollback />} />
+              <Route path="monitoring-redundancy" element={<AdminMonitoringRedundancy />} />
+              <Route path="data-sync" element={<AdminDataSync />} />
+              <Route path="security-patch" element={<AdminSecurityPatch />} />
+              <Route path="token-management" element={<AdminTokenManagement />} />
+              <Route path="disaster-recovery" element={<AdminDisasterRecovery />} />
+              <Route path="fraud-dashboard" element={<AdminFraudDashboard />} />
+              <Route path="user-risk-score" element={<AdminUserRiskScore />} />
+              <Route path="suspicious-users" element={<AdminSuspiciousUsers />} />
+              <Route path="payment-fraud" element={<AdminPaymentFraud />} />
+              <Route path="ip-device-monitor" element={<AdminIPDeviceMonitor />} />
+              <Route path="fraud-alerts" element={<AdminFraudAlerts />} />
+              <Route path="account-restrictions" element={<AdminAccountRestrictions />} />
+              <Route path="fraud-rules" element={<AdminFraudRules />} />
+              <Route path="fraud-cases" element={<AdminFraudCases />} />
+              <Route path="fraud-audit-log" element={<AdminFraudAuditLog />} />
+              <Route path="fraud-notifications" element={<AdminFraudNotifications />} />
+              <Route path="fraud-automation" element={<AdminFraudAutomation />} />
+              <Route path="fraud-reports" element={<AdminFraudReports />} />
+              <Route path="fraud-security" element={<AdminFraudSecuritySettings />} />
+              <Route path="alert-visibility" element={<AdminAlertVisibility />} />
+              <Route path="api-monitor" element={<AdminApiMonitor />} />
+              <Route path="api-rate-limiting" element={<AdminApiRateLimiting />} />
+              <Route path="api-schema" element={<AdminApiSchema />} />
+              <Route path="api-timeout" element={<AdminApiTimeout />} />
+              <Route path="auto-logout" element={<AdminAutoLogout />} />
+              <Route path="background-jobs" element={<AdminBackgroundJobMonitor />} />
+              <Route path="backup-storage" element={<AdminBackupStorage />} />
+              <Route path="bulk-notification" element={<AdminBulkNotification />} />
+              <Route path="cache-management" element={<AdminCacheManagement />} />
+              <Route path="cleanup-safety" element={<AdminCleanupSafety />} />
+              <Route path="compliance" element={<AdminComplianceManager />} />
+              <Route path="comprehensive-audit" element={<AdminComprehensiveAudit />} />
+              <Route path="config-drift" element={<AdminConfigDrift />} />
+              <Route path="cron-jobs" element={<AdminCronJobs />} />
+              <Route path="csrf-protection" element={<AdminCsrfProtection />} />
+              <Route path="dashboard-accuracy" element={<AdminDashboardAccuracy />} />
+              <Route path="data-archival" element={<AdminDataArchival />} />
+              <Route path="db-indexing" element={<AdminDbIndexing />} />
+              <Route path="dependency-manager" element={<AdminDependencyManager />} />
+              <Route path="deployment-monitor" element={<AdminDeploymentMonitor />} />
+              <Route path="dns-domain" element={<AdminDnsDomain />} />
+              <Route path="duplicate-accounts" element={<AdminDuplicateAccounts />} />
+              <Route path="email-deliverability" element={<AdminEmailDeliverability />} />
+              <Route path="encryption-keys" element={<AdminEncryptionKeys />} />
+              <Route path="export-format" element={<AdminExportFormat />} />
+              <Route path="external-api-monitor" element={<AdminExternalApiMonitor />} />
+              <Route path="external-failover" element={<AdminExternalServiceFailover />} />
+              <Route path="feature-dependency" element={<AdminFeatureDependency />} />
+              <Route path="feature-flags" element={<AdminFeatureFlags />} />
+              <Route path="feature-conflicts" element={<AdminFeatureToggleConflict />} />
+              <Route path="file-paths" element={<AdminFilePathManagement />} />
+              <Route path="file-permissions" element={<AdminFilePermissions />} />
+              <Route path="file-upload-validation" element={<AdminFileUploadValidation />} />
+              <Route path="gateway-failover" element={<AdminGatewayFailover />} />
+              <Route path="job-scheduler" element={<AdminJobScheduler />} />
+              <Route path="localization" element={<AdminLocalization />} />
+              <Route path="maintenance-mode" element={<AdminMaintenanceMode />} />
+              <Route path="module-dependency" element={<AdminModuleDependency />} />
+              <Route path="multi-admin-conflict" element={<AdminMultiAdminConflict />} />
+              <Route path="notification-control" element={<AdminNotificationControl />} />
+              <Route path="pagination-validator" element={<AdminPaginationValidator />} />
+              <Route path="performance-monitor" element={<AdminPerformanceMonitor />} />
+              <Route path="query-validation" element={<AdminQueryValidation />} />
+              <Route path="queue-management" element={<AdminQueueManagement />} />
+              <Route path="rate-limit-config" element={<AdminRateLimitConfig />} />
+              <Route path="rbac-security" element={<AdminRbacSecurity />} />
+              <Route path="report-validation" element={<AdminReportValidation />} />
+              <Route path="restore-version" element={<AdminRestoreVersionControl />} />
+              <Route path="role-escalation" element={<AdminRoleEscalation />} />
+              <Route path="search-index" element={<AdminSearchIndex />} />
+              <Route path="secure-audit-log" element={<AdminSecureAuditLog />} />
+              <Route path="secure-session-mgr" element={<AdminSecureSessionMgr />} />
+              <Route path="session-expiry" element={<AdminSessionExpiry />} />
+              <Route path="session-storage" element={<AdminSessionStorage />} />
+              <Route path="session-sync" element={<AdminSessionSync />} />
+              <Route path="smart-alerts" element={<AdminSmartAlertManager />} />
+              <Route path="soft-delete-cleanup" element={<AdminSoftDeleteCleanup />} />
+              <Route path="ssl-monitor" element={<AdminSslMonitor />} />
+              <Route path="storage-manager" element={<AdminStorageManager />} />
+              <Route path="time-slots" element={<AdminTimeSlotManagement />} />
+              <Route path="timezone-manager" element={<AdminTimezoneManager />} />
+              <Route path="traffic-management" element={<AdminTrafficManagement />} />
+              <Route path="webhook-monitor" element={<AdminWebhookMonitor />} />
+              <Route path="xss-protection" element={<AdminXssProtection />} />
+              <Route path="commission-management" element={<AdminCommissionManagement />} />
+              <Route path="dispute-center" element={<AdminDisputeCenter />} />
+              <Route path="badge-management" element={<AdminBadgeManagement />} />
+              <Route path="coin-management" element={<AdminCoinManagement />} />
+              <Route path="gst-tax-reports" element={<AdminGstTaxReports />} />
+              <Route path="promo-management" element={<AdminPromoManagement />} />
+              <Route path="project-analytics" element={<AdminProjectAnalytics />} />
+              <Route path="content-moderation" element={<AdminContentModeration />} />
+              <Route path="affiliate-management" element={<AdminAffiliateManagement />} />
+              <Route path="fee-configuration" element={<AdminFeeConfiguration />} />
+              <Route path="skill-category-management" element={<AdminSkillCategoryManagement />} />
+              <Route path="kyc-dashboard" element={<AdminKycDashboard />} />
+              <Route path="subscription-management" element={<AdminSubscriptionManagement />} />
+              <Route path="revenue-analytics" element={<AdminRevenueAnalytics />} />
+              <Route path="milestone-management" element={<AdminMilestoneManagement />} />
+              <Route path="invoice-management" element={<AdminInvoiceManagement />} />
+              <Route path="review-management" element={<AdminReviewManagement />} />
+              <Route path="email-campaigns" element={<AdminEmailCampaigns />} />
+              <Route path="payout-schedule" element={<AdminPayoutSchedule />} />
+              <Route path="mobile-app-management" element={<AdminMobileAppManagement />} />
+              <Route path="waitlist-management" element={<AdminWaitlistManagement />} />
+              <Route path="sla-reports" element={<AdminSlaReports />} />
+              <Route path="tds-management" element={<AdminTdsManagement />} />
+              <Route path="talent-showcase" element={<AdminTalentShowcase />} />
+              <Route path="freelancer-levels" element={<AdminFreelancerLevels />} />
+              <Route path="chat-monitoring" element={<AdminChatMonitoring />} />
+              <Route path="pan-gst-verification" element={<AdminPanVerification />} />
+              <Route path="commission-tiers" element={<AdminCommissionTiers />} />
+              <Route path="bidding-rules" element={<AdminBiddingRules />} />
+              <Route path="banner-manager" element={<AdminBannerManager />} />
+              <Route path="holiday-calendar" element={<AdminHolidayCalendar />} />
+              <Route path="rate-cards" element={<AdminRateCards />} />
+              <Route path="activity-log" element={<AdminActivityLog />} />
+              <Route path="ai-fraud-detection" element={<AdminAiFraudDetection />} />
+              <Route path="smart-match-algorithm" element={<AdminSmartMatchAlgorithm />} />
+              <Route path="sentiment-analysis" element={<AdminSentimentAnalysis />} />
+              <Route path="spam-detection" element={<AdminSpamDetection />} />
+              <Route path="cohort-analysis" element={<AdminCohortAnalysis />} />
+              <Route path="funnel-analytics" element={<AdminFunnelAnalytics />} />
+              <Route path="revenue-forecasting" element={<AdminRevenueForecasting />} />
+              <Route path="geographic-analytics" element={<AdminGeographicAnalytics />} />
+              <Route path="peak-hour-monitor" element={<AdminPeakHourMonitor />} />
+              <Route path="partner-reseller" element={<AdminPartnerReseller />} />
+              <Route path="b2b-clients" element={<AdminB2BClients />} />
+              <Route path="affiliate-payouts" element={<AdminAffiliatePayouts />} />
+              <Route path="referral-leaderboard" element={<AdminReferralLeaderboard />} />
+              <Route path="marketplace-trends" element={<AdminMarketplaceTrends />} />
+              <Route path="contract-templates" element={<AdminContractTemplates />} />
+              <Route path="nda-management" element={<AdminNdaManagement />} />
+              <Route path="gdpr-compliance" element={<AdminGdprCompliance />} />
+              <Route path="grievance-redressal" element={<AdminGrievanceRedressal />} />
+              <Route path="court-orders" element={<AdminCourtOrders />} />
+              <Route path="skill-assessment" element={<AdminSkillAssessment />} />
+              <Route path="portfolio-review" element={<AdminPortfolioReview />} />
+              <Route path="time-tracking" element={<AdminTimeTracking />} />
+              <Route path="project-templates" element={<AdminProjectTemplates />} />
+              <Route path="testimonial-approval" element={<AdminTestimonialApproval />} />
+              <Route path="email-campaign-manager" element={<AdminEmailCampaignManager />} />
+              <Route path="push-notification-campaigns" element={<AdminPushNotificationCampaigns />} />
+              <Route path="sms-campaign-manager" element={<AdminSmsCampaignManager />} />
+              <Route path="abandoned-user-reengagement" element={<AdminAbandonedUserReengagement />} />
+              <Route path="ab-test-manager" element={<AdminAbTestManager />} />
+              <Route path="badge-achievement-manager" element={<AdminBadgeAchievementManager />} />
+              <Route path="leaderboard-manager" element={<AdminLeaderboardManager />} />
+              <Route path="loyalty-points-system" element={<AdminLoyaltyPointsSystem />} />
+              <Route path="level-tier-upgrade-rules" element={<AdminLevelTierUpgradeRules />} />
+              <Route path="app-version-manager" element={<AdminAppVersionManager />} />
+              <Route path="pwa-analytics" element={<AdminPwaAnalytics />} />
+              <Route path="deep-link-manager" element={<AdminDeepLinkManager />} />
+              <Route path="app-store-review-monitor" element={<AdminAppStoreReviewMonitor />} />
+              <Route path="live-chat-monitor" element={<AdminLiveChatMonitor />} />
+              <Route path="ticket-escalation-matrix" element={<AdminTicketEscalationMatrix />} />
+              <Route path="sla-breach-alerts" element={<AdminSlaBreachAlerts />} />
+              <Route path="user-onboarding-funnel" element={<AdminUserOnboardingFunnel />} />
+              <Route path="third-party-api-key-manager" element={<AdminThirdPartyApiKeyManager />} />
+            </Route>
+
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
+    </>
+  );
+};
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;

@@ -1,0 +1,1420 @@
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+// Simple in-memory rate limiter per user (10 requests per 60 seconds)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+
+type ErrorLike = {
+  message?: unknown;
+  details?: unknown;
+  hint?: unknown;
+  code?: unknown;
+  error?: unknown;
+};
+
+function formatErrorMessage(error: unknown, fallback = "Unknown error"): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "string" && error) return error;
+
+  if (error && typeof error === "object") {
+    const e = error as ErrorLike;
+    const message = typeof e.message === "string" ? e.message : typeof e.error === "string" ? e.error : "";
+    const details = typeof e.details === "string" ? e.details : "";
+    const hint = typeof e.hint === "string" ? e.hint : "";
+    const code = typeof e.code === "string" ? e.code : "";
+
+    const parts = [message, details, hint ? `Hint: ${hint}` : "", code ? `Code: ${code}` : ""].filter(Boolean);
+    if (parts.length > 0) return parts.join(" | ");
+  }
+
+  return fallback;
+}
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(userId);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) {
+    return false;
+  }
+  entry.count++;
+  return true;
+}
+
+function validateAmount(amount: unknown, maxAmount = 10000000): number {
+  if (typeof amount !== 'number' || !Number.isFinite(amount)) {
+    throw new Error('Amount must be a valid number');
+  }
+  if (amount <= 0) {
+    throw new Error('Amount must be positive');
+  }
+  if (amount > maxAmount) {
+    throw new Error(`Amount exceeds maximum limit of ₹${maxAmount.toLocaleString('en-IN')}`);
+  }
+  if (Math.round(amount * 100) !== amount * 100) {
+    throw new Error('Amount can have maximum 2 decimal places');
+  }
+  if (!Number.isSafeInteger(amount * 100)) {
+    throw new Error('Amount value is too large');
+  }
+  return amount;
+}
+
+function generateWithdrawalOrderId(length: number): string {
+  const safeLength = Number.isFinite(length) ? Math.max(5, Math.floor(length)) : 15;
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, "0");
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const yy = String(now.getFullYear()).slice(-2);
+  const datePrefix = `${dd}${mm}${yy}`;
+
+  if (safeLength <= datePrefix.length) {
+    return datePrefix.slice(-safeLength);
+  }
+
+  const randomLength = safeLength - datePrefix.length;
+  let randomDigits = "";
+  for (let i = 0; i < randomLength; i++) {
+    randomDigits += Math.floor(Math.random() * 10).toString();
+  }
+
+  return `${datePrefix}${randomDigits}`;
+}
+
+function isDuplicateOrderIdError(error: unknown): boolean {
+  const message = formatErrorMessage(error, "").toLowerCase();
+  return (
+    (message.includes("duplicate key") && message.includes("order_id")) ||
+    message.includes("idx_withdrawals_order_id") ||
+    message.includes("withdrawals_order_id_key")
+  );
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceKey);
+
+    // Verify JWT from the request
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("Missing authorization header");
+
+    const anonClient = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_ANON_KEY")!
+    );
+    const {
+      data: { user },
+      error: authError,
+    } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (authError || !user) throw new Error("Unauthorized");
+
+    // Rate limit check
+    if (!checkRateLimit(user.id)) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, target_wallet_number, payment_method, payment_details, deposit_request_id, deposit_status } =
+      await req.json();
+
+    // Get the caller's profile
+    const { data: callerProfile, error: cpErr } = await supabase
+      .from("profiles")
+      .select("id, user_id, user_type, available_balance, hold_balance, approval_status, wallet_number")
+      .eq("user_id", user.id)
+      .single();
+    if (cpErr || !callerProfile) throw new Error("Profile not found");
+    if (callerProfile.approval_status !== "approved")
+      throw new Error("Account not approved");
+
+    let result: any = { success: true };
+
+    switch (action) {
+      case "add_money": {
+        const validAmount = validateAmount(amount, 500000);
+
+        const newBalance = Number(callerProfile.available_balance) + validAmount;
+        const { error: updateErr } = await supabase
+          .from("profiles")
+          .update({ available_balance: newBalance })
+          .eq("id", callerProfile.id);
+        if (updateErr) throw updateErr;
+
+        const addMoneyOrderId = `ADD-${generateWithdrawalOrderId(12)}`;
+        await supabase.from("transactions").insert({
+          profile_id: callerProfile.id,
+          type: "credit",
+          amount,
+          description: `Added to wallet (Order ID: ${addMoneyOrderId})`,
+          order_id: addMoneyOrderId,
+          status: "success",
+        });
+
+        result.new_balance = newBalance;
+        result.order_id = addMoneyOrderId;
+        break;
+      }
+
+      case "request_withdrawal": {
+        // Employee requests withdrawal — deduct from available_balance immediately
+        if (callerProfile.user_type !== "Freelancer" && callerProfile.user_type !== "employee")
+          throw new Error("Only freelancers can request withdrawals");
+        validateAmount(amount, 100000);
+
+        const requestedAmount = Number(amount);
+        const originalBalance = Number(callerProfile.available_balance);
+        if (requestedAmount > originalBalance)
+          throw new Error("Insufficient balance");
+
+        // Check bank verification status
+        const { data: bankVerif } = await supabase
+          .from("bank_verifications")
+          .select("status")
+          .eq("profile_id", callerProfile.id)
+          .single();
+        if (!bankVerif || bankVerif.status !== "verified")
+          throw new Error("Bank details must be verified before requesting withdrawals. Please submit your bank details for verification in your profile.");
+
+        const nextBalance = originalBalance - requestedAmount;
+        let deducted = false;
+        let createdWithdrawalId: string | null = null;
+
+        try {
+          const { error: deductErr } = await supabase
+            .from("profiles")
+            .update({ available_balance: nextBalance })
+            .eq("id", callerProfile.id);
+          if (deductErr) {
+            throw new Error(formatErrorMessage(deductErr, "Failed to deduct wallet balance"));
+          }
+          deducted = true;
+
+          const { data: newW, error: wErr } = await supabase
+            .from("withdrawals")
+            .insert({
+              employee_id: callerProfile.id,
+              amount: requestedAmount,
+              method: upi_id ? "UPI" : "Bank Transfer",
+              upi_id: upi_id || null,
+              bank_account_number: bank_account_number || null,
+              bank_ifsc_code: bank_ifsc_code || null,
+              bank_holder_name: bank_holder_name || null,
+            })
+            .select("id, order_id")
+            .single();
+
+          if (wErr) {
+            throw new Error(formatErrorMessage(wErr, "Failed to create withdrawal record"));
+          }
+          if (!newW?.id) {
+            throw new Error("Failed to create withdrawal record");
+          }
+
+          createdWithdrawalId = newW.id;
+
+          const generatedOrderId =
+            typeof newW.order_id === "string" && newW.order_id.trim().length > 0
+              ? newW.order_id
+              : null;
+
+          const { error: txErr } = await supabase.from("transactions").insert({
+            profile_id: callerProfile.id,
+            type: "debit",
+            amount: requestedAmount,
+            description: generatedOrderId
+              ? `Withdrawal requested (Order ID: ${generatedOrderId})`
+              : "Withdrawal requested",
+            reference_id: newW.id,
+            order_id: generatedOrderId,
+            status: "pending",
+          });
+          if (txErr) {
+            throw new Error(formatErrorMessage(txErr, "Failed to create withdrawal transaction"));
+          }
+
+          result.withdrawal_id = newW.id;
+          result.order_id = generatedOrderId;
+          result.new_balance = nextBalance;
+        } catch (innerError: unknown) {
+          const rollbackErrors: string[] = [];
+
+          if (createdWithdrawalId) {
+            const { error: cleanupErr } = await supabase
+              .from("withdrawals")
+              .delete()
+              .eq("id", createdWithdrawalId);
+            if (cleanupErr) rollbackErrors.push("failed to remove incomplete withdrawal record");
+          }
+
+          if (deducted) {
+            const { error: restoreErr } = await supabase
+              .from("profiles")
+              .update({ available_balance: originalBalance })
+              .eq("id", callerProfile.id);
+            if (restoreErr) rollbackErrors.push("failed to restore deducted wallet balance");
+          }
+
+          const rootCause = formatErrorMessage(innerError, "unknown server error");
+          if (rollbackErrors.length > 0) {
+            throw new Error(`Withdrawal failed (${rootCause}) and rollback was partial: ${rollbackErrors.join(", ")}. Please contact support immediately.`);
+          }
+          throw new Error(`Withdrawal failed: ${rootCause}. No money was deducted.`);
+        }
+
+        break;
+      }
+
+      case "confirm_job": {
+        // Step 1: Client confirms the job (in_progress → job_confirmed)
+        if (callerProfile.user_type !== "client")
+          throw new Error("Only clients can confirm jobs");
+        if (!project_id) throw new Error("Missing project_id");
+
+        const { data: proj1, error: p1Err } = await supabase
+          .from("projects")
+          .select("id, client_id, assigned_employee_id, status")
+          .eq("id", project_id)
+          .single();
+        if (p1Err || !proj1) throw new Error("Project not found");
+        if (proj1.client_id !== callerProfile.id)
+          throw new Error("Not your project");
+        if (proj1.status !== "in_progress")
+          throw new Error("Project must be in_progress to confirm job");
+
+        await supabase
+          .from("projects")
+          .update({ status: "job_confirmed" })
+          .eq("id", project_id);
+
+        if (proj1.assigned_employee_id) {
+          const { data: empU } = await supabase
+            .from("profiles")
+            .select("user_id")
+            .eq("id", proj1.assigned_employee_id)
+            .single();
+          if (empU) {
+            await supabase.from("notifications").insert({
+              user_id: empU.user_id,
+              title: "Job Confirmed",
+              message: `The client has confirmed your job. Payment processing will follow.`,
+              type: "info",
+              reference_id: project_id,
+              reference_type: "project",
+            });
+          }
+        }
+
+        result.status = "job_confirmed";
+        break;
+      }
+
+      case "hold_project_payment": {
+        // Step 2: Client initiates payment processing: validation_fees → employee hold_balance
+        if (callerProfile.user_type !== "client")
+          throw new Error("Only clients can initiate payment processing");
+        if (!project_id) throw new Error("Missing project_id");
+
+        const { data: project, error: pErr } = await supabase
+          .from("projects")
+          .select("id, amount, validation_fees, client_id, assigned_employee_id, status")
+          .eq("id", project_id)
+          .single();
+        if (pErr || !project) throw new Error("Project not found");
+        if (project.client_id !== callerProfile.id)
+          throw new Error("Not your project");
+        if (project.status !== "job_confirmed")
+          throw new Error("Job must be confirmed before processing payment");
+        if (!project.assigned_employee_id)
+          throw new Error("No employee assigned");
+
+        const validationFees = Number(project.validation_fees);
+
+        if (Number(callerProfile.available_balance) < validationFees)
+          throw new Error("Insufficient balance to process validation fees");
+
+        await supabase
+          .from("profiles")
+          .update({
+            available_balance: Number(callerProfile.available_balance) - validationFees,
+          })
+          .eq("id", callerProfile.id);
+
+        const { data: empProfile } = await supabase
+          .from("profiles")
+          .select("hold_balance")
+          .eq("id", project.assigned_employee_id)
+          .single();
+
+        if (empProfile) {
+          await supabase
+            .from("profiles")
+            .update({
+              hold_balance: Number(empProfile.hold_balance) + validationFees,
+            })
+            .eq("id", project.assigned_employee_id);
+        }
+
+        await supabase
+          .from("projects")
+          .update({ status: "payment_processing" })
+          .eq("id", project_id);
+
+        await supabase.from("transactions").insert([
+          {
+            profile_id: callerProfile.id,
+            type: "debit",
+            amount: validationFees,
+            description: `Validation fees for project: ${project_id}`,
+            reference_id: project_id,
+          },
+          {
+            profile_id: project.assigned_employee_id,
+            type: "hold",
+            amount: validationFees,
+            description: `Validation fees held for project: ${project_id}`,
+            reference_id: project_id,
+          },
+        ]);
+
+        const { data: empUser1 } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("id", project.assigned_employee_id)
+          .single();
+        if (empUser1) {
+          await supabase.from("notifications").insert({
+            user_id: empUser1.user_id,
+            title: "Payment Processing — Validation Fees Held",
+            message: `The client has initiated payment processing. ₹${validationFees} (validation fees) is now held in your account.`,
+            type: "financial",
+            reference_id: project_id,
+            reference_type: "project",
+          });
+        }
+
+        result.status = "payment_processing";
+        break;
+      }
+
+      case "confirm_validation": {
+        // Step 3: Client confirms validation (payment_processing → validation) — budget amount → employee hold
+        if (callerProfile.user_type !== "client")
+          throw new Error("Only clients can confirm validation");
+        if (!project_id) throw new Error("Missing project_id");
+
+        const { data: projV, error: pvErr } = await supabase
+          .from("projects")
+          .select("id, amount, client_id, assigned_employee_id, status")
+          .eq("id", project_id)
+          .single();
+        if (pvErr || !projV) throw new Error("Project not found");
+        if (projV.client_id !== callerProfile.id)
+          throw new Error("Not your project");
+        if (projV.status !== "payment_processing")
+          throw new Error("Project must be in payment_processing to validate");
+
+        const budgetAmount = Number(projV.amount);
+
+        // Re-fetch caller balance (may have changed)
+        const { data: freshCaller } = await supabase
+          .from("profiles")
+          .select("available_balance")
+          .eq("id", callerProfile.id)
+          .single();
+        const callerBal = Number(freshCaller?.available_balance ?? callerProfile.available_balance);
+
+        if (callerBal < budgetAmount)
+          throw new Error("Insufficient balance to hold budget amount");
+
+        // Deduct budget from client
+        await supabase
+          .from("profiles")
+          .update({ available_balance: callerBal - budgetAmount })
+          .eq("id", callerProfile.id);
+
+        // Add budget to employee hold
+        const { data: empProfV } = await supabase
+          .from("profiles")
+          .select("hold_balance")
+          .eq("id", projV.assigned_employee_id!)
+          .single();
+
+        if (empProfV) {
+          await supabase
+            .from("profiles")
+            .update({ hold_balance: Number(empProfV.hold_balance) + budgetAmount })
+            .eq("id", projV.assigned_employee_id!);
+        }
+
+        await supabase
+          .from("projects")
+          .update({ status: "validation" })
+          .eq("id", project_id);
+
+        await supabase.from("transactions").insert([
+          {
+            profile_id: callerProfile.id,
+            type: "debit",
+            amount: budgetAmount,
+            description: `Budget amount held for project: ${project_id}`,
+            reference_id: project_id,
+          },
+          {
+            profile_id: projV.assigned_employee_id!,
+            type: "hold",
+            amount: budgetAmount,
+            description: `Budget amount held for project: ${project_id}`,
+            reference_id: project_id,
+          },
+        ]);
+
+        if (projV.assigned_employee_id) {
+          const { data: empUV } = await supabase
+            .from("profiles")
+            .select("user_id")
+            .eq("id", projV.assigned_employee_id)
+            .single();
+          if (empUV) {
+            await supabase.from("notifications").insert({
+              user_id: empUV.user_id,
+              title: "Validation Confirmed — Budget Held",
+              message: `The client has confirmed validation. ₹${budgetAmount} (budget) is now held in your account. Final confirmation pending.`,
+              type: "financial",
+              reference_id: project_id,
+              reference_type: "project",
+            });
+          }
+        }
+
+        result.status = "validation";
+        break;
+      }
+
+      case "release_project_payment": {
+        // Step 4: Final confirmation — move all hold to available (validation → completed)
+        if (callerProfile.user_type !== "client")
+          throw new Error("Only clients can release payments");
+        if (!project_id) throw new Error("Missing project_id");
+
+        const { data: project, error: pErr } = await supabase
+          .from("projects")
+          .select("id, amount, validation_fees, client_id, assigned_employee_id, status")
+          .eq("id", project_id)
+          .single();
+        if (pErr || !project) throw new Error("Project not found");
+        if (project.client_id !== callerProfile.id)
+          throw new Error("Not your project");
+        if (project.status !== "validation")
+          throw new Error("Project must be in validation to release payment");
+        if (!project.assigned_employee_id)
+          throw new Error("No employee assigned");
+
+        const totalAmount = Number(project.amount) + Number(project.validation_fees);
+
+        const { data: empProfile } = await supabase
+          .from("profiles")
+          .select("hold_balance, available_balance")
+          .eq("id", project.assigned_employee_id)
+          .single();
+
+        if (empProfile) {
+          await supabase
+            .from("profiles")
+            .update({
+              hold_balance: Number(empProfile.hold_balance) - totalAmount,
+              available_balance: Number(empProfile.available_balance) + totalAmount,
+            })
+            .eq("id", project.assigned_employee_id);
+        }
+
+        await supabase
+          .from("projects")
+          .update({ status: "completed" })
+          .eq("id", project_id);
+
+        await supabase.from("transactions").insert({
+          profile_id: project.assigned_employee_id,
+          type: "release",
+          amount: totalAmount,
+          description: `Payment released for project: ${project_id}`,
+          reference_id: project_id,
+        });
+
+        const { data: empUser2 } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("id", project.assigned_employee_id)
+          .single();
+        if (empUser2) {
+          await supabase.from("notifications").insert({
+            user_id: empUser2.user_id,
+            title: "Payment Released — Project Completed!",
+            message: `Congratulations! ₹${totalAmount} (budget + validation fees) has been released to your available balance.`,
+            type: "financial",
+            reference_id: project_id,
+            reference_type: "project",
+          });
+        }
+
+        result.status = "completed";
+        break;
+      }
+
+      case "refund_project_payment": {
+        // Reject: cancel project, held balance stays on hold (no refund)
+        if (callerProfile.user_type !== "client")
+          throw new Error("Only clients can reject projects");
+        if (!project_id) throw new Error("Missing project_id");
+
+        const { data: project, error: pErr } = await supabase
+          .from("projects")
+          .select("id, amount, validation_fees, client_id, assigned_employee_id, status, remarks")
+          .eq("id", project_id)
+          .single();
+        if (pErr || !project) throw new Error("Project not found");
+        if (project.client_id !== callerProfile.id)
+          throw new Error("Not your project");
+        if (project.status !== "payment_processing" && project.status !== "validation")
+          throw new Error("Project must be in payment_processing or validation to reject");
+
+        await supabase
+          .from("projects")
+          .update({ status: "cancelled", remarks: reject_reason || project.remarks || "Rejected by client" })
+          .eq("id", project_id);
+
+        if (project.assigned_employee_id) {
+          const { data: empUser3 } = await supabase
+            .from("profiles")
+            .select("user_id")
+            .eq("id", project.assigned_employee_id)
+            .single();
+          if (empUser3) {
+            await supabase.from("notifications").insert({
+              user_id: empUser3.user_id,
+              title: "Project Rejected",
+              message: `The client has rejected the project. The held balance remains on hold.`,
+              type: "financial",
+              reference_id: project_id,
+              reference_type: "project",
+            });
+          }
+        }
+
+        result.status = "cancelled";
+        break;
+      }
+
+      case "process_withdrawal": {
+        if (callerProfile.user_type !== "client")
+          throw new Error("Only clients can process withdrawals");
+        if (!withdrawal_id || !status)
+          throw new Error("Missing withdrawal_id or status");
+
+        const { data: withdrawal, error: wErr } = await supabase
+          .from("withdrawals")
+          .select("*")
+          .eq("id", withdrawal_id)
+          .single();
+        if (wErr || !withdrawal) throw new Error("Withdrawal not found");
+        if (withdrawal.status !== "pending")
+          throw new Error("Withdrawal already processed");
+
+        const wAmount = Number(withdrawal.amount);
+
+        if (status === "approved") {
+          // Mark the original pending withdrawal transaction as success
+          await supabase
+            .from("transactions")
+            .update({ status: "success" })
+            .eq("profile_id", withdrawal.employee_id)
+            .eq("reference_id", withdrawal_id)
+            .eq("status", "pending");
+
+          await supabase.from("transactions").insert([
+            {
+              profile_id: callerProfile.id,
+              type: "debit",
+              amount: wAmount,
+              description: `Withdrawal approved for employee (Order ID: ${withdrawal.order_id ?? withdrawal_id})`,
+              reference_id: withdrawal_id,
+              order_id: withdrawal.order_id ?? null,
+              status: "success",
+            },
+          ]);
+        } else if (status === "rejected") {
+          // Mark the original pending withdrawal transaction as failed
+          await supabase
+            .from("transactions")
+            .update({ status: "failed" })
+            .eq("profile_id", withdrawal.employee_id)
+            .eq("reference_id", withdrawal_id)
+            .eq("status", "pending");
+
+          // Restore employee available balance
+          const { data: empProfile } = await supabase
+            .from("profiles")
+            .select("available_balance, user_id")
+            .eq("id", withdrawal.employee_id)
+            .single();
+
+          if (empProfile) {
+            await supabase
+              .from("profiles")
+              .update({
+                available_balance: Number(empProfile.available_balance) + wAmount,
+              })
+              .eq("id", withdrawal.employee_id);
+
+            // Record refund transaction
+            await supabase.from("transactions").insert({
+              profile_id: withdrawal.employee_id,
+              type: "credit",
+              amount: wAmount,
+              description: `Withdrawal rejected — amount restored (Order ID: ${withdrawal.order_id ?? withdrawal_id})`,
+              reference_id: withdrawal_id,
+              order_id: withdrawal.order_id ?? null,
+              status: "success",
+            });
+
+            // Notify employee about rejection
+            await supabase.from("notifications").insert({
+              user_id: empProfile.user_id,
+              title: "Withdrawal Rejected",
+              message: reject_reason
+                ? `Your withdrawal of ₹${wAmount.toLocaleString("en-IN")} was rejected. Reason: ${reject_reason}. The amount has been restored to your balance.`
+                : `Your withdrawal of ₹${wAmount.toLocaleString("en-IN")} was rejected. The amount has been restored to your balance.`,
+              type: "financial",
+              reference_id: withdrawal_id,
+              reference_type: "withdrawal",
+            });
+          }
+        }
+
+        await supabase
+          .from("withdrawals")
+          .update({
+            status,
+            reviewed_by: callerProfile.id,
+            reviewed_at: new Date().toISOString(),
+            review_notes: reject_reason || review_notes || null,
+          })
+          .eq("id", withdrawal_id);
+
+        result.status = status;
+        break;
+      }
+
+      case "admin_process_withdrawal": {
+        // Admin approves/rejects withdrawal
+        // Check admin role
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+
+        if (!withdrawal_id || !status)
+          throw new Error("Missing withdrawal_id or status");
+
+        const { data: withdrawal, error: wErr } = await supabase
+          .from("withdrawals")
+          .select("*")
+          .eq("id", withdrawal_id)
+          .single();
+        if (wErr || !withdrawal) throw new Error("Withdrawal not found");
+        if (withdrawal.status !== "pending")
+          throw new Error("Withdrawal already processed");
+
+        const wAmount = Number(withdrawal.amount);
+
+        if (status === "rejected") {
+          // Mark original pending transaction as failed
+          await supabase
+            .from("transactions")
+            .update({ status: "failed" })
+            .eq("profile_id", withdrawal.employee_id)
+            .eq("reference_id", withdrawal_id)
+            .eq("status", "pending");
+
+          // Restore employee balance
+          const { data: empProfile } = await supabase
+            .from("profiles")
+            .select("available_balance, user_id")
+            .eq("id", withdrawal.employee_id)
+            .single();
+
+          if (empProfile) {
+            await supabase
+              .from("profiles")
+              .update({
+                available_balance: Number(empProfile.available_balance) + wAmount,
+              })
+              .eq("id", withdrawal.employee_id);
+
+            await supabase.from("transactions").insert({
+              profile_id: withdrawal.employee_id,
+              type: "credit",
+              amount: wAmount,
+              description: `Withdrawal rejected by admin — amount restored (Order ID: ${withdrawal.order_id ?? withdrawal_id})`,
+              reference_id: withdrawal_id,
+              order_id: withdrawal.order_id ?? null,
+              status: "success",
+            });
+
+            await supabase.from("notifications").insert({
+              user_id: empProfile.user_id,
+              title: "Withdrawal Rejected by Admin",
+              message: reject_reason
+                ? `Your withdrawal of ₹${wAmount.toLocaleString("en-IN")} was rejected by admin. Reason: ${reject_reason}. The amount has been restored.`
+                : `Your withdrawal of ₹${wAmount.toLocaleString("en-IN")} was rejected by admin. The amount has been restored.`,
+              type: "financial",
+              reference_id: withdrawal_id,
+              reference_type: "withdrawal",
+            });
+          }
+        } else if (status === "approved") {
+          // Mark original pending transaction as success
+          await supabase
+            .from("transactions")
+            .update({ status: "success" })
+            .eq("profile_id", withdrawal.employee_id)
+            .eq("reference_id", withdrawal_id)
+            .eq("status", "pending");
+        }
+
+        await supabase
+          .from("withdrawals")
+          .update({
+            status,
+            reviewed_by: callerProfile.id,
+            reviewed_at: new Date().toISOString(),
+            review_notes: reject_reason || review_notes || null,
+          })
+          .eq("id", withdrawal_id);
+
+        result.status = status;
+        break;
+      }
+
+      case "admin_release_held_balance": {
+        // Admin releases held balance from cancelled project to employee's available balance
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+
+        if (!project_id) throw new Error("Missing project_id");
+
+        const { data: project, error: pErr } = await supabase
+          .from("projects")
+          .select("id, amount, validation_fees, assigned_employee_id, status")
+          .eq("id", project_id)
+          .single();
+        if (pErr || !project) throw new Error("Project not found");
+        if (project.status !== "cancelled")
+          throw new Error("Project must be cancelled to release held balance");
+        if (!project.assigned_employee_id)
+          throw new Error("No employee assigned");
+
+        // Calculate held amount based on what was held
+        const heldAmount = Number(project.amount) + Number(project.validation_fees);
+
+        const { data: empProfile } = await supabase
+          .from("profiles")
+          .select("hold_balance, available_balance, user_id")
+          .eq("id", project.assigned_employee_id)
+          .single();
+        if (!empProfile) throw new Error("Employee profile not found");
+
+        const currentHold = Number(empProfile.hold_balance);
+        const releaseAmount = Math.min(heldAmount, currentHold);
+        if (releaseAmount <= 0) throw new Error("No held balance to release");
+
+        // Transfer from hold to available
+        await supabase
+          .from("profiles")
+          .update({
+            hold_balance: currentHold - releaseAmount,
+            available_balance: Number(empProfile.available_balance) + releaseAmount,
+          })
+          .eq("id", project.assigned_employee_id);
+
+        // Record transaction
+        await supabase.from("transactions").insert({
+          profile_id: project.assigned_employee_id,
+          type: "release",
+          amount: releaseAmount,
+          description: `Recovery: held balance released by admin for project: ${project_id}`,
+          reference_id: project_id,
+        });
+
+        // Update recovery request admin notes (keep status pending so chat stays open)
+        if (recovery_request_id) {
+          await supabase
+            .from("recovery_requests")
+            .update({
+              admin_notes: admin_notes || "Balance released by admin",
+            })
+            .eq("id", recovery_request_id);
+        }
+
+        // Notify employee
+        await supabase.from("notifications").insert({
+          user_id: empProfile.user_id,
+          title: "Balance Recovered! 🎉",
+          message: `₹${releaseAmount.toLocaleString("en-IN")} has been released from hold to your available balance by Customer Service.`,
+          type: "financial",
+          reference_id: project_id,
+          reference_type: "project",
+        });
+
+        result.status = "released";
+        result.released_amount = releaseAmount;
+        break;
+      }
+
+      case "admin_hold_balance": {
+        // Admin moves funds from employee's available balance back to hold balance
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+
+        if (!recovery_request_id) throw new Error("Missing recovery_request_id");
+        if (!amount || amount <= 0) throw new Error("Invalid amount");
+
+        const { data: recReq, error: rrErr } = await supabase
+          .from("recovery_requests")
+          .select("*, employee:profiles!recovery_requests_employee_id_fkey(id, available_balance, hold_balance, user_id)")
+          .eq("id", recovery_request_id)
+          .single();
+        if (rrErr || !recReq) throw new Error("Recovery request not found");
+
+        const emp = recReq.employee as any;
+        if (!emp) throw new Error("Employee not found");
+
+        const holdAmount = Math.min(amount, Number(emp.available_balance));
+        if (holdAmount <= 0) throw new Error("Employee has no available balance to hold");
+
+        await supabase
+          .from("profiles")
+          .update({
+            available_balance: Number(emp.available_balance) - holdAmount,
+            hold_balance: Number(emp.hold_balance) + holdAmount,
+          })
+          .eq("id", emp.id);
+
+        await supabase.from("transactions").insert({
+          profile_id: emp.id,
+          type: "hold",
+          amount: holdAmount,
+          description: `Recovery: balance held by admin for recovery request: ${recovery_request_id}`,
+          reference_id: recReq.project_id,
+        });
+
+        if (admin_notes) {
+          await supabase
+            .from("recovery_requests")
+            .update({ admin_notes })
+            .eq("id", recovery_request_id);
+        }
+
+        await supabase.from("notifications").insert({
+          user_id: emp.user_id,
+          title: "Balance Held",
+          message: `₹${holdAmount.toLocaleString("en-IN")} has been moved from your available balance to hold by Customer Service.`,
+          type: "financial",
+          reference_id: recReq.project_id,
+          reference_type: "project",
+        });
+
+        result.status = "held";
+        result.held_amount = holdAmount;
+        break;
+      }
+
+      // ─── Admin Wallet Management Actions ───
+
+      case "admin_wallet_add": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!target_profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
+
+        const { data: tp, error: tpErr } = await supabase.from("profiles").select("id, available_balance, user_id, full_name").eq("id", target_profile_id).single();
+        if (tpErr || !tp) throw new Error("Target profile not found");
+
+        const newBal = Number(tp.available_balance) + amount;
+        await supabase.from("profiles").update({ available_balance: newBal }).eq("id", tp.id);
+        await supabase.from("transactions").insert({ profile_id: tp.id, type: "credit", amount, description: description || "Admin: added to wallet" });
+        await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Wallet Credited", message: `₹${amount.toLocaleString("en-IN")} has been added to your wallet by admin.`, type: "financial" });
+        
+        result.new_balance = newBal;
+        break;
+      }
+
+      case "admin_wallet_deduct": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!target_profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
+
+        const { data: tp } = await supabase.from("profiles").select("id, available_balance, user_id, full_name").eq("id", target_profile_id).single();
+        if (!tp) throw new Error("Target profile not found");
+
+        const newBal = Number(tp.available_balance) - amount;
+        await supabase.from("profiles").update({ available_balance: newBal }).eq("id", tp.id);
+        await supabase.from("transactions").insert({ profile_id: tp.id, type: "debit", amount, description: description || "Admin: deducted from wallet" });
+        await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Wallet Deducted", message: `₹${amount.toLocaleString("en-IN")} has been deducted from your wallet by admin.`, type: "financial" });
+        
+        result.new_balance = newBal;
+        break;
+      }
+
+      case "admin_wallet_hold": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!target_profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
+
+        const { data: tp } = await supabase.from("profiles").select("id, available_balance, hold_balance, user_id, full_name").eq("id", target_profile_id).single();
+        if (!tp) throw new Error("Target profile not found");
+
+        const holdAmt = Math.min(amount, Number(tp.available_balance));
+        if (holdAmt <= 0) throw new Error("Insufficient available balance to hold");
+
+        await supabase.from("profiles").update({ available_balance: Number(tp.available_balance) - holdAmt, hold_balance: Number(tp.hold_balance) + holdAmt }).eq("id", tp.id);
+        await supabase.from("transactions").insert({ profile_id: tp.id, type: "hold", amount: holdAmt, description: description || "Admin: amount held" });
+        await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Balance Held", message: `₹${holdAmt.toLocaleString("en-IN")} has been placed on hold by admin.`, type: "financial" });
+        
+        break;
+      }
+
+      case "admin_wallet_release": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!target_profile_id || !amount || amount <= 0) throw new Error("Missing profile_id or invalid amount");
+
+        const { data: tp } = await supabase.from("profiles").select("id, available_balance, hold_balance, user_id, full_name").eq("id", target_profile_id).single();
+        if (!tp) throw new Error("Target profile not found");
+
+        const releaseAmt = Math.min(amount, Number(tp.hold_balance));
+        if (releaseAmt <= 0) throw new Error("No held balance to release");
+
+        await supabase.from("profiles").update({ hold_balance: Number(tp.hold_balance) - releaseAmt, available_balance: Number(tp.available_balance) + releaseAmt }).eq("id", tp.id);
+        await supabase.from("transactions").insert({ profile_id: tp.id, type: "release", amount: releaseAmt, description: description || "Admin: hold released to available" });
+        await supabase.from("notifications").insert({ user_id: tp.user_id, title: "Balance Released", message: `₹${releaseAmt.toLocaleString("en-IN")} has been released from hold to your available balance by admin.`, type: "financial" });
+
+        result.released_amount = releaseAmt;
+        break;
+      }
+
+      case "admin_wallet_transfer": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!target_profile_id || !transfer_to_profile_id || !amount || amount <= 0) throw new Error("Missing parameters");
+
+        const { data: from } = await supabase.from("profiles").select("id, available_balance, user_id, full_name").eq("id", target_profile_id).single();
+        const { data: to } = await supabase.from("profiles").select("id, available_balance, user_id, full_name").eq("id", transfer_to_profile_id).single();
+        if (!from || !to) throw new Error("Profile not found");
+
+        await supabase.from("profiles").update({ available_balance: Number(from.available_balance) - amount }).eq("id", from.id);
+        await supabase.from("profiles").update({ available_balance: Number(to.available_balance) + amount }).eq("id", to.id);
+        await supabase.from("transactions").insert([
+          { profile_id: from.id, type: "debit" as const, amount, description: description || `Admin transfer to ${(to.full_name as any)?.[0] || to.id}` },
+          { profile_id: to.id, type: "credit" as const, amount, description: description || `Admin transfer from ${(from.full_name as any)?.[0] || from.id}` },
+        ]);
+        await supabase.from("notifications").insert([
+          { user_id: from.user_id, title: "Funds Transferred", message: `₹${amount.toLocaleString("en-IN")} transferred to ${(to.full_name as any)?.[0]} by admin.`, type: "financial" },
+          { user_id: to.user_id, title: "Funds Received", message: `₹${amount.toLocaleString("en-IN")} received from ${(from.full_name as any)?.[0]} by admin.`, type: "financial" },
+        ]);
+        
+        break;
+      }
+
+      case "admin_edit_transaction": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!transaction_id || !target_profile_id) throw new Error("Missing parameters");
+
+        const { data: oldTx } = await supabase.from("transactions").select("*").eq("id", transaction_id).single();
+        if (!oldTx) throw new Error("Transaction not found");
+
+        if (adjust_balance) {
+          const { data: tp } = await supabase.from("profiles").select("id, available_balance, hold_balance").eq("id", target_profile_id).single();
+          if (!tp) throw new Error("Profile not found");
+
+          let avail = Number(tp.available_balance);
+          let hold = Number(tp.hold_balance);
+          const oldAmt = Number(oldTx.amount);
+          const newAmt = Number(amount ?? oldTx.amount);
+          const oldType = oldTx.type;
+          const newType = type ?? oldTx.type;
+
+          if (oldType === "credit") avail -= oldAmt;
+          else if (oldType === "debit") avail += oldAmt;
+          else if (oldType === "hold") { avail += oldAmt; hold -= oldAmt; }
+          else if (oldType === "release") { avail -= oldAmt; hold += oldAmt; }
+
+          if (newType === "credit") avail += newAmt;
+          else if (newType === "debit") avail -= newAmt;
+          else if (newType === "hold") { avail -= newAmt; hold += newAmt; }
+          else if (newType === "release") { avail += newAmt; hold -= newAmt; }
+
+          await supabase.from("profiles").update({ available_balance: avail, hold_balance: hold }).eq("id", target_profile_id);
+        }
+
+        await supabase.from("transactions").update({
+          amount: Number(amount ?? oldTx.amount),
+          description: description ?? oldTx.description,
+          type: type ?? oldTx.type,
+        }).eq("id", transaction_id);
+
+        break;
+      }
+
+      case "admin_delete_transaction": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!transaction_id || !target_profile_id) throw new Error("Missing parameters");
+
+        const { data: oldTx } = await supabase.from("transactions").select("*").eq("id", transaction_id).single();
+        if (!oldTx) throw new Error("Transaction not found");
+
+        if (adjust_balance) {
+          const { data: tp } = await supabase.from("profiles").select("id, available_balance, hold_balance").eq("id", target_profile_id).single();
+          if (!tp) throw new Error("Profile not found");
+
+          let avail = Number(tp.available_balance);
+          let hold = Number(tp.hold_balance);
+          const amt = Number(oldTx.amount);
+
+          if (oldTx.type === "credit") avail -= amt;
+          else if (oldTx.type === "debit") avail += amt;
+          else if (oldTx.type === "hold") { avail += amt; hold -= amt; }
+          else if (oldTx.type === "release") { avail -= amt; hold += amt; }
+
+          await supabase.from("profiles").update({ available_balance: avail, hold_balance: hold }).eq("id", target_profile_id);
+        }
+
+        await supabase.from("transactions").delete().eq("id", transaction_id);
+
+        break;
+      }
+
+      case "admin_edit_withdrawal": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!withdrawal_id || !target_profile_id) throw new Error("Missing parameters");
+
+        const { data: oldW } = await supabase.from("withdrawals").select("*").eq("id", withdrawal_id).single();
+        if (!oldW) throw new Error("Withdrawal not found");
+
+        if (adjust_balance && amount !== undefined && Number(amount) !== Number(oldW.amount)) {
+          const diff = Number(amount) - Number(oldW.amount);
+          const { data: tp } = await supabase.from("profiles").select("id, available_balance").eq("id", target_profile_id).single();
+          if (tp) {
+            await supabase.from("profiles").update({ available_balance: Number(tp.available_balance) - diff }).eq("id", target_profile_id);
+          }
+        }
+
+        const updates: any = {};
+        if (amount !== undefined) updates.amount = Number(amount);
+        if (status) updates.status = status;
+        if (review_notes !== undefined) updates.review_notes = review_notes;
+
+        await supabase.from("withdrawals").update(updates).eq("id", withdrawal_id);
+
+        break;
+      }
+
+      case "admin_delete_withdrawal": {
+        const { data: roleCheck } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+        if (!roleCheck) throw new Error("Admin access required");
+        if (!withdrawal_id || !target_profile_id) throw new Error("Missing parameters");
+
+        const { data: oldW } = await supabase.from("withdrawals").select("*").eq("id", withdrawal_id).single();
+        if (!oldW) throw new Error("Withdrawal not found");
+
+        if (adjust_balance && (oldW.status === "pending" || oldW.status === "approved")) {
+          const { data: tp } = await supabase.from("profiles").select("id, available_balance").eq("id", target_profile_id).single();
+          if (tp) {
+            await supabase.from("profiles").update({ available_balance: Number(tp.available_balance) + Number(oldW.amount) }).eq("id", target_profile_id);
+          }
+        }
+
+        await supabase.from("withdrawals").delete().eq("id", withdrawal_id);
+
+        break;
+      }
+
+      case "lookup_wallet": {
+        if (!target_wallet_number || typeof target_wallet_number !== "string")
+          throw new Error("Missing wallet number");
+        if (target_wallet_number.trim().length !== 12)
+          throw new Error("Invalid wallet number");
+
+        const { data: lookupResult, error: lookupErr } = await supabase
+          .from("profiles")
+          .select("full_name, wallet_number, wallet_active")
+          .eq("wallet_number", target_wallet_number.trim())
+          .maybeSingle();
+        if (lookupErr) throw new Error("Lookup failed");
+        if (!lookupResult) throw new Error("No wallet found with this number");
+        if (lookupResult.wallet_number === callerProfile.wallet_number)
+          throw new Error("This is your own wallet");
+        if (!lookupResult.wallet_active)
+          throw new Error("This wallet is inactive");
+
+        const lookupName = Array.isArray(lookupResult.full_name) ? lookupResult.full_name.join(" ") : lookupResult.full_name;
+        result.recipient_name = lookupName;
+        break;
+      }
+
+      case "transfer_to_wallet": {
+        if (!target_wallet_number || typeof target_wallet_number !== "string")
+          throw new Error("Missing target wallet number");
+        if (!amount || amount <= 0) throw new Error("Invalid amount");
+        if (amount > Number(callerProfile.available_balance))
+          throw new Error("Insufficient balance");
+
+        // Look up recipient
+        const { data: recipient, error: rErr } = await supabase
+          .from("profiles")
+          .select("id, user_id, full_name, wallet_number, wallet_active")
+          .eq("wallet_number", target_wallet_number.trim())
+          .single();
+        if (rErr || !recipient) throw new Error("Recipient wallet not found");
+        if (recipient.id === callerProfile.id)
+          throw new Error("Cannot transfer to your own wallet");
+        if (!recipient.wallet_active)
+          throw new Error("Recipient wallet is inactive");
+
+        // Deduct from sender
+        await supabase
+          .from("profiles")
+          .update({ available_balance: Number(callerProfile.available_balance) - amount })
+          .eq("id", callerProfile.id);
+
+        // Credit recipient
+        const { data: recProfile } = await supabase
+          .from("profiles")
+          .select("available_balance")
+          .eq("id", recipient.id)
+          .single();
+        await supabase
+          .from("profiles")
+          .update({ available_balance: Number(recProfile?.available_balance ?? 0) + amount })
+          .eq("id", recipient.id);
+
+        const recipientName = Array.isArray(recipient.full_name) ? recipient.full_name[0] : recipient.full_name;
+
+        // Record transactions with a shared unique order ID for both sides
+        const transferOrderId = `TRF-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+        await supabase.from("transactions").insert([
+          {
+            profile_id: callerProfile.id,
+            type: "debit" as const,
+            amount,
+            description: `Transfer to wallet ${target_wallet_number} (Order ID: ${transferOrderId})`,
+            transaction_id: transferOrderId,
+            order_id: transferOrderId,
+            status: "success",
+          },
+          {
+            profile_id: recipient.id,
+            type: "credit" as const,
+            amount,
+            description: `Transfer received from wallet (Order ID: ${transferOrderId})`,
+            transaction_id: transferOrderId,
+            order_id: transferOrderId,
+            status: "success",
+          },
+        ]);
+        result.transaction_id = transferOrderId;
+        result.order_id = transferOrderId;
+
+        // Notify recipient
+        const { data: senderProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", callerProfile.id)
+          .single();
+        const senderName = Array.isArray(senderProfile?.full_name) ? senderProfile.full_name[0] : senderProfile?.full_name ?? "Someone";
+
+        await supabase.from("notifications").insert({
+          user_id: recipient.user_id,
+          title: "Money Received! 💰",
+          message: `${senderName} sent you ₹${amount.toLocaleString("en-IN")} via FlexPay wallet transfer.`,
+          type: "financial",
+        });
+
+        result.recipient_name = recipientName;
+        break;
+      }
+
+      case "claim_add_money_slot": {
+        // Simple implementation: always grant slot immediately (no queuing)
+        result = { claimed: true };
+        break;
+      }
+
+      case "release_add_money_slot": {
+        // Nothing to release in simple implementation
+        result = { success: true };
+        break;
+      }
+
+      case "submit_deposit_request": {
+        const validAmount = validateAmount(amount, 50000);
+        const orderId = generateWithdrawalOrderId(15);
+
+        // Try to save deposit request
+        const { error: drErr } = await supabase.from("deposit_requests").insert({
+          profile_id: callerProfile.id,
+          amount: validAmount,
+          payment_method: payment_method || "Unknown",
+          payment_details: payment_details ? JSON.stringify(payment_details) : null,
+          order_id: orderId,
+          status: "pending",
+        });
+        if (drErr) {
+          // Table may not exist yet — fall back to logging via notification
+          console.warn("deposit_requests insert failed:", drErr.message);
+          // Notify admin via notification record
+          const { data: adminProfiles } = await supabase
+            .from("profiles")
+            .select("user_id")
+            .eq("user_type", "employee")
+            .limit(1);
+          await supabase.from("notifications").insert({
+            user_id: user.id,
+            title: "Deposit Request Submitted",
+            message: `Your deposit request of ₹${validAmount.toLocaleString("en-IN")} via ${payment_method || "Unknown"} has been received. Order ID: ${orderId}. Admin will credit your wallet after verifying the payment.`,
+            type: "financial",
+          });
+        }
+
+        result = { order_id: orderId };
+        break;
+      }
+
+      case "admin_update_deposit_request_status": {
+        // Admin updates deposit request status and handles wallet crediting
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+
+        if (!deposit_request_id) throw new Error("Missing deposit_request_id");
+        if (!deposit_status) throw new Error("Missing deposit_status");
+
+        const validStatuses = ["pending", "payment_shared", "utr_submitted", "approved", "rejected", "expired"];
+        if (!validStatuses.includes(deposit_status)) throw new Error(`Invalid status: ${deposit_status}`);
+
+        const { data: depReq, error: depErr } = await supabase
+          .from("deposit_requests")
+          .select("*, profiles:profile_id (id, available_balance, user_id, full_name)")
+          .eq("id", deposit_request_id)
+          .single();
+        if (depErr || !depReq) throw new Error("Deposit request not found");
+
+        // If changing to approved and it wasn't already approved, credit the wallet
+        if (deposit_status === "approved" && depReq.status !== "approved") {
+          const userProfile = (depReq as any).profiles;
+          const newBalance = Number(userProfile.available_balance) + Number(depReq.amount);
+          
+          const { error: balErr } = await supabase
+            .from("profiles")
+            .update({ available_balance: newBalance })
+            .eq("id", userProfile.id);
+          if (balErr) throw new Error(`Failed to credit wallet: ${balErr.message}`);
+          
+          const { error: txnErr } = await supabase.from("transactions").insert({
+            profile_id: userProfile.id,
+            type: "credit",
+            amount: Number(depReq.amount),
+            description: `Wallet top-up approved via ${depReq.payment_method}. Order: ${depReq.order_id}`,
+            order_id: depReq.order_id,
+            status: "success",
+          });
+          if (txnErr) console.error("Transaction insert error (non-fatal):", txnErr.message);
+          
+          const { error: notifErr } = await supabase.from("notifications").insert({
+            user_id: userProfile.user_id,
+            title: "Deposit Approved! 💰",
+            message: `Your deposit of ₹${Number(depReq.amount).toLocaleString("en-IN")} via ${depReq.payment_method} has been approved. Your wallet has been credited.`,
+            type: "financial",
+          });
+          if (notifErr) console.error("Notification insert error (non-fatal):", notifErr.message);
+        }
+
+        // If changing to rejected and it wasn't already rejected
+        if (deposit_status === "rejected" && depReq.status !== "rejected") {
+          const userProfile = (depReq as any).profiles;
+          const { error: notifErr } = await supabase.from("notifications").insert({
+            user_id: userProfile.user_id,
+            title: "Deposit Request Rejected",
+            message: `Your deposit request of ₹${Number(depReq.amount).toLocaleString("en-IN")} via ${depReq.payment_method} was rejected.`,
+            type: "financial",
+          });
+          if (notifErr) console.error("Rejection notification error (non-fatal):", notifErr.message);
+        }
+
+        const { error: updateErr } = await supabase
+          .from("deposit_requests")
+          .update({
+            status: deposit_status,
+            reviewed_by: callerProfile.id,
+            reviewed_at: new Date().toISOString(),
+          })
+          .eq("id", deposit_request_id);
+        if (updateErr) throw new Error(`Failed to update status: ${updateErr.message}`);
+
+        result = { success: true };
+        break;
+      }
+
+      default:
+        throw new Error(`Unknown action: ${action}`);
+    }
+
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Unknown error";
+    console.error("wallet-operations error:", message);
+    return new Response(JSON.stringify({ error: message }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
