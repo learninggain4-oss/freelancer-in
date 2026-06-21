@@ -79,76 +79,29 @@ const getWA = (dark: boolean) => ({
 });
 
 /* ─── VoicePlayer ─── */
-/* ─── Voice recording ─── */
-const startRecording = async () => {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    recordingStreamRef.current = stream;
-    
-    // Choose appropriate mime type
-    const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/ogg";
-    const mr = new MediaRecorder(stream, { mimeType });
-    
-    audioChunksRef.current = [];
-    cancelledRef.current = false;
-    
-    mr.ondataavailable = (e) => {
-      if (e.data.size > 0) audioChunksRef.current.push(e.data);
-    };
+function VoicePlayer({ filePath, isMe, WA }: { filePath: string; isMe: boolean; WA: ReturnType<typeof getWA> }) {
+  const [url, setUrl]       = useState<string | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [dur, setDur]       = useState(0);
+  const [cur, setCur]       = useState(0);
+  const aRef = useRef<HTMLAudioElement>(null);
 
-    mr.onstop = async () => {
-      if (cancelledRef.current) {
-        audioChunksRef.current = [];
-        return;
-      }
-      
-      // Small delay to ensure all chunks are processed
-      await new Promise(resolve => setTimeout(resolve, 200));
+  useEffect(() => {
+    supabase.storage.from("support-files").createSignedUrl(filePath, 3600)
+      .then(({ data }) => { if (data?.signedUrl) setUrl(data.signedUrl); });
+  }, [filePath]);
 
-      const ext = mimeType.includes("webm") ? "webm" : "ogg";
-      const blob = new Blob(audioChunksRef.current, { type: mimeType });
-      
-      // Increased check threshold slightly to be safe
-      if (blob.size < 1000) {
-        toast.error("Recording too short");
-        return;
-      }
-      
-      try {
-        if (!conversation?.id || !profile?.id) return;
-        const path = `support/${conversation.id}/${Date.now()}.${ext}`;
-        const { error } = await supabase.storage.from("support-files").upload(path, blob, { contentType: mimeType });
-        if (error) throw error;
-        await sendMessage("🎤 Voice message", path, `voice.${ext}`);
-        setTimeout(() => scrollToBottom(), 100);
-      } catch (err: any) {
-        toast.error(err.message || "Failed to send voice message");
-      }
-    };
+  const toggle = () => {
+    const a = aRef.current;
+    if (!a) return;
+    if (playing) { a.pause(); setPlaying(false); }
+    else { a.play().then(() => setPlaying(true)).catch(() => {}); }
+  };
 
-    mr.start(100);
-    mediaRecorderRef.current = mr;
-    setIsRecording(true);
-    setRecordingTime(0);
-    recordingTimerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
-  } catch (err: any) {
-    if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") setShowMicDenied(true);
-    else toast.error("Could not access microphone");
-  }
-};
+  const barColor = isMe ? (WA.header === "#075e54" ? "#3e8e6e" : "#3d8c6e") : WA.sub;
 
-const stopAndSend = () => {
-  if (!mediaRecorderRef.current || !isRecording) return;
-  cancelledRef.current = false;
-  if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
-  
-  // Stop tracks first
-  recordingStreamRef.current?.getTracks().forEach(t => t.stop());
-  
-  // Stop recorder
-  mediaRecorderRef.current.stop();
-  setIsRecording(false);
-};
+  return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 200, paddingBottom: 4 }}>
       <audio ref={aRef} src={url ?? undefined} preload="metadata"
         onLoadedMetadata={() => { if (aRef.current) setDur(aRef.current.duration); }}
