@@ -14,6 +14,7 @@ const TransactionHistory = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const { data: transactions = [], isLoading } = useQuery({
