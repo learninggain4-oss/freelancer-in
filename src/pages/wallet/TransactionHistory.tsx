@@ -3,17 +3,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowUpRight, ArrowDownLeft, Calendar, Clock, Hash, Info, Copy, Check } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 
 const TransactionHistory = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const { data: transactions = [], isLoading } = useQuery({
@@ -31,6 +32,24 @@ const TransactionHistory = () => {
     },
     enabled: !!profile?.id,
   });
+
+  // Realtime: refresh on any change to this user's transactions
+  useEffect(() => {
+    if (!profile?.id) return;
+    const channel = supabase
+      .channel(`tx-history:${profile.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "transactions", filter: `profile_id=eq.${profile.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["all-transactions", profile.id] });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.id, queryClient]);
 
   const handleCopy = (id: string) => {
     navigator.clipboard.writeText(id);
