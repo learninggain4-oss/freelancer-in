@@ -33,6 +33,24 @@ const TransactionHistory = () => {
     enabled: !!profile?.id,
   });
 
+  // Realtime: refresh on any change to this user's transactions
+  useEffect(() => {
+    if (!profile?.id) return;
+    const channel = supabase
+      .channel(`tx-history:${profile.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "transactions", filter: `profile_id=eq.${profile.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["all-transactions", profile.id] });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.id, queryClient]);
+
   const handleCopy = (id: string) => {
     navigator.clipboard.writeText(id);
     setCopiedId(id);
