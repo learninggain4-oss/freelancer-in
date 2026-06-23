@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeftRight, CheckCircle2, XCircle, Loader2, Search } from "lucide-react";
+import { ArrowLeftRight, CheckCircle2, XCircle, Loader2, Search, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +26,8 @@ interface TransferDialogProps {
 const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWalletNumber }: TransferDialogProps) => {
   const [walletNumber, setWalletNumber] = useState(initialWalletNumber || "");
   const [amount, setAmount] = useState("");
+  const [withdrawalPassword, setWithdrawalPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [recipientName, setRecipientName] = useState<string | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
   const [transferStage, setTransferStage] = useState<"idle" | "processing" | "success" | "failed">("idle");
@@ -100,6 +102,7 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
       if (!amt || amt <= 0) throw new Error("Enter a valid amount");
       if (amt > maxBalance) throw new Error("Insufficient balance");
       if (!recipientName) throw new Error("Please look up the wallet first");
+      if (!withdrawalPassword) throw new Error("Please enter your withdrawal password");
 
       const orderId = generateOrderId();
       const res = await supabase.functions.invoke("wallet-operations", {
@@ -108,6 +111,7 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
           target_wallet_number: walletNumber,
           amount: amt,
           order_id: orderId,
+          withdrawal_password: withdrawalPassword, // Passing withdrawal password to backend
         },
       });
       if (res.error) throw new Error(res.error.message);
@@ -126,6 +130,7 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
         toast.success(`₹${Number(data.amount).toLocaleString("en-IN")} transferred successfully`);
         setWalletNumber("");
         setAmount("");
+        setWithdrawalPassword("");
         setRecipientName(null);
         onOpenChange(false);
         onSuccess();
@@ -229,6 +234,33 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
               />
               <p className="text-[11px] text-muted-foreground">Available: ₹{maxBalance.toLocaleString("en-IN")}</p>
             </div>
+
+            {/* New Withdrawal Password Field */}
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Withdrawal Password</Label>
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your withdrawal password"
+                  value={withdrawalPassword}
+                  onChange={(e) => setWithdrawalPassword(e.target.value)}
+                  className="pr-10 text-sm font-medium"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-10 w-10 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -236,7 +268,7 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
             </Button>
             <Button
               onClick={() => transferMutation.mutate()}
-              disabled={transferMutation.isPending || !recipientName || !amount}
+              disabled={transferMutation.isPending || !recipientName || !amount || !withdrawalPassword}
             >
               {transferMutation.isPending ? "Transferring..." : "Transfer"}
             </Button>
