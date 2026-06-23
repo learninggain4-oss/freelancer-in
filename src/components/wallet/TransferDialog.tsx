@@ -32,6 +32,18 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState("Processing transfer...");
 
+  // Sound Utility Function
+  const playStatusSound = (type: "success" | "failed") => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const text = type === "success" ? "Transfer successful" : "Transfer failed";
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.0;
+      utterance.pitch = type === "success" ? 1.2 : 0.8; // Success high pitch, fail low pitch
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
   // Unique Order ID Generator
   const generateOrderId = () => {
     return `TRF-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -75,7 +87,6 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
     } else {
       if (recipientName) setRecipientName(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [walletNumber]);
 
   const transferMutation = useMutation({
@@ -90,15 +101,13 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
       if (amt > maxBalance) throw new Error("Insufficient balance");
       if (!recipientName) throw new Error("Please look up the wallet first");
 
-      // Generate Order ID here
       const orderId = generateOrderId();
-
       const res = await supabase.functions.invoke("wallet-operations", {
         body: {
           action: "transfer_to_wallet",
           target_wallet_number: walletNumber,
           amount: amt,
-          order_id: orderId, // Order ID അയക്കുന്നു
+          order_id: orderId,
         },
       });
       if (res.error) throw new Error(res.error.message);
@@ -107,6 +116,7 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
     },
     onSuccess: (data) => {
       setTransferStage("success");
+      playStatusSound("success"); // Success Sound
       setStatusMessage(
         `₹${Number(data.amount).toLocaleString("en-IN")} transferred successfully\nOrder ID: ${data.order_id}`,
       );
@@ -119,10 +129,11 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
         setRecipientName(null);
         onOpenChange(false);
         onSuccess();
-      }, 2000); // 2 സെക്കൻഡ് കഴിഞ്ഞ് ക്ലോസ് ആകാൻ സമയം കൂട്ടി
+      }, 3000);
     },
     onError: (e: any) => {
       setTransferStage("failed");
+      playStatusSound("failed"); // Failure Sound
       setStatusMessage(e.message || "Transfer failed. Please try again.");
       toast.error(e.message || "Transfer failed. Please try again.");
     },
