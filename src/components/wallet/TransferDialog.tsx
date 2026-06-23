@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeftRight, CheckCircle2, XCircle, Loader2, Search, Ban } from "lucide-react";
+import { ArrowLeftRight, CheckCircle2, XCircle, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -141,18 +141,6 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
 
   return (
     <>
-      {/* CSS for Smooth Floating Animation */}
-      <style>{`
-        @keyframes custom-float {
-          0% { transform: translateY(0px); }
-          50% { transform: translateY(-12px); }
-          100% { transform: translateY(0px); }
-        }
-        .animate-custom-float {
-          animation: custom-float 2.5s ease-in-out infinite;
-        }
-      `}</style>
-
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -225,18 +213,10 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
       >
         <DialogContent className="max-w-sm">
           <div className="space-y-4 text-center py-6">
-            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-slate-50 text-slate-700">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 text-slate-700">
               {transferStage === "processing" && <Loader2 className="h-10 w-10 animate-spin" />}
-
-              {/* Green Tick with Floating Animation */}
-              {transferStage === "success" && (
-                <CheckCircle2 className="h-16 w-16 text-emerald-500 animate-custom-float drop-shadow-md" />
-              )}
-
-              {/* 🚫 (Ban) Icon with Floating Animation */}
-              {transferStage === "failed" && (
-                <Ban className="h-16 w-16 text-rose-500 animate-custom-float drop-shadow-md" />
-              )}
+              {transferStage === "success" && <CheckCircle2 className="h-12 w-12 text-emerald-500" />}
+              {transferStage === "failed" && <XCircle className="h-12 w-12 text-rose-500" />}
             </div>
             <div className="space-y-2">
               <p className="text-lg font-semibold">
