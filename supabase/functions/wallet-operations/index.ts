@@ -1234,13 +1234,13 @@ Deno.serve(async (req) => {
 
         // Record transactions with a shared unique order ID for both sides
         const transferOrderId = `TRF-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-        await supabase.from("transactions").insert([
+        const { error: txInsertErr } = await supabase.from("transactions").insert([
           {
             profile_id: callerProfile.id,
             type: "debit" as const,
             amount,
             description: `Transfer to wallet ${target_wallet_number} (Order ID: ${transferOrderId})`,
-            transaction_id: transferOrderId,
+            transaction_id: `${transferOrderId}-OUT`,
             order_id: transferOrderId,
             status: "success",
           },
@@ -1249,11 +1249,15 @@ Deno.serve(async (req) => {
             type: "credit" as const,
             amount,
             description: `Transfer received from wallet (Order ID: ${transferOrderId})`,
-            transaction_id: transferOrderId,
+            transaction_id: `${transferOrderId}-IN`,
             order_id: transferOrderId,
             status: "success",
           },
         ]);
+        if (txInsertErr) {
+          console.error("transfer_to_wallet: failed to insert transactions", txInsertErr);
+          throw new Error(formatErrorMessage(txInsertErr, "Failed to record transfer"));
+        }
         result.transaction_id = transferOrderId;
         result.order_id = transferOrderId;
 
