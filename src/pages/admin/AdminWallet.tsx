@@ -8,7 +8,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, PlusCircle, ArrowUpRight, SendHorizontal, Search, History, Wallet } from "lucide-react";
+import {
+  Loader2,
+  PlusCircle,
+  ArrowUpRight,
+  SendHorizontal,
+  Search,
+  History,
+  Wallet,
+  Edit2,
+  Check,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import TotpVerifyDialog from "@/components/admin/TotpVerifyDialog";
@@ -69,6 +80,12 @@ const AdminWallet = () => {
   const [transferDescription, setTransferDescription] = useState("");
   const [showTotpForTransfer, setShowTotpForTransfer] = useState(false);
   const [showTotpForAddMoney, setShowTotpForAddMoney] = useState(false);
+
+  // Wallet Edit States
+  const [isEditingWallet, setIsEditingWallet] = useState(false);
+  const [newWalletNumber, setNewWalletNumber] = useState("");
+  const [showTotpForEditWallet, setShowTotpForEditWallet] = useState(false);
+
   const queryClient = useQueryClient();
 
   const { data: totpStatus } = useQuery({
@@ -96,6 +113,14 @@ const AdminWallet = () => {
       setShowTotpForTransfer(true);
     } else {
       transferMutation.mutate();
+    }
+  };
+
+  const handleEditWallet = () => {
+    if (requireTotp) {
+      setShowTotpForEditWallet(true);
+    } else {
+      editWalletMutation.mutate();
     }
   };
 
@@ -173,6 +198,39 @@ const AdminWallet = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const editWalletMutation = useMutation({
+    mutationFn: async () => {
+      if (!newWalletNumber.trim()) throw new Error("Enter a valid wallet number");
+      if (!profile?.id) throw new Error("Not authenticated");
+
+      // Check if wallet number already exists
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("wallet_number", newWalletNumber.trim())
+        .maybeSingle();
+
+      if (existing && existing.id !== profile.id) {
+        throw new Error("This wallet number is already in use.");
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ wallet_number: newWalletNumber.trim() })
+        .eq("id", profile.id);
+
+      if (error) throw new Error(error.message);
+      return true;
+    },
+    onSuccess: () => {
+      toast.success("Wallet number updated successfully");
+      setIsEditingWallet(false);
+      setNewWalletNumber("");
+      refreshProfile();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   if (!profile) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -196,15 +254,101 @@ const AdminWallet = () => {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <WalletCard
-          name={profile.full_name?.join(" ") || "Admin"}
-          userCode={profile.user_code?.join(", ") || ""}
-          walletNumber={profile.wallet_number}
-          profileId={profile.id}
-          availableBalance={Number(profile.available_balance) || 0}
-          holdBalance={Number(profile.hold_balance) || 0}
-        />
+        {/* Left Column: Wallet Card & Edit Wallet Section */}
+        <div className="flex flex-col gap-6">
+          <WalletCard
+            name={profile.full_name?.join(" ") || "Admin"}
+            userCode={profile.user_code?.join(", ") || ""}
+            walletNumber={profile.wallet_number}
+            profileId={profile.id}
+            availableBalance={Number(profile.available_balance) || 0}
+            holdBalance={Number(profile.hold_balance) || 0}
+          />
 
+          <div
+            className="rounded-3xl border p-6 transition-all hover:shadow-xl"
+            style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
+                  <Edit2 className="h-5 w-5" />
+                </div>
+                <h3 className="text-lg font-bold" style={{ color: T.text }}>
+                  Wallet Settings
+                </h3>
+              </div>
+              {!isEditingWallet && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setIsEditingWallet(true);
+                    setNewWalletNumber(profile.wallet_number || "");
+                  }}
+                  style={{ color: T.sub }}
+                >
+                  Edit Number
+                </Button>
+              )}
+            </div>
+
+            {isEditingWallet ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label style={{ color: T.sub }}>New Wallet Number</Label>
+                  <Input
+                    placeholder="Enter new wallet number"
+                    value={newWalletNumber}
+                    onChange={(e) => setNewWalletNumber(e.target.value)}
+                    style={{ background: T.input, borderColor: T.border, color: T.text }}
+                    className="h-11"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={handleEditWallet}
+                    disabled={
+                      editWalletMutation.isPending ||
+                      !newWalletNumber.trim() ||
+                      newWalletNumber === profile.wallet_number
+                    }
+                  >
+                    {editWalletMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="mr-2 h-4 w-4" />
+                    )}
+                    Save
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 rounded-xl"
+                    style={{ borderColor: T.border, color: T.text }}
+                    onClick={() => {
+                      setIsEditingWallet(false);
+                      setNewWalletNumber("");
+                    }}
+                    disabled={editWalletMutation.isPending}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm" style={{ color: T.sub }}>
+                Current Number:{" "}
+                <span className="font-mono font-medium" style={{ color: T.text }}>
+                  {profile.wallet_number || "Not set"}
+                </span>
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Add Money */}
         <div
           className="rounded-3xl border p-6 transition-all hover:shadow-xl"
           style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }}
@@ -245,6 +389,7 @@ const AdminWallet = () => {
         </div>
       </div>
 
+      {/* Transfer Money Section */}
       <div
         className="rounded-3xl border p-6 transition-all hover:shadow-xl"
         style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }}
@@ -293,7 +438,6 @@ const AdminWallet = () => {
                         <p className="font-bold" style={{ color: T.text }}>
                           {u.full_name?.[0]}
                         </p>
-                        {/* UPDATED MAPPING HERE */}
                         <p className="text-xs" style={{ color: T.sub }}>
                           {u.user_type === "Freelancer"
                             ? "Freelancer"
@@ -401,6 +545,7 @@ const AdminWallet = () => {
         </Button>
       </div>
 
+      {/* TOTP Dialogs */}
       <TotpVerifyDialog
         open={showTotpForAddMoney}
         onClose={() => setShowTotpForAddMoney(false)}
@@ -421,6 +566,17 @@ const AdminWallet = () => {
         }}
         title="Authorize Transfer"
         description="Please enter your 2FA code to complete the fund transfer."
+      />
+
+      <TotpVerifyDialog
+        open={showTotpForEditWallet}
+        onClose={() => setShowTotpForEditWallet(false)}
+        onVerified={() => {
+          setShowTotpForEditWallet(false);
+          editWalletMutation.mutate();
+        }}
+        title="Verify Security Code"
+        description="Please enter your 2FA code to authorize updating your wallet number."
       />
     </div>
   );
