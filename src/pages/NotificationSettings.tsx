@@ -15,7 +15,6 @@ import {
   Briefcase,
   AlertTriangle,
   Megaphone,
-  Mic,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -41,23 +40,18 @@ const CATEGORY_COLORS: Record<SoundCategory, { bg: string; color: string }> = {
   announcement: { bg: "bg-warning/10", color: "text-warning" },
 };
 
-// Define the 5 voice options (2 Female, 2 Male, 1 Custom)
+// Define the 4 voice options (2 Female, 2 Male)
 const VOICE_OPTIONS = [
   { id: "voice-female-1", label: "Female Voice 1" },
   { id: "voice-female-2", label: "Female Voice 2" },
   { id: "voice-male-1", label: "Male Voice 1" },
   { id: "voice-male-2", label: "Male Voice 2" },
-  { id: "voice-custom", label: "Your Own Voice (Record)" },
 ];
 
 const NotificationSettings = () => {
   const [prefs, setPrefs] = useState<SoundPreferences>(loadSoundPreferences);
   const [playingId, setPlayingId] = useState<string | null>(null);
-  const [recordingCategory, setRecordingCategory] = useState<string | null>(null);
-
   const stopRef = useRef<(() => void) | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<BlobPart[]>([]);
 
   // Initialize browser voices early
   useEffect(() => {
@@ -82,71 +76,13 @@ const NotificationSettings = () => {
     setPlayingId(null);
   }, []);
 
-  // Voice Recording Functions
-  const startRecording = async (categoryId: string) => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
-      };
-
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        const reader = new FileReader();
-        reader.readAsDataURL(audioBlob);
-        reader.onloadend = () => {
-          const base64String = reader.result as string;
-          localStorage.setItem(`custom_voice_${categoryId}`, base64String);
-          toast.success("Custom voice saved successfully!");
-        };
-        stream.getTracks().forEach((track) => track.stop());
-      };
-
-      mediaRecorder.start();
-      setRecordingCategory(categoryId);
-    } catch (err) {
-      toast.error("Microphone access denied. Please allow mic permissions.");
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      mediaRecorderRef.current.stop();
-    }
-    setRecordingCategory(null);
-  };
-
   const handlePreview = useCallback(
     (categoryId: string, voiceId: string) => {
       stopCurrent();
       const currentPlayKey = `${categoryId}-${voiceId}`;
       if (playingId === currentPlayKey) return;
 
-      // Handle Custom Voice Playback
-      if (voiceId === "voice-custom") {
-        const customAudioData = localStorage.getItem(`custom_voice_${categoryId}`);
-        if (!customAudioData) {
-          toast.error("Please record your voice first using the mic button.");
-          return;
-        }
-
-        const audio = new Audio(customAudioData);
-        audio.onended = () => setPlayingId(null);
-        audio.play().catch(() => toast.error("Failed to play custom audio"));
-
-        stopRef.current = () => {
-          audio.pause();
-          audio.currentTime = 0;
-        };
-        setPlayingId(currentPlayKey);
-        return;
-      }
-
-      // Handle Text-to-Speech Playback
+      // Set explicit text for each category
       let textToSpeak = "New notification";
       if (categoryId === "chat") textToSpeak = "New chat message";
       if (categoryId === "project") textToSpeak = "New project update";
@@ -156,21 +92,23 @@ const NotificationSettings = () => {
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       const voices = window.speechSynthesis.getVoices();
 
+      // Find available female and male voices from the browser
       const femaleVoices = voices.filter((v) => /female|zira|samantha|victoria|siri/i.test(v.name));
       const maleVoices = voices.filter((v) => /male|david|mark|daniel|alex/i.test(v.name) && !/female/i.test(v.name));
 
+      // Map the selected voiceId to a distinct voice and pitch
       if (voiceId === "voice-female-1") {
         utterance.voice = femaleVoices[0] || null;
         utterance.pitch = 1.2;
       } else if (voiceId === "voice-female-2") {
         utterance.voice = femaleVoices[1] || femaleVoices[0] || null;
-        utterance.pitch = 1.6;
+        utterance.pitch = 1.6; // Higher pitch to sound distinct
       } else if (voiceId === "voice-male-1") {
         utterance.voice = maleVoices[0] || null;
         utterance.pitch = 1.0;
       } else if (voiceId === "voice-male-2") {
         utterance.voice = maleVoices[1] || maleVoices[0] || null;
-        utterance.pitch = 0.6;
+        utterance.pitch = 0.6; // Lower pitch to sound distinct
       }
 
       utterance.onstart = () => setPlayingId(currentPlayKey);
@@ -296,7 +234,6 @@ const NotificationSettings = () => {
                 {VOICE_OPTIONS.map((voice) => {
                   const isSelected = catPref.ringtoneId === voice.id;
                   const isPlaying = playingId === `${cat.key}-${voice.id}`;
-                  const isCustom = voice.id === "voice-custom";
 
                   return (
                     <button
@@ -312,7 +249,6 @@ const NotificationSettings = () => {
                         isSelected
                           ? "border-primary bg-primary/5 shadow-sm"
                           : "border-border hover:border-primary/30 hover:bg-muted/50",
-                        isCustom && "col-span-2", // Custom voice option spans full width
                       )}
                     >
                       <div className="flex flex-1 items-center gap-2 min-w-0">
@@ -325,37 +261,7 @@ const NotificationSettings = () => {
                         >
                           {voice.label}
                         </span>
-                        {isCustom && recordingCategory === cat.key && (
-                          <Badge variant="destructive" className="ml-2 text-[9px] px-1.5 py-0 h-4 animate-pulse">
-                            Recording...
-                          </Badge>
-                        )}
                       </div>
-
-                      {/* Show Mic Button only for Custom Voice */}
-                      {isCustom && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={cn(
-                            "h-7 w-7 shrink-0",
-                            recordingCategory === cat.key ? "text-destructive" : "text-primary",
-                          )}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (recordingCategory === cat.key) {
-                              stopRecording();
-                            } else {
-                              startRecording(cat.key);
-                            }
-                          }}
-                          title={recordingCategory === cat.key ? "Stop Recording" : "Record Voice"}
-                        >
-                          {recordingCategory === cat.key ? <Square className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
-                        </Button>
-                      )}
-
-                      {/* Play Button */}
                       <Button
                         variant="ghost"
                         size="icon"
