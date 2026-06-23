@@ -161,6 +161,9 @@ const AdminWalletManagement = () => {
   const [deleteW, setDeleteW] = useState<Withdrawal | null>(null);
   const [deleteWAdjustBalance, setDeleteWAdjustBalance] = useState(true);
 
+  const [editWalletNumberOpen, setEditWalletNumberOpen] = useState(false);
+  const [newWalletNumber, setNewWalletNumber] = useState("");
+
   const TX_PAGE_SIZE = 15;
   const W_PAGE_SIZE = 15;
   const [txPage, setTxPage] = useState(1);
@@ -377,6 +380,23 @@ const AdminWalletManagement = () => {
     },
     onSuccess: (_, vars) => {
       toast.success(vars.active ? "Wallet activated" : "Wallet deactivated");
+      queryClient.invalidateQueries({ queryKey: ["admin-wallet-all-users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-wallet-user"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const updateWalletNumberMutation = useMutation({
+    mutationFn: async ({ id, wallet_number }: { id: string; wallet_number: string | null }) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ wallet_number } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Wallet number updated successfully");
+      setEditWalletNumberOpen(false);
       queryClient.invalidateQueries({ queryKey: ["admin-wallet-all-users"] });
       queryClient.invalidateQueries({ queryKey: ["admin-wallet-user"] });
     },
@@ -629,9 +649,21 @@ const AdminWalletManagement = () => {
                 </div>
                 <p className="text-xs flex items-center gap-2 mt-1" style={{ color: T.sub }}>
                   {displayUser?.user_code?.[0]} · {displayUser?.email} ·{" "}
-                  <span className="font-semibold text-indigo-400">
+                  <span className="font-semibold text-indigo-400 flex items-center gap-1">
                     Wallet: {displayUser?.wallet_number || "Not assigned"}
                   </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 hover:bg-indigo-500/20"
+                    onClick={() => {
+                      setNewWalletNumber(displayUser?.wallet_number || "");
+                      setEditWalletNumberOpen(true);
+                    }}
+                    title="Edit Wallet Number"
+                  >
+                    <Pencil className="h-3 w-3 text-indigo-500" />
+                  </Button>
                   {displayUser?.wallet_number && (
                     <Button
                       variant="ghost"
@@ -640,6 +672,7 @@ const AdminWalletManagement = () => {
                       onClick={() =>
                         navigator.clipboard.writeText(displayUser.wallet_number!).then(() => toast.success("Copied"))
                       }
+                      title="Copy Wallet Number"
                     >
                       <Copy className="h-3 w-3 text-indigo-500" />
                     </Button>
@@ -1105,6 +1138,53 @@ const AdminWalletManagement = () => {
           </Tabs>
         </div>
       )}
+
+      {/* Edit Wallet Number Dialog */}
+      <Dialog open={editWalletNumberOpen} onOpenChange={setEditWalletNumberOpen}>
+        <DialogContent
+          className="max-w-sm"
+          style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(20px)" }}
+        >
+          <DialogHeader>
+            <DialogTitle style={{ color: T.text }}>Edit Wallet Number</DialogTitle>
+            <DialogDescription style={{ color: T.sub }}>
+              Update the wallet number for {displayUser?.full_name?.[0]}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label style={{ color: T.text }}>Wallet Number</Label>
+              <Input
+                value={newWalletNumber}
+                onChange={(e) => setNewWalletNumber(e.target.value)}
+                placeholder="Enter wallet number (leave blank to remove)"
+                style={{ background: T.input, borderColor: T.border, color: T.text }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditWalletNumberOpen(false)}
+              style={{ background: "transparent", borderColor: T.border, color: T.text }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() =>
+                updateWalletNumberMutation.mutate({
+                  id: displayUser!.id,
+                  wallet_number: newWalletNumber.trim() === "" ? null : newWalletNumber.trim(),
+                })
+              }
+              disabled={updateWalletNumberMutation.isPending}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              {updateWalletNumberMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!actionDialog.type} onOpenChange={(o) => !o && closeActionDialog()}>
         <DialogContent
