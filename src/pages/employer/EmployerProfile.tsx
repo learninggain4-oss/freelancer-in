@@ -5,9 +5,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
-  User, Briefcase, Landmark, Building2, AlertCircle,
-  ShieldCheck, BadgeCheck, ChevronRight, Wallet,
-  Mail, Phone, Calendar, GraduationCap, Copy, Check, Coins,
+  User,
+  Briefcase,
+  Landmark,
+  Building2,
+  AlertCircle,
+  ShieldCheck,
+  BadgeCheck,
+  ChevronRight,
+  Wallet,
+  Mail,
+  Phone,
+  Calendar,
+  GraduationCap,
+  Copy,
+  Check,
+  Coins,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ProfilePhotoUpload from "@/components/profile/ProfilePhotoUpload";
@@ -17,9 +30,39 @@ import { format } from "date-fns";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
 
 const TH = {
-  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
-  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
-  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  black: {
+    bg: "#070714",
+    card: "rgba(255,255,255,.05)",
+    border: "rgba(255,255,255,.08)",
+    text: "#e2e8f0",
+    sub: "#94a3b8",
+    input: "rgba(255,255,255,.07)",
+    nav: "rgba(255,255,255,.04)",
+    badge: "rgba(99,102,241,.2)",
+    badgeFg: "#a5b4fc",
+  },
+  white: {
+    bg: "#f0f4ff",
+    card: "#ffffff",
+    border: "rgba(0,0,0,.08)",
+    text: "#1e293b",
+    sub: "#64748b",
+    input: "#f8fafc",
+    nav: "#f1f5f9",
+    badge: "rgba(99,102,241,.1)",
+    badgeFg: "#4f46e5",
+  },
+  wb: {
+    bg: "#f0f4ff",
+    card: "#ffffff",
+    border: "rgba(0,0,0,.08)",
+    text: "#1e293b",
+    sub: "#64748b",
+    input: "#f8fafc",
+    nav: "#f1f5f9",
+    badge: "rgba(99,102,241,.1)",
+    badgeFg: "#4f46e5",
+  },
 };
 
 const ClientProfile = () => {
@@ -117,21 +160,37 @@ const ClientProfile = () => {
 
   const isVerified = aadhaarStatus === "verified";
   const walletNumber = (profile as any)?.wallet_number ?? "—";
-  const fullName = Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Employer";
-  const userCode = Array.isArray(profile?.user_code) ? profile.user_code.join("") : profile?.user_code ?? "—";
+  const fullName = Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : (profile?.full_name ?? "Employer");
+  const userCode = Array.isArray(profile?.user_code) ? profile.user_code.join("") : (profile?.user_code ?? "—");
 
   // Profile completion: 9 criteria
-  const personalFilled = !!(profile?.full_name && profile?.email && profile?.mobile_number && profile?.date_of_birth && profile?.gender);
-  const professionalFilled = !!(profile?.education_level);
+  const personalFilled = !!(
+    profile?.full_name &&
+    profile?.email &&
+    profile?.mobile_number &&
+    profile?.date_of_birth &&
+    profile?.gender
+  );
+  const professionalFilled = !!profile?.education_level;
   const bankAdded = (bankAccountsCount ?? 0) >= 1;
-  const workExpFilled = !!(profile?.work_experience);
+  const workExpFilled = !!profile?.work_experience;
   const serviceFilled = (servicesCount ?? 0) >= 1;
   const emergencyFilled = (emergencyCount ?? 0) >= 1;
   const aadhaarDone = aadhaarStatus === "verified";
   const bankVerifDone = bankVerifStatus === "verified";
-  const photoUploaded = !!(profile?.profile_photo_path);
+  const photoUploaded = !!profile?.profile_photo_path;
 
-  const completionItems = [personalFilled, professionalFilled, bankAdded, workExpFilled, serviceFilled, emergencyFilled, aadhaarDone, bankVerifDone, photoUploaded];
+  const completionItems = [
+    personalFilled,
+    professionalFilled,
+    bankAdded,
+    workExpFilled,
+    serviceFilled,
+    emergencyFilled,
+    aadhaarDone,
+    bankVerifDone,
+    photoUploaded,
+  ];
   const filledCount = completionItems.filter(Boolean).length;
   const completion = Math.round((filledCount / completionItems.length) * 100);
 
@@ -145,12 +204,48 @@ const ClientProfile = () => {
   };
 
   const sections = [
-    { icon: User, label: "Personal Information", path: "/employer/profile/personal", color: "text-primary", desc: "Name, gender, DOB & more" },
-    { icon: Briefcase, label: "Professional", path: "/employer/profile/professional", color: "text-accent", desc: "Education & background" },
-    { icon: Landmark, label: "Bank Details", path: "/employer/profile/bank-details", color: "text-warning", desc: "Account & IFSC details" },
-    { icon: Building2, label: "Work Experience", path: "/employer/profile/work-experience", color: "text-secondary", desc: "Past roles & certificates" },
-    { icon: Briefcase, label: "Services", path: "/employer/profile/services", color: "text-primary", desc: "Service preferences" },
-    { icon: AlertCircle, label: "Emergency Contacts", path: "/employer/profile/emergency-contacts", color: "text-destructive", desc: "Safety contacts" },
+    {
+      icon: User,
+      label: "Personal Information",
+      path: "/employer/profile/personal",
+      color: "text-primary",
+      desc: "Name, gender, DOB & more",
+    },
+    {
+      icon: Briefcase,
+      label: "Professional",
+      path: "/employer/profile/professional",
+      color: "text-accent",
+      desc: "Education & background",
+    },
+    {
+      icon: Landmark,
+      label: "Bank Details",
+      path: "/employer/profile/bank-details",
+      color: "text-warning",
+      desc: "Account & IFSC details",
+    },
+    {
+      icon: Building2,
+      label: "Work Experience",
+      path: "/employer/profile/work-experience",
+      color: "text-secondary",
+      desc: "Past roles & certificates",
+    },
+    {
+      icon: Briefcase,
+      label: "Services",
+      path: "/employer/profile/services",
+      color: "text-primary",
+      desc: "Service preferences",
+    },
+    {
+      icon: AlertCircle,
+      label: "Emergency Contacts",
+      path: "/employer/profile/emergency-contacts",
+      color: "text-destructive",
+      desc: "Safety contacts",
+    },
     {
       icon: ShieldCheck,
       label: "Self Real Name Verification",
@@ -181,11 +276,17 @@ const ClientProfile = () => {
   return (
     <div className="space-y-5 p-4 pb-24 min-h-screen" style={{ backgroundColor: T.bg, color: T.text }}>
       {/* Profile Hero Card */}
-      <Card className="overflow-hidden border-0 shadow-xl" style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+      <Card
+        className="overflow-hidden border-0 shadow-xl"
+        style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}
+      >
         <div className="h-24 bg-gradient-to-r from-indigo-600 to-purple-600 opacity-90" />
         <CardContent className="relative px-4 pb-6 pt-0">
           <div className="flex flex-col items-center -mt-12">
-            <div className="rounded-full border-4 border-card bg-card p-1 shadow-2xl" style={{ background: T.card, borderColor: T.border }}>
+            <div
+              className="rounded-full border-4 border-card bg-card p-1 shadow-2xl"
+              style={{ background: T.card, borderColor: T.border }}
+            >
               <ProfilePhotoUpload />
             </div>
             <h1 className="mt-4 flex items-center gap-2 text-2xl font-bold tracking-tight">
@@ -193,10 +294,20 @@ const ClientProfile = () => {
               {isVerified && <BadgeCheck className="h-6 w-6 text-indigo-400" />}
             </h1>
             <div className="mt-2 flex items-center gap-2">
-              <Badge variant="outline" className="font-mono text-xs tracking-wider border-indigo-500/30 text-indigo-400" style={{ background: T.badge }}>
+              <Badge
+                variant="outline"
+                className="font-mono text-xs tracking-wider border-indigo-500/30 text-indigo-400"
+                style={{ background: T.badge }}
+              >
                 {userCode}
               </Badge>
-              <Badge className="text-[10px] capitalize font-semibold px-3" style={{ background: profile?.approval_status === "approved" ? "#4ade8020" : T.badge, color: profile?.approval_status === "approved" ? "#4ade80" : T.badgeFg }}>
+              <Badge
+                className="text-[10px] capitalize font-semibold px-3"
+                style={{
+                  background: profile?.approval_status === "approved" ? "#4ade8020" : T.badge,
+                  color: profile?.approval_status === "approved" ? "#4ade80" : T.badgeFg,
+                }}
+              >
                 {profile?.approval_status ?? "pending"}
               </Badge>
             </div>
@@ -205,25 +316,37 @@ const ClientProfile = () => {
           {/* Quick Info Pills */}
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             {profile?.email && (
-              <div className="flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium" style={{ background: T.input, border: `1px solid ${T.border}`, color: T.sub }}>
+              <div
+                className="flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium"
+                style={{ background: T.input, border: `1px solid ${T.border}`, color: T.sub }}
+              >
                 <Mail className="h-3.5 w-3.5 text-indigo-400" />
                 <span className="max-w-[160px] truncate">{profile.email}</span>
               </div>
             )}
             {profile?.mobile_number && (
-              <div className="flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium" style={{ background: T.input, border: `1px solid ${T.border}`, color: T.sub }}>
+              <div
+                className="flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium"
+                style={{ background: T.input, border: `1px solid ${T.border}`, color: T.sub }}
+              >
                 <Phone className="h-3.5 w-3.5 text-indigo-400" />
                 <span>{profile.mobile_number}</span>
               </div>
             )}
             {profile?.date_of_birth && (
-              <div className="flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium" style={{ background: T.input, border: `1px solid ${T.border}`, color: T.sub }}>
+              <div
+                className="flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium"
+                style={{ background: T.input, border: `1px solid ${T.border}`, color: T.sub }}
+              >
                 <Calendar className="h-3.5 w-3.5 text-indigo-400" />
                 <span>{format(new Date(profile.date_of_birth), "dd MMM yyyy")}</span>
               </div>
             )}
             {profile?.education_level && (
-              <div className="flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium" style={{ background: T.input, border: `1px solid ${T.border}`, color: T.sub }}>
+              <div
+                className="flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium"
+                style={{ background: T.input, border: `1px solid ${T.border}`, color: T.sub }}
+              >
                 <GraduationCap className="h-3.5 w-3.5 text-indigo-400" />
                 <span className="capitalize">{profile.education_level}</span>
               </div>
@@ -233,11 +356,22 @@ const ClientProfile = () => {
       </Card>
 
       {/* Wallet Number Card */}
-      <div style={{ background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)", color: "white", borderRadius: 16, boxShadow: "0 10px 40px rgba(99,102,241,.35)" }}>
+      <div
+        style={{
+          background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+          color: "white",
+          borderRadius: 16,
+          boxShadow: "0 10px 40px rgba(99,102,241,.35)",
+        }}
+      >
         {(profile as any)?.username && (
           <div className="px-5 pt-4">
-            <p style={{ color: "rgba(255,255,255,.75)" }} className="text-[10px] font-bold uppercase tracking-widest">Username</p>
-            <p style={{ color: "white" }} className="font-mono text-base font-semibold tracking-wide">@{(profile as any).username}</p>
+            <p style={{ color: "rgba(255,255,255,.75)" }} className="text-[10px] font-bold uppercase tracking-widest">
+              Username
+            </p>
+            <p style={{ color: "white" }} className="font-mono text-base font-semibold tracking-wide">
+              @{(profile as any).username}
+            </p>
           </div>
         )}
         <div className="flex items-center justify-between p-5">
@@ -246,8 +380,12 @@ const ClientProfile = () => {
               <Wallet className="h-6 w-6" />
             </div>
             <div>
-              <p style={{ color: "rgba(255,255,255,.75)" }} className="text-[10px] font-bold uppercase tracking-widest">Wallet Number</p>
-              <p style={{ color: "white" }} className="font-mono text-lg font-bold tracking-[0.2em]">{walletNumber}</p>
+              <p style={{ color: "rgba(255,255,255,.75)" }} className="text-[10px] font-bold uppercase tracking-widest">
+                Wallet Number
+              </p>
+              <p style={{ color: "white" }} className="font-mono text-lg font-bold tracking-[0.2em]">
+                {walletNumber}
+              </p>
             </div>
           </div>
           <button
@@ -261,7 +399,10 @@ const ClientProfile = () => {
       </div>
 
       {/* Profile Completion */}
-      <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }} className="border-0 shadow-lg">
+      <Card
+        style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}
+        className="border-0 shadow-lg"
+      >
         <CardContent className="p-5">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm font-bold uppercase tracking-wider text-indigo-400">Profile Completion</span>
@@ -276,14 +417,15 @@ const ClientProfile = () => {
             </span>
           </div>
           <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-indigo-500/10">
-            <div 
+            <div
               className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-1000 ease-out"
               style={{ width: `${completion}%` }}
             />
           </div>
           {completion < 100 && (
             <p className="mt-3 text-xs leading-relaxed" style={{ color: T.sub }}>
-              Complete all sections: Personal Info, Professional, Bank Details, Work Experience, Services, Emergency Contacts, Photo, Self Real Name & Bank Verification.
+              Complete all sections: Personal Info, Professional, Bank Details, Work Experience, Services, Emergency
+              Contacts, Photo, Self Real Name & Bank Verification.
             </p>
           )}
           {completion === 100 && (
@@ -294,27 +436,11 @@ const ClientProfile = () => {
         </CardContent>
       </Card>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-4">
-        {[
-          { label: "Projects", val: projectsCount ?? 0, color: "text-indigo-400", bg: "bg-indigo-500/10" },
-          { label: "KYC", val: isVerified ? "✓" : "—", color: "text-purple-400", bg: "bg-purple-500/10" },
-          { label: "Coins", val: profile?.coin_balance ?? 0, color: "text-amber-400", bg: "bg-amber-500/10" }
-        ].map((s, i) => (
-          <Card key={i} className="border-0 shadow-lg" style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
-            <CardContent className="flex flex-col items-center p-4">
-              <div className={`mb-2 flex h-8 w-8 items-center justify-center rounded-lg ${s.bg}`}>
-                <span className={`text-lg font-black ${s.color}`}>{s.val}</span>
-              </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.sub }}>{s.label}</span>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
       {/* Navigation Menu */}
       <div className="pt-2">
-        <h2 className="mb-4 text-xs font-black uppercase tracking-[0.2em]" style={{ color: T.sub }}>Manage Profile</h2>
+        <h2 className="mb-4 text-xs font-black uppercase tracking-[0.2em]" style={{ color: T.sub }}>
+          Manage Profile
+        </h2>
         <div className="space-y-3">
           {sections.map((section) => (
             <button
@@ -323,26 +449,52 @@ const ClientProfile = () => {
               className="group flex w-full items-center gap-4 rounded-2xl p-4 text-left transition-all active:scale-[0.98] shadow-lg"
               style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}
             >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-transform group-hover:scale-110" style={{ background: T.input, border: `1px solid ${T.border}` }}>
-                <section.icon className={`h-6 w-6 ${section.color.replace('text-', 'text-indigo-400')}`} style={{ color: section.color === 'text-primary' ? '#6366f1' : section.color === 'text-accent' ? '#8b5cf6' : section.color === 'text-warning' ? '#fbbf24' : section.color === 'text-destructive' ? '#f87171' : '#6366f1' }} />
+              <div
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-transform group-hover:scale-110"
+                style={{ background: T.input, border: `1px solid ${T.border}` }}
+              >
+                <section.icon
+                  className={`h-6 w-6 ${section.color.replace("text-", "text-indigo-400")}`}
+                  style={{
+                    color:
+                      section.color === "text-primary"
+                        ? "#6366f1"
+                        : section.color === "text-accent"
+                          ? "#8b5cf6"
+                          : section.color === "text-warning"
+                            ? "#fbbf24"
+                            : section.color === "text-destructive"
+                              ? "#f87171"
+                              : "#6366f1",
+                  }}
+                />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="block text-sm font-bold tracking-tight" style={{ color: T.text }}>{section.label}</span>
-                <span className="block text-[11px] font-medium" style={{ color: T.sub }}>{section.desc}</span>
+                <span className="block text-sm font-bold tracking-tight" style={{ color: T.text }}>
+                  {section.label}
+                </span>
+                <span className="block text-[11px] font-medium" style={{ color: T.sub }}>
+                  {section.desc}
+                </span>
               </div>
               {section.badge && (
-                <Badge 
+                <Badge
                   className="text-[10px] font-bold capitalize mr-1"
-                  style={{ 
-                    background: section.badge === 'verified' ? '#4ade8020' : section.badge === 'rejected' ? '#f8717120' : T.badge,
-                    color: section.badge === 'verified' ? '#4ade80' : section.badge === 'rejected' ? '#f87171' : T.badgeFg,
-                    border: `1px solid ${section.badge === 'verified' ? '#4ade8030' : section.badge === 'rejected' ? '#f8717130' : T.border}`
+                  style={{
+                    background:
+                      section.badge === "verified" ? "#4ade8020" : section.badge === "rejected" ? "#f8717120" : T.badge,
+                    color:
+                      section.badge === "verified" ? "#4ade80" : section.badge === "rejected" ? "#f87171" : T.badgeFg,
+                    border: `1px solid ${section.badge === "verified" ? "#4ade8030" : section.badge === "rejected" ? "#f8717130" : T.border}`,
                   }}
                 >
                   {section.badge}
                 </Badge>
               )}
-              <ChevronRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" style={{ color: T.sub }} />
+              <ChevronRight
+                className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1"
+                style={{ color: T.sub }}
+              />
             </button>
           ))}
         </div>
