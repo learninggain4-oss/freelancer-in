@@ -1,5 +1,5 @@
 import RegistrationForm from "./RegistrationForm";
 
-const ClientRegister = () => <RegistrationForm userType="employer" />;
+const EmployerRegister = () => <RegistrationForm userType="employer" />;
 
-export default ClientRegister;
+export default EmployerRegister;
