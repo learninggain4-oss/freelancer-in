@@ -40,6 +40,14 @@ const CATEGORY_COLORS: Record<SoundCategory, { bg: string; color: string }> = {
   announcement: { bg: "bg-warning/10", color: "text-warning" },
 };
 
+// Define the 4 voice options (2 Female, 2 Male)
+const VOICE_OPTIONS = [
+  { id: "voice-female-1", label: "Female Voice 1" },
+  { id: "voice-female-2", label: "Female Voice 2" },
+  { id: "voice-male-1", label: "Male Voice 1" },
+  { id: "voice-male-2", label: "Male Voice 2" },
+];
+
 const NotificationSettings = () => {
   const [prefs, setPrefs] = useState<SoundPreferences>(loadSoundPreferences);
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -69,9 +77,9 @@ const NotificationSettings = () => {
   }, []);
 
   const handlePreview = useCallback(
-    (categoryId: string) => {
+    (categoryId: string, voiceId: string) => {
       stopCurrent();
-      const currentPlayKey = `voice-${categoryId}`;
+      const currentPlayKey = `${categoryId}-${voiceId}`;
       if (playingId === currentPlayKey) return;
 
       // Set explicit text for each category
@@ -84,13 +92,23 @@ const NotificationSettings = () => {
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       const voices = window.speechSynthesis.getVoices();
 
-      // Try to find a female voice
-      const femaleVoice = voices.find((v) => /female|zira|samantha|victoria/i.test(v.name));
+      // Find available female and male voices from the browser
+      const femaleVoices = voices.filter((v) => /female|zira|samantha|victoria|siri/i.test(v.name));
+      const maleVoices = voices.filter((v) => /male|david|mark|daniel|alex/i.test(v.name) && !/female/i.test(v.name));
 
-      if (femaleVoice) {
-        utterance.voice = femaleVoice;
-      } else {
-        utterance.pitch = 1.2; // Fallback to higher pitch if no specific female voice is found
+      // Map the selected voiceId to a distinct voice and pitch
+      if (voiceId === "voice-female-1") {
+        utterance.voice = femaleVoices[0] || null;
+        utterance.pitch = 1.2;
+      } else if (voiceId === "voice-female-2") {
+        utterance.voice = femaleVoices[1] || femaleVoices[0] || null;
+        utterance.pitch = 1.6; // Higher pitch to sound distinct
+      } else if (voiceId === "voice-male-1") {
+        utterance.voice = maleVoices[0] || null;
+        utterance.pitch = 1.0;
+      } else if (voiceId === "voice-male-2") {
+        utterance.voice = maleVoices[1] || maleVoices[0] || null;
+        utterance.pitch = 0.6; // Lower pitch to sound distinct
       }
 
       utterance.onstart = () => setPlayingId(currentPlayKey);
@@ -212,39 +230,56 @@ const NotificationSettings = () => {
               </div>
             </CardHeader>
             {catPref.enabled && (
-              <CardContent className="grid grid-cols-1 gap-2 pt-0">
-                <button
-                  onClick={() =>
-                    save({
-                      ...prefs,
-                      sounds: { ...prefs.sounds, [cat.key]: { ...catPref, ringtoneId: "female-voice" } },
-                    })
-                  }
-                  className={cn(
-                    "flex items-center gap-2 rounded-xl border-2 p-2.5 text-left transition-all",
-                    "border-primary bg-primary/5 shadow-sm",
-                  )}
-                >
-                  <div className="flex flex-1 items-center gap-2 min-w-0">
-                    <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
-                    <span className="truncate text-xs font-medium text-primary">Female Voice Assistant</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 shrink-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePreview(cat.key);
-                    }}
-                  >
-                    {playingId === `voice-${cat.key}` ? (
-                      <Square className="h-3 w-3 text-destructive" />
-                    ) : (
-                      <Play className="h-3 w-3 text-muted-foreground" />
-                    )}
-                  </Button>
-                </button>
+              <CardContent className="grid grid-cols-2 gap-2 pt-0">
+                {VOICE_OPTIONS.map((voice) => {
+                  const isSelected = catPref.ringtoneId === voice.id;
+                  const isPlaying = playingId === `${cat.key}-${voice.id}`;
+
+                  return (
+                    <button
+                      key={voice.id}
+                      onClick={() =>
+                        save({
+                          ...prefs,
+                          sounds: { ...prefs.sounds, [cat.key]: { ...catPref, ringtoneId: voice.id } },
+                        })
+                      }
+                      className={cn(
+                        "flex items-center gap-2 rounded-xl border-2 p-2.5 text-left transition-all",
+                        isSelected
+                          ? "border-primary bg-primary/5 shadow-sm"
+                          : "border-border hover:border-primary/30 hover:bg-muted/50",
+                      )}
+                    >
+                      <div className="flex flex-1 items-center gap-2 min-w-0">
+                        {isSelected && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                        <span
+                          className={cn(
+                            "truncate text-[11px] font-medium",
+                            isSelected ? "text-primary" : "text-foreground",
+                          )}
+                        >
+                          {voice.label}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePreview(cat.key, voice.id);
+                        }}
+                      >
+                        {isPlaying ? (
+                          <Square className="h-3 w-3 text-destructive" />
+                        ) : (
+                          <Play className="h-3 w-3 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </button>
+                  );
+                })}
               </CardContent>
             )}
           </Card>
