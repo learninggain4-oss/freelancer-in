@@ -141,6 +141,45 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
 
   return (
     <>
+      <style>{`
+        .success-animation {
+          animation: popScale 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .success-animation path, .success-animation circle, .success-animation line, .success-animation polyline {
+          stroke-dasharray: 100;
+          stroke-dashoffset: 100;
+          animation: drawStroke 0.6s ease-out 0.1s forwards;
+        }
+        
+        .failure-animation {
+          animation: shakePop 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+        .failure-animation path, .failure-animation circle, .failure-animation line, .failure-animation polyline {
+          stroke-dasharray: 100;
+          stroke-dashoffset: 100;
+          animation: drawStroke 0.5s ease-out 0.1s forwards;
+        }
+
+        @keyframes popScale {
+          0% { transform: scale(0.5); opacity: 0; }
+          80% { transform: scale(1.15); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes shakePop {
+          0% { transform: scale(0.8); opacity: 0; }
+          20% { transform: scale(1.1) translateX(-4px); opacity: 1; }
+          40% { transform: scale(1) translateX(4px); }
+          60% { transform: translateX(-4px); }
+          80% { transform: translateX(4px); }
+          100% { transform: translateX(0); }
+        }
+
+        @keyframes drawStroke {
+          to { stroke-dashoffset: 0; }
+        }
+      `}</style>
+
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -215,8 +254,16 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
           <div className="space-y-4 text-center py-6">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 text-slate-700">
               {transferStage === "processing" && <Loader2 className="h-10 w-10 animate-spin" />}
-              {transferStage === "success" && <CheckCircle2 className="h-12 w-12 text-emerald-500" />}
-              {transferStage === "failed" && <XCircle className="h-12 w-12 text-rose-500" />}
+              {transferStage === "success" && (
+                <div className="success-animation">
+                  <CheckCircle2 className="h-12 w-12 text-emerald-500" />
+                </div>
+              )}
+              {transferStage === "failed" && (
+                <div className="failure-animation">
+                  <XCircle className="h-12 w-12 text-rose-500" />
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <p className="text-lg font-semibold">
