@@ -141,23 +141,15 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
 
   return (
     <>
-      {/* CSS for Tick and Error Animations */}
+      {/* CSS for Smooth Floating Animation */}
       <style>{`
-        @keyframes pop-in {
-          0% { transform: scale(0); opacity: 0; }
-          80% { transform: scale(1.2); opacity: 1; }
-          100% { transform: scale(1); opacity: 1; }
+        @keyframes custom-float {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-12px); }
+          100% { transform: translateY(0px); }
         }
-        @keyframes shake-error {
-          0%, 100% { transform: translateX(0); }
-          20%, 60% { transform: translateX(-8px); }
-          40%, 80% { transform: translateX(8px); }
-        }
-        .animate-success-tick {
-          animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-        .animate-error-ban {
-          animation: pop-in 0.3s ease-out forwards, shake-error 0.5s ease-in-out 0.3s forwards;
+        .animate-custom-float {
+          animation: custom-float 2.5s ease-in-out infinite;
         }
       `}</style>
 
@@ -236,14 +228,14 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
             <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-slate-50 text-slate-700">
               {transferStage === "processing" && <Loader2 className="h-10 w-10 animate-spin" />}
 
-              {/* Green Tick Animation */}
+              {/* Green Tick with Floating Animation */}
               {transferStage === "success" && (
-                <CheckCircle2 className="h-16 w-16 text-emerald-500 animate-success-tick drop-shadow-md" />
+                <CheckCircle2 className="h-16 w-16 text-emerald-500 animate-custom-float drop-shadow-md" />
               )}
 
-              {/* 🚫 (Ban) Shake Animation */}
+              {/* 🚫 (Ban) Icon with Floating Animation */}
               {transferStage === "failed" && (
-                <Ban className="h-16 w-16 text-rose-500 animate-error-ban drop-shadow-md" />
+                <Ban className="h-16 w-16 text-rose-500 animate-custom-float drop-shadow-md" />
               )}
             </div>
             <div className="space-y-2">
