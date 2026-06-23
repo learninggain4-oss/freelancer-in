@@ -1,16 +1,28 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Bell, BellOff, Volume2, VolumeX, Play, Square, Check,
-  MessageCircle, Briefcase, AlertTriangle, Megaphone, Settings,
+  Bell,
+  BellOff,
+  Volume2,
+  VolumeX,
+  Play,
+  Square,
+  Check,
+  MessageCircle,
+  Briefcase,
+  AlertTriangle,
+  Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  RINGTONES, SOUND_CATEGORIES, loadSoundPreferences, saveSoundPreferences,
-  type SoundPreferences, type SoundCategory,
+  SOUND_CATEGORIES,
+  loadSoundPreferences,
+  saveSoundPreferences,
+  type SoundPreferences,
+  type SoundCategory,
 } from "@/utils/notification-sounds";
 import { toast } from "sonner";
 
@@ -32,7 +44,13 @@ const NotificationSettings = () => {
   const [prefs, setPrefs] = useState<SoundPreferences>(loadSoundPreferences);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const stopRef = useRef<(() => void) | null>(null);
-  const ctxRef = useRef<AudioContext | null>(null);
+
+  // Initialize browser voices early
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.getVoices();
+    }
+  }, []);
 
   const save = useCallback((next: SoundPreferences) => {
     setPrefs(next);
@@ -40,27 +58,48 @@ const NotificationSettings = () => {
   }, []);
 
   const stopCurrent = useCallback(() => {
-    stopRef.current?.();
-    stopRef.current = null;
+    if (stopRef.current) {
+      stopRef.current();
+      stopRef.current = null;
+    }
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
     setPlayingId(null);
   }, []);
 
   const handlePreview = useCallback(
-    (ringtoneId: string) => {
+    (categoryId: string) => {
       stopCurrent();
-      if (playingId === ringtoneId) return;
-      if (!ctxRef.current || ctxRef.current.state === "closed") {
-        ctxRef.current = new AudioContext();
+      const currentPlayKey = `voice-${categoryId}`;
+      if (playingId === currentPlayKey) return;
+
+      // Set explicit text for each category
+      let textToSpeak = "New notification";
+      if (categoryId === "chat") textToSpeak = "New chat message";
+      if (categoryId === "project") textToSpeak = "New project update";
+      if (categoryId === "alert") textToSpeak = "New alert received";
+      if (categoryId === "announcement") textToSpeak = "New announcement";
+
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      const voices = window.speechSynthesis.getVoices();
+
+      // Try to find a female voice
+      const femaleVoice = voices.find((v) => /female|zira|samantha|victoria/i.test(v.name));
+
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+      } else {
+        utterance.pitch = 1.2; // Fallback to higher pitch if no specific female voice is found
       }
-      const ctx = ctxRef.current;
-      const tone = RINGTONES.find((r) => r.id === ringtoneId);
-      if (!tone) return;
-      const { stop } = tone.play(ctx, 30);
-      stopRef.current = stop;
-      setPlayingId(ringtoneId);
-      setTimeout(() => { if (stopRef.current === stop) stopCurrent(); }, 30000);
+
+      utterance.onstart = () => setPlayingId(currentPlayKey);
+      utterance.onend = () => setPlayingId(null);
+
+      window.speechSynthesis.speak(utterance);
+      stopRef.current = () => window.speechSynthesis.cancel();
     },
-    [playingId, stopCurrent]
+    [playingId, stopCurrent],
   );
 
   const handleTogglePush = async () => {
@@ -75,7 +114,9 @@ const NotificationSettings = () => {
           } else {
             toast.error("Permission denied");
           }
-        } catch { toast.error("Could not enable push"); }
+        } catch {
+          toast.error("Could not enable push");
+        }
       });
     } else {
       save({ ...prefs, pushEnabled: false });
@@ -105,8 +146,14 @@ const NotificationSettings = () => {
         <CardContent className="space-y-0 p-0">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${prefs.enabled ? "bg-accent/10" : "bg-muted"}`}>
-                {prefs.enabled ? <Volume2 className="h-5 w-5 text-accent" /> : <VolumeX className="h-5 w-5 text-muted-foreground" />}
+              <div
+                className={`flex h-10 w-10 items-center justify-center rounded-xl ${prefs.enabled ? "bg-accent/10" : "bg-muted"}`}
+              >
+                {prefs.enabled ? (
+                  <Volume2 className="h-5 w-5 text-accent" />
+                ) : (
+                  <VolumeX className="h-5 w-5 text-muted-foreground" />
+                )}
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">Sound Notifications</p>
@@ -118,8 +165,14 @@ const NotificationSettings = () => {
           <div className="mx-4 h-px bg-border" />
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${prefs.pushEnabled ? "bg-primary/10" : "bg-muted"}`}>
-                {prefs.pushEnabled ? <Bell className="h-5 w-5 text-primary" /> : <BellOff className="h-5 w-5 text-muted-foreground" />}
+              <div
+                className={`flex h-10 w-10 items-center justify-center rounded-xl ${prefs.pushEnabled ? "bg-primary/10" : "bg-muted"}`}
+              >
+                {prefs.pushEnabled ? (
+                  <Bell className="h-5 w-5 text-primary" />
+                ) : (
+                  <BellOff className="h-5 w-5 text-muted-foreground" />
+                )}
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">Push Notifications</p>
@@ -136,6 +189,7 @@ const NotificationSettings = () => {
         const Icon = CATEGORY_ICONS[cat.key];
         const colors = CATEGORY_COLORS[cat.key];
         const catPref = prefs.sounds[cat.key];
+
         return (
           <Card key={cat.key} className="border-0 shadow-sm overflow-hidden">
             <CardHeader className="pb-2">
@@ -158,36 +212,39 @@ const NotificationSettings = () => {
               </div>
             </CardHeader>
             {catPref.enabled && (
-              <CardContent className="grid grid-cols-2 gap-2 pt-0">
-                {RINGTONES.map((tone) => {
-                  const isSelected = catPref.ringtoneId === tone.id;
-                  const isPlaying = playingId === tone.id;
-                  return (
-                    <button
-                      key={tone.id}
-                      onClick={() =>
-                        save({ ...prefs, sounds: { ...prefs.sounds, [cat.key]: { ...catPref, ringtoneId: tone.id } } })
-                      }
-                      className={cn(
-                        "flex items-center gap-2 rounded-xl border-2 p-2.5 text-left transition-all",
-                        isSelected ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/30 hover:bg-muted/50"
-                      )}
-                    >
-                      <div className="flex flex-1 items-center gap-2 min-w-0">
-                        {isSelected && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
-                        <span className={cn("truncate text-xs font-medium", isSelected ? "text-primary" : "text-foreground")}>{tone.name}</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 shrink-0"
-                        onClick={(e) => { e.stopPropagation(); handlePreview(tone.id); }}
-                      >
-                        {isPlaying ? <Square className="h-3 w-3 text-destructive" /> : <Play className="h-3 w-3 text-muted-foreground" />}
-                      </Button>
-                    </button>
-                  );
-                })}
+              <CardContent className="grid grid-cols-1 gap-2 pt-0">
+                <button
+                  onClick={() =>
+                    save({
+                      ...prefs,
+                      sounds: { ...prefs.sounds, [cat.key]: { ...catPref, ringtoneId: "female-voice" } },
+                    })
+                  }
+                  className={cn(
+                    "flex items-center gap-2 rounded-xl border-2 p-2.5 text-left transition-all",
+                    "border-primary bg-primary/5 shadow-sm",
+                  )}
+                >
+                  <div className="flex flex-1 items-center gap-2 min-w-0">
+                    <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span className="truncate text-xs font-medium text-primary">Female Voice Assistant</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePreview(cat.key);
+                    }}
+                  >
+                    {playingId === `voice-${cat.key}` ? (
+                      <Square className="h-3 w-3 text-destructive" />
+                    ) : (
+                      <Play className="h-3 w-3 text-muted-foreground" />
+                    )}
+                  </Button>
+                </button>
               </CardContent>
             )}
           </Card>
@@ -196,7 +253,11 @@ const NotificationSettings = () => {
 
       {playingId && (
         <div className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2">
-          <Badge variant="secondary" className="flex items-center gap-2 px-4 py-2 shadow-lg cursor-pointer rounded-full" onClick={stopCurrent}>
+          <Badge
+            variant="secondary"
+            className="flex items-center gap-2 px-4 py-2 shadow-lg cursor-pointer rounded-full"
+            onClick={stopCurrent}
+          >
             <Square className="h-3 w-3 text-destructive" />
             <span className="text-xs">Playing — tap to stop</span>
           </Badge>
