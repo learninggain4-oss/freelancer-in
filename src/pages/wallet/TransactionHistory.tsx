@@ -199,9 +199,36 @@ const TransactionHistory = () => {
       });
     });
 
+    const priceMap: Record<string, number> = {};
+    (walletTypes as any[]).forEach((wt) => {
+      const raw = String(wt.wallet_price ?? "").replace(/[^\d.]/g, "");
+      priceMap[wt.name] = Number(raw) || 0;
+    });
+
+    (upgrades as any[]).forEach((u) => {
+      const price = priceMap[u.requested_wallet_type] || 0;
+      const status = u.status || "pending";
+      const desc =
+        status === "approved" ? `Wallet upgraded to ${u.requested_wallet_type}` :
+        status === "rejected" ? `Wallet upgrade to ${u.requested_wallet_type} rejected` :
+        status === "cancelled" ? `Wallet upgrade to ${u.requested_wallet_type} cancelled` :
+        `Wallet upgrade requested: ${u.current_wallet_type} → ${u.requested_wallet_type}`;
+      out.push({
+        key: `up-${u.id}`,
+        orderId: u.order_id || u.id,
+        amount: price,
+        type: "Upgrade",
+        direction: "debit",
+        description: u.admin_notes ? `${desc} — ${u.admin_notes}` : desc,
+        status,
+        timestamp: u.reviewed_at || u.created_at,
+      });
+    });
+
     out.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     return out;
-  }, [transactions, deposits, withdrawals]);
+  }, [transactions, deposits, withdrawals, upgrades, walletTypes]);
+
 
   const handleCopy = (id: string) => {
     navigator.clipboard.writeText(id);
