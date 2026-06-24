@@ -139,6 +139,9 @@ const TransactionHistory = () => {
       if (t.type === "credit" && /wallet top-up approved/i.test(desc)) return;
       // Skip withdrawal-linked debit (shown via withdrawals row)
       if (t.type === "debit" && /withdrawal requested/i.test(desc)) return;
+      // Skip wallet upgrade synced rows (shown via wallet_upgrade_requests row)
+      if (/wallet upgrade/i.test(desc)) return;
+
 
       let type: Row["type"] = "Other";
       if (/transfer/i.test(desc)) type = "Transfer";
