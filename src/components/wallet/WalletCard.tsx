@@ -13,6 +13,7 @@ import {
   ScanLine,
   ArrowDownToLine,
   Settings,
+  QrCode,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -271,6 +272,7 @@ const WalletCard = ({
               Settings
             </button>
           )}
+
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -280,6 +282,18 @@ const WalletCard = ({
           >
             <ScanLine className="h-3.5 w-3.5" />
             Scan QR
+          </button>
+
+          {/* New My QR Button Added Here */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`${basePath}/wallet/my-qr`);
+            }}
+            className="flex items-center gap-1.5 rounded-lg bg-primary-foreground/15 px-3 py-2 text-xs font-semibold text-primary-foreground backdrop-blur-sm transition-all hover:bg-primary-foreground/25 active:scale-95"
+          >
+            <QrCode className="h-3.5 w-3.5" />
+            My QR
           </button>
         </div>
       )}
