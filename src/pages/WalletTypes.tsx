@@ -227,6 +227,8 @@ const WalletTypes = () => {
       }
 
       const newBalance = currentBalance - planPrice;
+      const currentWalletType =
+        walletTypes.find((wt) => wt.id === profile.wallet_type_id)?.name || "Silver";
 
       const { error: updateError } = await supabase
         .from("profiles")
@@ -237,6 +239,29 @@ const WalletTypes = () => {
         .eq("id", profile.id);
 
       if (updateError) throw updateError;
+
+      const { error: upgradeHistoryError } = await supabase
+        .from("wallet_upgrade_requests")
+        .insert({
+          profile_id: profile.id,
+          user_id: user.id,
+          current_wallet_type: currentWalletType,
+          requested_wallet_type: pendingPlan.name,
+          status: "approved",
+          reviewed_at: new Date().toISOString(),
+          admin_notes: `Wallet type upgrade paid from FlexPay Wallet. Amount: ₹${planPrice.toLocaleString("en-IN")}`,
+        });
+
+      if (upgradeHistoryError) {
+        await supabase
+          .from("profiles")
+          .update({
+            available_balance: currentBalance,
+            wallet_type_id: profile.wallet_type_id,
+          })
+          .eq("id", profile.id);
+        throw upgradeHistoryError;
+      }
 
       toast.success(`₹${planPrice} deducted. Successfully updated plan to ${pendingPlan.name}!`);
 
@@ -275,6 +300,8 @@ const WalletTypes = () => {
 
       await queryClient.invalidateQueries({ queryKey: ["user-wallet-profile", user.id] });
       await queryClient.invalidateQueries({ queryKey: ["user-profile-tier", user.id] });
+      await queryClient.invalidateQueries({ queryKey: ["all-wallet-upgrades-history", profile.id] });
+      await queryClient.invalidateQueries({ queryKey: ["all-transactions", profile.id] });
 
       setIsConfirmOpen(false);
     } catch (err: any) {
