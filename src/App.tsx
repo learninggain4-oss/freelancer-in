@@ -89,7 +89,7 @@ const AdminCountdowns = lazy(() => import("./pages/admin/AdminCountdowns"));
 const AdminValidation = lazy(() => import("./pages/admin/AdminValidation"));
 const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"));
 const AdminBranding = lazy(() => import("./pages/admin/AdminBranding"));
-const AdminReset    = lazy(() => import("./pages/admin/AdminReset"));
+const AdminReset = lazy(() => import("./pages/admin/AdminReset"));
 const AdminTestimonials = lazy(() => import("./pages/admin/AdminTestimonials"));
 const AdminReferrals = lazy(() => import("./pages/admin/AdminReferrals"));
 const AdminOnlineStatus = lazy(() => import("./pages/admin/AdminOnlineStatus"));
@@ -378,8 +378,7 @@ const PageLoader = () => <LoadingScreen />;
 /** Show landing page in browser, login in installed PWA */
 const SmartRoot = () => {
   const isStandalone =
-    window.matchMedia("(display-mode: standalone)").matches ||
-    (window.navigator as any).standalone === true;
+    window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone === true;
   return isStandalone ? <Login /> : <Index />;
 };
 
@@ -387,11 +386,14 @@ const AppContent = () => {
   const { blocked, loading } = useIpBlockCheck();
 
   useEffect(() => {
-    supabase.from("app_settings").select("key, value").in("key", ["seo_title", "seo_description"])
+    supabase
+      .from("app_settings")
+      .select("key, value")
+      .in("key", ["seo_title", "seo_description"])
       .then(({ data }) => {
         if (!data) return;
-        const title = data.find(r => r.key === "seo_title")?.value;
-        const desc  = data.find(r => r.key === "seo_description")?.value;
+        const title = data.find((r) => r.key === "seo_title")?.value;
+        const desc = data.find((r) => r.key === "seo_description")?.value;
         if (title) document.title = title;
         if (desc) {
           const m = document.querySelector('meta[name="description"]');
@@ -409,7 +411,6 @@ const AppContent = () => {
       <AnnouncementPopup />
       <LocationPermissionBanner />
 
-      
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
@@ -467,7 +468,7 @@ const AppContent = () => {
               path="/freelancer"
               element={
                 <ProtectedRoute>
-                  <AppLayout userType="employee" />
+                  <AppLayout userType="freelancer" />
                 </ProtectedRoute>
               }
             >
@@ -486,7 +487,6 @@ const AppContent = () => {
               <Route path="wallet/qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
-              <Route path="wallet/add" element={<AddMoneyPage />} />
               <Route path="bids" element={<FreelancerBids />} />
               <Route path="earnings" element={<FreelancerEarnings />} />
               <Route path="reviews" element={<FreelancerReviews />} />
@@ -522,9 +522,9 @@ const AppContent = () => {
               <Route path="wallet/upgrade-chat/:requestId" element={<UpgradeChat />} />
             </Route>
 
-            {/* Freelancer Routes (alias for /freelancer — same pages, new brand name) */}
+            {/* Employee Routes (alias for /freelancer — same pages, new brand name) */}
             <Route
-              path="/freelancer"
+              path="/employee"
               element={
                 <ProtectedRoute>
                   <AppLayout userType="employee" />
@@ -546,7 +546,6 @@ const AppContent = () => {
               <Route path="wallet/qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
-              <Route path="wallet/add" element={<AddMoneyPage />} />
               <Route path="bids" element={<FreelancerBids />} />
               <Route path="earnings" element={<FreelancerEarnings />} />
               <Route path="reviews" element={<FreelancerReviews />} />
@@ -602,7 +601,6 @@ const AppContent = () => {
               <Route path="wallet/qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
-              <Route path="wallet/add" element={<AddMoneyPage />} />
               <Route path="projects" element={<EmployerProjects />} />
               <Route path="projects/create" element={<CreateProject />} />
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
