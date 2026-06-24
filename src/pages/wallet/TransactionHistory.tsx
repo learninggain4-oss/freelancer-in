@@ -76,7 +76,35 @@ const TransactionHistory = () => {
     enabled: !!profile?.id,
   });
 
-  // Realtime: refresh on any change to user's transactions, deposits, withdrawals
+  const { data: upgrades = [], isLoading: uLoading } = useQuery({
+    queryKey: ["all-wallet-upgrades-history", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data, error } = await supabase
+        .from("wallet_upgrade_requests")
+        .select("id, current_wallet_type, requested_wallet_type, status, admin_notes, order_id, created_at, reviewed_at")
+        .eq("profile_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!profile?.id,
+  });
+
+  // Fetch wallet type prices to show upgrade amount
+  const { data: walletTypes = [] } = useQuery({
+    queryKey: ["wallet-types-for-history"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wallet_types")
+        .select("name, wallet_price");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Realtime: refresh on any change to user's transactions, deposits, withdrawals, upgrades
   useEffect(() => {
     if (!profile?.id) return;
     const channel = supabase
@@ -90,13 +118,17 @@ const TransactionHistory = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "withdrawals", filter: `employee_id=eq.${profile.id}` }, () => {
         queryClient.invalidateQueries({ queryKey: ["all-withdrawals-history", profile.id] });
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "wallet_upgrade_requests", filter: `profile_id=eq.${profile.id}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["all-wallet-upgrades-history", profile.id] });
+      })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [profile?.id, queryClient]);
 
-  const isLoading = txLoading || depLoading || wLoading;
+  const isLoading = txLoading || depLoading || wLoading || uLoading;
+
 
   const rows: Row[] = useMemo(() => {
     const out: Row[] = [];
