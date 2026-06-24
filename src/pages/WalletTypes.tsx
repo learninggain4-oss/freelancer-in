@@ -300,6 +300,8 @@ const WalletTypes = () => {
 
       await queryClient.invalidateQueries({ queryKey: ["user-wallet-profile", user.id] });
       await queryClient.invalidateQueries({ queryKey: ["user-profile-tier", user.id] });
+      await queryClient.invalidateQueries({ queryKey: ["all-wallet-upgrades-history", profile.id] });
+      await queryClient.invalidateQueries({ queryKey: ["all-transactions", profile.id] });
 
       setIsConfirmOpen(false);
     } catch (err: any) {
