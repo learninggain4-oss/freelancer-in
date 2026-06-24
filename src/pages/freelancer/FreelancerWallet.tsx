@@ -4,7 +4,7 @@ import WalletCard from "@/components/wallet/WalletCard";
 import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
 import TransferDialog from "@/components/wallet/TransferDialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { AlertCircle, History, Wallet, ArrowLeft, QrCode } from "lucide-react";
+import { AlertCircle, History, Wallet, ArrowLeft } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useDashboardTheme } from "@/hooks/use-dashboard-theme";
@@ -165,32 +165,6 @@ const FreelancerWallet = () => {
           </div>
         </div>
       )}
-
-      {/* Full Width Quick Action (My QR) */}
-      <div className="animate-fade-in-up" style={{ animationDelay: "0.09s" }}>
-        <button
-          onClick={() => navigate(`${base}/wallet/qr`)}
-          style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }}
-          className="group flex w-full items-center justify-between gap-4 rounded-3xl p-6 border shadow-xl transition-all hover:bg-white/[0.02] hover:shadow-2xl active:scale-98"
-        >
-          <div className="flex items-center gap-4">
-            <div
-              style={{ background: "linear-gradient(135deg, #10b981 0%, #3b82f6 100%)" }}
-              className="flex h-16 w-16 items-center justify-center rounded-2xl transition-transform group-hover:scale-105 shadow-lg"
-            >
-              <QrCode className="h-8 w-8 text-white" />
-            </div>
-            <div className="text-left">
-              <p style={{ color: T.text }} className="text-base font-black uppercase tracking-widest">
-                My QR
-              </p>
-              <p style={{ color: T.sub }} className="text-xs font-bold uppercase tracking-tighter opacity-60 mt-1">
-                Share QR code to receive payments
-              </p>
-            </div>
-          </div>
-        </button>
-      </div>
 
       {/* Full Width Quick Action (Combined Logs & History) */}
       <div className="animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
