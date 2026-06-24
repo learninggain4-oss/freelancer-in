@@ -10,9 +10,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeftRight, CheckCircle2, XCircle, Loader2, Search } from "lucide-react";
+import { ArrowLeftRight, CheckCircle2, XCircle, Loader2, Search, Lock, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TransferDialogProps {
@@ -31,6 +31,26 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
   const [transferStage, setTransferStage] = useState<"idle" | "processing" | "success" | "failed">("idle");
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState("Processing transfer...");
+
+  // Withdrawal Password States
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [withdrawalPassword, setWithdrawalPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [verifyingPassword, setVerifyingPassword] = useState(false);
+
+  // Fetch Withdrawal Password Status
+  const { data: passwordStatus } = useQuery({
+    queryKey: ["withdrawal-password-status"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("withdrawal-password", {
+        body: { action: "status" },
+      });
+      if (error) return { has_password: false };
+      return data as { has_password: boolean };
+    },
+  });
+
+  const hasWithdrawalPassword = passwordStatus?.has_password ?? false;
 
   // Sound Utility Function
   const playStatusSound = (type: "success" | "failed") => {
@@ -127,6 +147,8 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
         setWalletNumber("");
         setAmount("");
         setRecipientName(null);
+        setWithdrawalPassword("");
+        setShowPasswordDialog(false);
         onOpenChange(false);
         onSuccess();
       }, 3000);
@@ -138,6 +160,51 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
       toast.error(e.message || "Transfer failed. Please try again.");
     },
   });
+
+  const handleTransferClick = () => {
+    if (!hasWithdrawalPassword) {
+      toast.error("Please create a Withdrawal Password first in Account Settings");
+      return;
+    }
+    const amt = Number(amount);
+    if (!amt || amt <= 0) {
+      toast.error("Enter a valid amount");
+      return;
+    }
+    if (amt > maxBalance) {
+      toast.error("Insufficient balance");
+      return;
+    }
+    if (!recipientName) {
+      toast.error("Please look up the wallet first");
+      return;
+    }
+    setShowPasswordDialog(true);
+  };
+
+  const handleVerifyAndTransfer = async () => {
+    if (!withdrawalPassword) {
+      toast.error("Enter your withdrawal password");
+      return;
+    }
+    setVerifyingPassword(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("withdrawal-password", {
+        body: { action: "verify", password: withdrawalPassword },
+      });
+      if (error) throw new Error("Verification failed");
+      if (data?.error) throw new Error(data.error);
+      if (!data?.valid) {
+        toast.error("Incorrect withdrawal password");
+        return;
+      }
+      transferMutation.mutate();
+    } catch (err: any) {
+      toast.error(err.message || "Password verification failed");
+    } finally {
+      setVerifyingPassword(false);
+    }
+  };
 
   return (
     <>
@@ -234,11 +301,58 @@ const TransferDialog = ({ open, onOpenChange, maxBalance, onSuccess, initialWall
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={() => transferMutation.mutate()}
-              disabled={transferMutation.isPending || !recipientName || !amount}
-            >
+            <Button onClick={handleTransferClick} disabled={transferMutation.isPending || !recipientName || !amount}>
               {transferMutation.isPending ? "Transferring..." : "Transfer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Withdrawal Password Dialog */}
+      <Dialog
+        open={showPasswordDialog}
+        onOpenChange={(open) => {
+          setShowPasswordDialog(open);
+          if (!open) setWithdrawalPassword("");
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-primary" />
+              Withdrawal Password
+            </DialogTitle>
+            <DialogDescription>
+              Enter your withdrawal password to confirm this transfer of ₹{Number(amount).toLocaleString("en-IN")}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter withdrawal password"
+                value={withdrawalPassword}
+                onChange={(e) => setWithdrawalPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleVerifyAndTransfer()}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 h-10 w-10"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleVerifyAndTransfer} disabled={verifyingPassword || transferMutation.isPending}>
+              {verifyingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {verifyingPassword ? "Verifying..." : "Confirm Transfer"}
             </Button>
           </DialogFooter>
         </DialogContent>
