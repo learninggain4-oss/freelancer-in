@@ -76,7 +76,35 @@ const TransactionHistory = () => {
     enabled: !!profile?.id,
   });
 
-  // Realtime: refresh on any change to user's transactions, deposits, withdrawals
+  const { data: upgrades = [], isLoading: uLoading } = useQuery({
+    queryKey: ["all-wallet-upgrades-history", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data, error } = await supabase
+        .from("wallet_upgrade_requests")
+        .select("id, current_wallet_type, requested_wallet_type, status, admin_notes, order_id, created_at, reviewed_at")
+        .eq("profile_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!profile?.id,
+  });
+
+  // Fetch wallet type prices to show upgrade amount
+  const { data: walletTypes = [] } = useQuery({
+    queryKey: ["wallet-types-for-history"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wallet_types")
+        .select("name, wallet_price");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Realtime: refresh on any change to user's transactions, deposits, withdrawals, upgrades
   useEffect(() => {
     if (!profile?.id) return;
     const channel = supabase
@@ -90,13 +118,17 @@ const TransactionHistory = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "withdrawals", filter: `employee_id=eq.${profile.id}` }, () => {
         queryClient.invalidateQueries({ queryKey: ["all-withdrawals-history", profile.id] });
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "wallet_upgrade_requests", filter: `profile_id=eq.${profile.id}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["all-wallet-upgrades-history", profile.id] });
+      })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [profile?.id, queryClient]);
 
-  const isLoading = txLoading || depLoading || wLoading;
+  const isLoading = txLoading || depLoading || wLoading || uLoading;
+
 
   const rows: Row[] = useMemo(() => {
     const out: Row[] = [];
@@ -107,6 +139,9 @@ const TransactionHistory = () => {
       if (t.type === "credit" && /wallet top-up approved/i.test(desc)) return;
       // Skip withdrawal-linked debit (shown via withdrawals row)
       if (t.type === "debit" && /withdrawal requested/i.test(desc)) return;
+      // Skip wallet upgrade synced rows (shown via wallet_upgrade_requests row)
+      if (/wallet upgrade/i.test(desc)) return;
+
 
       let type: Row["type"] = "Other";
       if (/transfer/i.test(desc)) type = "Transfer";
@@ -167,9 +202,36 @@ const TransactionHistory = () => {
       });
     });
 
+    const priceMap: Record<string, number> = {};
+    (walletTypes as any[]).forEach((wt) => {
+      const raw = String(wt.wallet_price ?? "").replace(/[^\d.]/g, "");
+      priceMap[wt.name] = Number(raw) || 0;
+    });
+
+    (upgrades as any[]).forEach((u) => {
+      const price = priceMap[u.requested_wallet_type] || 0;
+      const status = u.status || "pending";
+      const desc =
+        status === "approved" ? `Wallet upgraded to ${u.requested_wallet_type}` :
+        status === "rejected" ? `Wallet upgrade to ${u.requested_wallet_type} rejected` :
+        status === "cancelled" ? `Wallet upgrade to ${u.requested_wallet_type} cancelled` :
+        `Wallet upgrade requested: ${u.current_wallet_type} → ${u.requested_wallet_type}`;
+      out.push({
+        key: `up-${u.id}`,
+        orderId: u.order_id || u.id,
+        amount: price,
+        type: "Upgrade",
+        direction: "debit",
+        description: u.admin_notes ? `${desc} — ${u.admin_notes}` : desc,
+        status,
+        timestamp: u.reviewed_at || u.created_at,
+      });
+    });
+
     out.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     return out;
-  }, [transactions, deposits, withdrawals]);
+  }, [transactions, deposits, withdrawals, upgrades, walletTypes]);
+
 
   const handleCopy = (id: string) => {
     navigator.clipboard.writeText(id);
