@@ -35,6 +35,7 @@ const FreelancerPortfolio = lazy(() => import("./pages/freelancer/FreelancerPort
 const EmployerDashboard = lazy(() => import("./pages/employer/EmployerDashboard"));
 const EmployerWallet = lazy(() => import("./pages/employer/EmployerWallet"));
 const EmployerProjects = lazy(() => import("./pages/employer/EmployerProjects"));
+import WalletQRPage from "@/pages/wallet/WalletQRPage"; // നിങ്ങളുടെ ഫയൽ പാത്ത് അനുസരിച്ച് മാറ്റുക
 const CreateProject = lazy(() => import("./pages/employer/CreateProject"));
 const EmployerWithdrawals = lazy(() => import("./pages/employer/EmployerWithdrawals"));
 const EmployerProfile = lazy(() => import("./pages/employer/EmployerProfile"));
@@ -89,7 +90,7 @@ const AdminCountdowns = lazy(() => import("./pages/admin/AdminCountdowns"));
 const AdminValidation = lazy(() => import("./pages/admin/AdminValidation"));
 const AdminSessions = lazy(() => import("./pages/admin/AdminSessions"));
 const AdminBranding = lazy(() => import("./pages/admin/AdminBranding"));
-const AdminReset    = lazy(() => import("./pages/admin/AdminReset"));
+const AdminReset = lazy(() => import("./pages/admin/AdminReset"));
 const AdminTestimonials = lazy(() => import("./pages/admin/AdminTestimonials"));
 const AdminReferrals = lazy(() => import("./pages/admin/AdminReferrals"));
 const AdminOnlineStatus = lazy(() => import("./pages/admin/AdminOnlineStatus"));
@@ -378,8 +379,7 @@ const PageLoader = () => <LoadingScreen />;
 /** Show landing page in browser, login in installed PWA */
 const SmartRoot = () => {
   const isStandalone =
-    window.matchMedia("(display-mode: standalone)").matches ||
-    (window.navigator as any).standalone === true;
+    window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone === true;
   return isStandalone ? <Login /> : <Index />;
 };
 
@@ -387,11 +387,14 @@ const AppContent = () => {
   const { blocked, loading } = useIpBlockCheck();
 
   useEffect(() => {
-    supabase.from("app_settings").select("key, value").in("key", ["seo_title", "seo_description"])
+    supabase
+      .from("app_settings")
+      .select("key, value")
+      .in("key", ["seo_title", "seo_description"])
       .then(({ data }) => {
         if (!data) return;
-        const title = data.find(r => r.key === "seo_title")?.value;
-        const desc  = data.find(r => r.key === "seo_description")?.value;
+        const title = data.find((r) => r.key === "seo_title")?.value;
+        const desc = data.find((r) => r.key === "seo_description")?.value;
         if (title) document.title = title;
         if (desc) {
           const m = document.querySelector('meta[name="description"]');
@@ -409,7 +412,6 @@ const AppContent = () => {
       <AnnouncementPopup />
       <LocationPermissionBanner />
 
-      
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
@@ -467,7 +469,7 @@ const AppContent = () => {
               path="/freelancer"
               element={
                 <ProtectedRoute>
-                  <AppLayout userType="employee" />
+                  <AppLayout userType="freelancer" />
                 </ProtectedRoute>
               }
             >
@@ -484,6 +486,8 @@ const AppContent = () => {
               <Route path="wallet/activity" element={<WalletActivity />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
               <Route path="wallet/qr" element={<WalletQRPage />} />
+              <Route path="/freelancer/wallet/my-qr" element={<WalletQRPage />} />
+              <Route path="/employer/wallet/my-qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
               <Route path="wallet/add" element={<AddMoneyPage />} />
