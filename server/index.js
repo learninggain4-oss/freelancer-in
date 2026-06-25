@@ -2742,7 +2742,14 @@ app.post("/functions/v1/public-register", async (req, res) => {
 
     const emailLower = email.trim().toLowerCase();
     const nameUpper  = full_name.trim().toUpperCase();
-    const uType      = user_type || "employee";
+    const normalizePublicRegisterUserType = (value) => {
+      const raw = String(value || "Freelancer").trim().toLowerCase();
+      if (["freelancer", "employee"].includes(raw)) return "Freelancer";
+      if (["employer", "client"].includes(raw)) return "Employer";
+      return null;
+    };
+    const uType = normalizePublicRegisterUserType(user_type);
+    if (!uType) return res.status(400).json({ error: "Account Type Error --- please contact support" });
 
     // Find existing auth user
     const { data: { users: allUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
