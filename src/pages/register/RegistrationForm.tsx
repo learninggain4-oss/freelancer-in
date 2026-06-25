@@ -224,7 +224,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       let geoData: any = {};
       try { const r = await fetch("https://ipapi.co/json/"); if (r.ok) { const g = await r.json(); geoData = { ip: g.ip, city: g.city, region: g.region, country: g.country_name, lat: g.latitude, lon: g.longitude }; } } catch {}
 
-      const uType = userType === "employer" ? "client" : "employee";
+      const uType = userType === "employer" ? "Employer" : "Freelancer";
 
       // Helper: create profile directly after getting userId (works for both new and duplicate email)
       const insertProfileAndRelated = async (userId: string, supabaseClient: typeof supabase) => {
@@ -253,7 +253,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
           education_background: data.education_background || null,
           referred_by: referralCode.trim() || null, approval_status: "approved",
           geo: geoData,
-          employer_biz: uType === "client" ? employerBiz : undefined,
+          employer_biz: uType === "Employer" ? employerBiz : undefined,
           work_experiences: workExperiences.filter(w => w.company_name.trim()).map(w => ({
             company_name: w.company_name, company_type: w.company_type,
             work_description: w.work_description || null, start_year: w.start_year,
@@ -281,7 +281,7 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       // Helper: insert all related data after profile is created
       const insertRelatedData = async (profileId: string, supabaseClient: typeof supabase) => {
         try { await supabaseClient.from("registration_metadata" as any).insert([{ profile_id: profileId, ip_address: geoData.ip||null, city: geoData.city||null, region: geoData.region||null, country: geoData.country||null, latitude: geoData.lat||null, longitude: geoData.lon||null }] as any); } catch {}
-        if (uType === "client") {
+        if (uType === "Employer") {
           try {
             await supabaseClient.from("employer_profiles" as any).insert([{
               profile_id: profileId,
