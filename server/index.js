@@ -2599,7 +2599,14 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
 
     const emailLower = email.trim().toLowerCase();
     const nameUpper  = full_name.trim().toUpperCase();
-    const uType      = user_type || "employee";
+    const normalizeUserType = (value) => {
+      const raw = String(value || "Freelancer").trim().toLowerCase();
+      if (["freelancer", "employee"].includes(raw)) return "Freelancer";
+      if (["employer", "client"].includes(raw)) return "Employer";
+      return null;
+    };
+    const uType = normalizeUserType(user_type);
+    if (!uType) return res.status(400).json({ error: "Account Type Error --- please contact support" });
     const approvalSt = approval_status || "pending";
 
     const profileFields = {
@@ -2735,7 +2742,14 @@ app.post("/functions/v1/public-register", async (req, res) => {
 
     const emailLower = email.trim().toLowerCase();
     const nameUpper  = full_name.trim().toUpperCase();
-    const uType      = user_type || "employee";
+    const normalizePublicRegisterUserType = (value) => {
+      const raw = String(value || "Freelancer").trim().toLowerCase();
+      if (["freelancer", "employee"].includes(raw)) return "Freelancer";
+      if (["employer", "client"].includes(raw)) return "Employer";
+      return null;
+    };
+    const uType = normalizePublicRegisterUserType(user_type);
+    if (!uType) return res.status(400).json({ error: "Account Type Error --- please contact support" });
 
     // Find existing auth user
     const { data: { users: allUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
@@ -2773,7 +2787,7 @@ app.post("/functions/v1/public-register", async (req, res) => {
     }
 
     // Employer profile
-    if (uType === "client" && employer_biz) {
+    if (uType === "Employer" && employer_biz) {
       const { error: employerErr } = await adminClient.from("employer_profiles").insert([{
         profile_id: newProfileId,
         company_name: employer_biz.company_name || null,

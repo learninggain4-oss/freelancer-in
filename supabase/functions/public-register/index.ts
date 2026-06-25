@@ -51,7 +51,14 @@ Deno.serve(async (req) => {
 
   const emailLower = String(email).trim().toLowerCase();
   const nameUpper = String(full_name).trim().toUpperCase();
-  const uType = user_type || "employee";
+  const normalizeUserType = (value: unknown) => {
+    const raw = String(value || "Freelancer").trim().toLowerCase();
+    if (["freelancer", "employee"].includes(raw)) return "Freelancer";
+    if (["employer", "client"].includes(raw)) return "Employer";
+    return null;
+  };
+  const uType = normalizeUserType(user_type);
+  if (!uType) return errResp(400, "Account Type Error --- please contact support");
 
   // Find existing auth user (created by client-side signUp just before this call)
   let userId: string | null = null;
@@ -103,7 +110,7 @@ Deno.serve(async (req) => {
   }
 
   // Employer business profile
-  if (uType === "client" && employer_biz) {
+  if (uType === "Employer" && employer_biz) {
     const { error } = await adminClient.from("employer_profiles").insert([{
       profile_id: profileId,
       company_name: employer_biz.company_name || null,
