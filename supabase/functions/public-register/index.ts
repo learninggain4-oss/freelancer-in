@@ -72,32 +72,21 @@ Deno.serve(async (req) => {
   }
   if (!userId) return errResp(400, "Auth user not found for this email. Please retry registration.");
 
-  // Reuse existing profile if one already exists for this user
-  const { data: existingProfile } = await adminClient
-    .from("profiles")
-    .select("id")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  let profileId: string;
-  if (existingProfile?.id) {
-    profileId = existingProfile.id;
-  } else {
-    profileId = crypto.randomUUID();
-    const profilePayload: Record<string, any> = {
-      id: profileId, user_id: userId, email: emailLower,
-      user_type: uType, full_name: [nameUpper], user_code: [],
-      username: username ? String(username).trim().toLowerCase() : null,
-      gender: gender || null, date_of_birth: date_of_birth || null,
-      marital_status: marital_status || null, education_level: education_level || null,
-      mobile_number: mobile_number || null, whatsapp_number: whatsapp_number || null,
-      education_background: education_background || null,
-      referred_by: referred_by || null,
-      approval_status: approval_status || "approved",
-    };
-    const { error: profErr } = await adminClient.from("profiles").insert(profilePayload);
-    if (profErr) return errResp(500, profErr.message);
-  }
+  // Always create a new profile row — same email can register multiple times
+  const profileId = crypto.randomUUID();
+  const profilePayload: Record<string, any> = {
+    id: profileId, user_id: userId, email: emailLower,
+    user_type: uType, full_name: [nameUpper], user_code: [],
+    username: username ? String(username).trim().toLowerCase() : null,
+    gender: gender || null, date_of_birth: date_of_birth || null,
+    marital_status: marital_status || null, education_level: education_level || null,
+    mobile_number: mobile_number || null, whatsapp_number: whatsapp_number || null,
+    education_background: education_background || null,
+    referred_by: referred_by || null,
+    approval_status: approval_status || "approved",
+  };
+  const { error: profErr } = await adminClient.from("profiles").insert(profilePayload);
+  if (profErr) return errResp(500, profErr.message);
 
   // Registration metadata
   if (geo) {
