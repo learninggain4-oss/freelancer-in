@@ -15,10 +15,29 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Briefcase, Search, MessageSquare, ChevronDown, X, User, Settings,
-  LogOut, IndianRupee, ArrowUpRight, Wallet, Bell, Plus,
-  LayoutDashboard, FileText, ClipboardCheck, CircleHelp, Gift, Star,
-  Layers, MoreHorizontal, UserCircle, HelpCircle,
+  Briefcase,
+  Search,
+  MessageSquare,
+  ChevronDown,
+  X,
+  User,
+  Settings,
+  LogOut,
+  IndianRupee,
+  ArrowUpRight,
+  Wallet,
+  Bell,
+  Plus,
+  LayoutDashboard,
+  FileText,
+  ClipboardCheck,
+  CircleHelp,
+  Gift,
+  Star,
+  Layers,
+  MoreHorizontal,
+  UserCircle,
+  HelpCircle,
 } from "lucide-react";
 
 interface AppLayoutProps {
@@ -30,226 +49,226 @@ const A2 = "#8b5cf6";
 
 const T = {
   black: {
-    shell:      "#070714",
-    header:     "rgba(7,7,20,.94)",
-    headerBdr:  "rgba(255,255,255,.07)",
-    logo:       "white",
-    logoSub:    "rgba(255,255,255,.3)",
-    mainBg:     "#070714",
-    mainText:   "rgba(255,255,255,.9)",
-    mainSub:    "rgba(255,255,255,.45)",
-    cardBg:     "rgba(255,255,255,.05)",
-    cardBdr:    "rgba(255,255,255,.08)",
-    mutedBg:    "rgba(255,255,255,.06)",
-    inputBg:    "rgba(255,255,255,.06)",
-    inputBdr:   "rgba(255,255,255,.1)",
-    inputFg:    "white",
-    inputPh:    "rgba(255,255,255,.25)",
-    accent:     "#a5b4fc",
-    green:      "#4ade80",
-    orange:     "#fbbf24",
-    red:        "#f87171",
-    orbA:       "rgba(99,102,241,.14)",
-    orbB:       "rgba(139,92,246,.1)",
-    gridLine:   "rgba(255,255,255,.013)",
-    hoverRow:   "rgba(255,255,255,.04)",
-    iconBtn:    "rgba(255,255,255,.07)",
+    shell: "#070714",
+    header: "rgba(7,7,20,.94)",
+    headerBdr: "rgba(255,255,255,.07)",
+    logo: "white",
+    logoSub: "rgba(255,255,255,.3)",
+    mainBg: "#070714",
+    mainText: "rgba(255,255,255,.9)",
+    mainSub: "rgba(255,255,255,.45)",
+    cardBg: "rgba(255,255,255,.05)",
+    cardBdr: "rgba(255,255,255,.08)",
+    mutedBg: "rgba(255,255,255,.06)",
+    inputBg: "rgba(255,255,255,.06)",
+    inputBdr: "rgba(255,255,255,.1)",
+    inputFg: "white",
+    inputPh: "rgba(255,255,255,.25)",
+    accent: "#a5b4fc",
+    green: "#4ade80",
+    orange: "#fbbf24",
+    red: "#f87171",
+    orbA: "rgba(99,102,241,.14)",
+    orbB: "rgba(139,92,246,.1)",
+    gridLine: "rgba(255,255,255,.013)",
+    hoverRow: "rgba(255,255,255,.04)",
+    iconBtn: "rgba(255,255,255,.07)",
     iconBtnHov: "rgba(255,255,255,.13)",
-    dropBg:     "rgba(10,10,28,.98)",
-    dropBdr:    "rgba(255,255,255,.1)",
-    searchBg:   "rgba(255,255,255,.06)",
-    searchBdr:  "rgba(255,255,255,.1)",
-    footerBg:   "rgba(7,7,20,.92)",
-    footerBdr:  "rgba(255,255,255,.07)",
-    shadowSm:   "0 2px 12px rgba(0,0,0,.4)",
-    shadowMd:   "0 4px 20px rgba(0,0,0,.5)",
-    shadowLg:   "0 8px 32px rgba(0,0,0,.55)",
-    shadowXl:   "0 12px 40px rgba(0,0,0,.6)",
+    dropBg: "rgba(10,10,28,.98)",
+    dropBdr: "rgba(255,255,255,.1)",
+    searchBg: "rgba(255,255,255,.06)",
+    searchBdr: "rgba(255,255,255,.1)",
+    footerBg: "rgba(7,7,20,.92)",
+    footerBdr: "rgba(255,255,255,.07)",
+    shadowSm: "0 2px 12px rgba(0,0,0,.4)",
+    shadowMd: "0 4px 20px rgba(0,0,0,.5)",
+    shadowLg: "0 8px 32px rgba(0,0,0,.55)",
+    shadowXl: "0 12px 40px rgba(0,0,0,.6)",
   },
   white: {
-    shell:      "#f0f4ff",
-    header:     "rgba(255,255,255,.96)",
-    headerBdr:  "rgba(0,0,0,.08)",
-    logo:       "#0d0d24",
-    logoSub:    "#9ca3af",
-    mainBg:     "#f0f4ff",
-    mainText:   "#0d0d24",
-    mainSub:    "#6b7280",
-    cardBg:     "#ffffff",
-    cardBdr:    "rgba(0,0,0,.07)",
-    mutedBg:    "#f1f5f9",
-    inputBg:    "#ffffff",
-    inputBdr:   "rgba(0,0,0,.12)",
-    inputFg:    "#0d0d24",
-    inputPh:    "#9ca3af",
-    accent:     "#4f46e5",
-    green:      "#16a34a",
-    orange:     "#d97706",
-    red:        "#dc2626",
-    orbA:       "rgba(99,102,241,.07)",
-    orbB:       "rgba(139,92,246,.04)",
-    gridLine:   "rgba(0,0,0,.022)",
-    hoverRow:   "rgba(0,0,0,.03)",
-    iconBtn:    "rgba(0,0,0,.05)",
+    shell: "#f0f4ff",
+    header: "rgba(255,255,255,.96)",
+    headerBdr: "rgba(0,0,0,.08)",
+    logo: "#0d0d24",
+    logoSub: "#9ca3af",
+    mainBg: "#f0f4ff",
+    mainText: "#0d0d24",
+    mainSub: "#6b7280",
+    cardBg: "#ffffff",
+    cardBdr: "rgba(0,0,0,.07)",
+    mutedBg: "#f1f5f9",
+    inputBg: "#ffffff",
+    inputBdr: "rgba(0,0,0,.12)",
+    inputFg: "#0d0d24",
+    inputPh: "#9ca3af",
+    accent: "#4f46e5",
+    green: "#16a34a",
+    orange: "#d97706",
+    red: "#dc2626",
+    orbA: "rgba(99,102,241,.07)",
+    orbB: "rgba(139,92,246,.04)",
+    gridLine: "rgba(0,0,0,.022)",
+    hoverRow: "rgba(0,0,0,.03)",
+    iconBtn: "rgba(0,0,0,.05)",
     iconBtnHov: "rgba(0,0,0,.09)",
-    dropBg:     "#ffffff",
-    dropBdr:    "rgba(0,0,0,.1)",
-    searchBg:   "#f1f5f9",
-    searchBdr:  "rgba(0,0,0,.09)",
-    footerBg:   "rgba(255,255,255,.95)",
-    footerBdr:  "rgba(0,0,0,.07)",
-    shadowSm:   "0 2px 12px rgba(0,0,0,.07)",
-    shadowMd:   "0 4px 20px rgba(0,0,0,.09)",
-    shadowLg:   "0 8px 32px rgba(0,0,0,.10)",
-    shadowXl:   "0 12px 40px rgba(0,0,0,.11)",
+    dropBg: "#ffffff",
+    dropBdr: "rgba(0,0,0,.1)",
+    searchBg: "#f1f5f9",
+    searchBdr: "rgba(0,0,0,.09)",
+    footerBg: "rgba(255,255,255,.95)",
+    footerBdr: "rgba(0,0,0,.07)",
+    shadowSm: "0 2px 12px rgba(0,0,0,.07)",
+    shadowMd: "0 4px 20px rgba(0,0,0,.09)",
+    shadowLg: "0 8px 32px rgba(0,0,0,.10)",
+    shadowXl: "0 12px 40px rgba(0,0,0,.11)",
   },
   wb: {
-    shell:      "#f0f4ff",
-    header:     "rgba(10,10,28,.94)",
-    headerBdr:  "rgba(255,255,255,.07)",
-    logo:       "white",
-    logoSub:    "rgba(255,255,255,.35)",
-    mainBg:     "#f0f4ff",
-    mainText:   "#0d0d24",
-    mainSub:    "#6b7280",
-    cardBg:     "#ffffff",
-    cardBdr:    "rgba(0,0,0,.07)",
-    mutedBg:    "#f1f5f9",
-    inputBg:    "#ffffff",
-    inputBdr:   "rgba(0,0,0,.12)",
-    inputFg:    "#0d0d24",
-    inputPh:    "#9ca3af",
-    accent:     "#4f46e5",
-    green:      "#16a34a",
-    orange:     "#d97706",
-    red:        "#dc2626",
-    orbA:       "rgba(99,102,241,.07)",
-    orbB:       "rgba(139,92,246,.04)",
-    gridLine:   "rgba(0,0,0,.022)",
-    hoverRow:   "rgba(0,0,0,.03)",
-    iconBtn:    "rgba(255,255,255,.09)",
+    shell: "#f0f4ff",
+    header: "rgba(10,10,28,.94)",
+    headerBdr: "rgba(255,255,255,.07)",
+    logo: "white",
+    logoSub: "rgba(255,255,255,.35)",
+    mainBg: "#f0f4ff",
+    mainText: "#0d0d24",
+    mainSub: "#6b7280",
+    cardBg: "#ffffff",
+    cardBdr: "rgba(0,0,0,.07)",
+    mutedBg: "#f1f5f9",
+    inputBg: "#ffffff",
+    inputBdr: "rgba(0,0,0,.12)",
+    inputFg: "#0d0d24",
+    inputPh: "#9ca3af",
+    accent: "#4f46e5",
+    green: "#16a34a",
+    orange: "#d97706",
+    red: "#dc2626",
+    orbA: "rgba(99,102,241,.07)",
+    orbB: "rgba(139,92,246,.04)",
+    gridLine: "rgba(0,0,0,.022)",
+    hoverRow: "rgba(0,0,0,.03)",
+    iconBtn: "rgba(255,255,255,.09)",
     iconBtnHov: "rgba(255,255,255,.16)",
-    dropBg:     "#ffffff",
-    dropBdr:    "rgba(0,0,0,.1)",
-    searchBg:   "rgba(255,255,255,.08)",
-    searchBdr:  "rgba(255,255,255,.12)",
-    footerBg:   "rgba(255,255,255,.95)",
-    footerBdr:  "rgba(0,0,0,.07)",
-    shadowSm:   "0 2px 12px rgba(0,0,0,.07)",
-    shadowMd:   "0 4px 20px rgba(0,0,0,.09)",
-    shadowLg:   "0 8px 32px rgba(0,0,0,.10)",
-    shadowXl:   "0 12px 40px rgba(0,0,0,.11)",
+    dropBg: "#ffffff",
+    dropBdr: "rgba(0,0,0,.1)",
+    searchBg: "rgba(255,255,255,.08)",
+    searchBdr: "rgba(255,255,255,.12)",
+    footerBg: "rgba(255,255,255,.95)",
+    footerBdr: "rgba(0,0,0,.07)",
+    shadowSm: "0 2px 12px rgba(0,0,0,.07)",
+    shadowMd: "0 4px 20px rgba(0,0,0,.09)",
+    shadowLg: "0 8px 32px rgba(0,0,0,.10)",
+    shadowXl: "0 12px 40px rgba(0,0,0,.11)",
   },
   warm: {
-    shell:      "#fef6e4",
-    header:     "rgba(254,246,228,.97)",
-    headerBdr:  "rgba(180,83,9,.12)",
-    logo:       "#1c1a17",
-    logoSub:    "rgba(120,113,108,.6)",
-    mainBg:     "#fef6e4",
-    mainText:   "#1c1a17",
-    mainSub:    "#78716c",
-    cardBg:     "#fffdf7",
-    cardBdr:    "rgba(180,83,9,.1)",
-    mutedBg:    "#fef3c7",
-    inputBg:    "#fffdf7",
-    inputBdr:   "rgba(180,83,9,.18)",
-    inputFg:    "#1c1a17",
-    inputPh:    "rgba(120,113,108,.55)",
-    accent:     "#d97706",
-    green:      "#16a34a",
-    orange:     "#b45309",
-    red:        "#dc2626",
-    orbA:       "rgba(217,119,6,.1)",
-    orbB:       "rgba(245,158,11,.07)",
-    gridLine:   "rgba(180,83,9,.018)",
-    hoverRow:   "rgba(180,83,9,.05)",
-    iconBtn:    "rgba(180,83,9,.08)",
+    shell: "#fef6e4",
+    header: "rgba(254,246,228,.97)",
+    headerBdr: "rgba(180,83,9,.12)",
+    logo: "#1c1a17",
+    logoSub: "rgba(120,113,108,.6)",
+    mainBg: "#fef6e4",
+    mainText: "#1c1a17",
+    mainSub: "#78716c",
+    cardBg: "#fffdf7",
+    cardBdr: "rgba(180,83,9,.1)",
+    mutedBg: "#fef3c7",
+    inputBg: "#fffdf7",
+    inputBdr: "rgba(180,83,9,.18)",
+    inputFg: "#1c1a17",
+    inputPh: "rgba(120,113,108,.55)",
+    accent: "#d97706",
+    green: "#16a34a",
+    orange: "#b45309",
+    red: "#dc2626",
+    orbA: "rgba(217,119,6,.1)",
+    orbB: "rgba(245,158,11,.07)",
+    gridLine: "rgba(180,83,9,.018)",
+    hoverRow: "rgba(180,83,9,.05)",
+    iconBtn: "rgba(180,83,9,.08)",
     iconBtnHov: "rgba(180,83,9,.14)",
-    dropBg:     "#fffdf7",
-    dropBdr:    "rgba(180,83,9,.12)",
-    searchBg:   "rgba(180,83,9,.07)",
-    searchBdr:  "rgba(180,83,9,.14)",
-    footerBg:   "rgba(254,246,228,.97)",
-    footerBdr:  "rgba(180,83,9,.1)",
-    shadowSm:   "0 2px 12px rgba(180,83,9,.08)",
-    shadowMd:   "0 4px 20px rgba(180,83,9,.1)",
-    shadowLg:   "0 8px 32px rgba(180,83,9,.12)",
-    shadowXl:   "0 12px 40px rgba(180,83,9,.14)",
+    dropBg: "#fffdf7",
+    dropBdr: "rgba(180,83,9,.12)",
+    searchBg: "rgba(180,83,9,.07)",
+    searchBdr: "rgba(180,83,9,.14)",
+    footerBg: "rgba(254,246,228,.97)",
+    footerBdr: "rgba(180,83,9,.1)",
+    shadowSm: "0 2px 12px rgba(180,83,9,.08)",
+    shadowMd: "0 4px 20px rgba(180,83,9,.1)",
+    shadowLg: "0 8px 32px rgba(180,83,9,.12)",
+    shadowXl: "0 12px 40px rgba(180,83,9,.14)",
   },
   forest: {
-    shell:      "#f1faf4",
-    header:     "rgba(241,250,244,.97)",
-    headerBdr:  "rgba(21,128,61,.12)",
-    logo:       "#0f2d18",
-    logoSub:    "rgba(75,124,93,.6)",
-    mainBg:     "#f1faf4",
-    mainText:   "#0f2d18",
-    mainSub:    "#4b7c5d",
-    cardBg:     "#ffffff",
-    cardBdr:    "rgba(21,128,61,.1)",
-    mutedBg:    "#dcfce7",
-    inputBg:    "#ffffff",
-    inputBdr:   "rgba(21,128,61,.18)",
-    inputFg:    "#0f2d18",
-    inputPh:    "rgba(75,124,93,.55)",
-    accent:     "#16a34a",
-    green:      "#15803d",
-    orange:     "#b45309",
-    red:        "#dc2626",
-    orbA:       "rgba(22,163,74,.1)",
-    orbB:       "rgba(21,128,61,.07)",
-    gridLine:   "rgba(21,128,61,.018)",
-    hoverRow:   "rgba(21,128,61,.05)",
-    iconBtn:    "rgba(21,128,61,.08)",
+    shell: "#f1faf4",
+    header: "rgba(241,250,244,.97)",
+    headerBdr: "rgba(21,128,61,.12)",
+    logo: "#0f2d18",
+    logoSub: "rgba(75,124,93,.6)",
+    mainBg: "#f1faf4",
+    mainText: "#0f2d18",
+    mainSub: "#4b7c5d",
+    cardBg: "#ffffff",
+    cardBdr: "rgba(21,128,61,.1)",
+    mutedBg: "#dcfce7",
+    inputBg: "#ffffff",
+    inputBdr: "rgba(21,128,61,.18)",
+    inputFg: "#0f2d18",
+    inputPh: "rgba(75,124,93,.55)",
+    accent: "#16a34a",
+    green: "#15803d",
+    orange: "#b45309",
+    red: "#dc2626",
+    orbA: "rgba(22,163,74,.1)",
+    orbB: "rgba(21,128,61,.07)",
+    gridLine: "rgba(21,128,61,.018)",
+    hoverRow: "rgba(21,128,61,.05)",
+    iconBtn: "rgba(21,128,61,.08)",
     iconBtnHov: "rgba(21,128,61,.14)",
-    dropBg:     "#ffffff",
-    dropBdr:    "rgba(21,128,61,.12)",
-    searchBg:   "rgba(21,128,61,.07)",
-    searchBdr:  "rgba(21,128,61,.14)",
-    footerBg:   "rgba(241,250,244,.97)",
-    footerBdr:  "rgba(21,128,61,.1)",
-    shadowSm:   "0 2px 12px rgba(21,128,61,.08)",
-    shadowMd:   "0 4px 20px rgba(21,128,61,.1)",
-    shadowLg:   "0 8px 32px rgba(21,128,61,.12)",
-    shadowXl:   "0 12px 40px rgba(21,128,61,.14)",
+    dropBg: "#ffffff",
+    dropBdr: "rgba(21,128,61,.12)",
+    searchBg: "rgba(21,128,61,.07)",
+    searchBdr: "rgba(21,128,61,.14)",
+    footerBg: "rgba(241,250,244,.97)",
+    footerBdr: "rgba(21,128,61,.1)",
+    shadowSm: "0 2px 12px rgba(21,128,61,.08)",
+    shadowMd: "0 4px 20px rgba(21,128,61,.1)",
+    shadowLg: "0 8px 32px rgba(21,128,61,.12)",
+    shadowXl: "0 12px 40px rgba(21,128,61,.14)",
   },
   ocean: {
-    shell:      "#f0f9ff",
-    header:     "rgba(240,249,255,.97)",
-    headerBdr:  "rgba(14,165,233,.12)",
-    logo:       "#0c4a6e",
-    logoSub:    "rgba(3,105,161,.6)",
-    mainBg:     "#f0f9ff",
-    mainText:   "#0c4a6e",
-    mainSub:    "#4b83a3",
-    cardBg:     "#ffffff",
-    cardBdr:    "rgba(14,165,233,.1)",
-    mutedBg:    "#e0f2fe",
-    inputBg:    "#ffffff",
-    inputBdr:   "rgba(14,165,233,.18)",
-    inputFg:    "#0c4a6e",
-    inputPh:    "rgba(75,131,163,.55)",
-    accent:     "#0284c7",
-    green:      "#16a34a",
-    orange:     "#b45309",
-    red:        "#dc2626",
-    orbA:       "rgba(14,165,233,.1)",
-    orbB:       "rgba(2,132,199,.07)",
-    gridLine:   "rgba(14,165,233,.018)",
-    hoverRow:   "rgba(14,165,233,.05)",
-    iconBtn:    "rgba(14,165,233,.08)",
+    shell: "#f0f9ff",
+    header: "rgba(240,249,255,.97)",
+    headerBdr: "rgba(14,165,233,.12)",
+    logo: "#0c4a6e",
+    logoSub: "rgba(3,105,161,.6)",
+    mainBg: "#f0f9ff",
+    mainText: "#0c4a6e",
+    mainSub: "#4b83a3",
+    cardBg: "#ffffff",
+    cardBdr: "rgba(14,165,233,.1)",
+    mutedBg: "#e0f2fe",
+    inputBg: "#ffffff",
+    inputBdr: "rgba(14,165,233,.18)",
+    inputFg: "#0c4a6e",
+    inputPh: "rgba(75,131,163,.55)",
+    accent: "#0284c7",
+    green: "#16a34a",
+    orange: "#b45309",
+    red: "#dc2626",
+    orbA: "rgba(14,165,233,.1)",
+    orbB: "rgba(2,132,199,.07)",
+    gridLine: "rgba(14,165,233,.018)",
+    hoverRow: "rgba(14,165,233,.05)",
+    iconBtn: "rgba(14,165,233,.08)",
     iconBtnHov: "rgba(14,165,233,.14)",
-    dropBg:     "#ffffff",
-    dropBdr:    "rgba(14,165,233,.12)",
-    searchBg:   "rgba(14,165,233,.07)",
-    searchBdr:  "rgba(14,165,233,.14)",
-    footerBg:   "rgba(240,249,255,.97)",
-    footerBdr:  "rgba(14,165,233,.1)",
-    shadowSm:   "0 2px 12px rgba(14,165,233,.08)",
-    shadowMd:   "0 4px 20px rgba(14,165,233,.1)",
-    shadowLg:   "0 8px 32px rgba(14,165,233,.12)",
-    shadowXl:   "0 12px 40px rgba(14,165,233,.14)",
+    dropBg: "#ffffff",
+    dropBdr: "rgba(14,165,233,.12)",
+    searchBg: "rgba(14,165,233,.07)",
+    searchBdr: "rgba(14,165,233,.14)",
+    footerBg: "rgba(240,249,255,.97)",
+    footerBdr: "rgba(14,165,233,.1)",
+    shadowSm: "0 2px 12px rgba(14,165,233,.08)",
+    shadowMd: "0 4px 20px rgba(14,165,233,.1)",
+    shadowLg: "0 8px 32px rgba(14,165,233,.12)",
+    shadowXl: "0 12px 40px rgba(14,165,233,.14)",
   },
 };
 
@@ -292,41 +311,43 @@ function buildCss(t: typeof T.black): string {
 
 const SEARCH_ITEMS = {
   freelancer: [
-    { label: "Dashboard",     icon: LayoutDashboard, path: "/freelancer/dashboard" },
-    { label: "My Jobs",       icon: Briefcase,       path: "/freelancer/projects" },
-    { label: "Attendance",    icon: ClipboardCheck,  path: "/freelancer/attendance" },
-    { label: "My Wallet",     icon: Wallet,          path: "/freelancer/wallet" },
-    { label: "Transactions",  icon: FileText,        path: "/freelancer/wallet/transactions" },
-    { label: "Withdrawals",   icon: ArrowUpRight,    path: "/freelancer/wallet/withdrawals" },
-    { label: "Notifications", icon: Bell,            path: "/freelancer/notification-settings" },
-    { label: "Help & Support",icon: CircleHelp,      path: "/freelancer/help-support" },
-    { label: "Reviews",       icon: Star,            path: "/freelancer/review" },
-    { label: "Get Free",      icon: Gift,            path: "/freelancer/get-free" },
+    { label: "Dashboard", icon: LayoutDashboard, path: "/freelancer/dashboard" },
+    { label: "My Jobs", icon: Briefcase, path: "/freelancer/projects" },
+    { label: "Attendance", icon: ClipboardCheck, path: "/freelancer/attendance" },
+    { label: "My Wallet", icon: Wallet, path: "/freelancer/wallet" },
+    { label: "Transactions", icon: FileText, path: "/freelancer/wallet/transactions" },
+    { label: "Withdrawals", icon: ArrowUpRight, path: "/freelancer/wallet/withdrawals" },
+    { label: "Notifications", icon: Bell, path: "/freelancer/notification-settings" },
+    { label: "Help & Support", icon: CircleHelp, path: "/freelancer/help-support" },
+    { label: "Reviews", icon: Star, path: "/freelancer/review" },
+    { label: "Get Free", icon: Gift, path: "/freelancer/get-free" },
   ],
   employer: [
-    { label: "Dashboard",    icon: LayoutDashboard, path: "/employer/dashboard" },
-    { label: "My Jobs",      icon: Briefcase,       path: "/employer/projects" },
-    { label: "Attendance",   icon: ClipboardCheck,  path: "/employer/attendance" },
-    { label: "My Wallet",    icon: Wallet,          path: "/employer/wallet" },
-    { label: "Help & Support",icon: CircleHelp,     path: "/employer/help-support" },
+    { label: "Dashboard", icon: LayoutDashboard, path: "/employer/dashboard" },
+    { label: "My Jobs", icon: Briefcase, path: "/employer/projects" },
+    { label: "Attendance", icon: ClipboardCheck, path: "/employer/attendance" },
+    { label: "My Wallet", icon: Wallet, path: "/employer/wallet" },
+    { label: "Help & Support", icon: CircleHelp, path: "/employer/help-support" },
   ],
 };
 
 function useClickOutside(ref: React.RefObject<HTMLDivElement | null>, fn: () => void) {
   useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) fn(); };
+    const h = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) fn();
+    };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, [ref, fn]);
 }
 
 const AppLayout = ({ userType }: AppLayoutProps) => {
-  const [drawerOpen, setDrawerOpen]   = useState(false);
-  const [searchOpen, setSearchOpen]   = useState(false);
-  const [searchQ, setSearchQ]         = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQ, setSearchQ] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
-  const [appLogoUrl, setAppLogoUrl]   = useState<string | null>(null);
-  const [appName, setAppName]         = useState("Freelancer India");
+  const [appLogoUrl, setAppLogoUrl] = useState<string | null>(null);
+  const [appName, setAppName] = useState("Freelancer India");
   const { theme, setTheme } = useDashboardTheme();
   const { signOut, user, profile } = useAuth();
   const navigate = useNavigate();
@@ -348,27 +369,28 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
   );
 
   // TOTP setup — only triggered for new users, after security questions
-  const { totpMode, markTotpDone } = useTotpGate(
-    mpinJustCreated && sqGatePassed,
-    user?.id ?? undefined,
-  );
+  const { totpMode, markTotpDone } = useTotpGate(mpinJustCreated && sqGatePassed, user?.id ?? undefined);
 
   const profileRef = useRef<HTMLDivElement>(null);
-  const searchRef  = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   useClickOutside(profileRef, () => setProfileOpen(false));
-  useClickOutside(searchRef,  () => { if (!searchQ) setSearchOpen(false); });
+  useClickOutside(searchRef, () => {
+    if (!searchQ) setSearchOpen(false);
+  });
 
   const tok = T[theme];
   const css = buildCss(tok);
   const isHeaderDark = theme === "black" || theme === "wb";
-  const isWarm   = theme === "warm";
+  const isWarm = theme === "warm";
   const isForest = theme === "forest";
-  const isOcean  = theme === "ocean";
+  const isOcean = theme === "ocean";
   const { pathname } = useLocation();
-  const basePath = pathname.startsWith("/freelancer") ? "/freelancer"
-    : pathname.startsWith("/employer") ? "/employer"
-    : "/employee";
+  const basePath = pathname.startsWith("/freelancer")
+    ? "/freelancer"
+    : pathname.startsWith("/employer")
+      ? "/employer"
+      : "/employee";
 
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== "undefined" && window.innerWidth >= 768);
   useEffect(() => {
@@ -377,53 +399,64 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
     return () => window.removeEventListener("resize", handler);
   }, []);
 
-  const desktopNavItems = userType === "employee" ? [
-    { label: "Dashboard",     icon: LayoutDashboard, path: `${basePath}/dashboard` },
-    { label: "My Jobs",       icon: Briefcase,        path: `${basePath}/projects` },
-    { label: "Requests",      icon: FileText,         path: `${basePath}/requests` },
-    { label: "Attendance",    icon: ClipboardCheck,   path: `${basePath}/attendance` },
-    { label: "My Wallet",     icon: Wallet,           path: `${basePath}/wallet` },
-    { label: "My Profile",    icon: UserCircle,       path: `${basePath}/profile` },
-    { label: "Services",      icon: Layers,           path: `${basePath}/profile/services` },
-    { label: "Portfolio",     icon: Star,             path: `${basePath}/portfolio` },
-    { label: "Help & Support",icon: HelpCircle,       path: `${basePath}/help-support` },
-    { label: "Settings",      icon: Settings,         path: `${basePath}/settings` },
-  ] : [
-    { label: "Dashboard",     icon: LayoutDashboard, path: `${basePath}/dashboard` },
-    { label: "My Projects",   icon: Briefcase,        path: `${basePath}/projects` },
-    { label: "Attendance",    icon: ClipboardCheck,   path: `${basePath}/attendance` },
-    { label: "My Wallet",     icon: Wallet,           path: `${basePath}/wallet` },
-    { label: "My Profile",    icon: UserCircle,       path: `${basePath}/profile` },
-    { label: "Help & Support",icon: HelpCircle,       path: `${basePath}/help-support` },
-    { label: "Settings",      icon: Settings,         path: `${basePath}/settings` },
-  ];
+  const desktopNavItems =
+    userType === "employee"
+      ? [
+          { label: "Dashboard", icon: LayoutDashboard, path: `${basePath}/dashboard` },
+          { label: "My Jobs", icon: Briefcase, path: `${basePath}/projects` },
+          { label: "Requests", icon: FileText, path: `${basePath}/requests` },
+          { label: "Attendance", icon: ClipboardCheck, path: `${basePath}/attendance` },
+          { label: "My Wallet", icon: Wallet, path: `${basePath}/wallet` },
+          { label: "My Profile", icon: UserCircle, path: `${basePath}/profile` },
+          { label: "Services", icon: Layers, path: `${basePath}/profile/services` },
+          { label: "Portfolio", icon: Star, path: `${basePath}/portfolio` },
+          { label: "Help & Support", icon: HelpCircle, path: `${basePath}/help-support` },
+          { label: "Settings", icon: Settings, path: `${basePath}/settings` },
+        ]
+      : [
+          { label: "Dashboard", icon: LayoutDashboard, path: `${basePath}/dashboard` },
+          { label: "My Projects", icon: Briefcase, path: `${basePath}/projects` },
+          { label: "Attendance", icon: ClipboardCheck, path: `${basePath}/attendance` },
+          { label: "My Wallet", icon: Wallet, path: `${basePath}/wallet` },
+          { label: "My Profile", icon: UserCircle, path: `${basePath}/profile` },
+          { label: "Help & Support", icon: HelpCircle, path: `${basePath}/help-support` },
+          { label: "Settings", icon: Settings, path: `${basePath}/settings` },
+        ];
 
   const { data: walletProfile } = useQuery({
     queryKey: ["app-layout-wallet", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data } = await supabase.from("profiles").select("full_name,available_balance,user_code").eq("id", user.id).single();
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name,available_balance,user_code")
+        .eq("id", user.id)
+        .single();
       return data;
     },
     enabled: !!user?.id,
     refetchInterval: 60000,
   });
 
-  const userName    = walletProfile?.full_name || profile?.full_name?.[0] || "User";
-  const userInitial = (typeof userName === "string" ? userName : Array.isArray(userName) ? userName[0] : "U").charAt(0).toUpperCase();
+  const userName = walletProfile?.full_name || profile?.full_name?.[0] || "User";
+  const userInitial = (typeof userName === "string" ? userName : Array.isArray(userName) ? userName[0] : "U")
+    .charAt(0)
+    .toUpperCase();
   const walletBalance = walletProfile?.available_balance ?? profile?.available_balance ?? 0;
 
   const allSearchItems = SEARCH_ITEMS[userType];
-  const searchResults = searchQ.length > 1
-    ? allSearchItems.filter(i => i.label.toLowerCase().includes(searchQ.toLowerCase()))
-    : [];
+  const searchResults =
+    searchQ.length > 1 ? allSearchItems.filter((i) => i.label.toLowerCase().includes(searchQ.toLowerCase())) : [];
 
   useEffect(() => {
-    supabase.from("app_settings").select("key, value").in("key", ["app_logo_url", "app_name"])
+    supabase
+      .from("app_settings")
+      .select("key, value")
+      .in("key", ["app_logo_url", "app_name"])
       .then(({ data }) => {
         if (!data) return;
-        const logo = data.find(r => r.key === "app_logo_url");
-        const name = data.find(r => r.key === "app_name");
+        const logo = data.find((r) => r.key === "app_logo_url");
+        const name = data.find((r) => r.key === "app_name");
         if (logo?.value) setAppLogoUrl(logo.value);
         if (name?.value) setAppName(name.value);
       });
@@ -431,57 +464,180 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") { e.preventDefault(); setSearchOpen(true); }
-      if (e.key === "Escape") { setSearchOpen(false); setSearchQ(""); setProfileOpen(false); }
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+      if (e.key === "Escape") {
+        setSearchOpen(false);
+        setSearchQ("");
+        setProfileOpen(false);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const handleLogout = useCallback(async () => { await signOut(); navigate("/login"); }, [signOut, navigate]);
+  const handleLogout = useCallback(async () => {
+    await signOut();
+    navigate("/login");
+  }, [signOut, navigate]);
 
   const iconBtnStyle: React.CSSProperties = {
-    width: 34, height: 34, borderRadius: 9, background: tok.iconBtn,
+    width: 34,
+    height: 34,
+    borderRadius: 9,
+    background: tok.iconBtn,
     border: `1px solid ${isHeaderDark ? "rgba(255,255,255,.08)" : isWarm ? "rgba(180,83,9,.14)" : isForest ? "rgba(21,128,61,.14)" : isOcean ? "rgba(14,165,233,.14)" : "rgba(0,0,0,.07)"}`,
-    display: "flex", alignItems: "center", justifyContent: "center",
-    cursor: "pointer", color: isHeaderDark ? "rgba(255,255,255,.5)" : isWarm ? "#78716c" : isForest ? "#4b7c5d" : isOcean ? "#4b83a3" : "#6b7280",
-    transition: "all .15s", flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    color: isHeaderDark
+      ? "rgba(255,255,255,.5)"
+      : isWarm
+        ? "#78716c"
+        : isForest
+          ? "#4b7c5d"
+          : isOcean
+            ? "#4b83a3"
+            : "#6b7280",
+    transition: "all .15s",
+    flexShrink: 0,
   };
 
   const dropStyle: React.CSSProperties = {
-    position: "absolute", top: "calc(100% + 8px)", right: 0, zIndex: 200,
-    background: tok.dropBg, border: `1px solid ${tok.dropBdr}`,
-    borderRadius: 14, boxShadow: "0 20px 50px rgba(0,0,0,.22)",
-    minWidth: 220, overflow: "hidden", animation: "slideDownFade .15s ease",
+    position: "absolute",
+    top: "calc(100% + 8px)",
+    right: 0,
+    zIndex: 200,
+    background: tok.dropBg,
+    border: `1px solid ${tok.dropBdr}`,
+    borderRadius: 14,
+    boxShadow: "0 20px 50px rgba(0,0,0,.22)",
+    minWidth: 220,
+    overflow: "hidden",
+    animation: "slideDownFade .15s ease",
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100dvh", flexDirection: "column", background: tok.shell, fontFamily: "Inter,system-ui,sans-serif" }}>
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100dvh",
+        flexDirection: "column",
+        background: tok.shell,
+        fontFamily: "Inter,system-ui,sans-serif",
+      }}
+    >
       <style>{css}</style>
 
       {/* Ambient background */}
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: "-5%", right: "-10%", width: 350, height: 350, borderRadius: "50%", background: `radial-gradient(circle,${tok.orbA} 0%,transparent 70%)`, animation: "orbGlowApp 7s ease-in-out infinite" }} />
-        <div style={{ position: "absolute", bottom: "15%", left: "-8%", width: 280, height: 280, borderRadius: "50%", background: `radial-gradient(circle,${tok.orbB} 0%,transparent 70%)`, animation: "orbGlowApp 9s ease-in-out infinite 2s" }} />
-        <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${tok.gridLine} 1px,transparent 1px),linear-gradient(90deg,${tok.gridLine} 1px,transparent 1px)`, backgroundSize: "60px 60px" }} />
+        <div
+          style={{
+            position: "absolute",
+            top: "-5%",
+            right: "-10%",
+            width: 350,
+            height: 350,
+            borderRadius: "50%",
+            background: `radial-gradient(circle,${tok.orbA} 0%,transparent 70%)`,
+            animation: "orbGlowApp 7s ease-in-out infinite",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            bottom: "15%",
+            left: "-8%",
+            width: 280,
+            height: 280,
+            borderRadius: "50%",
+            background: `radial-gradient(circle,${tok.orbB} 0%,transparent 70%)`,
+            animation: "orbGlowApp 9s ease-in-out infinite 2s",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage: `linear-gradient(${tok.gridLine} 1px,transparent 1px),linear-gradient(90deg,${tok.gridLine} 1px,transparent 1px)`,
+            backgroundSize: "60px 60px",
+          }}
+        />
       </div>
 
       {/* ─── HEADER ─────────────────────────────────────────────── */}
-      <header style={{ position: "sticky", top: 0, zIndex: 30, background: tok.header, borderBottom: `1px solid ${tok.headerBdr}`, backdropFilter: "blur(20px)" }}>
-        <div style={{ margin: "0 auto", display: "flex", height: 56, alignItems: "center", gap: 8, padding: "0 14px", maxWidth: 860 }}>
-
+      <header
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+          background: tok.header,
+          borderBottom: `1px solid ${tok.headerBdr}`,
+          backdropFilter: "blur(20px)",
+        }}
+      >
+        <div
+          style={{
+            margin: "0 auto",
+            display: "flex",
+            height: 56,
+            alignItems: "center",
+            gap: 8,
+            padding: "0 14px",
+            maxWidth: 860,
+          }}
+        >
           {/* Logo */}
           <div style={{ display: "flex", alignItems: "center", gap: 9, flexShrink: 0 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: appLogoUrl ? "transparent" : `linear-gradient(135deg,${A1},${A2})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: appLogoUrl ? "none" : "0 0 16px rgba(99,102,241,.45)", overflow: "hidden" }}>
-              {appLogoUrl
-                ? <img src={appLogoUrl} alt="App Logo" style={{ width: 34, height: 34, objectFit: "contain", borderRadius: 10 }} />
-                : <Briefcase size={16} color="white" />}
+            <div
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                background: appLogoUrl ? "transparent" : `linear-gradient(135deg,${A1},${A2})`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: appLogoUrl ? "none" : "0 0 16px rgba(99,102,241,.45)",
+                overflow: "hidden",
+              }}
+            >
+              {appLogoUrl ? (
+                <img
+                  src={appLogoUrl}
+                  alt="App Logo"
+                  style={{ width: 34, height: 34, objectFit: "contain", borderRadius: 10 }}
+                />
+              ) : (
+                <Briefcase size={16} color="white" />
+              )}
             </div>
             <div className="hidden sm:block">
-              <p style={{ fontWeight: 800, fontSize: 15, color: tok.logo, lineHeight: 1.1, letterSpacing: "-0.3px", margin: 0 }}>
+              <p
+                style={{
+                  fontWeight: 800,
+                  fontSize: 15,
+                  color: tok.logo,
+                  lineHeight: 1.1,
+                  letterSpacing: "-0.3px",
+                  margin: 0,
+                }}
+              >
                 {appName}
               </p>
-              <p style={{ fontSize: 8.5, color: tok.logoSub, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, margin: 0 }}>
+              <p
+                style={{
+                  fontSize: 8.5,
+                  color: tok.logoSub,
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                  margin: 0,
+                }}
+              >
                 {userType === "employee" ? "Freelancer Portal" : "Employer Portal"}
               </p>
             </div>
@@ -490,30 +646,137 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
           {/* Search bar */}
           <div ref={searchRef} style={{ flex: 1, maxWidth: 340, position: "relative", margin: "0 4px" }}>
             {searchOpen ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 7, background: tok.searchBg, border: `1px solid ${A1}55`, borderRadius: 10, padding: "0 11px", height: 34 }}>
-                <Search size={12} color={isHeaderDark ? "rgba(255,255,255,.4)" : isWarm ? "rgba(120,113,108,.6)" : isForest ? "rgba(75,124,93,.6)" : isOcean ? "rgba(75,131,163,.6)" : "#9ca3af"} />
-                <input autoFocus value={searchQ} onChange={e => setSearchQ(e.target.value)}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 7,
+                  background: tok.searchBg,
+                  border: `1px solid ${A1}55`,
+                  borderRadius: 10,
+                  padding: "0 11px",
+                  height: 34,
+                }}
+              >
+                <Search
+                  size={12}
+                  color={
+                    isHeaderDark
+                      ? "rgba(255,255,255,.4)"
+                      : isWarm
+                        ? "rgba(120,113,108,.6)"
+                        : isForest
+                          ? "rgba(75,124,93,.6)"
+                          : isOcean
+                            ? "rgba(75,131,163,.6)"
+                            : "#9ca3af"
+                  }
+                />
+                <input
+                  autoFocus
+                  value={searchQ}
+                  onChange={(e) => setSearchQ(e.target.value)}
                   placeholder="Search features..."
-                  style={{ flex: 1, background: "none", border: "none", outline: "none", color: isHeaderDark ? "rgba(255,255,255,.9)" : "#0d0d24", fontSize: 12.5 }} />
-                <button onClick={() => { setSearchOpen(false); setSearchQ(""); }} style={{ background: "none", border: "none", cursor: "pointer", color: isHeaderDark ? "rgba(255,255,255,.3)" : "#9ca3af", display: "flex" }}>
+                  style={{
+                    flex: 1,
+                    background: "none",
+                    border: "none",
+                    outline: "none",
+                    color: isHeaderDark ? "rgba(255,255,255,.9)" : "#0d0d24",
+                    fontSize: 12.5,
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    setSearchOpen(false);
+                    setSearchQ("");
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: isHeaderDark ? "rgba(255,255,255,.3)" : "#9ca3af",
+                    display: "flex",
+                  }}
+                >
                   <X size={12} />
                 </button>
               </div>
             ) : (
-              <button onClick={() => setSearchOpen(true)}
-                style={{ display: "flex", alignItems: "center", gap: 7, background: tok.searchBg, border: `1px solid ${tok.searchBdr}`, borderRadius: 10, padding: "0 11px", height: 34, width: "100%", cursor: "text", color: isHeaderDark ? "rgba(255,255,255,.3)" : "#9ca3af", fontSize: 12 }}>
+              <button
+                onClick={() => setSearchOpen(true)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 7,
+                  background: tok.searchBg,
+                  border: `1px solid ${tok.searchBdr}`,
+                  borderRadius: 10,
+                  padding: "0 11px",
+                  height: 34,
+                  width: "100%",
+                  cursor: "text",
+                  color: isHeaderDark ? "rgba(255,255,255,.3)" : "#9ca3af",
+                  fontSize: 12,
+                }}
+              >
                 <Search size={12} />
                 <span className="hidden sm:inline">Search...</span>
-                <kbd className="hidden sm:inline" style={{ marginLeft: "auto", fontSize: 9, color: isHeaderDark ? "rgba(255,255,255,.2)" : "#9ca3af", background: isHeaderDark ? "rgba(255,255,255,.06)" : "rgba(0,0,0,.05)", borderRadius: 4, padding: "1px 5px" }}>⌘K</kbd>
+                <kbd
+                  className="hidden sm:inline"
+                  style={{
+                    marginLeft: "auto",
+                    fontSize: 9,
+                    color: isHeaderDark ? "rgba(255,255,255,.2)" : "#9ca3af",
+                    background: isHeaderDark ? "rgba(255,255,255,.06)" : "rgba(0,0,0,.05)",
+                    borderRadius: 4,
+                    padding: "1px 5px",
+                  }}
+                >
+                  ⌘K
+                </kbd>
               </button>
             )}
             {searchResults.length > 0 && (
-              <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: tok.dropBg, border: `1px solid ${tok.dropBdr}`, borderRadius: 12, overflow: "hidden", boxShadow: "0 16px 40px rgba(0,0,0,.22)", zIndex: 300, animation: "slideDownFade .15s ease" }}>
-                {searchResults.map(r => (
-                  <button key={r.path} onClick={() => { navigate(r.path); setSearchOpen(false); setSearchQ(""); }}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 9, padding: "8px 13px", background: "none", border: "none", cursor: "pointer", color: tok.mainText, fontSize: 13, textAlign: "left" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = tok.hoverRow)}
-                    onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+              <div
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 6px)",
+                  left: 0,
+                  right: 0,
+                  background: tok.dropBg,
+                  border: `1px solid ${tok.dropBdr}`,
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  boxShadow: "0 16px 40px rgba(0,0,0,.22)",
+                  zIndex: 300,
+                  animation: "slideDownFade .15s ease",
+                }}
+              >
+                {searchResults.map((r) => (
+                  <button
+                    key={r.path}
+                    onClick={() => {
+                      navigate(r.path);
+                      setSearchOpen(false);
+                      setSearchQ("");
+                    }}
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 9,
+                      padding: "8px 13px",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: tok.mainText,
+                      fontSize: 13,
+                      textAlign: "left",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = tok.hoverRow)}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+                  >
                     <r.icon size={13} color={A1} />
                     <span>{r.label}</span>
                   </button>
@@ -524,45 +787,113 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
 
           {/* Right actions */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto", flexShrink: 0 }}>
-
             {/* Wallet balance */}
-            <button onClick={() => navigate(`${basePath}/wallet`)}
+            <button
+              onClick={() => navigate(`${basePath}/wallet`)}
               className="hidden sm:flex"
-              style={{ alignItems: "center", gap: 7, padding: "5px 10px", borderRadius: 10, background: `${A1}15`, border: `1px solid ${A1}30`, cursor: "pointer", height: 34 }}
-              onMouseEnter={e => (e.currentTarget.style.background = `${A1}25`)}
-              onMouseLeave={e => (e.currentTarget.style.background = `${A1}15`)}>
-              <IndianRupee size={12} color={isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : isForest ? "#16a34a" : isOcean ? "#0284c7" : "#4f46e5"} />
-              <span style={{ fontSize: 12.5, fontWeight: 800, color: isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : isForest ? "#16a34a" : isOcean ? "#0284c7" : "#4f46e5" }}>
+              style={{
+                alignItems: "center",
+                gap: 7,
+                padding: "5px 10px",
+                borderRadius: 10,
+                background: `${A1}15`,
+                border: `1px solid ${A1}30`,
+                cursor: "pointer",
+                height: 34,
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = `${A1}25`)}
+              onMouseLeave={(e) => (e.currentTarget.style.background = `${A1}15`)}
+            >
+              <IndianRupee
+                size={12}
+                color={
+                  isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : isForest ? "#16a34a" : isOcean ? "#0284c7" : "#4f46e5"
+                }
+              />
+              <span
+                style={{
+                  fontSize: 12.5,
+                  fontWeight: 800,
+                  color: isHeaderDark
+                    ? "#a5b4fc"
+                    : isWarm
+                      ? "#d97706"
+                      : isForest
+                        ? "#16a34a"
+                        : isOcean
+                          ? "#0284c7"
+                          : "#4f46e5",
+                }}
+              >
                 {walletBalance.toLocaleString("en-IN")}
               </span>
             </button>
 
             {/* CTA: Withdraw (freelancer) or Post Job (employer) */}
             {userType === "employee" ? (
-              <button onClick={() => navigate(`${basePath}/wallet`)}
+              <button
+                onClick={() => navigate(`${basePath}/wallet`)}
                 className="hidden md:flex"
-                style={{ alignItems: "center", gap: 6, padding: "5px 11px", borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, border: "none", cursor: "pointer", height: 34, color: "white", fontSize: 12, fontWeight: 700, boxShadow: `0 4px 14px rgba(99,102,241,.35)` }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")}
-                onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+                style={{
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "5px 11px",
+                  borderRadius: 10,
+                  background: `linear-gradient(135deg,${A1},${A2})`,
+                  border: "none",
+                  cursor: "pointer",
+                  height: 34,
+                  color: "white",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  boxShadow: `0 4px 14px rgba(99,102,241,.35)`,
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+              >
                 <ArrowUpRight size={13} />
                 <span>Withdraw</span>
               </button>
             ) : (
-              <button onClick={() => navigate(`${basePath}/projects/create`)}
+              <button
+                onClick={() => navigate(`${basePath}/projects/create`)}
                 className="hidden md:flex"
-                style={{ alignItems: "center", gap: 6, padding: "5px 11px", borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, border: "none", cursor: "pointer", height: 34, color: "white", fontSize: 12, fontWeight: 700, boxShadow: `0 4px 14px rgba(99,102,241,.35)` }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")}
-                onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+                style={{
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "5px 11px",
+                  borderRadius: 10,
+                  background: `linear-gradient(135deg,${A1},${A2})`,
+                  border: "none",
+                  cursor: "pointer",
+                  height: 34,
+                  color: "white",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  boxShadow: `0 4px 14px rgba(99,102,241,.35)`,
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+              >
                 <Plus size={13} />
                 <span>Post Job</span>
               </button>
             )}
 
             {/* Messages */}
-            <button onClick={() => navigate(`${basePath}/help-support`)} title="Messages"
+            <button
+              onClick={() => navigate(`${basePath}/help-support`)}
+              title="Messages"
               style={iconBtnStyle}
-              onMouseEnter={e => { e.currentTarget.style.background = tok.iconBtnHov; e.currentTarget.style.color = isHeaderDark ? "white" : "#0d0d24"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = tok.iconBtn;    e.currentTarget.style.color = isHeaderDark ? "rgba(255,255,255,.5)" : "#6b7280"; }}>
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = tok.iconBtnHov;
+                e.currentTarget.style.color = isHeaderDark ? "white" : "#0d0d24";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = tok.iconBtn;
+                e.currentTarget.style.color = isHeaderDark ? "rgba(255,255,255,.5)" : "#6b7280";
+              }}
+            >
               <MessageSquare size={15} />
             </button>
 
@@ -576,11 +907,37 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
 
             {/* Profile dropdown */}
             <div ref={profileRef} style={{ position: "relative" }}>
-              <button onClick={() => setProfileOpen(o => !o)}
-                style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 8px 4px 4px", borderRadius: 10, background: tok.iconBtn, border: `1px solid ${isHeaderDark ? "rgba(255,255,255,.08)" : "rgba(0,0,0,.07)"}`, cursor: "pointer", height: 34 }}
-                onMouseEnter={e => (e.currentTarget.style.background = tok.iconBtnHov)}
-                onMouseLeave={e => (e.currentTarget.style.background = tok.iconBtn)}>
-                <div style={{ width: 26, height: 26, borderRadius: 8, background: `linear-gradient(135deg,${A1},${A2})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "white", flexShrink: 0 }}>
+              <button
+                onClick={() => setProfileOpen((o) => !o)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "4px 8px 4px 4px",
+                  borderRadius: 10,
+                  background: tok.iconBtn,
+                  border: `1px solid ${isHeaderDark ? "rgba(255,255,255,.08)" : "rgba(0,0,0,.07)"}`,
+                  cursor: "pointer",
+                  height: 34,
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = tok.iconBtnHov)}
+                onMouseLeave={(e) => (e.currentTarget.style.background = tok.iconBtn)}
+              >
+                <div
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: 8,
+                    background: `linear-gradient(135deg,${A1},${A2})`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: "white",
+                    flexShrink: 0,
+                  }}
+                >
                   {userInitial}
                 </div>
                 <ChevronDown size={11} color={isHeaderDark ? "rgba(255,255,255,.4)" : "#9ca3af"} />
@@ -589,33 +946,80 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
                 <div style={dropStyle}>
                   <div style={{ padding: "12px 14px 10px", borderBottom: `1px solid ${tok.dropBdr}` }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                      <div style={{ width: 34, height: 34, borderRadius: 10, background: `linear-gradient(135deg,${A1},${A2})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: "white" }}>
+                      <div
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: 10,
+                          background: `linear-gradient(135deg,${A1},${A2})`,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 13,
+                          fontWeight: 800,
+                          color: "white",
+                        }}
+                      >
                         {userInitial}
                       </div>
                       <div>
-                        <p style={{ fontWeight: 700, fontSize: 13, color: tok.mainText, margin: 0 }}>{typeof userName === "string" ? userName : Array.isArray(userName) ? userName[0] : "User"}</p>
-                        <p style={{ fontSize: 10.5, color: tok.mainSub, margin: 0, textTransform: "capitalize" }}>{userType === "employee" ? "Freelancer Account" : "Employer Account"}</p>
+                        <p style={{ fontWeight: 700, fontSize: 13, color: tok.mainText, margin: 0 }}>
+                          {typeof userName === "string" ? userName : Array.isArray(userName) ? userName[0] : "User"}
+                        </p>
+                        <p style={{ fontSize: 10.5, color: tok.mainSub, margin: 0, textTransform: "capitalize" }}>
+                          {userType === "employee" ? "Freelancer Account" : "Employer Account"}
+                        </p>
                       </div>
                     </div>
                   </div>
                   {[
-                    { label: "My Profile",  icon: User,          path: `${basePath}/profile` },
-                    { label: "Settings",    icon: Settings,      path: `${basePath}/settings` },
-                    { label: "My Wallet",   icon: Wallet,        path: `${basePath}/wallet` },
-                  ].map(item => (
-                    <button key={item.label} onClick={() => { navigate(item.path); setProfileOpen(false); }}
-                      style={{ width: "100%", display: "flex", alignItems: "center", gap: 9, padding: "9px 14px", background: "none", border: "none", cursor: "pointer", color: tok.mainText, fontSize: 13 }}
-                      onMouseEnter={e => (e.currentTarget.style.background = tok.hoverRow)}
-                      onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                    { label: "My Profile", icon: User, path: `${basePath}/profile` },
+                    { label: "Settings", icon: Settings, path: `${basePath}/settings` },
+                    { label: "My Wallet", icon: Wallet, path: `${basePath}/wallet` },
+                  ].map((item) => (
+                    <button
+                      key={item.label}
+                      onClick={() => {
+                        navigate(item.path);
+                        setProfileOpen(false);
+                      }}
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 9,
+                        padding: "9px 14px",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: tok.mainText,
+                        fontSize: 13,
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = tok.hoverRow)}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+                    >
                       <item.icon size={13} color={tok.mainSub} />
                       <span>{item.label}</span>
                     </button>
                   ))}
                   <div style={{ borderTop: `1px solid ${tok.dropBdr}`, margin: "3px 0" }} />
-                  <button onClick={handleLogout}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 9, padding: "9px 14px", background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: 13 }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(239,68,68,.06)")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                  <button
+                    onClick={handleLogout}
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 9,
+                      padding: "9px 14px",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "#ef4444",
+                      fontSize: 13,
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(239,68,68,.06)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+                  >
                     <LogOut size={13} />
                     <span>Sign Out</span>
                   </button>
@@ -628,31 +1032,56 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
 
       {/* ─── BODY (sidebar + content) ─────────────────────────── */}
       <div style={{ display: "flex", flex: 1 }}>
-
         {/* Left Sidebar — Desktop only */}
         {isDesktop && (
-          <aside style={{
-            width: 228, flexShrink: 0,
-            position: "sticky", top: 56, alignSelf: "flex-start",
-            height: "calc(100vh - 56px)", overflowY: "auto",
-            background: tok.header,
-            borderRight: `1px solid ${tok.headerBdr}`,
-            display: "flex", flexDirection: "column",
-            backdropFilter: "blur(20px)",
-          }}>
+          <aside
+            style={{
+              width: 228,
+              flexShrink: 0,
+              position: "sticky",
+              top: 56,
+              alignSelf: "flex-start",
+              height: "calc(100vh - 56px)",
+              overflowY: "auto",
+              background: tok.header,
+              borderRight: `1px solid ${tok.headerBdr}`,
+              display: "flex",
+              flexDirection: "column",
+              backdropFilter: "blur(20px)",
+            }}
+          >
             {/* User card */}
             <div style={{ padding: "14px 14px 12px", borderBottom: `1px solid ${tok.headerBdr}` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                <div style={{
-                  width: 38, height: 38, borderRadius: 12,
-                  background: `linear-gradient(135deg,${A1},${A2})`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 15, fontWeight: 800, color: "white", flexShrink: 0,
-                }}>
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 12,
+                    background: `linear-gradient(135deg,${A1},${A2})`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 15,
+                    fontWeight: 800,
+                    color: "white",
+                    flexShrink: 0,
+                  }}
+                >
                   {userInitial}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontWeight: 700, fontSize: 13, color: tok.logo, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <p
+                    style={{
+                      fontWeight: 700,
+                      fontSize: 13,
+                      color: tok.logo,
+                      margin: 0,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     {typeof userName === "string" ? userName : Array.isArray(userName) ? userName[0] : "User"}
                   </p>
                   <p style={{ fontSize: 10.5, color: tok.logoSub, margin: 0, textTransform: "capitalize" }}>
@@ -661,12 +1090,51 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
                 </div>
               </div>
               {/* Balance pill */}
-              <button onClick={() => navigate(`${basePath}/wallet`)}
-                style={{ width: "100%", display: "flex", alignItems: "center", gap: 7, padding: "7px 10px", borderRadius: 9, background: `${A1}15`, border: `1px solid ${A1}30`, cursor: "pointer" }}
-                onMouseEnter={e => (e.currentTarget.style.background = `${A1}25`)}
-                onMouseLeave={e => (e.currentTarget.style.background = `${A1}15`)}>
-                <IndianRupee size={12} color={isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : isForest ? "#16a34a" : isOcean ? "#0284c7" : "#4f46e5"} />
-                <span style={{ fontSize: 13, fontWeight: 800, color: isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : isForest ? "#16a34a" : isOcean ? "#0284c7" : "#4f46e5" }}>
+              <button
+                onClick={() => navigate(`${basePath}/wallet`)}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 7,
+                  padding: "7px 10px",
+                  borderRadius: 9,
+                  background: `${A1}15`,
+                  border: `1px solid ${A1}30`,
+                  cursor: "pointer",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = `${A1}25`)}
+                onMouseLeave={(e) => (e.currentTarget.style.background = `${A1}15`)}
+              >
+                <IndianRupee
+                  size={12}
+                  color={
+                    isHeaderDark
+                      ? "#a5b4fc"
+                      : isWarm
+                        ? "#d97706"
+                        : isForest
+                          ? "#16a34a"
+                          : isOcean
+                            ? "#0284c7"
+                            : "#4f46e5"
+                  }
+                />
+                <span
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 800,
+                    color: isHeaderDark
+                      ? "#a5b4fc"
+                      : isWarm
+                        ? "#d97706"
+                        : isForest
+                          ? "#16a34a"
+                          : isOcean
+                            ? "#0284c7"
+                            : "#4f46e5",
+                  }}
+                >
                   ₹{walletBalance.toLocaleString("en-IN")}
                 </span>
                 <span style={{ fontSize: 10, color: tok.logoSub, marginLeft: "auto" }}>Balance</span>
@@ -675,28 +1143,73 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
 
             {/* Nav links */}
             <nav style={{ flex: 1, padding: "8px 10px", overflowY: "auto" }}>
-              {desktopNavItems.map(item => {
+              {desktopNavItems.map((item) => {
                 const isActive = pathname === item.path || pathname.startsWith(item.path + "/");
                 return (
-                  <button key={item.path} onClick={() => navigate(item.path)}
+                  <button
+                    key={item.path}
+                    onClick={() => navigate(item.path)}
                     style={{
-                      width: "100%", display: "flex", alignItems: "center", gap: 10,
-                      padding: "9px 10px", borderRadius: 10, marginBottom: 2,
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "9px 10px",
+                      borderRadius: 10,
+                      marginBottom: 2,
                       background: isActive ? `${A1}18` : "none",
                       border: isActive ? `1px solid ${A1}35` : "1px solid transparent",
                       cursor: "pointer",
                       color: isActive
-                        ? (isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : isForest ? "#16a34a" : isOcean ? "#0284c7" : A1)
-                        : (isHeaderDark ? "rgba(255,255,255,.55)" : isWarm ? "#78716c" : isForest ? "#4b7c5d" : isOcean ? "#4b83a3" : "#6b7280"),
-                      fontSize: 13, fontWeight: isActive ? 700 : 500,
-                      transition: "all .15s", textAlign: "left",
+                        ? isHeaderDark
+                          ? "#a5b4fc"
+                          : isWarm
+                            ? "#d97706"
+                            : isForest
+                              ? "#16a34a"
+                              : isOcean
+                                ? "#0284c7"
+                                : A1
+                        : isHeaderDark
+                          ? "rgba(255,255,255,.55)"
+                          : isWarm
+                            ? "#78716c"
+                            : isForest
+                              ? "#4b7c5d"
+                              : isOcean
+                                ? "#4b83a3"
+                                : "#6b7280",
+                      fontSize: 13,
+                      fontWeight: isActive ? 700 : 500,
+                      transition: "all .15s",
+                      textAlign: "left",
                     }}
-                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = tok.iconBtn; }}
-                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "none"; }}>
+                    onMouseEnter={(e) => {
+                      if (!isActive) e.currentTarget.style.background = tok.iconBtn;
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) e.currentTarget.style.background = "none";
+                    }}
+                  >
                     <item.icon size={15} strokeWidth={isActive ? 2.4 : 1.8} />
                     <span style={{ flex: 1 }}>{item.label}</span>
                     {isActive && (
-                      <div style={{ width: 6, height: 6, borderRadius: 3, background: isHeaderDark ? "#a5b4fc" : isWarm ? "#d97706" : isForest ? "#16a34a" : isOcean ? "#0284c7" : A1 }} />
+                      <div
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: 3,
+                          background: isHeaderDark
+                            ? "#a5b4fc"
+                            : isWarm
+                              ? "#d97706"
+                              : isForest
+                                ? "#16a34a"
+                                : isOcean
+                                  ? "#0284c7"
+                                  : A1,
+                        }}
+                      />
                     )}
                   </button>
                 );
@@ -704,16 +1217,26 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
 
               {/* Divider + More */}
               <div style={{ height: 1, background: tok.headerBdr, margin: "8px 0" }} />
-              <button onClick={() => setDrawerOpen(true)}
+              <button
+                onClick={() => setDrawerOpen(true)}
                 style={{
-                  width: "100%", display: "flex", alignItems: "center", gap: 10,
-                  padding: "9px 10px", borderRadius: 10, background: "none",
-                  border: "1px solid transparent", cursor: "pointer",
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "9px 10px",
+                  borderRadius: 10,
+                  background: "none",
+                  border: "1px solid transparent",
+                  cursor: "pointer",
                   color: isHeaderDark ? "rgba(255,255,255,.45)" : "#9ca3af",
-                  fontSize: 13, fontWeight: 500, transition: "all .15s",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  transition: "all .15s",
                 }}
-                onMouseEnter={e => (e.currentTarget.style.background = tok.iconBtn)}
-                onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                onMouseEnter={(e) => (e.currentTarget.style.background = tok.iconBtn)}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+              >
                 <MoreHorizontal size={15} strokeWidth={1.8} />
                 <span>More</span>
               </button>
@@ -721,16 +1244,26 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
 
             {/* Logout */}
             <div style={{ padding: "10px 10px 14px", borderTop: `1px solid ${tok.headerBdr}` }}>
-              <button onClick={handleLogout}
+              <button
+                onClick={handleLogout}
                 style={{
-                  width: "100%", display: "flex", alignItems: "center", gap: 10,
-                  padding: "9px 10px", borderRadius: 10,
-                  background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.15)",
-                  cursor: "pointer", color: "#ef4444", fontSize: 13, fontWeight: 600,
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "9px 10px",
+                  borderRadius: 10,
+                  background: "rgba(239,68,68,.08)",
+                  border: "1px solid rgba(239,68,68,.15)",
+                  cursor: "pointer",
+                  color: "#ef4444",
+                  fontSize: 13,
+                  fontWeight: 600,
                   transition: "all .15s",
                 }}
-                onMouseEnter={e => (e.currentTarget.style.background = "rgba(239,68,68,.15)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "rgba(239,68,68,.08)")}>
+                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(239,68,68,.15)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(239,68,68,.08)")}
+              >
                 <LogOut size={15} />
                 <span>Logout</span>
               </button>
@@ -739,13 +1272,18 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
         )}
 
         {/* Main content */}
-        <main className="app-main-dark" style={{
-          flex: 1, position: "relative", zIndex: 1,
-          paddingBottom: isDesktop ? 32 : 88,
-          width: "100%",
-          background: tok.mainBg,
-          ...(!isDesktop ? { maxWidth: 860, margin: "0 auto" } : {}),
-        }}>
+        <main
+          className="app-main-dark"
+          style={{
+            flex: 1,
+            position: "relative",
+            zIndex: 1,
+            paddingBottom: isDesktop ? 32 : 88,
+            width: "100%",
+            background: tok.mainBg,
+            ...(!isDesktop ? { maxWidth: 860, margin: "0 auto" } : {}),
+          }}
+        >
           <Outlet />
         </main>
       </div>
@@ -757,9 +1295,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
         <MPinGateModal mode={mpinMode} theme={theme} onVerified={handleMpinVerified} />
       )}
 
-      {mpinMode === "done" && showQuestions && (
-        <SecurityQuestionsModal theme={theme} onDone={markQuestionsDone} />
-      )}
+      {mpinMode === "done" && showQuestions && <SecurityQuestionsModal theme={theme} onDone={markQuestionsDone} />}
 
       {sqGatePassed && (totpMode === "setup" || totpMode === "verify") && (
         <TotpGateModal mode={totpMode} theme={theme} onVerified={markTotpDone} />
