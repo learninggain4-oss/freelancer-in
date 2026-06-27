@@ -41,7 +41,7 @@ import {
 } from "lucide-react";
 
 interface AppLayoutProps {
-  userType: "freelancer" | "employer";
+  userType: "employee" | "employer";
 }
 
 const A1 = "#6366f1";
@@ -1288,11 +1288,7 @@ const AppLayout = ({ userType }: AppLayoutProps) => {
         </main>
       </div>
 
-      {!isDesktop && (
-      <div style={{ height: "65px"}}>
-      <BottomTabBar userType={userType} onMenuClick={() => setDrawerOpen(true)} theme={theme} />}
-      </div> 
-      )}
+      {!isDesktop && <BottomTabBar userType={userType} onMenuClick={() => setDrawerOpen(true)} theme={theme} />}
       <SideDrawer open={drawerOpen} onOpenChange={setDrawerOpen} theme={theme} />
 
       {(mpinMode === "create" || mpinMode === "verify") && (
