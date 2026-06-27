@@ -44,7 +44,9 @@ ${AUTH_CSS}
 .step-dot-pending { background:rgba(255,255,255,.04); }
 `;
 
-interface RegistrationFormProps { userType: "employee" | "employer"; }
+type RegistrationUserType = "Freelancer" | "Employer" | "employee" | "employer" | "client" | "freelancer";
+
+interface RegistrationFormProps { userType: RegistrationUserType; }
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: currentYear - 1969 }, (_, i) => String(currentYear - i));
@@ -103,7 +105,8 @@ const BUSINESS_TYPES = [
 const inp: React.CSSProperties = { background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", color: "white", borderRadius: 10 };
 
 const RegistrationForm = ({ userType }: RegistrationFormProps) => {
-  const isFreelancer = userType === "employee";
+  const normalizedInitialUserType = String(userType || "Freelancer").trim().toLowerCase();
+  const isFreelancer = normalizedInitialUserType === "freelancer" || normalizedInitialUserType === "employee";
   const stepConfig = isFreelancer ? freelancerStepConfig : employerStepConfig;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -224,7 +227,8 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       let geoData: any = {};
       try { const r = await fetch("https://ipapi.co/json/"); if (r.ok) { const g = await r.json(); geoData = { ip: g.ip, city: g.city, region: g.region, country: g.country_name, lat: g.latitude, lon: g.longitude }; } } catch {}
 
-      const uType = userType === "employer" ? "Employer" : "Freelancer";
+      const normalizedUserType = String(userType || "Freelancer").trim().toLowerCase();
+      const uType = ["employer", "client"].includes(normalizedUserType) ? "Employer" : "Freelancer";
 
       // Helper: create profile directly after getting userId (works for both new and duplicate email)
       const insertProfileAndRelated = async (userId: string, supabaseClient: typeof supabase) => {
@@ -246,7 +250,8 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       // Helper: register via server API (fallback when can't sign in with existing account)
       const registerViaServer = async () => {
         const payload = {
-          email: data.email, user_type: uType, full_name: data.full_name, username: data.username.trim().toLowerCase(),
+          email: data.email, user_type: uType, userType: uType, account_type: uType, accountType: uType,
+          full_name: data.full_name, username: data.username.trim().toLowerCase(),
           gender: data.gender, date_of_birth: data.date_of_birth,
           marital_status: data.marital_status, education_level: data.education_level,
           mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number,
@@ -330,7 +335,14 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
         await insertRelatedData(profileId, supabase);
       };
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({ email: data.email, password: data.password, options: { emailRedirectTo: window.location.origin } });
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: { user_type: uType, userType: uType, account_type: uType, full_name: data.full_name },
+        },
+      });
 
       // Detect duplicate email
       const isEmailTaken = authError?.message?.toLowerCase().includes("already") ||

@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
   }
 
   const {
-    email, user_type, full_name, username, gender, date_of_birth, marital_status,
+    email, user_type, userType, account_type, accountType, type, full_name, username, gender, date_of_birth, marital_status,
     education_level, mobile_number, whatsapp_number, education_background,
     referred_by, approval_status,
     geo, employer_biz, work_experiences, emergency_contacts, services,
@@ -51,13 +51,14 @@ Deno.serve(async (req) => {
 
   const emailLower = String(email).trim().toLowerCase();
   const nameUpper = String(full_name).trim().toUpperCase();
-  const normalizeUserType = (value: unknown) => {
-    const raw = String(value || "Freelancer").trim().toLowerCase();
-    if (["freelancer", "employee"].includes(raw)) return "Freelancer";
-    if (["employer", "client"].includes(raw)) return "Employer";
+  const normalizeUserType = (...values: unknown[]) => {
+    const rawValue = values.find((value) => value !== undefined && value !== null && String(value).trim() !== "");
+    const raw = String(rawValue || "Freelancer").trim().toLowerCase();
+    if (["freelancer", "employee", "worker", "seller"].includes(raw)) return "Freelancer";
+    if (["employer", "client", "buyer", "customer"].includes(raw)) return "Employer";
     return null;
   };
-  const uType = normalizeUserType(user_type);
+  const uType = normalizeUserType(user_type, userType, account_type, accountType, type, body?.user?.user_type, body?.user?.userType);
   if (!uType) return errResp(400, "Account Type Error --- please contact support");
 
   // Find existing auth user (created by client-side signUp just before this call)
