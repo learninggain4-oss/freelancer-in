@@ -2732,7 +2732,7 @@ app.post("/functions/v1/public-register", async (req, res) => {
   try {
     const adminClient = getAdminClient();
     const {
-      email, user_type, full_name, gender, date_of_birth, marital_status,
+      email, user_type, userType, account_type, accountType, type, full_name, username, gender, date_of_birth, marital_status,
       education_level, mobile_number, whatsapp_number, education_background,
       referred_by, approval_status,
       geo, employer_biz, work_experiences, emergency_contacts, services,
@@ -2742,13 +2742,14 @@ app.post("/functions/v1/public-register", async (req, res) => {
 
     const emailLower = email.trim().toLowerCase();
     const nameUpper  = full_name.trim().toUpperCase();
-    const normalizePublicRegisterUserType = (value) => {
-      const raw = String(value || "Freelancer").trim().toLowerCase();
-      if (["freelancer", "employee"].includes(raw)) return "Freelancer";
-      if (["employer", "client"].includes(raw)) return "Employer";
+    const normalizePublicRegisterUserType = (...values) => {
+      const rawValue = values.find((value) => value !== undefined && value !== null && String(value).trim() !== "");
+      const raw = String(rawValue || "Freelancer").trim().toLowerCase();
+      if (["freelancer", "employee", "worker", "seller"].includes(raw)) return "Freelancer";
+      if (["employer", "client", "buyer", "customer"].includes(raw)) return "Employer";
       return null;
     };
-    const uType = normalizePublicRegisterUserType(user_type);
+    const uType = normalizePublicRegisterUserType(user_type, userType, account_type, accountType, type, req.body?.user?.user_type, req.body?.user?.userType);
     if (!uType) return res.status(400).json({ error: "Account Type Error --- please contact support" });
 
     // Find existing auth user
@@ -2763,6 +2764,7 @@ app.post("/functions/v1/public-register", async (req, res) => {
     const profilePayload = {
       id: newProfileId, user_id: userId, email: emailLower,
       user_type: uType, full_name: [nameUpper], user_code: [],
+      username: username ? String(username).trim().toLowerCase() : null,
       gender: gender || null, date_of_birth: date_of_birth || null,
       marital_status: marital_status || null, education_level: education_level || null,
       mobile_number: mobile_number || null, whatsapp_number: whatsapp_number || null,
