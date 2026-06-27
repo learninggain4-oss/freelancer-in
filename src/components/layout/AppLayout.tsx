@@ -41,7 +41,7 @@ import {
 } from "lucide-react";
 
 interface AppLayoutProps {
-  userType: "freelancer" | "employer";
+  userType: "employee" | "employer";
 }
 
 const A1 = "#6366f1";
