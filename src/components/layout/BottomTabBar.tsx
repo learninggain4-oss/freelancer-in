@@ -272,27 +272,27 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: 38,
-                  height: 30,
-                  borderRadius: 10,
+                  width: 44,
+                  height: 34,
+                  borderRadius: 12,
                   background: isActive ? activePill : "transparent",
                   transition: "all .2s",
-                  boxShadow: isActive ? `0 0 12px ${activeGlow}` : "none",
+                  boxShadow: isActive ? `0 0 14px ${activeGlow}` : "none",
                 }}
               >
                 <tab.icon
-                  size={isActive ? 19 : 18}
+                  size={isActive ? 22 : 20}
                   style={{
                     color: isActive ? activeC : inactC,
                     strokeWidth: isActive ? 2.4 : 1.7,
                     transition: "all .2s",
-                    filter: isActive ? `drop-shadow(0 0 4px ${activeGlow})` : "none",
+                    filter: isActive ? `drop-shadow(0 0 5px ${activeGlow})` : "none",
                   }}
                 />
               </div>
               <span
                 style={{
-                  fontSize: 9.5,
+                  fontSize: 11,
                   fontWeight: isActive ? 800 : 500,
                   color: isActive ? labelActive : labelInact,
                   lineHeight: 1,
