@@ -138,7 +138,7 @@ const ChatRoom = () => {
 
   return (
     <div className="flex h-[calc(100vh-5rem)] bg-background">
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col relative">
         {/* Header - Call button added */}
         <div className="relative overflow-hidden border-b bg-gradient-to-r from-primary/5 via-primary/10 to-accent/5">
           <div className="absolute inset-0 backdrop-blur-xl" />
@@ -175,24 +175,82 @@ const ChatRoom = () => {
           validationFees={Number(projectData?.validation_fees ?? 0)}
         />
 
-        <ScrollArea className="flex-1 relative">
-          {/* ... (Messages mapping remains same) ... */}
-          {messages.map((msg) => (
-            <MessageBubble
-              key={msg.id}
-              message={msg}
-              currentUserId={profile?.id || ""}
-              onEdit={editMessage}
-              onDelete={deleteMessage}
-              onReaction={toggleReaction}
-              onReply={handleReply}
-            />
-          ))}
-          <div ref={bottomRef} />
+        <ScrollArea className="flex-1 relative p-4">
+          <div className="flex flex-col gap-4">
+            {messages.map((msg) => (
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                currentUserId={profile?.id || ""}
+                onEdit={editMessage}
+                onDelete={deleteMessage}
+                onReaction={toggleReaction}
+                onReply={handleReply}
+              />
+            ))}
+            <div ref={bottomRef} className="h-2" />
+          </div>
         </ScrollArea>
 
-        {/* ... (Input Area remains same) ... */}
+        {/* Input Area - ടൈപ്പിംഗ് സെക്ഷൻ മുകളിലേക്ക് കയറ്റാൻ pb-8 ഉം mb-2 ഉം നൽകിയിരിക്കുന്നു */}
+        <div className="p-3 bg-background border-t pb-8 mb-2 z-10 shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.1)]">
+          {!isClosed ? (
+            <div className="flex flex-col gap-2">
+              <TypingIndicator users={typingUsers} />
+
+              {pendingFile && (
+                <div className="flex items-center gap-2 text-sm text-primary bg-primary/10 p-2 rounded-md">
+                  <Paperclip className="h-4 w-4" />
+                  <span className="truncate">{pendingFile.name}</span>
+                  <Button variant="ghost" size="sm" className="h-6 px-2 ml-auto" onClick={() => setPendingFile(null)}>
+                    Remove
+                  </Button>
+                </div>
+              )}
+
+              <div className="flex items-end gap-2">
+                <ChatFileUpload onFileSelect={handleFileUploaded} />
+                <Textarea
+                  ref={textareaRef}
+                  value={newMessage}
+                  onChange={handleInputChange}
+                  placeholder="Type a message..."
+                  className="min-h-[44px] max-h-[160px] resize-none py-3"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                />
+                <Button
+                  onClick={handleSend}
+                  disabled={!newMessage.trim() && !pendingFile}
+                  className="h-[44px] w-[44px] shrink-0 rounded-full"
+                >
+                  <Send className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center p-3 text-muted-foreground text-sm flex items-center justify-center gap-2">
+              <ShieldCheck className="h-4 w-4" />
+              This project is {projectData?.status}. Chat is closed.
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Thread Panel */}
+      {threadParent && (
+        <ThreadPanel
+          parentMessage={threadParent}
+          messages={threadMessages}
+          onClose={() => setThreadParent(null)}
+          onSend={(content) => handleThreadSend(content, threadParent.id)}
+          currentUserId={profile?.id || ""}
+        />
+      )}
     </div>
   );
 };
