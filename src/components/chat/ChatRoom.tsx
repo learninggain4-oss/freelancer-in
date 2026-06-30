@@ -196,7 +196,7 @@ const ChatRoom = () => {
         <div className="p-3 bg-background border-t pb-8 mb-2 z-10 shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.1)]">
           {!isClosed ? (
             <div className="flex flex-col gap-2">
-              <TypingIndicator users={typingUsers} />
+              <TypingIndicator typingUsers={typingUsers} />
 
               {pendingFile && (
                 <div className="flex items-center gap-2 text-sm text-primary bg-primary/10 p-2 rounded-md">
@@ -209,7 +209,7 @@ const ChatRoom = () => {
               )}
 
               <div className="flex items-end gap-2">
-                <ChatFileUpload onFileSelect={handleFileUploaded} />
+                <ChatFileUpload onFileUploaded={handleFileUploaded} />
                 <Textarea
                   ref={textareaRef}
                   value={newMessage}
@@ -245,9 +245,13 @@ const ChatRoom = () => {
       {threadParent && (
         <ThreadPanel
           parentMessage={threadParent}
-          messages={threadMessages}
+          threadMessages={threadMessages}
+          isLoading={loadingThread}
           onClose={() => setThreadParent(null)}
-          onSend={(content) => handleThreadSend(content, threadParent.id)}
+          onSendReply={(content, parentId) => handleThreadSend(content, parentId)}
+          onEdit={editMessage}
+          onDelete={deleteMessage}
+          onReaction={toggleReaction}
           currentUserId={profile?.id || ""}
         />
       )}
