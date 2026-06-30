@@ -240,10 +240,10 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
         style={{
           display: "flex",
           alignItems: "stretch",
-          height: 64,
+          height: 76,
           maxWidth: 600,
           margin: "0 auto",
-          padding: "0 2px",
+          padding: "0 4px",
         }}
       >
         {tabs.map((tab) => {
