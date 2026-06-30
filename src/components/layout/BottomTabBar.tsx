@@ -114,9 +114,9 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
     alignItems: "center",
     justifyContent: "center",
     textDecoration: "none",
-    padding: "8px 12px",
-    borderRadius: "12px",
-    gap: "4px",
+    padding: "10px 14px",
+    borderRadius: "14px",
+    gap: "5px",
     transition: "all .2s",
   };
 
@@ -124,11 +124,11 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
   const subMenuContainerStyle: React.CSSProperties = {
     position: "absolute",
     display: "flex",
-    gap: "8px",
-    padding: "10px",
+    gap: "10px",
+    padding: "12px",
     background: barBg,
     border: `1px solid ${barBdr}`,
-    borderRadius: "20px",
+    borderRadius: "22px",
     backdropFilter: "blur(28px)",
     WebkitBackdropFilter: "blur(28px)",
     boxShadow: isDark ? "0 -8px 32px rgba(0,0,0,.5)" : "0 -4px 24px rgba(0,0,0,.1)",
@@ -185,16 +185,16 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
           }}
         >
           <NavLink to={`${base}/projects`} onClick={() => setActiveSubMenu(null)} style={submenuLinkStyle}>
-            <div style={{ background: activePill, padding: "8px", borderRadius: "10px" }}>
-              <Briefcase size={20} color={activeC} />
+            <div style={{ background: activePill, padding: "9px", borderRadius: "11px" }}>
+              <Briefcase size={22} color={activeC} />
             </div>
-            <span style={{ fontSize: 10, fontWeight: 600, color: labelActive }}>Jobs</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: labelActive }}>Jobs</span>
           </NavLink>
           <NavLink to={`${base}/requests`} onClick={() => setActiveSubMenu(null)} style={submenuLinkStyle}>
-            <div style={{ background: activePill, padding: "8px", borderRadius: "10px" }}>
-              <FileText size={20} color={activeC} />
+            <div style={{ background: activePill, padding: "9px", borderRadius: "11px" }}>
+              <FileText size={22} color={activeC} />
             </div>
-            <span style={{ fontSize: 10, fontWeight: 600, color: labelActive }}>Requests</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: labelActive }}>Requests</span>
           </NavLink>
         </div>
 
@@ -209,28 +209,28 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
           }}
         >
           <NavLink to={`${base}/wallet`} onClick={() => setActiveSubMenu(null)} style={submenuLinkStyle}>
-            <div style={{ background: activePill, padding: "8px", borderRadius: "10px" }}>
-              <CreditCard size={18} color={activeC} />
+            <div style={{ background: activePill, padding: "9px", borderRadius: "11px" }}>
+              <CreditCard size={20} color={activeC} />
             </div>
-            <span style={{ fontSize: 9.5, fontWeight: 600, color: labelActive }}>Account</span>
+            <span style={{ fontSize: 10.5, fontWeight: 600, color: labelActive }}>Account</span>
           </NavLink>
           <NavLink to={`${base}/my-qr`} onClick={() => setActiveSubMenu(null)} style={submenuLinkStyle}>
-            <div style={{ background: activePill, padding: "8px", borderRadius: "10px" }}>
-              <QrCode size={18} color={activeC} />
+            <div style={{ background: activePill, padding: "9px", borderRadius: "11px" }}>
+              <QrCode size={20} color={activeC} />
             </div>
-            <span style={{ fontSize: 9.5, fontWeight: 600, color: labelActive }}>My QR</span>
+            <span style={{ fontSize: 10.5, fontWeight: 600, color: labelActive }}>My QR</span>
           </NavLink>
           <NavLink to={`${base}/scan-qr`} onClick={() => setActiveSubMenu(null)} style={submenuLinkStyle}>
-            <div style={{ background: activePill, padding: "8px", borderRadius: "10px" }}>
-              <Scan size={18} color={activeC} />
+            <div style={{ background: activePill, padding: "9px", borderRadius: "11px" }}>
+              <Scan size={20} color={activeC} />
             </div>
-            <span style={{ fontSize: 9.5, fontWeight: 600, color: labelActive }}>Scan QR</span>
+            <span style={{ fontSize: 10.5, fontWeight: 600, color: labelActive }}>Scan QR</span>
           </NavLink>
           <NavLink to={`${base}/attendance`} onClick={() => setActiveSubMenu(null)} style={submenuLinkStyle}>
-            <div style={{ background: activePill, padding: "8px", borderRadius: "10px" }}>
-              <ClipboardCheck size={18} color={activeC} />
+            <div style={{ background: activePill, padding: "9px", borderRadius: "11px" }}>
+              <ClipboardCheck size={20} color={activeC} />
             </div>
-            <span style={{ fontSize: 9.5, fontWeight: 600, color: labelActive }}>Attend</span>
+            <span style={{ fontSize: 10.5, fontWeight: 600, color: labelActive }}>Attend</span>
           </NavLink>
         </div>
       </div>
@@ -240,10 +240,10 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
         style={{
           display: "flex",
           alignItems: "stretch",
-          height: 64,
+          height: 76,
           maxWidth: 600,
           margin: "0 auto",
-          padding: "0 2px",
+          padding: "0 4px",
         }}
       >
         {tabs.map((tab) => {
@@ -272,27 +272,27 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: 38,
-                  height: 30,
-                  borderRadius: 10,
+                  width: 44,
+                  height: 34,
+                  borderRadius: 12,
                   background: isActive ? activePill : "transparent",
                   transition: "all .2s",
-                  boxShadow: isActive ? `0 0 12px ${activeGlow}` : "none",
+                  boxShadow: isActive ? `0 0 14px ${activeGlow}` : "none",
                 }}
               >
                 <tab.icon
-                  size={isActive ? 19 : 18}
+                  size={isActive ? 22 : 20}
                   style={{
                     color: isActive ? activeC : inactC,
                     strokeWidth: isActive ? 2.4 : 1.7,
                     transition: "all .2s",
-                    filter: isActive ? `drop-shadow(0 0 4px ${activeGlow})` : "none",
+                    filter: isActive ? `drop-shadow(0 0 5px ${activeGlow})` : "none",
                   }}
                 />
               </div>
               <span
                 style={{
-                  fontSize: 9.5,
+                  fontSize: 11,
                   fontWeight: isActive ? 800 : 500,
                   color: isActive ? labelActive : labelInact,
                   lineHeight: 1,
@@ -317,8 +317,8 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
                   flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 3,
-                  padding: "6px 2px",
+                  gap: 4,
+                  padding: "8px 2px",
                   textDecoration: "none",
                   position: "relative",
                   transition: "all .2s",
@@ -341,8 +341,8 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
                   flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 3,
-                  padding: "6px 2px",
+                  gap: 4,
+                  padding: "8px 2px",
                   background: "none",
                   border: "none",
                   cursor: "pointer",
@@ -367,8 +367,8 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            gap: 3,
-            padding: "6px 2px",
+            gap: 4,
+            padding: "8px 2px",
             background: "none",
             border: "none",
             cursor: "pointer",
@@ -379,14 +379,14 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 38,
-              height: 30,
-              borderRadius: 10,
+              width: 44,
+              height: 34,
+              borderRadius: 12,
             }}
           >
-            <Menu size={18} style={{ color: inactC, strokeWidth: 1.7 }} />
+            <Menu size={22} style={{ color: inactC, strokeWidth: 1.7 }} />
           </div>
-          <span style={{ fontSize: 9.5, fontWeight: 500, color: labelInact, lineHeight: 1 }}>Menu</span>
+          <span style={{ fontSize: 11, fontWeight: 500, color: labelInact, lineHeight: 1 }}>Menu</span>
         </button>
       </div>
     </nav>
