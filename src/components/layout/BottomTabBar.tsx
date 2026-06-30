@@ -114,9 +114,9 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
     alignItems: "center",
     justifyContent: "center",
     textDecoration: "none",
-    padding: "8px 12px",
-    borderRadius: "12px",
-    gap: "4px",
+    padding: "10px 14px",
+    borderRadius: "14px",
+    gap: "5px",
     transition: "all .2s",
   };
 
@@ -124,11 +124,11 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
   const subMenuContainerStyle: React.CSSProperties = {
     position: "absolute",
     display: "flex",
-    gap: "8px",
-    padding: "10px",
+    gap: "10px",
+    padding: "12px",
     background: barBg,
     border: `1px solid ${barBdr}`,
-    borderRadius: "20px",
+    borderRadius: "22px",
     backdropFilter: "blur(28px)",
     WebkitBackdropFilter: "blur(28px)",
     boxShadow: isDark ? "0 -8px 32px rgba(0,0,0,.5)" : "0 -4px 24px rgba(0,0,0,.1)",
