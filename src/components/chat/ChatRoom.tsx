@@ -137,7 +137,7 @@ const ChatRoom = () => {
   const isClosed = projectData?.status === "cancelled" || projectData?.status === "completed";
 
   return (
-    <div className="flex h-[calc(100dvh-5rem-88px)] lg:h-[calc(100dvh-5rem)] bg-background">
+    <div className="fixed top-[5rem] left-0 right-0 bottom-[88px] md:bottom-0 flex bg-background" style={{ zIndex: 10 }}>
       <div className="flex flex-1 flex-col relative">
         {/* Header - Call button added */}
         <div className="relative overflow-hidden border-b bg-gradient-to-r from-primary/5 via-primary/10 to-accent/5">
