@@ -625,7 +625,7 @@ const UpgradeChat = () => {
   }
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] flex-col bg-background">
+    <div className="flex h-[calc(100dvh-5rem-88px)] lg:h-[calc(100dvh-5rem)] flex-col bg-background">
       {/* Header */}
       <div className="relative overflow-hidden border-b bg-gradient-to-r from-primary/5 via-primary/10 to-accent/5">
         <div className="absolute inset-0 backdrop-blur-xl" />
