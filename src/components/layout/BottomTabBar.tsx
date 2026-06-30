@@ -75,18 +75,18 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
         ? "0 -4px 24px rgba(21,128,61,.08)"
         : "0 -4px 24px rgba(0,0,0,.08)",
     } as React.CSSProperties}>
-      <div style={{ display: "flex", alignItems: "stretch", height: 64, maxWidth: 600, margin: "0 auto", padding: "0 2px" }}>
+      <div style={{ display: "flex", alignItems: "stretch", height: 74, maxWidth: 600, margin: "0 auto", padding: "0 2px" }}>
         {tabs.map(tab => {
           const isActive = location.pathname.startsWith(tab.path);
           return (
             <NavLink key={tab.path} to={tab.path}
-              style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "6px 2px", textDecoration: "none", position: "relative", transition: "all .2s" }}>
+              style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, padding: "6px 2px", textDecoration: "none", position: "relative", transition: "all .2s" }}>
 
               {/* Active glow line at top */}
               {isActive && (
                 <div style={{
                   position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
-                  width: 28, height: 3, borderRadius: "0 0 4px 4px",
+                  width: 32, height: 3, borderRadius: "0 0 4px 4px",
                   background: `linear-gradient(90deg, ${A1}, ${activeC})`,
                   boxShadow: `0 2px 10px ${activeGlow}`,
                 }} />
@@ -94,13 +94,13 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
 
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "center",
-                width: 38, height: 30, borderRadius: 10,
+                width: 44, height: 34, borderRadius: 12,
                 background: isActive ? activePill : "transparent",
                 transition: "all .2s",
                 boxShadow: isActive ? `0 0 12px ${activeGlow}` : "none",
               }}>
                 <tab.icon
-                  size={isActive ? 19 : 18}
+                  size={isActive ? 23 : 22}
                   style={{
                     color: isActive ? activeC : inactC,
                     strokeWidth: isActive ? 2.4 : 1.7,
@@ -110,7 +110,7 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
                 />
               </div>
               <span style={{
-                fontSize: 9.5,
+                fontSize: 11,
                 fontWeight: isActive ? 800 : 500,
                 color: isActive ? labelActive : labelInact,
                 lineHeight: 1,
@@ -124,11 +124,11 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
         })}
 
         <button onClick={onMenuClick}
-          style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "6px 2px", background: "none", border: "none", cursor: "pointer" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 30, borderRadius: 10 }}>
-            <Menu size={18} style={{ color: inactC, strokeWidth: 1.7 }} />
+          style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, padding: "6px 2px", background: "none", border: "none", cursor: "pointer" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 34, borderRadius: 12 }}>
+            <Menu size={22} style={{ color: inactC, strokeWidth: 1.7 }} />
           </div>
-          <span style={{ fontSize: 9.5, fontWeight: 500, color: labelInact, lineHeight: 1 }}>Menu</span>
+          <span style={{ fontSize: 11, fontWeight: 500, color: labelInact, lineHeight: 1 }}>Menu</span>
         </button>
       </div>
     </nav>
