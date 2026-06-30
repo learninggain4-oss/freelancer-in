@@ -141,13 +141,12 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
       style={
         {
           position: "fixed",
-          bottom: 12,
-          left: 12,
-          right: 12,
+          bottom: 0,
+          left: 0,
+          right: 0,
           zIndex: 40,
           background: barBg,
-          border: `1px solid ${barBdr}`,
-          borderRadius: 24,
+          borderTop: `1px solid ${barBdr}`,
           backdropFilter: "blur(28px)",
           WebkitBackdropFilter: "blur(28px)",
           boxShadow: isDark
