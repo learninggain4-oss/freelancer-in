@@ -185,16 +185,16 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
           }}
         >
           <NavLink to={`${base}/projects`} onClick={() => setActiveSubMenu(null)} style={submenuLinkStyle}>
-            <div style={{ background: activePill, padding: "8px", borderRadius: "10px" }}>
-              <Briefcase size={20} color={activeC} />
+            <div style={{ background: activePill, padding: "9px", borderRadius: "11px" }}>
+              <Briefcase size={22} color={activeC} />
             </div>
-            <span style={{ fontSize: 10, fontWeight: 600, color: labelActive }}>Jobs</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: labelActive }}>Jobs</span>
           </NavLink>
           <NavLink to={`${base}/requests`} onClick={() => setActiveSubMenu(null)} style={submenuLinkStyle}>
-            <div style={{ background: activePill, padding: "8px", borderRadius: "10px" }}>
-              <FileText size={20} color={activeC} />
+            <div style={{ background: activePill, padding: "9px", borderRadius: "11px" }}>
+              <FileText size={22} color={activeC} />
             </div>
-            <span style={{ fontSize: 10, fontWeight: 600, color: labelActive }}>Requests</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: labelActive }}>Requests</span>
           </NavLink>
         </div>
 
@@ -209,28 +209,28 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
           }}
         >
           <NavLink to={`${base}/wallet`} onClick={() => setActiveSubMenu(null)} style={submenuLinkStyle}>
-            <div style={{ background: activePill, padding: "8px", borderRadius: "10px" }}>
-              <CreditCard size={18} color={activeC} />
+            <div style={{ background: activePill, padding: "9px", borderRadius: "11px" }}>
+              <CreditCard size={20} color={activeC} />
             </div>
-            <span style={{ fontSize: 9.5, fontWeight: 600, color: labelActive }}>Account</span>
+            <span style={{ fontSize: 10.5, fontWeight: 600, color: labelActive }}>Account</span>
           </NavLink>
           <NavLink to={`${base}/my-qr`} onClick={() => setActiveSubMenu(null)} style={submenuLinkStyle}>
-            <div style={{ background: activePill, padding: "8px", borderRadius: "10px" }}>
-              <QrCode size={18} color={activeC} />
+            <div style={{ background: activePill, padding: "9px", borderRadius: "11px" }}>
+              <QrCode size={20} color={activeC} />
             </div>
-            <span style={{ fontSize: 9.5, fontWeight: 600, color: labelActive }}>My QR</span>
+            <span style={{ fontSize: 10.5, fontWeight: 600, color: labelActive }}>My QR</span>
           </NavLink>
           <NavLink to={`${base}/scan-qr`} onClick={() => setActiveSubMenu(null)} style={submenuLinkStyle}>
-            <div style={{ background: activePill, padding: "8px", borderRadius: "10px" }}>
-              <Scan size={18} color={activeC} />
+            <div style={{ background: activePill, padding: "9px", borderRadius: "11px" }}>
+              <Scan size={20} color={activeC} />
             </div>
-            <span style={{ fontSize: 9.5, fontWeight: 600, color: labelActive }}>Scan QR</span>
+            <span style={{ fontSize: 10.5, fontWeight: 600, color: labelActive }}>Scan QR</span>
           </NavLink>
           <NavLink to={`${base}/attendance`} onClick={() => setActiveSubMenu(null)} style={submenuLinkStyle}>
-            <div style={{ background: activePill, padding: "8px", borderRadius: "10px" }}>
-              <ClipboardCheck size={18} color={activeC} />
+            <div style={{ background: activePill, padding: "9px", borderRadius: "11px" }}>
+              <ClipboardCheck size={20} color={activeC} />
             </div>
-            <span style={{ fontSize: 9.5, fontWeight: 600, color: labelActive }}>Attend</span>
+            <span style={{ fontSize: 10.5, fontWeight: 600, color: labelActive }}>Attend</span>
           </NavLink>
         </div>
       </div>
