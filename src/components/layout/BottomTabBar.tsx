@@ -379,14 +379,14 @@ const BottomTabBar = ({ userType, onMenuClick, theme = "black" }: BottomTabBarPr
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 38,
-              height: 30,
-              borderRadius: 10,
+              width: 44,
+              height: 34,
+              borderRadius: 12,
             }}
           >
-            <Menu size={18} style={{ color: inactC, strokeWidth: 1.7 }} />
+            <Menu size={22} style={{ color: inactC, strokeWidth: 1.7 }} />
           </div>
-          <span style={{ fontSize: 9.5, fontWeight: 500, color: labelInact, lineHeight: 1 }}>Menu</span>
+          <span style={{ fontSize: 11, fontWeight: 500, color: labelInact, lineHeight: 1 }}>Menu</span>
         </button>
       </div>
     </nav>
