@@ -137,7 +137,7 @@ const ChatRoom = () => {
   const isClosed = projectData?.status === "cancelled" || projectData?.status === "completed";
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] bg-background">
+    <div className="flex h-[calc(100dvh-5rem-88px)] lg:h-[calc(100dvh-5rem)] bg-background">
       <div className="flex flex-1 flex-col relative">
         {/* Header - Call button added */}
         <div className="relative overflow-hidden border-b bg-gradient-to-r from-primary/5 via-primary/10 to-accent/5">
@@ -192,8 +192,8 @@ const ChatRoom = () => {
           </div>
         </ScrollArea>
 
-        {/* Input Area - ടൈപ്പിംഗ് സെക്ഷൻ മുകളിലേക്ക് കയറ്റാൻ pb-8 ഉം mb-2 ഉം നൽകിയിരിക്കുന്നു */}
-        <div className="p-3 bg-background border-t pb-8 mb-2 z-10 shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.1)]">
+        {/* Input Area - always sits above the bottom navigation */}
+        <div className="p-3 bg-background border-t z-10 shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.1)]">
           {!isClosed ? (
             <div className="flex flex-col gap-2">
               <TypingIndicator typingUsers={typingUsers} />
