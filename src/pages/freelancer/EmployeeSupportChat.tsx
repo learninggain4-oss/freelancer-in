@@ -420,9 +420,10 @@ const EmployeeSupportChat = () => {
   );
 
   /* ─────────────────── Loading screen ─────────────────── */
+  const _isMob = typeof window !== "undefined" && window.innerWidth < 768;
   if (loadingRoom) {
     return (
-      <div style={{ background: WA.bg, display: "flex", flexDirection: "column", height: `calc(100dvh - 5rem - ${typeof window !== "undefined" && window.innerWidth < 1024 ? 88 : 0}px)` }}>
+      <div style={{ position: "fixed", top: "5rem", left: 0, right: 0, bottom: _isMob ? 88 : 0, background: WA.bg, display: "flex", flexDirection: "column", zIndex: 10 }}>
         <div style={{ background: WA.header, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
           {[32, 120, 60].map((w, i) => <Skeleton key={i} style={{ width: w, height: i === 0 ? 32 : i === 1 ? 13 : 9, borderRadius: i === 0 ? "50%" : 8, background: "rgba(255,255,255,.22)", marginBottom: i === 1 ? 5 : 0 }} />)}
         </div>
@@ -452,10 +453,8 @@ const EmployeeSupportChat = () => {
   }
 
   /* ═══════════════════════ RENDER ═══════════════════════════ */
-  const navH = typeof window !== "undefined" && window.innerWidth < 1024 ? 88 : 0;
-  const chatH = `calc(100dvh - 5rem - ${navH}px)`;
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: chatH, background: WA.bg, overflow: "hidden", position: "relative" }}
+    <div style={{ position: "fixed", top: "5rem", left: 0, right: 0, bottom: _isMob ? 88 : 0, display: "flex", flexDirection: "column", background: WA.bg, overflow: "hidden", zIndex: 10 }}
       onClick={() => { setContextMenu(null); setShowMoreMenu(false); setPickerMsgId(null); }}>
 
       {/* ─── Lightbox ─── */}
