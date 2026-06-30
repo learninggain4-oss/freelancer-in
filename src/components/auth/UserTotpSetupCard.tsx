@@ -134,7 +134,7 @@ const UserTotpSetupCard = () => {
             <div className="space-y-2">
               <p className="text-sm font-medium">1. Scan this QR code with Google Authenticator:</p>
               <div className="flex justify-center rounded-lg border bg-white p-4">
-                <img
+                <img loading="lazy" decoding="async"
                   src={setupData.qrCodeDataUrl}
                   alt="TOTP QR Code"
                   className="h-48 w-48"

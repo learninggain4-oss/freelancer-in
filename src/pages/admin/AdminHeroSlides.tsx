@@ -225,7 +225,7 @@ const AdminHeroSlides = () => {
             </div>
             {imagePreview && (
               <div className="relative w-full max-w-md overflow-hidden rounded-xl border" style={{ borderColor: T.border }}>
-                <img src={imagePreview} alt="Preview" className="h-40 w-full object-cover" />
+                <img loading="lazy" decoding="async" src={imagePreview} alt="Preview" className="h-40 w-full object-cover" />
                 <div className="absolute inset-0 bg-black/20" />
               </div>
             )}
@@ -305,7 +305,7 @@ const AdminHeroSlides = () => {
                       <div className="flex flex-col sm:flex-row sm:items-center gap-6">
                         {(imagePreview || slide.image_path) && (
                           <div className="h-24 w-40 shrink-0 overflow-hidden rounded-lg border" style={{ borderColor: T.border }}>
-                            <img src={imagePreview || slide.image_path!} alt="Preview" className="h-full w-full object-cover" />
+                            <img loading="lazy" decoding="async" src={imagePreview || slide.image_path!} alt="Preview" className="h-full w-full object-cover" />
                           </div>
                         )}
                         <div className="flex items-center gap-2">
@@ -339,7 +339,7 @@ const AdminHeroSlides = () => {
                         <GripVertical className="h-5 w-5 shrink-0" style={{ color: T.sub }} />
                         <div className="h-16 w-28 shrink-0 overflow-hidden rounded-xl border" style={{ borderColor: T.border }}>
                           {slide.image_path ? (
-                            <img src={slide.image_path} alt={slide.title} className="h-full w-full object-cover" />
+                            <img loading="lazy" decoding="async" src={slide.image_path} alt={slide.title} className="h-full w-full object-cover" />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center" style={{ background: T.input }}>
                               <Image className="h-6 w-6" style={{ color: T.sub }} />

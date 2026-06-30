@@ -121,7 +121,7 @@ const AdminNotifications = () => {
         });
       } else {
         // freelancers or employers
-        const targetUsers = allUsers.filter(u => u.user_type === (pushTarget === "freelancers" ? "employee" : "client"));
+        const targetUsers = allUsers.filter(u => u.user_type === (pushTarget === "freelancers" ? "Freelancer" : "Employer"));
         for (const u of targetUsers) {
           await supabase.from("notifications").insert({
             user_id: u.user_id,

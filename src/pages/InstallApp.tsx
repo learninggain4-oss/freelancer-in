@@ -53,6 +53,11 @@ const InstallApp = () => {
   const progressRef  = useRef(0);
 
   useEffect(() => {
+    document.title = "Install Freelan Space App | Work on the Go";
+    return () => { document.title = "Freelan Space"; };
+  }, []);
+
+  useEffect(() => {
     setPlatform(detectPlatform());
     // Subscribe to future prompt events (e.g. prompt fires after page load)
     return pwa.subscribe(() => setHasPrompt(!!pwa.getPrompt()));
@@ -153,7 +158,7 @@ const InstallApp = () => {
           {/* ── Header ── */}
           <div style={{ background: `linear-gradient(135deg,${A1}25,${A2}18)`, borderBottom: "1px solid rgba(255,255,255,.07)", padding: "24px 24px 20px", textAlign: "center" }}>
             <div style={{ width: 64, height: 64, borderRadius: 18, background: `linear-gradient(135deg,${A1},${A2})`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px", boxShadow: `0 6px 24px ${A1}55` }}>
-              <img src="/pwa-icon-512.png" alt="" style={{ width: 42, height: 42, borderRadius: 10 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              <img fetchPriority="high" src="/pwa-icon-512.webp" alt="" style={{ width: 42, height: 42, borderRadius: 10 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
             </div>
             <h1 style={{ fontSize: 20, fontWeight: 800, color: "white", margin: 0, letterSpacing: "-0.4px" }}>Install App</h1>
             <p style={{ fontSize: 12, color: "rgba(255,255,255,.4)", marginTop: 4 }}>Quick access • Works offline • Full experience</p>

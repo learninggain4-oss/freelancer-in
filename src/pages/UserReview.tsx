@@ -138,7 +138,7 @@ const UserReview = () => {
             <label className="text-xs font-semibold text-foreground uppercase tracking-wider">Photo (optional)</label>
             {photoPreview ? (
               <div className="relative mt-1.5 inline-block">
-                <img src={photoPreview} alt="Preview" className="h-24 w-24 rounded-xl object-cover shadow-sm" />
+                <img loading="lazy" decoding="async" src={photoPreview} alt="Preview" className="h-24 w-24 rounded-xl object-cover shadow-sm" />
                 <button onClick={() => { setPhotoFile(null); setPhotoPreview(null); }} className="absolute -right-2 -top-2 rounded-full bg-destructive p-1 text-destructive-foreground shadow-sm">
                   <X className="h-3 w-3" />
                 </button>

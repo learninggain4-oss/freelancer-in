@@ -70,9 +70,9 @@ export default function Contact() {
     root.style.setProperty("--t-a1-rgb", t.a1rgb);
     root.style.setProperty("--t-a2-rgb", t.a2rgb);
     document.body.style.background = t.bg;
-    document.title = "Contact Us | Freelancer India";
+    document.title = "Contact Us | Freelan Space";
     return () => {
-      document.title = "Freelancer India";
+      document.title = "Freelan Space";
       document.body.style.background = "";
     };
   }, []);

@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, target_wallet_number, payment_method, payment_details } =
+    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, target_wallet_number, payment_method, payment_details, deposit_request_id, deposit_status } =
       await req.json();
 
     // Get the caller's profile
@@ -158,21 +158,25 @@ Deno.serve(async (req) => {
           .eq("id", callerProfile.id);
         if (updateErr) throw updateErr;
 
+        const addMoneyOrderId = `ADD-${generateWithdrawalOrderId(12)}`;
         await supabase.from("transactions").insert({
           profile_id: callerProfile.id,
           type: "credit",
           amount,
-          description: "Added to wallet",
+          description: `Added to wallet (Order ID: ${addMoneyOrderId})`,
+          order_id: addMoneyOrderId,
+          status: "success",
         });
 
         result.new_balance = newBalance;
+        result.order_id = addMoneyOrderId;
         break;
       }
 
       case "request_withdrawal": {
         // Employee requests withdrawal — deduct from available_balance immediately
-        if (callerProfile.user_type !== "employee")
-          throw new Error("Only employees can request withdrawals");
+        if (callerProfile.user_type !== "Freelancer" && callerProfile.user_type !== "employee")
+          throw new Error("Only freelancers can request withdrawals");
         validateAmount(amount, 100000);
 
         const requestedAmount = Number(amount);
@@ -239,6 +243,8 @@ Deno.serve(async (req) => {
               ? `Withdrawal requested (Order ID: ${generatedOrderId})`
               : "Withdrawal requested",
             reference_id: newW.id,
+            order_id: generatedOrderId,
+            status: "pending",
           });
           if (txErr) {
             throw new Error(formatErrorMessage(txErr, "Failed to create withdrawal transaction"));
@@ -634,24 +640,34 @@ Deno.serve(async (req) => {
         const wAmount = Number(withdrawal.amount);
 
         if (status === "approved") {
-          // Employee balance was already deducted on request; mark as completed
+          // Mark the original pending withdrawal transaction as success
+          await supabase
+            .from("transactions")
+            .update({ status: "success" })
+            .eq("profile_id", withdrawal.employee_id)
+            .eq("reference_id", withdrawal_id)
+            .eq("status", "pending");
+
           await supabase.from("transactions").insert([
             {
               profile_id: callerProfile.id,
               type: "debit",
               amount: wAmount,
-              description: `Withdrawal approved for employee`,
+              description: `Withdrawal approved for employee (Order ID: ${withdrawal.order_id ?? withdrawal_id})`,
               reference_id: withdrawal_id,
-            },
-            {
-              profile_id: withdrawal.employee_id,
-              type: "credit",
-              amount: wAmount,
-              description: `Withdrawal approved and processed`,
-              reference_id: withdrawal_id,
+              order_id: withdrawal.order_id ?? null,
+              status: "success",
             },
           ]);
         } else if (status === "rejected") {
+          // Mark the original pending withdrawal transaction as failed
+          await supabase
+            .from("transactions")
+            .update({ status: "failed" })
+            .eq("profile_id", withdrawal.employee_id)
+            .eq("reference_id", withdrawal_id)
+            .eq("status", "pending");
+
           // Restore employee available balance
           const { data: empProfile } = await supabase
             .from("profiles")
@@ -672,8 +688,10 @@ Deno.serve(async (req) => {
               profile_id: withdrawal.employee_id,
               type: "credit",
               amount: wAmount,
-              description: `Withdrawal rejected — amount restored`,
+              description: `Withdrawal rejected — amount restored (Order ID: ${withdrawal.order_id ?? withdrawal_id})`,
               reference_id: withdrawal_id,
+              order_id: withdrawal.order_id ?? null,
+              status: "success",
             });
 
             // Notify employee about rejection
@@ -730,6 +748,14 @@ Deno.serve(async (req) => {
         const wAmount = Number(withdrawal.amount);
 
         if (status === "rejected") {
+          // Mark original pending transaction as failed
+          await supabase
+            .from("transactions")
+            .update({ status: "failed" })
+            .eq("profile_id", withdrawal.employee_id)
+            .eq("reference_id", withdrawal_id)
+            .eq("status", "pending");
+
           // Restore employee balance
           const { data: empProfile } = await supabase
             .from("profiles")
@@ -749,8 +775,10 @@ Deno.serve(async (req) => {
               profile_id: withdrawal.employee_id,
               type: "credit",
               amount: wAmount,
-              description: `Withdrawal rejected by admin — amount restored`,
+              description: `Withdrawal rejected by admin — amount restored (Order ID: ${withdrawal.order_id ?? withdrawal_id})`,
               reference_id: withdrawal_id,
+              order_id: withdrawal.order_id ?? null,
+              status: "success",
             });
 
             await supabase.from("notifications").insert({
@@ -765,13 +793,13 @@ Deno.serve(async (req) => {
             });
           }
         } else if (status === "approved") {
-          await supabase.from("transactions").insert({
-            profile_id: withdrawal.employee_id,
-            type: "credit",
-            amount: wAmount,
-            description: `Withdrawal approved by admin`,
-            reference_id: withdrawal_id,
-          });
+          // Mark original pending transaction as success
+          await supabase
+            .from("transactions")
+            .update({ status: "success" })
+            .eq("profile_id", withdrawal.employee_id)
+            .eq("reference_id", withdrawal_id)
+            .eq("status", "pending");
         }
 
         await supabase
@@ -1204,21 +1232,34 @@ Deno.serve(async (req) => {
 
         const recipientName = Array.isArray(recipient.full_name) ? recipient.full_name[0] : recipient.full_name;
 
-        // Record transactions
-        await supabase.from("transactions").insert([
+        // Record transactions with a shared unique order ID for both sides
+        const transferOrderId = `TRF-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+        const { error: txInsertErr } = await supabase.from("transactions").insert([
           {
             profile_id: callerProfile.id,
             type: "debit" as const,
             amount,
-            description: `Transfer to wallet ${target_wallet_number}`,
+            description: `Transfer to wallet ${target_wallet_number} (Order ID: ${transferOrderId})`,
+            transaction_id: `${transferOrderId}-OUT`,
+            order_id: transferOrderId,
+            status: "success",
           },
           {
             profile_id: recipient.id,
             type: "credit" as const,
             amount,
-            description: `Transfer received from wallet`,
+            description: `Transfer received from wallet (Order ID: ${transferOrderId})`,
+            transaction_id: `${transferOrderId}-IN`,
+            order_id: transferOrderId,
+            status: "success",
           },
         ]);
+        if (txInsertErr) {
+          console.error("transfer_to_wallet: failed to insert transactions", txInsertErr);
+          throw new Error(formatErrorMessage(txInsertErr, "Failed to record transfer"));
+        }
+        result.transaction_id = transferOrderId;
+        result.order_id = transferOrderId;
 
         // Notify recipient
         const { data: senderProfile } = await supabase
@@ -1282,6 +1323,85 @@ Deno.serve(async (req) => {
         }
 
         result = { order_id: orderId };
+        break;
+      }
+
+      case "admin_update_deposit_request_status": {
+        // Admin updates deposit request status and handles wallet crediting
+        const { data: roleCheck } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .single();
+        if (!roleCheck) throw new Error("Admin access required");
+
+        if (!deposit_request_id) throw new Error("Missing deposit_request_id");
+        if (!deposit_status) throw new Error("Missing deposit_status");
+
+        const validStatuses = ["pending", "payment_shared", "utr_submitted", "approved", "rejected", "expired"];
+        if (!validStatuses.includes(deposit_status)) throw new Error(`Invalid status: ${deposit_status}`);
+
+        const { data: depReq, error: depErr } = await supabase
+          .from("deposit_requests")
+          .select("*, profiles:profile_id (id, available_balance, user_id, full_name)")
+          .eq("id", deposit_request_id)
+          .single();
+        if (depErr || !depReq) throw new Error("Deposit request not found");
+
+        // If changing to approved and it wasn't already approved, credit the wallet
+        if (deposit_status === "approved" && depReq.status !== "approved") {
+          const userProfile = (depReq as any).profiles;
+          const newBalance = Number(userProfile.available_balance) + Number(depReq.amount);
+          
+          const { error: balErr } = await supabase
+            .from("profiles")
+            .update({ available_balance: newBalance })
+            .eq("id", userProfile.id);
+          if (balErr) throw new Error(`Failed to credit wallet: ${balErr.message}`);
+          
+          const { error: txnErr } = await supabase.from("transactions").insert({
+            profile_id: userProfile.id,
+            type: "credit",
+            amount: Number(depReq.amount),
+            description: `Wallet top-up approved via ${depReq.payment_method}. Order: ${depReq.order_id}`,
+            order_id: depReq.order_id,
+            status: "success",
+          });
+          if (txnErr) console.error("Transaction insert error (non-fatal):", txnErr.message);
+          
+          const { error: notifErr } = await supabase.from("notifications").insert({
+            user_id: userProfile.user_id,
+            title: "Deposit Approved! 💰",
+            message: `Your deposit of ₹${Number(depReq.amount).toLocaleString("en-IN")} via ${depReq.payment_method} has been approved. Your wallet has been credited.`,
+            type: "financial",
+          });
+          if (notifErr) console.error("Notification insert error (non-fatal):", notifErr.message);
+        }
+
+        // If changing to rejected and it wasn't already rejected
+        if (deposit_status === "rejected" && depReq.status !== "rejected") {
+          const userProfile = (depReq as any).profiles;
+          const { error: notifErr } = await supabase.from("notifications").insert({
+            user_id: userProfile.user_id,
+            title: "Deposit Request Rejected",
+            message: `Your deposit request of ₹${Number(depReq.amount).toLocaleString("en-IN")} via ${depReq.payment_method} was rejected.`,
+            type: "financial",
+          });
+          if (notifErr) console.error("Rejection notification error (non-fatal):", notifErr.message);
+        }
+
+        const { error: updateErr } = await supabase
+          .from("deposit_requests")
+          .update({
+            status: deposit_status,
+            reviewed_by: callerProfile.id,
+            reviewed_at: new Date().toISOString(),
+          })
+          .eq("id", deposit_request_id);
+        if (updateErr) throw new Error(`Failed to update status: ${updateErr.message}`);
+
+        result = { success: true };
         break;
       }
 

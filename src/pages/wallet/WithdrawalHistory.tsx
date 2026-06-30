@@ -20,7 +20,7 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
 const WithdrawalHistory = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const isFreelancer = profile?.user_type === "employee";
+  const isFreelancer = profile?.user_type === "Freelancer";
 
   const { data: withdrawals = [], isLoading } = useQuery({
     queryKey: ["all-withdrawals", profile?.id],

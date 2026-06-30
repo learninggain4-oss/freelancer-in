@@ -178,13 +178,13 @@ const AdminAdmins = () => {
     setAuditAdmin(admin);
     setAuditLoading(true);
     setAuditLogs([]);
-    const { data: logs } = await supabase
-      .from("admin_audit_logs")
+    const { data: logs } = await (supabase
+      .from("admin_audit_logs" as any) as any)
       .select("id, action, created_at, target_profile_name, details")
       .eq("admin_id", admin.profile_id)
       .order("created_at", { ascending: false })
       .limit(50);
-    setAuditLogs((logs || []) as AuditLog[]);
+    setAuditLogs((logs || []) as unknown as AuditLog[]);
     setAuditLoading(false);
   };
 

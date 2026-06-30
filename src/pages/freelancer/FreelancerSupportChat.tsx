@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
-  ArrowLeft, Send, Smile, CheckCheck, Check, Shield, Mic, MicOff,
+  ArrowLeft, Send, Smile, CheckCheck, Check, Shield,
   Paperclip, Reply, Copy, Trash2, X, Search, Phone, Video, Star,
   MoreVertical, ChevronDown, Download, FileText, Camera, Forward,
-  Pencil, StopCircle, Image as ImageIcon, Play, Pause, Lock, Volume2,
+  Pencil, Image as ImageIcon, Lock,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
@@ -88,57 +88,6 @@ const EMOJIS = ["😊","😂","❤️","👍","🙏","😭","🔥","✅","💯",
 const BUCKET = "chat-attachments";
 
 const isImage = (name: string | null) => !!name?.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
-const isAudio = (name: string | null) => !!name?.match(/\.(webm|ogg|mp3|m4a|wav|aac)$/i);
-
-/* ─────────── Audio player component ─────────── */
-function AudioPlayer({ url, dark, isMe }: { url: string; dark: boolean; isMe: boolean }) {
-  const [playing, setPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [current, setCurrent] = useState(0);
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const WA = getWA(dark);
-
-  useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    a.onloadedmetadata = () => setDuration(a.duration);
-    a.ontimeupdate = () => { setCurrent(a.currentTime); setProgress(a.duration ? (a.currentTime / a.duration) * 100 : 0); };
-    a.onended = () => setPlaying(false);
-  }, []);
-
-  const toggle = () => {
-    const a = audioRef.current;
-    if (!a) return;
-    if (playing) { a.pause(); setPlaying(false); } else { a.play(); setPlaying(true); }
-  };
-
-  const barColor = isMe ? (dark ? "#b2dfdb" : "#075e54") : (dark ? "#8696a0" : "#667781");
-
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 200, paddingBottom: 4 }}>
-      <audio ref={audioRef} src={url} preload="metadata" style={{ display: "none" }} />
-      <button onClick={toggle}
-        style={{ width: 38, height: 38, borderRadius: "50%", background: isMe ? "#075e54" : WA.sendBtn, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        {playing ? <Pause size={16} color="#fff" /> : <Play size={16} color="#fff" style={{ marginLeft: 2 }} />}
-      </button>
-      {/* Waveform bars */}
-      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 2, height: 28, position: "relative" }}>
-        {Array.from({ length: 28 }).map((_, i) => {
-          const h = 6 + Math.sin(i * 1.2) * 8 + Math.cos(i * 0.8) * 5;
-          const filled = (i / 28) * 100 <= progress;
-          return <div key={i} style={{ width: 3, height: Math.abs(h), borderRadius: 2, background: filled ? WA.sendBtn : barColor, transition: "background .1s", flexShrink: 0 }} />;
-        })}
-        <input type="range" min={0} max={duration || 1} step={0.1} value={current}
-          onChange={e => { if (audioRef.current) { audioRef.current.currentTime = +e.target.value; setCurrent(+e.target.value); } }}
-          style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%" }} />
-      </div>
-      <span style={{ fontSize: 11, color: isMe ? (dark ? "#b2dfdb" : "#075e54") : WA.sub, minWidth: 32 }}>
-        {fmtSecs(playing ? Math.round(current) : Math.round(duration))}
-      </span>
-    </div>
-  );
-}
 
 /* ════════════════════════ main component ════════════════════════ */
 const EmployeeSupportChat = () => {
@@ -167,8 +116,6 @@ const EmployeeSupportChat = () => {
     try { return new Set(JSON.parse(localStorage.getItem("wa_starred_support") || "[]")); } catch { return new Set(); }
   });
   const [uploading, setUploading]         = useState(false);
-  const [isRecording, setIsRecording]     = useState(false);
-  const [recordingSecs, setRecordingSecs] = useState(0);
   const [supportTyping, setSupportTyping] = useState(false);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [lightboxUrl, setLightboxUrl]     = useState<string | null>(null);
@@ -183,9 +130,6 @@ const EmployeeSupportChat = () => {
   const chatAreaRef      = useRef<HTMLDivElement>(null);
   const fileInputRef     = useRef<HTMLInputElement>(null);
   const cameraInputRef   = useRef<HTMLInputElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef   = useRef<Blob[]>([]);
-  const recordTimerRef   = useRef<ReturnType<typeof setInterval> | null>(null);
   const typingTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
   const presenceChRef    = useRef<any>(null);
   const touchStartXRef   = useRef(0);
@@ -228,14 +172,30 @@ const EmployeeSupportChat = () => {
     staleTime: 3000,
   });
 
-  /* ─── Signed URLs for attachments ─── */
+  /* ─── Signed URLs for attachments (server-side) ─── */
   useEffect(() => {
     const fileMsgs = messages.filter((m) => m.file_path && !fileUrls[m.id]);
     if (fileMsgs.length === 0) return;
-    fileMsgs.forEach(async (m) => {
-      const { data } = await supabase.storage.from(BUCKET).createSignedUrl(m.file_path!, 3600);
-      if (data?.signedUrl) setFileUrls(prev => ({ ...prev, [m.id]: data.signedUrl }));
-    });
+    (async () => {
+      const session = (await supabase.auth.getSession()).data.session;
+      const token = session?.access_token;
+      if (!token) return;
+      const paths = fileMsgs.map((m) => m.file_path!);
+      try {
+        const res = await fetch("/functions/v1/chat-signed-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ paths }),
+        });
+        if (!res.ok) return;
+        const { urls } = await res.json();
+        setFileUrls(prev => {
+          const next = { ...prev };
+          fileMsgs.forEach((m) => { if (urls[m.file_path!]) next[m.id] = urls[m.file_path!]; });
+          return next;
+        });
+      } catch {}
+    })();
   }, [messages]);
 
   /* ─── Realtime messages + reactions ─── */
@@ -398,21 +358,29 @@ const EmployeeSupportChat = () => {
     setContextMenu(null);
   }, []);
 
-  /* File upload */
+  /* File upload — via server route */
   const uploadFile = useCallback(async (file: File) => {
     if (!profile?.id || !chatRoom?.id) return;
     if (file.size > 20 * 1024 * 1024) { toast.error("Max file size: 20 MB"); return; }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "bin";
-      const path = `${profile.id}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from(BUCKET).upload(path, file);
-      if (error) throw error;
+      const session = (await supabase.auth.getSession()).data.session;
+      const token = session?.access_token;
+      if (!token) throw new Error("Not authenticated");
+      const arrayBuf = await file.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuf)));
+      const uploadRes = await fetch("/functions/v1/upload-chat-attachment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ file_base64: base64, file_name: file.name, file_type: file.type, profile_id: profile.id }),
+      });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) throw new Error(uploadData.error || "Upload failed");
       const isImg = file.type.startsWith("image/");
       const ins: any = {
         chat_room_id: chatRoom.id, sender_id: profile.id,
         content: isImg ? "📷 Photo" : `📎 ${file.name}`,
-        file_path: path, file_name: file.name,
+        file_path: uploadData.path, file_name: file.name,
       };
       if (replyTo) ins.parent_message_id = replyTo.id;
       await supabase.from("messages").insert(ins);
@@ -422,50 +390,6 @@ const EmployeeSupportChat = () => {
     finally { setUploading(false); }
   }, [profile?.id, chatRoom?.id, replyTo]);
 
-  /* Voice recording */
-  const startRecording = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream, { mimeType: "audio/webm" });
-      audioChunksRef.current = [];
-      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
-      mr.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        if (!profile?.id || !chatRoom?.id || audioChunksRef.current.length === 0) return;
-        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        const path = `${profile.id}/voice_${Date.now()}.webm`;
-        const { error } = await supabase.storage.from(BUCKET).upload(path, blob);
-        if (error) { toast.error("Voice upload failed"); return; }
-        await supabase.from("messages").insert({
-          chat_room_id: chatRoom.id, sender_id: profile.id,
-          content: "🎤 Voice message", file_path: path, file_name: "voice.webm",
-        });
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-      };
-      mr.start(200);
-      mediaRecorderRef.current = mr;
-      setIsRecording(true); setRecordingSecs(0);
-      recordTimerRef.current = setInterval(() => setRecordingSecs((s) => s + 1), 1000);
-    } catch { toast.error("Microphone access denied"); }
-  }, [profile?.id, chatRoom?.id]);
-
-  const stopRecording = useCallback(() => {
-    mediaRecorderRef.current?.stop();
-    setIsRecording(false);
-    if (recordTimerRef.current) { clearInterval(recordTimerRef.current); recordTimerRef.current = null; }
-    setRecordingSecs(0);
-  }, []);
-
-  const cancelRecording = useCallback(() => {
-    if (mediaRecorderRef.current) {
-      audioChunksRef.current = [];
-      mediaRecorderRef.current.stream?.getTracks().forEach((t) => t.stop());
-      mediaRecorderRef.current.stop();
-    }
-    setIsRecording(false);
-    if (recordTimerRef.current) { clearInterval(recordTimerRef.current); recordTimerRef.current = null; }
-    setRecordingSecs(0);
-  }, []);
 
   /* Swipe to reply */
   const onTouchStart = useCallback((e: React.TouchEvent, msg: Msg) => {
@@ -540,7 +464,7 @@ const EmployeeSupportChat = () => {
             style={{ position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,.15)", border: "none", borderRadius: "50%", width: 40, height: 40, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <X size={22} />
           </button>
-          <img src={lightboxUrl} alt="attachment" style={{ maxWidth: "90vw", maxHeight: "90vh", borderRadius: 8, objectFit: "contain" }} />
+          <img loading="lazy" decoding="async" src={lightboxUrl} alt="attachment" style={{ maxWidth: "90vw", maxHeight: "90vh", borderRadius: 8, objectFit: "contain" }} />
           <a href={lightboxUrl} download target="_blank" rel="noopener noreferrer"
             style={{ position: "absolute", bottom: 24, right: 24, background: WA.sendBtn, borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
             <Download size={20} color="#fff" />
@@ -664,8 +588,7 @@ const EmployeeSupportChat = () => {
               const showPicker = pickerMsgId === msg.id;
               const fileUrl  = fileUrls[msg.id];
               const isImg    = isImage(msg.file_name);
-              const isVoice  = isAudio(msg.file_name);
-              const isDoc    = msg.file_path && !isImg && !isVoice;
+              const isDoc    = msg.file_path && !isImg;
               const isStarred = starred.has(msg.id);
               const isEditing = editingId === msg.id;
 
@@ -716,7 +639,7 @@ const EmployeeSupportChat = () => {
                         <div
                           onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setContextMenu({ msgId: msg.id, x: e.clientX, y: e.clientY }); }}
                           onDoubleClick={() => setReplyTo(msg)}
-                          style={{ background: isMe ? WA.outgoing : WA.incoming, borderRadius: isMe ? "12px 2px 12px 12px" : "2px 12px 12px 12px", padding: "7px 11px 5px", boxShadow: "0 1px 2px rgba(0,0,0,.13)", cursor: "default", minWidth: isVoice ? 220 : 80 }}>
+                          style={{ background: isMe ? WA.outgoing : WA.incoming, borderRadius: isMe ? "12px 2px 12px 12px" : "2px 12px 12px 12px", padding: "7px 11px 5px", boxShadow: "0 1px 2px rgba(0,0,0,.13)", cursor: "default", minWidth: 80 }}>
                           {!isMe && <p style={{ margin: "0 0 2px", fontSize: 12, fontWeight: 700, color: "#00a884" }}>Support Team</p>}
 
                           {/* Star indicator */}
@@ -752,11 +675,9 @@ const EmployeeSupportChat = () => {
                             <>
                               {/* Image */}
                               {isImg && fileUrl && (
-                                <img src={fileUrl} alt={msg.file_name || "photo"} onClick={() => setLightboxUrl(fileUrl)}
+                                <img loading="lazy" decoding="async" src={fileUrl} alt={msg.file_name || "photo"} onClick={() => setLightboxUrl(fileUrl)}
                                   style={{ maxWidth: 240, maxHeight: 220, width: "100%", borderRadius: 8, objectFit: "cover", cursor: "pointer", display: "block", marginBottom: 4 }} />
                               )}
-                              {/* Voice */}
-                              {isVoice && fileUrl && <AudioPlayer url={fileUrl} dark={isDark} isMe={isMe} />}
                               {/* Doc */}
                               {isDoc && (
                                 <a href={fileUrl || "#"} target="_blank" rel="noopener noreferrer"
@@ -772,7 +693,7 @@ const EmployeeSupportChat = () => {
                                 </a>
                               )}
                               {/* Text (with link detection) */}
-                              {(!isImg && !isVoice || msg.content !== "📷 Photo" && msg.content !== "🎤 Voice message") && (
+                              {(!isImg || msg.content !== "📷 Photo") && (
                                 <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, wordBreak: "break-word", whiteSpace: "pre-wrap", color: isMe ? WA.outgoingTxt : WA.incomingTxt }}>
                                   {detectLinks(msg.content)}
                                   {msg.edited_at && <span style={{ fontSize: 10, color: WA.sub, marginLeft: 5, fontStyle: "italic" }}>edited</span>}
@@ -914,72 +835,48 @@ const EmployeeSupportChat = () => {
         </div>
       )}
 
-      {/* ─── Recording UI ─── */}
-      {isRecording && (
-        <div style={{ background: WA.inputBar, borderTop: `1px solid ${WA.border}`, padding: "10px 14px", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-          <button onClick={cancelRecording} style={{ background: "none", border: "none", cursor: "pointer", color: WA.sub }}><X size={22} /></button>
-          <div style={{ width: 10, height: 10, borderRadius: "50%", background: WA.recBg, animation: "waRecPulse 1s ease-in-out infinite", flexShrink: 0 }} />
-          <span style={{ flex: 1, fontSize: 15, color: isDark ? "#e9edef" : "#111b21", fontWeight: 500 }}>Recording… {fmtSecs(recordingSecs)}</span>
-          <button onClick={stopRecording}
-            style={{ width: 46, height: 46, borderRadius: "50%", border: "none", background: WA.sendBtn, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,168,132,.4)" }}>
+      {/* ─── Input bar ─── */}
+      <div style={{ background: WA.inputBar, padding: "8px 10px 10px", flexShrink: 0 }}>
+        {/* Uploading indicator */}
+        {uploading && (
+          <div style={{ padding: "4px 0 6px", display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 14, height: 14, borderRadius: "50%", border: `2px solid ${WA.sendBtn}`, borderTopColor: "transparent", animation: "waSpin 0.7s linear infinite" }} />
+            <span style={{ fontSize: 12, color: WA.sub }}>Uploading…</span>
+          </div>
+        )}
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
+          {/* Pill */}
+          <div style={{ flex: 1, background: WA.inputBg, borderRadius: 26, display: "flex", alignItems: "flex-end", padding: "6px 8px 6px 12px", boxShadow: "0 1px 3px rgba(0,0,0,.12)", minHeight: 44 }}>
+            <button onClick={() => setShowEmoji(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 6px 4px 0", color: WA.emojiBtn, flexShrink: 0 }}><Smile size={22} /></button>
+
+            {/* Attachment dropdown */}
+            <div style={{ position: "relative" }}>
+              <button onClick={e => { e.stopPropagation(); setShowMoreMenu(false); fileInputRef.current?.click(); }}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 6px 4px 0", color: WA.emojiBtn, flexShrink: 0 }}>
+                <Paperclip size={22} />
+              </button>
+            </div>
+
+            {/* Camera */}
+            <button onClick={() => cameraInputRef.current?.click()}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 6px 4px 0", color: WA.emojiBtn, flexShrink: 0 }}>
+              <Camera size={22} />
+            </button>
+
+            <textarea ref={textareaRef} value={newMessage}
+              onChange={e => { handleTyping(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; }}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a message" rows={1}
+              style={{ flex: 1, background: "none", border: "none", outline: "none", resize: "none", color: WA.inputTxt, fontSize: 15, lineHeight: 1.5, padding: "2px 0", fontFamily: "inherit", maxHeight: 120, overflowY: "auto" }} />
+          </div>
+
+          {/* Send */}
+          <button onClick={handleSend}
+            style={{ width: 46, height: 46, borderRadius: "50%", border: "none", background: WA.sendBtn, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,168,132,.4)" }}>
             <Send size={20} style={{ marginLeft: 2 }} />
           </button>
         </div>
-      )}
-
-      {/* ─── Input bar ─── */}
-      {!isRecording && (
-        <div style={{ background: WA.inputBar, padding: "8px 10px 10px", flexShrink: 0 }}>
-          {/* Uploading indicator */}
-          {uploading && (
-            <div style={{ padding: "4px 0 6px", display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 14, height: 14, borderRadius: "50%", border: `2px solid ${WA.sendBtn}`, borderTopColor: "transparent", animation: "waSpin 0.7s linear infinite" }} />
-              <span style={{ fontSize: 12, color: WA.sub }}>Uploading…</span>
-            </div>
-          )}
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
-            {/* Pill */}
-            <div style={{ flex: 1, background: WA.inputBg, borderRadius: 26, display: "flex", alignItems: "flex-end", padding: "6px 8px 6px 12px", boxShadow: "0 1px 3px rgba(0,0,0,.12)", minHeight: 44 }}>
-              <button onClick={() => setShowEmoji(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 6px 4px 0", color: WA.emojiBtn, flexShrink: 0 }}><Smile size={22} /></button>
-
-              {/* Attachment dropdown */}
-              <div style={{ position: "relative" }}>
-                <button onClick={e => { e.stopPropagation(); setShowMoreMenu(false); fileInputRef.current?.click(); }}
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 6px 4px 0", color: WA.emojiBtn, flexShrink: 0 }}>
-                  <Paperclip size={22} />
-                </button>
-              </div>
-
-              {/* Camera */}
-              <button onClick={() => cameraInputRef.current?.click()}
-                style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 6px 4px 0", color: WA.emojiBtn, flexShrink: 0 }}>
-                <Camera size={22} />
-              </button>
-
-              <textarea ref={textareaRef} value={newMessage}
-                onChange={e => { handleTyping(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; }}
-                onKeyDown={handleKeyDown}
-                placeholder="Type a message" rows={1}
-                style={{ flex: 1, background: "none", border: "none", outline: "none", resize: "none", color: WA.inputTxt, fontSize: 15, lineHeight: 1.5, padding: "2px 0", fontFamily: "inherit", maxHeight: 120, overflowY: "auto" }} />
-            </div>
-
-            {/* Send / Mic */}
-            {newMessage.trim() ? (
-              <button onClick={handleSend}
-                style={{ width: 46, height: 46, borderRadius: "50%", border: "none", background: WA.sendBtn, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,168,132,.4)" }}>
-                <Send size={20} style={{ marginLeft: 2 }} />
-              </button>
-            ) : (
-              <button
-                onMouseDown={startRecording}
-                onTouchStart={startRecording}
-                style={{ width: 46, height: 46, borderRadius: "50%", border: "none", background: WA.sendBtn, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,168,132,.4)" }}>
-                <Mic size={20} />
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* ─── Styles ─── */}
       <style>{`
@@ -987,7 +884,6 @@ const EmployeeSupportChat = () => {
         @keyframes waPickerIn { from { opacity:0; transform:scale(.85) translateY(6px); } to { opacity:1; transform:scale(1) translateY(0); } }
         @keyframes waMenuIn  { from { opacity:0; transform:scale(.92); } to { opacity:1; transform:scale(1); } }
         @keyframes waDot { 0%,80%,100% { transform:translateY(0); } 40% { transform:translateY(-5px); } }
-        @keyframes waRecPulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.5; transform:scale(1.3); } }
         @keyframes waSpin { to { transform:rotate(360deg); } }
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: rgba(134,150,160,.35); border-radius: 10px; }

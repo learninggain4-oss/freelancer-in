@@ -278,7 +278,7 @@ const AdminBranding = () => {
               {loading ? (
                 <Loader2 size={18} color={T.sub} style={{ animation: "spin 1s linear infinite" }} />
               ) : displayUrl ? (
-                <img src={displayUrl} alt="App Logo" style={{ width: "100%", height: "100%", objectFit: "contain", padding: 4 }} />
+                <img fetchPriority="high" src={displayUrl} alt="App Logo" style={{ width: "100%", height: "100%", objectFit: "contain", padding: 4 }} />
               ) : (
                 <div style={{ width: 34, height: 34, borderRadius: 9, background: `linear-gradient(135deg,${A1},${A2})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <span style={{ fontSize: 16 }}>🇮🇳</span>

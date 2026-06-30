@@ -22,7 +22,7 @@ import {
   CheckCircle2, Info, XCircle, Mail, Image as ImageIcon, RotateCcw,
   Trash2, CheckSquare, Square, Timer,
   Handshake, Brain, Layout, Scale, AlertCircle,
-  FlaskConical, Award, Trophy, Gift, Smartphone, MessageCircle, Flame, Key, Link,
+  FlaskConical, Award, Trophy, Gift, Smartphone, Phone, MessageCircle, Flame, Key, Link,
 } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 
@@ -133,7 +133,7 @@ const navSections = [
     { label: "Online Status", icon: Wifi,     path: "/admin/online-status" },
   ]},
   { title: "Financial", items: [
-    { label: "Deposit Requests",   icon: PlusCircle,         path: "/admin/deposit-requests" },
+    { label: "Deposit Requests",   icon: IndianRupee,        path: "/admin/deposits" },
     { label: "Withdrawals",        icon: Wallet,             path: "/admin/withdrawals" },
     { label: "Wallet Mgmt",        icon: IndianRupee,        path: "/admin/wallet-management" },
     { label: "Wallet Types",       icon: Wallet,             path: "/admin/wallet-types" },
@@ -151,8 +151,11 @@ const navSections = [
     { label: "Commission Tiers",   icon: SlidersHorizontal,  path: "/admin/commission-tiers" },
   ]},
   { title: "Verification", items: [
+    { label: "Add Money Setup",    icon: Clock,       path: "/admin/add-money-setup" },
+    { label: "UPI KYC Management", icon: Smartphone,  path: "/admin/upi-kyc-management" },
     { label: "Aadhaar Verify",     icon: Fingerprint, path: "/admin/verifications" },
     { label: "Bank Verify",        icon: Landmark,    path: "/admin/bank-verifications" },
+    { label: "Mobile Verify",      icon: Phone,       path: "/admin/mobile-verifications" },
     { label: "Validation",         icon: BadgeCheck,  path: "/admin/validation" },
     { label: "KYC Dashboard",      icon: ShieldCheck, path: "/admin/kyc-dashboard" },
     { label: "Waitlist Mgmt",      icon: UserCheck,   path: "/admin/waitlist-management" },
@@ -800,7 +803,7 @@ const AdminLayout = () => {
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
           <div style={{ width: 34, height: 34, borderRadius: 10, background: appLogoUrl ? "transparent" : tok.logoBg, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: appLogoUrl ? "none" : `0 3px 12px ${tok.logoShadow}`, overflow: "hidden" }}>
             {appLogoUrl
-              ? <img src={appLogoUrl} alt="App Logo" style={{ width: 34, height: 34, objectFit: "contain", borderRadius: 10 }} />
+              ? <img fetchPriority="high" src={appLogoUrl} alt="App Logo" style={{ width: 34, height: 34, objectFit: "contain", borderRadius: 10 }} />
               : <ShieldCheck size={16} color="white" />}
           </div>
           <div className="hidden sm:block">
@@ -1284,7 +1287,7 @@ const AdminLayout = () => {
               {/* ── PHASE 1: Confirm + Select Records ── */}
               {clearPhase === "confirm" && (
                 <>
-                  <button onClick={cancelClear} style={{ position: "absolute", top: 14, right: 14, background: "rgba(0,0,0,.06)", border: "none", borderRadius: 8, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" }}>
+                  <button onClick={cancelClear} aria-label="Cancel" style={{ position: "absolute", top: 14, right: 14, background: "rgba(0,0,0,.06)", border: "none", borderRadius: 8, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" }}>
                     <X size={15} />
                   </button>
 

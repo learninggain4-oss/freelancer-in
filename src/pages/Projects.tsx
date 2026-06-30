@@ -229,11 +229,11 @@ export default function ProjectsPage() {
     root.style.setProperty("--t-a1-rgb", t.a1rgb);
     root.style.setProperty("--t-a2-rgb", t.a2rgb);
     document.body.style.background = t.bg;
-    document.title = "Browse Freelance Projects India | 1,000+ Live Jobs | Freelancer India";
+    document.title = "Browse Freelance Projects in India | 1,000+ Live Jobs | Freelan Space";
     const desc = document.querySelector('meta[name="description"]');
     if (desc) desc.setAttribute("content", "Browse 1,000+ live freelance projects in India. Filter by category, budget, and deadline. Bid on web development, design, content, marketing projects and more. Get paid via UPI.");
     return () => {
-      document.title = "Freelancer India — Hire Top Indian Freelancers | UPI Payments | ₹0 Commission (3 Months)";
+      document.title = "Freelan Space";
       document.body.style.background = "";
     };
   }, []);
@@ -303,7 +303,7 @@ export default function ProjectsPage() {
       <div className="sticky top-0 z-40 backdrop-blur-xl" style={{ background: "rgba(var(--t-bg-rgb),0.9)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 flex items-center gap-3">
           <Link to="/" className="flex items-center gap-2 mr-2 shrink-0">
-            <img src="/logo.png" alt="Freelancer India" className="h-8 w-8 object-contain" />
+            <img fetchPriority="high" src="/logo.webp" alt="Freelancer India" className="h-8 w-8 object-contain" />
             <span className="text-sm font-bold text-white hidden sm:block">Freelancer<span className="text-indigo-400">.</span></span>
           </Link>
           <div className="relative flex-1">
@@ -370,6 +370,9 @@ export default function ProjectsPage() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8" style={{ position: "relative", zIndex: 1 }}>
+
+        {/* Page H1 — SEO primary heading */}
+        <h1 className="sr-only">Find Freelance Projects in India — Bid & Get Hired</h1>
 
         {/* Live Stats Bar */}
         <div className="mb-8 rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>

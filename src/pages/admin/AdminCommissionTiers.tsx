@@ -41,7 +41,7 @@ const AdminCommissionTiers = () => {
   const { data: stats } = useQuery({
     queryKey: ["admin-commission-tier-stats"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("user_id,total_earnings,user_type").eq("user_type", "employee").limit(500);
+      const { data } = await supabase.from("profiles").select("user_id,total_earnings,user_type").eq("user_type", "Freelancer").limit(500);
       const users = data || [];
       return tiers.map(tier => ({
         ...tier,

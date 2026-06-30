@@ -589,7 +589,7 @@ const AdminTimeSlotManagement = () => {
                                   </Button>
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                                      <Button size="icon" variant="ghost" aria-label="Delete time slot" className="h-8 w-8 text-destructive hover:bg-destructive/10">
                                         <Trash2 className="h-3.5 w-3.5" />
                                       </Button>
                                     </AlertDialogTrigger>

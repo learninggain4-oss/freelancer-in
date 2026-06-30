@@ -288,7 +288,7 @@ export default function TotpGateModal({ mode, theme, onVerified }: Props) {
                   {qrLoading
                     ? <RefreshCw size={28} color={accent} style={{ animation: "totpSpin 1s linear infinite" }} />
                     : qrData && !qrImgErr
-                      ? <img
+                      ? <img loading="lazy" decoding="async"
                           src={qrData.qrCodeDataUrl}
                           alt="TOTP QR Code"
                           style={{ width: "100%", height: "100%" }}

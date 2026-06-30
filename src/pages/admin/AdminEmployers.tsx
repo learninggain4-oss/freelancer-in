@@ -62,7 +62,7 @@ const AdminClients = () => {
         let q = supabase
           .from("profiles")
           .select("id, user_id, full_name, user_code, email, approval_status, available_balance, hold_balance, is_disabled, created_at, mobile_number")
-          .eq("user_type", "client")
+          .eq("user_type", "Employer")
           .order("created_at", { ascending: false });
         if (adminUserIds.length > 0)
           q = q.not("user_id", "in", `(${adminUserIds.join(",")})`);

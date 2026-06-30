@@ -134,7 +134,7 @@ const CompleteProfile = () => {
       toast({ title: "Profile completed successfully! 🎉" });
 
       // Navigate to appropriate dashboard
-      if (profile?.user_type === "employee") {
+      if (profile?.user_type === "Freelancer") {
         navigate("/freelancer/dashboard", { replace: true });
       } else {
         navigate("/employer/dashboard", { replace: true });

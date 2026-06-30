@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
-  Send, Search, X, HelpCircle, Smile, Paperclip, Mic,
+  Send, Search, X, HelpCircle, Smile, Paperclip,
   ChevronDown, Check, CheckCheck, CornerUpLeft, Copy, Trash2,
-  ArrowLeft, MoreVertical, Camera, Play, Pause, Square,
-  Star, Forward, ImageIcon, FileText, Lock, Volume2,
+  ArrowLeft, MoreVertical, Camera, Square,
+  Star, Forward, ImageIcon, FileText, Lock,
   Phone, Video, ZoomIn,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,7 +34,6 @@ function isSameDay(a: string, b: string) {
 }
 
 const isImage = (name: string | null) => !!name?.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
-const isAudio = (name: string | null) => !!name?.match(/\.(webm|ogg|mp3|m4a|wav|aac)$/i);
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 const EMOJIS = ["😊","😂","❤️","👍","🙏","😭","🔥","✅","💯","😍","🤔","👏","🎉","😅","💪","🙌","😎","🤝","💬","⭐","😮","😢","🥳","💔","👀","✨","🫶","🤩","😁","🙃","🥺","😬","🤣","😆","😇","🤗","🤫","😏","😒","🙄"];
@@ -78,64 +77,6 @@ const getWA = (dark: boolean) => ({
   encryptedBg: dark ? "rgba(11,20,26,.8)" : "rgba(225,218,200,.8)",
 });
 
-/* ─── VoicePlayer ─── */
-function VoicePlayer({ filePath, isMe, WA }: { filePath: string; isMe: boolean; WA: ReturnType<typeof getWA> }) {
-  const [url, setUrl]       = useState<string | null>(null);
-  const [playing, setPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [dur, setDur]       = useState(0);
-  const [cur, setCur]       = useState(0);
-  const aRef = useRef<HTMLAudioElement>(null);
-
-  useEffect(() => {
-    supabase.storage.from("support-files").createSignedUrl(filePath, 3600)
-      .then(({ data }) => { if (data?.signedUrl) setUrl(data.signedUrl); });
-  }, [filePath]);
-
-  const toggle = () => {
-    const a = aRef.current;
-    if (!a) return;
-    if (playing) { a.pause(); setPlaying(false); }
-    else { a.play().then(() => setPlaying(true)).catch(() => {}); }
-  };
-
-  const barColor = isMe ? (WA.header === "#075e54" ? "#3e8e6e" : "#3d8c6e") : WA.sub;
-
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 200, paddingBottom: 4 }}>
-      <audio ref={aRef} src={url ?? undefined} preload="metadata"
-        onLoadedMetadata={() => { if (aRef.current) setDur(aRef.current.duration); }}
-        onTimeUpdate={() => { const a = aRef.current; if (a && a.duration) { setCur(a.currentTime); setProgress((a.currentTime / a.duration) * 100); } }}
-        onEnded={() => { setPlaying(false); setProgress(0); setCur(0); }}
-        style={{ display: "none" }} />
-      <button onClick={toggle}
-        style={{ width: 38, height: 38, borderRadius: "50%", background: WA.sendBtn, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        {playing ? <Pause size={16} color="#fff" /> : <Play size={16} color="#fff" style={{ marginLeft: 2 }} />}
-      </button>
-      <div style={{ flex: 1, position: "relative", height: 28 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 2, height: "100%" }}>
-          {Array.from({ length: 26 }).map((_, i) => {
-            const h = 5 + Math.abs(Math.sin(i * 1.1) * 9 + Math.cos(i * 0.7) * 4);
-            return (
-              <div key={i} style={{ width: 3, height: Math.abs(h), borderRadius: 2, flexShrink: 0,
-                background: (i / 26) * 100 <= progress ? WA.sendBtn : barColor, transition: "background .1s" }} />
-            );
-          })}
-        </div>
-        <input type="range" min={0} max={dur || 1} step={0.1} value={cur}
-          onChange={e => { if (aRef.current) { aRef.current.currentTime = +e.target.value; setCur(+e.target.value); } }}
-          style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%" }} />
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
-        <Mic size={11} style={{ color: isMe ? WA.headerSub : WA.sub }} />
-        <span style={{ fontSize: 10, color: isMe ? WA.headerSub : WA.sub, minWidth: 30 }}>
-          {fmtSecs(playing ? Math.round(cur) : Math.round(dur))}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 /* ─── ImageBubble ─── */
 function ImageBubble({ filePath, onClick }: { filePath: string; onClick: (url: string) => void }) {
   const [url, setUrl] = useState<string | null>(null);
@@ -146,7 +87,7 @@ function ImageBubble({ filePath, onClick }: { filePath: string; onClick: (url: s
   if (!url) return <div style={{ width: 180, height: 120, borderRadius: 10, background: "rgba(128,128,128,.2)", display: "flex", alignItems: "center", justifyContent: "center" }}><ImageIcon size={24} style={{ opacity: .5 }} /></div>;
   return (
     <div style={{ position: "relative", cursor: "pointer", borderRadius: 10, overflow: "hidden", maxWidth: 220 }} onClick={() => onClick(url)}>
-      <img src={url} alt="attachment" style={{ width: "100%", maxWidth: 220, display: "block", borderRadius: 10 }} />
+      <img loading="lazy" decoding="async" src={url} alt="attachment" style={{ width: "100%", maxWidth: 220, display: "block", borderRadius: 10 }} />
       <div style={{ position: "absolute", bottom: 6, right: 8, background: "rgba(0,0,0,.45)", borderRadius: 12, padding: "1px 6px", display: "flex", alignItems: "center", gap: 3 }}>
         <ZoomIn size={10} style={{ color: "#fff" }} />
       </div>
@@ -175,9 +116,6 @@ const HelpSupport = () => {
   const [expandedFaq, setExpandedFaq]     = useState<string | null>(null);
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
   const [confirmClear, setConfirmClear]   = useState(false);
-  const [isRecording, setIsRecording]     = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [showMicDenied, setShowMicDenied] = useState(false);
   const [showCamDenied, setShowCamDenied] = useState(false);
   const [searchOpen, setSearchOpen]       = useState(false);
   const [searchQuery, setSearchQuery]     = useState("");
@@ -196,11 +134,6 @@ const HelpSupport = () => {
   const fileRef            = useRef<HTMLInputElement>(null);
   const searchRef          = useRef<HTMLInputElement>(null);
   const typingTimer        = useRef<any>(null);
-  const mediaRecorderRef   = useRef<MediaRecorder | null>(null);
-  const audioChunksRef     = useRef<Blob[]>([]);
-  const recordingTimerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
-  const recordingStreamRef = useRef<MediaStream | null>(null);
-  const cancelledRef       = useRef(false);
   const videoRef           = useRef<HTMLVideoElement>(null);
   const canvasRef          = useRef<HTMLCanvasElement>(null);
   const cameraStreamRef    = useRef<MediaStream | null>(null);
@@ -367,54 +300,6 @@ const HelpSupport = () => {
     }, "image/jpeg", 0.92);
   };
 
-  /* ─── Voice recording ─── */
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      recordingStreamRef.current = stream;
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/ogg";
-      const mr = new MediaRecorder(stream, { mimeType });
-      audioChunksRef.current = []; cancelledRef.current = false;
-      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
-      mr.onstop = async () => {
-        if (cancelledRef.current) { audioChunksRef.current = []; return; }
-        const ext = mimeType.includes("webm") ? "webm" : "ogg";
-        const blob = new Blob(audioChunksRef.current, { type: mimeType });
-        if (blob.size < 500) return;
-        try {
-          if (!conversation?.id || !profile?.id) return;
-          const path = `support/${conversation.id}/${Date.now()}.${ext}`;
-          const { error } = await supabase.storage.from("support-files").upload(path, blob, { contentType: mimeType });
-          if (error) throw error;
-          await sendMessage("🎤 Voice message", path, `voice.${ext}`);
-          setTimeout(() => scrollToBottom(), 100);
-        } catch (err: any) { toast.error(err.message || "Failed to send voice message"); }
-      };
-      mr.start(100); mediaRecorderRef.current = mr;
-      setIsRecording(true); setRecordingTime(0);
-      recordingTimerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
-    } catch (err: any) {
-      if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") setShowMicDenied(true);
-      else toast.error("Could not access microphone");
-    }
-  };
-  const stopAndSend = () => {
-    if (!mediaRecorderRef.current || !isRecording) return;
-    cancelledRef.current = false;
-    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
-    recordingStreamRef.current?.getTracks().forEach(t => t.stop());
-    mediaRecorderRef.current.stop();
-    setIsRecording(false);
-  };
-  const cancelRecording = () => {
-    if (!mediaRecorderRef.current) return;
-    cancelledRef.current = true;
-    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
-    recordingStreamRef.current?.getTracks().forEach(t => t.stop());
-    mediaRecorderRef.current.stop();
-    setIsRecording(false); setRecordingTime(0);
-  };
-
   /* ─── Context menu ─── */
   const openCtxMenu = (e: React.MouseEvent | React.TouchEvent, msg: any) => {
     e.preventDefault(); e.stopPropagation();
@@ -526,7 +411,7 @@ const HelpSupport = () => {
           {/* Avatar */}
           <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", cursor: "pointer" }}>
             {agentProfile?.profile_photo_path
-              ? <img src={agentProfile.profile_photo_path} alt="Support" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ? <img loading="lazy" decoding="async" src={agentProfile.profile_photo_path} alt="Support" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               : <span style={{ color: "#fff", fontWeight: 800, fontSize: 14 }}>FI</span>}
           </div>
           <div style={{ flex: 1, cursor: "pointer" }}>
@@ -673,7 +558,7 @@ const HelpSupport = () => {
                       {!isMe && isLast && (
                         <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#00a884", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginRight: 6, alignSelf: "flex-end", fontSize: 10, color: "#fff", fontWeight: 800, overflow: "hidden" }}>
                           {agentProfile?.profile_photo_path
-                            ? <img src={agentProfile.profile_photo_path} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            ? <img loading="lazy" decoding="async" src={agentProfile.profile_photo_path} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                             : "FI"}
                         </div>
                       )}
@@ -734,9 +619,8 @@ const HelpSupport = () => {
                           {!isReply && (() => {
                             const fn = msg.file_name;
                             const fp = msg.file_path;
-                            if (fp && isAudio(fn)) return <VoicePlayer filePath={fp} isMe={isMe} WA={WA} />;
                             if (fp && isImage(fn)) return <ImageBubble filePath={fp} onClick={setLightboxUrl} />;
-                            if (fp && fn && !isImage(fn) && !isAudio(fn)) {
+                            if (fp && fn && !isImage(fn)) {
                               return (
                                 <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 0" }}>
                                   <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(0,168,132,.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -895,66 +779,38 @@ const HelpSupport = () => {
 
         {/* ══ Input bar ══ */}
         <input type="file" ref={fileRef} accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
-        {isRecording ? (
-          <div style={{ background: WA.inputBar, padding: "10px 14px", display: "flex", alignItems: "center", gap: 12, borderTop: `1px solid ${WA.border}`, flexShrink: 0 }}>
-            <button onClick={cancelRecording} style={{ background: "none", border: "none", cursor: "pointer", padding: 6 }}>
-              <X size={22} style={{ color: "#ef4444" }} />
+        <div style={{ background: WA.inputBar, padding: "8px 10px", display: "flex", alignItems: "flex-end", gap: 8, borderTop: `1px solid ${WA.border}`, flexShrink: 0 }}>
+          {/* Emoji + attach */}
+          <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+            <button onClick={e => { e.stopPropagation(); setShowEmoji(s => !s); setShowAttachMenu(false); }}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 8, display: "flex", alignItems: "center" }}>
+              <Smile size={22} style={{ color: WA.emojiBtn }} />
             </button>
-            <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#ef4444", animation: "wa-rec 1.2s infinite" }} />
-              <div style={{ flex: 1, height: 2, background: WA.border, borderRadius: 2 }}>
-                <div style={{ height: "100%", width: `${Math.min((recordingTime / 180) * 100, 100)}%`, background: "#ef4444", borderRadius: 2, transition: "width 1s linear" }} />
-              </div>
-              <span style={{ fontSize: 14, color: "#ef4444", fontVariantNumeric: "tabular-nums", fontWeight: 600, minWidth: 36 }}>
-                {fmtSecs(recordingTime)}
-              </span>
-            </div>
-            <button onClick={stopAndSend}
-              style={{ width: 46, height: 46, borderRadius: "50%", background: WA.sendBtn, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Send size={20} color="#fff" />
+            <button onClick={e => { e.stopPropagation(); setShowAttachMenu(s => !s); setShowEmoji(false); }}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 8, display: "flex", alignItems: "center" }}>
+              <Paperclip size={22} style={{ color: WA.emojiBtn }} />
             </button>
           </div>
-        ) : (
-          <div style={{ background: WA.inputBar, padding: "8px 10px", display: "flex", alignItems: "flex-end", gap: 8, borderTop: `1px solid ${WA.border}`, flexShrink: 0 }}>
-            {/* Emoji + attach */}
-            <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-              <button onClick={e => { e.stopPropagation(); setShowEmoji(s => !s); setShowAttachMenu(false); }}
-                style={{ background: "none", border: "none", cursor: "pointer", padding: 8, display: "flex", alignItems: "center" }}>
-                <Smile size={22} style={{ color: WA.emojiBtn }} />
-              </button>
-              <button onClick={e => { e.stopPropagation(); setShowAttachMenu(s => !s); setShowEmoji(false); }}
-                style={{ background: "none", border: "none", cursor: "pointer", padding: 8, display: "flex", alignItems: "center" }}>
-                <Paperclip size={22} style={{ color: WA.emojiBtn }} />
-              </button>
-            </div>
 
-            {/* Text input */}
-            <div style={{ flex: 1, background: WA.inputBg, borderRadius: 22, padding: "8px 14px", display: "flex", alignItems: "center" }}>
-              <textarea
-                ref={inputRef}
-                value={newMessage}
-                onChange={e => setNewMessage(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } if (e.key === "Escape") setReplyTo(null); }}
-                placeholder="Message"
-                rows={1}
-                style={{ flex: 1, background: "none", border: "none", outline: "none", resize: "none", fontSize: 15, color: WA.inputTxt, lineHeight: 1.4, maxHeight: 120, overflow: "auto", fontFamily: "inherit" }}
-              />
-            </div>
-
-            {/* Send / mic */}
-            {newMessage.trim() ? (
-              <button onClick={handleSend} className="wa-send-btn"
-                style={{ width: 46, height: 46, borderRadius: "50%", background: WA.sendBtn, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Send size={20} color="#fff" />
-              </button>
-            ) : (
-              <button onTouchStart={startRecording} onMouseDown={startRecording}
-                style={{ width: 46, height: 46, borderRadius: "50%", background: WA.sendBtn, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Mic size={20} color="#fff" />
-              </button>
-            )}
+          {/* Text input */}
+          <div style={{ flex: 1, background: WA.inputBg, borderRadius: 22, padding: "8px 14px", display: "flex", alignItems: "center" }}>
+            <textarea
+              ref={inputRef}
+              value={newMessage}
+              onChange={e => setNewMessage(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } if (e.key === "Escape") setReplyTo(null); }}
+              placeholder="Message"
+              rows={1}
+              style={{ flex: 1, background: "none", border: "none", outline: "none", resize: "none", fontSize: 15, color: WA.inputTxt, lineHeight: 1.4, maxHeight: 120, overflow: "auto", fontFamily: "inherit" }}
+            />
           </div>
-        )}
+
+          {/* Send */}
+          <button onClick={handleSend} aria-label="Send message" className="wa-send-btn"
+            style={{ width: 46, height: 46, borderRadius: "50%", background: WA.sendBtn, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Send size={20} color="#fff" />
+          </button>
+        </div>
 
         {/* ══ Image lightbox ══ */}
         {lightboxUrl && (
@@ -964,7 +820,7 @@ const HelpSupport = () => {
                 <X size={20} color="#fff" />
               </button>
             </div>
-            <img src={lightboxUrl} alt="Full size" style={{ maxWidth: "95vw", maxHeight: "85vh", objectFit: "contain", borderRadius: 8 }} onClick={e => e.stopPropagation()} />
+            <img loading="lazy" decoding="async" src={lightboxUrl} alt="Full size" style={{ maxWidth: "95vw", maxHeight: "85vh", objectFit: "contain", borderRadius: 8 }} onClick={e => e.stopPropagation()} />
           </div>
         )}
 
@@ -989,7 +845,7 @@ const HelpSupport = () => {
         {showCamera && (
           <div style={{ position: "fixed", inset: 0, background: "#000", zIndex: 100, display: "flex", flexDirection: "column" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", background: "linear-gradient(to bottom,rgba(0,0,0,.55),transparent)" }}>
-              <button onClick={closeCamera} style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,.18)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <button onClick={closeCamera} aria-label="Close camera" style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,.18)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <X size={20} color="#fff" />
               </button>
               <button onClick={() => openCamera(facingMode === "environment" ? "user" : "environment")} style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,.18)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1012,23 +868,6 @@ const HelpSupport = () => {
               </button>
             </div>
             <canvas ref={canvasRef} style={{ display: "none" }} />
-          </div>
-        )}
-
-        {/* ══ Mic denied dialog ══ */}
-        {showMicDenied && (
-          <div onClick={() => setShowMicDenied(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: WA.menu, border: `1px solid ${WA.menuBorder}`, borderRadius: 20, padding: 24, maxWidth: 320, width: "100%", boxShadow: "0 16px 48px rgba(0,0,0,.4)" }}>
-              <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(239,68,68,.12)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
-                <Mic size={24} style={{ color: "#ef4444" }} />
-              </div>
-              <p style={{ fontWeight: 800, fontSize: 16, color: dark ? "#e9edef" : "#111b21", textAlign: "center", margin: "0 0 8px" }}>Microphone Access Denied</p>
-              <p style={{ fontSize: 13, color: WA.sub, textAlign: "center", margin: "0 0 20px", lineHeight: 1.5 }}>Please allow microphone access in your browser settings and try again.</p>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => setShowMicDenied(false)} style={{ flex: 1, padding: "12px", borderRadius: 12, border: `1px solid ${WA.border}`, background: "none", cursor: "pointer", color: WA.sub, fontSize: 14, fontWeight: 600 }}>Dismiss</button>
-                <button onClick={() => { setShowMicDenied(false); setTimeout(startRecording, 300); }} style={{ flex: 1, padding: "12px", borderRadius: 12, border: "none", background: WA.sendBtn, cursor: "pointer", color: "#fff", fontSize: 14, fontWeight: 700 }}>Try Again</button>
-              </div>
-            </div>
           </div>
         )}
 

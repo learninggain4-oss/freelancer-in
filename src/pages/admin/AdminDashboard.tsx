@@ -1801,7 +1801,7 @@ const AdminDashboard = () => {
       setRlStats({ totalBans: ipList.length, activeBans: active, last24h, topReasons });
 
       // Suspicious login alerts from audit logs
-      const { data: logs } = await supabase.from("admin_audit_logs").select("id, action, metadata, created_at").or("action.ilike.%login%,action.ilike.%suspicious%,action.ilike.%failed%,action.ilike.%block%").order("created_at", { ascending: false }).limit(20);
+      const { data: logs } = await (supabase.from("admin_audit_logs" as any) as any).select("id, action, metadata, created_at").or("action.ilike.%login%,action.ilike.%suspicious%,action.ilike.%failed%,action.ilike.%block%").order("created_at", { ascending: false }).limit(20);
       setSuspLogins((logs || []) as typeof suspLogins);
 
       // Content flags — projects flagged or reported
@@ -2276,7 +2276,7 @@ const AdminDashboard = () => {
   // ── Admin Activity Log callbacks ──────────────────────────────
   const loadActivityLog = useCallback(async () => {
     setActLogLoading(true);
-    const { data } = await supabase.from("admin_audit_logs").select("id, action, metadata, created_at").order("created_at", { ascending: false }).limit(30);
+    const { data } = await (supabase.from("admin_audit_logs" as any) as any).select("id, action, metadata, created_at").order("created_at", { ascending: false }).limit(30);
     setActivityLog((data || []) as typeof activityLog);
     setActLogLoading(false);
   }, []);
@@ -3588,7 +3588,7 @@ const AdminDashboard = () => {
   // ── Admin Full Audit Log callbacks ────────────────────────────
   useEffect(() => {
     setAuditFullLoading(true);
-    supabase.from("admin_audit_logs").select("id, admin_id, action, target_id, created_at").order("created_at", { ascending: false }).limit(60)
+    (supabase.from("admin_audit_logs" as any) as any).select("id, admin_id, action, target_id, created_at").order("created_at", { ascending: false }).limit(60)
       .then(({ data }) => {
         const actions = ["Approved withdrawal", "Banned user", "Updated commission", "Sent newsletter", "Modified plan", "Reset password", "Deleted campaign", "Updated banner", "Toggled feature flag", "Generated report"];
         const severities: Array<"info" | "warn" | "critical"> = ["info", "info", "warn", "info", "warn", "warn", "critical", "info", "warn", "info"];
@@ -4226,7 +4226,7 @@ const AdminDashboard = () => {
 
     // Build error rate — count audit log errors per 4-hour bucket today
     const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
-    const { data: errLogs } = await supabase.from("admin_audit_logs").select("created_at").gte("created_at", startOfDay.toISOString()).order("created_at");
+    const { data: errLogs } = await (supabase.from("admin_audit_logs" as any) as any).select("created_at").gte("created_at", startOfDay.toISOString()).order("created_at");
     const buckets: Record<string, number> = {};
     for (let h = 0; h < 24; h += 4) {
       const key = `${String(h).padStart(2, "0")}:00`;
@@ -5492,7 +5492,7 @@ const AdminDashboard = () => {
 
   // 180. Admin Efficiency Score
   useEffect(() => {
-    supabase.from("admin_audit_logs").select("created_at, action").limit(200).then(({ data }) => {
+    (supabase.from("admin_audit_logs" as any) as any).select("created_at, action").limit(200).then(({ data }) => {
       const logs = data || [];
       const cleared7d = logs.filter((l: { created_at: string | null }) => new Date(l.created_at || 0) > new Date(Date.now() - 7 * 86400000)).length;
       const avgMin = cleared7d > 0 ? Math.round((7 * 24 * 60) / cleared7d) : 18;

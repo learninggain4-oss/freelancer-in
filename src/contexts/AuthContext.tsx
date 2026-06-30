@@ -11,6 +11,8 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  profileLoading: boolean;
+  profileError: string | null;
   isAdmin: boolean;
   signUp: (email: string, password: string) => Promise<{ error: Error | null; data: any }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -25,6 +27,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const hasPromptedPushPermissionRef = useRef(false);
 
@@ -33,25 +37,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsAdmin(!!data);
   };
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, user_id, user_type, full_name, user_code, email, gender, date_of_birth, marital_status, education_level, mobile_number, whatsapp_number, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, approval_status, approval_notes, approved_at, available_balance, hold_balance, is_disabled, disabled_reason, created_at, updated_at, edit_request_status, bank_holder_name, bank_name, bank_account_number, bank_ifsc_code, upi_id, wallet_number, profile_photo_path, wallet_active, coin_balance")
-      .eq("user_id", userId)
-      .maybeSingle();
+  const fetchProfile = async (userId: string, options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
 
-    // If account is disabled, sign out immediately
-    if (data && (data as any).is_disabled) {
-      await supabase.auth.signOut();
-      setProfile(null);
-      setSession(null);
-      setUser(null);
-      setLoading(false);
-      // We'll show an alert via the login page
-      throw new Error("ACCOUNT_DISABLED");
+    if (!silent) {
+      setProfileLoading(true);
     }
+    setProfileError(null);
 
-    setProfile(data as unknown as Profile | null);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      // If account is disabled, sign out immediately
+      if (data && (data as any).is_disabled) {
+        await supabase.auth.signOut();
+        setProfile(null);
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        throw new Error("ACCOUNT_DISABLED");
+      }
+
+      setProfile(data as unknown as Profile | null);
+      return data as unknown as Profile | null;
+    } catch (error: any) {
+      console.error("Failed to load profile:", error);
+      setProfile(null);
+      setProfileError(error?.message || "Failed to load profile");
+      throw error;
+    } finally {
+      if (!silent) {
+        setProfileLoading(false);
+      }
+    }
   };
 
   const refreshProfile = async () => {
@@ -85,10 +109,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (session?.user) {
           loginOneSignal(session.user.id);
           requestPushPermissionOnce();
+          setProfileLoading(true);
           setTimeout(() => fetchProfile(session.user.id).catch(() => {}), 0);
           checkAdminRole(session.user.id).catch(() => {});
         } else {
           setProfile(null);
+          setProfileLoading(false);
+          setProfileError(null);
           setIsAdmin(false);
           // Clear all gate session flags so every gate re-checks on next login
           Object.keys(sessionStorage)
@@ -112,8 +139,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (session?.user) {
           loginOneSignal(session.user.id);
           requestPushPermissionOnce();
+          setProfileLoading(true);
           fetchProfile(session.user.id).catch(() => {});
           checkAdminRole(session.user.id).catch(() => {});
+        } else {
+          setProfileLoading(false);
+          setProfileError(null);
         }
         setLoading(false);
       })
@@ -136,7 +167,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!user) return;
     const interval = setInterval(() => {
-      fetchProfile(user.id).catch(() => {});
+      fetchProfile(user.id, { silent: true }).catch(() => {});
     }, 30000);
     return () => clearInterval(interval);
   }, [user]);
@@ -156,13 +187,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Check if the account is disabled
     if (signInData.user) {
-      const { data: prof } = await supabase
+      const { data: prof, error: profileCheckError } = await supabase
         .from("profiles")
         .select("is_disabled, disabled_reason")
         .eq("user_id", signInData.user.id)
         .maybeSingle();
 
-      if (prof && (prof as any).is_disabled) {
+      if (!profileCheckError && prof && (prof as any).is_disabled) {
         await supabase.auth.signOut();
         const reason = (prof as any).disabled_reason || "Your account has been disabled by an administrator.";
         return { error: new Error(reason) };
@@ -180,7 +211,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, isAdmin, signUp, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, profileLoading, profileError, isAdmin, signUp, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

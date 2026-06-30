@@ -8,7 +8,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, PlusCircle, ArrowUpRight, SendHorizontal, Search, History, Wallet } from "lucide-react";
+import {
+  Loader2,
+  PlusCircle,
+  ArrowUpRight,
+  SendHorizontal,
+  Search,
+  History,
+  Wallet,
+  Edit2,
+  Check,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import TotpVerifyDialog from "@/components/admin/TotpVerifyDialog";
@@ -16,9 +27,39 @@ import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { cn } from "@/lib/utils";
 
 const TH = {
-  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
-  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
-  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  black: {
+    bg: "#070714",
+    card: "rgba(255,255,255,.05)",
+    border: "rgba(255,255,255,.08)",
+    text: "#e2e8f0",
+    sub: "#94a3b8",
+    input: "rgba(255,255,255,.07)",
+    nav: "rgba(255,255,255,.04)",
+    badge: "rgba(99,102,241,.2)",
+    badgeFg: "#a5b4fc",
+  },
+  white: {
+    bg: "#f0f4ff",
+    card: "#ffffff",
+    border: "rgba(0,0,0,.08)",
+    text: "#1e293b",
+    sub: "#64748b",
+    input: "#f8fafc",
+    nav: "#f1f5f9",
+    badge: "rgba(99,102,241,.1)",
+    badgeFg: "#4f46e5",
+  },
+  wb: {
+    bg: "#f0f4ff",
+    card: "#ffffff",
+    border: "rgba(0,0,0,.08)",
+    text: "#1e293b",
+    sub: "#64748b",
+    input: "#f8fafc",
+    nav: "#f1f5f9",
+    badge: "rgba(99,102,241,.1)",
+    badgeFg: "#4f46e5",
+  },
 };
 
 const AdminWallet = () => {
@@ -29,10 +70,22 @@ const AdminWallet = () => {
   const [addAmount, setAddAmount] = useState("");
   const [transferAmount, setTransferAmount] = useState("");
   const [transferSearch, setTransferSearch] = useState("");
-  const [selectedRecipient, setSelectedRecipient] = useState<{ id: string; full_name: string[]; user_code: string[]; user_type: string; wallet_number: string } | null>(null);
+  const [selectedRecipient, setSelectedRecipient] = useState<{
+    id: string;
+    full_name: string[];
+    user_code: string[];
+    user_type: string;
+    wallet_number: string;
+  } | null>(null);
   const [transferDescription, setTransferDescription] = useState("");
   const [showTotpForTransfer, setShowTotpForTransfer] = useState(false);
   const [showTotpForAddMoney, setShowTotpForAddMoney] = useState(false);
+
+  // Wallet Edit States
+  const [isEditingWallet, setIsEditingWallet] = useState(false);
+  const [newWalletNumber, setNewWalletNumber] = useState("");
+  const [showTotpForEditWallet, setShowTotpForEditWallet] = useState(false);
+
   const queryClient = useQueryClient();
 
   const { data: totpStatus } = useQuery({
@@ -63,11 +116,21 @@ const AdminWallet = () => {
     }
   };
 
+  const handleEditWallet = () => {
+    if (requireTotp) {
+      setShowTotpForEditWallet(true);
+    } else {
+      editWalletMutation.mutate();
+    }
+  };
+
   const addMoneyMutation = useMutation({
     mutationFn: async () => {
       const amount = Number(addAmount);
       if (!amount || amount <= 0) throw new Error("Enter a valid amount");
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
       const res = await supabase.functions.invoke("wallet-operations", {
@@ -122,13 +185,48 @@ const AdminWallet = () => {
       return res.data;
     },
     onSuccess: () => {
-      toast.success(`₹${Number(transferAmount).toLocaleString("en-IN")} transferred to ${selectedRecipient?.full_name?.[0]}`);
+      toast.success(
+        `₹${Number(transferAmount).toLocaleString("en-IN")} transferred to ${selectedRecipient?.full_name?.[0]}`,
+      );
       setTransferAmount("");
       setTransferSearch("");
       setSelectedRecipient(null);
       setTransferDescription("");
       refreshProfile();
       queryClient.invalidateQueries({ queryKey: ["admin-wallet-transactions"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const editWalletMutation = useMutation({
+    mutationFn: async () => {
+      if (!newWalletNumber.trim()) throw new Error("Enter a valid wallet number");
+      if (!profile?.id) throw new Error("Not authenticated");
+
+      // Check if wallet number already exists
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("wallet_number", newWalletNumber.trim())
+        .maybeSingle();
+
+      if (existing && existing.id !== profile.id) {
+        throw new Error("This wallet number is already in use.");
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ wallet_number: newWalletNumber.trim() })
+        .eq("id", profile.id);
+
+      if (error) throw new Error(error.message);
+      return true;
+    },
+    onSuccess: () => {
+      toast.success("Wallet number updated successfully");
+      setIsEditingWallet(false);
+      setNewWalletNumber("");
+      refreshProfile();
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -143,7 +241,6 @@ const AdminWallet = () => {
 
   return (
     <div className="min-h-screen p-4 pb-20 space-y-6" style={{ background: T.bg }}>
-      {/* Hero Section */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-700 p-8 text-white shadow-2xl">
         <div className="relative z-10">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-xl">
@@ -157,20 +254,112 @@ const AdminWallet = () => {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <WalletCard
-          name={profile.full_name?.join(" ") || "Admin"}
-          userCode={profile.user_code?.join(", ") || ""}
-          walletNumber={profile.wallet_number}
-          availableBalance={Number(profile.available_balance) || 0}
-          holdBalance={Number(profile.hold_balance) || 0}
-        />
+        {/* Left Column: Wallet Card & Edit Wallet Section */}
+        <div className="flex flex-col gap-6">
+          <WalletCard
+            name={profile.full_name?.join(" ") || "Admin"}
+            userCode={profile.user_code?.join(", ") || ""}
+            walletNumber={profile.wallet_number}
+            profileId={profile.id}
+            availableBalance={Number(profile.available_balance) || 0}
+            holdBalance={Number(profile.hold_balance) || 0}
+          />
 
-        <div className="rounded-3xl border p-6 transition-all hover:shadow-xl" style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }}>
+          <div
+            className="rounded-3xl border p-6 transition-all hover:shadow-xl"
+            style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
+                  <Edit2 className="h-5 w-5" />
+                </div>
+                <h3 className="text-lg font-bold" style={{ color: T.text }}>
+                  Wallet Settings
+                </h3>
+              </div>
+              {!isEditingWallet && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setIsEditingWallet(true);
+                    setNewWalletNumber(profile.wallet_number || "");
+                  }}
+                  style={{ color: T.sub }}
+                >
+                  Edit Number
+                </Button>
+              )}
+            </div>
+
+            {isEditingWallet ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label style={{ color: T.sub }}>New Wallet Number</Label>
+                  <Input
+                    placeholder="Enter new wallet number"
+                    value={newWalletNumber}
+                    onChange={(e) => setNewWalletNumber(e.target.value)}
+                    style={{ background: T.input, borderColor: T.border, color: T.text }}
+                    className="h-11"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={handleEditWallet}
+                    disabled={
+                      editWalletMutation.isPending ||
+                      !newWalletNumber.trim() ||
+                      newWalletNumber === profile.wallet_number
+                    }
+                  >
+                    {editWalletMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="mr-2 h-4 w-4" />
+                    )}
+                    Save
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 rounded-xl"
+                    style={{ borderColor: T.border, color: T.text }}
+                    onClick={() => {
+                      setIsEditingWallet(false);
+                      setNewWalletNumber("");
+                    }}
+                    disabled={editWalletMutation.isPending}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm" style={{ color: T.sub }}>
+                Current Number:{" "}
+                <span className="font-mono font-medium" style={{ color: T.text }}>
+                  {profile.wallet_number || "Not set"}
+                </span>
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Add Money */}
+        <div
+          className="rounded-3xl border p-6 transition-all hover:shadow-xl"
+          style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }}
+        >
           <div className="mb-6 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-500">
               <PlusCircle className="h-5 w-5" />
             </div>
-            <h3 className="text-lg font-bold" style={{ color: T.text }}>Add Money</h3>
+            <h3 className="text-lg font-bold" style={{ color: T.text }}>
+              Add Money
+            </h3>
           </div>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -189,20 +378,29 @@ const AdminWallet = () => {
               onClick={handleAddMoney}
               disabled={addMoneyMutation.isPending}
             >
-              {addMoneyMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowUpRight className="mr-2 h-4 w-4" />}
+              {addMoneyMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowUpRight className="mr-2 h-4 w-4" />
+              )}
               {addMoneyMutation.isPending ? "Processing..." : "Add to Wallet"}
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Transfer Money */}
-      <div className="rounded-3xl border p-6 transition-all hover:shadow-xl" style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }}>
+      {/* Transfer Money Section */}
+      <div
+        className="rounded-3xl border p-6 transition-all hover:shadow-xl"
+        style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }}
+      >
         <div className="mb-6 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 text-violet-500">
             <SendHorizontal className="h-5 w-5" />
           </div>
-          <h3 className="text-lg font-bold" style={{ color: T.text }}>Transfer Money</h3>
+          <h3 className="text-lg font-bold" style={{ color: T.text }}>
+            Transfer Money
+          </h3>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-4">
@@ -222,7 +420,10 @@ const AdminWallet = () => {
                 />
               </div>
               {!selectedRecipient && recipientResults.length > 0 && (
-                <div className="mt-2 rounded-xl border overflow-hidden shadow-2xl" style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(20px)" }}>
+                <div
+                  className="mt-2 rounded-xl border overflow-hidden shadow-2xl"
+                  style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(20px)" }}
+                >
                   {recipientResults.map((u: any) => (
                     <button
                       key={u.id}
@@ -234,26 +435,46 @@ const AdminWallet = () => {
                       }}
                     >
                       <div className="text-left">
-                        <p className="font-bold" style={{ color: T.text }}>{u.full_name?.[0]}</p>
-                        <p className="text-xs" style={{ color: T.sub }}>{u.user_type === "employee" ? "Freelancer" : u.user_type === "client" ? "Employer" : u.user_type || "—"}</p>
+                        <p className="font-bold" style={{ color: T.text }}>
+                          {u.full_name?.[0]}
+                        </p>
+                        <p className="text-xs" style={{ color: T.sub }}>
+                          {u.user_type === "Freelancer"
+                            ? "Freelancer"
+                            : u.user_type === "Employer"
+                              ? "Employer"
+                              : u.user_type || "—"}
+                        </p>
                       </div>
-                      <Badge variant="outline" className="border-indigo-500/30 text-indigo-400">{u.wallet_number}</Badge>
+                      <Badge variant="outline" className="border-indigo-500/30 text-indigo-400">
+                        {u.wallet_number}
+                      </Badge>
                     </button>
                   ))}
                 </div>
               )}
               {selectedRecipient && (
-                <div className="flex items-center gap-3 rounded-xl border p-3 mt-2" style={{ background: "rgba(99,102,241,0.05)", borderColor: "rgba(99,102,241,0.2)" }}>
+                <div
+                  className="flex items-center gap-3 rounded-xl border p-3 mt-2"
+                  style={{ background: "rgba(99,102,241,0.05)", borderColor: "rgba(99,102,241,0.2)" }}
+                >
                   <div className="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-bold">
                     {selectedRecipient.full_name?.[0][0]}
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-bold" style={{ color: T.text }}>{selectedRecipient.full_name?.[0]}</p>
-                    <p className="text-[10px]" style={{ color: T.sub }}>{selectedRecipient.wallet_number}</p>
+                    <p className="text-sm font-bold" style={{ color: T.text }}>
+                      {selectedRecipient.full_name?.[0]}
+                    </p>
+                    <p className="text-[10px]" style={{ color: T.sub }}>
+                      {selectedRecipient.wallet_number}
+                    </p>
                   </div>
                   <button
                     className="text-xs font-medium text-red-400 hover:text-red-300"
-                    onClick={() => { setSelectedRecipient(null); setTransferSearch(""); }}
+                    onClick={() => {
+                      setSelectedRecipient(null);
+                      setTransferSearch("");
+                    }}
                   >
                     Change
                   </button>
@@ -289,7 +510,11 @@ const AdminWallet = () => {
                 onClick={handleTransfer}
                 disabled={transferMutation.isPending || !selectedRecipient}
               >
-                {transferMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <SendHorizontal className="mr-2 h-4 w-4" />}
+                {transferMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <SendHorizontal className="mr-2 h-4 w-4" />
+                )}
                 {transferMutation.isPending ? "Processing..." : "Confirm Transfer"}
               </Button>
             </div>
@@ -297,13 +522,20 @@ const AdminWallet = () => {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-3xl border p-6" style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }}>
+      <div
+        className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-3xl border p-6"
+        style={{ background: T.card, borderColor: T.border, backdropFilter: "blur(12px)" }}
+      >
         <div>
-          <h3 className="text-lg font-bold" style={{ color: T.text }}>Transaction History</h3>
-          <p className="text-sm" style={{ color: T.sub }}>View all your past wallet activity</p>
+          <h3 className="text-lg font-bold" style={{ color: T.text }}>
+            Transaction History
+          </h3>
+          <p className="text-sm" style={{ color: T.sub }}>
+            View all your past wallet activity
+          </p>
         </div>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={() => navigate("/admin/wallet/transactions")}
           className="rounded-xl px-6 h-11"
           style={{ borderColor: T.border, background: "transparent", color: T.text }}
@@ -313,6 +545,7 @@ const AdminWallet = () => {
         </Button>
       </div>
 
+      {/* TOTP Dialogs */}
       <TotpVerifyDialog
         open={showTotpForAddMoney}
         onClose={() => setShowTotpForAddMoney(false)}
@@ -333,6 +566,17 @@ const AdminWallet = () => {
         }}
         title="Authorize Transfer"
         description="Please enter your 2FA code to complete the fund transfer."
+      />
+
+      <TotpVerifyDialog
+        open={showTotpForEditWallet}
+        onClose={() => setShowTotpForEditWallet(false)}
+        onVerified={() => {
+          setShowTotpForEditWallet(false);
+          editWalletMutation.mutate();
+        }}
+        title="Verify Security Code"
+        description="Please enter your 2FA code to authorize updating your wallet number."
       />
     </div>
   );

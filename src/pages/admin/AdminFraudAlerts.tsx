@@ -50,12 +50,12 @@ export default function AdminFraudAlerts() {
     queryKey: ["admin-fraud-alerts"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("admin_audit_logs")
+        .from("admin_audit_logs" as any)
         .select("id, action, admin_id, created_at, details, target_profile_name")
         .order("created_at", { ascending: false })
         .limit(100);
       if (error) throw error;
-      return data || [];
+      return (data || []) as any[];
     },
     refetchInterval: 30000,
   });

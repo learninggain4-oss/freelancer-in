@@ -31,8 +31,8 @@ const AnnouncementPopup = () => {
     const fetchAnnouncement = async () => {
       // Determine which audiences apply to this user
       const audiences = ["everyone"];
-      if (profile.user_type === "employee") audiences.push("employees");
-      if (profile.user_type === "client") audiences.push("clients");
+      if (profile.user_type === "Freelancer") audiences.push("employees");
+      if (profile.user_type === "Employer") audiences.push("clients");
 
       // Get active announcements not yet dismissed by this user
       const { data: dismissed } = await supabase

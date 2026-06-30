@@ -15,6 +15,8 @@ import {
   CheckCircle2,
   ArrowLeft,
   Wallet,
+  Landmark,
+  Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -29,11 +31,28 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
+interface UserBankAccount {
+  id: string;
+  profile_id: string;
+  bank_name: string;
+  bank_holder_name: string;
+  bank_account_number: string;
+  bank_ifsc_code: string;
+  is_locked: boolean;
+  linked_upi_app_id: string | null;
+  created_at: string;
+}
+
+const maskAccount = (v: string) => {
+  if (!v) return "";
+  if (v.length <= 4) return v;
+  return "•".repeat(v.length - 4) + v.slice(-4);
+};
+
 const RequestWithdrawal = () => {
   const { profile, refreshProfile } = useAuth();
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [method, setMethod] = useState<"upi" | "bank">("upi");
-  const [selectedUpiAppId, setSelectedUpiAppId] = useState<string | null>(null);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [withdrawalPassword, setWithdrawalPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -43,25 +62,80 @@ const RequestWithdrawal = () => {
 
   const basePath = window.location.pathname.includes("/employer/") ? "/employer" : "/freelancer";
 
-  const savedBank = profile?.bank_account_number;
-  const savedIfsc = profile?.bank_ifsc_code;
-  const savedBankName = profile?.bank_name;
-  const savedHolderName = profile?.bank_holder_name;
-
-  const { data: bankVerification } = useQuery({
-    queryKey: ["bank-verification-status", profile?.id],
+  // 1. Fetch User Bank Accounts
+  const { data: bankAccounts = [] } = useQuery({
+    queryKey: ["user-bank-accounts", profile?.id],
     enabled: !!profile?.id,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("bank_verifications")
-        .select("status")
+      const { data, error } = await supabase
+        .from("user_bank_accounts" as any)
+        .select("*")
         .eq("profile_id", profile!.id)
-        .maybeSingle();
+        .order("created_at");
+      if (error) throw error;
+      return (data ?? []) as unknown as UserBankAccount[];
+    },
+  });
+
+  // 2. Fetch Bank Verifications
+  const { data: bankVerifications = [] } = useQuery({
+    queryKey: ["bank-verifications-by-account", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("bank_verifications")
+        .select("status, bank_account_id")
+        .eq("profile_id", profile!.id);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  // 3. Fetch Banks list for logos
+  const { data: banks = [] } = useQuery({
+    queryKey: ["banks-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("banks").select("id, name, logo_path").eq("is_active", true);
+      if (error) throw error;
       return data;
     },
   });
 
-  const isBankVerified = bankVerification?.status === "verified";
+  // 4. Fetch Payment Methods (UPI Apps Names)
+  const { data: paymentMethods = [] } = useQuery({
+    queryKey: ["payment-methods-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("payment_methods").select("id, name").eq("is_active", true);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // 5. Fetch saved UPI apps for KYC status
+  const KYC_DURATION_MS = 30 * 60 * 1000;
+  const { data: savedUpiApps = [] } = useQuery({
+    queryKey: ["freelancer-payment-apps", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("employee_payment_apps" as any)
+        .select("*")
+        .eq("profile_id", profile!.id);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const isUpiKycEnabled = (methodId: string | null) => {
+    if (!methodId) return false;
+    const app = savedUpiApps.find((s: any) => s.payment_method_id === methodId);
+    if (!app) return false;
+    if (app.kyc_status === "kyc_enabled" && app.kyc_enabled_at) {
+      const remaining = new Date(app.kyc_enabled_at).getTime() + KYC_DURATION_MS - Date.now();
+      return remaining > 0;
+    }
+    return false;
+  };
 
   const { data: passwordStatus } = useQuery({
     queryKey: ["withdrawal-password-status"],
@@ -74,57 +148,26 @@ const RequestWithdrawal = () => {
     },
   });
 
-  const { data: orderIdFormat } = useQuery({
-    queryKey: ["order-id-format-setting"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("app_settings")
-        .select("value")
-        .eq("key", "withdrawal_order_id_length")
-        .maybeSingle();
-      return Number(data?.value) || 15;
-    },
-  });
-
   const hasWithdrawalPassword = passwordStatus?.has_password ?? false;
-
-  const { data: upiApps } = useQuery({
-    queryKey: ["freelancer-upi-apps", profile?.id],
-    enabled: !!profile?.id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("employee_payment_apps")
-        .select("*, payment_methods(id, name, logo_path)")
-        .eq("profile_id", profile!.id)
-        .order("is_primary", { ascending: false });
-      return data ?? [];
-    },
-  });
-
-  const { data: bankRecord } = useQuery({
-    queryKey: ["bank-logo", savedBankName],
-    enabled: !!savedBankName,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("banks")
-        .select("name, logo_path")
-        .eq("name", savedBankName!)
-        .eq("is_active", true)
-        .maybeSingle();
-      return data;
-    },
-  });
-
-  const getLogoUrl = (path: string | null | undefined) => {
-    if (!path) return null;
-    if (path.startsWith("http")) return path;
-    return supabase.storage.from("payment-method-logos").getPublicUrl(path).data.publicUrl;
-  };
 
   const getBankLogoUrl = (path: string | null | undefined) => {
     if (!path) return null;
     if (path.startsWith("http")) return path;
     return supabase.storage.from("bank-logos").getPublicUrl(path).data.publicUrl;
+  };
+
+  const isAccountVerified = (accountId: string) =>
+    bankVerifications.some((v: any) => v.bank_account_id === accountId && v.status === "verified");
+
+  const verifiedAccounts = bankAccounts.filter(
+    (acc) => isAccountVerified(acc.id) && !!acc.linked_upi_app_id && isUpiKycEnabled(acc.linked_upi_app_id),
+  );
+  const selectedAccount = verifiedAccounts.find((acc) => acc.id === selectedAccountId);
+
+  const getLinkedUpiName = (linkedUpiAppId: string | null) => {
+    if (!linkedUpiAppId) return null;
+    const method = paymentMethods.find((m: any) => m.id === linkedUpiAppId);
+    return method ? method.name : null;
   };
 
   const parseEdgeFunctionError = async (invokeError: any) => {
@@ -136,7 +179,9 @@ const RequestWithdrawal = () => {
       try {
         const parsed = JSON.parse(raw);
         return typeof parsed?.error === "string" ? parsed.error : null;
-      } catch { return null; }
+      } catch {
+        return null;
+      }
     };
     try {
       if (response?.clone && typeof response.clone === "function") {
@@ -155,26 +200,25 @@ const RequestWithdrawal = () => {
     return fallback;
   };
 
-  const selectedApp = upiApps?.find((a) => a.id === selectedUpiAppId);
-
   const withdrawMutation = useMutation({
     mutationFn: async () => {
       if (!profile?.id) throw new Error("Not authenticated");
       const amount = Number(withdrawAmount);
       if (!amount || amount <= 0) throw new Error("Enter a valid amount");
       if (amount > (profile?.available_balance ?? 0)) throw new Error("Insufficient balance");
-      if (method === "upi" && !selectedApp) throw new Error("Please select a UPI app");
-      if (method === "bank" && !savedBank) throw new Error("No bank account saved in your profile");
+      if (!selectedAccount) throw new Error("Please select a verified bank account");
+
+      const linkedUpiName = getLinkedUpiName(selectedAccount.linked_upi_app_id);
 
       const res = await supabase.functions.invoke("wallet-operations", {
         body: {
           action: "request_withdrawal",
           amount,
-          bank_holder_name: savedHolderName || null,
-          upi_id: method === "upi" ? (selectedApp as any)?.payment_methods?.name : null,
-          bank_account_number: method === "bank" ? savedBank : null,
-          bank_ifsc_code: method === "bank" ? savedIfsc : null,
-          bank_name: method === "bank" ? savedBankName : null,
+          bank_holder_name: selectedAccount.bank_holder_name,
+          upi_id: linkedUpiName,
+          bank_account_number: selectedAccount.bank_account_number,
+          bank_ifsc_code: selectedAccount.bank_ifsc_code,
+          bank_name: selectedAccount.bank_name,
         },
       });
 
@@ -185,20 +229,26 @@ const RequestWithdrawal = () => {
       if (res.data?.error) throw new Error(res.data.error);
       return res.data;
     },
-    onSuccess: (data: any) => {
+    onSuccess: async (data: any) => {
       const generatedOrderId = typeof data?.order_id === "string" ? data.order_id : null;
       toast.success(
         generatedOrderId
           ? `Withdrawal request submitted • Order ID: ${generatedOrderId}`
-          : "Withdrawal request submitted"
+          : "Withdrawal request submitted",
       );
       setWithdrawAmount("");
-      setSelectedUpiAppId(null);
+      setSelectedAccountId(null);
       setShowPasswordDialog(false);
       setWithdrawalPassword("");
       refreshProfile();
-      queryClient.invalidateQueries({ queryKey: ["freelancer-withdrawals"] });
-      queryClient.invalidateQueries({ queryKey: ["freelancer-transactions"] });
+
+      // Invalidate transactions cache specifying the exact query key to reflect the same order ID instantly
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["all-withdrawals"] }),
+        queryClient.invalidateQueries({ queryKey: ["all-transactions", profile?.id] }),
+        queryClient.invalidateQueries({ queryKey: ["freelancer-withdrawals"] }),
+        queryClient.invalidateQueries({ queryKey: ["freelancer-transactions"] }),
+      ]);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -210,15 +260,26 @@ const RequestWithdrawal = () => {
       return;
     }
     const amount = Number(withdrawAmount);
-    if (!amount || amount <= 0) { toast.error("Enter a valid amount"); return; }
-    if (amount > (profile?.available_balance ?? 0)) { toast.error("Insufficient balance"); return; }
-    if (method === "upi" && !selectedUpiAppId) { toast.error("Please select a UPI app"); return; }
-    if (method === "bank" && !savedBank) { toast.error("No bank account saved"); return; }
+    if (!amount || amount <= 0) {
+      toast.error("Enter a valid amount");
+      return;
+    }
+    if (amount > (profile?.available_balance ?? 0)) {
+      toast.error("Insufficient balance");
+      return;
+    }
+    if (!selectedAccountId) {
+      toast.error("Please select a verified bank account");
+      return;
+    }
     setShowPasswordDialog(true);
   };
 
   const handleVerifyAndWithdraw = async () => {
-    if (!withdrawalPassword) { toast.error("Enter your withdrawal password"); return; }
+    if (!withdrawalPassword) {
+      toast.error("Enter your withdrawal password");
+      return;
+    }
     setVerifyingPassword(true);
     try {
       const { data, error } = await supabase.functions.invoke("withdrawal-password", {
@@ -226,7 +287,10 @@ const RequestWithdrawal = () => {
       });
       if (error) throw new Error("Verification failed");
       if (data?.error) throw new Error(data.error);
-      if (!data?.valid) { toast.error("Incorrect withdrawal password"); return; }
+      if (!data?.valid) {
+        toast.error("Incorrect withdrawal password");
+        return;
+      }
       withdrawMutation.mutate();
     } catch (err: any) {
       toast.error(err.message || "Password verification failed");
@@ -265,7 +329,15 @@ const RequestWithdrawal = () => {
           <Lock className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
             <span>You must create a Withdrawal Password before you can withdraw funds.</span>
-            <Button variant="link" size="sm" className="h-auto p-0 ml-1 text-warning underline" onClick={() => navigate("/account-settings")}>
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto p-0 ml-1 text-warning underline"
+              onClick={() => {
+                const base = profile?.user_type === "Employer" ? "/employer" : "/freelancer";
+                navigate(`${base}/settings/security/withdrawal-password`);
+              }}
+            >
               Create Now →
             </Button>
           </div>
@@ -288,11 +360,6 @@ const RequestWithdrawal = () => {
           </div>
           <div>
             <CardTitle className="text-sm font-semibold text-foreground">Withdrawal Details</CardTitle>
-            {isBankVerified && (
-              <div className="flex items-center gap-1 text-[10px] text-accent font-medium mt-0.5">
-                <BadgeCheck className="h-3 w-3" /> Bank Verified
-              </div>
-            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -307,149 +374,119 @@ const RequestWithdrawal = () => {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-xs font-medium">Order ID</Label>
-            <Input
-              type="text"
-              value="Auto-generated on confirmation"
-              readOnly
-              className="h-12 text-sm font-medium bg-muted/50"
-            />
-            <p className="text-[11px] text-muted-foreground">
-              A unique {orderIdFormat || 15}-digit Order ID is generated automatically for every withdrawal.
-            </p>
-          </div>
+          {/* Verified Accounts Section */}
+          <div className="space-y-3">
+            <Label className="text-xs font-medium text-muted-foreground">Select Verified Bank Account</Label>
 
-          <div className="space-y-2">
-            <Label className="text-xs font-medium">Payment Method</Label>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant={method === "upi" ? "default" : "outline"}
-                className="flex-1 h-11"
-                onClick={() => setMethod("upi")}
-              >
-                UPI
-              </Button>
-              <Button
-                type="button"
-                variant={method === "bank" ? "default" : "outline"}
-                className="flex-1 h-11"
-                onClick={() => setMethod("bank")}
-              >
-                Bank Transfer
-              </Button>
-            </div>
-          </div>
+            {verifiedAccounts.length > 0 ? (
+              <div className="space-y-2.5">
+                {verifiedAccounts.map((account) => {
+                  const bankInfo = banks.find((b: any) => b.name === account.bank_name);
+                  const logoUrl = bankInfo ? getBankLogoUrl((bankInfo as any).logo_path) : null;
+                  const isSelected = selectedAccountId === account.id;
+                  const linkedUpiName = getLinkedUpiName(account.linked_upi_app_id);
 
-          {method === "upi" ? (
-            <div className="space-y-3">
-              <p className="text-xs font-medium text-muted-foreground">Select UPI App</p>
-              {upiApps && upiApps.length > 0 ? (
-                <div className="grid grid-cols-2 gap-2">
-                  {upiApps.map((app) => {
-                    const pm = (app as any).payment_methods;
-                    const logoUrl = getLogoUrl(pm?.logo_path);
-                    const isSelected = selectedUpiAppId === app.id;
-                    return (
-                      <button
-                        key={app.id}
-                        type="button"
-                        onClick={() => setSelectedUpiAppId(app.id)}
-                        className={`relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all ${
-                          isSelected
-                            ? "border-primary bg-primary/5 shadow-sm"
-                            : "border-border bg-card hover:border-primary/40"
-                        }`}
-                      >
-                        {isSelected && <CheckCircle2 className="absolute right-1.5 top-1.5 h-4 w-4 text-primary" />}
-                        {logoUrl ? (
-                          <img src={logoUrl} alt={pm?.name} className="h-10 w-10 rounded-md object-contain" />
-                        ) : (
-                          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted text-xs font-bold text-muted-foreground">
-                            {pm?.name?.charAt(0) ?? "?"}
+                  return (
+                    <button
+                      key={account.id}
+                      type="button"
+                      onClick={() => setSelectedAccountId(account.id)}
+                      className={`w-full relative flex items-start gap-3 rounded-xl border-2 p-3 text-left transition-all ${
+                        isSelected
+                          ? "border-primary bg-primary/5 shadow-sm"
+                          : "border-border bg-card hover:border-primary/40"
+                      }`}
+                    >
+                      {isSelected && <CheckCircle2 className="absolute right-3 top-3 h-4 w-4 text-primary" />}
+
+                      {logoUrl ? (
+                        <img loading="lazy" decoding="async" src={logoUrl} alt="" className="mt-0.5 h-9 w-9 shrink-0 rounded object-contain" />
+                      ) : (
+                        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-muted text-xs font-bold text-muted-foreground shrink-0">
+                          <Landmark className="h-4 w-4" />
+                        </div>
+                      )}
+
+                      <div className="space-y-1 min-w-0 pr-6">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-semibold text-foreground truncate">{account.bank_name}</p>
+                          <span className="flex items-center gap-0.5 text-[10px] text-green-600 bg-green-50 px-1.5 py-0.2 rounded font-medium border border-green-200">
+                            <BadgeCheck className="h-3 w-3" /> Verified
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">Holder: {account.bank_holder_name}</p>
+                        <p className="text-xs font-mono text-foreground">
+                          A/C: {maskAccount(account.bank_account_number)}
+                        </p>
+
+                        {linkedUpiName && (
+                          <div className="flex items-center gap-1 mt-1.5 pt-1.5 border-t border-dashed border-border text-[11px] text-primary font-medium">
+                            <Smartphone className="h-3 w-3" />
+                            <span>Linked UPI: {linkedUpiName}</span>
                           </div>
                         )}
-                        <span className="text-xs font-medium text-foreground truncate w-full text-center">{pm?.name}</span>
-                        {app.phone_number && <span className="text-[10px] text-muted-foreground">{app.phone_number}</span>}
-                        {app.is_primary && <span className="text-[10px] font-medium text-primary">Primary</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="rounded-xl border border-dashed p-4 text-center">
-                  <p className="text-sm text-muted-foreground">No UPI apps saved</p>
-                  <Button variant="link" size="sm" className="mt-1 h-auto p-0 text-xs" onClick={() => navigate("/profile/upi-apps")}>
-                    Add UPI Apps in Profile →
-                  </Button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">Bank Account Details</p>
-              {savedBank ? (
-                <div className="flex items-start gap-3 rounded-xl border p-3">
-                  {bankRecord?.logo_path ? (
-                    <img src={getBankLogoUrl(bankRecord.logo_path) ?? ""} alt={savedBankName ?? "Bank"} className="h-10 w-10 rounded-md object-contain shrink-0" />
-                  ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted text-xs font-bold text-muted-foreground shrink-0">
-                      {savedBankName?.charAt(0) ?? "B"}
-                    </div>
-                  )}
-                  <div className="space-y-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground">{savedBankName || "Bank"}</p>
-                    <p className="text-xs text-muted-foreground">Holder: {savedHolderName || "—"}</p>
-                    <p className="text-xs text-muted-foreground">A/C: {savedBank}</p>
-                    <p className="text-xs text-muted-foreground">IFSC: {savedIfsc || "—"}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-xl border border-dashed p-4 text-center">
-                  <p className="text-sm text-muted-foreground">No bank details saved</p>
-                  <Button variant="link" size="sm" className="mt-1 h-auto p-0 text-xs" onClick={() => navigate("/profile/bank-details")}>
-                    Add Bank Details in Profile →
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {!isBankVerified && (
-            <div className="flex items-start gap-2 rounded-xl bg-warning/10 p-3 text-sm text-warning">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>Bank details must be verified before withdrawing. Submit for verification in your Profile.</span>
-            </div>
-          )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed p-5 text-center bg-muted/20">
+                <p className="text-sm text-muted-foreground">No eligible bank accounts available</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Withdrawals are only allowed to verified bank accounts with a linked UPI app.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 text-xs"
+                  onClick={() =>
+                    navigate(
+                      profile?.user_type === "Employer"
+                        ? "/employer/profile/bank-details"
+                        : "/freelancer/profile/bank-details",
+                    )
+                  }
+                >
+                  Go to Bank Details →
+                </Button>
+              </div>
+            )}
+          </div>
 
           <Button
             className="w-full h-12 text-sm font-semibold"
             onClick={handleWithdrawClick}
             disabled={
               withdrawMutation.isPending ||
-              !isBankVerified ||
-              !(profile as any)?.wallet_active ||
-              (method === "upi" && !selectedUpiAppId)
+              verifiedAccounts.length === 0 ||
+              !selectedAccountId ||
+              !(profile as any)?.wallet_active
             }
           >
             {withdrawMutation.isPending
               ? "Submitting..."
               : !(profile as any)?.wallet_active
-              ? "Wallet Inactive"
-              : !isBankVerified
-              ? "Bank Verification Required"
-              : !hasWithdrawalPassword
-              ? "Set Withdrawal Password First"
-              : method === "upi" && !selectedUpiAppId
-              ? "Select a UPI App"
-              : "Enter Withdrawal"}
+                ? "Wallet Inactive"
+                : verifiedAccounts.length === 0
+                  ? "No Verified Bank with Linked UPI"
+                  : !selectedAccountId
+                    ? "Select a Bank Account"
+                    : !hasWithdrawalPassword
+                      ? "Set Withdrawal Password First"
+                      : "Confirm & Request Withdrawal"}
           </Button>
         </CardContent>
       </Card>
 
       {/* Withdrawal Password Dialog */}
-      <Dialog open={showPasswordDialog} onOpenChange={(open) => { setShowPasswordDialog(open); if (!open) setWithdrawalPassword(""); }}>
+      <Dialog
+        open={showPasswordDialog}
+        onOpenChange={(open) => {
+          setShowPasswordDialog(open);
+          if (!open) setWithdrawalPassword("");
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -457,7 +494,8 @@ const RequestWithdrawal = () => {
               Withdrawal Password
             </DialogTitle>
             <DialogDescription>
-              Enter your withdrawal password to confirm this withdrawal of ₹{Number(withdrawAmount).toLocaleString("en-IN")}.
+              Enter your withdrawal password to confirm this withdrawal of ₹
+              {Number(withdrawAmount).toLocaleString("en-IN")}.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -481,7 +519,9 @@ const RequestWithdrawal = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
+              Cancel
+            </Button>
             <Button onClick={handleVerifyAndWithdraw} disabled={verifyingPassword || withdrawMutation.isPending}>
               {verifyingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {verifyingPassword ? "Verifying..." : "Confirm Withdrawal"}

@@ -25,6 +25,9 @@ serve(async (req) => {
     // Geo lookup using ipapi.co with the real IP
     let city: string | null = null;
     let country: string | null = null;
+    let region: string | null = null;
+    let latitude: number | null = null;
+    let longitude: number | null = null;
     if (ip_address) {
       try {
         const geoRes = await fetch(`https://ipapi.co/${ip_address}/json/`, {
@@ -34,6 +37,9 @@ serve(async (req) => {
           const geo = await geoRes.json();
           city = geo.city || null;
           country = geo.country_name || null;
+          region = geo.region || null;
+          latitude = typeof geo.latitude === "number" ? geo.latitude : null;
+          longitude = typeof geo.longitude === "number" ? geo.longitude : null;
         }
       } catch {
         // Geo lookup is optional
@@ -58,6 +64,26 @@ serve(async (req) => {
     });
 
     if (error) throw error;
+
+    // Prefer precise browser geolocation when the user allowed it.
+    const finalLat = typeof body.browser_latitude === "number" ? body.browser_latitude : latitude;
+    const finalLng = typeof body.browser_longitude === "number" ? body.browser_longitude : longitude;
+
+    // Update profile's latest captured location (lat/lng + city/region/country/ip)
+    if (body.profile_id) {
+      try {
+        await supabaseAdmin.from("profiles").update({
+          registration_ip: ip_address,
+          registration_city: city,
+          registration_region: region,
+          registration_country: country,
+          registration_latitude: finalLat,
+          registration_longitude: finalLng,
+        }).eq("id", body.profile_id);
+      } catch {
+        // best-effort
+      }
+    }
 
     // Check if this IP is blocked
     let blocked = false;

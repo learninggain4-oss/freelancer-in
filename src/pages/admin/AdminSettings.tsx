@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Clock, Landmark, Gift, CreditCard, Search, X, Coins, CheckCircle, Briefcase, Calendar, Star, Users, Receipt, Settings, Globe, Share2 } from "lucide-react";
+import { Loader2, Save, Clock, Landmark, Gift, CreditCard, Search, X, Coins, CheckCircle, Briefcase, Calendar, Star, Users, Receipt, Settings, Globe, Share2, PlusCircle, ArrowLeftRight, ArrowDownToLine } from "lucide-react";
 import TotpSetupCard from "@/components/admin/TotpSetupCard";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,10 @@ const AdminSettings = () => {
   const [maxBankAttempts, setMaxBankAttempts] = useState("");
   const [signupBonus, setSignupBonus] = useState("");
   const [jobBonus, setJobBonus] = useState("");
+  const [firstTimeDepositCashback, setFirstTimeDepositCashback] = useState("");
+  const [addMoneyBadgePercent, setAddMoneyBadgePercent] = useState("");
+  const [transferBadgePercent, setTransferBadgePercent] = useState("");
+  const [withdrawBadgePercent, setWithdrawBadgePercent] = useState("");
   const [referralTerms, setReferralTerms] = useState("");
   const [referralShareMsg, setReferralShareMsg] = useState("Join Freelancer as a {role} using my referral code: {code}\nSign up at {link}");
   const [coinRate, setCoinRate] = useState("");
@@ -78,7 +82,7 @@ const AdminSettings = () => {
     const { data } = await supabase
       .from("profiles")
       .select("id, full_name, user_code, email, payment_sharing_enabled")
-      .eq("user_type", "client")
+      .eq("user_type", "Employer")
       .eq("approval_status", "approved")
       .order("full_name", { ascending: true });
     setClients((data as ClientPaymentRow[]) || []);
@@ -95,6 +99,10 @@ const AdminSettings = () => {
           "max_bank_verification_attempts",
           "referral_signup_bonus",
           "referral_job_bonus",
+          "first_time_deposit_cashback_percentage",
+          "add_money_badge_percent",
+          "transfer_badge_percent",
+          "withdraw_badge_percent",
           "referral_terms_conditions",
           "referral_share_message",
           "employee_code_prefix",
@@ -129,6 +137,10 @@ const AdminSettings = () => {
           if (row.key === "max_bank_verification_attempts") setMaxBankAttempts(row.value);
           if (row.key === "referral_signup_bonus") setSignupBonus(row.value);
           if (row.key === "referral_job_bonus") setJobBonus(row.value);
+          if (row.key === "first_time_deposit_cashback_percentage") setFirstTimeDepositCashback(row.value);
+          if (row.key === "add_money_badge_percent") setAddMoneyBadgePercent(row.value);
+          if (row.key === "transfer_badge_percent") setTransferBadgePercent(row.value);
+          if (row.key === "withdraw_badge_percent") setWithdrawBadgePercent(row.value);
           if (row.key === "referral_terms_conditions") setReferralTerms(row.value.replace(/\\n/g, "\n"));
           if (row.key === "referral_share_message") setReferralShareMsg(row.value.replace(/\\n/g, "\n"));
           if (row.key === "employee_code_prefix") setEmpPrefix(row.value);
@@ -516,6 +528,186 @@ const AdminSettings = () => {
                 Save
               </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+          <CardHeader className="pb-3 border-b" style={{ borderColor: T.border }}>
+            <CardTitle className="flex items-center gap-2 text-lg" style={{ color: T.text }}>
+              <Gift className="h-5 w-5 text-[#6366f1]" />
+              First-Time Deposit Cashback
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-4">
+            <p className="text-sm" style={{ color: T.sub }}>
+              Reward percentage for users making their first deposit. This cashback is shown as a badge on the "Add Money" button.
+            </p>
+            <div className="flex items-end gap-3">
+              <div className="flex-1 space-y-2">
+                <Label style={{ color: T.text }}>Cashback Percentage (%)</Label>
+                <Input 
+                  type="number" 
+                  min="0" 
+                  max="100" 
+                  value={firstTimeDepositCashback} 
+                  onChange={(e) => setFirstTimeDepositCashback(e.target.value)} 
+                  style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                  placeholder="e.g., 10"
+                />
+              </div>
+              <Button 
+                onClick={() => handleSaveSetting("first_time_deposit_cashback_percentage", firstTimeDepositCashback, "First-time deposit cashback", 0, 100)} 
+                disabled={saving === "first_time_deposit_cashback_percentage"} 
+                className="gap-2 bg-[#6366f1] hover:bg-[#6366f1]/90 text-white"
+              >
+                {saving === "first_time_deposit_cashback_percentage" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save
+              </Button>
+            </div>
+            {firstTimeDepositCashback && (
+              <div className="rounded-xl p-4" style={{ background: theme === "black" ? "rgba(99,102,241,0.1)" : "rgba(99,102,241,0.05)", border: `1px solid rgba(99,102,241,0.2)` }}>
+                <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2">Preview Badge</p>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold" style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.2), rgba(16,185,129,0.2))", border: "1px solid rgba(34,197,94,0.3)", color: "#10b981" }}>
+                  <span>🎉</span>
+                  <span>{firstTimeDepositCashback}% Cashback</span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+          <CardHeader className="pb-3 border-b" style={{ borderColor: T.border }}>
+            <CardTitle className="flex items-center gap-2 text-lg" style={{ color: T.text }}>
+              <PlusCircle className="h-5 w-5 text-[#6366f1]" />
+              Add Money Badge Percentage
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-4">
+            <p className="text-sm" style={{ color: T.sub }}>
+              Badge percentage shown on the "Add Money" button for special promotions.
+            </p>
+            <div className="flex items-end gap-3">
+              <div className="flex-1 space-y-2">
+                <Label style={{ color: T.text }}>Badge Percentage (%)</Label>
+                <Input 
+                  type="number" 
+                  min="0" 
+                  max="100" 
+                  value={addMoneyBadgePercent} 
+                  onChange={(e) => setAddMoneyBadgePercent(e.target.value)} 
+                  style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                  placeholder="e.g., 15"
+                />
+              </div>
+              <Button 
+                onClick={() => handleSaveSetting("add_money_badge_percent", addMoneyBadgePercent, "Add money badge", 0, 100)} 
+                disabled={saving === "add_money_badge_percent"} 
+                className="gap-2 bg-[#6366f1] hover:bg-[#6366f1]/90 text-white"
+              >
+                {saving === "add_money_badge_percent" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save
+              </Button>
+            </div>
+            {addMoneyBadgePercent && (
+              <div className="rounded-xl p-4" style={{ background: theme === "black" ? "rgba(59,130,246,0.1)" : "rgba(59,130,246,0.05)", border: `1px solid rgba(59,130,246,0.2)` }}>
+                <p className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2">Preview Badge</p>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.2), rgba(37,99,235,0.2))", border: "1px solid rgba(59,130,246,0.3)", color: "#3b82f6" }}>
+                  <span>✨</span>
+                  <span>{addMoneyBadgePercent}% Bonus</span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+          <CardHeader className="pb-3 border-b" style={{ borderColor: T.border }}>
+            <CardTitle className="flex items-center gap-2 text-lg" style={{ color: T.text }}>
+              <ArrowLeftRight className="h-5 w-5 text-[#6366f1]" />
+              Transfer Badge Percentage
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-4">
+            <p className="text-sm" style={{ color: T.sub }}>
+              Badge percentage shown on the "Transfer" button for wallet-to-wallet transfers.
+            </p>
+            <div className="flex items-end gap-3">
+              <div className="flex-1 space-y-2">
+                <Label style={{ color: T.text }}>Badge Percentage (%)</Label>
+                <Input 
+                  type="number" 
+                  min="0" 
+                  max="100" 
+                  value={transferBadgePercent} 
+                  onChange={(e) => setTransferBadgePercent(e.target.value)} 
+                  style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                  placeholder="e.g., 5"
+                />
+              </div>
+              <Button 
+                onClick={() => handleSaveSetting("transfer_badge_percent", transferBadgePercent, "Transfer badge", 0, 100)} 
+                disabled={saving === "transfer_badge_percent"} 
+                className="gap-2 bg-[#6366f1] hover:bg-[#6366f1]/90 text-white"
+              >
+                {saving === "transfer_badge_percent" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save
+              </Button>
+            </div>
+            {transferBadgePercent && (
+              <div className="rounded-xl p-4" style={{ background: theme === "black" ? "rgba(245,158,11,0.1)" : "rgba(245,158,11,0.05)", border: `1px solid rgba(245,158,11,0.2)` }}>
+                <p className="text-xs font-bold text-amber-400 uppercase tracking-widest mb-2">Preview Badge</p>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold" style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(217,119,6,0.2))", border: "1px solid rgba(245,158,11,0.3)", color: "#f59e0b" }}>
+                  <span>🚀</span>
+                  <span>{transferBadgePercent}% Rewards</span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card style={{ background: T.card, border: `1px solid ${T.border}`, backdropFilter: "blur(12px)" }}>
+          <CardHeader className="pb-3 border-b" style={{ borderColor: T.border }}>
+            <CardTitle className="flex items-center gap-2 text-lg" style={{ color: T.text }}>
+              <ArrowDownToLine className="h-5 w-5 text-[#6366f1]" />
+              Withdraw Badge Percentage
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-4">
+            <p className="text-sm" style={{ color: T.sub }}>
+              Badge percentage shown on the "Withdraw" button for withdrawal operations.
+            </p>
+            <div className="flex items-end gap-3">
+              <div className="flex-1 space-y-2">
+                <Label style={{ color: T.text }}>Badge Percentage (%)</Label>
+                <Input 
+                  type="number" 
+                  min="0" 
+                  max="100" 
+                  value={withdrawBadgePercent} 
+                  onChange={(e) => setWithdrawBadgePercent(e.target.value)} 
+                  style={{ background: T.input, border: `1px solid ${T.border}`, color: T.text }}
+                  placeholder="e.g., 2"
+                />
+              </div>
+              <Button 
+                onClick={() => handleSaveSetting("withdraw_badge_percent", withdrawBadgePercent, "Withdraw badge", 0, 100)} 
+                disabled={saving === "withdraw_badge_percent"} 
+                className="gap-2 bg-[#6366f1] hover:bg-[#6366f1]/90 text-white"
+              >
+                {saving === "withdraw_badge_percent" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save
+              </Button>
+            </div>
+            {withdrawBadgePercent && (
+              <div className="rounded-xl p-4" style={{ background: theme === "black" ? "rgba(139,92,246,0.1)" : "rgba(139,92,246,0.05)", border: `1px solid rgba(139,92,246,0.2)` }}>
+                <p className="text-xs font-bold text-purple-400 uppercase tracking-widest mb-2">Preview Badge</p>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(124,58,237,0.2))", border: "1px solid rgba(139,92,246,0.3)", color: "#8b5cf6" }}>
+                  <span>💜</span>
+                  <span>{withdrawBadgePercent}% Extra</span>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useMemo, useState } from "react";
 import WalletCard from "@/components/wallet/WalletCard";
+import TransferDialog from "@/components/wallet/TransferDialog";
 import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -93,6 +94,7 @@ const ClientDashboard = () => {
   const { theme, themeKey } = useDashboardTheme();
   const tok = TH[themeKey];
   const [chartTab, setChartTab] = useState<"spending" | "jobs">("spending");
+  const [showTransfer, setShowTransfer] = useState(false);
 
   const handleRefresh = useCallback(async () => {
     await Promise.all([
@@ -221,6 +223,7 @@ const ClientDashboard = () => {
   };
 
   return (
+    <>
     <div ref={containerRef} style={{ position: "relative", height: "100%", overflowY: "auto" }}>
       {/* Pull-to-refresh */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", transition: "all .2s ease-out", height: pullDistance > 0 ? pullDistance : 0 }}>
@@ -259,6 +262,7 @@ const ClientDashboard = () => {
           availableBalance={profile?.available_balance ?? 0}
           holdBalance={profile?.hold_balance ?? 0}
           walletActive={(profile as any)?.wallet_active ?? true}
+          onTransfer={() => setShowTransfer(true)}
         />
 
         {/* ── Wallet Type Badge ── */}
@@ -573,6 +577,17 @@ const ClientDashboard = () => {
 
       </div>
     </div>
+
+    <TransferDialog
+      open={showTransfer}
+      onOpenChange={setShowTransfer}
+      maxBalance={profile?.available_balance ?? 0}
+      onSuccess={() => {
+        refreshProfile();
+        queryClient.invalidateQueries({ queryKey: ["employer-transactions", profile?.id] });
+      }}
+    />
+    </>
   );
 };
 

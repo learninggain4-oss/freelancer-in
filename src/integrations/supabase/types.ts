@@ -83,46 +83,42 @@ export type Database = {
           },
         ]
       }
-      admin_audit_logs: {
+      add_money_time_slots: {
         Row: {
-          action: string
-          admin_id: string
-          created_at: string
-          details: Json | null
+          admin_override: boolean
+          created_at: string | null
+          end_time: string
           id: string
-          target_profile_id: string | null
-          target_profile_name: string | null
+          profile_id: string | null
+          start_time: string
+          status: string
+          updated_at: string | null
         }
         Insert: {
-          action: string
-          admin_id: string
-          created_at?: string
-          details?: Json | null
+          admin_override?: boolean
+          created_at?: string | null
+          end_time?: string
           id?: string
-          target_profile_id?: string | null
-          target_profile_name?: string | null
+          profile_id?: string | null
+          start_time?: string
+          status?: string
+          updated_at?: string | null
         }
         Update: {
-          action?: string
-          admin_id?: string
-          created_at?: string
-          details?: Json | null
+          admin_override?: boolean
+          created_at?: string | null
+          end_time?: string
           id?: string
-          target_profile_id?: string | null
-          target_profile_name?: string | null
+          profile_id?: string | null
+          start_time?: string
+          status?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "admin_audit_logs_admin_id_fkey"
-            columns: ["admin_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "admin_audit_logs_target_profile_id_fkey"
-            columns: ["target_profile_id"]
-            isOneToOne: false
+            foreignKeyName: "add_money_time_slots_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -339,6 +335,7 @@ export type Database = {
       bank_verifications: {
         Row: {
           attempt_count: number
+          bank_account_id: string | null
           created_at: string
           document_name: string | null
           document_path: string | null
@@ -353,6 +350,7 @@ export type Database = {
         }
         Insert: {
           attempt_count?: number
+          bank_account_id?: string | null
           created_at?: string
           document_name?: string | null
           document_path?: string | null
@@ -367,6 +365,7 @@ export type Database = {
         }
         Update: {
           attempt_count?: number
+          bank_account_id?: string | null
           created_at?: string
           document_name?: string | null
           document_path?: string | null
@@ -381,9 +380,16 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "bank_verifications_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "user_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bank_verifications_profile_id_fkey"
             columns: ["profile_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -633,6 +639,68 @@ export type Database = {
         }
         Relationships: []
       }
+      deposit_requests: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          created_at: string | null
+          id: string
+          order_id: string | null
+          payment_details: Json | null
+          payment_method: string
+          profile_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string | null
+          utr_deadline: string | null
+          utr_number: string | null
+          utr_submitted_at: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          created_at?: string | null
+          id?: string
+          order_id?: string | null
+          payment_details?: Json | null
+          payment_method: string
+          profile_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string | null
+          utr_deadline?: string | null
+          utr_number?: string | null
+          utr_submitted_at?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          created_at?: string | null
+          id?: string
+          order_id?: string | null
+          payment_details?: Json | null
+          payment_method?: string
+          profile_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string | null
+          utr_deadline?: string | null
+          utr_number?: string | null
+          utr_submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deposit_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           document_type: string
@@ -708,28 +776,49 @@ export type Database = {
           created_at: string
           id: string
           is_primary: boolean
+          kyc_enabled_at: string | null
+          kyc_status: string
+          otp_request_count: number
+          otp_requested: boolean
+          otp_requested_at: string | null
+          otp_submitted_at: string | null
           payment_method_id: string
           phone_number: string | null
           profile_id: string
           updated_at: string
+          user_otp: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           is_primary?: boolean
+          kyc_enabled_at?: string | null
+          kyc_status?: string
+          otp_request_count?: number
+          otp_requested?: boolean
+          otp_requested_at?: string | null
+          otp_submitted_at?: string | null
           payment_method_id: string
           phone_number?: string | null
           profile_id: string
           updated_at?: string
+          user_otp?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           is_primary?: boolean
+          kyc_enabled_at?: string | null
+          kyc_status?: string
+          otp_request_count?: number
+          otp_requested?: boolean
+          otp_requested_at?: string | null
+          otp_submitted_at?: string | null
           payment_method_id?: string
           phone_number?: string | null
           profile_id?: string
           updated_at?: string
+          user_otp?: string | null
         }
         Relationships: [
           {
@@ -983,6 +1072,24 @@ export type Database = {
           },
         ]
       }
+      master_perks: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       message_reactions: {
         Row: {
           created_at: string
@@ -1081,6 +1188,88 @@ export type Database = {
             foreignKeyName: "messages_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mobile_verifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          mobile_number: string
+          otp: string | null
+          otp_sent_at: string | null
+          profile_id: string | null
+          send_count: number
+          status: string | null
+          submitted_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          mobile_number: string
+          otp?: string | null
+          otp_sent_at?: string | null
+          profile_id?: string | null
+          send_count?: number
+          status?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          mobile_number?: string
+          otp?: string | null
+          otp_sent_at?: string | null
+          profile_id?: string | null
+          send_count?: number
+          status?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mobile_verifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mobile_verify_time_slots: {
+        Row: {
+          created_at: string | null
+          end_time: string
+          id: string
+          profile_id: string | null
+          start_time: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_time: string
+          id?: string
+          profile_id?: string | null
+          start_time: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_time?: string
+          id?: string
+          profile_id?: string | null
+          start_time?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mobile_verify_time_slots_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1214,6 +1403,7 @@ export type Database = {
           is_active: boolean
           logo_path: string | null
           name: string
+          native_scheme: string | null
           updated_at: string
         }
         Insert: {
@@ -1223,6 +1413,7 @@ export type Database = {
           is_active?: boolean
           logo_path?: string | null
           name: string
+          native_scheme?: string | null
           updated_at?: string
         }
         Update: {
@@ -1232,6 +1423,7 @@ export type Database = {
           is_active?: boolean
           logo_path?: string | null
           name?: string
+          native_scheme?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1266,6 +1458,9 @@ export type Database = {
           hold_balance: number
           id: string
           is_disabled: boolean
+          kyc_window_changed_at: string | null
+          kyc_window_end: string | null
+          kyc_window_start: string | null
           last_seen_at: string | null
           marital_status:
             | Database["public"]["Enums"]["marital_status_type"]
@@ -1288,6 +1483,9 @@ export type Database = {
           user_id: string
           user_type: Database["public"]["Enums"]["user_type"]
           username: string | null
+          verify_window_changed_at: string | null
+          verify_window_end: string | null
+          verify_window_start: string | null
           wallet_active: boolean
           wallet_number: string | null
           wallet_type_id: string | null
@@ -1324,6 +1522,9 @@ export type Database = {
           hold_balance?: number
           id?: string
           is_disabled?: boolean
+          kyc_window_changed_at?: string | null
+          kyc_window_end?: string | null
+          kyc_window_start?: string | null
           last_seen_at?: string | null
           marital_status?:
             | Database["public"]["Enums"]["marital_status_type"]
@@ -1346,6 +1547,9 @@ export type Database = {
           user_id: string
           user_type: Database["public"]["Enums"]["user_type"]
           username?: string | null
+          verify_window_changed_at?: string | null
+          verify_window_end?: string | null
+          verify_window_start?: string | null
           wallet_active?: boolean
           wallet_number?: string | null
           wallet_type_id?: string | null
@@ -1382,6 +1586,9 @@ export type Database = {
           hold_balance?: number
           id?: string
           is_disabled?: boolean
+          kyc_window_changed_at?: string | null
+          kyc_window_end?: string | null
+          kyc_window_start?: string | null
           last_seen_at?: string | null
           marital_status?:
             | Database["public"]["Enums"]["marital_status_type"]
@@ -1404,6 +1611,9 @@ export type Database = {
           user_id?: string
           user_type?: Database["public"]["Enums"]["user_type"]
           username?: string | null
+          verify_window_changed_at?: string | null
+          verify_window_end?: string | null
+          verify_window_start?: string | null
           wallet_active?: boolean
           wallet_number?: string | null
           wallet_type_id?: string | null
@@ -2238,6 +2448,7 @@ export type Database = {
           description: string
           id: string
           is_cleared: boolean
+          order_id: string | null
           profile_id: string
           reference_id: string | null
           status: string
@@ -2250,6 +2461,7 @@ export type Database = {
           description: string
           id?: string
           is_cleared?: boolean
+          order_id?: string | null
           profile_id: string
           reference_id?: string | null
           status?: string
@@ -2262,6 +2474,7 @@ export type Database = {
           description?: string
           id?: string
           is_cleared?: boolean
+          order_id?: string | null
           profile_id?: string
           reference_id?: string | null
           status?: string
@@ -2517,6 +2730,7 @@ export type Database = {
           created_at: string
           id: string
           is_locked: boolean
+          linked_upi_app_id: string | null
           profile_id: string
           updated_at: string
         }
@@ -2528,6 +2742,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_locked?: boolean
+          linked_upi_app_id?: string | null
           profile_id: string
           updated_at?: string
         }
@@ -2539,10 +2754,18 @@ export type Database = {
           created_at?: string
           id?: string
           is_locked?: boolean
+          linked_upi_app_id?: string | null
           profile_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_bank_accounts_linked_upi_app_id_fkey"
+            columns: ["linked_upi_app_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_bank_accounts_profile_id_fkey"
             columns: ["profile_id"]
@@ -2666,6 +2889,7 @@ export type Database = {
           wallet_expiry: string | null
           wallet_max_capacity: number
           wallet_price: string | null
+          wallet_price_monthly: number | null
         }
         Insert: {
           color?: string
@@ -2688,6 +2912,7 @@ export type Database = {
           wallet_expiry?: string | null
           wallet_max_capacity?: number
           wallet_price?: string | null
+          wallet_price_monthly?: number | null
         }
         Update: {
           color?: string
@@ -2710,6 +2935,7 @@ export type Database = {
           wallet_expiry?: string | null
           wallet_max_capacity?: number
           wallet_price?: string | null
+          wallet_price_monthly?: number | null
         }
         Relationships: []
       }
@@ -2719,6 +2945,7 @@ export type Database = {
           created_at: string
           current_wallet_type: string
           id: string
+          order_id: string | null
           profile_id: string
           requested_wallet_type: string
           reviewed_at: string | null
@@ -2731,6 +2958,7 @@ export type Database = {
           created_at?: string
           current_wallet_type: string
           id?: string
+          order_id?: string | null
           profile_id: string
           requested_wallet_type: string
           reviewed_at?: string | null
@@ -2743,6 +2971,7 @@ export type Database = {
           created_at?: string
           current_wallet_type?: string
           id?: string
+          order_id?: string | null
           profile_id?: string
           requested_wallet_type?: string
           reviewed_at?: string | null
@@ -2884,7 +3113,50 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      mobile_verifications_safe: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          mobile_number: string | null
+          otp_sent_at: string | null
+          profile_id: string | null
+          send_count: number | null
+          status: string | null
+          submitted_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          mobile_number?: string | null
+          otp_sent_at?: string | null
+          profile_id?: string | null
+          send_count?: number | null
+          status?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          mobile_number?: string | null
+          otp_sent_at?: string | null
+          profile_id?: string | null
+          send_count?: number | null
+          status?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mobile_verifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       algorithm_sign: {
@@ -2947,7 +3219,7 @@ export type Database = {
         | "rejected"
       app_role: "admin" | "user"
       application_status: "pending" | "approved" | "rejected"
-      approval_status: "pending" | "approved" | "rejected"
+      approval_status: "pending" | "approved" | "rejected" | "under process"
       bank_verification_status:
         | "pending"
         | "under_process"
@@ -2971,7 +3243,7 @@ export type Database = {
         | "completed"
         | "cancelled"
       transaction_type: "credit" | "debit" | "hold" | "release"
-      user_type: "employee" | "client"
+      user_type: "Freelancer" | "Employer"
       withdrawal_status: "pending" | "approved" | "rejected" | "completed"
     }
     CompositeTypes: {
@@ -3109,7 +3381,7 @@ export const Constants = {
       ],
       app_role: ["admin", "user"],
       application_status: ["pending", "approved", "rejected"],
-      approval_status: ["pending", "approved", "rejected"],
+      approval_status: ["pending", "approved", "rejected", "under process"],
       bank_verification_status: [
         "pending",
         "under_process",
@@ -3136,7 +3408,7 @@ export const Constants = {
         "cancelled",
       ],
       transaction_type: ["credit", "debit", "hold", "release"],
-      user_type: ["employee", "client"],
+      user_type: ["Freelancer", "Employer"],
       withdrawal_status: ["pending", "approved", "rejected", "completed"],
     },
   },

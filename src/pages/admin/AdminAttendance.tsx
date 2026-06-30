@@ -273,8 +273,8 @@ const AdminAttendance = () => {
                         <TableCell>
                           <Badge
                             style={{ 
-                              background: record.profile?.user_type === "employee" ? "rgba(99,102,241,0.15)" : "rgba(168,85,247,0.15)",
-                              color: record.profile?.user_type === "employee" ? "#818cf8" : "#c084fc",
+                              background: record.profile?.user_type === "Freelancer" ? "rgba(99,102,241,0.15)" : "rgba(168,85,247,0.15)",
+                              color: record.profile?.user_type === "Freelancer" ? "#818cf8" : "#c084fc",
                               borderColor: "transparent"
                             }}
                           >
@@ -370,7 +370,7 @@ const AdminAttendance = () => {
             <DialogTitle className="text-white">{photoDialog.title}</DialogTitle>
           </DialogHeader>
           <div className="flex justify-center p-4">
-            <img
+            <img loading="lazy" decoding="async"
               src={photoDialog.url}
               alt={photoDialog.title}
               className="max-h-[60vh] rounded-2xl object-contain shadow-2xl border border-white/10"

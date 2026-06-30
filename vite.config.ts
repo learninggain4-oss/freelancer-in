@@ -7,7 +7,6 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "0.0.0.0",
     port: 5000,
-    strictPort: true,
     allowedHosts: true,
     hmr: {
       overlay: false,
@@ -20,15 +19,57 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
+  build: {
+    target: "es2020",
+    cssCodeSplit: true,
+    reportCompressedSize: true,
+    chunkSizeWarningLimit: 1500,
+    minify: "esbuild",
+    esbuildOptions: {
+      drop: mode === "production" ? ["console", "debugger"] : [],
+      legalComments: "none",
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+
+    },
+  },
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react-router-dom",
+      "@tanstack/react-query",
+      "@supabase/supabase-js",
+      "lucide-react",
+    ],
+  },
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       includeAssets: ["favicon.ico", "pwa-icon-512.png"],
+      devOptions: {
+        enabled: false,
+      },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,webp}"],
         navigateFallbackDenylist: [/^\/~oauth/],
-        runtimeCaching: [],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/maysttckdfnnzvfeujaj\.supabase\.co\//,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "supabase-api",
+              networkTimeoutSeconds: 5,
+              expiration: { maxEntries: 50, maxAgeSeconds: 300 },
+            },
+          },
+        ],
+        clientsClaim: false,
+        skipWaiting: false,
       },
       manifest: {
         name: "Freelancer",
@@ -57,7 +98,6 @@ export default defineConfig(({ mode }) => ({
   ].filter(Boolean),
   define: {
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
-    "import.meta.env.VITE_SUPABASE_URL": JSON.stringify("https://maysttckdfnnzvfeujaj.supabase.co"),
   },
   resolve: {
     alias: {

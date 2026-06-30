@@ -291,10 +291,10 @@ const AdminRecoveryChat = () => {
                       className="h-7 w-24 text-xs border-none"
                       style={{ background: T.input, color: T.text }}
                     />
-                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={handleEditAmount} disabled={actionLoading}>
+                    <Button size="sm" variant="ghost" aria-label="Confirm amount" className="h-7 w-7 p-0" onClick={handleEditAmount} disabled={actionLoading}>
                       <CheckCircle className="h-4 w-4 text-emerald-500" />
                     </Button>
-                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditingAmount(false)}>
+                    <Button size="sm" variant="ghost" aria-label="Cancel edit" className="h-7 w-7 p-0" onClick={() => setEditingAmount(false)}>
                       <XCircle className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
@@ -462,7 +462,8 @@ const AdminRecoveryChat = () => {
             style={{ background: T.input, color: T.text }}
           />
           <Button 
-            size="icon" 
+            size="icon"
+            aria-label="Send message"
             className="h-11 w-11 shrink-0 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20"
             onClick={handleSend} 
             disabled={!newMessage.trim()}

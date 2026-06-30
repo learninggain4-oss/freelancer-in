@@ -11,6 +11,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AppLayout from "@/components/layout/AppLayout";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import LoadingScreen from "@/components/LoadingScreen";
+import PageTitleManager from "@/components/PageTitleManager";
 
 // Lazy loaded pages
 const Index = lazy(() => import("./pages/Index"));
@@ -18,27 +19,28 @@ const Login = lazy(() => import("./pages/Login"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
-const EmployeeRegister = lazy(() => import("./pages/register/FreelancerRegister"));
+const FreelancerRegister = lazy(() => import("./pages/register/FreelancerRegister"));
 const EmployerRegisterComp = lazy(() => import("./pages/register/EmployerRegister"));
 const VerificationPending = lazy(() => import("./pages/VerificationPending"));
-const EmployeeDashboard = lazy(() => import("./pages/freelancer/EmployeeDashboard"));
-const EmployeeProjects = lazy(() => import("./pages/freelancer/EmployeeProjects"));
-const EmployeeRequests = lazy(() => import("./pages/freelancer/EmployeeRequests"));
-const EmployeeWallet = lazy(() => import("./pages/freelancer/EmployeeWallet"));
-const EmployeeAttendance = lazy(() => import("./pages/freelancer/EmployeeAttendance"));
-const EmployeeProfile = lazy(() => import("./pages/freelancer/EmployeeProfile"));
-const EmployeeBids = lazy(() => import("./pages/freelancer/EmployeeBids"));
-const EmployeeEarnings = lazy(() => import("./pages/freelancer/EmployeeEarnings"));
-const EmployeeReviews = lazy(() => import("./pages/freelancer/EmployeeReviews"));
-const EmployeeBadges = lazy(() => import("./pages/freelancer/EmployeeBadges"));
-const EmployeePortfolio = lazy(() => import("./pages/freelancer/EmployeePortfolio"));
-const EmployerDashboard = lazy(() => import("./pages/employer/ClientDashboard"));
-const EmployerWallet = lazy(() => import("./pages/employer/ClientWallet"));
-const EmployerProjects = lazy(() => import("./pages/employer/ClientProjects"));
+const FreelancerDashboard = lazy(() => import("./pages/freelancer/FreelancerDashboard"));
+const FreelancerProjects = lazy(() => import("./pages/freelancer/FreelancerProjects"));
+const FreelancerRequests = lazy(() => import("./pages/freelancer/FreelancerRequests"));
+const FreelancerWallet = lazy(() => import("./pages/freelancer/FreelancerWallet"));
+const FreelancerAttendance = lazy(() => import("./pages/freelancer/FreelancerAttendance"));
+const FreelancerProfile = lazy(() => import("./pages/freelancer/FreelancerProfile"));
+const FreelancerBids = lazy(() => import("./pages/freelancer/FreelancerBids"));
+const FreelancerEarnings = lazy(() => import("./pages/freelancer/FreelancerEarnings"));
+const FreelancerReviews = lazy(() => import("./pages/freelancer/FreelancerReviews"));
+const FreelancerBadges = lazy(() => import("./pages/freelancer/FreelancerBadges"));
+const FreelancerPortfolio = lazy(() => import("./pages/freelancer/FreelancerPortfolio"));
+const EmployerDashboard = lazy(() => import("./pages/employer/EmployerDashboard"));
+const EmployerWallet = lazy(() => import("./pages/employer/EmployerWallet"));
+const EmployerProjects = lazy(() => import("./pages/employer/EmployerProjects"));
+const EmployerRequests = lazy(() => import("./pages/employer/EmployerRequests"));
 const CreateProject = lazy(() => import("./pages/employer/CreateProject"));
-const EmployerWithdrawals = lazy(() => import("./pages/employer/ClientWithdrawals"));
-const EmployerProfile = lazy(() => import("./pages/employer/ClientProfile"));
-const EmployerAttendance = lazy(() => import("./pages/employer/ClientAttendance"));
+const EmployerWithdrawals = lazy(() => import("./pages/employer/EmployerWithdrawals"));
+const EmployerProfile = lazy(() => import("./pages/employer/EmployerProfile"));
+const EmployerAttendance = lazy(() => import("./pages/employer/EmployerAttendance"));
 const ChatRoom = lazy(() => import("./components/chat/ChatRoom"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
@@ -50,9 +52,15 @@ const AdminInvite = lazy(() => import("./pages/admin/AdminInvite"));
 const AdminEmployees = lazy(() => import("./pages/admin/AdminEmployees"));
 const AdminClients = lazy(() => import("./pages/admin/AdminClients"));
 const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
+const AdminDeposits = lazy(() => import("./pages/admin/AdminDeposits"));
+const AdminFreelancer = lazy(() => import("./pages/admin/AdminFreelancer"));
+const AdminEmployers = lazy(() => import("./pages/admin/AdminEmployers"));
 const AdminDepositRequests = lazy(() => import("./pages/admin/AdminDepositRequests"));
 const AdminVerifications = lazy(() => import("./pages/admin/AdminVerifications"));
 const AdminBankVerifications = lazy(() => import("./pages/admin/AdminBankVerifications"));
+const AdminMobileVerifications = lazy(() => import("./pages/admin/AdminMobileVerifications"));
+const AdminUpiKycManagement = lazy(() => import("./pages/admin/AdminUpiKycManagement"));
+const AdminUpiKycSchedule = lazy(() => import("./pages/admin/AdminUpiKycSchedule"));
 const AdminProfileEdit = lazy(() => import("./pages/admin/AdminProfileEdit"));
 const AdminProfileEdits = lazy(() => import("./pages/admin/AdminProfileEdits"));
 const AdminLegalDocuments = lazy(() => import("./pages/admin/AdminLegalDocuments"));
@@ -65,12 +73,17 @@ const AdminRecoveryChat = lazy(() => import("./pages/admin/AdminRecoveryChat"));
 const AdminWalletManagement = lazy(() => import("./pages/admin/AdminWalletManagement"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 const LegalDocument = lazy(() => import("./pages/LegalDocument"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const AccountSettings = lazy(() => import("./pages/AccountSettings"));
+const SecurityMpinPage = lazy(() => import("./pages/settings/SecurityMpinPage"));
+const SecurityTotpPage = lazy(() => import("./pages/settings/SecurityTotpPage"));
+const SecurityWithdrawalPasswordPage = lazy(() => import("./pages/settings/SecurityWithdrawalPasswordPage"));
+const SecurityQuestionsPage = lazy(() => import("./pages/settings/SecurityQuestionsPage"));
 const NotificationSettings = lazy(() => import("./pages/NotificationSettings"));
 const GetFree = lazy(() => import("./pages/GetFree"));
 const GetCoins = lazy(() => import("./pages/GetCoins"));
 const AppPage = lazy(() => import("./pages/AppPage"));
-const EmployeeSupportChat = lazy(() => import("./pages/freelancer/EmployeeSupportChat"));
+const FreelancerSupportChat = lazy(() => import("./pages/freelancer/FreelancerSupportChat"));
 const HelpSupport = lazy(() => import("./pages/HelpSupport"));
 const AdminHelpSupport = lazy(() => import("./pages/admin/AdminHelpSupport"));
 const AdminSupportReporting = lazy(() => import("./pages/admin/AdminSupportReporting"));
@@ -317,12 +330,18 @@ const Careers = lazy(() => import("./pages/Careers"));
 const ContactPage = lazy(() => import("./pages/Contact"));
 const TransactionHistory = lazy(() => import("./pages/wallet/TransactionHistory"));
 const WithdrawalHistory = lazy(() => import("./pages/wallet/WithdrawalHistory"));
+const WalletActivity = lazy(() => import("./pages/wallet/WalletActivity"));
 const WalletQRPage = lazy(() => import("./pages/wallet/WalletQRPage"));
 const WalletScanPage = lazy(() => import("./pages/wallet/WalletScanPage"));
 const RequestWithdrawal = lazy(() => import("./pages/wallet/RequestWithdrawal"));
 const AddMoneyPage = lazy(() => import("./pages/wallet/AddMoneyPage"));
+const AddMoneySetupTime = lazy(() => import("./pages/wallet/AddMoneySetupTime"));
+const AdminAddMoneySetupTime = lazy(() => import("./pages/admin/AdminAddMoneySetupTime"));
+const DepositPayment = lazy(() => import("./pages/wallet/DepositPayment"));
 const UpgradeChat = lazy(() => import("./pages/wallet/UpgradeChat"));
 const ProfilePersonalInfo = lazy(() => import("./pages/profile/ProfilePersonalInfo"));
+const ProfileChangeEmail = lazy(() => import("./pages/profile/ProfileChangeEmail"));
+const ProfileMobileVerify = lazy(() => import("./pages/profile/ProfileMobileVerify"));
 const ProfileProfessional = lazy(() => import("./pages/profile/ProfileProfessional"));
 const ProfileBankDetails = lazy(() => import("./pages/profile/ProfileBankDetails"));
 const ProfileWorkExperience = lazy(() => import("./pages/profile/ProfileWorkExperience"));
@@ -331,6 +350,10 @@ const ProfileEmergencyContacts = lazy(() => import("./pages/profile/ProfileEmerg
 const ProfileAadhaarVerification = lazy(() => import("./pages/profile/ProfileAadhaarVerification"));
 const ProfileBankVerification = lazy(() => import("./pages/profile/ProfileBankVerification"));
 const ProfileUpiApps = lazy(() => import("./pages/profile/ProfileUpiApps"));
+const ProfileUpiKycSchedule = lazy(() => import("./pages/profile/ProfileUpiKycSchedule"));
+const ProfileMobileVerifySchedule = lazy(() => import("./pages/profile/ProfileMobileVerifySchedule"));
+const AdminMobileVerifySchedule = lazy(() => import("./pages/admin/AdminMobileVerifySchedule"));
+const ProfileUpiAppKyc = lazy(() => import("./pages/profile/ProfileUpiAppKyc"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 import AdminLayout from "@/components/layout/AdminLayout";
 import AdminRoute from "@/components/auth/AdminRoute";
@@ -340,10 +363,20 @@ import { usePresenceHeartbeat } from "@/hooks/use-presence-heartbeat";
 import { useVisitorTracking } from "@/hooks/use-visitor-tracking";
 import { useIpBlockCheck } from "@/hooks/use-ip-block-check";
 import AnnouncementPopup from "@/components/announcements/AnnouncementPopup";
+import LocationPermissionBanner from "@/components/LocationPermissionBanner";
 
 import BlockedScreen from "@/components/BlockedScreen";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000,        // data stays fresh for 1 min — avoids re-fetching on tab focus
+      gcTime: 5 * 60 * 1000,       // keep unused cache for 5 min
+      retry: 1,                    // only retry once on failure
+      refetchOnWindowFocus: false, // don't re-fetch every time user switches tabs
+    },
+  },
+});
 
 /** Activates global chat toast notifications for logged-in users */
 const GlobalChatNotifier = () => {
@@ -386,8 +419,11 @@ const AppContent = () => {
 
   return (
     <>
+      <PageTitleManager />
       <GlobalChatNotifier />
       <AnnouncementPopup />
+      <LocationPermissionBanner />
+
       
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
@@ -397,8 +433,8 @@ const AppContent = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/register/employee" element={<EmployeeRegister />} />
-            <Route path="/register/freelancer" element={<EmployeeRegister />} />
+            <Route path="/register/employee" element={<FreelancerRegister />} />
+            <Route path="/register/freelancer" element={<FreelancerRegister />} />
             <Route path="/register/employer" element={<EmployerRegisterComp />} />
             <Route path="/register/client" element={<EmployerRegisterComp />} />
             <Route path="/verification-pending" element={<VerificationPending />} />
@@ -415,36 +451,70 @@ const AppContent = () => {
             <Route path="/complete-profile" element={<CompleteProfile />} />
             <Route path="/admin-preview" element={<AdminPreview />} />
             <Route path="/legal/:slug" element={<LegalDocument />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
+            <Route
+              path="/wallet/deposit/:requestId"
+              element={
+                <ProtectedRoute>
+                  <DepositPayment />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/client/wallet/deposit/:requestId"
+              element={
+                <ProtectedRoute>
+                  <DepositPayment />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/employee/wallet/deposit/:requestId"
+              element={
+                <ProtectedRoute>
+                  <DepositPayment />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Freelancer Routes */}
             <Route
-              path="/employee"
+              path="/freelancer"
               element={
                 <ProtectedRoute>
                   <AppLayout userType="employee" />
                 </ProtectedRoute>
               }
             >
-              <Route path="dashboard" element={<EmployeeDashboard />} />
-              <Route path="attendance" element={<EmployeeAttendance />} />
-              <Route path="projects" element={<EmployeeProjects />} />
-              <Route path="requests" element={<EmployeeRequests />} />
+              <Route path="dashboard" element={<FreelancerDashboard />} />
+              <Route path="attendance" element={<FreelancerAttendance />} />
+              <Route path="projects" element={<FreelancerProjects />} />
+              <Route path="requests" element={<FreelancerRequests />} />
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
-              <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
-              <Route path="wallet" element={<EmployeeWallet />} />
+              <Route path="projects/support-chat/:projectId" element={<FreelancerSupportChat />} />
+              <Route path="wallet" element={<FreelancerWallet />} />
               <Route path="wallet/add" element={<AddMoneyPage />} />
+              <Route path="wallet/add-money-setup" element={<AddMoneySetupTime />} />
+              <Route path="wallet/deposit/:requestId" element={<DepositPayment />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
+              <Route path="wallet/activity" element={<WalletActivity />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
               <Route path="wallet/qr" element={<WalletQRPage />} />
+              <Route path="wallet/my-qr" element={<WalletQRPage />} />
+              <Route path="my-qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
+              <Route path="scan-qr" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
-              <Route path="bids" element={<EmployeeBids />} />
-              <Route path="earnings" element={<EmployeeEarnings />} />
-              <Route path="reviews" element={<EmployeeReviews />} />
-              <Route path="badges" element={<EmployeeBadges />} />
-              <Route path="portfolio" element={<EmployeePortfolio />} />
-              <Route path="profile" element={<EmployeeProfile />} />
+              <Route path="bids" element={<FreelancerBids />} />
+              <Route path="earnings" element={<FreelancerEarnings />} />
+              <Route path="reviews" element={<FreelancerReviews />} />
+              <Route path="badges" element={<FreelancerBadges />} />
+              <Route path="portfolio" element={<FreelancerPortfolio />} />
+              <Route path="profile" element={<FreelancerProfile />} />
               <Route path="profile/personal" element={<ProfilePersonalInfo />} />
+              <Route path="profile/change-email" element={<ProfileChangeEmail />} />
+              <Route path="profile/mobile-verify" element={<ProfileMobileVerify />} />
+              <Route path="profile/mobile-verify/schedule" element={<ProfileMobileVerifySchedule />} />
               <Route path="profile/professional" element={<ProfileProfessional />} />
               <Route path="profile/bank-details" element={<ProfileBankDetails />} />
               <Route path="profile/work-experience" element={<ProfileWorkExperience />} />
@@ -453,7 +523,13 @@ const AppContent = () => {
               <Route path="profile/aadhaar-verification" element={<ProfileAadhaarVerification />} />
               <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
               <Route path="profile/upi-apps" element={<ProfileUpiApps />} />
+              <Route path="profile/upi-apps/schedule" element={<ProfileUpiKycSchedule />} />
+              <Route path="profile/upi-apps/:methodId/kyc" element={<ProfileUpiAppKyc />} />
               <Route path="settings" element={<AccountSettings />} />
+              <Route path="settings/security/mpin" element={<SecurityMpinPage />} />
+              <Route path="settings/security/google-authenticator" element={<SecurityTotpPage />} />
+              <Route path="settings/security/withdrawal-password" element={<SecurityWithdrawalPasswordPage />} />
+              <Route path="settings/security/security-questions" element={<SecurityQuestionsPage />} />
               <Route path="notification-settings" element={<NotificationSettings />} />
               <Route path="get-free" element={<GetFree />} />
               <Route path="get-coins" element={<GetCoins />} />
@@ -465,7 +541,7 @@ const AppContent = () => {
               <Route path="wallet/upgrade-chat/:requestId" element={<UpgradeChat />} />
             </Route>
 
-            {/* Freelancer Routes (alias for /employee — same pages, new brand name) */}
+            {/* Freelancer Routes (alias for /freelancer — same pages, new brand name) */}
             <Route
               path="/freelancer"
               element={
@@ -474,26 +550,35 @@ const AppContent = () => {
                 </ProtectedRoute>
               }
             >
-              <Route path="dashboard" element={<EmployeeDashboard />} />
-              <Route path="attendance" element={<EmployeeAttendance />} />
-              <Route path="projects" element={<EmployeeProjects />} />
-              <Route path="requests" element={<EmployeeRequests />} />
+              <Route path="dashboard" element={<FreelancerDashboard />} />
+              <Route path="attendance" element={<FreelancerAttendance />} />
+              <Route path="projects" element={<FreelancerProjects />} />
+              <Route path="requests" element={<FreelancerRequests />} />
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
-              <Route path="projects/support-chat/:projectId" element={<EmployeeSupportChat />} />
-              <Route path="wallet" element={<EmployeeWallet />} />
+              <Route path="projects/support-chat/:projectId" element={<FreelancerSupportChat />} />
+              <Route path="wallet" element={<FreelancerWallet />} />
               <Route path="wallet/add" element={<AddMoneyPage />} />
+              <Route path="wallet/add-money-setup" element={<AddMoneySetupTime />} />
+              <Route path="wallet/deposit/:requestId" element={<DepositPayment />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
+              <Route path="wallet/activity" element={<WalletActivity />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
               <Route path="wallet/qr" element={<WalletQRPage />} />
+              <Route path="wallet/my-qr" element={<WalletQRPage />} />
+              <Route path="my-qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
+              <Route path="scan-qr" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
-              <Route path="bids" element={<EmployeeBids />} />
-              <Route path="earnings" element={<EmployeeEarnings />} />
-              <Route path="reviews" element={<EmployeeReviews />} />
-              <Route path="badges" element={<EmployeeBadges />} />
-              <Route path="portfolio" element={<EmployeePortfolio />} />
-              <Route path="profile" element={<EmployeeProfile />} />
+              <Route path="bids" element={<FreelancerBids />} />
+              <Route path="earnings" element={<FreelancerEarnings />} />
+              <Route path="reviews" element={<FreelancerReviews />} />
+              <Route path="badges" element={<FreelancerBadges />} />
+              <Route path="portfolio" element={<FreelancerPortfolio />} />
+              <Route path="profile" element={<FreelancerProfile />} />
               <Route path="profile/personal" element={<ProfilePersonalInfo />} />
+              <Route path="profile/change-email" element={<ProfileChangeEmail />} />
+              <Route path="profile/mobile-verify" element={<ProfileMobileVerify />} />
+              <Route path="profile/mobile-verify/schedule" element={<ProfileMobileVerifySchedule />} />
               <Route path="profile/professional" element={<ProfileProfessional />} />
               <Route path="profile/bank-details" element={<ProfileBankDetails />} />
               <Route path="profile/work-experience" element={<ProfileWorkExperience />} />
@@ -502,7 +587,13 @@ const AppContent = () => {
               <Route path="profile/aadhaar-verification" element={<ProfileAadhaarVerification />} />
               <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
               <Route path="profile/upi-apps" element={<ProfileUpiApps />} />
+              <Route path="profile/upi-apps/schedule" element={<ProfileUpiKycSchedule />} />
+              <Route path="profile/upi-apps/:methodId/kyc" element={<ProfileUpiAppKyc />} />
               <Route path="settings" element={<AccountSettings />} />
+              <Route path="settings/security/mpin" element={<SecurityMpinPage />} />
+              <Route path="settings/security/google-authenticator" element={<SecurityTotpPage />} />
+              <Route path="settings/security/withdrawal-password" element={<SecurityWithdrawalPasswordPage />} />
+              <Route path="settings/security/security-questions" element={<SecurityQuestionsPage />} />
               <Route path="notification-settings" element={<NotificationSettings />} />
               <Route path="get-free" element={<GetFree />} />
               <Route path="get-coins" element={<GetCoins />} />
@@ -527,17 +618,27 @@ const AppContent = () => {
               <Route path="attendance" element={<EmployerAttendance />} />
               <Route path="wallet" element={<EmployerWallet />} />
               <Route path="wallet/add" element={<AddMoneyPage />} />
+              <Route path="wallet/add-money-setup" element={<AddMoneySetupTime />} />
+              <Route path="wallet/deposit/:requestId" element={<DepositPayment />} />
               <Route path="wallet/transactions" element={<TransactionHistory />} />
+              <Route path="wallet/activity" element={<WalletActivity />} />
               <Route path="wallet/withdrawals" element={<WithdrawalHistory />} />
               <Route path="wallet/qr" element={<WalletQRPage />} />
+              <Route path="wallet/my-qr" element={<WalletQRPage />} />
+              <Route path="my-qr" element={<WalletQRPage />} />
               <Route path="wallet/scan" element={<WalletScanPage />} />
+              <Route path="scan-qr" element={<WalletScanPage />} />
               <Route path="wallet/withdraw" element={<RequestWithdrawal />} />
               <Route path="projects" element={<EmployerProjects />} />
+              <Route path="requests" element={<EmployerRequests />} />
               <Route path="projects/create" element={<CreateProject />} />
               <Route path="projects/chat/:projectId" element={<ChatRoom />} />
               <Route path="withdrawals" element={<EmployerWithdrawals />} />
               <Route path="profile" element={<EmployerProfile />} />
               <Route path="profile/personal" element={<ProfilePersonalInfo />} />
+              <Route path="profile/change-email" element={<ProfileChangeEmail />} />
+              <Route path="profile/mobile-verify" element={<ProfileMobileVerify />} />
+              <Route path="profile/mobile-verify/schedule" element={<ProfileMobileVerifySchedule />} />
               <Route path="profile/professional" element={<ProfileProfessional />} />
               <Route path="profile/bank-details" element={<ProfileBankDetails />} />
               <Route path="profile/work-experience" element={<ProfileWorkExperience />} />
@@ -546,7 +647,13 @@ const AppContent = () => {
               <Route path="profile/aadhaar-verification" element={<ProfileAadhaarVerification />} />
               <Route path="profile/bank-verification" element={<ProfileBankVerification />} />
               <Route path="profile/upi-apps" element={<ProfileUpiApps />} />
+              <Route path="profile/upi-apps/schedule" element={<ProfileUpiKycSchedule />} />
+              <Route path="profile/upi-apps/:methodId/kyc" element={<ProfileUpiAppKyc />} />
               <Route path="settings" element={<AccountSettings />} />
+              <Route path="settings/security/mpin" element={<SecurityMpinPage />} />
+              <Route path="settings/security/google-authenticator" element={<SecurityTotpPage />} />
+              <Route path="settings/security/withdrawal-password" element={<SecurityWithdrawalPasswordPage />} />
+              <Route path="settings/security/security-questions" element={<SecurityQuestionsPage />} />
               <Route path="notification-settings" element={<NotificationSettings />} />
               <Route path="get-free" element={<GetFree />} />
               <Route path="get-coins" element={<GetCoins />} />
@@ -574,9 +681,15 @@ const AppContent = () => {
               <Route path="freelancers" element={<AdminEmployees />} />
               <Route path="employers" element={<AdminClients />} />
               <Route path="withdrawals" element={<AdminWithdrawals />} />
+              <Route path="deposits" element={<AdminDeposits />} />
               <Route path="deposit-requests" element={<AdminDepositRequests />} />
+              <Route path="add-money-setup" element={<AdminAddMoneySetupTime />} />
+              <Route path="upi-kyc-management" element={<AdminUpiKycManagement />} />
+              <Route path="upi-kyc-schedule" element={<AdminUpiKycSchedule />} />
               <Route path="verifications" element={<AdminVerifications />} />
               <Route path="bank-verifications" element={<AdminBankVerifications />} />
+              <Route path="mobile-verifications" element={<AdminMobileVerifications />} />
+              <Route path="mobile-verify-schedule" element={<AdminMobileVerifySchedule />} />
               <Route path="profile-edits" element={<AdminProfileEdits />} />
               <Route path="users/:profileId" element={<AdminProfileEdit />} />
               <Route path="legal-documents" element={<AdminLegalDocuments />} />

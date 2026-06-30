@@ -74,9 +74,9 @@ export default function Careers() {
     root.style.setProperty("--t-a1-rgb", t.a1rgb);
     root.style.setProperty("--t-a2-rgb", t.a2rgb);
     document.body.style.background = t.bg;
-    document.title = "Careers | Freelancer India";
+    document.title = "Careers at Freelan Space | Join Our Team";
     return () => {
-      document.title = "Freelancer India";
+      document.title = "Freelan Space";
       document.body.style.background = "";
     };
   }, []);
@@ -160,6 +160,75 @@ export default function Careers() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* SEO Content Section */}
+        <div className="space-y-10 rounded-3xl p-8 md:p-12 my-8" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div>
+            <h2 className="text-2xl font-black text-white mb-4">Why Work at Freelancer India?</h2>
+            <p className="text-white/55 leading-relaxed mb-4">Freelancer India is one of India's fastest-growing freelance marketplace startups, on a mission to connect skilled professionals with businesses across the country. We are a remote-first, product-focused team that believes in ownership, speed, and impact. Every team member at Freelancer India has a direct hand in shaping a platform used by hundreds of thousands of Indian professionals.</p>
+            <p className="text-white/55 leading-relaxed">If you are passionate about the future of work in India, excited by the challenge of building at scale, and want to make a real difference in the lives of freelancers and employers — Freelancer India is the place for you.</p>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-black text-white mb-6">Life at Freelancer India</h2>
+            <div className="grid md:grid-cols-3 gap-5">
+              {[
+                { emoji: "🏠", title: "Remote-First Culture", body: "Work from anywhere in India. We have team members in Bengaluru, Delhi, Mumbai, Hyderabad, Kochi, and smaller cities. We believe the best talent should not be limited by geography." },
+                { emoji: "📈", title: "Ownership & Impact", body: "Every engineer, designer, and marketer at Freelancer India owns their domain fully. You ship features that go live to hundreds of thousands of users — sometimes within the same week you build them." },
+                { emoji: "💰", title: "Competitive Compensation", body: "We offer market-competitive salaries, equity for senior roles, and performance bonuses. We benchmark against leading Indian startups and revisit compensation twice a year." },
+                { emoji: "🎓", title: "Learning Budget", body: "₹15,000 annual learning budget per employee for courses, books, and conferences. We encourage skill growth and cross-functional learning across all roles." },
+                { emoji: "🏥", title: "Health Coverage", body: "Comprehensive health insurance for you and your immediate family. We also offer mental health support through curated wellness programmes and flexible leave policies." },
+                { emoji: "⚡", title: "Fast-Paced & Agile", body: "We ship weekly. Our engineering and product cycles are short, our decisions are data-driven, and our team avoids unnecessary processes that slow down good work." },
+              ].map(item => (
+                <div key={item.title} className="rounded-2xl p-5 space-y-2" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div className="text-2xl">{item.emoji}</div>
+                  <h3 className="font-bold text-white text-sm">{item.title}</h3>
+                  <p className="text-white/50 text-sm leading-relaxed">{item.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-black text-white mb-4">Our Hiring Process</h2>
+            <p className="text-white/55 leading-relaxed mb-5">We believe in a fair, transparent, and respectful hiring process. Our goal is to evaluate skills, problem-solving ability, and cultural fit — not credentials alone. Here is what the process looks like for most roles:</p>
+            <div className="space-y-4">
+              {[
+                { step: "01", title: "Application Review", body: "We review every application carefully. A strong application includes a brief cover note explaining why you're excited about this role and what you'd bring to the team. We respond to all applicants within 5 working days." },
+                { step: "02", title: "Introductory Call", body: "A 30-minute video call with our recruiting team. We want to understand your background, what you're looking for, and give you a chance to ask questions about the role, team, and company." },
+                { step: "03", title: "Skills Assessment", body: "A practical assignment relevant to the role. We keep it short — no more than 2–3 hours of actual work. We respect your time and compensate candidates who complete assignments for senior roles." },
+                { step: "04", title: "Team Interviews", body: "Two 45-minute interviews with team members you'll work with directly. One focuses on domain expertise; the other on cross-functional collaboration, communication, and problem-solving." },
+                { step: "05", title: "Offer & Onboarding", body: "We send offers within 48 hours of the final interview. Our onboarding is structured and human — you'll have a dedicated buddy, clear 30-60-90 day goals, and full access to our internal tools from day one." },
+              ].map(item => (
+                <div key={item.step} className="flex gap-4 rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <div className="text-2xl font-black shrink-0" style={{ color: "rgba(255,255,255,0.08)", minWidth: 36 }}>{item.step}</div>
+                  <div>
+                    <h3 className="font-bold text-white text-sm mb-1">{item.title}</h3>
+                    <p className="text-white/50 text-sm leading-relaxed">{item.body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-black text-white mb-4">Careers FAQ</h2>
+            <div className="space-y-4">
+              {[
+                { q: "Do you hire freshers and entry-level candidates?", a: "Yes. We have dedicated entry-level roles in engineering, customer support, and content. We look for strong fundamentals, curiosity, and a willingness to learn fast. Prior work experience helps but is not always required for the right candidate." },
+                { q: "Are all roles remote?", a: "Most roles are fully remote. Some leadership and BD roles may require occasional travel to meet clients or partners. We will always specify clearly in the job listing whether a role has any location requirements." },
+                { q: "How long does the hiring process take?", a: "Most candidates complete our process within 2–3 weeks from the date of application. We make every effort to avoid unnecessary delays and keep you informed at every stage." },
+                { q: "Can I apply for multiple roles simultaneously?", a: "Yes, you can apply for up to two roles at a time. Please tailor your application for each role individually to show us you understand what each position requires." },
+                { q: "What technologies does your engineering team use?", a: "Our frontend is built with React, TypeScript, Vite, and TailwindCSS. Our backend uses Node.js and Express. Our database is PostgreSQL via Supabase. We also work with Supabase Edge Functions, OneSignal for push notifications, and various third-party APIs for payments and KYC." },
+              ].map(item => (
+                <div key={item.q} className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <h3 className="font-bold text-white text-sm mb-2">{item.q}</h3>
+                  <p className="text-white/50 text-sm leading-relaxed">{item.a}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

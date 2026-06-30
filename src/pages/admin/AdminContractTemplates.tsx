@@ -69,9 +69,9 @@ export default function AdminContractTemplates() {
               <button onClick={() => setSelected(t)} className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-bold border" style={{ borderColor:T.border, color:T.sub }}>
                 <Eye className="h-3.5 w-3.5" /> Preview
               </button>
-              <button className="p-1.5 rounded-lg border" style={{ borderColor:T.border, color:T.sub }}><Edit className="h-3.5 w-3.5" /></button>
-              <button className="p-1.5 rounded-lg border" style={{ borderColor:T.border, color:"#f87171" }}><Trash2 className="h-3.5 w-3.5" /></button>
-              <button className="p-1.5 rounded-lg border" style={{ borderColor:T.border, color:A1 }}><Download className="h-3.5 w-3.5" /></button>
+              <button aria-label="Edit template" className="p-1.5 rounded-lg border" style={{ borderColor:T.border, color:T.sub }}><Edit className="h-3.5 w-3.5" /></button>
+              <button aria-label="Delete template" className="p-1.5 rounded-lg border" style={{ borderColor:T.border, color:"#f87171" }}><Trash2 className="h-3.5 w-3.5" /></button>
+              <button aria-label="Download template" className="p-1.5 rounded-lg border" style={{ borderColor:T.border, color:A1 }}><Download className="h-3.5 w-3.5" /></button>
             </div>
           </div>
         ))}

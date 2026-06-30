@@ -801,6 +801,7 @@ const UpgradeChat = () => {
             size="icon"
             onClick={handleLiveSend}
             disabled={!liveChatInput.trim()}
+            aria-label="Send message"
             className="h-11 w-11 rounded-xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all duration-200 disabled:shadow-none disabled:opacity-40 shrink-0"
           >
             <Send className="h-4.5 w-4.5" />

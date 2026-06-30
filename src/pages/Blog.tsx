@@ -84,9 +84,9 @@ export default function Blog() {
     root.style.setProperty("--t-a1-rgb", t.a1rgb);
     root.style.setProperty("--t-a2-rgb", t.a2rgb);
     document.body.style.background = t.bg;
-    document.title = "Blog | Freelancer India";
+    document.title = "Freelance Blog — Tips, Guides & News India | Freelan Space";
     return () => {
-      document.title = "Freelancer India";
+      document.title = "Freelan Space";
       document.body.style.background = "";
     };
   }, []);
@@ -191,6 +191,55 @@ export default function Blog() {
             ))}
           </div>
         )}
+
+        {/* SEO Content Section */}
+        <div className="space-y-10 rounded-3xl p-8 md:p-12 mt-10" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div>
+            <h2 className="text-2xl font-black text-white mb-4">Complete Guide to Freelancing in India</h2>
+            <p className="text-white/55 leading-relaxed mb-4">Freelancing in India has evolved dramatically over the last decade. What once was a side hustle for a few tech professionals is now a full-time career for millions. From graphic designers in Pune to data analysts in Hyderabad, Indian freelancers are building thriving businesses on their own terms — choosing their clients, setting their rates, and working on their schedule. This guide covers everything you need to know to start, grow, and sustain a successful freelance career in India.</p>
+            <p className="text-white/55 leading-relaxed">Whether you are a beginner wondering how to get your first client, or an experienced professional looking to scale your income, the articles and resources on Freelancer India's blog are written by practitioners who understand the Indian market from the inside.</p>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-black text-white mb-6">Top Freelancing Topics We Cover</h2>
+            <div className="grid md:grid-cols-2 gap-5">
+              {[
+                { emoji: "💼", title: "Getting Your First Freelance Client", body: "The hardest part of freelancing is landing your first paying client. We cover proven strategies — from optimising your profile on Freelancer India to writing proposals that win, cold outreach templates that work, and how to leverage your existing network to find your first project without spending a rupee on advertising." },
+                { emoji: "📊", title: "Freelance Pricing in India", body: "How much should you charge as a freelancer in India? This is one of the most common questions we receive. Our pricing guides break down hourly vs. project-based pricing, how to research market rates for your skill, when to raise your rates, and how to handle clients who negotiate aggressively." },
+                { emoji: "📝", title: "Writing Winning Proposals", body: "A great proposal can win a project even against cheaper competition. We break down what clients look for in a proposal, how to structure your bid, what to include in your portfolio, and how to tailor each proposal to the specific project — saving you time while dramatically improving your win rate." },
+                { emoji: "💰", title: "Managing Freelance Finances", body: "Income from freelancing is irregular. We publish guides on budgeting for variable income, setting aside money for taxes (including GST registration and filing), creating a financial cushion for slow months, and using Freelancer India's built-in invoicing and wallet tools to stay on top of your cash flow." },
+                { emoji: "🚀", title: "Scaling from Freelancer to Agency", body: "Many successful freelancers eventually want to grow beyond a solo practice. We cover the journey from individual freelancer to small agency — how to hire your first sub-contractor, manage a team of freelancers, handle larger enterprise projects, and build a brand that attracts premium clients." },
+                { emoji: "🛡️", title: "Client Relationships and Contracts", body: "Client disputes are a reality of freelancing. Our guides help you set up proper contracts, define scope clearly, manage revisions professionally, and use Freelancer India's escrow and milestone systems to protect yourself and your clients through every project stage." },
+              ].map(item => (
+                <div key={item.title} className="rounded-2xl p-5 space-y-2" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xl">{item.emoji}</span>
+                    <h3 className="font-bold text-white text-sm">{item.title}</h3>
+                  </div>
+                  <p className="text-white/50 text-sm leading-relaxed">{item.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-black text-white mb-4">Frequently Asked Questions for New Freelancers</h2>
+            <div className="space-y-4">
+              {[
+                { q: "How much can I earn as a freelancer in India?", a: "Earnings vary widely by skill, experience, and niche. Entry-level freelancers typically earn ₹10,000–₹30,000 per month. Experienced professionals in high-demand fields like web development, UI/UX design, or digital marketing can earn ₹80,000–₹3,00,000 per month or more. Building a strong profile with verified skill badges on Freelancer India significantly increases your earning potential." },
+                { q: "Do I need to register a business to freelance in India?", a: "No, you can start freelancing as an individual without registering a business. However, if your annual turnover exceeds ₹20 lakhs (₹10 lakhs in some states), GST registration is mandatory. For income tax purposes, freelance income is reported as 'Profits and Gains from Business or Profession' under ITR-3 or ITR-4. Freelancer India generates GST-compliant invoices automatically for all transactions." },
+                { q: "What are the best skills to freelance with in India?", a: "High-demand freelance skills in India include: web and mobile app development (React, Flutter, PHP, WordPress), UI/UX design, content writing and copywriting, SEO and digital marketing, video editing and animation, data entry and virtual assistance, accounting and bookkeeping, and online tutoring and coaching. Technology-related skills generally command the highest rates, but non-technical skills with strong portfolios can be equally lucrative." },
+                { q: "How do I build a portfolio with no prior clients?", a: "Start by doing 2–3 projects for free or at a discounted rate for local businesses, NGOs, or non-profits. Create personal projects that demonstrate your skills — a website for a fictional brand, a redesigned app for a popular service, a sample content marketing campaign. Document your process and results thoroughly. Upload these to your Freelancer India portfolio with detailed case studies." },
+                { q: "How does Freelancer India help me find work?", a: "Freelancer India's smart-match algorithm analyses your skills, experience, and past performance to recommend projects you are likely to win. You can also browse all live projects by category, budget, and keywords. Set up job alerts to be notified instantly when new projects matching your skills are posted. Your verified skill badges and portfolio make your profile stand out to employers." },
+              ].map(item => (
+                <div key={item.q} className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <h3 className="font-bold text-white text-sm mb-2">{item.q}</h3>
+                  <p className="text-white/50 text-sm leading-relaxed">{item.a}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
         {/* Newsletter */}
         <div className="rounded-3xl p-8 md:p-12 text-center space-y-5" style={{ background: "linear-gradient(135deg, rgba(var(--t-a1-rgb),0.1), rgba(var(--t-a2-rgb),0.1))", border: "1px solid rgba(var(--t-a1-rgb),0.2)" }}>

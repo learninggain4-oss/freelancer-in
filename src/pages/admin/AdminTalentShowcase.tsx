@@ -45,7 +45,7 @@ const AdminTalentShowcase = () => {
       const { data } = await supabase
         .from("profiles")
         .select("user_id,full_name,user_code,profile_photo_url,rating,total_earnings,user_type")
-        .eq("user_type", "employee")
+        .eq("user_type", "Freelancer")
         .or(`full_name.cs.{${search}},user_code.cs.{${search}}`)
         .limit(10);
       return data || [];
@@ -141,7 +141,7 @@ const AdminTalentShowcase = () => {
                 </div>
                 <div style={{ width: 40, height: 40, borderRadius: "50%", background: `${secMeta.color}20`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: secMeta.color, flexShrink: 0 }}>
                   {item.profile?.profile_photo_url
-                    ? <img src={item.profile.profile_photo_url} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }} alt="" />
+                    ? <img loading="lazy" decoding="async" src={item.profile.profile_photo_url} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }} alt="" />
                     : ((item.profile?.full_name || [])[0] || "?").charAt(0).toUpperCase()}
                 </div>
                 <div style={{ flex: 1 }}>

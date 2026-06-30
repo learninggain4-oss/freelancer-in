@@ -12,12 +12,18 @@ const getDeviceType = (): string => {
 /**
  * Tracks page visits via edge function to capture real server-side IP.
  * Runs once per page load. Links to profile if user is authenticated.
+ * Precise browser location is requested separately from an explicit user tap,
+ * so Android/PWA browsers can show the native permission prompt reliably.
  */
 export const useVisitorTracking = () => {
   const { profile } = useAuth();
 
   useEffect(() => {
+    let cancelled = false;
+
     const trackVisit = async () => {
+      if (cancelled) return;
+
       try {
         await supabase.functions.invoke("track-visitor", {
           body: {
@@ -26,6 +32,9 @@ export const useVisitorTracking = () => {
             referrer: document.referrer || null,
             profile_id: profile?.id || null,
             device_type: getDeviceType(),
+            browser_latitude: null,
+            browser_longitude: null,
+            browser_accuracy: null,
           },
         });
       } catch {
@@ -34,5 +43,8 @@ export const useVisitorTracking = () => {
     };
 
     trackVisit();
-  }, []); // Only once per page load
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.id]);
 };

@@ -51,7 +51,7 @@ export default function AdminFraudCases() {
     queryKey: ["admin-fraud-cases"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("admin_audit_logs")
+        .from("admin_audit_logs" as any)
         .select("id, action, admin_id, created_at, details, target_profile_id, target_profile_name")
         .order("created_at", { ascending: false })
         .limit(50);

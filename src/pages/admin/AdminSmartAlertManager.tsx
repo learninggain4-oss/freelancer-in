@@ -93,7 +93,7 @@ export default function AdminSmartAlertManager() {
                     style={{ background: g.muted ? `${A1}20` : "rgba(148,163,184,.15)", color: g.muted ? A1 : T.sub }}>
                     {g.muted ? "Unmute" : "Mute"}
                   </button>
-                  <button className="p-1.5 rounded-lg hover:bg-white/5 transition-all" style={{ color: T.sub }}>
+                  <button aria-label="Alert settings" className="p-1.5 rounded-lg hover:bg-white/5 transition-all" style={{ color: T.sub }}>
                     <Settings className="h-4 w-4" />
                   </button>
                 </div>

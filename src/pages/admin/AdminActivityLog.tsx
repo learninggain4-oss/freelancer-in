@@ -40,7 +40,7 @@ const AdminActivityLog = () => {
     queryKey: ["admin-activity-log"],
     queryFn: async () => {
       const { data } = await supabase
-        .from("admin_audit_logs")
+        .from("admin_audit_logs" as any)
         .select("id,action,table_name,record_id,old_values,new_values,created_at,admin_id,profile:admin_id(full_name,user_code)")
         .order("created_at", { ascending: false })
         .limit(500);

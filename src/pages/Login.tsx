@@ -136,6 +136,10 @@ const TestiCard = ({ name, role, text, rating }: { name: string; role: string; t
 
 /* ═══════════════════ MAIN LOGIN PAGE ═══════════════════ */
 const Login = () => {
+  useEffect(() => {
+    document.title = "Login to Your Account | Freelan Space";
+    return () => { document.title = "Freelan Space"; };
+  }, []);
   const [loading, setLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -169,7 +173,7 @@ const Login = () => {
   if (!authLoading && user && profile && isAdmin !== null) {
     if (isAdmin) return <Navigate to="/admin/dashboard" replace />;
     if (profile.approval_status !== "approved") return <Navigate to="/verification-pending" replace />;
-    const base = profile.user_type === "employee" ? "/freelancer" : "/employer";
+    const base = profile.user_type === "Freelancer" ? "/freelancer" : "/employer";
     return <Navigate to={`${base}/dashboard`} replace />;
   }
 
@@ -195,7 +199,7 @@ const Login = () => {
             if (totpRes.data?.is_enabled) { setPendingAdminNav(true); setShowTotpDialog(true); return; }
             navigate("/admin/dashboard", { replace: true });
           } else {
-            const base = prof.user_type === "employee" ? "/freelancer" : "/employer";
+            const base = prof.user_type === "Freelancer" ? "/freelancer" : "/employer";
             const dest = `${base}/dashboard`;
             const userTotpRes = await supabase.functions.invoke("user-totp", { body: { action: "check_status_by_id", user_id: session.user.id } });
             if (userTotpRes.data?.is_enabled) { setPendingUserNav(dest); setShowTotpDialog(true); return; }
@@ -240,8 +244,8 @@ const Login = () => {
 
       {/* ════════════ HERO + LOGIN FORM ════════════ */}
       <section style={{ position: "relative", zIndex: 1, minHeight: "100vh", display: "flex", alignItems: "center", padding: "60px 5%" }}>
-        <div style={{ maxWidth: 1280, width: "100%", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "center" }}
-          className="lg:grid-cols-2 flex-col sm:flex-row">
+        <div style={{ maxWidth: 1280, width: "100%", margin: "0 auto", display: "grid", gap: 64, alignItems: "center" }}
+          className="grid-cols-1 lg:grid-cols-2">
 
           {/* LEFT: 3D Illustration */}
           <div style={{ animation: "slideInLeft .8s ease both", position: "relative" }} className="hidden lg:block">
@@ -304,7 +308,7 @@ const Login = () => {
           </div>
 
           {/* RIGHT: Login Form */}
-          <div style={{ animation: "slideInRight .8s ease both", animationDelay: ".1s" }}>
+          <div style={{ animation: "slideInRight .8s ease both", animationDelay: ".1s", width: "100%", maxWidth: 480, margin: "0 auto" }}>
             <div style={{ marginBottom: 32 }}>
               <span style={{ display: "inline-block", fontSize: 11, fontWeight: 700, letterSpacing: 2, color: A1, textTransform: "uppercase", background: "rgba(99,102,241,.12)", padding: "4px 12px", borderRadius: 20, border: `1px solid rgba(99,102,241,.25)`, marginBottom: 16 }}>
                 Welcome Back

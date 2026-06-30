@@ -115,7 +115,7 @@ export default function AdminStorageManager() {
                   <div className="flex items-center gap-3">
                     <span className="text-xs" style={{ color: T.sub }}>{b.files.toLocaleString()} files</span>
                     <span className="font-bold font-mono text-sm" style={{ color }}>{b.used}/{b.total} GB</span>
-                    <button className="p-1.5 rounded-lg hover:bg-white/5 transition-all" style={{ color:"#f87171" }}>
+                    <button aria-label="Delete bucket" className="p-1.5 rounded-lg hover:bg-white/5 transition-all" style={{ color:"#f87171" }}>
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>

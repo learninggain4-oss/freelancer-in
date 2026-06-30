@@ -119,7 +119,7 @@ export default function EmployeePortfolio() {
           <div className="rounded-2xl p-5" style={card}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold" style={{ color: T.text }}>{editId ? "Edit Project" : "Add New Project"}</h3>
-              <button onClick={resetForm}><X className="h-4 w-4" style={{ color: T.sub }} /></button>
+              <button onClick={resetForm} aria-label="Close form"><X className="h-4 w-4" style={{ color: T.sub }} /></button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div className="sm:col-span-2">

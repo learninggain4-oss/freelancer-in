@@ -18,11 +18,9 @@ const WithdrawalPasswordCard = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    supabase.functions
-      .invoke("withdrawal-password", { body: { action: "status" } })
-      .then(({ data, error }) => {
-        if (!error && data) setHasPassword(data.has_password);
-      });
+    supabase.functions.invoke("withdrawal-password", { body: { action: "status" } }).then(({ data, error }) => {
+      if (!error && data) setHasPassword(data.has_password);
+    });
   }, []);
 
   const handleSubmit = async () => {

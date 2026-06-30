@@ -103,7 +103,7 @@ const DocumentImagePreview = ({ filePath, getSignedUrl }: { filePath: string; ge
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => { getSignedUrl(filePath).then(setUrl); }, [filePath]);
   if (!url) return <Skeleton className="h-32 w-full rounded" />;
-  return <img src={url} alt="Document" className="max-h-48 w-full rounded object-contain border bg-muted/30" />;
+  return <img loading="lazy" decoding="async" src={url} alt="Document" className="max-h-48 w-full rounded object-contain border bg-muted/30" />;
 };
 
 const UserDetailDialog = ({ user, actionType, notes, onNotesChange, processing, onAction, onClose }: Props) => {
@@ -318,7 +318,7 @@ const UserDetailDialog = ({ user, actionType, notes, onNotesChange, processing, 
                 className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 cursor-pointer"
                 onClick={() => setPreviewUrl(null)}
               >
-                <img src={previewUrl} alt="Preview" className="max-h-[85vh] max-w-[90vw] rounded-lg object-contain" />
+                <img loading="lazy" decoding="async" src={previewUrl} alt="Preview" className="max-h-[85vh] max-w-[90vw] rounded-lg object-contain" />
               </div>
             )}
 

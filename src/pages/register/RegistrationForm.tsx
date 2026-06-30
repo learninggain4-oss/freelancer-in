@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { callEdgeFunction, readResponseJson } from "@/lib/supabase-functions";
 import {
   registrationProfileSchema, type RegistrationFormData,
   type WorkExperienceEntry, type EmergencyContactEntry, type ServiceEntry,
@@ -44,7 +45,9 @@ ${AUTH_CSS}
 .step-dot-pending { background:rgba(255,255,255,.04); }
 `;
 
-interface RegistrationFormProps { userType: "employee" | "employer"; }
+type RegistrationUserType = "Freelancer" | "Employer" | "employee" | "employer" | "client" | "freelancer";
+
+interface RegistrationFormProps { userType: RegistrationUserType; }
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: currentYear - 1969 }, (_, i) => String(currentYear - i));
@@ -103,7 +106,8 @@ const BUSINESS_TYPES = [
 const inp: React.CSSProperties = { background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", color: "white", borderRadius: 10 };
 
 const RegistrationForm = ({ userType }: RegistrationFormProps) => {
-  const isFreelancer = userType === "employee";
+  const normalizedInitialUserType = String(userType || "Freelancer").trim().toLowerCase();
+  const isFreelancer = normalizedInitialUserType === "freelancer" || normalizedInitialUserType === "employee";
   const stepConfig = isFreelancer ? freelancerStepConfig : employerStepConfig;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -224,36 +228,23 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
       let geoData: any = {};
       try { const r = await fetch("https://ipapi.co/json/"); if (r.ok) { const g = await r.json(); geoData = { ip: g.ip, city: g.city, region: g.region, country: g.country_name, lat: g.latitude, lon: g.longitude }; } } catch {}
 
-      const uType = userType === "employer" ? "client" : "employee";
+      const normalizedUserType = String(userType || "Freelancer").trim().toLowerCase();
+      const uType = ["employer", "client"].includes(normalizedUserType) ? "Employer" : "Freelancer";
 
-      // Helper: create profile directly after getting userId (works for both new and duplicate email)
-      const insertProfileAndRelated = async (userId: string, supabaseClient: typeof supabase) => {
-        const newProfileId = crypto.randomUUID();
-        const { data: profileData, error: profileError } = await supabaseClient.from("profiles").insert([{
-          id: newProfileId, user_id: userId, user_type: uType,
-          full_name: [data.full_name.toUpperCase()], user_code: [], email: data.email,
-          username: data.username.trim().toLowerCase(),
-          gender: data.gender, date_of_birth: data.date_of_birth,
-          marital_status: data.marital_status, education_level: data.education_level,
-          mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number,
-          education_background: data.education_background || null,
-          referred_by: referralCode.trim() || null, approval_status: "approved",
-        } as any]).select("id").single();
-        if (profileError) throw profileError;
-        return (profileData as any)?.id || newProfileId;
-      };
-
-      // Helper: register via server API (fallback when can't sign in with existing account)
+      // Helper: register via server API. This path supports duplicate emails by
+      // finding the existing auth user or creating one when the email is new.
       const registerViaServer = async () => {
         const payload = {
-          email: data.email, user_type: uType, full_name: data.full_name, username: data.username.trim().toLowerCase(),
+          email: data.email, user_type: uType, userType: uType, account_type: uType, accountType: uType,
+          password: data.password,
+          full_name: data.full_name, username: data.username.trim().toLowerCase(),
           gender: data.gender, date_of_birth: data.date_of_birth,
           marital_status: data.marital_status, education_level: data.education_level,
           mobile_number: data.mobile_number, whatsapp_number: data.whatsapp_number,
           education_background: data.education_background || null,
           referred_by: referralCode.trim() || null, approval_status: "approved",
           geo: geoData,
-          employer_biz: uType === "client" ? employerBiz : undefined,
+          employer_biz: uType === "Employer" ? employerBiz : undefined,
           work_experiences: workExperiences.filter(w => w.company_name.trim()).map(w => ({
             company_name: w.company_name, company_type: w.company_type,
             work_description: w.work_description || null, start_year: w.start_year,
@@ -266,86 +257,12 @@ const RegistrationForm = ({ userType }: RegistrationFormProps) => {
             skill_ids: s.skill_ids,
           })),
         };
-        const res = await fetch("/functions/v1/public-register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const text = await res.text();
-        let result: any = {};
-        try { result = JSON.parse(text); } catch { throw new Error("Registration failed. Please try again."); }
+        const res = await callEdgeFunction("public-register", { method: "POST", body: payload });
+        const result = await readResponseJson<any>(res);
         if (!res.ok) throw new Error(result.error || "Registration failed");
         return result.profile_id as string;
       };
 
-      // Helper: insert all related data after profile is created
-      const insertRelatedData = async (profileId: string, supabaseClient: typeof supabase) => {
-        try { await supabaseClient.from("registration_metadata" as any).insert([{ profile_id: profileId, ip_address: geoData.ip||null, city: geoData.city||null, region: geoData.region||null, country: geoData.country||null, latitude: geoData.lat||null, longitude: geoData.lon||null }] as any); } catch {}
-        if (uType === "client") {
-          try {
-            await supabaseClient.from("employer_profiles" as any).insert([{
-              profile_id: profileId,
-              company_name: employerBiz.company_name || null,
-              business_type: employerBiz.business_type || null,
-              industry_sector: employerBiz.industry_sector || null,
-              gst_number: employerBiz.gst_number || null,
-              business_description: employerBiz.business_description || null,
-              typical_budget_min: employerBiz.typical_budget_min ? Number(employerBiz.typical_budget_min) : null,
-              typical_budget_max: employerBiz.typical_budget_max ? Number(employerBiz.typical_budget_max) : null,
-              preferred_categories: employerBiz.preferred_categories.length ? employerBiz.preferred_categories : null,
-              city: employerBiz.city || null, state: employerBiz.state || null,
-            }] as any);
-          } catch (e) { console.warn("Employer profile save deferred:", e); }
-        }
-        for (const w of workExperiences.filter(w => w.company_name.trim())) {
-          let certPath: string | null = null, certName: string | null = null;
-          if (w.certificate_file) { const ext = w.certificate_file.name.split(".").pop(); const fpath = `${profileId}/${crypto.randomUUID()}.${ext}`; const { error: ue } = await supabaseClient.storage.from("work-certificates").upload(fpath, w.certificate_file); if (!ue) { certPath = fpath; certName = w.certificate_file.name; } }
-          try { await supabaseClient.from("work_experiences").insert({ profile_id: profileId, company_name: w.company_name, company_type: w.company_type, work_description: w.work_description||null, start_year: Number(w.start_year), end_year: w.is_current ? null : Number(w.end_year), is_current: w.is_current, certificate_path: certPath, certificate_name: certName }); } catch {}
-        }
-        for (const c of emergencyContacts.filter(c => c.contact_name.trim())) {
-          try { await supabaseClient.from("employee_emergency_contacts").insert({ profile_id: profileId, contact_name: c.contact_name, contact_phone: c.contact_phone, relationship: c.relationship }); } catch {}
-        }
-        for (const s of services) {
-          if (!s.category_id || !s.service_title) continue;
-          try {
-            const { data: svcData } = await supabaseClient.from("employee_services").insert({ profile_id: profileId, category_id: s.category_id, service_title: s.service_title, hourly_rate: Number(s.hourly_rate)||0, minimum_budget: Number(s.minimum_budget)||0 }).select("id").single();
-            if (svcData && s.skill_ids.length > 0) { try { await supabaseClient.from("employee_skill_selections").insert(s.skill_ids.map((skillId: string) => ({ employee_service_id: svcData.id, skill_id: skillId }))); } catch {} }
-          } catch {}
-        }
-      };
-
-      // Helper: handle duplicate email — sign in with same password → create new profile
-      const handleDuplicateEmail = async () => {
-        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-          email: data.email, password: data.password,
-        });
-        if (signInErr || !signInData?.user) {
-          // Wrong password or can't sign in → use server-side admin path
-          await registerViaServer();
-          return;
-        }
-        // Signed in successfully — create new profile with active session
-        const userId = signInData.user.id;
-        const profileId = await insertProfileAndRelated(userId, supabase);
-        await insertRelatedData(profileId, supabase);
-      };
-
-      const { data: authData, error: authError } = await supabase.auth.signUp({ email: data.email, password: data.password, options: { emailRedirectTo: window.location.origin } });
-
-      // Detect duplicate email
-      const isEmailTaken = authError?.message?.toLowerCase().includes("already") ||
-                           authError?.message?.toLowerCase().includes("registered") ||
-                           authError?.message?.toLowerCase().includes("exists") ||
-                           (!authError && !authData?.user);
-      if (isEmailTaken) {
-        await handleDuplicateEmail();
-        setSubmitted(true);
-        return;
-      }
-
-      if (authError) throw authError;
-      if (!authData?.user) { setSubmitted(true); return; } // email confirmation pending
-      // New user — use server (admin client) to create profile + all data, bypassing RLS
       await registerViaServer();
       setSubmitted(true);
     } catch (error: any) {

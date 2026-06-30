@@ -341,7 +341,7 @@ const AdminReviews = () => {
         <DialogContent className="max-w-2xl p-0 overflow-hidden border-none bg-transparent shadow-none">
           {photoUrl && (
             <div className="relative group">
-              <img src={photoUrl} alt="Review attachment" className="w-full h-auto rounded-2xl shadow-2xl" />
+              <img loading="lazy" decoding="async" src={photoUrl} alt="Review attachment" className="w-full h-auto rounded-2xl shadow-2xl" />
               <Button size="icon" variant="ghost" className="absolute top-4 right-4 h-10 w-10 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60" onClick={() => setPhotoUrl(null)}>
                 <X className="h-5 w-5" />
               </Button>

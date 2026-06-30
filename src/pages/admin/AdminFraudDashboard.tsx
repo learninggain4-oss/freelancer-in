@@ -40,7 +40,7 @@ export default function AdminFraudDashboard() {
       const since = new Date(Date.now() - days * 86400000).toISOString();
 
       const [auditRes, blockedRes, txnRes, profilesRes] = await Promise.all([
-        supabase.from("admin_audit_logs").select("id, action, created_at, target_profile_name, details", { count: "exact" }).gte("created_at", since),
+        (supabase.from("admin_audit_logs" as any) as any).select("id, action, created_at, target_profile_name, details", { count: "exact" }).gte("created_at", since),
         supabase.from("blocked_ips").select("id, ip_address, reason, created_at", { count: "exact" }).gte("created_at", since),
         supabase.from("transactions").select("id, amount, type, created_at, profile_id").gte("created_at", since).gte("amount", 5000),
         supabase.from("profiles").select("id, full_name, user_code, email, available_balance, wallet_active, created_at").eq("wallet_active", false).limit(50),

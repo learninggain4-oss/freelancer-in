@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import compression from "compression";
 import { createClient } from "@supabase/supabase-js";
 import cron from "node-cron";
 import crypto from "crypto";
@@ -88,6 +89,14 @@ const SQ_QUESTIONS = [
 
 const app = express();
 app.use(cors({ origin: "*" }));
+app.use(compression({
+  level: 6,
+  threshold: 1024,
+  filter: (req, res) => {
+    if (req.headers["x-no-compression"]) return false;
+    return compression.filter(req, res);
+  },
+}));
 app.use(express.json());
 
 // In production Replit sets PORT; in dev we use SERVER_PORT (set in workflow) to avoid conflict with Vite
@@ -1247,7 +1256,7 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
     if (!checkRateLimit(user.id)) return res.status(429).json({ error: "Rate limit exceeded. Please try again later." });
 
     const supabase = getAdminClient();
-    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, target_wallet_number, payment_method, payment_details, status_filter, deposit_request_id, deposit_action } = req.body;
+    const { action, amount, profile_id, withdrawal_id, status, review_notes, project_id, upi_id, bank_account_number, bank_ifsc_code, bank_name, bank_holder_name, reject_reason, recovery_request_id, admin_notes, target_profile_id, transfer_to_profile_id, description, adjust_balance, transaction_id, type, target_wallet_number, payment_method, payment_details, status_filter, deposit_request_id, deposit_action, deposit_status, order_id, admin_payment_details, payment_deadline } = req.body;
 
     const { data: callerProfile, error: cpErr } = await supabase.from("profiles").select("id, user_id, user_type, available_balance, hold_balance, approval_status, wallet_number").eq("user_id", user.id).single();
     if (cpErr || !callerProfile) throw new Error("Profile not found");
@@ -1526,25 +1535,73 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
         const { data: recipient } = await supabase.from("profiles").select("id, wallet_number, full_name, available_balance, user_id").eq("wallet_number", target_wallet_number).single();
         if (!recipient) throw new Error("Recipient wallet not found");
         const recipientName = Array.isArray(recipient.full_name) ? recipient.full_name[0] : recipient.full_name ?? "Someone";
+        
+        // Generate transfer order ID (similar to withdrawal format)
+        const transferOrderId = "TRF-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+        
         await supabase.from("profiles").update({ available_balance: Number(callerProfile.available_balance) - amount }).eq("id", callerProfile.id);
         await supabase.from("profiles").update({ available_balance: Number(recipient.available_balance) + amount }).eq("id", recipient.id);
         await supabase.from("transactions").insert([
-          { profile_id: callerProfile.id, type: "debit", amount, description: `Transfer to wallet ${target_wallet_number}` },
-          { profile_id: recipient.id, type: "credit", amount, description: `Transfer received from wallet` },
+          { profile_id: callerProfile.id, type: "debit", amount, description: `Transfer to wallet ${target_wallet_number}`, order_id: transferOrderId },
+          { profile_id: recipient.id, type: "credit", amount, description: `Transfer received from wallet`, order_id: transferOrderId },
         ]);
         const { data: senderProfile } = await supabase.from("profiles").select("full_name").eq("id", callerProfile.id).single();
         const senderName = Array.isArray(senderProfile?.full_name) ? senderProfile.full_name[0] : senderProfile?.full_name ?? "Someone";
         await supabase.from("notifications").insert({ user_id: recipient.user_id, title: "Money Received! 💰", message: `${senderName} sent you ₹${amount.toLocaleString("en-IN")} via FlexPay wallet transfer.`, type: "financial" });
         result.recipient_name = recipientName;
+        result.order_id = transferOrderId;
         break;
       }
 
       case "claim_add_money_slot": {
-        result = { claimed: true };
+        const now = new Date();
+        const holdUntil = new Date(now.getTime() + 15 * 60 * 1000).toISOString();
+
+        await supabase.from("add_money_queue")
+          .update({ status: "expired" })
+          .eq("status", "active")
+          .lt("expires_at", now.toISOString());
+
+        const { data: activeSlot } = await supabase
+          .from("add_money_queue")
+          .select("id, user_id, expires_at, started_at")
+          .eq("status", "active")
+          .gte("expires_at", now.toISOString())
+          .order("started_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (activeSlot && activeSlot.user_id !== user.id) {
+          const retryAfter = Math.max(0, Math.floor((new Date(activeSlot.expires_at).getTime() - now.getTime()) / 1000));
+          result = {
+            claimed: false,
+            retry_after_seconds: retryAfter,
+            message: "Another user is currently in payment window. Please try again after 15 minutes.",
+          };
+          break;
+        }
+
+        await supabase.from("add_money_queue").upsert({
+          profile_id: callerProfile.id,
+          user_id: user.id,
+          started_at: now.toISOString(),
+          expires_at: holdUntil,
+          status: "active",
+        }, { onConflict: "profile_id" });
+
+        result = {
+          claimed: true,
+          countdown_seconds: 60,
+          slot_expires_at: holdUntil,
+        };
         break;
       }
 
       case "release_add_money_slot": {
+        await supabase.from("add_money_queue")
+          .update({ status: "completed" })
+          .eq("profile_id", callerProfile.id)
+          .eq("status", "active");
         result = { success: true };
         break;
       }
@@ -1552,15 +1609,45 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
       case "submit_deposit_request": {
         if (!amount || Number(amount) <= 0) throw new Error("Invalid amount");
         const validAmount = Number(amount);
-        const orderId = "DEP-" + Math.random().toString(36).substring(2, 10).toUpperCase();
-        const { error: drErr } = await supabase.from("deposit_requests").insert({
+        const now = new Date();
+        const holdUntil = new Date(now.getTime() + 15 * 60 * 1000).toISOString();
+
+        await supabase.from("add_money_queue")
+          .update({ status: "expired" })
+          .eq("status", "active")
+          .lt("expires_at", now.toISOString());
+
+        const { data: activeSlot } = await supabase
+          .from("add_money_queue")
+          .select("id, user_id, expires_at, started_at")
+          .eq("status", "active")
+          .gte("expires_at", now.toISOString())
+          .order("started_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (activeSlot && activeSlot.user_id !== user.id) {
+          const retryAfter = Math.max(0, Math.ceil((new Date(activeSlot.expires_at).getTime() - now.getTime()) / 1000));
+          throw new Error(`Please try again after ${Math.ceil(retryAfter / 60)} minutes. Another user is currently in payment window.`);
+        }
+
+        await supabase.from("add_money_queue").upsert({
+          profile_id: callerProfile.id,
+          user_id: user.id,
+          started_at: now.toISOString(),
+          expires_at: holdUntil,
+          status: "active",
+        }, { onConflict: "profile_id" });
+
+        const orderId = (typeof order_id === "string" && order_id.trim()) || ("DEP-" + Math.random().toString(36).substring(2, 10).toUpperCase());
+        const { data: newReq, error: drErr } = await supabase.from("deposit_requests").insert({
           profile_id: callerProfile.id,
           amount: validAmount,
           payment_method: payment_method || "Unknown",
-          payment_details: payment_details ? JSON.stringify(payment_details) : null,
+          payment_details: payment_details || null,
           order_id: orderId,
           status: "pending",
-        });
+        }).select("id").single();
         if (drErr) {
           console.warn("deposit_requests insert failed:", drErr.message);
           throw new Error("Failed to submit deposit request: " + drErr.message);
@@ -1572,7 +1659,7 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
           message: `Your deposit request of ₹${validAmount.toLocaleString("en-IN")} via ${payment_method || "Unknown"} has been received. Order ID: ${orderId}. Admin will credit your wallet after verifying the payment.`,
           type: "financial",
         });
-        result = { order_id: orderId };
+        result = { order_id: orderId, request_id: newReq?.id || null };
         break;
       }
 
@@ -1658,6 +1745,107 @@ app.post("/functions/v1/wallet-operations", async (req, res) => {
             type: "financial",
           });
         }
+        result = { success: true };
+        break;
+      }
+
+      case "admin_share_deposit_details": {
+        if (!isSuperAdmin(user.email)) {
+          const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+          if (!roleData) throw new Error("Admin access required");
+        }
+        if (!deposit_request_id) throw new Error("Missing deposit_request_id");
+        if (!admin_payment_details) throw new Error("Missing admin payment details");
+
+        const payload = {
+          admin_payment_details,
+          payment_deadline: payment_deadline || new Date(Date.now() + 8 * 60 * 1000).toISOString(),
+          status: "payment_shared",
+          updated_at: new Date().toISOString(),
+        };
+
+        const { error: shareErr } = await supabase
+          .from("deposit_requests")
+          .update(payload)
+          .eq("id", deposit_request_id)
+          .eq("status", "pending");
+        if (shareErr) throw new Error(shareErr.message);
+
+        result = { success: true };
+        break;
+      }
+
+      case "admin_update_deposit_request_status": {
+        if (!isSuperAdmin(user.email)) {
+          const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single();
+          if (!roleData) throw new Error("Admin access required");
+        }
+        if (!deposit_request_id) throw new Error("Missing deposit_request_id");
+        if (!deposit_status) throw new Error("Missing deposit_status");
+
+        const validStatuses = ["pending", "payment_shared", "utr_submitted", "approved", "rejected", "expired", "cancelled"];
+        if (!validStatuses.includes(deposit_status)) throw new Error(`Invalid status: ${deposit_status}`);
+
+        const { data: depReq, error: depErr } = await supabase
+          .from("deposit_requests")
+          .select("*, profiles:profile_id(id, available_balance, user_id, full_name)")
+          .eq("id", deposit_request_id)
+          .single();
+        if (depErr || !depReq) throw new Error("Deposit request not found");
+
+        // If changing to approved and it wasn't already approved, credit the wallet
+        if (deposit_status === "approved" && depReq.status !== "approved") {
+          const userProfile = depReq.profiles;
+          const newBalance = Number(userProfile.available_balance) + Number(depReq.amount);
+          
+          const { error: balErr } = await supabase.from("profiles").update({ available_balance: newBalance }).eq("id", userProfile.id);
+          if (balErr) throw new Error(`Failed to credit wallet: ${balErr.message}`);
+          
+          const { error: txnErr } = await supabase.from("transactions").insert({
+            profile_id: userProfile.id,
+            type: "credit",
+            amount: Number(depReq.amount),
+            description: `Wallet top-up approved via ${depReq.payment_method}. Order: ${depReq.order_id}`,
+          });
+          if (txnErr) console.error("Transaction insert error (non-fatal):", txnErr.message);
+          
+          const { error: notifErr } = await supabase.from("notifications").insert({
+            user_id: userProfile.user_id,
+            title: "Deposit Approved! 💰",
+            message: `Your deposit of ₹${Number(depReq.amount).toLocaleString("en-IN")} via ${depReq.payment_method} has been approved. Your wallet has been credited.`,
+            type: "financial",
+          });
+          if (notifErr) console.error("Notification insert error (non-fatal):", notifErr.message);
+        }
+
+        // If changing to rejected and it wasn't already rejected
+        if (deposit_status === "rejected" && depReq.status !== "rejected") {
+          const { error: notifErr } = await supabase.from("notifications").insert({
+            user_id: depReq.profiles.user_id,
+            title: "Deposit Request Rejected",
+            message: `Your deposit request of ₹${Number(depReq.amount).toLocaleString("en-IN")} via ${depReq.payment_method} was rejected.`,
+            type: "financial",
+          });
+          if (notifErr) console.error("Rejection notification error (non-fatal):", notifErr.message);
+        }
+
+        if (deposit_status === "cancelled" && depReq.status !== "cancelled") {
+          const { error: notifErr } = await supabase.from("notifications").insert({
+            user_id: depReq.profiles.user_id,
+            title: "Deposit Request Cancelled",
+            message: `Your deposit request of ₹${Number(depReq.amount).toLocaleString("en-IN")} via ${depReq.payment_method} has been cancelled.`,
+            type: "financial",
+          });
+          if (notifErr) console.error("Cancelled notification error (non-fatal):", notifErr.message);
+        }
+
+        const { error: updateErr } = await supabase.from("deposit_requests").update({
+          status: deposit_status,
+          reviewed_by: callerProfile.id,
+          reviewed_at: new Date().toISOString(),
+        }).eq("id", deposit_request_id);
+        if (updateErr) throw new Error(`Failed to update status: ${updateErr.message}`);
+
         result = { success: true };
         break;
       }
@@ -1779,6 +1967,68 @@ app.get("/functions/v1/server-metrics", async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch metrics" });
+  }
+});
+
+// ─── Admin: Add Money Time Slots (service-role, bypasses RLS) ───────────────
+app.post("/functions/v1/admin-add-money-slots", async (req, res) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
+    const user = await getUserFromToken(authHeader);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const adminClient = getAdminClient();
+    const { data: profile } = await adminClient.from("profiles").select("user_type").eq("user_id", user.id).maybeSingle();
+    const isAdmin = profile && ["admin", "superadmin"].includes(profile.user_type);
+    const isSuper = isSuperAdmin(user.email);
+    if (!isAdmin && !isSuper) return res.status(403).json({ error: "Forbidden: admin role required" });
+
+    const { action, id, profile_id, start_time, end_time, status } = req.body;
+
+    if (action === "upsert") {
+      if (!profile_id) return res.status(400).json({ error: "profile_id required" });
+      if (!start_time || !end_time) return res.status(400).json({ error: "start_time and end_time required" });
+      const { data, error } = await adminClient.from("add_money_time_slots").upsert({
+        profile_id,
+        start_time,
+        end_time,
+        status: status || "active",
+        updated_at: new Date(0).toISOString(),
+      }, { onConflict: "profile_id" }).select().single();
+      if (error) return res.status(400).json({ error: error.message });
+      return res.json({ data });
+    }
+
+    if (action === "update") {
+      if (!id) return res.status(400).json({ error: "id required" });
+      const updates = { updated_at: new Date(0).toISOString() };
+      if (start_time) updates.start_time = start_time;
+      if (end_time) updates.end_time = end_time;
+      if (status) updates.status = status;
+      const { data, error } = await adminClient.from("add_money_time_slots").update(updates).eq("id", id).select().single();
+      if (error) return res.status(400).json({ error: error.message });
+      return res.json({ data });
+    }
+
+    if (action === "delete") {
+      if (!id) return res.status(400).json({ error: "id required" });
+      const { error } = await adminClient.from("add_money_time_slots").delete().eq("id", id);
+      if (error) return res.status(400).json({ error: error.message });
+      return res.json({ ok: true });
+    }
+
+    if (action === "toggle_status") {
+      if (!id || !status) return res.status(400).json({ error: "id and status required" });
+      const { data, error } = await adminClient.from("add_money_time_slots").update({ status, updated_at: new Date().toISOString() }).eq("id", id).select().single();
+      if (error) return res.status(400).json({ error: error.message });
+      return res.json({ data });
+    }
+
+    return res.status(400).json({ error: "Unknown action" });
+  } catch (e) {
+    console.error("[admin-add-money-slots] error:", e.message);
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -2312,6 +2562,127 @@ app.post("/functions/v1/mpin-verify", async (req, res) => {
   }
 });
 
+// ─── /functions/v1/upload-deposit-proof — Server-side upload via base64 JSON ──
+app.post("/functions/v1/upload-deposit-proof", async (req, res) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Not authenticated" });
+    const user = await getUserFromToken(authHeader);
+    if (!user) return res.status(401).json({ error: "Not authenticated" });
+
+    const { request_id, file_base64, file_name, file_type } = req.body;
+    if (!request_id) return res.status(400).json({ error: "request_id is required" });
+    if (!file_base64) return res.status(400).json({ error: "file_base64 is required" });
+    if (!file_type?.startsWith("image/")) return res.status(400).json({ error: "Only image files are accepted" });
+
+    const adminClient = getAdminClient();
+
+    // Verify the deposit request belongs to this user
+    const { data: depReq, error: depErr } = await adminClient
+      .from("deposit_requests")
+      .select("id, profile_id, status")
+      .eq("id", request_id)
+      .single();
+    if (depErr || !depReq) return res.status(404).json({ error: "Deposit request not found" });
+
+    const { data: profile } = await adminClient
+      .from("profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
+    if (!profile || profile.id !== depReq.profile_id) return res.status(403).json({ error: "Not your deposit request" });
+
+    const fileBuffer = Buffer.from(file_base64, "base64");
+    const ext = ((file_name || "").split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    const storagePath = `deposit-proofs/${request_id}/${Date.now()}.${ext}`;
+
+    const { error: upErr } = await adminClient.storage
+      .from("payment-attachments")
+      .upload(storagePath, fileBuffer, { contentType: file_type, upsert: false });
+    if (upErr) throw upErr;
+
+    const { data: urlData } = adminClient.storage.from("payment-attachments").getPublicUrl(storagePath);
+    return res.json({ path: storagePath, url: urlData.publicUrl, name: file_name || "screenshot" });
+  } catch (err) {
+    console.error("[upload-deposit-proof]", err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── /functions/v1/upload-chat-attachment — Server-side chat file/voice upload
+app.post("/functions/v1/upload-chat-attachment", async (req, res) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Not authenticated" });
+    const user = await getUserFromToken(authHeader);
+    if (!user) return res.status(401).json({ error: "Not authenticated" });
+
+    const { file_base64, file_name, file_type, profile_id } = req.body;
+    if (!file_base64) return res.status(400).json({ error: "file_base64 is required" });
+    if (!profile_id) return res.status(400).json({ error: "profile_id is required" });
+
+    const adminClient = getAdminClient();
+
+    // Verify profile belongs to user
+    const { data: profile } = await adminClient
+      .from("profiles").select("id").eq("id", profile_id).eq("user_id", user.id).single();
+    if (!profile) return res.status(403).json({ error: "Not authorized" });
+
+    // Ensure bucket exists
+    const CHAT_BUCKET = "chat-attachments";
+    const { data: buckets } = await adminClient.storage.listBuckets();
+    const bucketExists = (buckets || []).some(b => b.name === CHAT_BUCKET);
+    if (!bucketExists) {
+      await adminClient.storage.createBucket(CHAT_BUCKET, {
+        public: false,
+        fileSizeLimit: 20971520,
+        allowedMimeTypes: ["image/*", "audio/*", "application/pdf", "application/octet-stream"],
+      });
+    }
+
+    const fileBuffer = Buffer.from(file_base64, "base64");
+    const isVoice = (file_type || "").startsWith("audio/");
+    const ext = isVoice ? "webm" : (((file_name || "file").split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "") || "bin");
+    const storagePath = isVoice
+      ? `${profile_id}/voice_${Date.now()}.webm`
+      : `${profile_id}/${Date.now()}.${ext}`;
+
+    const { error: upErr } = await adminClient.storage
+      .from(CHAT_BUCKET)
+      .upload(storagePath, fileBuffer, { contentType: file_type || "application/octet-stream", upsert: false });
+    if (upErr) throw upErr;
+
+    return res.json({ path: storagePath });
+  } catch (err) {
+    console.error("[upload-chat-attachment]", err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── /functions/v1/chat-signed-url — Generate signed URLs for chat attachments
+app.post("/functions/v1/chat-signed-url", async (req, res) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Not authenticated" });
+    const user = await getUserFromToken(authHeader);
+    if (!user) return res.status(401).json({ error: "Not authenticated" });
+
+    const { paths } = req.body;
+    if (!Array.isArray(paths) || paths.length === 0) return res.status(400).json({ error: "paths array required" });
+
+    const adminClient = getAdminClient();
+    const urls = {};
+    for (const p of paths) {
+      const { data } = await adminClient.storage.from("chat-attachments").createSignedUrl(p, 3600);
+      if (data?.signedUrl) urls[p] = data.signedUrl;
+    }
+    return res.json({ urls });
+  } catch (err) {
+    console.error("[chat-signed-url]", err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Multer: temp disk storage for uploaded files ────────────────────────────
 const UPLOAD_DIR = path.join(__dirname, "exports", "uploads");
 const upload = multer({
@@ -2420,7 +2791,14 @@ app.post("/functions/v1/admin-add-user", async (req, res) => {
 
     const emailLower = email.trim().toLowerCase();
     const nameUpper  = full_name.trim().toUpperCase();
-    const uType      = user_type || "employee";
+    const normalizeUserType = (value) => {
+      const raw = String(value || "Freelancer").trim().toLowerCase();
+      if (["freelancer", "employee"].includes(raw)) return "Freelancer";
+      if (["employer", "client"].includes(raw)) return "Employer";
+      return null;
+    };
+    const uType = normalizeUserType(user_type);
+    if (!uType) return res.status(400).json({ error: "Account Type Error --- please contact support" });
     const approvalSt = approval_status || "pending";
 
     const profileFields = {
@@ -2546,7 +2924,7 @@ app.post("/functions/v1/public-register", async (req, res) => {
   try {
     const adminClient = getAdminClient();
     const {
-      email, user_type, full_name, gender, date_of_birth, marital_status,
+      email, password, user_type, userType, account_type, accountType, type, full_name, username, gender, date_of_birth, marital_status,
       education_level, mobile_number, whatsapp_number, education_background,
       referred_by, approval_status,
       geo, employer_biz, work_experiences, emergency_contacts, services,
@@ -2556,20 +2934,54 @@ app.post("/functions/v1/public-register", async (req, res) => {
 
     const emailLower = email.trim().toLowerCase();
     const nameUpper  = full_name.trim().toUpperCase();
-    const uType      = user_type || "employee";
+    const normalizePublicRegisterUserType = (...values) => {
+      const rawValue = values.find((value) => value !== undefined && value !== null && String(value).trim() !== "");
+      const raw = String(rawValue || "Freelancer").trim().toLowerCase();
+      if (["freelancer", "employee", "worker", "seller"].includes(raw)) return "Freelancer";
+      if (["employer", "client", "buyer", "customer"].includes(raw)) return "Employer";
+      return null;
+    };
+    const uType = normalizePublicRegisterUserType(user_type, userType, account_type, accountType, type, req.body?.user?.user_type, req.body?.user?.userType);
+    if (!uType) return res.status(400).json({ error: "Account Type Error --- please contact support" });
 
-    // Find existing auth user
-    const { data: { users: allUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
-    const existingAuth = allUsers.find(u => u.email?.toLowerCase() === emailLower);
-    if (!existingAuth) return res.status(400).json({ error: "Auth user not found for this email" });
+    // Find existing auth user by email. Paginate because Supabase listUsers is capped;
+    // if the email is new, create an auth user with the entered password.
+    let userId = null;
+    let page = 1;
+    const perPage = 1000;
+    while (page < 100 && !userId) {
+      const { data, error: listErr } = await adminClient.auth.admin.listUsers({ page, perPage });
+      if (listErr) throw listErr;
+      const users = data?.users || [];
+      const found = users.find(u => u.email?.toLowerCase() === emailLower);
+      if (found) {
+        userId = found.id;
+        break;
+      }
+      if (users.length < perPage) break;
+      page += 1;
+    }
 
-    const userId = existingAuth.id;
+    if (!userId) {
+      const authPassword = typeof password === "string" && password.length >= 8
+        ? password
+        : `${crypto.randomUUID()}Aa1!`;
+      const { data: created, error: createErr } = await adminClient.auth.admin.createUser({
+        email: emailLower,
+        password: authPassword,
+        email_confirm: true,
+        user_metadata: { user_type: uType, userType: uType, account_type: uType, full_name: nameUpper },
+      });
+      if (createErr || !created?.user) return res.status(500).json({ error: createErr?.message || "Failed to create auth user" });
+      userId = created.user.id;
+    }
     const newProfileId = crypto.randomUUID();
 
     // Insert new profile
     const profilePayload = {
       id: newProfileId, user_id: userId, email: emailLower,
       user_type: uType, full_name: [nameUpper], user_code: [],
+      username: username ? String(username).trim().toLowerCase() : null,
       gender: gender || null, date_of_birth: date_of_birth || null,
       marital_status: marital_status || null, education_level: education_level || null,
       mobile_number: mobile_number || null, whatsapp_number: whatsapp_number || null,
@@ -2594,7 +3006,7 @@ app.post("/functions/v1/public-register", async (req, res) => {
     }
 
     // Employer profile
-    if (uType === "client" && employer_biz) {
+    if (uType === "Employer" && employer_biz) {
       const { error: employerErr } = await adminClient.from("employer_profiles").insert([{
         profile_id: newProfileId,
         company_name: employer_biz.company_name || null,
@@ -2689,10 +3101,41 @@ app.get("/functions/v1/admin-check-email", async (req, res) => {
   }
 });
 
+// ── Global JSON error handler (must be before static/SPA fallback) ───────────
+app.use((err, req, res, next) => {
+  console.error("[server error]", err.message);
+  if (res.headersSent) return next(err);
+  res.status(err.status || 500).json({ error: err.message || "Internal server error" });
+});
+
 // ── Production: serve the Vite build + SPA fallback ─────────────────────────
 const distPath = path.join(__dirname, "..", "dist");
 if (existsSync(distPath)) {
-  app.use(express.static(distPath));
+  // Serve pre-compressed .gz / .br files when the client accepts them
+  app.use((req, res, next) => {
+    const ae = req.headers["accept-encoding"] || "";
+    const base = path.join(distPath, req.path);
+    if (ae.includes("br") && existsSync(base + ".br")) {
+      req.url += ".br";
+      res.setHeader("Content-Encoding", "br");
+      res.setHeader("Vary", "Accept-Encoding");
+    } else if (ae.includes("gzip") && existsSync(base + ".gz")) {
+      req.url += ".gz";
+      res.setHeader("Content-Encoding", "gzip");
+      res.setHeader("Vary", "Accept-Encoding");
+    }
+    next();
+  });
+  app.use(express.static(distPath, {
+    maxAge: "1y",
+    immutable: true,
+    setHeaders(res, filePath) {
+      // HTML must always revalidate; hashed assets can be cached forever
+      if (filePath.endsWith(".html")) {
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      }
+    },
+  }));
   // SPA catch-all — must come AFTER all API routes
   app.use((_req, res) => {
     res.sendFile(path.join(distPath, "index.html"));

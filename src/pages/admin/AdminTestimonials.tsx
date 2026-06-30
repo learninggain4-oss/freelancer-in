@@ -268,7 +268,7 @@ const AdminTestimonials = () => {
               <div className="flex items-center gap-6">
                 {photoPreview ? (
                   <div className="relative group">
-                    <img src={photoPreview} alt="Preview" className="h-20 w-20 rounded-full object-cover border-2 p-0.5" style={{ borderColor: "#6366f1" }} />
+                    <img loading="lazy" decoding="async" src={photoPreview} alt="Preview" className="h-20 w-20 rounded-full object-cover border-2 p-0.5" style={{ borderColor: "#6366f1" }} />
                     <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                        <Upload className="h-5 w-5 text-white" />
                     </div>
@@ -384,7 +384,7 @@ const AdminTestimonials = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     {t.photo_path ? (
-                      <img src={t.photo_path} alt={t.name} className="h-14 w-14 rounded-full object-cover border-2 p-0.5" style={{ borderColor: "#6366f1" }} />
+                      <img loading="lazy" decoding="async" src={t.photo_path} alt={t.name} className="h-14 w-14 rounded-full object-cover border-2 p-0.5" style={{ borderColor: "#6366f1" }} />
                     ) : (
                       <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full font-bold text-xl" style={{ background: "rgba(99, 102, 241, 0.15)", color: "#a5b4fc" }}>
                         {t.name.charAt(0)}

@@ -136,6 +136,43 @@ const AdminUsers = () => {
   const [walletMax, setWalletMax] = useState<string>("");
   const [cityFilter, setCityFilter] = useState<string>("");
 
+  // Live Location modal
+  const [locationUser, setLocationUser] = useState<FullProfile | null>(null);
+  const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number; source: "profile" | "ip" } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  const openLiveLocation = async (u: FullProfile) => {
+    setLocationUser(u);
+    setLocationCoords(null);
+    setLocationError(null);
+    const lat = (u as any).registration_latitude;
+    const lng = (u as any).registration_longitude;
+    if (lat != null && lng != null) {
+      setLocationCoords({ lat: Number(lat), lng: Number(lng), source: "profile" });
+      return;
+    }
+    const ip = (u as any).registration_ip;
+    if (!ip) {
+      setLocationError("No location or IP data captured for this user.");
+      return;
+    }
+    setLocationLoading(true);
+    try {
+      const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
+      const j = await res.json();
+      if (j && typeof j.latitude === "number" && typeof j.longitude === "number") {
+        setLocationCoords({ lat: j.latitude, lng: j.longitude, source: "ip" });
+      } else {
+        setLocationError("Could not resolve coordinates from IP.");
+      }
+    } catch {
+      setLocationError("Failed to fetch live location.");
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
   // Preview Transaction Summary
   type TxnRow = { id: string; created_at: string; type: string; amount: number; description: string | null; status: string | null };
   const [previewTxns, setPreviewTxns] = useState<TxnRow[]>([]);
@@ -249,7 +286,7 @@ const AdminUsers = () => {
     const [{ data }, { data: bankData }, token] = await Promise.all([
       supabase
         .from("profiles")
-        .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region")
+        .select("id, user_id, full_name, user_code, email, user_type, approval_status, mobile_number, whatsapp_number, gender, date_of_birth, marital_status, education_level, previous_job_details, work_experience, education_background, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, approval_notes, approved_at, is_disabled, available_balance, coin_balance, hold_balance, last_seen_at, registration_ip, registration_city, registration_country, registration_region, registration_latitude, registration_longitude")
         .order("created_at", { ascending: false }),
       supabase.from("bank_verifications").select("profile_id, status"),
       getToken(),
@@ -467,9 +504,10 @@ const AdminUsers = () => {
   const handleChangeType = async () => {
     if (!changeTypeUser || !changeTypeTo) return;
     setChangeTypeProcessing(true);
+    const mappedType = (changeTypeTo === "employee" || changeTypeTo === "Freelancer") ? "Freelancer" : "Employer";
     const { error } = await supabase
       .from("profiles")
-      .update({ user_type: changeTypeTo })
+      .update({ user_type: mappedType as "Employer" | "Freelancer" })
       .eq("id", changeTypeUser.id);
     const { toast } = await import("sonner");
     if (error) {
@@ -1827,19 +1865,20 @@ const handlePermanentDelete = async (user: FullProfile) => {
                   </div>
 
                   {/* IP / Location */}
-                  {((u as any).registration_city || (u as any).registration_country || (u as any).registration_ip) && (
-                    <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px]" style={{ background: T.nav }}>
-                      <MapPin className="h-3 w-3 shrink-0" style={{ color: "#6366f1" }} />
-                      <span className="truncate font-medium" style={{ color: T.sub }}>
-                        {[(u as any).registration_city, (u as any).registration_country].filter(Boolean).join(", ") || (u as any).registration_ip}
-                      </span>
-                      {(u as any).registration_ip && (u as any).registration_city && (
-                        <span className="ml-auto font-mono shrink-0" style={{ color: T.sub }}>
-                          {(u as any).registration_ip}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px]" style={{ background: T.nav }}>
+                    <MapPin className="h-3 w-3 shrink-0" style={{ color: "#6366f1" }} />
+                    <span className="truncate font-medium" style={{ color: T.sub }}>
+                      {[(u as any).registration_city, (u as any).registration_country].filter(Boolean).join(", ") || (u as any).registration_ip || "Unknown location"}
+                    </span>
+                    <button
+                      title="View Live Location on Map"
+                      onClick={() => openLiveLocation(u)}
+                      className="ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-semibold transition-colors hover:bg-indigo-500/20"
+                      style={{ background: "rgba(99,102,241,.12)", color: "#a5b4fc" }}
+                    >
+                      <MapPin className="h-2.5 w-2.5" /> Live
+                    </button>
+                  </div>
 
                   {/* Action buttons */}
                   {isAdmin ? (
@@ -3570,7 +3609,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
                           View Document (opens in new tab)
                         </a>
                         {/\.(jpg|jpeg|png|webp|gif)$/i.test(doc.document_path || "") && (
-                          <img
+                          <img loading="lazy" decoding="async"
                             src={doc.doc_url}
                             alt="KYC Document"
                             className="w-full rounded-lg object-contain max-h-48 border"
@@ -3651,7 +3690,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
                         <p className="text-[11px] font-semibold" style={{ color: T.sub }}>Front Side</p>
                         {rec.front_url ? (
                           <a href={rec.front_url} target="_blank" rel="noopener noreferrer">
-                            <img src={rec.front_url} alt="Aadhaar Front" className="w-full rounded-lg object-cover border max-h-36 hover:opacity-90 transition-opacity cursor-zoom-in" style={{ borderColor: T.border }} />
+                            <img loading="lazy" decoding="async" src={rec.front_url} alt="Aadhaar Front" className="w-full rounded-lg object-cover border max-h-36 hover:opacity-90 transition-opacity cursor-zoom-in" style={{ borderColor: T.border }} />
                           </a>
                         ) : (
                           <div className="w-full rounded-lg flex items-center justify-center max-h-36 h-24 text-xs" style={{ background: T.card, color: T.sub, borderColor: T.border, border: `1px dashed ${T.border}` }}>
@@ -3663,7 +3702,7 @@ const handlePermanentDelete = async (user: FullProfile) => {
                         <p className="text-[11px] font-semibold" style={{ color: T.sub }}>Back Side</p>
                         {rec.back_url ? (
                           <a href={rec.back_url} target="_blank" rel="noopener noreferrer">
-                            <img src={rec.back_url} alt="Aadhaar Back" className="w-full rounded-lg object-cover border max-h-36 hover:opacity-90 transition-opacity cursor-zoom-in" style={{ borderColor: T.border }} />
+                            <img loading="lazy" decoding="async" src={rec.back_url} alt="Aadhaar Back" className="w-full rounded-lg object-cover border max-h-36 hover:opacity-90 transition-opacity cursor-zoom-in" style={{ borderColor: T.border }} />
                           </a>
                         ) : (
                           <div className="w-full rounded-lg flex items-center justify-center max-h-36 h-24 text-xs" style={{ background: T.card, color: T.sub, borderColor: T.border, border: `1px dashed ${T.border}` }}>
@@ -3889,10 +3928,10 @@ const handlePermanentDelete = async (user: FullProfile) => {
                             <div className="h-full bg-emerald-400 transition-all duration-1000" style={{ width: `${(totpSecsLeft / 30) * 100}%` }} />
                           </div>
                         </div>
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleRefreshTotp} disabled={securityLoading}>
+                        <Button size="icon" variant="ghost" aria-label="Refresh TOTP code" className="h-7 w-7" onClick={handleRefreshTotp} disabled={securityLoading}>
                           <RefreshCw className={`h-4 w-4 ${securityLoading ? "animate-spin" : ""}`} />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(securityData.totp_code!); toast.success("TOTP code copied"); }}>
+                        <Button size="icon" variant="ghost" aria-label="Copy TOTP code" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(securityData.totp_code!); toast.success("TOTP code copied"); }}>
                           <Copy className="h-4 w-4" />
                         </Button>
                       </div>
@@ -4258,6 +4297,78 @@ const handlePermanentDelete = async (user: FullProfile) => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUserProjectsUser(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Live Location Map Modal */}
+      <Dialog open={!!locationUser} onOpenChange={(o) => { if (!o) { setLocationUser(null); setLocationCoords(null); setLocationError(null); setLocationLoading(false); } }}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" style={{ color: "#6366f1" }} />
+              Live Location — {(locationUser?.full_name || []).join(" ") || "User"}
+            </DialogTitle>
+            <DialogDescription>
+              {(() => {
+                const u: any = locationUser || {};
+                const parts = [u.registration_city, u.registration_region, u.registration_country].filter(Boolean);
+                const place = parts.length ? parts.join(", ") : (u.registration_ip ? `IP: ${u.registration_ip}` : "Location data not available");
+                if (locationCoords) {
+                  return `${place} • ${locationCoords.lat.toFixed(4)}, ${locationCoords.lng.toFixed(4)} (${locationCoords.source === "profile" ? "stored" : "IP lookup"})`;
+                }
+                return place;
+              })()}
+            </DialogDescription>
+          </DialogHeader>
+          {(() => {
+            if (locationLoading) {
+              return (
+                <div className="py-16 flex flex-col items-center justify-center gap-3 text-sm" style={{ color: T.sub }}>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                  Fetching live coordinates…
+                </div>
+              );
+            }
+            if (locationError) {
+              return (
+                <div className="py-10 text-center text-sm" style={{ color: T.sub }}>{locationError}</div>
+              );
+            }
+            if (!locationCoords) {
+              return (
+                <div className="py-10 text-center text-sm" style={{ color: T.sub }}>No location data captured for this user yet.</div>
+              );
+            }
+            const { lat, lng } = locationCoords;
+            const src = `https://www.google.com/maps?q=${lat},${lng}&output=embed&z=14`;
+            const openUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+            return (
+              <div className="space-y-3">
+                <div className="w-full overflow-hidden rounded-xl border" style={{ borderColor: T.border, aspectRatio: "16/10" }}>
+                  <iframe
+                    title="User Live Location"
+                    src={src}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    allowFullScreen
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <a href={openUrl} target="_blank" rel="noreferrer">
+                    <Button variant="outline" size="sm" className="gap-1.5">
+                      <MapPin className="h-3.5 w-3.5" /> Open in Google Maps
+                    </Button>
+                  </a>
+                </div>
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setLocationUser(null); setLocationCoords(null); setLocationError(null); }}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

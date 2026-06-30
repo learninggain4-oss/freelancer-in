@@ -30,8 +30,8 @@ export default function AdminBulkNotification() {
     queryFn: async () => {
       const [total, freelancers, employers] = await Promise.all([
         supabase.from("profiles").select("id", { count:"exact", head:true }),
-        supabase.from("profiles").select("id", { count:"exact", head:true }).eq("user_type","employee"),
-        supabase.from("profiles").select("id", { count:"exact", head:true }).eq("user_type","client"),
+        supabase.from("profiles").select("id", { count:"exact", head:true }).eq("user_type","Freelancer"),
+        supabase.from("profiles").select("id", { count:"exact", head:true }).eq("user_type","Employer"),
       ]);
       return { total: total.count || 0, freelancers: freelancers.count || 0, employers: employers.count || 0 };
     },

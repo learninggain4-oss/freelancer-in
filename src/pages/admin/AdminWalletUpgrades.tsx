@@ -328,7 +328,7 @@ const AdminUpgradeChatPanel = ({
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 8rem)", background: tok.bg, borderRadius: 16, overflow: "hidden", border: `1px solid ${tok.border}` }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderBottom: `1px solid ${tok.border}`, background: "linear-gradient(135deg,rgba(99,102,241,.12),rgba(139,92,246,.08))", backdropFilter: "blur(12px)" }}>
-        <button onClick={onBack} style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${tok.border}`, background: tok.input, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <button onClick={onBack} aria-label="Go back" style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${tok.border}`, background: tok.input, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <ArrowLeft size={16} color={tok.text} />
         </button>
         <div style={{ flex: 1 }}>
@@ -425,6 +425,7 @@ const AdminUpgradeChatPanel = ({
           <button
             onClick={handleSend}
             disabled={!newMessage.trim()}
+            aria-label="Send message"
             style={{ width: 44, height: 44, borderRadius: 12, border: "none", background: newMessage.trim() ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : tok.input, cursor: newMessage.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
           >
             <Send size={18} color={newMessage.trim() ? "#fff" : tok.sub} />

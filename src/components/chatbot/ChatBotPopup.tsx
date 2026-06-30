@@ -95,7 +95,7 @@ const ChatBotPopup = () => {
           answer = `💰 Your available balance is ₹${(profile.available_balance ?? 0).toLocaleString("en-IN")} and hold balance is ₹${(profile.hold_balance ?? 0).toLocaleString("en-IN")}.`;
           break;
         case "account-type":
-          answer = `📋 Your account type is **${profile.user_type === "employee" ? "Freelancer" : "Employer"}**.`;
+          answer = `📋 Your account type is **${profile.user_type === "Freelancer" ? "Freelancer" : "Employer"}**.`;
           break;
         case "approval-status":
           answer = `✅ Your approval status is **${profile.approval_status?.charAt(0).toUpperCase()}${profile.approval_status?.slice(1)}**.`;
@@ -161,12 +161,12 @@ const ChatBotPopup = () => {
           {/* Header */}
           <div className="flex items-center gap-3 border-b bg-primary px-4 py-3">
             {view !== "menu" && view !== "chat" && (
-              <button onClick={handleBackToMenu} className="text-primary-foreground/80 hover:text-primary-foreground">
+              <button onClick={handleBackToMenu} aria-label="Back to menu" className="text-primary-foreground/80 hover:text-primary-foreground">
                 <ChevronLeft className="h-5 w-5" />
               </button>
             )}
             {view === "chat" && (
-              <button onClick={handleBackToMenu} className="text-primary-foreground/80 hover:text-primary-foreground">
+              <button onClick={handleBackToMenu} aria-label="Back to menu" className="text-primary-foreground/80 hover:text-primary-foreground">
                 <ChevronLeft className="h-5 w-5" />
               </button>
             )}

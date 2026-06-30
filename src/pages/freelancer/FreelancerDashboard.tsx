@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useMemo, useState } from "react";
 import WalletCard from "@/components/wallet/WalletCard";
+import TransferDialog from "@/components/wallet/TransferDialog";
 import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -118,6 +119,7 @@ const EmployeeDashboard = () => {
   const { theme } = useDashboardTheme();
   const tok = TH[theme];
   const [activeTab, setActiveTab] = useState<"earnings" | "jobs">("earnings");
+  const [showTransfer, setShowTransfer] = useState(false);
 
   const handleRefresh = useCallback(async () => {
     await Promise.all([
@@ -274,6 +276,7 @@ const EmployeeDashboard = () => {
   };
 
   return (
+    <>
     <div ref={containerRef} style={{ position: "relative", height: "100%", overflowY: "auto" }}>
       {/* Pull-to-refresh */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", transition: "all .2s ease-out", height: pullDistance > 0 ? pullDistance : 0 }}>
@@ -342,8 +345,10 @@ const EmployeeDashboard = () => {
           walletNumber={profile?.wallet_number}
           availableBalance={profile?.available_balance ?? 0}
           holdBalance={profile?.hold_balance ?? 0}
+          profileId={profile?.id}
           walletActive={(profile as any)?.wallet_active ?? true}
-          onTransfer={() => {}}
+          onAddMoney={() => navigate(`${base}/wallet/add`)}
+          onTransfer={() => setShowTransfer(true)}
           onWithdraw={() => navigate(`${base}/wallet/withdraw`)}
         />
 
@@ -635,6 +640,17 @@ const EmployeeDashboard = () => {
 
       </div>
     </div>
+
+    <TransferDialog
+      open={showTransfer}
+      onOpenChange={setShowTransfer}
+      maxBalance={profile?.available_balance ?? 0}
+      onSuccess={() => {
+        refreshProfile();
+        queryClient.invalidateQueries({ queryKey: ["freelancer-transactions", profile?.id] });
+      }}
+    />
+    </>
   );
 };
 

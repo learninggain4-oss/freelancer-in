@@ -233,7 +233,7 @@ const AdminBanks = () => {
                 <div className="flex items-center gap-4 p-4 rounded-xl border border-dashed border-white/10 bg-white/5">
                   {(editingBank?.logo_path || logoFile) && (
                     <div className="h-16 w-16 rounded-xl bg-white p-2 flex items-center justify-center overflow-hidden">
-                      <img src={logoFile ? URL.createObjectURL(logoFile) : (getLogoUrl(editingBank!.logo_path) || "")} alt="Logo" className="max-h-full max-w-full object-contain" />
+                      <img loading="lazy" decoding="async" src={logoFile ? URL.createObjectURL(logoFile) : (getLogoUrl(editingBank!.logo_path) || "")} alt="Logo" className="max-h-full max-w-full object-contain" />
                     </div>
                   )}
                   <label className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 h-16 text-sm hover:bg-white/5 transition-colors">
@@ -308,7 +308,7 @@ const AdminBanks = () => {
                           <TableCell>
                             <div className="h-10 w-10 rounded-lg bg-white p-1 flex items-center justify-center overflow-hidden border border-white/10">
                               {bank.logo_path ? (
-                                <img src={getLogoUrl(bank.logo_path) || ""} alt={bank.name} className="max-h-full max-w-full object-contain" />
+                                <img loading="lazy" decoding="async" src={getLogoUrl(bank.logo_path) || ""} alt={bank.name} className="max-h-full max-w-full object-contain" />
                               ) : (
                                 <Landmark className="h-5 w-5 text-gray-400" />
                               )}

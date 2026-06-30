@@ -75,7 +75,7 @@ export default function AdminBadgeAchievementManager() {
                   <p className="text-xs font-mono p-2 rounded-lg" style={{ background:`${A1}08`, color:T.sub }}>Criteria: {b.criteria}</p>
                 </div>
               </div>
-              <button className="p-2 rounded-xl border shrink-0" style={{ borderColor:T.border, color:T.sub }}><Edit className="h-3.5 w-3.5" /></button>
+              <button aria-label="Edit badge" className="p-2 rounded-xl border shrink-0" style={{ borderColor:T.border, color:T.sub }}><Edit className="h-3.5 w-3.5" /></button>
             </div>
             <div className="mt-3 pt-3 border-t" style={{ borderColor:T.border }}>
               <div className="flex items-center justify-between text-xs">

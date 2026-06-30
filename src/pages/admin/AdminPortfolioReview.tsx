@@ -88,7 +88,7 @@ export default function AdminPortfolioReview() {
                 </div>
               </div>
               <div className="flex gap-2 shrink-0">
-                <button className="p-2 rounded-xl border" style={{ borderColor:T.border, color:T.sub }}><Eye className="h-4 w-4" /></button>
+                <button aria-label="Preview portfolio" className="p-2 rounded-xl border" style={{ borderColor:T.border, color:T.sub }}><Eye className="h-4 w-4" /></button>
               </div>
             </div>
             {p.status==="Pending" && (

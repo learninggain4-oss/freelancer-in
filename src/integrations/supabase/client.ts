@@ -22,16 +22,19 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 const _originalInvoke = supabase.functions.invoke.bind(supabase.functions);
 supabase.functions.invoke = async (functionName: string, options?: any) => {
   try {
-    const session = (await supabase.auth.getSession()).data.session;
-    const res = await fetch(`/functions/v1/${functionName}`, {
-      method: 'POST',
-      headers: {
+      const session = (await supabase.auth.getSession()).data.session;
+      const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${session?.access_token ?? ''}`,
         ...(options?.headers ?? {}),
-      },
-      body: options?.body !== undefined ? JSON.stringify(options.body) : undefined,
-    });
+      };
+      // Only include Authorization when a valid access token is available
+      if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+
+      const res = await fetch(`/functions/v1/${functionName}`, {
+        method: 'POST',
+        headers,
+        body: options?.body !== undefined ? JSON.stringify(options.body) : undefined,
+      });
     const data = await res.json();
     if (!res.ok) {
       return { data: null, error: { message: data?.error ?? `HTTP ${res.status}` } };

@@ -1,26 +1,73 @@
+# robots.txt — freelan.space
+# Updated: June 2026
+
+# ── Default: all crawlers ──────────────────────────────────────────────────
 User-agent: *
 Allow: /
+
+# Auth & post-auth flows (no SEO value)
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verification-pending
+Disallow: /complete-profile
+
+# Duplicate / utility pages
+Disallow: /landing
+Disallow: /unsubscribe
+Disallow: /admin-preview
+
+# Private dashboard sections
+Disallow: /freelancer/
 Disallow: /employee/
+Disallow: /employer/
 Disallow: /client/
 Disallow: /admin/
-Disallow: /complete-profile
-Disallow: /verification-pending
-Disallow: /reset-password
-Disallow: /forgot-password
+
+# Payment / wallet flows
+Disallow: /wallet/
+
 Crawl-delay: 1
 
+# ── Googlebot (full list — Google ignores Crawl-delay) ────────────────────
 User-agent: Googlebot
 Allow: /
+
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verification-pending
+Disallow: /complete-profile
+Disallow: /landing
+Disallow: /unsubscribe
+Disallow: /admin-preview
+Disallow: /freelancer/
 Disallow: /employee/
+Disallow: /employer/
 Disallow: /client/
 Disallow: /admin/
+Disallow: /wallet/
 
+# ── Bingbot ───────────────────────────────────────────────────────────────
 User-agent: Bingbot
 Allow: /
+
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verification-pending
+Disallow: /complete-profile
+Disallow: /landing
+Disallow: /unsubscribe
+Disallow: /admin-preview
+Disallow: /freelancer/
 Disallow: /employee/
+Disallow: /employer/
 Disallow: /client/
 Disallow: /admin/
+Disallow: /wallet/
 
+# ── Social crawlers — allow all public pages ───────────────────────────────
 User-agent: Twitterbot
 Allow: /
 
@@ -30,4 +77,8 @@ Allow: /
 User-agent: LinkedInBot
 Allow: /
 
-Sitemap: https://freelancer-india.com/sitemap.xml
+User-agent: Slurp
+Allow: /
+
+# ── Sitemap ───────────────────────────────────────────────────────────────
+Sitemap: https://freelan.space/sitemap.xml

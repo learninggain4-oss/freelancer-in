@@ -216,7 +216,7 @@ const ClientProjects = () => {
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="outline" className="h-10 w-10 rounded-xl border-rose-500/30 text-rose-500 hover:bg-rose-500/10">
+                            <Button size="sm" variant="outline" aria-label="Delete project" className="h-10 w-10 rounded-xl border-rose-500/30 text-rose-500 hover:bg-rose-500/10">
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>

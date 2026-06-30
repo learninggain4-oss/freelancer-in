@@ -380,7 +380,7 @@ const FaceVerificationDialog = ({ open, onOpenChange, onCaptured, title }: FaceV
                 )}
                 onClick={() => setZoomedPreview(!zoomedPreview)}
               >
-                <img 
+                <img loading="lazy" decoding="async" 
                   src={capturedImage} 
                   alt="Captured selfie" 
                   className={cn(

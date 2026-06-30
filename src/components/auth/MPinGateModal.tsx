@@ -349,19 +349,27 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
       const token = await getToken();
       const fnName = mode === "create" ? "mpin-set" : "mpin-verify";
       const res = await callEdgeFunction(fnName, { body: { pin }, token });
-      const json = await readFunctionJson<{
+
+      // Parse response directly so we can handle 429 "blocked" without throwing
+      let json: {
         blocked?: boolean;
         blockedUntil?: string;
         valid?: boolean;
         attemptsLeft?: number;
-      }>(res, "M-Pin is not available right now.");
+        error?: string;
+      } = {};
+      try { json = await res.json(); } catch { /* ignore */ }
 
-      // Locked out
+      // Locked out — handle BEFORE checking res.ok (429 returns blocked:true)
       if (json.blocked && json.blockedUntil) {
         const until = new Date(json.blockedUntil);
         setBlocked(true); setBlockedUntil(until); setAttemptsLeft(0);
         setTimeLeft(Math.ceil((until.getTime() - Date.now()) / 1000));
-        setPin(""); return;
+        setError(""); setPin(""); return;
+      }
+
+      if (!res.ok || json.error) {
+        throw new Error(json.error || "M-Pin is not available right now.");
       }
 
       if (mode === "verify" && !json.valid) {
@@ -727,6 +735,9 @@ export default function MPinGateModal({ mode, theme, onVerified }: Props) {
               {/* New PIN — numpad ---------------------------------------- */}
               {(forgotStep === "new-pin-enter" || forgotStep === "new-pin-confirm") && (
                 <div style={{animation:"mpinSlideIn .25s ease"}}>
+                  <p style={{margin:"0 0 14px",fontSize:14,fontWeight:700,color:textC,textAlign:"center"}}>
+                    {forgotStep === "new-pin-enter" ? "New Pin Enter" : "Confirm New Pin Enter"}
+                  </p>
                   {/* Dots */}
                   <div className={newPinShake ? "mpin-dots-shake" : ""} style={{display:"flex",justifyContent:"center",gap:14,marginBottom:18}}>
                     {Array.from({length:PIN_LEN}).map((_,i) => {

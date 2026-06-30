@@ -689,6 +689,9 @@ const faqs = [
   { q: "How are disputes resolved?", a: "Our admin team mediates disputes through the in-app support chat. We hold payments in escrow until project validation is complete, protecting both parties." },
   { q: "Can I work on multiple projects simultaneously?", a: "Yes! Freelancers can manage multiple projects. Our dashboard gives you a clear overview of all active projects, deadlines, and earnings." },
   { q: "How do I withdraw my earnings?", a: "Go to your Wallet section, set up your UPI ID or bank account, and request a withdrawal. Transfers are typically processed within 24 hours." },
+  { q: "Are data entry and typing jobs available for beginners?", a: "Absolutely. Data entry, online typing, form filling, and copy-paste work are among the most beginner-friendly categories on the platform. No degree or prior experience is required — just a computer, a reliable internet connection, and decent typing speed." },
+  { q: "How much can I earn from online data entry jobs in India?", a: "Earnings vary by volume and complexity. Basic data entry and form filling typically pay ₹150–₹300 per hour, while specialised tasks like Excel data entry, transcription, or PDF conversion can pay ₹300–₹500 per hour. Consistent workers earning 4–6 hours a day make ₹15,000–₹40,000 per month." },
+  { q: "Are the data entry jobs on Freelancer India genuine?", a: "Yes. All employers are verified before they can post projects. We have strict no-advance-fee and no-deposit policies — you should never pay money to get work. If any listing asks for payment, report it immediately and our team will act within 24 hours." },
 ];
 
 interface BeforeInstallPromptEvent extends Event {
@@ -1320,6 +1323,8 @@ const SKILL_TAGS = [
   { label: "UI/UX",       color: "#c4b5fd" },
   { label: "Tailwind",    color: "#38bdf8" },
   { label: "Android",     color: "#a4c639" },
+  { label: "Data Entry",  color: "#fb923c" },
+  { label: "Typing Jobs", color: "#a3e635" },
 ];
 const FloatingSkillTags = () => (
   <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 200, pointerEvents: "none", overflow: "hidden" }}>
@@ -1678,7 +1683,7 @@ const RegisterModal = ({ open, onClose }: { open: boolean; onClose: () => void }
       <div className="modal-enter relative w-full max-w-md rounded-3xl p-8 shadow-2xl" style={{ background: "linear-gradient(145deg, rgba(15,15,35,0.98), rgba(20,20,50,0.98))", border: "1px solid rgba(255,255,255,0.12)" }} onClick={(e) => e.stopPropagation()}>
         <button onClick={onClose} className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full text-white/40 hover:text-white transition-colors hover:bg-white/10">✕</button>
         <div className="text-center mb-8">
-          <img src="/logo.png" alt="Logo" className="h-14 w-14 object-contain mx-auto mb-4" />
+          <img fetchPriority="high" src="/logo.webp" alt="Logo" className="h-14 w-14 object-contain mx-auto mb-4" />
           <h2 className="text-2xl font-black text-white mb-1">Join Freelancer<span className="gradient-text">.</span></h2>
           <p className="text-sm text-white/50">{t.registerModal.sub}</p>
         </div>
@@ -1803,7 +1808,7 @@ const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip, activ
             {/* Drawer header */}
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               <div className="flex items-center gap-2">
-                <img src="/logo.png" alt="Freelancer Logo" className="h-8 w-8 object-contain" />
+                <img fetchPriority="high" src="/logo.webp" alt="Freelancer Logo" className="h-8 w-8 object-contain" />
                 <span className="text-base font-bold text-white">Freelancer<span className="gradient-text">.</span></span>
               </div>
               <button onClick={() => setMobileMenuOpen(false)} className="text-white/50 hover:text-white text-xl leading-none">✕</button>
@@ -1841,7 +1846,7 @@ const Navbar = ({ deferredPrompt, isInstalled, isIOS, onInstall, onIOSTip, activ
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6">
           {/* Left: logo */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <img src="/logo.png" alt="Freelancer Logo" className="h-8 w-8 sm:h-10 sm:w-10 object-contain" />
+            <img fetchPriority="high" src="/logo.webp" alt="Freelancer Logo" className="h-8 w-8 sm:h-10 sm:w-10 object-contain" />
             <span className="text-base sm:text-lg font-bold text-white">Freelancer<span className="gradient-text">.</span></span>
             <span className="hidden sm:block"><LiveClock /></span>
           </div>
@@ -2251,6 +2256,142 @@ const ServicesSection = () => {
   );
 };
 
+/* ─────────────────────── Entry-Level Jobs Section ─────────────────────── */
+const ENTRY_JOBS = [
+  {
+    title: "Data Entry Jobs",
+    desc: "Type or copy information into spreadsheets, databases, and CRMs. No experience needed.",
+    pay: "₹150–₹350/hr",
+    badge: "Most Popular",
+    badgeColor: "#f97316",
+    tags: ["MS Excel", "Google Sheets", "Copy-Paste"],
+    emoji: "📋",
+  },
+  {
+    title: "Online Typing Jobs",
+    desc: "Type content from images, PDFs, or audio recordings. Work anytime, from home.",
+    pay: "₹120–₹300/hr",
+    badge: "Beginner Friendly",
+    badgeColor: "#22c55e",
+    tags: ["Fast Typing", "Accuracy", "MS Word"],
+    emoji: "⌨️",
+  },
+  {
+    title: "Form Filling Work",
+    desc: "Fill online forms, registration data, and survey sheets for businesses across India.",
+    pay: "₹100–₹250/hr",
+    badge: "Work From Home",
+    badgeColor: "#6366f1",
+    tags: ["Attention to Detail", "Internet", "Basic Computer"],
+    emoji: "📝",
+  },
+  {
+    title: "Excel Data Entry",
+    desc: "Enter, sort, and clean data in Microsoft Excel or Google Sheets for companies and agencies.",
+    pay: "₹200–₹400/hr",
+    badge: "High Demand",
+    badgeColor: "#ec4899",
+    tags: ["Excel", "Data Cleaning", "Formulas"],
+    emoji: "📊",
+  },
+  {
+    title: "Audio Transcription",
+    desc: "Convert audio or video recordings into written text. Flexible hours, pay per audio minute.",
+    pay: "₹250–₹500/hr",
+    badge: "Good Earnings",
+    badgeColor: "#8b5cf6",
+    tags: ["Listening Skills", "Typing Speed", "Accuracy"],
+    emoji: "🎙️",
+  },
+  {
+    title: "PDF to Word / Excel",
+    desc: "Convert PDF documents into editable Word or Excel files for businesses and students.",
+    pay: "₹150–₹350/hr",
+    badge: "Quick Tasks",
+    badgeColor: "#0ea5e9",
+    tags: ["PDF Tools", "MS Word", "Formatting"],
+    emoji: "📄",
+  },
+];
+
+const EntryLevelJobsSection = () => (
+  <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(251,146,60,0.06) 0%, transparent 70%)" }} />
+    <div className="mx-auto max-w-7xl">
+      <Reveal className="text-center mb-14">
+        <div className="badge-pulse mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-orange-300" style={{ background: "rgba(251,146,60,0.12)", border: "1px solid rgba(251,146,60,0.25)" }}>
+          <FileText className="h-3.5 w-3.5" /> Entry-Level Jobs
+        </div>
+        <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+          Online <span className="gradient-text">Data Entry</span> &amp; Typing Jobs
+        </h2>
+        <p className="text-white/50 max-w-xl mx-auto text-base">
+          Start earning from home with no prior experience. India's largest collection of genuine data entry, typing, and form-filling projects — paid weekly via UPI.
+        </p>
+      </Reveal>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
+        {ENTRY_JOBS.map((job, i) => (
+          <Reveal key={job.title} delay={i * 80}>
+            <div className="group relative flex flex-col h-full rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              {/* Badge */}
+              <span className="mb-3 self-start rounded-full px-2.5 py-0.5 text-[10px] font-bold" style={{ background: `${job.badgeColor}20`, color: job.badgeColor, border: `1px solid ${job.badgeColor}40` }}>
+                {job.badge}
+              </span>
+              <div className="flex items-start gap-3 mb-3">
+                <span className="text-3xl leading-none shrink-0">{job.emoji}</span>
+                <div>
+                  <h3 className="text-base font-bold text-white leading-tight mb-1">{job.title}</h3>
+                  <p className="text-sm text-white/50 leading-relaxed">{job.desc}</p>
+                </div>
+              </div>
+              {/* Tags */}
+              <div className="flex flex-wrap gap-1.5 mt-auto pt-3">
+                {job.tags.map(t => (
+                  <span key={t} className="rounded-lg px-2 py-0.5 text-[10px] font-semibold text-white/55" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}>{t}</span>
+                ))}
+              </div>
+              {/* Pay */}
+              <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+                <span className="text-xs text-white/40">Typical pay</span>
+                <span className="text-sm font-black" style={{ color: job.badgeColor }}>{job.pay}</span>
+              </div>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+
+      {/* Trust strip */}
+      <Reveal>
+        <div className="rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-4 sm:gap-8 justify-between" style={{ background: "rgba(251,146,60,0.06)", border: "1px solid rgba(251,146,60,0.15)" }}>
+          {[
+            { icon: "✅", label: "No Advance Fee", desc: "You never pay to start working" },
+            { icon: "💸", label: "Weekly UPI Payout", desc: "Get paid directly to your bank" },
+            { icon: "🕐", label: "Flexible Hours", desc: "Work mornings, evenings or weekends" },
+            { icon: "🏠", label: "100% Work From Home", desc: "No commute, no office required" },
+          ].map(({ icon, label, desc }) => (
+            <div key={label} className="flex items-center gap-3 text-center sm:text-left">
+              <span className="text-2xl shrink-0">{icon}</span>
+              <div>
+                <p className="text-sm font-bold text-white">{label}</p>
+                <p className="text-xs text-white/45">{desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+
+      <Reveal className="flex justify-center mt-8">
+        <Link to="/register/freelancer">
+          <button className="flex items-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-bold text-white transition-all hover:scale-105" style={{ background: "linear-gradient(135deg,#f97316,#fb923c)", boxShadow: "0 0 28px rgba(249,115,22,0.35)" }}>
+            Start Earning — Register Free <ArrowRight className="h-4 w-4" />
+          </button>
+        </Link>
+      </Reveal>
+    </div>
+  </section>
+);
+
 /* ─────────────────────── Stats Section ─────────────────────── */
 const StatsSection = () => {
   const { t } = useLang();
@@ -2335,7 +2476,7 @@ const TestimonialsSection = ({ testimonials }: { testimonials: any[] }) => {
                     <p className="text-sm text-white/60 leading-relaxed italic mb-4 flex-1">"{t.quote}"</p>
                     <div className="flex items-center gap-3 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
                       {t.photo_path ? (
-                        <img src={t.photo_path} alt={t.name} className="h-10 w-10 rounded-full object-cover ring-2 ring-indigo-500/30" />
+                        <img loading="lazy" decoding="async" src={t.photo_path} alt={t.name} className="h-10 w-10 rounded-full object-cover ring-2 ring-indigo-500/30" />
                       ) : (
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: "linear-gradient(135deg,var(--t-a1),var(--t-a2))" }}>
                           {t.name.charAt(0)}
@@ -2906,7 +3047,7 @@ const OfferBanner = ({ onDismiss }: { onDismiss: () => void }) => (
       <span><strong>Launch Offer:</strong> Zero Commission for your first 3 months —</span>
       <Link to="/register/freelancer" className="underline underline-offset-2 hover:text-white/80 font-black whitespace-nowrap">Claim Now</Link>
     </span>
-    <button onClick={onDismiss} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors">
+    <button onClick={onDismiss} aria-label="Dismiss announcement" className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors">
       <X className="h-4 w-4" />
     </button>
   </div>
@@ -2996,6 +3137,9 @@ const SKILL_RATES: Record<string, number> = {
   "Data Science / Analytics": 1100, "DevOps / Cloud": 1300,
   "WordPress / Web Design": 550, "Customer Support": 350,
   "Translation / Transcription": 400,
+  "Data Entry": 250, "Online Typing Jobs": 200,
+  "Form Filling / Copy-Paste": 180, "Excel Data Entry": 280,
+  "Transcription (Audio to Text)": 350, "PDF to Word Conversion": 220,
 };
 const EXP_MULTIPLIERS = [0.7, 1.0, 1.35, 1.75];
 const EXP_LABELS = ["Beginner (0–1 yr)", "Intermediate (1–3 yr)", "Experienced (3–6 yr)", "Expert (6+ yr)"];
@@ -4602,7 +4746,7 @@ const Footer = ({ socialLinks }: { socialLinks?: SocialLinks }) => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <img src="/logo.png" alt="Freelancer Logo" className="h-10 w-10 object-contain" />
+              <img fetchPriority="high" src="/logo.webp" alt="Freelancer Logo" className="h-10 w-10 object-contain" />
               <span className="text-lg font-bold text-white">Freelancer<span className="gradient-text">.</span></span>
             </div>
             <p className="text-sm text-white/40 leading-relaxed mb-5 max-w-xs">{t.footer.tagline}</p>
@@ -5101,6 +5245,11 @@ const Index = () => {
   const [renderPhase, setRenderPhase] = useState(0);
   const theme = THEMES.find(t => t.id === themeId) ?? THEMES[0];
 
+  useEffect(() => {
+    document.title = "Freelance Jobs in India — Work From Home | Freelan Space";
+    return () => { document.title = "Freelan Space"; };
+  }, []);
+
   const handleLangChange = (l: LangCode) => {
     setLangState(l);
     localStorage.setItem("fi-lang", l);
@@ -5196,7 +5345,7 @@ const Index = () => {
 
   if (!loading && user && profile) {
     if (profile.approval_status === "approved") {
-      return <Navigate to={`/${profile.user_type === "employee" ? "freelancer" : "employer"}/dashboard`} replace />;
+      return <Navigate to={`/${profile.user_type === "Freelancer" ? "freelancer" : "employer"}/dashboard`} replace />;
     }
     if (profile.approval_status === "pending" || profile.approval_status === "rejected") {
       return <Navigate to="/verification-pending" replace />;
@@ -5391,6 +5540,7 @@ const Index = () => {
         <LiveProjectsStrip />
         <NeonDivider />
         <ServicesSection />
+        <EntryLevelJobsSection />
         <EarningsCalculatorSection />
         <SalaryCalcSection />
         <CareerPathSection />

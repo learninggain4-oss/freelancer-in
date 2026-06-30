@@ -6,28 +6,43 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { Loader2, Plus, Trash2, Edit2, X, CreditCard, GripVertical, Check, Upload, Link2 } from "lucide-react";
 import {
-  Loader2, Plus, Trash2, Edit2, X, CreditCard, RefreshCw,
-  GripVertical, Check, Upload, Image as ImageIcon,
-} from "lucide-react";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 
 const TH = {
-  black: { bg:"#070714", card:"rgba(255,255,255,.05)", border:"rgba(255,255,255,.08)", text:"#e2e8f0", sub:"#94a3b8", input:"rgba(255,255,255,.07)", nav:"rgba(255,255,255,.04)", badge:"rgba(99,102,241,.2)", badgeFg:"#a5b4fc" },
-  white: { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
-  wb:    { bg:"#f0f4ff", card:"#ffffff", border:"rgba(0,0,0,.08)", text:"#1e293b", sub:"#64748b", input:"#f8fafc", nav:"#f1f5f9", badge:"rgba(99,102,241,.1)", badgeFg:"#4f46e5" },
+  black: {
+    bg: "#070714", card: "rgba(255,255,255,.05)", border: "rgba(255,255,255,.08)",
+    text: "#e2e8f0", sub: "#94a3b8", input: "rgba(255,255,255,.07)",
+    nav: "rgba(255,255,255,.04)", badge: "rgba(99,102,241,.2)", badgeFg: "#a5b4fc",
+  },
+  white: {
+    bg: "#f0f4ff", card: "#ffffff", border: "rgba(0,0,0,.08)",
+    text: "#1e293b", sub: "#64748b", input: "#f8fafc",
+    nav: "#f1f5f9", badge: "rgba(99,102,241,.1)", badgeFg: "#4f46e5",
+  },
+  wb: {
+    bg: "#f0f4ff", card: "#ffffff", border: "rgba(0,0,0,.08)",
+    text: "#1e293b", sub: "#64748b", input: "#f8fafc",
+    nav: "#f1f5f9", badge: "rgba(99,102,241,.1)", badgeFg: "#4f46e5",
+  },
 };
 
 type PaymentMethod = {
   id: string;
   name: string;
+  native_scheme: string | null;
   is_active: boolean;
   display_order: number;
   logo_path: string | null;
@@ -37,18 +52,39 @@ type PaymentMethod = {
 
 const BUCKET = "payment-method-logos";
 
+const SCHEME_EXAMPLES: Record<string, string> = {
+  "paytm":      "paytmmp://pay",
+  "phonepe":    "phonepe://pay",
+  "gpay":       "tez://upi/pay",
+  "google pay": "tez://upi/pay",
+  "bhim":       "bhim://pay",
+  "amazon pay": "amazonpay://",
+  "mobikwik":   "mobikwik://",
+  "freecharge":  "freecharge://",
+  "jiopay":     "jiopay://",
+  "cred":       "cred://",
+};
+
+function suggestScheme(name: string): string {
+  const lower = name.toLowerCase();
+  for (const [key, scheme] of Object.entries(SCHEME_EXAMPLES)) {
+    if (lower.includes(key)) return scheme;
+  }
+  return "";
+}
+
 const AdminPaymentMethods = () => {
-  const { theme, themeKey } = useAdminTheme();
+  const { themeKey } = useAdminTheme();
   const T = TH[themeKey];
   const qc = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newScheme, setNewScheme] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [editScheme, setEditScheme] = useState("");
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [bannerUploading, setBannerUploading] = useState(false);
-  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const { data: methods = [], isLoading } = useQuery({
     queryKey: ["admin-payment-methods"],
@@ -62,43 +98,25 @@ const AdminPaymentMethods = () => {
     },
   });
 
-  const { data: bannerPath } = useQuery({
-    queryKey: ["upi-banner-setting"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("app_settings")
-        .select("value")
-        .eq("key", "upi_banner_path")
-        .maybeSingle();
-      return data?.value || "";
-    },
-  });
-
   const getLogoUrl = (path: string | null) => {
     if (!path) return null;
     const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
     return data.publicUrl;
   };
 
-  const getBannerUrl = (path: string) => {
-    if (!path) return null;
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-    return data.publicUrl;
-  };
-
   const addMutation = useMutation({
-    mutationFn: async (name: string) => {
+    mutationFn: async ({ name, native_scheme }: { name: string; native_scheme: string }) => {
       const maxOrder = methods.reduce((m, r) => Math.max(m, r.display_order), 0);
       const { error } = await supabase.from("payment_methods").insert({
         name,
+        native_scheme: native_scheme || null,
         display_order: maxOrder + 1,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-payment-methods"] });
-      setNewName("");
-      setShowAdd(false);
+      setNewName(""); setNewScheme(""); setShowAdd(false);
       toast.success("Payment method added");
     },
     onError: (e: any) => toast.error(e.message),
@@ -109,22 +127,21 @@ const AdminPaymentMethods = () => {
       const { error } = await supabase.from("payment_methods").update({ is_active }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin-payment-methods"] });
-      toast.success("Status updated");
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-payment-methods"] }); toast.success("Status updated"); },
     onError: (e: any) => toast.error(e.message),
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      const { error } = await supabase.from("payment_methods").update({ name }).eq("id", id);
+    mutationFn: async ({ id, name, native_scheme }: { id: string; name: string; native_scheme: string }) => {
+      const { error } = await supabase.from("payment_methods")
+        .update({ name, native_scheme: native_scheme || null })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-payment-methods"] });
       setEditId(null);
-      toast.success("Name updated");
+      toast.success("Method updated");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -134,10 +151,7 @@ const AdminPaymentMethods = () => {
       const { error } = await supabase.from("payment_methods").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin-payment-methods"] });
-      toast.success("Payment method deleted");
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-payment-methods"] }); toast.success("Payment method deleted"); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -146,49 +160,16 @@ const AdminPaymentMethods = () => {
     try {
       const ext = file.name.split(".").pop();
       const path = `logos/${methodId}.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from(BUCKET)
-        .upload(path, file, { upsert: true });
+      const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true });
       if (uploadError) throw uploadError;
-
-      const { error: updateError } = await supabase
-        .from("payment_methods")
-        .update({ logo_path: path })
-        .eq("id", methodId);
+      const { error: updateError } = await supabase.from("payment_methods").update({ logo_path: path }).eq("id", methodId);
       if (updateError) throw updateError;
-
       qc.invalidateQueries({ queryKey: ["admin-payment-methods"] });
       toast.success("Logo uploaded");
     } catch (e: any) {
       toast.error(e.message);
     } finally {
       setUploadingId(null);
-    }
-  };
-
-  const handleBannerUpload = async (file: File) => {
-    setBannerUploading(true);
-    try {
-      const ext = file.name.split(".").pop();
-      const path = `banners/upi-banner.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from(BUCKET)
-        .upload(path, file, { upsert: true });
-      if (uploadError) throw uploadError;
-
-      const { error: updateError } = await supabase
-        .from("app_settings")
-        .upsert({ key: "upi_banner_path", value: path });
-      if (updateError) throw updateError;
-
-      qc.invalidateQueries({ queryKey: ["upi-banner-setting"] });
-      toast.success("Banner uploaded");
-    } catch (e: any) {
-      toast.error(e.message);
-    } finally {
-      setBannerUploading(false);
     }
   };
 
@@ -202,7 +183,10 @@ const AdminPaymentMethods = () => {
 
   return (
     <div className="space-y-6 p-4 min-h-screen" style={{ backgroundColor: T.bg, color: T.text }}>
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between p-6 rounded-2xl border" style={{ background: `linear-gradient(135deg, ${T.card} 0%, rgba(99,102,241,0.05) 100%)`, borderColor: T.border }}>
+      <div
+        className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between p-6 rounded-2xl border"
+        style={{ background: `linear-gradient(135deg, ${T.card} 0%, rgba(99,102,241,0.05) 100%)`, borderColor: T.border }}
+      >
         <div>
           <div className="flex items-center gap-3 mb-1">
             <div className="p-2 rounded-xl bg-indigo-500/20">
@@ -210,9 +194,12 @@ const AdminPaymentMethods = () => {
             </div>
             <h2 className="text-2xl font-bold tracking-tight">Payment Methods</h2>
           </div>
-          <p style={{ color: T.sub }}>Manage wallet recharge options and display banners</p>
+          <p style={{ color: T.sub }}>Manage wallet recharge options & app deep links</p>
         </div>
-        <Button onClick={() => setShowAdd(!showAdd)} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-500/20 gap-2 h-11">
+        <Button
+          onClick={() => setShowAdd(!showAdd)}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-500/20 gap-2 h-11"
+        >
           {showAdd ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
           {showAdd ? "Cancel" : "Add Method"}
         </Button>
@@ -220,69 +207,12 @@ const AdminPaymentMethods = () => {
 
       <div className="grid lg:grid-cols-[1fr,2fr] gap-6">
         <div className="space-y-6">
-          {/* Banner Upload */}
-          <Card className="border-none shadow-xl overflow-hidden" style={{ backgroundColor: T.card }}>
-            <CardHeader className="pb-3 border-b border-white/5 bg-white/5">
-              <CardTitle className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest" style={{ color: T.sub }}>
-                <ImageIcon className="h-4 w-4 text-indigo-400" />
-                UPI Page Banner
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              {bannerPath && getBannerUrl(bannerPath) ? (
-                <div className="relative group rounded-2xl overflow-hidden border border-white/10 aspect-video bg-black/40">
-                  <img
-                    src={getBannerUrl(bannerPath)!}
-                    alt="UPI Banner"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                    <Button variant="secondary" size="sm" className="rounded-xl shadow-xl" onClick={() => bannerInputRef.current?.click()}>
-                      <RefreshCw className="mr-2 h-4 w-4" /> Change Banner
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div 
-                  className="flex flex-col items-center justify-center aspect-video rounded-2xl border-2 border-dashed border-white/10 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
-                  onClick={() => bannerInputRef.current?.click()}
-                >
-                  <Upload className="h-8 w-8 opacity-20 mb-2" />
-                  <p className="text-sm opacity-40">Click to upload banner</p>
-                </div>
-              )}
-              <input
-                ref={bannerInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) handleBannerUpload(f);
-                  e.target.value = "";
-                }}
-              />
-              {!bannerPath && (
-                <Button
-                  variant="outline"
-                  className="w-full border-white/10 hover:bg-white/5 rounded-xl h-11"
-                  disabled={bannerUploading}
-                  onClick={() => bannerInputRef.current?.click()}
-                >
-                  {bannerUploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
-                  Upload UPI Banner
-                </Button>
-              )}
-              <p className="text-[10px] text-center opacity-40 uppercase font-bold tracking-widest">
-                Recommended: 1920x1080 for high resolution
-              </p>
-            </CardContent>
-          </Card>
-
           {showAdd && (
             <Card className="border-none shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300" style={{ backgroundColor: T.card }}>
-               <CardHeader className="pb-3 border-b border-white/5 bg-white/5">
-                <CardTitle className="text-sm font-bold uppercase tracking-widest" style={{ color: T.sub }}>New Payment Method</CardTitle>
+              <CardHeader className="pb-3 border-b border-white/5 bg-white/5">
+                <CardTitle className="text-sm font-bold uppercase tracking-widest" style={{ color: T.sub }}>
+                  New Payment Method
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-4">
                 <div className="space-y-2">
@@ -291,14 +221,32 @@ const AdminPaymentMethods = () => {
                     className="border-white/10 h-11"
                     style={{ backgroundColor: T.input, color: T.text }}
                     value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
+                    onChange={(e) => {
+                      setNewName(e.target.value);
+                      if (!newScheme) setNewScheme(suggestScheme(e.target.value));
+                    }}
                     placeholder="e.g. GPay, PhonePe, Paytm"
-                    onKeyDown={(e) => e.key === "Enter" && newName.trim() && addMutation.mutate(newName.trim())}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label style={{ color: T.sub }} className="flex items-center gap-1.5">
+                    <Link2 className="h-3.5 w-3.5" /> Native App Scheme
+                  </Label>
+                  <Input
+                    className="border-white/10 h-11 font-mono text-sm"
+                    style={{ backgroundColor: T.input, color: T.text }}
+                    value={newScheme}
+                    onChange={(e) => setNewScheme(e.target.value)}
+                    placeholder="e.g. paytmmp://pay"
+                  />
+                  <p className="text-[10px] leading-relaxed" style={{ color: T.sub }}>
+                    Deep link to open this payment app directly on the user's phone.
+                    Examples: <code className="opacity-70">paytmmp://pay</code> · <code className="opacity-70">phonepe://pay</code> · <code className="opacity-70">tez://upi/pay</code>
+                  </p>
                 </div>
                 <Button
                   className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20"
-                  onClick={() => newName.trim() && addMutation.mutate(newName.trim())}
+                  onClick={() => newName.trim() && addMutation.mutate({ name: newName.trim(), native_scheme: newScheme.trim() })}
                   disabled={addMutation.isPending || !newName.trim()}
                 >
                   {addMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
@@ -307,6 +255,25 @@ const AdminPaymentMethods = () => {
               </CardContent>
             </Card>
           )}
+
+          {/* Scheme reference card */}
+          <Card className="border-none shadow-xl" style={{ backgroundColor: T.card }}>
+            <CardHeader className="pb-3 border-b border-white/5 bg-white/5">
+              <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2" style={{ color: T.sub }}>
+                <Link2 className="h-4 w-4 text-indigo-400" /> Common App Schemes
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="space-y-2">
+                {Object.entries(SCHEME_EXAMPLES).map(([app, scheme]) => (
+                  <div key={app} className="flex items-center justify-between gap-2 text-xs py-1.5 px-3 rounded-lg" style={{ background: "rgba(99,102,241,.04)" }}>
+                    <span className="font-bold capitalize" style={{ color: T.text }}>{app}</span>
+                    <code className="font-mono opacity-60 text-[10px]" style={{ color: T.sub }}>{scheme}</code>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <Card className="border-none shadow-xl overflow-hidden" style={{ backgroundColor: T.card }}>
@@ -330,124 +297,141 @@ const AdminPaymentMethods = () => {
             />
             {methods.length === 0 ? (
               <div className="py-20 text-center flex flex-col items-center">
-                 <div className="p-4 rounded-full bg-white/5 mb-4">
-                    <CreditCard className="h-8 w-8 opacity-20" />
-                  </div>
-                 <p style={{ color: T.sub }}>No payment methods configured yet.</p>
+                <div className="p-4 rounded-full bg-white/5 mb-4">
+                  <CreditCard className="h-8 w-8 opacity-20" />
+                </div>
+                <p style={{ color: T.sub }}>No payment methods configured yet.</p>
               </div>
             ) : (
               <div className="grid gap-3">
                 {methods.map((m) => (
-                  <div
-                    key={m.id}
-                    className="flex items-center gap-4 rounded-2xl border p-4 transition-all hover:scale-[1.01] hover:shadow-lg group"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderColor: T.border }}
-                  >
-                    <div className="cursor-grab active:cursor-grabbing opacity-20 group-hover:opacity-100 transition-opacity">
-                      <GripVertical className="h-4 w-4" />
-                    </div>
-                    
-                    <span className="text-xs font-mono opacity-40 w-8">#{m.display_order}</span>
+                  <div key={m.id} className="rounded-2xl border group" style={{ backgroundColor: "rgba(255,255,255,0.02)", borderColor: T.border }}>
+                    <div className="flex items-center gap-4 p-4">
+                      <div className="cursor-grab active:cursor-grabbing opacity-20 group-hover:opacity-100 transition-opacity">
+                        <GripVertical className="h-4 w-4" />
+                      </div>
+                      <span className="text-xs font-mono opacity-40 w-8">#{m.display_order}</span>
 
-                    {/* Logo */}
-                    <div
-                      className="h-12 w-12 rounded-xl bg-white flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-indigo-500/50 transition-all border border-white/10 shrink-0"
-                      onClick={() => {
-                        setUploadingId(m.id);
-                        fileInputRef.current?.click();
-                      }}
-                    >
-                      {uploadingId === m.id ? (
-                        <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
-                      ) : m.logo_path ? (
-                        <img
-                          src={getLogoUrl(m.logo_path)!}
-                          alt={m.name}
-                          className="h-full w-full object-contain p-1.5"
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center gap-0.5 opacity-30">
-                          <Upload className="h-4 w-4" />
-                          <span className="text-[8px] font-bold">LOGO</span>
+                      {/* Logo */}
+                      <div
+                        className="h-12 w-12 rounded-xl bg-white flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-indigo-500/50 transition-all border border-white/10 shrink-0"
+                        onClick={() => { setUploadingId(m.id); fileInputRef.current?.click(); }}
+                      >
+                        {uploadingId === m.id ? (
+                          <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
+                        ) : m.logo_path ? (
+                          <img loading="lazy" decoding="async" src={getLogoUrl(m.logo_path)!} alt={m.name} className="h-full w-full object-contain p-1.5" />
+                        ) : (
+                          <div className="flex flex-col items-center gap-0.5 opacity-30">
+                            <Upload className="h-4 w-4" />
+                            <span className="text-[8px] font-bold">LOGO</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-bold truncate block">{m.name}</span>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <div className={`h-1.5 w-1.5 rounded-full ${m.is_active ? "bg-emerald-500" : "bg-white/20"}`} />
+                          <span className="text-[10px] font-bold tracking-widest uppercase opacity-50">
+                            {m.is_active ? "Online" : "Disabled"}
+                          </span>
+                          {m.native_scheme && (
+                            <span className="flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded-md" style={{ background: "rgba(99,102,241,.12)", color: "#a5b4fc" }}>
+                              <Link2 className="h-2.5 w-2.5" />{m.native_scheme}
+                            </span>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </div>
 
-                    {editId === m.id ? (
-                      <div className="flex flex-1 items-center gap-2">
-                        <Input
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          className="h-10 flex-1 border-white/20"
-                          style={{ backgroundColor: T.input }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && editName.trim())
-                              updateMutation.mutate({ id: m.id, name: editName.trim() });
-                            if (e.key === "Escape") setEditId(null);
-                          }}
-                          autoFocus
+                      <div className="flex items-center gap-3 shrink-0">
+                        <Switch
+                          checked={m.is_active}
+                          onCheckedChange={(checked) => toggleMutation.mutate({ id: m.id, is_active: checked })}
                         />
                         <Button
                           size="icon"
-                          className="h-10 w-10 bg-indigo-600 text-white rounded-xl"
-                          onClick={() => editName.trim() && updateMutation.mutate({ id: m.id, name: editName.trim() })}
+                          variant="ghost"
+                          className="h-10 w-10 rounded-xl hover:bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => { setEditId(editId === m.id ? null : m.id); setEditName(m.name); setEditScheme(m.native_scheme || ""); }}
                         >
-                          <Check className="h-4 w-4" />
+                          <Edit2 className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-10 w-10 rounded-xl" onClick={() => setEditId(null)}>
-                          <X className="h-4 w-4" />
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="icon" variant="ghost" className="h-10 w-10 rounded-xl hover:bg-red-500/10 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="border-white/10" style={{ backgroundColor: T.bg }}>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle style={{ color: T.text }}>Delete Method?</AlertDialogTitle>
+                              <AlertDialogDescription style={{ color: T.sub }}>
+                                This will permanently remove "{m.name}" from recharge options.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="border-white/10" style={{ color: T.text }}>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(m.id)} className="bg-red-600 hover:bg-red-700 text-white">
+                                Delete Permanently
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
-                    ) : (
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-bold truncate block">{m.name}</span>
-                        <div className="flex items-center gap-2 mt-1">
-                           <div className={`h-1.5 w-1.5 rounded-full ${m.is_active ? 'bg-emerald-500' : 'bg-white/20'}`} />
-                           <span className="text-[10px] font-bold tracking-widest uppercase opacity-50">{m.is_active ? 'Online' : 'Disabled'}</span>
+                    </div>
+
+                    {/* Inline Edit Panel */}
+                    {editId === m.id && (
+                      <div className="border-t px-4 pb-4 pt-3 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200" style={{ borderColor: T.border }}>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-[10px] font-black uppercase tracking-widest" style={{ color: T.sub }}>Name</Label>
+                            <Input
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              className="h-10 border-white/20 text-sm"
+                              style={{ backgroundColor: T.input, color: T.text }}
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && editName.trim()) updateMutation.mutate({ id: m.id, name: editName.trim(), native_scheme: editScheme.trim() });
+                                if (e.key === "Escape") setEditId(null);
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1" style={{ color: T.sub }}>
+                              <Link2 className="h-3 w-3" /> Native Scheme
+                            </Label>
+                            <Input
+                              value={editScheme}
+                              onChange={(e) => setEditScheme(e.target.value)}
+                              className="h-10 border-white/20 font-mono text-sm"
+                              style={{ backgroundColor: T.input, color: T.text }}
+                              placeholder="e.g. paytmmp://pay"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && editName.trim()) updateMutation.mutate({ id: m.id, name: editName.trim(), native_scheme: editScheme.trim() });
+                                if (e.key === "Escape") setEditId(null);
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5"
+                            disabled={!editName.trim() || updateMutation.isPending}
+                            onClick={() => updateMutation.mutate({ id: m.id, name: editName.trim(), native_scheme: editScheme.trim() })}
+                          >
+                            {updateMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                            Save
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-9 gap-1.5" onClick={() => setEditId(null)}>
+                            <X className="h-3.5 w-3.5" /> Cancel
+                          </Button>
                         </div>
                       </div>
                     )}
-
-                    <div className="flex items-center gap-3">
-                      <Switch
-                        checked={m.is_active}
-                        onCheckedChange={(checked) => toggleMutation.mutate({ id: m.id, is_active: checked })}
-                      />
-
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-10 w-10 rounded-xl hover:bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => { setEditId(m.id); setEditName(m.name); }}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="icon" variant="ghost" className="h-10 w-10 rounded-xl hover:bg-red-500/10 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent className="border-white/10" style={{ backgroundColor: T.bg }}>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle style={{ color: T.text }}>Delete Method?</AlertDialogTitle>
-                            <AlertDialogDescription style={{ color: T.sub }}>
-                              This will permanently remove "{m.name}" from recharge options.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel className="border-white/10" style={{ color: T.text }}>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => deleteMutation.mutate(m.id)}
-                              className="bg-red-600 hover:bg-red-700 text-white"
-                            >
-                              Delete Permanently
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
                   </div>
                 ))}
               </div>

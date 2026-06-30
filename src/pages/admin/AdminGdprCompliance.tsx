@@ -107,7 +107,7 @@ export default function AdminGdprCompliance() {
                 </div>
                 <div className="flex gap-2">
                   {r.status!=="Completed" && <button className="px-3 py-1.5 rounded-xl text-xs font-bold" style={{ background:"rgba(74,222,128,.12)", color:"#4ade80" }}>Process</button>}
-                  <button className="p-1.5 rounded-xl border" style={{ borderColor:T.border, color:A1 }}><Download className="h-3.5 w-3.5" /></button>
+                  <button aria-label="Download report" className="p-1.5 rounded-xl border" style={{ borderColor:T.border, color:A1 }}><Download className="h-3.5 w-3.5" /></button>
                 </div>
               </div>
             </div>

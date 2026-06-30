@@ -45,9 +45,9 @@ export default function About() {
     root.style.setProperty("--t-a1-rgb", t.a1rgb);
     root.style.setProperty("--t-a2-rgb", t.a2rgb);
     document.body.style.background = t.bg;
-    document.title = "About Us | Freelancer India";
+    document.title = "About Us — India's Freelance Platform | Freelan Space";
     return () => {
-      document.title = "Freelancer India";
+      document.title = "Freelan Space";
       document.body.style.background = "";
     };
   }, []);
@@ -154,6 +154,58 @@ export default function About() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* SEO Content Section */}
+        <div className="space-y-10 rounded-3xl p-8 md:p-12" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div>
+            <h2 className="text-2xl font-black text-white mb-4">India's Growing Freelance Economy</h2>
+            <p className="text-white/55 leading-relaxed mb-4">India is now the world's second-largest freelance workforce, with over 15 million freelancers contributing to every sector from technology and design to content writing and digital marketing. The demand for skilled freelancers is growing rapidly as startups, SMEs, and large enterprises increasingly prefer flexible, project-based talent over full-time hiring. Freelancer India was built to serve this booming market — a platform designed specifically for the Indian context, with UPI payments, GST invoicing, Aadhaar-based KYC, and support for regional languages.</p>
+            <p className="text-white/55 leading-relaxed">Unlike global platforms that treat India as an afterthought, Freelancer India was built from the ground up for Indian freelancers and employers. Every feature — from the escrow-protected wallet to the instant UPI withdrawal system — reflects the real needs of professionals working in India's unique economic environment.</p>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-black text-white mb-4">What Makes Freelancer India Different</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              {[
+                { title: "Zero Commission for 3 Months", body: "New freelancers keep 100% of their earnings for the first three months. We believe in giving professionals the space to grow before platform fees apply. This means you can take on projects, build your reputation, and earn freely from day one." },
+                { title: "Verified Profiles Only", body: "Every freelancer and employer on our platform goes through a verification process. Aadhaar-based identity checks, bank account verification, and admin approval ensure that every profile you interact with is genuine. No bots, no fake reviews." },
+                { title: "Escrow-Protected Payments", body: "All project payments are held in a secure escrow account until the work is approved. Neither party can access the funds prematurely. This protects freelancers from non-payment and protects employers from poor deliverables." },
+                { title: "Instant UPI Withdrawals", body: "Forget waiting 5–7 business days for your money. Freelancer India supports instant withdrawals to any UPI ID, bank account via IMPS/NEFT, and all major Indian payment apps. Your earnings are yours the moment a project is marked complete." },
+                { title: "GST-Compliant Invoicing", body: "Every transaction on Freelancer India generates a GST-compliant invoice automatically. Freelancers registered under GST can share professional invoices with clients at the click of a button — saving hours of manual work each month." },
+                { title: "Skill Badges and Assessments", body: "Stand out with verified skill badges. Freelancer India's skill assessment system tests you on real tasks relevant to your field. Earning a verified badge increases your profile's credibility and helps you win higher-paying projects." },
+              ].map(item => (
+                <div key={item.title} className="rounded-2xl p-5 space-y-2" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <h3 className="font-bold text-white text-sm">{item.title}</h3>
+                  <p className="text-white/50 text-sm leading-relaxed">{item.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-black text-white mb-4">Frequently Asked Questions About Freelancer India</h2>
+            <div className="space-y-5">
+              {[
+                { q: "Who can join Freelancer India?", a: "Anyone with a skill to offer or a project to post can join. Freelancer India is open to individual freelancers, agencies, startups, SMEs, and large enterprises across India. Whether you are a college student looking for your first client, an experienced developer wanting more work, or a business owner looking to hire skilled professionals — Freelancer India has a place for you." },
+                { q: "How does Freelancer India protect my money?", a: "All project payments go into an escrow account the moment a project is funded. The money stays there until you approve the completed work. If there is a dispute, our support team steps in to mediate. We follow RBI-compliant payment guidelines and never hold your funds beyond the agreed project timeline." },
+                { q: "What skills are in demand on Freelancer India?", a: "The most in-demand skills on Freelancer India include web development (React, Node.js, PHP), mobile app development (Flutter, Android, iOS), graphic design (logo design, UI/UX, Canva), content writing (blogs, product descriptions, SEO articles), digital marketing (SEO, social media, Google Ads), video editing, data entry, and accounting & bookkeeping. New categories are added regularly based on market demand." },
+                { q: "Can I use Freelancer India to hire talent for my business?", a: "Absolutely. Businesses of all sizes use Freelancer India to hire project-based talent quickly. Post your project for free, describe your requirements, set your budget, and start receiving proposals from verified freelancers within hours. Our smart-match algorithm also suggests the most relevant candidates based on your project requirements." },
+                { q: "Is Freelancer India available across all Indian states?", a: "Yes. Freelancer India supports freelancers and employers from all 28 states and 8 union territories of India. We have active users in metropolitan cities like Mumbai, Delhi, Bengaluru, Hyderabad, and Chennai, as well as smaller towns and semi-urban areas. Our platform works on any device with an internet connection." },
+              ].map(item => (
+                <div key={item.q} className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <h3 className="font-bold text-white text-sm mb-2">{item.q}</h3>
+                  <p className="text-white/50 text-sm leading-relaxed">{item.a}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-black text-white mb-3">Our Commitment to the Indian Freelance Community</h2>
+            <p className="text-white/55 leading-relaxed mb-3">Freelancer India is more than a marketplace — it is a community. We run regular webinars, skill development workshops, and freelancing bootcamps to help professionals upskill and earn more. Our blog publishes weekly tips on winning projects, managing clients, pricing your services, and building a sustainable freelance career in India.</p>
+            <p className="text-white/55 leading-relaxed">We are committed to transparent pricing, fair dispute resolution, and continuous platform improvement. Every piece of feedback from our community shapes the features we build next. If you have a suggestion, our support team is available around the clock to hear you out.</p>
           </div>
         </div>
 

@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
 
     const { data: expired, error } = await supabase
       .from("withdrawals")
-      .select("id, employee_id, amount")
+      .select("id, employee_id, amount, order_id")
       .eq("status", "pending")
       .lt("requested_at", twoHoursAgo);
 
@@ -70,6 +70,7 @@ Deno.serve(async (req) => {
           amount: wAmount,
           description: "Withdrawal auto-rejected (expired after 2 hours) — amount restored",
           reference_id: w.id,
+          transaction_id: w.order_id || null,
         });
 
         // Notify employee

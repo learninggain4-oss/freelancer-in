@@ -27,7 +27,7 @@ export default function AdminFraudReports() {
 
       const [{ data: txns }, { data: logs }, { data: highRiskProfiles }, { count: totalBlocked }] = await Promise.all([
         supabase.from("transactions").select("id, amount, type, created_at").gte("created_at", since30).order("created_at", { ascending: false }),
-        supabase.from("admin_audit_logs").select("id, action, created_at").gte("created_at", since30).order("created_at", { ascending: false }),
+        (supabase.from("admin_audit_logs" as any) as any).select("id, action, created_at").gte("created_at", since30).order("created_at", { ascending: false }),
         supabase.from("profiles").select("id, full_name, email, wallet_active, available_balance, updated_at").eq("wallet_active", false).order("updated_at", { ascending: false }).limit(10),
         supabase.from("blocked_ips").select("*", { count: "exact", head: true }),
       ]);

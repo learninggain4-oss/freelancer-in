@@ -134,6 +134,16 @@ Deno.serve(async (req) => {
         await adminClient.from("withdrawals").update({ reviewed_by: null }).eq("reviewed_by", pid);
         await adminClient.from("blocked_ips").update({ blocked_by: null }).eq("blocked_by", pid);
 
+        // Critical pre-delete: recovery_requests has a FK to profiles(id) without CASCADE.
+        // Must be removed sequentially BEFORE the Promise.all so a failure surfaces clearly.
+        {
+          const { error: recErr } = await adminClient.from("recovery_requests").delete().eq("employee_id", pid);
+          if (recErr) {
+            console.error("recovery_requests delete error:", recErr);
+            return json({ error: "Failed to clear recovery requests: " + recErr.message }, 500);
+          }
+        }
+
         await Promise.all([
           adminClient.from("aadhaar_verifications").delete().eq("profile_id", pid),
           adminClient.from("bank_verifications").delete().eq("profile_id", pid),
@@ -199,6 +209,7 @@ Deno.serve(async (req) => {
         return json({ success: true, message: "User permanently deleted" });
       }
 
+      case "force_logout":
       case "revoke_sessions": {
         if (!user_id) return json({ error: "user_id required" }, 400);
         const revokeRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${user_id}/logout`, {

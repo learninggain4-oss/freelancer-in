@@ -9,13 +9,23 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    setIsAdmin(null);
     const check = async () => {
-      const { data } = await supabase.rpc("has_role", {
-        _user_id: user.id,
-        _role: "admin",
-      });
-      setIsAdmin(!!data);
+      try {
+        const { data, error } = await supabase.rpc("has_role", {
+          _user_id: user.id,
+          _role: "admin",
+        });
+        if (error) throw error;
+        setIsAdmin(!!data);
+      } catch (error) {
+        console.error("Failed to check admin role:", error);
+        setIsAdmin(false);
+      }
     };
     check();
   }, [user]);

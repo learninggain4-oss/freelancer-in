@@ -32,7 +32,7 @@ const SideDrawer = ({ open, onOpenChange, theme = "black" }: SideDrawerProps) =>
   const nameFg      = isDark ? "white"                      : "#0d0d24";
   const iconBoxBg   = isDark ? "rgba(255,255,255,.06)"      : "#f1f5f9";
 
-  const basePath = profile?.user_type === "client" ? "/employer"
+  const basePath = profile?.user_type === "Employer" ? "/employer"
     : pathname.startsWith("/freelancer") ? "/freelancer"
     : "/employee";
   const initials = (profile?.full_name?.[0] || "U").slice(0, 2).toUpperCase();

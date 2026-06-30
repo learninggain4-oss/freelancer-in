@@ -169,7 +169,7 @@ const MessageBubble = ({
           {fileUrl && (
             <div className="mb-1">
               {isImage ? (
-                <img
+                <img loading="lazy" decoding="async"
                   src={fileUrl}
                   alt={message.file_name || "attachment"}
                   className="max-w-full rounded-lg max-h-48 object-cover cursor-pointer"

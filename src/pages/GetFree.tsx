@@ -7,10 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Copy, Gift, Users, Check, Loader2, Share2, UserCheck,
-  Briefcase, Clock, Sparkles, Trophy, ChevronRight,
-} from "lucide-react";
+import { Copy, Gift, Users, Check, Loader2, Share2, UserCheck, Briefcase, Clock, Sparkles, Trophy } from "lucide-react";
 import { format } from "date-fns";
 
 interface ReferralEntry {
@@ -30,7 +27,7 @@ const GetFree = () => {
   const [referralStats, setReferralStats] = useState({ total: 0, signupPaid: 0, jobPaid: 0 });
   const [referralHistory, setReferralHistory] = useState<ReferralEntry[]>([]);
   const [terms, setTerms] = useState("");
-  const [shareMsg, setShareMsg] = useState("Join Freelancer as a {role} using my referral code: {code}\nSign up at {link}");
+  const [shareMsg, setShareMsg] = useState("Join Freelancer using my referral code: {code}\nSign up at {link}");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,13 +36,20 @@ const GetFree = () => {
       const [profRes, historyRes, settingsRes] = await Promise.all([
         supabase.from("profiles").select("referral_code").eq("id", profile.id).single(),
         supabase.rpc("get_referral_history"),
-        supabase.from("app_settings").select("key, value").in("key", ["referral_terms_conditions", "referral_share_message"]),
+        supabase
+          .from("app_settings")
+          .select("key, value")
+          .in("key", ["referral_terms_conditions", "referral_share_message"]),
       ]);
       if (profRes.data) setReferralCode((profRes.data as any).referral_code || "");
       if (historyRes.data) {
         const arr = historyRes.data as any as ReferralEntry[];
         setReferralHistory(arr);
-        setReferralStats({ total: arr.length, signupPaid: arr.filter((r) => r.signup_bonus_paid).length, jobPaid: arr.filter((r) => r.job_bonus_paid).length });
+        setReferralStats({
+          total: arr.length,
+          signupPaid: arr.filter((r) => r.signup_bonus_paid).length,
+          jobPaid: arr.filter((r) => r.job_bonus_paid).length,
+        });
       }
       if (settingsRes.data) {
         for (const s of settingsRes.data) {
@@ -64,23 +68,32 @@ const GetFree = () => {
       setCopied(true);
       toast({ title: "Copied!", description: "Referral code copied" });
       setTimeout(() => setCopied(false), 2000);
-    } catch { toast({ title: "Failed to copy", variant: "destructive" }); }
+    } catch {
+      toast({ title: "Failed to copy", variant: "destructive" });
+    }
   };
 
-  const handleShare = async (type: "freelancer" | "employer") => {
-    const label = type === "freelancer" ? "Freelancer" : "Employer";
-    const routeType = type === "freelancer" ? "employee" : "employer";
-    const link = `${window.location.origin}/register/${routeType}?ref=${referralCode}`;
+  const handleShare = async () => {
+    const link = `${window.location.origin}/register?ref=${referralCode}`;
     const text = shareMsg
-      .replace(/\{role\}/gi, label)
+      .replace(/\{role\}/gi, "")
       .replace(/\{code\}/gi, referralCode)
       .replace(/\{link\}/gi, link);
     if (navigator.share) {
-      try { await navigator.share({ title: `Join Freelancer as ${label}`, text }); } catch {}
-    } else { handleCopy(); }
+      try {
+        await navigator.share({ title: "Join Freelancer", text });
+      } catch {}
+    } else {
+      handleCopy();
+    }
   };
 
-  if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+  if (loading)
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
 
   return (
     <div className="space-y-5 p-4 pb-8">
@@ -103,8 +116,20 @@ const GetFree = () => {
       <div className="grid grid-cols-3 gap-2.5 animate-fade-in-up">
         {[
           { icon: Users, value: referralStats.total, label: "Referred", color: "text-primary", bg: "bg-primary/10" },
-          { icon: Trophy, value: referralStats.signupPaid, label: "Signup Bonus", color: "text-accent", bg: "bg-accent/10" },
-          { icon: Briefcase, value: referralStats.jobPaid, label: "Job Bonus", color: "text-warning", bg: "bg-warning/10" },
+          {
+            icon: Trophy,
+            value: referralStats.signupPaid,
+            label: "Signup Bonus",
+            color: "text-accent",
+            bg: "bg-accent/10",
+          },
+          {
+            icon: Briefcase,
+            value: referralStats.jobPaid,
+            label: "Job Bonus",
+            color: "text-warning",
+            bg: "bg-warning/10",
+          },
         ].map((s) => (
           <Card key={s.label} className="border-0 shadow-sm">
             <CardContent className="flex flex-col items-center p-3 gap-1">
@@ -133,28 +158,33 @@ const GetFree = () => {
           <Card className="border-0 shadow-sm overflow-hidden">
             <div className="h-1 bg-gradient-to-r from-accent via-emerald-400 to-accent" />
             <CardContent className="space-y-4 p-4">
-              <p className="text-sm text-muted-foreground">Share your referral code and earn bonuses when friends join and complete work!</p>
+              <p className="text-sm text-muted-foreground">
+                Share your referral code and earn bonuses when friends join and complete work!
+              </p>
               <div className="flex items-center gap-2">
-                <Input readOnly value={referralCode} className="font-mono text-lg font-bold tracking-widest text-center bg-muted/30 h-12 rounded-xl" />
+                <Input
+                  readOnly
+                  value={referralCode}
+                  className="font-mono text-lg font-bold tracking-widest text-center bg-muted/30 h-12 rounded-xl"
+                />
                 <Button variant="outline" size="icon" onClick={handleCopy} className="shrink-0 h-12 w-12 rounded-xl">
                   {copied ? <Check className="h-5 w-5 text-accent" /> : <Copy className="h-5 w-5" />}
                 </Button>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" className="gap-1.5 rounded-xl h-11" onClick={() => handleShare("freelancer")}>
-                  <Share2 className="h-4 w-4" /> As Freelancer
-                </Button>
-                <Button variant="outline" className="gap-1.5 rounded-xl h-11" onClick={() => handleShare("employer")}>
-                  <Share2 className="h-4 w-4" /> As Employer
-                </Button>
-              </div>
+              <Button className="w-full gap-1.5 rounded-xl h-11" onClick={handleShare}>
+                <Share2 className="h-4 w-4" /> Share Invite Link
+              </Button>
             </CardContent>
           </Card>
 
           {terms && (
             <Card className="border-0 shadow-sm">
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Terms & Conditions</CardTitle></CardHeader>
-              <CardContent><p className="whitespace-pre-line text-xs text-muted-foreground">{terms.replace(/\\n/g, "\n")}</p></CardContent>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Terms & Conditions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-line text-xs text-muted-foreground">{terms.replace(/\\n/g, "\n")}</p>
+              </CardContent>
             </Card>
           )}
         </TabsContent>
@@ -178,18 +208,26 @@ const GetFree = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-semibold text-foreground truncate">{r.referred_name}</p>
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">{r.referred_user_type}</Badge>
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">
+                        {r.referred_user_type}
+                      </Badge>
                     </div>
                     <div className="mt-1.5 flex items-center gap-3 flex-wrap">
                       <div className="flex items-center gap-1">
-                        <UserCheck className="h-3.5 w-3.5" /><span className="text-xs">Signup</span>
-                        <Badge className={`h-4 px-1.5 text-[10px] border-0 ${r.signup_bonus_paid ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"}`}>
+                        <UserCheck className="h-3.5 w-3.5" />
+                        <span className="text-xs">Signup</span>
+                        <Badge
+                          className={`h-4 px-1.5 text-[10px] border-0 ${r.signup_bonus_paid ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"}`}
+                        >
                           {r.signup_bonus_paid ? "Paid" : "Pending"}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Briefcase className="h-3.5 w-3.5" /><span className="text-xs">Job</span>
-                        <Badge className={`h-4 px-1.5 text-[10px] border-0 ${r.job_bonus_paid ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"}`}>
+                        <Briefcase className="h-3.5 w-3.5" />
+                        <span className="text-xs">Job</span>
+                        <Badge
+                          className={`h-4 px-1.5 text-[10px] border-0 ${r.job_bonus_paid ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"}`}
+                        >
                           {r.job_bonus_paid ? "Paid" : "Pending"}
                         </Badge>
                       </div>

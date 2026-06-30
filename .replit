@@ -121,6 +121,9 @@ externalPort = 9000
 [userenv.shared]
 VITE_SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1heXN0dGNrZGZubnp2ZmV1amFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2OTg1NTksImV4cCI6MjA4NjI3NDU1OX0.tIawlM0-rePDtGD-EKT1klugKYZvaEnJPlQ-emmwxTo"
 SERVER_PORT = "3001"
-WEB_APP_URL = "https://freelancer-india.lovable.app"
+WEB_APP_URL = "https://04d40d73-e0d3-49d7-9bdf-413d96d8da0a-00-2lkp6hrpyyo6n.pike.replit.dev"
 SUPER_ADMIN_EMAILS = "freeandin9@gmail.com"
 SUPABASE_URL = "https://maysttckdfnnzvfeujaj.supabase.co"
+VITE_SUPABASE_URL = "https://maysttckdfnnzvfeujaj.supabase.co"
+VITE_SUPABASE_PROJECT_ID = "maysttckdfnnzvfeujaj"
+NODE_ENV = "development"

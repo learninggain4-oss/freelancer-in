@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const KEYFRAMES = `
 @keyframes fi-spin-slow  { to { transform: rotate(360deg); } }
@@ -9,12 +9,12 @@ const KEYFRAMES = `
   50%      { box-shadow: 0 0 56px 18px rgba(99,102,241,.85), 0 0 120px 40px rgba(139,92,246,.45); opacity:1; transform:scale(1.06); }
 }
 @keyframes fi-float-a {
-  0%,100% { transform:translate(0,0) scale(1); opacity:.7; }
+  0%,10%,100% { transform:translate(0,0) scale(1); opacity:.7; }
   33%      { transform:translate(22px,-18px) scale(1.12); opacity:1; }
   66%      { transform:translate(-14px,12px) scale(.9); opacity:.5; }
 }
 @keyframes fi-float-b {
-  0%,100% { transform:translate(0,0) scale(1); opacity:.5; }
+  0%, 10%,100%  { transform:translate(0,0) scale(1); opacity:.5; }
   40%      { transform:translate(-20px,16px) scale(1.08); opacity:.9; }
   70%      { transform:translate(12px,-22px) scale(.85); opacity:.6; }
 }
@@ -24,8 +24,13 @@ const KEYFRAMES = `
 }
 @keyframes fi-bar {
   0%   { width:0%;   opacity:.5; }
+  10%   { width:18%;   opacity:.5; }
   20%  { width:28%;  opacity:1; }
+  30%  { width:38%;  opacity:1; }
+  40%  { width:48%;  opacity:1; }
   50%  { width:62%;  opacity:1; }
+  60%  { width:72%;  opacity:1; }
+  70%  { width:78%;  opacity:1; }
   80%  { width:88%;  opacity:1; }
   100% { width:100%; opacity:.7; }
 }
@@ -95,198 +100,235 @@ export default function LoadingScreen() {
     const targets = [18, 42, 68, 88, 100];
     let ti = 0;
     const advance = () => {
-      if (ti < targets.length) { setBarPct(targets[ti]); ti++; }
+      if (ti < targets.length) {
+        setBarPct(targets[ti]);
+        ti++;
+      }
     };
-    const intervals = [300, 700, 600, 700, 600].map((d, i) =>
-      setTimeout(advance, d + [0,300,1000,1600,2300][i])
-    );
-    const msgT = [900, 1800, 2700].map((d, i) =>
-      setTimeout(() => setMsgIdx(i + 1), d)
-    );
-    return () => { [...intervals, ...msgT].forEach(clearTimeout); };
+    const intervals = [300, 700, 600, 700, 600].map((d, i) => setTimeout(advance, d + [0, 300, 1000, 1600, 2300][i]));
+    const msgT = [900, 1800, 2700].map((d, i) => setTimeout(() => setMsgIdx(i + 1), d));
+    return () => {
+      [...intervals, ...msgT].forEach(clearTimeout);
+    };
   }, []);
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 9999,
-      background: "#070714",
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      overflow: "hidden",
-      opacity: visible ? 1 : 0,
-      transition: "opacity .35s ease",
-    }}>
-
-      {/* ── Background orbs ── */}
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        background: "radial-gradient(circle at center, #0f172a 0%, #020617 100%)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+        opacity: visible ? 1 : 0,
+        transition: "opacity .5s ease-in-out",
+      }}
+    >
+      {/* ── Enhanced Background Glow ── */}
       <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
-        {[
-          { w:520, h:520, t:"5%",  l:"-10%", c:"rgba(99,102,241,.12)",  d:"0s",  dur:"12s" },
-          { w:400, h:400, t:"55%", l:"60%",  c:"rgba(139,92,246,.1)",   d:"4s",  dur:"15s" },
-          { w:300, h:300, t:"20%", l:"70%",  c:"rgba(99,102,241,.07)",  d:"2s",  dur:"10s" },
-          { w:350, h:350, t:"70%", l:"5%",   c:"rgba(168,139,250,.08)", d:"6s",  dur:"13s" },
-        ].map((o, i) => (
-          <div key={i} style={{
-            position: "absolute", top: o.t, left: o.l,
-            width: o.w, height: o.h, borderRadius: "50%",
-            background: `radial-gradient(circle, ${o.c}, transparent 70%)`,
-            animation: `fi-bg-orb ${o.dur} ${o.d} ease-in-out infinite`,
-            filter: "blur(40px)",
-          }} />
-        ))}
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "600px",
+            height: "600px",
+            background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)",
+            filter: "blur(60px)",
+          }}
+        />
       </div>
 
-      {/* ── Grid dots ── */}
-      <div style={{
-        position: "absolute", inset: 0,
-        backgroundImage: "radial-gradient(rgba(99,102,241,.07) 1px, transparent 1px)",
-        backgroundSize: "40px 40px",
-        pointerEvents: "none",
-      }} />
-
-      {/* ── Main stage ── */}
-      <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 0 }}>
-
-        {/* Orbital rings */}
-        <div style={{ position: "relative", width: 200, height: 200, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 32 }}>
-
-          {/* Ring 1 — outer slow */}
-          <div style={{
-            position: "absolute", width: 190, height: 190, borderRadius: "50%",
-            border: "1.5px solid transparent",
-            backgroundImage: "linear-gradient(135deg,rgba(99,102,241,.6),rgba(139,92,246,.15),rgba(99,102,241,.05),rgba(139,92,246,.5))",
-            backgroundOrigin: "border-box",
-            WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-            WebkitMaskComposite: "xor",
-            animation: "fi-spin-slow 7s linear infinite, fi-ring-pulse 3s ease-in-out infinite",
-          }} />
-
-          {/* Ring 2 — mid reverse */}
-          <div style={{
-            position: "absolute", width: 152, height: 152, borderRadius: "50%",
-            border: "1.5px dashed rgba(139,92,246,.4)",
-            animation: "fi-spin-rev 5s linear infinite",
-            opacity: .7,
-          }} />
-
-          {/* Ring 3 — inner fast */}
-          <div style={{
-            position: "absolute", width: 116, height: 116, borderRadius: "50%",
-            border: "2px solid transparent",
-            backgroundImage: "linear-gradient(90deg,rgba(168,139,250,.8),rgba(99,102,241,.1),rgba(168,139,250,.7))",
-            backgroundOrigin: "border-box",
-            WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-            WebkitMaskComposite: "xor",
-            animation: "fi-spin-med 3s linear infinite",
-          }} />
-
-          {/* Orbital dot on ring 1 */}
-          <div style={{
-            position: "absolute", width: 190, height: 190, borderRadius: "50%",
-            animation: "fi-spin-slow 7s linear infinite",
-          }}>
-            <div style={{ position: "absolute", top: -5, left: "50%", transform: "translateX(-50%)", width: 10, height: 10, borderRadius: "50%", background: "#6366f1", boxShadow: "0 0 12px 4px rgba(99,102,241,.8)" }} />
-          </div>
-
-          {/* Orbital dot on ring 3 */}
-          <div style={{
-            position: "absolute", width: 116, height: 116, borderRadius: "50%",
-            animation: "fi-spin-med 3s linear infinite",
-          }}>
-            <div style={{ position: "absolute", bottom: -4, left: "50%", transform: "translateX(-50%)", width: 8, height: 8, borderRadius: "50%", background: "#a78bfa", boxShadow: "0 0 10px 3px rgba(167,139,250,.8)" }} />
-          </div>
-
-          {/* Particles */}
-          {particles.map(p => (
-            <div key={p.id} style={{
+      {/* ── Main Stage with subtle Glassmorphism ── */}
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          padding: "50px 40px",
+          borderRadius: "32px",
+          background: "rgba(15, 23, 42, 0.4)",
+          backdropFilter: "blur(12px)",
+          border: "1px solid rgba(255,255,255,0.05)",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+          animation: "fi-sub 0.8s ease-out forwards",
+        }}
+      >
+        {/* Orbitals, Particles & Logo */}
+        <div
+          style={{
+            position: "relative",
+            width: 140,
+            height: 140,
+            marginBottom: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {/* Animated Orbital Rings */}
+          <div
+            style={{
               position: "absolute",
-              top: "50%", left: "50%",
-              width: p.size, height: p.size, borderRadius: "50%",
-              background: p.color,
-              boxShadow: `0 0 ${p.size * 2}px ${p.color}`,
-              "--px": `${p.x}px`, "--py": `${p.y}px`,
-              animation: `fi-particle ${p.dur}s ${p.delay}s ease-out infinite`,
-              opacity: 0,
-            } as React.CSSProperties} />
+              inset: "-30px",
+              border: "2px dashed rgba(99,102,241,0.2)",
+              borderRadius: "50%",
+              animation: "fi-spin-slow 12s linear infinite",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: "-50px",
+              border: "1px solid rgba(139,92,246,0.15)",
+              borderRadius: "50%",
+              animation: "fi-spin-rev 16s linear infinite",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: "-15px",
+              border: "2px solid transparent",
+              borderTopColor: "rgba(99,102,241,0.5)",
+              borderRightColor: "rgba(99,102,241,0.5)",
+              borderRadius: "50%",
+              animation: "fi-spin-med 4s linear infinite",
+            }}
+          />
+
+          {/* Floating Particles */}
+          {particles.map((p) => (
+            <div
+              key={p.id}
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                width: p.size,
+                height: p.size,
+                background: p.color,
+                borderRadius: "50%",
+                boxShadow: `0 0 8px ${p.color}`,
+                ["--px" as never]: `${p.x}px`,
+                ["--py" as never]: `${p.y}px`,
+                animation: `fi-particle ${p.dur}s ease-out infinite`,
+                animationDelay: `${p.delay}s`,
+                opacity: 0,
+              } as React.CSSProperties}
+            />
           ))}
 
-          {/* Center logo */}
-          <div style={{
-            position: "relative", width: 80, height: 80, borderRadius: 22,
-            background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            animation: "fi-pulse-glow 2.5s ease-in-out infinite, fi-logo-reveal .8s cubic-bezier(.34,1.56,.64,1) forwards",
-            zIndex: 2,
-          }}>
-            {/* FI Monogram */}
-            <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-              <text x="4" y="34" fontFamily="system-ui,sans-serif" fontWeight="800" fontSize="28" fill="white" letterSpacing="-1">fi</text>
-              <circle cx="36" cy="10" r="5" fill="rgba(255,255,255,.6)" />
-            </svg>
+          {/* Center Logo */}
+          <div
+            style={{
+              position: "absolute",
+              inset: "0",
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #6366f1, #a855f7)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 0 40px rgba(99,102,241,0.4)",
+              animation: "fi-pulse-glow 3s ease-in-out infinite",
+            }}
+          >
+            <span
+              style={{
+                color: "white",
+                fontSize: "40px",
+                fontWeight: "900",
+                letterSpacing: "-0.05em",
+                animation: "fi-logo-reveal 1s ease-out",
+              }}
+            >
+              fi
+            </span>
           </div>
         </div>
 
-        {/* Brand name */}
-        <div style={{
-          animation: "fi-title .7s .4s cubic-bezier(.23,1,.32,1) both",
-          textAlign: "center", marginBottom: 6,
-        }}>
-          <h1 style={{
-            margin: 0,
-            fontSize: "clamp(22px,4vw,30px)",
-            fontWeight: 800,
-            background: "linear-gradient(135deg,#e0e7ff,#a5b4fc,#c4b5fd)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            letterSpacing: ".12em",
-            textTransform: "uppercase",
-          }}>Freelancer<span style={{ fontWeight: 300 }}>.in</span></h1>
+        {/* Modern Text Treatment */}
+        <div
+          style={{
+            textAlign: "center",
+            marginBottom: 16,
+            animation: "fi-title 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+          }}
+        >
+          <h1
+            style={{
+              margin: 0,
+              fontSize: "2.5rem",
+              fontWeight: 800,
+              letterSpacing: "-0.05em",
+              color: "#ffffff",
+            }}
+          >
+            Freelancer<span style={{ color: "#818cf8" }}>.in</span>
+          </h1>
+          <p
+            style={{
+              fontSize: "0.85rem",
+              color: "#94a3b8",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              marginTop: "8px",
+            }}
+          >
+            Engineered for Excellence
+          </p>
         </div>
 
-        {/* Tagline */}
-        <div style={{ animation: "fi-sub .6s .7s ease both", marginBottom: 36, textAlign: "center" }}>
-          <p style={{ margin: 0, fontSize: 12, color: "rgba(148,163,184,.7)", letterSpacing: ".18em", textTransform: "uppercase" }}>Premium Freelance Platform</p>
-        </div>
-
-        {/* Progress bar */}
-        <div style={{ width: "min(320px,80vw)", marginBottom: 16 }}>
-          <div style={{ height: 3, borderRadius: 8, background: "rgba(255,255,255,.07)", overflow: "hidden", position: "relative" }}>
-            <div style={{
-              height: "100%", borderRadius: 8,
-              background: "linear-gradient(90deg,#6366f1,#8b5cf6,#a78bfa)",
-              width: `${barPct}%`,
-              transition: "width .6s cubic-bezier(.23,1,.32,1)",
-              boxShadow: "0 0 10px rgba(99,102,241,.8)",
-              animation: "fi-bar-glow 1.2s ease-in-out infinite",
-            }} />
+        {/* Progress Bar & Status Messages */}
+        <div style={{ width: "280px", marginTop: "20px" }}>
+          <div style={{ height: "4px", background: "rgba(255,255,255,0.1)", borderRadius: "2px", overflow: "hidden" }}>
+            <div
+              style={{
+                height: "100%",
+                width: `${barPct}%`,
+                background: "linear-gradient(90deg, #6366f1, #c084fc)",
+                transition: "width 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
+              }}
+            />
           </div>
-        </div>
 
-        {/* Status message + dots */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, height: 20 }}>
-          <span style={{
-            fontSize: 12, color: "rgba(148,163,184,.75)",
-            transition: "opacity .4s ease",
-            letterSpacing: ".04em",
-          }}>{MESSAGES[msgIdx]}</span>
-          <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-            {[0, 1, 2].map(i => (
-              <div key={i} style={{
-                width: 4, height: 4, borderRadius: "50%",
-                background: "#6366f1",
-                animation: `fi-dot 1.2s ${i * 0.2}s ease-in-out infinite`,
-              }} />
-            ))}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: "12px",
+              fontSize: "0.8rem",
+            }}
+          >
+            <span key={msgIdx} style={{ color: "#94a3b8", animation: "fi-sub 0.3s ease-in-out forwards" }}>
+              {MESSAGES[msgIdx]}
+            </span>
+            <span style={{ color: "#e2e8f0", fontWeight: 600 }}>{barPct}%</span>
           </div>
         </div>
       </div>
 
-      {/* Footer hint */}
-      <div style={{
-        position: "absolute", bottom: 28,
-        animation: "fi-sub .6s 1.2s ease both", opacity: 0,
-        display: "flex", alignItems: "center", gap: 6,
-      }}>
-        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 8px rgba(74,222,128,.8)", animation: "fi-pulse-glow 2s ease-in-out infinite" }} />
-        <span style={{ fontSize: 11, color: "rgba(148,163,184,.45)", letterSpacing: ".1em" }}>SECURE CONNECTION</span>
+      {/* Footer - Professional subtle status */}
+      <div style={{ position: "absolute", bottom: "40px", display: "flex", alignItems: "center", gap: "8px" }}>
+        <div
+          style={{
+            width: "6px",
+            height: "6px",
+            borderRadius: "50%",
+            background: "#22c55e",
+            boxShadow: "0 0 10px rgba(34, 197, 94, 0.6)",
+          }}
+        />
+        <span style={{ fontSize: "0.75rem", color: "#64748b", letterSpacing: "0.1em", fontWeight: 500 }}>
+          SYSTEM OPTIMIZED
+        </span>
       </div>
     </div>
   );

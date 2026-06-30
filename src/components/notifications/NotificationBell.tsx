@@ -13,7 +13,7 @@ const NotificationBell = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
-  const basePath = profile?.user_type === "client" ? "/client" : "/employee";
+  const basePath = profile?.user_type === "Employer" ? "/employer" : "/freelancer";
 
   return (
     <>
