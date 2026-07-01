@@ -28,13 +28,17 @@ const DashboardSlideshow = ({ target, autoPlayMs = 3500 }: Props) => {
   useEffect(() => {
     const fetchSlides = async () => {
       try {
-        const { data } = await supabase.from("app_settings").select("value").eq("key", "dashboard_slideshow_slides").maybeSingle();
+        const { data } = await supabase
+          .from("app_settings")
+          .select("value")
+          .eq("key", "dashboard_slideshow_slides")
+          .maybeSingle();
         const all: Slide[] = data?.value ? JSON.parse(data.value) : [];
-        const filtered = all.filter(
-          (s) => s.active && (s.target === "all" || s.target === target)
-        ).sort((a, b) => a.sort_order - b.sort_order);
+        const filtered = all
+          .filter((s) => s.active && (s.target === "all" || s.target === target))
+          .sort((a, b) => a.sort_order - b.sort_order);
         setSlides(filtered);
-      } catch { }
+      } catch {}
       setLoading(false);
     };
     fetchSlides();
@@ -51,7 +55,9 @@ const DashboardSlideshow = ({ target, autoPlayMs = 3500 }: Props) => {
   useEffect(() => {
     if (slides.length <= 1) return;
     timerRef.current = setInterval(next, autoPlayMs);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [slides.length, next, autoPlayMs]);
 
   const resetTimer = () => {
@@ -77,17 +83,22 @@ const DashboardSlideshow = ({ target, autoPlayMs = 3500 }: Props) => {
         width: "100%",
         borderRadius: 16,
         overflow: "hidden",
-        aspectRatio: "16/5",
+        aspectRatio: "16/7", // Changed from 16/5 to 16/7 to increase banner height
         userSelect: "none",
         cursor: slide.link_url ? "pointer" : "default",
         boxShadow: "0 4px 20px rgba(0,0,0,.15)",
       }}
       onClick={handleClick}
-      onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+      onTouchStart={(e) => {
+        touchStartX.current = e.touches[0].clientX;
+      }}
       onTouchEnd={(e) => {
         if (touchStartX.current === null) return;
         const dx = e.changedTouches[0].clientX - touchStartX.current;
-        if (Math.abs(dx) > 40) { dx < 0 ? next() : prev(); resetTimer(); }
+        if (Math.abs(dx) > 40) {
+          dx < 0 ? next() : prev();
+          resetTimer();
+        }
         touchStartX.current = null;
       }}
     >
@@ -112,41 +123,86 @@ const DashboardSlideshow = ({ target, autoPlayMs = 3500 }: Props) => {
       {slides.length > 1 && (
         <>
           <button
-            onClick={(e) => { e.stopPropagation(); prev(); resetTimer(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              prev();
+              resetTimer();
+            }}
             style={{
-              position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)",
-              background: "rgba(0,0,0,.35)", border: "none", borderRadius: "50%",
-              width: 28, height: 28, cursor: "pointer", display: "flex",
-              alignItems: "center", justifyContent: "center", color: "white", zIndex: 2,
+              position: "absolute",
+              left: 8,
+              top: "50%",
+              transform: "translateY(-50%)",
+              background: "rgba(0,0,0,.35)",
+              border: "none",
+              borderRadius: "50%",
+              width: 22,
+              height: 22,
+              cursor: "pointer",
+              display: "flex", // Reduced size from 28 to 22
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              zIndex: 2,
             }}
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={14} /> {/* Reduced icon size from 16 to 14 */}
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); next(); resetTimer(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              next();
+              resetTimer();
+            }}
             style={{
-              position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
-              background: "rgba(0,0,0,.35)", border: "none", borderRadius: "50%",
-              width: 28, height: 28, cursor: "pointer", display: "flex",
-              alignItems: "center", justifyContent: "center", color: "white", zIndex: 2,
+              position: "absolute",
+              right: 8,
+              top: "50%",
+              transform: "translateY(-50%)",
+              background: "rgba(0,0,0,.35)",
+              border: "none",
+              borderRadius: "50%",
+              width: 22,
+              height: 22,
+              cursor: "pointer",
+              display: "flex", // Reduced size from 28 to 22
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              zIndex: 2,
             }}
           >
-            <ChevronRight size={16} />
+            <ChevronRight size={14} /> {/* Reduced icon size from 16 to 14 */}
           </button>
 
-          <div style={{
-            position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)",
-            display: "flex", gap: 5, zIndex: 2,
-          }}>
+          <div
+            style={{
+              position: "absolute",
+              bottom: 8,
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
+              gap: 5,
+              zIndex: 2,
+            }}
+          >
             {slides.map((_, i) => (
               <button
                 key={i}
-                onClick={(e) => { e.stopPropagation(); setCurrent(i); resetTimer(); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrent(i);
+                  resetTimer();
+                }}
                 style={{
-                  width: i === current ? 18 : 6, height: 6,
-                  borderRadius: 3, border: "none", cursor: "pointer",
+                  width: i === current ? 14 : 4,
+                  height: 4, // Reduced sizes
+                  borderRadius: 2,
+                  border: "none",
+                  cursor: "pointer",
                   background: i === current ? "white" : "rgba(255,255,255,.45)",
-                  transition: "all 0.3s ease", padding: 0,
+                  transition: "all 0.3s ease",
+                  padding: 0,
                 }}
               />
             ))}
