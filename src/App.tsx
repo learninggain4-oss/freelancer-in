@@ -21,6 +21,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
 const FreelancerRegister = lazy(() => import("./pages/register/FreelancerRegister"));
 const EmployerRegisterComp = lazy(() => import("./pages/register/EmployerRegister"));
+const RegisterChoice = lazy(() => import("./pages/register/RegisterChoice"));
 const VerificationPending = lazy(() => import("./pages/VerificationPending"));
 const FreelancerDashboard = lazy(() => import("./pages/freelancer/FreelancerDashboard"));
 const FreelancerProjects = lazy(() => import("./pages/freelancer/FreelancerProjects"));
@@ -434,6 +435,7 @@ const AppContent = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/register" element={<RegisterChoice />} />
             <Route path="/register/employee" element={<FreelancerRegister />} />
             <Route path="/register/freelancer" element={<FreelancerRegister />} />
             <Route path="/register/employer" element={<EmployerRegisterComp />} />
