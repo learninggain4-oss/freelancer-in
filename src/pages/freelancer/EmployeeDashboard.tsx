@@ -298,14 +298,6 @@ const EmployeeDashboard = () => {
           <div style={{ position: "absolute", top: -50, right: -30, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,.07)", filter: "blur(30px)", pointerEvents: "none" }} />
           <div style={{ position: "absolute", bottom: -40, left: -20, width: 140, height: 140, borderRadius: "50%", background: "rgba(255,255,255,.05)", pointerEvents: "none" }} />
 
-          {/* Earnings display */}
-          <div style={{ position: "relative", marginBottom: 16 }}>
-            <p style={{ color: "rgba(255,255,255,.6)", fontSize: 10.5, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.2 }}>Total Earnings</p>
-            <p style={{ color: "white", fontSize: 32, fontWeight: 900, margin: "4px 0 0", letterSpacing: "-1.5px", lineHeight: 1 }}>
-              ₹{totalAll.toLocaleString("en-IN")}
-            </p>
-          </div>
-
           {/* 3 mini stat chips */}
           <div style={{ position: "relative", display: "flex", gap: 8 }}>
             {[
