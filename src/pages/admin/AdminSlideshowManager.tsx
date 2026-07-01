@@ -238,7 +238,7 @@ const AdminSlideshowManager = () => {
           {uploading ? "Uploading..." : "Upload Image"}
         </button>
         <p style={{ fontSize: 11, color: T.sub, marginTop: 8 }}>
-          Recommended: 1200×375px, JPG/PNG, max 5MB. Aspect ratio 16:5 works best.
+          Recommended: 1920×1000px, JPG/PNG, max 5MB. Aspect ratio 16:5 works best.
         </p>
       </div>
 
