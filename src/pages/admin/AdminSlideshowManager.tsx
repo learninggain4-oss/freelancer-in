@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { Trash2, ImageIcon, Eye, EyeOff, ArrowUp, ArrowDown, Upload, Loader2 } from "lucide-react";
+import { Trash2, ImageIcon, Eye, EyeOff, ArrowUp, ArrowDown, Upload, Loader2, X } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -62,6 +62,8 @@ const AdminSlideshowManager = () => {
   const [uploading, setUploading] = useState(false);
   const [newTarget, setNewTarget] = useState<Target>("all");
   const [newLink, setNewLink] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -69,6 +71,9 @@ const AdminSlideshowManager = () => {
       setSlides(s);
       setLoading(false);
     });
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
   }, []);
 
   const persist = async (updated: Slide[]) => {
@@ -80,20 +85,26 @@ const AdminSlideshowManager = () => {
     }
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!fileRef.current) return;
-    fileRef.current.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) return toast.error("Only image files allowed");
     if (file.size > 5 * 1024 * 1024) return toast.error("Max file size is 5MB");
 
+    setSelectedFile(file);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleActualUpload = async () => {
+    if (!selectedFile) return toast.error("Please select an image first");
+
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const ext = selectedFile.name.split(".").pop();
       const filename = `slide_${Date.now()}.${ext}`;
 
-      const { error: upErr } = await supabase.storage.from(BUCKET).upload(filename, file, { upsert: false });
+      const { error: upErr } = await supabase.storage.from(BUCKET).upload(filename, selectedFile, { upsert: false });
       if (upErr) {
         if (upErr.message?.includes("Bucket not found") || upErr.message?.includes("bucket")) {
           toast.error(
@@ -120,12 +131,20 @@ const AdminSlideshowManager = () => {
       const updated = [...slides, newSlide];
       await persist(updated);
       setNewLink("");
+      handleCancelPreview();
       toast.success("Slide added!");
     } catch (e: any) {
       toast.error("Error: " + e.message);
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleCancelPreview = () => {
+    setSelectedFile(null);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    if (fileRef.current) fileRef.current.value = "";
   };
 
   const toggle = async (id: string) => {
@@ -162,7 +181,7 @@ const AdminSlideshowManager = () => {
   const TARGET_LABELS: Record<Target, string> = { all: "Everyone", freelancer: "Freelancers", employer: "Employers" };
 
   return (
-    <div style={{ padding: "24px 16px", maxWidth: 900, margin: "0 auto" }}>
+    <div style={{ padding: "24px 16px", maxWidth: "100%", margin: "0 auto" }}>
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontWeight: 800, fontSize: 22, color: T.text, margin: 0 }}>Dashboard Slideshow</h1>
         <p style={{ color: T.sub, fontSize: 13, marginTop: 4 }}>
@@ -215,28 +234,114 @@ const AdminSlideshowManager = () => {
           </div>
         </div>
 
-        <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} style={{ display: "none" }} />
-        <button
-          onClick={() => fileRef.current?.click()}
-          disabled={uploading}
-          style={{
-            background: `linear-gradient(135deg,${A1},#8b5cf6)`,
-            border: "none",
-            borderRadius: 10,
-            padding: "10px 20px",
-            cursor: uploading ? "not-allowed" : "pointer",
-            color: "#fff",
-            fontWeight: 700,
-            fontSize: 13,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            opacity: uploading ? 0.7 : 1,
-          }}
-        >
-          {uploading ? <Loader2 size={15} style={{ animation: "spin 1s linear infinite" }} /> : <Upload size={15} />}
-          {uploading ? "Uploading..." : "Upload Image"}
-        </button>
+        <input ref={fileRef} type="file" accept="image/*" onChange={handleFileSelect} style={{ display: "none" }} />
+
+        {previewUrl && (
+          <div
+            style={{
+              marginBottom: 16,
+              borderRadius: 10,
+              overflow: "hidden",
+              border: `1px solid ${T.border}`,
+              background: T.input,
+              padding: 12,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            <span style={{ fontSize: 12, fontWeight: 600, color: T.text }}>Image Preview:</span>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                maxHeight: 250,
+                background: "rgba(0,0,0,0.03)",
+                borderRadius: 8,
+                overflow: "hidden",
+              }}
+            >
+              <img
+                src={previewUrl}
+                alt="Selected preview"
+                style={{ maxWidth: "100%", maxHeight: 250, objectFit: "contain" }}
+              />
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {!previewUrl ? (
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              style={{
+                background: `linear-gradient(135deg,${A1},#8b5cf6)`,
+                border: "none",
+                borderRadius: 10,
+                padding: "10px 20px",
+                cursor: "pointer",
+                color: "#fff",
+                fontWeight: 700,
+                fontSize: 13,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <Upload size={15} />
+              Choose Image
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={handleActualUpload}
+                disabled={uploading}
+                style={{
+                  background: "linear-gradient(135deg, #22c55e, #16a34a)",
+                  border: "none",
+                  borderRadius: 10,
+                  padding: "10px 20px",
+                  cursor: uploading ? "not-allowed" : "pointer",
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  opacity: uploading ? 0.7 : 1,
+                }}
+              >
+                {uploading ? (
+                  <Loader2 size={15} style={{ animation: "spin 1s linear infinite" }} />
+                ) : (
+                  <Upload size={15} />
+                )}
+                {uploading ? "Uploading..." : "Confirm & Upload Slide"}
+              </button>
+              <button
+                onClick={handleCancelPreview}
+                disabled={uploading}
+                style={{
+                  background: "none",
+                  border: `1px solid ${T.border}`,
+                  borderRadius: 10,
+                  padding: "10px 20px",
+                  cursor: uploading ? "not-allowed" : "pointer",
+                  color: T.text,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <X size={15} />
+                Cancel
+              </button>
+            </>
+          )}
+        </div>
         <p style={{ fontSize: 11, color: T.sub, marginTop: 8 }}>
           Recommended: 1920×1000px, JPG/PNG, max 5MB. Aspect ratio 16:5 works best.
         </p>
