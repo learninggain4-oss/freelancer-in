@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, ImageIcon, Eye, EyeOff, ArrowUp, ArrowDown, Upload, Loader2 } from "lucide-react";
+import { Trash2, ImageIcon, Eye, EyeOff, ArrowUp, ArrowDown, Upload, Loader2 } from "lucide-react";
 import { useAdminTheme } from "@/hooks/use-dashboard-theme";
 import { supabase } from "@/integrations/supabase/client";
 
 const A1 = "#6366f1";
-const SETTINGS_KEY = "slideshow_banners";
 const BUCKET = "slideshow-banners";
+const API = "/functions/v1/slideshow-settings";
 
 type Target = "all" | "freelancer" | "employer";
 
@@ -27,19 +27,21 @@ const TH = {
 
 async function loadSlides(): Promise<Slide[]> {
   try {
-    const { data } = await (supabase as any)
-      .from("app_settings").select("value").eq("key", SETTINGS_KEY).maybeSingle();
-    if (data?.value) return JSON.parse(data.value);
+    const res = await fetch(API);
+    const json = await res.json();
+    return json.slides ?? [];
   } catch { }
   return [];
 }
 
 async function saveSlides(slides: Slide[]) {
-  const { error } = await (supabase as any).from("app_settings").upsert(
-    { key: SETTINGS_KEY, value: JSON.stringify(slides) },
-    { onConflict: "key" }
-  );
-  if (error) throw error;
+  const res = await fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ slides }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error ?? "Save failed");
 }
 
 const AdminSlideshowManager = () => {

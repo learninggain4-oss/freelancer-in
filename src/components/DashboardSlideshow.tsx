@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export type SlideTarget = "all" | "freelancer" | "employer";
@@ -28,18 +27,13 @@ const DashboardSlideshow = ({ target, autoPlayMs = 3500 }: Props) => {
   useEffect(() => {
     const fetchSlides = async () => {
       try {
-        const { data } = await (supabase as any)
-          .from("app_settings")
-          .select("value")
-          .eq("key", "slideshow_banners")
-          .maybeSingle();
-        if (data?.value) {
-          const all: Slide[] = JSON.parse(data.value);
-          const filtered = all.filter(
-            (s) => s.active && (s.target === "all" || s.target === target)
-          ).sort((a, b) => a.sort_order - b.sort_order);
-          setSlides(filtered);
-        }
+        const res = await fetch("/functions/v1/slideshow-settings");
+        const json = await res.json();
+        const all: Slide[] = json.slides ?? [];
+        const filtered = all.filter(
+          (s) => s.active && (s.target === "all" || s.target === target)
+        ).sort((a, b) => a.sort_order - b.sort_order);
+        setSlides(filtered);
       } catch { }
       setLoading(false);
     };

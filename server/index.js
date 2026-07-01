@@ -3142,6 +3142,33 @@ if (existsSync(distPath)) {
   });
 }
 
+// ─── /functions/v1/slideshow-settings ────────────────────────────────────────
+app.get("/functions/v1/slideshow-settings", async (_req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("app_settings").select("value").eq("key", "slideshow_banners").maybeSingle();
+    if (error) throw error;
+    const slides = data?.value ? JSON.parse(data.value) : [];
+    res.json({ slides });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/functions/v1/slideshow-settings", async (req, res) => {
+  try {
+    const { slides } = req.body;
+    if (!Array.isArray(slides)) return res.status(400).json({ error: "slides must be array" });
+    const { error } = await supabase
+      .from("app_settings")
+      .upsert({ key: "slideshow_banners", value: JSON.stringify(slides) }, { onConflict: "key" });
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`API server running on port ${PORT}`);
   if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
