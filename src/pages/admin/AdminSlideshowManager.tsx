@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const A1 = "#6366f1";
 const BUCKET = "slideshow-banners";
-const API = "/functions/v1/slideshow-settings";
+const SETTINGS_KEY = "dashboard_slideshow_slides";
 
 type Target = "all" | "freelancer" | "employer";
 
@@ -27,21 +27,17 @@ const TH = {
 
 async function loadSlides(): Promise<Slide[]> {
   try {
-    const res = await fetch(API);
-    const json = await res.json();
-    return json.slides ?? [];
+    const { data } = await supabase.from("app_settings").select("value").eq("key", SETTINGS_KEY).maybeSingle();
+    if (data?.value) return JSON.parse(data.value);
   } catch { }
   return [];
 }
 
 async function saveSlides(slides: Slide[]) {
-  const res = await fetch(API, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ slides }),
-  });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.error ?? "Save failed");
+  const { error } = await supabase
+    .from("app_settings")
+    .upsert({ key: SETTINGS_KEY, value: JSON.stringify(slides) }, { onConflict: "key" });
+  if (error) throw new Error(error.message);
 }
 
 const AdminSlideshowManager = () => {
