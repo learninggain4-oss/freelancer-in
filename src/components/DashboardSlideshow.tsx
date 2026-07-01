@@ -83,7 +83,7 @@ const DashboardSlideshow = ({ target, autoPlayMs = 3500 }: Props) => {
         width: "100%",
         borderRadius: 16,
         overflow: "hidden",
-        aspectRatio: "16/7", // Changed from 16/5 to 16/7 to increase banner height
+        aspectRatio: "16/9", // Increased banner size/height by changing from 16/7 to 16/9
         userSelect: "none",
         cursor: slide.link_url ? "pointer" : "default",
         boxShadow: "0 4px 20px rgba(0,0,0,.15)",
@@ -136,17 +136,17 @@ const DashboardSlideshow = ({ target, autoPlayMs = 3500 }: Props) => {
               background: "rgba(0,0,0,.35)",
               border: "none",
               borderRadius: "50%",
-              width: 22,
-              height: 22,
+              width: 18, // Reduced button size from 22 to 18
+              height: 18, // Reduced button size from 22 to 18
               cursor: "pointer",
-              display: "flex", // Reduced size from 28 to 22
+              display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color: "white",
               zIndex: 2,
             }}
           >
-            <ChevronLeft size={14} /> {/* Reduced icon size from 16 to 14 */}
+            <ChevronLeft size={12} /> {/* Reduced icon size from 14 to 12 */}
           </button>
           <button
             onClick={(e) => {
@@ -162,17 +162,17 @@ const DashboardSlideshow = ({ target, autoPlayMs = 3500 }: Props) => {
               background: "rgba(0,0,0,.35)",
               border: "none",
               borderRadius: "50%",
-              width: 22,
-              height: 22,
+              width: 18, // Reduced button size from 22 to 18
+              height: 18, // Reduced button size from 22 to 18
               cursor: "pointer",
-              display: "flex", // Reduced size from 28 to 22
+              display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color: "white",
               zIndex: 2,
             }}
           >
-            <ChevronRight size={14} /> {/* Reduced icon size from 16 to 14 */}
+            <ChevronRight size={12} /> {/* Reduced icon size from 14 to 12 */}
           </button>
 
           <div
@@ -195,9 +195,9 @@ const DashboardSlideshow = ({ target, autoPlayMs = 3500 }: Props) => {
                   resetTimer();
                 }}
                 style={{
-                  width: i === current ? 14 : 4,
-                  height: 4, // Reduced sizes
-                  borderRadius: 2,
+                  width: i === current ? 10 : 3, // Reduced width from 14/4 to 10/3
+                  height: 3, // Reduced height from 4 to 3
+                  borderRadius: 1.5, // Adjusted border radius for perfect square look
                   border: "none",
                   cursor: "pointer",
                   background: i === current ? "white" : "rgba(255,255,255,.45)",
