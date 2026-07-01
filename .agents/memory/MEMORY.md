@@ -1,0 +1,1 @@
+- [Git push auth in task-agent sandboxes](git-push-askpass-hang.md) — plain `git push` can hang forever via Replit's askpass; use a token-embedded URL with GIT_ASKPASS cleared instead.
