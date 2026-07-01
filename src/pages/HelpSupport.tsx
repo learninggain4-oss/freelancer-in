@@ -389,7 +389,7 @@ const HelpSupport = () => {
   /* ────────────────── MESSAGES TAB ────────────────── */
   if (activeTab === "messages") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", position: "fixed", top: 56, left: 0, right: 0, bottom: 88, zIndex: 40, background: WA.bg }}
+      <div style={{ display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, height: "100dvh", paddingTop: 56, paddingBottom: 88, boxSizing: "border-box", zIndex: 40, background: WA.bg }}
         onClick={() => { setCtxMsg(null); setShowHeaderMenu(false); setShowAttachMenu(false); }}>
 
         {/* ══ Global styles ══ */}
