@@ -182,6 +182,7 @@ const DashboardSlideshow = ({ target, autoPlayMs = 3500 }: Props) => {
               left: "50%",
               transform: "translateX(-50%)",
               display: "flex",
+              alignItems: "center", // Added to align circles perfectly
               gap: 5,
               zIndex: 2,
             }}
@@ -195,9 +196,9 @@ const DashboardSlideshow = ({ target, autoPlayMs = 3500 }: Props) => {
                   resetTimer();
                 }}
                 style={{
-                  width: i === current ? 10 : 3, // Reduced width from 14/4 to 10/3
-                  height: 3, // Reduced height from 4 to 3
-                  borderRadius: 1.5, // Adjusted border radius for perfect square look
+                  width: i === current ? 6 : 4, // Small circle dimensions
+                  height: i === current ? 6 : 4, // Same as width for perfect circle
+                  borderRadius: "50%", // Changed to 50% for circle shape
                   border: "none",
                   cursor: "pointer",
                   background: i === current ? "white" : "rgba(255,255,255,.45)",
