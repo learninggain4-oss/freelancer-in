@@ -185,6 +185,7 @@ const navSections = [
     { label: "Talent Showcase",    icon: Star,          path: "/admin/talent-showcase" },
     { label: "Freelancer Levels",  icon: TrendingUp,    path: "/admin/freelancer-levels" },
     { label: "Banner Manager",     icon: Megaphone,     path: "/admin/banner-manager" },
+    { label: "Slideshow Manager",  icon: ImageIcon,     path: "/admin/slideshow-manager" },
     { label: "Rate Cards",         icon: FileText,      path: "/admin/rate-cards" },
     { label: "Feature Flags",      icon: Activity,      path: "/admin/feature-flags" },
   ]},

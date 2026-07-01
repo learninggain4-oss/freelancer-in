@@ -223,6 +223,7 @@ const TITLES: Record<string, string> = {
   "/admin/commission-tiers": "Commission Tiers" + S,
   "/admin/bidding-rules": "Bidding Rules" + S,
   "/admin/banner-manager": "Banner Manager" + S,
+  "/admin/slideshow-manager": "Slideshow Manager" + S,
   "/admin/holiday-calendar": "Holiday Calendar" + S,
   "/admin/rate-cards": "Rate Cards" + S,
   "/admin/activity-log": "Activity Log" + S,

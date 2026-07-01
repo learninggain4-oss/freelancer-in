@@ -272,6 +272,7 @@ const AdminPanVerification = lazy(() => import("./pages/admin/AdminPanVerificati
 const AdminCommissionTiers = lazy(() => import("./pages/admin/AdminCommissionTiers"));
 const AdminBiddingRules = lazy(() => import("./pages/admin/AdminBiddingRules"));
 const AdminBannerManager = lazy(() => import("./pages/admin/AdminBannerManager"));
+const AdminSlideshowManager = lazy(() => import("./pages/admin/AdminSlideshowManager"));
 const AdminHolidayCalendar = lazy(() => import("./pages/admin/AdminHolidayCalendar"));
 const AdminRateCards = lazy(() => import("./pages/admin/AdminRateCards"));
 const AdminActivityLog = lazy(() => import("./pages/admin/AdminActivityLog"));
@@ -888,6 +889,7 @@ const AppContent = () => {
               <Route path="commission-tiers" element={<AdminCommissionTiers />} />
               <Route path="bidding-rules" element={<AdminBiddingRules />} />
               <Route path="banner-manager" element={<AdminBannerManager />} />
+              <Route path="slideshow-manager" element={<AdminSlideshowManager />} />
               <Route path="holiday-calendar" element={<AdminHolidayCalendar />} />
               <Route path="rate-cards" element={<AdminRateCards />} />
               <Route path="activity-log" element={<AdminActivityLog />} />

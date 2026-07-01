@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useMemo, useState } from "react";
+import DashboardSlideshow from "@/components/DashboardSlideshow";
 import WalletCard from "@/components/wallet/WalletCard";
 import TransferDialog from "@/components/wallet/TransferDialog";
 import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
@@ -287,6 +288,9 @@ const EmployeeDashboard = () => {
       </div>
 
       <div style={{ padding: "16px 16px 32px", display: "flex", flexDirection: "column", gap: 14 }}>
+
+        {/* ── Slideshow Banner ── */}
+        <DashboardSlideshow target="freelancer" />
 
         {/* ── Wallet Card ── */}
         <WalletCard

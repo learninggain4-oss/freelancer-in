@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useMemo, useState } from "react";
+import DashboardSlideshow from "@/components/DashboardSlideshow";
 import WalletCard from "@/components/wallet/WalletCard";
 import TransferDialog from "@/components/wallet/TransferDialog";
 import WalletTypeBadge from "@/components/wallet/WalletTypeBadge";
@@ -253,6 +254,9 @@ const ClientDashboard = () => {
             </button>
           </div>
         </div>
+
+        {/* ── Slideshow Banner ── */}
+        <DashboardSlideshow target="employer" />
 
         {/* ── Wallet Card ── */}
         <WalletCard
