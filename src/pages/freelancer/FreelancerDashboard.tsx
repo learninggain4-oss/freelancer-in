@@ -288,31 +288,6 @@ const EmployeeDashboard = () => {
 
       <div style={{ padding: "16px 16px 32px", display: "flex", flexDirection: "column", gap: 14 }}>
 
-        {/* ── HERO SECTION ── */}
-        <div style={{
-          background: `linear-gradient(135deg, ${A1} 0%, ${A2} 55%, #0ea5e9 100%)`,
-          borderRadius: 24, padding: "20px 20px 22px",
-          position: "relative", overflow: "hidden",
-          boxShadow: "0 10px 40px rgba(99,102,241,.38)",
-        }}>
-          <div style={{ position: "absolute", top: -50, right: -30, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,.07)", filter: "blur(30px)", pointerEvents: "none" }} />
-          <div style={{ position: "absolute", bottom: -40, left: -20, width: 140, height: 140, borderRadius: "50%", background: "rgba(255,255,255,.05)", pointerEvents: "none" }} />
-
-          {/* 3 mini stat chips */}
-          <div style={{ position: "relative", display: "flex", gap: 8 }}>
-            {[
-              { label: "Available", value: `₹${availBal.toLocaleString("en-IN")}` },
-              { label: "On Hold",   value: `₹${holdBal.toLocaleString("en-IN")}` },
-              { label: "Jobs Done", value: String(completedCount) },
-            ].map(chip => (
-              <div key={chip.label} style={{ flex: 1, background: "rgba(255,255,255,.13)", backdropFilter: "blur(10px)", borderRadius: 14, padding: "10px 10px", border: "1px solid rgba(255,255,255,.1)" }}>
-                <p style={{ color: "rgba(255,255,255,.65)", fontSize: 9.5, margin: 0, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 700 }}>{chip.label}</p>
-                <p style={{ color: "white", fontSize: 13, fontWeight: 900, margin: "3px 0 0", letterSpacing: "-0.3px" }}>{chip.value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* ── Wallet Card ── */}
         <WalletCard
           name={Array.isArray(profile?.full_name) ? profile.full_name.join(" ") : profile?.full_name ?? "Freelancer"}
