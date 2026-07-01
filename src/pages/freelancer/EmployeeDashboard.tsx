@@ -298,23 +298,6 @@ const EmployeeDashboard = () => {
           <div style={{ position: "absolute", top: -50, right: -30, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,.07)", filter: "blur(30px)", pointerEvents: "none" }} />
           <div style={{ position: "absolute", bottom: -40, left: -20, width: 140, height: 140, borderRadius: "50%", background: "rgba(255,255,255,.05)", pointerEvents: "none" }} />
 
-          {/* Top row */}
-          <div style={{ position: "relative", display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
-                <Sparkles size={11} style={{ color: "rgba(255,255,255,.7)" }} />
-                <p style={{ color: "rgba(255,255,255,.7)", fontSize: 12, fontWeight: 600, margin: 0 }}>{greeting}</p>
-              </div>
-              <h2 style={{ color: "white", fontSize: 22, fontWeight: 900, margin: 0, letterSpacing: "-0.5px" }}>
-                Hi, {(typeof firstName === "string" ? firstName : "there").split(" ")[0]} 👋
-              </h2>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,.18)", backdropFilter: "blur(10px)", borderRadius: 20, padding: "5px 12px", border: "1px solid rgba(255,255,255,.15)", flexShrink: 0 }}>
-              <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 8px #4ade80" }} />
-              <span style={{ color: "white", fontSize: 11, fontWeight: 700 }}>Online</span>
-            </div>
-          </div>
-
           {/* Earnings display */}
           <div style={{ position: "relative", marginBottom: 16 }}>
             <p style={{ color: "rgba(255,255,255,.6)", fontSize: 10.5, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.2 }}>Total Earnings</p>
